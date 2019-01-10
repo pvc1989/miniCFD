@@ -18,8 +18,19 @@ class RiemannSolver(abc.ABC):
     # as well as the constant states.
     pass
 
-  @abc.abstractmethod
   def U(self, x, t):
+    if t == 0:
+      if x <= 0:
+        return self._U_L
+      else:
+        return self._U_R
+    else:  # t > 0
+      return self._U(v=x/t)
+
+  @abc.abstractmethod
+  def _U(self, v):
+    # v = x / t
+    # return the self-similar solution
     pass
 
   def F(self, U):
@@ -42,13 +53,11 @@ class LinearAdvection(RiemannSolver):
   def _solve(self):
     pass
 
-  def U(self, x, t):
-    U = 0.0
-    if x < t * self._equation.A(U):
-      U = self._U_L
+  def _U(self, v):
+    if v <= self._a:
+      return self._U_L
     else:
-      U = self._U_R
-    return U
+      return self._U_R
 
 
 class InviscidBurgers(RiemannSolver):
@@ -58,7 +67,7 @@ class InviscidBurgers(RiemannSolver):
 
   def _solve(self):
     self._v_L, self._v_R = 0, 0
-    if self._U_L < self._U_R:
+    if self._U_L <= self._U_R:
       # rarefaction
       self._v_L, self._v_R = self._U_L, self._U_R
     else:
@@ -66,6 +75,13 @@ class InviscidBurgers(RiemannSolver):
       v = (self._U_L + self._U_R) / 2
       self._v_L, self._v_R = v, v
 
+  def _U(self, v):
+    if v <= self._v_L:
+      return self._U_L
+    elif v >= self._v_R:
+      return self._U_R
+    else:  # v_L < v < v_R
+      return v
   def U(self, x, t):
     U = 0.0
     if t == 0.0:
