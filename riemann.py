@@ -10,6 +10,13 @@ class RiemannSolver(abc.ABC):
   def set_initial(self, U_L, U_R):
     self._U_L = U_L
     self._U_R = U_R
+    self._solve()
+  
+  @abc.abstractmethod
+  def _solve(self):
+    # Determine boundaries of constant regions and elementary waves,
+    # as well as the constant states.
+    pass
 
   @abc.abstractmethod
   def U(self, x, t):
