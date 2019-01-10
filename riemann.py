@@ -26,10 +26,12 @@ class RiemannSolver(abc.ABC):
     return self._equation.F(U)
 
   def F_on_t_axis(self, U_L, U_R):
-    # F is always unique on t-axis
     self.set_initial(U_L=U_L, U_R=U_R)
     U_on_t_axis = self.U(x=0, t=1)
-    return self._equation.F(U_on_t_axis)
+    # Actually, U(x=0, t=1) returns either U(x=-0, t=1) or U(x=+0, t=1).
+    # If the speed of a shock is 0, then U(x=-0, t=1) != U(x=+0, t=1).
+    # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
+    return self.F(U_on_t_axis)
 
 
 class LinearAdvection(RiemannSolver):
