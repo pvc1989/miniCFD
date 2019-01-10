@@ -61,16 +61,14 @@ class Euler1d(ConservationLaw):
     self._gas = gas.Ideal(gamma)
 
   def u_p_rho_to_U(self, u, p, rho):
-    U = np.zeros(3)
-    U[0] = rho
-    U[1] = rho * u
-    U[2] = p / self._gas.gamma_minus_1() + rho * u**2 / 2
+    U = np.array([rho, rho*u, 0])
+    U[2] = u*U[1]/2 + p/self._gas.gamma_minus_1()
     return U
 
   def U_to_u_p_rho(self, U):
     rho = U[0]
     u = U[1] / U[0]
-    p = (U[2] - rho * u**2 / 2) * self._gas.gamma_minus_1()
+    p = (U[2] - u*U[1]/2) * self._gas.gamma_minus_1()
     return u, p, rho
 
   def F(self, U):
@@ -84,13 +82,13 @@ class Euler1d(ConservationLaw):
     A = np.zeros((3, 3))
     A[0][1] = 1.0
     u = U[1] / U[0]
-    u_square = u**2
-    e_kinetic = u_square / 2
+    uu = u**2
+    e_kinetic = uu / 2
     A[1][0] = e_kinetic * self._gas.gamma_minus_3()
     A[1][1] = -u * self._gas.gamma_minus_3()
     A[1][2] = self._gas.gamma_minus_1()
     gamma_times_e_total = U[2] / U[0] * self._gas.gamma()
-    A[2][0] = u * (u_square*self._gas.gamma_minus_1() - gamma_times_e_total)
+    A[2][0] = u * (uu*self._gas.gamma_minus_1() - gamma_times_e_total)
     A[2][1] = gamma_times_e_total - 3*e_kinetic*self._gas.gamma_minus_1()
     A[2][2] = u * self._gas.gamma()
     return A
