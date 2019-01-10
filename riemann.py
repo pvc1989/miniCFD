@@ -33,8 +33,9 @@ class RiemannSolver(abc.ABC):
     # return the self-similar solution
     pass
 
+  @abc.abstractmethod
   def F(self, U):
-    return self._equation.F(U)
+    pass
 
   def F_on_t_axis(self, U_L, U_R):
     self.set_initial(U_L=U_L, U_R=U_R)
@@ -48,7 +49,7 @@ class RiemannSolver(abc.ABC):
 class LinearAdvection(RiemannSolver):
 
   def __init__(self, a_const):
-    self._equation = equation.LinearAdvection(a_const)
+    self._a = a_const
 
   def _solve(self):
     pass
@@ -59,6 +60,8 @@ class LinearAdvection(RiemannSolver):
     else:
       return self._U_R
 
+  def F(self, U):
+    return U * self._a
 
 class InviscidBurgers(RiemannSolver):
 
@@ -82,6 +85,9 @@ class InviscidBurgers(RiemannSolver):
       return self._U_R
     else:  # v_L < v < v_R
       return v
+
+  def F(self, U):
+    return U**2 / 2
   def U(self, x, t):
     U = 0.0
     if t == 0.0:
