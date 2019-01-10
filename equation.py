@@ -60,21 +60,21 @@ class Euler1d(ConservationLaw):
     self._gamma_minus_1 = gamma - 1
     self._gamma_minus_3 = gamma - 3
 
-  def primitive_to_conservative(self, u, p, rho):
-    U = np.zeros((3,1))
+  def u_p_rho_to_U(self, u, p, rho):
+    U = np.zeros(3)
     U[0] = rho
     U[1] = rho * u
     U[2] = p / self._gamma_minus_1 + rho * u**2 / 2
     return U
 
-  def conservative_to_primitive(self, U):
+  def U_to_u_p_rho(self, U):
     rho = U[0]
     u = U[1] / U[0]
     p = (U[2] - rho * u**2 / 2) * self._gamma_minus_1
     return u, p, rho
 
   def F(self, U):
-    u, p, rho = self.conservative_to_primitive(U)
+    u, p, rho = self.U_to_u_p_rho(U)
     F = U * u
     F[1] += p
     F[2] += p*u

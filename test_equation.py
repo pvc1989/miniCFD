@@ -29,9 +29,9 @@ class TestEquations(unittest.TestCase):
 
   def test_euler_1d(self):
     euler = equation.Euler1d(gamma=1.4)
-    U = euler.primitive_to_conservative(u=0.1, p=0.2, rho=0.3)
-    u, p, rho = euler.conservative_to_primitive(U)
-    self.assertEqual(euler.primitive_to_conservative(u=u, p=p, rho=rho).all(),
+    U = euler.u_p_rho_to_U(u=0.1, p=0.2, rho=0.3)
+    u, p, rho = euler.U_to_u_p_rho(U)
+    self.assertEqual(euler.u_p_rho_to_U(u=u, p=p, rho=rho).all(),
                      U.all())
     self.assertEqual(euler.A(U).dot(U).all(), euler.F(U).all())
 
