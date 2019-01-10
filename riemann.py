@@ -39,6 +39,9 @@ class LinearAdvection(RiemannSolver):
   def __init__(self, a_const):
     self._equation = equation.LinearAdvection(a_const)
 
+  def _solve(self):
+    pass
+
   def U(self, x, t):
     U = 0.0
     if x < t * self._equation.A(U):
@@ -53,13 +56,17 @@ class InviscidBurgers(RiemannSolver):
   def __init__(self):
     self._equation = equation.InviscidBurgers()
 
-  def U(self, x, t):
+  def _solve(self):
+    self._v_L, self._v_R = 0, 0
     if self._U_L < self._U_R:
-      return self._rarefaction(x, t)
+      # rarefaction
+      self._v_L, self._v_R = self._U_L, self._U_R
     else:
-      return self._shock(x, t)
+      # shock
+      v = (self._U_L + self._U_R) / 2
+      self._v_L, self._v_R = v, v
 
-  def _rarefaction(self, x, t):
+  def U(self, x, t):
     U = 0.0
     if t == 0.0:
       if x < 0:
@@ -67,19 +74,15 @@ class InviscidBurgers(RiemannSolver):
       else:
         U = self._U_R
     else:
-      slope = x / t
-      if  slope < self._U_L:
+      v = x / t
+      if  v <= self._v_L:
         U = self._U_L
-      elif slope > self._U_R:
+      elif v >= self._v_R:
         U = self._U_R
-      else:
-        U = slope
+      else:  # v_L < v < v_R
+        U = v
     return U
 
-  def _shock(self, x, t):
-    U = (self._U_L + self._U_R) / 2
-    if x < t * U:
-      U = self._U_L
     else:
       U = self._U_R
     return U
