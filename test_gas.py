@@ -14,6 +14,7 @@ class TestIdealGas(unittest.TestCase):
     self.assertEqual(ideal.gamma_minus_3(), gamma-3)
     self.assertEqual(ideal.gamma_minus_1_over_gamma_plus_1(),
                      (gamma-1)/(gamma+1))
+    self.assertEqual(ideal.one_over_gamma_minus_1(), 1/(gamma-1))
 
 
 if __name__ == '__main__':
