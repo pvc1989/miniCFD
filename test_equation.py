@@ -29,11 +29,13 @@ class TestEquations(unittest.TestCase):
 
   def test_euler_1d(self):
     euler = equation.Euler1d(gamma=1.4)
-    U = euler.u_p_rho_to_U(u=0.1, p=0.2, rho=0.3)
+    # If U is an array of ints, small number will be rounded to 0.
+    u_given, p_given, rho_given = 0, 0.01, 1
+    U = euler.u_p_rho_to_U(u=u_given, p=p_given, rho=rho_given)
     u, p, rho = euler.U_to_u_p_rho(U)
-    self.assertEqual(euler.u_p_rho_to_U(u=u, p=p, rho=rho).all(),
-                     U.all())
-    self.assertEqual(euler.A(U).dot(U).all(), euler.F(U).all())
+    self.assertEqual(u, u_given)
+    self.assertEqual(p, p_given)
+    self.assertEqual(rho, rho_given)
 
 
 if __name__ == '__main__':
