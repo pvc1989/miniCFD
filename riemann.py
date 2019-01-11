@@ -63,6 +63,7 @@ class LinearAdvection(RiemannSolver):
   def F(self, U):
     return U * self._a
 
+
 class InviscidBurgers(RiemannSolver):
 
   def __init__(self):
@@ -88,26 +89,6 @@ class InviscidBurgers(RiemannSolver):
 
   def F(self, U):
     return U**2 / 2
-  def U(self, x, t):
-    U = 0.0
-    if t == 0.0:
-      if x < 0:
-        U = self._U_L
-      else:
-        U = self._U_R
-    else:
-      v = x / t
-      if  v <= self._v_L:
-        U = self._U_L
-      elif v >= self._v_R:
-        U = self._U_R
-      else:  # v_L < v < v_R
-        U = v
-    return U
-
-    else:
-      U = self._U_R
-    return U
 
 
 if __name__ == '__main__':
