@@ -183,8 +183,8 @@ class Euler(RiemannSolver):
       self._rho_2_R = rho_2
       self._v_3_L = v_L
       self._v_3_R = v_R
-    # print('p2 = {0:5f}, u2 = {1:5f}, rho2L = {2:5f}, rho2R = {3:5f}'.format(
-    #   self._p_2, self._u_2, self._rho_2_L, self._rho_2_R))
+    print('p2 = {0:5f}, u2 = {1:5f}, rho2L = {2:5f}, rho2R = {3:5f}'.format(
+      self._p_2, self._u_2, self._rho_2_L, self._rho_2_R))
 
   def _exist_vacuum(self):
     if self._riemann_invariants_L[1] <= self._riemann_invariants_R[1]:
@@ -301,20 +301,20 @@ if __name__ == '__main__':
   problems['Sod'] = (0.25,
     euler.u_p_rho_to_U(u=0, p=1.0, rho=1.0),
     euler.u_p_rho_to_U(u=0, p=0.1, rho=0.125))
-  problems['AlmostVaccum'] = (0.15,
-    euler.u_p_rho_to_U(u=-2, p=0.4, rho=1),
-    euler.u_p_rho_to_U(u=+2, p=0.4, rho=1))
-  problems['BlastWaveFromLeft'] = (0.012,
-    euler.u_p_rho_to_U(u=0, p=1000,  rho=1),
-    euler.u_p_rho_to_U(u=0, p=0.01, rho=1))
-  problems['BlastWaveFromRight'] = (0.035,
-    euler.u_p_rho_to_U(u=0, p=0.01, rho=1),
-    euler.u_p_rho_to_U(u=0, p=100,  rho=1))
   problems['ShockCollision'] = (0.035, 
     euler.u_p_rho_to_U(u=19.5975,  p=460.894, rho=5.99924),
-    euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99924))
+    euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99242))
+  problems['BlastFromLeft'] = (0.012,
+    euler.u_p_rho_to_U(u=0, p=1000,  rho=1),
+    euler.u_p_rho_to_U(u=0, p=0.01, rho=1))
+  problems['BlastFromRight'] = (0.035,
+    euler.u_p_rho_to_U(u=0, p=0.01, rho=1),
+    euler.u_p_rho_to_U(u=0, p=100,  rho=1))
+  problems['AlmostVacuumed'] = (0.15,
+    euler.u_p_rho_to_U(u=-2, p=0.4, rho=1),
+    euler.u_p_rho_to_U(u=+2, p=0.4, rho=1))
   # other tests
-  problems['Vaccum'] = (0.1,
+  problems['Vacuumed'] = (0.1,
     euler.u_p_rho_to_U(u=-4, p=0.4, rho=1),
     euler.u_p_rho_to_U(u=+4, p=0.4, rho=1))
 
@@ -338,7 +338,7 @@ if __name__ == '__main__':
       raise
     finally:
       pass
-    plt.figure(figsize=(4,6))
+    plt.figure(figsize=(4,5))
     # subplots = (311, 312, 313)
     titles = (r'$\rho(x)$', r'$p(x)$', r'$u(x)$')
     y_data = (rho_vec, p_vec, u_vec)
