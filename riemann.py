@@ -112,27 +112,34 @@ if __name__ == '__main__':
   solver = Euler(gamma=1.4)
 
   settings = dict()
+  # tests in Table 4.1 of Toro[2009], see https://doi.org/10.1007/b79761
   settings['Sod'] = (0.25,
     euler.u_p_rho_to_U(u=0, p=1.0, rho=1.0),
     euler.u_p_rho_to_U(u=0, p=0.1, rho=0.125))
   settings['AlmostVaccum'] = (0.15,
     euler.u_p_rho_to_U(u=-2, p=0.4, rho=1),
     euler.u_p_rho_to_U(u=+2, p=0.4, rho=1))
-  settings['Vaccum'] = (0.15,
-    euler.u_p_rho_to_U(u=-4, p=0.4, rho=1),
-    euler.u_p_rho_to_U(u=+4, p=0.4, rho=1))
   settings['BlastWaveFromLeft'] = (0.12,
-    euler.u_p_rho_to_U(u=0, p=1e3,  rho=1),
-    euler.u_p_rho_to_U(u=0, p=1e-2, rho=1))
+    euler.u_p_rho_to_U(u=0, p=1000,  rho=1),
+    euler.u_p_rho_to_U(u=0, p=0.01, rho=1))
   settings['BlastWaveFromRight'] = (0.035,
-    euler.u_p_rho_to_U(u=0, p=1e-2, rho=1),
-    euler.u_p_rho_to_U(u=0, p=1e2,  rho=1))
+    euler.u_p_rho_to_U(u=0, p=0.01, rho=1),
+    euler.u_p_rho_to_U(u=0, p=100,  rho=1))
   settings['ShockCollision'] = (0.035, 
     euler.u_p_rho_to_U(u=19.5975,  p=460.894, rho=5.99924),
     euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99924))
+  # other tests
+  settings['Vaccum'] = (0.15,
+    euler.u_p_rho_to_U(u=-4, p=0.4, rho=1),
+    euler.u_p_rho_to_U(u=+4, p=0.4, rho=1))
 
   for name, setting in settings.items():
     t = setting[0]
-    U_L = setting[0]
-    U_R = setting[1]
-    solver.set_initial(U_L, U_R)
+    U_L = setting[1]
+    U_R = setting[2]
+    try:
+      solver.set_initial(U_L, U_R)
+    except AssertionError:
+      raise
+    finally:
+      pass
