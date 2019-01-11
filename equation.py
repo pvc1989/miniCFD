@@ -61,8 +61,9 @@ class Euler1d(ConservationLaw):
     self._gas = gas.Ideal(gamma)
 
   def u_p_rho_to_U(self, u, p, rho):
-    U = np.array([rho, rho*u, 0])
+    U = np.array([rho, rho*u, 0.0])
     U[2] = u*U[1]/2 + p/self._gas.gamma_minus_1()
+    # print(u, p, rho, '->', U)
     return U
 
   def U_to_u_p_rho(self, U):
@@ -73,6 +74,7 @@ class Euler1d(ConservationLaw):
     else:
       u = U[1] / U[0]
     p = (U[2] - u*U[1]/2) * self._gas.gamma_minus_1()
+    # print(U, '->', u, p, rho)
     return u, p, rho
 
   def F(self, U):
