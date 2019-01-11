@@ -183,8 +183,8 @@ class Euler(RiemannSolver):
       self._rho_2_R = rho_2
       self._v_3_L = v_L
       self._v_3_R = v_R
-    print('p2 = {0:5f}, u2 = {1:5f}, rho2L = {2:5f}, rho2R = {3:5f}'.format(
-      self._p_2, self._u_2, self._rho_2_L, self._rho_2_R))
+    # print('p2 = {0:5f}, u2 = {1:5f}, rho2L = {2:5f}, rho2R = {3:5f}'.format(
+    #   self._p_2, self._u_2, self._rho_2_L, self._rho_2_R))
 
   def _exist_vacuum(self):
     if self._riemann_invariants_L[1] <= self._riemann_invariants_R[1]:
@@ -257,10 +257,42 @@ class Euler(RiemannSolver):
     return rho_2, v, v
 
   def _U(self, v):
-    pass
+    u, p, rho = 0, 0, 0
+    if v < self._v_2:
+      if v <= self._v_1_L:
+        u, p, rho = self._u_L, self._p_L, self._rho_L 
+      elif v > self._v_1_R:
+        u, p, rho = self._u_2, self._p_2, self._rho_2_L
+        # print(p, rho)
+      else:  # v_1_L < v < v_2_R
+        a = self._riemann_invariants_L[1] - v
+        a *= self._gas.gamma_minus_1_over_gamma_plus_1()
+        assert a >= 0, a
+        u = v + a
+        rho = a**2 / self._gas.gamma() / self._riemann_invariants_L[0]
+        rho = rho**self._gas.one_over_gamma_minus_1()
+        p = a**2 * rho / self._gas.gamma()
+    else:  # v > v_2
+      if v >= self._v_3_R:
+        u, p, rho = self._u_R, self._p_R, self._rho_R
+      elif v <= self._v_3_L:
+        u, p, rho = self._u_2, self._p_2, self._rho_2_R
+        # print(p, rho)
+      else:  # v_3_L < v < v_3_R
+        a = v - self._riemann_invariants_R[1]
+        a *= self._gas.gamma_minus_1_over_gamma_plus_1()
+        assert a >= 0, a
+        u = v - a
+        rho = a**2 / self._gas.gamma() / self._riemann_invariants_R[0]
+        rho = rho**self._gas.one_over_gamma_minus_1()
+        p = a**2 * rho / self._gas.gamma()
+    assert p >= 0, p
+    return self._equation.u_p_rho_to_U(u, p, rho)
 
 
 if __name__ == '__main__':
+  from matplotlib import pyplot as plt
+
   euler = equation.Euler1d(gamma=1.4)  
   solver = Euler(gamma=1.4)
 
@@ -272,7 +304,7 @@ if __name__ == '__main__':
   problems['AlmostVaccum'] = (0.15,
     euler.u_p_rho_to_U(u=-2, p=0.4, rho=1),
     euler.u_p_rho_to_U(u=+2, p=0.4, rho=1))
-  problems['BlastWaveFromLeft'] = (0.12,
+  problems['BlastWaveFromLeft'] = (0.012,
     euler.u_p_rho_to_U(u=0, p=1000,  rho=1),
     euler.u_p_rho_to_U(u=0, p=0.01, rho=1))
   problems['BlastWaveFromRight'] = (0.035,
@@ -282,17 +314,39 @@ if __name__ == '__main__':
     euler.u_p_rho_to_U(u=19.5975,  p=460.894, rho=5.99924),
     euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99924))
   # other tests
-  problems['Vaccum'] = (0.15,
+  problems['Vaccum'] = (0.1,
     euler.u_p_rho_to_U(u=-4, p=0.4, rho=1),
     euler.u_p_rho_to_U(u=+4, p=0.4, rho=1))
 
+  # range for plot
+  x_vec = np.linspace(start=-0.5, stop=0.5, num=101)
+
   for name, problem in problems.items():
-    t = problem[0]
     U_L = problem[1]
     U_R = problem[2]
     try:
       solver.set_initial(U_L, U_R)
+      u_vec = np.zeros(len(x_vec))
+      p_vec = np.zeros(len(x_vec))
+      rho_vec = np.zeros(len(x_vec))
+      for i in range(len(x_vec)):
+        x = x_vec[i]
+        U = solver.U(x, t=problem[0])
+        u, p, rho = euler.U_to_u_p_rho(U)
+        u_vec[i], p_vec[i], rho_vec[i] = u, p, rho
     except AssertionError:
       raise
     finally:
       pass
+    plt.figure(figsize=(4,6))
+    # subplots = (311, 312, 313)
+    titles = (r'$\rho(x)$', r'$p(x)$', r'$u(x)$')
+    y_data = (rho_vec, p_vec, u_vec)
+    for i in range(3):
+      plt.subplot(3,1,i+1)
+      plt.grid(True)
+      plt.title(titles[i])
+      plt.plot(x_vec, y_data[i], '.', markersize='3')
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig(name+'.pdf')
