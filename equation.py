@@ -67,7 +67,11 @@ class Euler1d(ConservationLaw):
 
   def U_to_u_p_rho(self, U):
     rho = U[0]
-    u = U[1] / U[0]
+    if rho == 0:
+      assert U[1] == U[2] == 0, U
+      u = 0
+    else:
+      u = U[1] / U[0]
     p = (U[2] - u*U[1]/2) * self._gas.gamma_minus_1()
     return u, p, rho
 
