@@ -13,14 +13,21 @@ class Node {
   Coordinate x_;
   Coordinate y_;
  public:
-  Node(Tag tag, Coordinate x, Coordinate y) : tag_(tag), x_(x), y_(y) { }
+  Node(Tag tag, Coordinate x, Coordinate y) : tag_(tag), x_(x), y_(y) {}
   auto Tag() const { return tag_; }
   auto X() const { return x_; }
   auto Y() const { return y_; }
 };
 
 class Edge {
-
+  Tag tag_;
+  Node* head_;
+  Node* tail_;
+ public:
+  Edge(Tag tag, Node* head, Node* tail) : tag_(tag), head_(head), tail_(tail) {}
+  auto Tag() const { return tag_; }
+  auto Head() const { return head_; }
+  auto Tail() const { return tail_; }
 };
 
 class Cell {

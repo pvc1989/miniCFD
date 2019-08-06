@@ -26,6 +26,13 @@ TEST_F(NodeTest, Constructor) {
 class EdgeTest : public ::testing::Test {
 };
 TEST_F(EdgeTest, Constructor) {
+  auto tag{0};
+  auto head = Node(0, 0.0, 0.0);
+  auto tail = Node(1, 1.0, 0.0);
+  auto edge = Edge(tag, &head, &tail);
+  EXPECT_EQ(edge.Tag(), tag);
+  EXPECT_EQ(edge.Head()->Tag(), head.Tag());
+  EXPECT_EQ(edge.Tail()->Tag(), tail.Tag());
 }
 
 class CellTest : public ::testing::Test {
