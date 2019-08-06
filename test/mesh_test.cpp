@@ -38,6 +38,15 @@ TEST_F(EdgeTest, Constructor) {
 class CellTest : public ::testing::Test {
 };
 TEST_F(CellTest, Constructor) {
+  auto tag{0};
+  auto a = Node(0, 0.0, 0.0);
+  auto b = Node(1, 1.0, 0.0);
+  auto c = Node(2, 1.0, 1.0);
+  auto ab = Edge(0, &a, &b);
+  auto bc = Edge(1, &b, &c);
+  auto ca = Edge(2, &c, &a);
+  auto cell = Cell(tag, {&ab, &bc, &ca});
+  EXPECT_EQ(cell.Tag(), tag);
 }
 
 class MeshTest : public ::testing::Test {

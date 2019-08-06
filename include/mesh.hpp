@@ -2,6 +2,7 @@
 #define PVC_CFD_MESH_HPP_
 
 #include <cstddef>
+#include <initializer_list>
 namespace pvc {
 namespace cfd {
 
@@ -31,7 +32,14 @@ class Edge {
 };
 
 class Cell {
-
+  Tag tag_;
+ public:
+  Cell(Tag tag, std::initializer_list<Edge*> edges) : tag_(tag) {
+  }
+  auto Tag() const { return tag_; }
+  template <class Visitor>
+  auto ForEachEdge(Visitor& visitor) const {
+  }
 };
 
 class Mesh {
