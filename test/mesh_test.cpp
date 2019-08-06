@@ -15,6 +15,12 @@ using pvc::cfd::Mesh;
 class NodeTest : public ::testing::Test {
 };
 TEST_F(NodeTest, Constructor) {
+  auto tag{0};
+  auto x{1.0}, y{2.0};
+  auto node = Node(tag, x, y);
+  EXPECT_EQ(node.Tag(), tag);
+  EXPECT_EQ(node.X(), x);
+  EXPECT_EQ(node.Y(), y);
 }
 
 class EdgeTest : public ::testing::Test {
