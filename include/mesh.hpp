@@ -43,7 +43,29 @@ class Cell {
 };
 
 class Mesh {
+ public:
+  // Emplace primitive objects.
+  auto EmplaceNode(Tag tag, Coordinate x, Coordinate y) {
+  }
+  auto EmplaceEdge(Tag edge_tag, Tag head, Tag tail) {
 
+  }
+  auto EmplaceCell(Tag node_tag, std::initializer_list<Tag> node_tags) {
+  }
+  // Count primitive objects.
+  auto CountNodes() const { return nodes_.size(); }
+  auto CountEdges() const { return edges_.size(); }
+  auto CountCells() const { return cells_.size(); }
+  // Traverse primitive objects.
+  template <typename Visitor>
+  auto ForEachNode(Visitor& visitor) const {
+  }
+  template <class Visitor>
+  auto ForEachEdge(Visitor& visitor) const {
+  }
+  template <class Visitor>
+  auto ForEachCell(Visitor& visitor) const {
+  }
 };
 
 }  // namespace cfd
