@@ -130,6 +130,45 @@ TEST_F(MeshTest, EmplaceCell) {
 }
 TEST_F(MeshTest, ForEachCell) {
 }
+TEST_F(MeshTest, PositiveSide) {
+  auto mesh = Mesh();
+  // Emplace 4 nodes:
+  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  for (auto tag = 0; tag != x.size(); ++tag) {
+    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  }
+  EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Emplace 5 edges:
+  auto edges = std::vector<Edge*>();
+  edges.emplace_back(mesh.EmplaceEdge(0, 1));
+  edges.emplace_back(mesh.EmplaceEdge(1, 2));
+  edges.emplace_back(mesh.EmplaceEdge(2, 3));
+  edges.emplace_back(mesh.EmplaceEdge(3, 0));
+  edges.emplace_back(mesh.EmplaceEdge(0, 2));
+  EXPECT_EQ(mesh.CountEdges(), edges.size());
+  // Emplace 2 triangular cells:
+  auto cells = std::vector<Cell*>();
+  cells.emplace_back(mesh.EmplaceCell(0, {0, 1, 2}));
+  cells.emplace_back(mesh.EmplaceCell(1, {0, 2, 3}));
+  EXPECT_EQ(mesh.CountCells(), 2);
+  // Check each edge's positive side and negative side:
+  // edges[0] == {nodes[0], nodes[1]}
+  EXPECT_EQ(edges[0]->PositiveSide(), cells[0]);
+  EXPECT_EQ(edges[0]->NegativeSide(), nullptr);
+  // edges[1] == {nodes[1], nodes[2]}
+  EXPECT_EQ(edges[1]->PositiveSide(), cells[0]);
+  EXPECT_EQ(edges[1]->NegativeSide(), nullptr);
+  // edges[2] == {nodes[0], nodes[2]}
+  EXPECT_EQ(edges[2]->PositiveSide(), cells[1]);
+  EXPECT_EQ(edges[2]->NegativeSide(), cells[0]);
+  // edges[3] == {nodes[2], nodes[3]}
+  EXPECT_EQ(edges[3]->PositiveSide(), cells[1]);
+  EXPECT_EQ(edges[3]->NegativeSide(), nullptr);
+  // edges[4] == {nodes[0], nodes[3]}
+  EXPECT_EQ(edges[4]->PositiveSide(), nullptr);
+  EXPECT_EQ(edges[4]->NegativeSide(), cells[1]);
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
