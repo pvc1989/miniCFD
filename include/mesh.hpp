@@ -3,6 +3,11 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <map>
+#include <memory>
+#include <utility>
+#include <vector>
+
 namespace pvc {
 namespace cfd {
 
@@ -43,11 +48,14 @@ class Cell {
 };
 
 class Mesh {
+  std::map<Tag, std::unique_ptr<Node>> nodes_;
+  std::map<std::pair<Tag, Tag>, std::unique_ptr<Edge>> edges_;
+  std::map<Tag, Cell> cells_;
  public:
   // Emplace primitive objects.
-  auto EmplaceNode(Tag tag, Coordinate x, Coordinate y) {
+  auto EmplaceNode(Tag node_tag, Coordinate x, Coordinate y) {
   }
-  auto EmplaceEdge(Tag edge_tag, Tag head, Tag tail) {
+  auto EmplaceEdge(Tag edge_tag, Tag head_tag, Tag tail_tag) {
 
   }
   auto EmplaceCell(Tag node_tag, std::initializer_list<Tag> node_tags) {
