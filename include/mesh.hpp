@@ -28,6 +28,7 @@ class Node {
   auto Y() const { return y_; }
 };
 
+class Cell;
 class Edge {
   Tag tag_;
   Node* head_;
@@ -37,6 +38,12 @@ class Edge {
   auto Tag() const { return tag_; }
   auto Head() const { return head_; }
   auto Tail() const { return tail_; }
+  Cell* PositiveSide() const {
+    return nullptr;
+  }
+  Cell* NegativeSide() const {
+    return nullptr;
+  }
 };
 
 class Cell {
@@ -83,7 +90,6 @@ class Mesh {
     assert(tag_to_edge_.size() == tag_pair_to_edge_.size());
     return iter->second;
   }
- private:
   Edge* EmplaceEdge(Tag head_tag, Tag tail_tag) {
     auto tag_pair = std::minmax(head_tag, tail_tag);
     auto iter = tag_pair_to_edge_.find(tag_pair);
@@ -101,7 +107,6 @@ class Mesh {
       return edge_ptr;
     }
   }
- public:
   auto EmplaceCell(Tag cell_tag, std::initializer_list<Tag> node_tags) {
     auto cell = std::make_unique<Cell>(cell_tag);
     auto curr = node_tags.begin();
