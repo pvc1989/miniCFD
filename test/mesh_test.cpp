@@ -64,17 +64,19 @@ TEST_F(MeshTest, EmplaceNode) {
 }
 TEST_F(MeshTest, ForEachNode) {
   auto mesh = Mesh();
+  // Emplace 4 nodes:
   auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
   for (auto tag = 0; tag != x.size(); ++tag) {
     mesh.EmplaceNode(tag, x[tag], y[tag]);
- }
+  }
   EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Check each node's tag and coordinates:
   auto check_coordinates = [&x, &y](Node const& node) {
     auto tag = node.Tag();
     EXPECT_EQ(node.X(), x[tag]);
     EXPECT_EQ(node.Y(), y[tag]);
- };
+  };
   mesh.ForEachNode(check_coordinates);
 }
 TEST_F(MeshTest, EmplaceEdge) {
@@ -86,6 +88,28 @@ TEST_F(MeshTest, EmplaceEdge) {
   EXPECT_EQ(mesh.CountEdges(), 1);
 }
 TEST_F(MeshTest, ForEachEdge) {
+  auto mesh = Mesh();
+  // Emplace 4 nodes:
+  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  for (auto tag = 0; tag != x.size(); ++tag) {
+    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  }
+  EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Emplace 6 edges:
+  auto e = 0;
+  mesh.EmplaceEdge(e++, 0, 1);
+  mesh.EmplaceEdge(e++, 1, 2);
+  mesh.EmplaceEdge(e++, 2, 3);
+  mesh.EmplaceEdge(e++, 3, 0);
+  mesh.EmplaceEdge(e++, 2, 0);
+  mesh.EmplaceEdge(e++, 3, 1);
+  EXPECT_EQ(mesh.CountEdges(), e);
+  // For each edge: head's tag < tail's tag
+  auto check_edges = [](Edge const& edge) {
+    EXPECT_LT(edge.Head()->Tag(), edge.Tail()->Tag());
+  };
+  mesh.ForEachEdge(check_edges);
 }
 TEST_F(MeshTest, EmplaceCell) {
   auto mesh = Mesh();
@@ -94,7 +118,7 @@ TEST_F(MeshTest, EmplaceCell) {
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
   for (auto tag = 0; tag != x.size(); ++tag) {
     mesh.EmplaceNode(tag, x[tag], y[tag]);
- }
+  }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 2 triangular cells:
   mesh.EmplaceCell(0, {0, 1, 2});
