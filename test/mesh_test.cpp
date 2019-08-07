@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 
 using pvc::cfd::Coordinate;
+using pvc::cfd::Tag;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
 using pvc::cfd::Cell;
@@ -15,8 +16,9 @@ using pvc::cfd::Mesh;
 class NodeTest : public ::testing::Test {
 };
 TEST_F(NodeTest, Constructor) {
-  auto tag{0};
-  auto x{1.0}, y{2.0};
+  auto tag = Tag{0};
+  auto x = Coordinate{1.0};
+  auto y = Coordinate{2.0};
   auto node = Node(tag, x, y);
   EXPECT_EQ(node.Tag(), tag);
   EXPECT_EQ(node.X(), x);
@@ -26,7 +28,7 @@ TEST_F(NodeTest, Constructor) {
 class EdgeTest : public ::testing::Test {
 };
 TEST_F(EdgeTest, Constructor) {
-  auto tag{0};
+  auto tag = Tag{0};
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 1.0, 0.0);
   auto edge = Edge(tag, &head, &tail);
@@ -38,7 +40,7 @@ TEST_F(EdgeTest, Constructor) {
 class CellTest : public ::testing::Test {
 };
 TEST_F(CellTest, Constructor) {
-  auto tag{0};
+  auto tag = Tag{0};
   auto a = Node(0, 0.0, 0.0);
   auto b = Node(1, 1.0, 0.0);
   auto c = Node(2, 1.0, 1.0);
