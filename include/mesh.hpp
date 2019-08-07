@@ -84,11 +84,12 @@ class Mesh {
     auto tag_pair = std::make_pair<Tag, Tag>(head->second->Tag(), tail->second->Tag());
     assert(tag_pair_to_edge_.count(tag_pair) == 0);  // Re-emplace an edge is not allowed.
     // Emplace a new edge:
-    auto edge_ptr = std::make_unique<Edge>(edge_tag, head->second.get(), tail->second.get());
-    auto [iter, inserted] = tag_pair_to_edge_.emplace(tag_pair, edge_ptr.get());
-    tag_to_edge_.emplace(edge_tag, std::move(edge_ptr));
+    auto edge_unique_ptr = std::make_unique<Edge>(edge_tag, head->second.get(), tail->second.get());
+    auto edge_ptr = edge_unique_ptr.get();
+    tag_pair_to_edge_.emplace(tag_pair, edge_ptr);
+    tag_to_edge_.emplace(edge_tag, std::move(edge_unique_ptr));
     assert(tag_to_edge_.size() == tag_pair_to_edge_.size());
-    return iter->second;
+    return edge_ptr;
   }
   Edge* EmplaceEdge(Tag head_tag, Tag tail_tag) {
     auto tag_pair = std::minmax(head_tag, tail_tag);
@@ -117,7 +118,9 @@ class Mesh {
     }
     next = node_tags.begin();
     cell->edges_.emplace(EmplaceEdge(*curr, *next));
+    auto cell_ptr = cell.get();
     tag_to_cell_.emplace(cell_tag, std::move(cell));
+    return cell_ptr;
   }
   // Count primitive objects.
   auto CountNodes() const { return tag_to_node_.size(); }
