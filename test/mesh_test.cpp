@@ -15,7 +15,7 @@ using pvc::cfd::Mesh;
 class NodeTest : public ::testing::Test {
 };
 TEST_F(NodeTest, Constructor) {
-  auto i = Node::Index{0};
+  auto i = Node::Id{0};
   auto x = Coordinate{1.0};
   auto y = Coordinate{2.0};
   auto node = Node(i, x, y);
@@ -27,7 +27,7 @@ TEST_F(NodeTest, Constructor) {
 class EdgeTest : public ::testing::Test {
 };
 TEST_F(EdgeTest, Constructor) {
-  auto i = Edge::Index{0};
+  auto i = Edge::Id{0};
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 1.0, 0.0);
   auto edge = Edge(i, &head, &tail);
@@ -39,7 +39,7 @@ TEST_F(EdgeTest, Constructor) {
 class CellTest : public ::testing::Test {
 };
 TEST_F(CellTest, Constructor) {
-  auto i = Cell::Index{0};
+  auto i = Cell::Id{0};
   auto a = Node(0, 0.0, 0.0);
   auto b = Node(1, 1.0, 0.0);
   auto c = Node(2, 1.0, 1.0);
