@@ -23,9 +23,9 @@ class Node {
   // Constructors
   Node(Id i, Real x, Real y) : i_(i), x_(x), y_(y) {}
   // Accessors
-  auto I() const { return i_; }
-  auto X() const { return x_; }
-  auto Y() const { return y_; }
+  Id I() const { return i_; }
+  Real X() const { return x_; }
+  Real Y() const { return y_; }
  private:
   Id i_;
   Real x_;
@@ -39,15 +39,15 @@ class Edge {
   // Constructors
   Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
   // Accessors
-  auto I() const { return i_; }
-  auto Head() const { return head_; }
-  auto Tail() const { return tail_; }
   Cell* PositiveSide() const {
     return positive_side_;
   }
   Cell* NegativeSide() const {
     return negative_side_;
   }
+  Edge::Id I() const { return i_; }
+  Node* Head() const { return head_; }
+  Node* Tail() const { return tail_; }
   // Modifiers
   void SetPositiveSide(Cell* positive_side) {
     positive_side_ = positive_side;
@@ -87,10 +87,10 @@ class Cell {
     for (auto e : edges) { edges_.emplace(e); }
   }
   // Accessors
-  auto I() const { return i_; }
+  Id I() const { return i_; }
   // Iterators
   template <class Visitor>
-  auto ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor& visitor) const {
   }
  private:
   Id i_;
@@ -104,8 +104,11 @@ class Mesh {
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
  public:
   // Emplace primitive objects.
-  auto EmplaceNode(Node::Id i, Real x, Real y) {
-    id_to_node_.emplace(i, std::make_unique<Node>(i, x, y));
+  Node* EmplaceNode(Node::Id i, Real x, Real y) {
+    auto node_unique_ptr = std::make_unique<Node>(i, x, y);
+    auto node_ptr = node_unique_ptr.get();
+    id_to_node_.emplace(i, std::move(node_unique_ptr));
+    return node_ptr;
   }
   Edge* EmplaceEdge(Edge::Id edge_id,
                     Node::Id head_id, Node::Id tail_id) {
@@ -176,13 +179,13 @@ class Mesh {
   auto CountCells() const { return id_to_cell_.size(); }
   // Traverse primitive objects.
   template <typename Visitor>
-  auto ForEachNode(Visitor& visitor) const {
+  void ForEachNode(Visitor& visitor) const {
   }
   template <class Visitor>
-  auto ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor& visitor) const {
   }
   template <class Visitor>
-  auto ForEachCell(Visitor& visitor) const {
+  void ForEachCell(Visitor& visitor) const {
   }
 };
 
