@@ -57,13 +57,12 @@ class Edge {
     auto dy = Tail()->Y() - Head()->Y();
     return std::hypot(dx, dy);
   }
-  Real Length() const { return Measure(); }
   template <class Integrand>
   auto Integrate(Integrand&& integrand) {
     // Default implementation:
     auto x = (Head()->X() + Tail()->X()) / 2;
     auto y = (Head()->Y() + Tail()->Y()) / 2;
-    return integrand(x, y) * Length();
+    return integrand(x, y) * Measure();
   }
  private:
   Id i_;
