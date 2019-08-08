@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 #include <map>
@@ -53,6 +54,19 @@ class Edge {
   }
   void SetNegativeSide(Cell* negative_side) {
     negative_side_ = negative_side;
+  }
+  // Math Methods
+  Coordinate Length() const {
+    auto dx = Tail()->X() - Head()->X();
+    auto dy = Tail()->Y() - Head()->Y();
+    return std::sqrt(dx * dx + dy * dy);
+  }
+  template <class Integrand>
+  auto Integrate(Integrand&& integrand) {
+    // Default implementation:
+    auto x = (Head()->X() + Tail()->X()) / 2;
+    auto y = (Head()->Y() + Tail()->Y()) / 2;
+    return integrand(x, y) * Length();
   }
  private:
   Id i_;

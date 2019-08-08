@@ -35,6 +35,23 @@ TEST_F(EdgeTest, Constructor) {
   EXPECT_EQ(edge.Head()->I(), head.I());
   EXPECT_EQ(edge.Tail()->I(), tail.I());
 }
+TEST_F(EdgeTest, Length) {
+  Coordinate length = 3.14;
+  auto head = Node(0, 0.0, 0.0);
+  auto tail = Node(1, 0.0, length);
+  auto edge = Edge(1, &head, &tail);
+  EXPECT_DOUBLE_EQ(edge.Length(), length);
+}
+TEST_F(EdgeTest, Integrate) {
+  Coordinate length = 2.0;
+  auto head = Node(0, 0.0, 0.0);
+  auto tail = Node(1, 0.0, length);
+  auto edge = Edge(1, &head, &tail);
+  auto integrand = [](Coordinate x, Coordinate y) {
+    return 1.0;
+  };
+  EXPECT_DOUBLE_EQ(edge.Integrate(integrand), length);
+}
 
 class CellTest : public ::testing::Test {
 };
