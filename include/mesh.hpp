@@ -33,16 +33,24 @@ class Edge {
   Tag tag_;
   Node* head_;
   Node* tail_;
+  Cell* positive_side_{nullptr};
+  Cell* negative_side_{nullptr};
  public:
   Edge(Tag tag, Node* head, Node* tail) : tag_(tag), head_(head), tail_(tail) {}
   auto Tag() const { return tag_; }
   auto Head() const { return head_; }
   auto Tail() const { return tail_; }
   Cell* PositiveSide() const {
-    return nullptr;
+    return positive_side_;
   }
   Cell* NegativeSide() const {
-    return nullptr;
+    return negative_side_;
+  }
+  void SetPositiveSide(Cell* positive_side) {
+    positive_side_ = positive_side;
+  }
+  void SetNegativeSide(Cell* negative_side) {
+    negative_side_ = negative_side;
   }
 };
 
@@ -108,18 +116,29 @@ class Mesh {
       return edge_ptr;
     }
   }
+ private:
+  void LinkCellToEdge(Cell* cell_ptr, Tag head, Tag tail) {
+    auto edge_ptr = EmplaceEdge(head, tail);
+    cell_ptr->edges_.emplace(edge_ptr);
+    if (head < tail) {
+      edge_ptr->SetPositiveSide(cell_ptr);
+    } else {
+      edge_ptr->SetNegativeSide(cell_ptr);
+    }
+  }
+ public:
   auto EmplaceCell(Tag cell_tag, std::initializer_list<Tag> node_tags) {
-    auto cell = std::make_unique<Cell>(cell_tag);
+    auto cell_unique_ptr = std::make_unique<Cell>(cell_tag);
+    auto cell_ptr = cell_unique_ptr.get();
     auto curr = node_tags.begin();
     auto next = node_tags.begin() + 1;
     while (next != node_tags.end()) {
-      cell->edges_.emplace(EmplaceEdge(*curr, *next));
+      LinkCellToEdge(cell_ptr, *curr, *next);
       curr = next++;
     }
     next = node_tags.begin();
-    cell->edges_.emplace(EmplaceEdge(*curr, *next));
-    auto cell_ptr = cell.get();
-    tag_to_cell_.emplace(cell_tag, std::move(cell));
+    LinkCellToEdge(cell_ptr, *curr, *next);
+    tag_to_cell_.emplace(cell_tag, std::move(cell_unique_ptr));
     return cell_ptr;
   }
   // Count primitive objects.
