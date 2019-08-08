@@ -2,6 +2,7 @@
 #define PVC_CFD_MESH_HPP_
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
@@ -17,23 +18,43 @@ namespace cfd {
 
 using Real = double;
 
-class Node {
+class Point {
  public:
-  using Id = std::size_t;
-  // Constructors
-  Node(Id i, Real x, Real y) : i_(i), x_(x), y_(y) {}
-  // Accessors
-  Id I() const { return i_; }
+  Point(Real x, Real y) : x_(x), y_(y) {}
   Real X() const { return x_; }
   Real Y() const { return y_; }
  private:
-  Id i_;
   Real x_;
   Real y_;
 };
 
+class Node {
+ public:
+  using Id = std::size_t;
+  // Constructors
+  Node(Id i, Real x, Real y) : i_(i), p_(x, y) {}
+  // Accessors
+  Id I() const { return i_; }
+  Real X() const { return p_.X(); }
+  Real Y() const { return p_.Y(); }
+ private:
+  Id i_;
+  Point p_;
+};
+
+class Element {
+ public:
+  virtual Real Measure() const = 0;
+  virtual Point Center() const = 0;
+  template <class Integrand>
+  auto Integrate(Integrand&& integrand) const {
+    // Default implementation:
+    return integrand(Center()) * Measure();
+  }
+};
+
 class Cell;
-class Edge {
+class Edge : public Element {
  public:
   using Id = std::size_t;
   // Constructors
@@ -51,18 +72,16 @@ class Edge {
   void SetNegativeSide(Cell* negative_side) {
     negative_side_ = negative_side;
   }
-  // Mathematical Methods
-  Real Measure() const {
+  // Element Methods
+  virtual Real Measure() const override {
     auto dx = Tail()->X() - Head()->X();
     auto dy = Tail()->Y() - Head()->Y();
     return std::hypot(dx, dy);
   }
-  template <class Integrand>
-  auto Integrate(Integrand&& integrand) {
-    // Default implementation:
+  virtual Point Center() const override {
     auto x = (Head()->X() + Tail()->X()) / 2;
     auto y = (Head()->Y() + Tail()->Y()) / 2;
-    return integrand(x, y) * Measure();
+    return Point(x, y);
   }
  private:
   Id i_;
@@ -90,6 +109,30 @@ class Cell {
  private:
   Id i_;
   std::set<Edge*> edges_;
+};
+
+class Triangle : public Element {
+ public:
+  virtual Real Measure() const override {
+    return 0;
+  }
+  virtual Point Center() const override {
+    return Point(0.0, 0.0);
+  }
+ private:
+  std::array<Node*, 3> vertices_;
+};
+
+class Rectangle : public Element {
+ public:
+  virtual Real Measure() const override {
+    return 0;
+  }
+  virtual Point Center() const override {
+    return Point(0.0, 0.0);
+  }
+ private:
+  std::array<Node*, 4> vertices_;
 };
 
 class Mesh {

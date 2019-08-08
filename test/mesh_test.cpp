@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 
 using pvc::cfd::Real;
+using pvc::cfd::Point;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
 using pvc::cfd::Cell;
@@ -35,22 +36,17 @@ TEST_F(EdgeTest, Constructor) {
   EXPECT_EQ(edge.Head()->I(), head.I());
   EXPECT_EQ(edge.Tail()->I(), tail.I());
 }
-TEST_F(EdgeTest, Measure) {
+TEST_F(EdgeTest, ElementMethods) {
   Real length = 3.14;
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 0.0, length);
   auto edge = Edge(1, &head, &tail);
   EXPECT_DOUBLE_EQ(edge.Measure(), length);
-}
-TEST_F(EdgeTest, Integrate) {
-  Real length = 2.0;
-  auto head = Node(0, 0.0, 0.0);
-  auto tail = Node(1, 0.0, length);
-  auto edge = Edge(1, &head, &tail);
-  auto integrand = [](Real x, Real y) {
-    return 1.0;
-  };
-  EXPECT_DOUBLE_EQ(edge.Integrate(integrand), length);
+  auto center = edge.Center();
+  EXPECT_EQ(center.X() * 2, head.X() + tail.X());
+  EXPECT_EQ(center.Y() * 2, head.Y() + tail.Y());
+  auto integrand = [](Point point) { return 0.618; };
+  EXPECT_DOUBLE_EQ(edge.Integrate(integrand), 0.618 * length);
 }
 
 class CellTest : public ::testing::Test {
