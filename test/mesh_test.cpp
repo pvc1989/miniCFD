@@ -152,6 +152,7 @@ TEST_F(MeshTest, PositiveSide) {
   cells.emplace_back(mesh.EmplaceCell(0, {0, 1, 2}));
   cells.emplace_back(mesh.EmplaceCell(1, {0, 2, 3}));
   EXPECT_EQ(mesh.CountCells(), 2);
+  EXPECT_EQ(mesh.CountEdges(), edges.size());
   // Check each edge's positive side and negative side:
   // edges[0] == {nodes[0], nodes[1]}
   EXPECT_EQ(edges[0]->PositiveSide(), cells[0]);
@@ -159,15 +160,15 @@ TEST_F(MeshTest, PositiveSide) {
   // edges[1] == {nodes[1], nodes[2]}
   EXPECT_EQ(edges[1]->PositiveSide(), cells[0]);
   EXPECT_EQ(edges[1]->NegativeSide(), nullptr);
-  // edges[2] == {nodes[0], nodes[2]}
+  // edges[4] == {nodes[0], nodes[2]}
+  EXPECT_EQ(edges[4]->PositiveSide(), cells[1]);
+  EXPECT_EQ(edges[4]->NegativeSide(), cells[0]);
+  // edges[2] == {nodes[2], nodes[3]}
   EXPECT_EQ(edges[2]->PositiveSide(), cells[1]);
-  EXPECT_EQ(edges[2]->NegativeSide(), cells[0]);
-  // edges[3] == {nodes[2], nodes[3]}
-  EXPECT_EQ(edges[3]->PositiveSide(), cells[1]);
-  EXPECT_EQ(edges[3]->NegativeSide(), nullptr);
-  // edges[4] == {nodes[0], nodes[3]}
-  EXPECT_EQ(edges[4]->PositiveSide(), nullptr);
-  EXPECT_EQ(edges[4]->NegativeSide(), cells[1]);
+  EXPECT_EQ(edges[2]->NegativeSide(), nullptr);
+  // edges[3] == {nodes[0], nodes[3]}
+  EXPECT_EQ(edges[3]->PositiveSide(), nullptr);
+  EXPECT_EQ(edges[3]->NegativeSide(), cells[1]);
 }
 
 int main(int argc, char* argv[]) {
