@@ -39,15 +39,11 @@ class Edge {
   // Constructors
   Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
   // Accessors
-  Cell* PositiveSide() const {
-    return positive_side_;
-  }
-  Cell* NegativeSide() const {
-    return negative_side_;
-  }
   Edge::Id I() const { return i_; }
   Node* Head() const { return head_; }
   Node* Tail() const { return tail_; }
+  Cell* PositiveSide() const { return positive_side_; }
+  Cell* NegativeSide() const { return negative_side_; }
   // Modifiers
   void SetPositiveSide(Cell* positive_side) {
     positive_side_ = positive_side;
@@ -59,7 +55,7 @@ class Edge {
   Real Measure() const {
     auto dx = Tail()->X() - Head()->X();
     auto dy = Tail()->Y() - Head()->Y();
-    return std::sqrt(dx * dx + dy * dy);
+    return std::hypot(dx, dy);
   }
   Real Length() const { return Measure(); }
   template <class Integrand>
