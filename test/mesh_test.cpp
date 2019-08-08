@@ -7,9 +7,6 @@
 #include "gtest/gtest.h"
 
 using pvc::cfd::Coordinate;
-using pvc::cfd::NodeTag;
-using pvc::cfd::EdgeTag;
-using pvc::cfd::CellTag;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
 using pvc::cfd::Cell;
@@ -18,11 +15,11 @@ using pvc::cfd::Mesh;
 class NodeTest : public ::testing::Test {
 };
 TEST_F(NodeTest, Constructor) {
-  auto tag = NodeTag{0};
+  auto i = Node::Index{0};
   auto x = Coordinate{1.0};
   auto y = Coordinate{2.0};
-  auto node = Node(tag, x, y);
-  EXPECT_EQ(node.Tag(), tag);
+  auto node = Node(i, x, y);
+  EXPECT_EQ(node.I(), i);
   EXPECT_EQ(node.X(), x);
   EXPECT_EQ(node.Y(), y);
 }
@@ -30,27 +27,27 @@ TEST_F(NodeTest, Constructor) {
 class EdgeTest : public ::testing::Test {
 };
 TEST_F(EdgeTest, Constructor) {
-  auto tag = EdgeTag{0};
+  auto i = Edge::Index{0};
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 1.0, 0.0);
-  auto edge = Edge(tag, &head, &tail);
-  EXPECT_EQ(edge.Tag(), tag);
-  EXPECT_EQ(edge.Head()->Tag(), head.Tag());
-  EXPECT_EQ(edge.Tail()->Tag(), tail.Tag());
+  auto edge = Edge(i, &head, &tail);
+  EXPECT_EQ(edge.I(), i);
+  EXPECT_EQ(edge.Head()->I(), head.I());
+  EXPECT_EQ(edge.Tail()->I(), tail.I());
 }
 
 class CellTest : public ::testing::Test {
 };
 TEST_F(CellTest, Constructor) {
-  auto tag = CellTag{0};
+  auto i = Cell::Index{0};
   auto a = Node(0, 0.0, 0.0);
   auto b = Node(1, 1.0, 0.0);
   auto c = Node(2, 1.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto ca = Edge(2, &c, &a);
-  auto cell = Cell(tag, {&ab, &bc, &ca});
-  EXPECT_EQ(cell.Tag(), tag);
+  auto cell = Cell(i, {&ab, &bc, &ca});
+  EXPECT_EQ(cell.I(), i);
 }
 
 class MeshTest : public ::testing::Test {
@@ -71,15 +68,15 @@ TEST_F(MeshTest, ForEachNode) {
   // Emplace 4 nodes:
   auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
-  for (auto tag = 0; tag != x.size(); ++tag) {
-    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
-  // Check each node's tag and coordinates:
+  // Check each node's index and coordinates:
   auto check_coordinates = [&x, &y](Node const& node) {
-    auto tag = node.Tag();
-    EXPECT_EQ(node.X(), x[tag]);
-    EXPECT_EQ(node.Y(), y[tag]);
+    auto i = node.I();
+    EXPECT_EQ(node.X(), x[i]);
+    EXPECT_EQ(node.Y(), y[i]);
   };
   mesh.ForEachNode(check_coordinates);
 }
@@ -96,8 +93,8 @@ TEST_F(MeshTest, ForEachEdge) {
   // Emplace 4 nodes:
   auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
-  for (auto tag = 0; tag != x.size(); ++tag) {
-    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 6 edges:
@@ -109,9 +106,9 @@ TEST_F(MeshTest, ForEachEdge) {
   mesh.EmplaceEdge(e++, 2, 0);
   mesh.EmplaceEdge(e++, 3, 1);
   EXPECT_EQ(mesh.CountEdges(), e);
-  // For each edge: head's tag < tail's tag
+  // For each edge: head's index < tail's index
   auto check_edges = [](Edge const& edge) {
-    EXPECT_LT(edge.Head()->Tag(), edge.Tail()->Tag());
+    EXPECT_LT(edge.Head()->I(), edge.Tail()->I());
   };
   mesh.ForEachEdge(check_edges);
 }
@@ -120,8 +117,8 @@ TEST_F(MeshTest, EmplaceCell) {
   // Emplace 4 nodes:
   auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
-  for (auto tag = 0; tag != x.size(); ++tag) {
-    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 2 triangular cells:
@@ -137,8 +134,8 @@ TEST_F(MeshTest, PositiveSide) {
   // Emplace 4 nodes:
   auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
   auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
-  for (auto tag = 0; tag != x.size(); ++tag) {
-    mesh.EmplaceNode(tag, x[tag], y[tag]);
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 5 edges:
