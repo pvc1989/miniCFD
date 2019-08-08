@@ -15,21 +15,21 @@
 namespace pvc {
 namespace cfd {
 
-using Coordinate = double;
+using Real = double;
 
 class Node {
  public:
   using Id = std::size_t;
   // Constructors
-  Node(Id i, Coordinate x, Coordinate y) : i_(i), x_(x), y_(y) {}
+  Node(Id i, Real x, Real y) : i_(i), x_(x), y_(y) {}
   // Accessors
   auto I() const { return i_; }
   auto X() const { return x_; }
   auto Y() const { return y_; }
  private:
   Id i_;
-  Coordinate x_;
-  Coordinate y_;
+  Real x_;
+  Real y_;
 };
 
 class Cell;
@@ -55,12 +55,13 @@ class Edge {
   void SetNegativeSide(Cell* negative_side) {
     negative_side_ = negative_side;
   }
-  // Math Methods
-  Coordinate Length() const {
+  // Mathematical Methods
+  Real Measure() const {
     auto dx = Tail()->X() - Head()->X();
     auto dy = Tail()->Y() - Head()->Y();
     return std::sqrt(dx * dx + dy * dy);
   }
+  Real Length() const { return Measure(); }
   template <class Integrand>
   auto Integrate(Integrand&& integrand) {
     // Default implementation:
@@ -103,7 +104,7 @@ class Mesh {
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
  public:
   // Emplace primitive objects.
-  auto EmplaceNode(Node::Id i, Coordinate x, Coordinate y) {
+  auto EmplaceNode(Node::Id i, Real x, Real y) {
     id_to_node_.emplace(i, std::make_unique<Node>(i, x, y));
   }
   Edge* EmplaceEdge(Edge::Id edge_id,

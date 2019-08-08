@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-using pvc::cfd::Coordinate;
+using pvc::cfd::Real;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
 using pvc::cfd::Cell;
@@ -16,8 +16,8 @@ class NodeTest : public ::testing::Test {
 };
 TEST_F(NodeTest, Constructor) {
   auto i = Node::Id{0};
-  auto x = Coordinate{1.0};
-  auto y = Coordinate{2.0};
+  auto x = Real{1.0};
+  auto y = Real{2.0};
   auto node = Node(i, x, y);
   EXPECT_EQ(node.I(), i);
   EXPECT_EQ(node.X(), x);
@@ -36,18 +36,18 @@ TEST_F(EdgeTest, Constructor) {
   EXPECT_EQ(edge.Tail()->I(), tail.I());
 }
 TEST_F(EdgeTest, Length) {
-  Coordinate length = 3.14;
+  Real length = 3.14;
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 0.0, length);
   auto edge = Edge(1, &head, &tail);
   EXPECT_DOUBLE_EQ(edge.Length(), length);
 }
 TEST_F(EdgeTest, Integrate) {
-  Coordinate length = 2.0;
+  Real length = 2.0;
   auto head = Node(0, 0.0, 0.0);
   auto tail = Node(1, 0.0, length);
   auto edge = Edge(1, &head, &tail);
-  auto integrand = [](Coordinate x, Coordinate y) {
+  auto integrand = [](Real x, Real y) {
     return 1.0;
   };
   EXPECT_DOUBLE_EQ(edge.Integrate(integrand), length);
@@ -83,8 +83,8 @@ TEST_F(MeshTest, EmplaceNode) {
 TEST_F(MeshTest, ForEachNode) {
   auto mesh = Mesh();
   // Emplace 4 nodes:
-  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
-  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Real>{0.0, 0.0, 1.0, 1.0};
   for (auto i = 0; i != x.size(); ++i) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
@@ -108,8 +108,8 @@ TEST_F(MeshTest, EmplaceEdge) {
 TEST_F(MeshTest, ForEachEdge) {
   auto mesh = Mesh();
   // Emplace 4 nodes:
-  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
-  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Real>{0.0, 0.0, 1.0, 1.0};
   for (auto i = 0; i != x.size(); ++i) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
@@ -132,8 +132,8 @@ TEST_F(MeshTest, ForEachEdge) {
 TEST_F(MeshTest, EmplaceCell) {
   auto mesh = Mesh();
   // Emplace 4 nodes:
-  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
-  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Real>{0.0, 0.0, 1.0, 1.0};
   for (auto i = 0; i != x.size(); ++i) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
@@ -149,8 +149,8 @@ TEST_F(MeshTest, ForEachCell) {
 TEST_F(MeshTest, PositiveSide) {
   auto mesh = Mesh();
   // Emplace 4 nodes:
-  auto x = std::vector<Coordinate>{0.0, 1.0, 1.0, 0.0};
-  auto y = std::vector<Coordinate>{0.0, 0.0, 1.0, 1.0};
+  auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<Real>{0.0, 0.0, 1.0, 1.0};
   for (auto i = 0; i != x.size(); ++i) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
