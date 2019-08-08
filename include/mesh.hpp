@@ -14,15 +14,17 @@
 namespace pvc {
 namespace cfd {
 
-using Tag = std::size_t;
+using NodeTag = std::size_t;
+using EdgeTag = std::size_t;
+using CellTag = std::size_t;
 using Coordinate = double;
 
 class Node {
-  Tag tag_;
+  NodeTag tag_;
   Coordinate x_;
   Coordinate y_;
  public:
-  Node(Tag tag, Coordinate x, Coordinate y) : tag_(tag), x_(x), y_(y) {}
+  Node(NodeTag tag, Coordinate x, Coordinate y) : tag_(tag), x_(x), y_(y) {}
   auto Tag() const { return tag_; }
   auto X() const { return x_; }
   auto Y() const { return y_; }
@@ -30,13 +32,13 @@ class Node {
 
 class Cell;
 class Edge {
-  Tag tag_;
+  EdgeTag tag_;
   Node* head_;
   Node* tail_;
   Cell* positive_side_{nullptr};
   Cell* negative_side_{nullptr};
  public:
-  Edge(Tag tag, Node* head, Node* tail) : tag_(tag), head_(head), tail_(tail) {}
+  Edge(EdgeTag tag, Node* head, Node* tail) : tag_(tag), head_(head), tail_(tail) {}
   auto Tag() const { return tag_; }
   auto Head() const { return head_; }
   auto Tail() const { return tail_; }
@@ -57,11 +59,11 @@ class Edge {
 class Cell {
   friend class Mesh;
  private:
-  Tag tag_;
+  CellTag tag_;
   std::set<Edge*> edges_;
  public:
-  explicit Cell(Tag tag) : tag_(tag) {}
-  Cell(Tag tag, std::initializer_list<Edge*> edges) : tag_(tag) {
+  explicit Cell(CellTag tag) : tag_(tag) {}
+  Cell(CellTag tag, std::initializer_list<Edge*> edges) : tag_(tag) {
     for (auto e : edges) { edges_.emplace(e); }
   }
   // template<class ForwardIterator>
@@ -74,22 +76,22 @@ class Cell {
 };
 
 class Mesh {
-  std::map<Tag, std::unique_ptr<Node>> tag_to_node_;
-  std::map<Tag, std::unique_ptr<Edge>> tag_to_edge_;
-  std::map<Tag, std::unique_ptr<Cell>> tag_to_cell_;
-  std::map<std::pair<Tag, Tag>, Edge*> tag_pair_to_edge_;
+  std::map<NodeTag, std::unique_ptr<Node>> tag_to_node_;
+  std::map<EdgeTag, std::unique_ptr<Edge>> tag_to_edge_;
+  std::map<CellTag, std::unique_ptr<Cell>> tag_to_cell_;
+  std::map<std::pair<NodeTag, NodeTag>, Edge*> tag_pair_to_edge_;
  public:
   // Emplace primitive objects.
-  auto EmplaceNode(Tag node_tag, Coordinate x, Coordinate y) {
+  auto EmplaceNode(NodeTag node_tag, Coordinate x, Coordinate y) {
     tag_to_node_.emplace(node_tag, std::make_unique<Node>(node_tag, x, y));
   }
-  Edge* EmplaceEdge(Tag edge_tag, Tag head_tag, Tag tail_tag) {
+  Edge* EmplaceEdge(EdgeTag edge_tag, NodeTag head_tag, NodeTag tail_tag) {
     auto head = tag_to_node_.find(head_tag);
     assert(head != tag_to_node_.end());
     auto tail = tag_to_node_.find(tail_tag);
     assert(tail != tag_to_node_.end());
     if (head->first > tail->first) { std::swap(head, tail); }
-    auto tag_pair = std::make_pair<Tag, Tag>(head->second->Tag(), tail->second->Tag());
+    auto tag_pair = std::make_pair<NodeTag, NodeTag>(head->second->Tag(), tail->second->Tag());
     assert(tag_pair_to_edge_.count(tag_pair) == 0);  // Re-emplace an edge is not allowed.
     // Emplace a new edge:
     auto edge_unique_ptr = std::make_unique<Edge>(edge_tag, head->second.get(), tail->second.get());
@@ -99,14 +101,14 @@ class Mesh {
     assert(tag_to_edge_.size() == tag_pair_to_edge_.size());
     return edge_ptr;
   }
-  Edge* EmplaceEdge(Tag head_tag, Tag tail_tag) {
+  Edge* EmplaceEdge(NodeTag head_tag, NodeTag tail_tag) {
     auto tag_pair = std::minmax(head_tag, tail_tag);
     auto iter = tag_pair_to_edge_.find(tag_pair);
     if (iter != tag_pair_to_edge_.end()) {
       return iter->second;
     } else {  // Emplace a new edge:
       auto last = tag_to_edge_.rbegin();
-      Tag edge_tag = 0;
+      EdgeTag edge_tag = 0;
       if (last != tag_to_edge_.rend()) {  // Find the next unused tag:
         edge_tag = last->first + 1;
         while (tag_to_edge_.count(edge_tag)) { ++edge_tag; }
@@ -117,7 +119,7 @@ class Mesh {
     }
   }
  private:
-  void LinkCellToEdge(Cell* cell_ptr, Tag head, Tag tail) {
+  void LinkCellToEdge(Cell* cell_ptr, NodeTag head, NodeTag tail) {
     auto edge_ptr = EmplaceEdge(head, tail);
     cell_ptr->edges_.emplace(edge_ptr);
     if (head < tail) {
@@ -127,7 +129,7 @@ class Mesh {
     }
   }
  public:
-  auto EmplaceCell(Tag cell_tag, std::initializer_list<Tag> node_tags) {
+  auto EmplaceCell(CellTag cell_tag, std::initializer_list<NodeTag> node_tags) {
     auto cell_unique_ptr = std::make_unique<Cell>(cell_tag);
     auto cell_ptr = cell_unique_ptr.get();
     auto curr = node_tags.begin();
