@@ -1,3 +1,5 @@
+// Copyright 2019 Weicheng Pei and Minghao Yang
+
 #ifndef PVC_CFD_MESH_HPP_
 #define PVC_CFD_MESH_HPP_
 
@@ -73,16 +75,17 @@ class Edge : public Element {
     negative_side_ = negative_side;
   }
   // Element Methods
-  virtual Real Measure() const override {
+  Real Measure() const override {
     auto dx = Tail()->X() - Head()->X();
     auto dy = Tail()->Y() - Head()->Y();
     return std::hypot(dx, dy);
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     auto x = (Head()->X() + Tail()->X()) / 2;
     auto y = (Head()->Y() + Tail()->Y()) / 2;
     return Point(x, y);
   }
+
  private:
   Id i_;
   Node* head_;
@@ -104,7 +107,7 @@ class Cell {
   Id I() const { return i_; }
   // Iterators
   template <class Visitor>
-  void ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor&& visitor) const {
   }
  private:
   Id i_;
@@ -120,21 +123,22 @@ class Triangle : public Element, public Cell {
     assert(vertices.size() == 3);
     auto iter = vertices.begin();
     a_ = *iter++;
-    b_ = *iter++; 
+    b_ = *iter++;
     c_ = *iter++;
     assert(iter == vertices.end());
   }
-  virtual Real Measure() const override {
+  Real Measure() const override {
     Real measure = (b_->X() * c_->Y() + a_->X() * b_->Y() + c_->X() * a_->Y()
-                  - b_->X() * a_->Y() - c_->X() * b_->Y() - a_->X() * c_->Y()
-                   ) / 2;
+                  - b_->X() * a_->Y() - c_->X() * b_->Y() - a_->X() * c_->Y())
+                 / 2;
     return std::abs(measure);
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     Real x = (a_->X() + b_->X() + c_->X()) / 3;
     Real y = (a_->Y() + b_->Y() + c_->Y()) / 3;
     return Point(x, y);
   }
+
  private:
   Node* a_;
   Node* b_;
@@ -154,16 +158,17 @@ class Rectangle : public Element, public Cell {
     d_ = *iter++;
     assert(iter == vertices.end());
   }
-  virtual Real Measure() const override {
+  Real Measure() const override {
     Real h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
     Real w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
     return h * w;
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     Real x = (a_->X() + c_->X()) / 2;
     Real y = (a_->Y() + c_->Y()) / 2;
     return Point(x, y);
   }
+
  private:
   Node* a_;
   Node* b_;
@@ -176,6 +181,7 @@ class Mesh {
   std::map<Edge::Id, std::unique_ptr<Edge>> id_to_edge_;
   std::map<Cell::Id, std::unique_ptr<Cell>> id_to_cell_;
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
+
  public:
   // Emplace primitive objects.
   Node* EmplaceNode(Node::Id i, Real x, Real y) {
@@ -236,6 +242,7 @@ class Mesh {
     LinkCellToEdge(cell_ptr, *curr, *next);
     return cell_ptr;
   }
+
  private:
   void LinkCellToEdge(Cell* cell, Node::Id head, Node::Id tail) {
     auto edge = EmplaceEdge(head, tail);
@@ -246,6 +253,7 @@ class Mesh {
       edge->SetNegativeSide(cell);
     }
   }
+
  public:
   // Count primitive objects.
   auto CountNodes() const { return id_to_node_.size(); }
@@ -253,13 +261,13 @@ class Mesh {
   auto CountCells() const { return id_to_cell_.size(); }
   // Traverse primitive objects.
   template <typename Visitor>
-  void ForEachNode(Visitor& visitor) const {
+  void ForEachNode(Visitor&& visitor) const {
   }
   template <class Visitor>
-  void ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor&& visitor) const {
   }
   template <class Visitor>
-  void ForEachCell(Visitor& visitor) const {
+  void ForEachCell(Visitor&& visitor) const {
   }
 };
 

@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei
+// Copyright 2019 Weicheng Pei and Minghao Yang
 
 #include "mesh.hpp"
 
