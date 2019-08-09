@@ -2,7 +2,9 @@
 #define PVC_CFD_MESH_HPP_
 
 #include <algorithm>
+#include <array>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <initializer_list>
 #include <map>
@@ -14,45 +16,72 @@
 namespace pvc {
 namespace cfd {
 
-using Coordinate = double;
+using Real = double;
+
+class Point {
+ public:
+  Point(Real x, Real y) : x_(x), y_(y) {}
+  Real X() const { return x_; }
+  Real Y() const { return y_; }
+ private:
+  Real x_;
+  Real y_;
+};
 
 class Node {
  public:
   using Id = std::size_t;
   // Constructors
-  Node(Id i, Coordinate x, Coordinate y) : i_(i), x_(x), y_(y) {}
+  Node(Id i, Real x, Real y) : i_(i), p_(x, y) {}
   // Accessors
-  auto I() const { return i_; }
-  auto X() const { return x_; }
-  auto Y() const { return y_; }
+  Id I() const { return i_; }
+  Real X() const { return p_.X(); }
+  Real Y() const { return p_.Y(); }
  private:
   Id i_;
-  Coordinate x_;
-  Coordinate y_;
+  Point p_;
+};
+
+class Element {
+ public:
+  virtual Real Measure() const = 0;
+  virtual Point Center() const = 0;
+  template <class Integrand>
+  auto Integrate(Integrand&& integrand) const {
+    // Default implementation:
+    return integrand(Center()) * Measure();
+  }
 };
 
 class Cell;
-class Edge {
+class Edge : public Element {
  public:
   using Id = std::size_t;
   // Constructors
   Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
   // Accessors
-  auto I() const { return i_; }
-  auto Head() const { return head_; }
-  auto Tail() const { return tail_; }
-  Cell* PositiveSide() const {
-    return positive_side_;
-  }
-  Cell* NegativeSide() const {
-    return negative_side_;
-  }
+  Edge::Id I() const { return i_; }
+  Node* Head() const { return head_; }
+  Node* Tail() const { return tail_; }
+  Cell* PositiveSide() const { return positive_side_; }
+  Cell* NegativeSide() const { return negative_side_; }
   // Modifiers
   void SetPositiveSide(Cell* positive_side) {
     positive_side_ = positive_side;
   }
   void SetNegativeSide(Cell* negative_side) {
     negative_side_ = negative_side;
+  }
+  // Element Methods
+  virtual Real Measure() const override {
+    auto dx = Tail()->X() - Head()->X();
+    auto dy = Tail()->Y() - Head()->Y();
+    return std::hypot(dx, dy);
+  }
+  virtual Point Center() const override {
+    auto x = (Head()->X() + Tail()->X()) / 2;
+    auto y = (Head()->Y() + Tail()->Y()) / 2;
+    return Point(x, y);
   }
  private:
   Id i_;
@@ -72,14 +101,38 @@ class Cell {
     for (auto e : edges) { edges_.emplace(e); }
   }
   // Accessors
-  auto I() const { return i_; }
+  Id I() const { return i_; }
   // Iterators
   template <class Visitor>
-  auto ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor& visitor) const {
   }
  private:
   Id i_;
   std::set<Edge*> edges_;
+};
+
+class Triangle : public Element {
+ public:
+  virtual Real Measure() const override {
+    return 0;
+  }
+  virtual Point Center() const override {
+    return Point(0.0, 0.0);
+  }
+ private:
+  std::array<Node*, 3> vertices_;
+};
+
+class Rectangle : public Element {
+ public:
+  virtual Real Measure() const override {
+    return 0;
+  }
+  virtual Point Center() const override {
+    return Point(0.0, 0.0);
+  }
+ private:
+  std::array<Node*, 4> vertices_;
 };
 
 class Mesh {
@@ -89,8 +142,11 @@ class Mesh {
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
  public:
   // Emplace primitive objects.
-  auto EmplaceNode(Node::Id i, Coordinate x, Coordinate y) {
-    id_to_node_.emplace(i, std::make_unique<Node>(i, x, y));
+  Node* EmplaceNode(Node::Id i, Real x, Real y) {
+    auto node_unique_ptr = std::make_unique<Node>(i, x, y);
+    auto node_ptr = node_unique_ptr.get();
+    id_to_node_.emplace(i, std::move(node_unique_ptr));
+    return node_ptr;
   }
   Edge* EmplaceEdge(Edge::Id edge_id,
                     Node::Id head_id, Node::Id tail_id) {
@@ -161,13 +217,13 @@ class Mesh {
   auto CountCells() const { return id_to_cell_.size(); }
   // Traverse primitive objects.
   template <typename Visitor>
-  auto ForEachNode(Visitor& visitor) const {
+  void ForEachNode(Visitor& visitor) const {
   }
   template <class Visitor>
-  auto ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor& visitor) const {
   }
   template <class Visitor>
-  auto ForEachCell(Visitor& visitor) const {
+  void ForEachCell(Visitor& visitor) const {
   }
 };
 
