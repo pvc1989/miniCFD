@@ -84,14 +84,12 @@ TEST_F(TriangleTest, ElementMethods) {
   Real area = 0.5;
   auto i = Cell::Id{0};
   auto a = Node(0, 0.0, 0.0);
-  auto d = Node(1, 0.5, 0.0);
-  auto b = Node(2, 1.0, 0.0);
-  auto c = Node(3, 0.0, 1.0);
-  auto ad = Edge(0, &a, &d);
-  auto db = Edge(0, &d, &b);
+  auto b = Node(1, 1.0, 0.0);
+  auto c = Node(2, 0.0, 1.0);
+  auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto ca = Edge(2, &c, &a);
-  auto edges = {&ad, &db, &bc, &ca};
+  auto edges = {&ab, &bc, &ca};
   auto vertices = {&a, &b, &c};
   auto triangle = Triangle(i, edges, vertices);
   EXPECT_DOUBLE_EQ(triangle.Measure(), area);
