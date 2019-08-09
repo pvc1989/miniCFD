@@ -125,14 +125,13 @@ class Triangle : public Element, public Cell {
     assert(iter == vertices.end());
   }
   virtual Real Measure() const override {
-    Real measure = (b_->X() * c_->Y() + a_->X() * b_->Y() + c_->X() * a_->Y()
-                  - b_->X() * a_->Y() - c_->X() * b_->Y() - a_->X() * c_->Y()
-                   ) / 2;
-    return std::abs(measure);
+    auto det  = a_->X() * b_->Y() + b_->X() * c_->Y() + c_->X() * a_->Y();
+         det -= b_->X() * a_->Y() + c_->X() * b_->Y() + a_->X() * c_->Y();
+    return std::abs(det / 2);
   }
   virtual Point Center() const override {
-    Real x = (a_->X() + b_->X() + c_->X()) / 3;
-    Real y = (a_->Y() + b_->Y() + c_->Y()) / 3;
+    auto x = (a_->X() + b_->X() + c_->X()) / 3;
+    auto y = (a_->Y() + b_->Y() + c_->Y()) / 3;
     return Point(x, y);
   }
  private:
@@ -155,13 +154,13 @@ class Rectangle : public Element, public Cell {
     assert(iter == vertices.end());
   }
   virtual Real Measure() const override {
-    Real h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
-    Real w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
+    auto h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
+    auto w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
     return h * w;
   }
   virtual Point Center() const override {
-    Real x = (a_->X() + c_->X()) / 2;
-    Real y = (a_->Y() + c_->Y()) / 2;
+    auto x = (a_->X() + c_->X()) / 2;
+    auto y = (a_->Y() + c_->Y()) / 2;
     return Point(x, y);
   }
  private:
