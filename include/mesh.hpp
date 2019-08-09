@@ -22,7 +22,9 @@ using Real = double;
 
 class Point {
  public:
+  // Constructors
   Point(Real x, Real y) : x_(x), y_(y) {}
+  // Accessors
   Real X() const { return x_; }
   Real Y() const { return y_; }
  private:
@@ -30,18 +32,15 @@ class Point {
   Real y_;
 };
 
-class Node {
+class Node : public Point {
  public:
   using Id = std::size_t;
   // Constructors
-  Node(Id i, Real x, Real y) : i_(i), p_(x, y) {}
+  Node(Id i, Real x, Real y) : Point(x, y), i_(i) {}
   // Accessors
   Id I() const { return i_; }
-  Real X() const { return p_.X(); }
-  Real Y() const { return p_.Y(); }
  private:
   Id i_;
-  Point p_;
 };
 
 class Element {
