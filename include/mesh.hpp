@@ -37,8 +37,10 @@ class Node : public Point {
   using Id = std::size_t;
   // Constructors
   Node(Id i, Real x, Real y) : Point(x, y), i_(i) {}
+  Node(Real x, Real y) : Node(DefaultId(), x, y) {}
   // Accessors
   Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
  private:
   Id i_;
 };

@@ -21,8 +21,14 @@ TEST_F(NodeTest, Constructor) {
   auto i = Node::Id{0};
   auto x = Real{1.0};
   auto y = Real{2.0};
+  // Test Node(Id i, Real x, Real y):
   auto node = Node(i, x, y);
   EXPECT_EQ(node.I(), i);
+  EXPECT_EQ(node.X(), x);
+  EXPECT_EQ(node.Y(), y);
+  // Test Node(Real x, Real y):
+  node = Node(x, y);
+  EXPECT_EQ(node.I(), Node::DefaultId());
   EXPECT_EQ(node.X(), x);
   EXPECT_EQ(node.Y(), y);
 }
@@ -31,17 +37,17 @@ class EdgeTest : public ::testing::Test {
 };
 TEST_F(EdgeTest, Constructor) {
   auto i = Edge::Id{0};
-  auto head = Node(0, 0.0, 0.0);
-  auto tail = Node(1, 1.0, 0.0);
+  auto head = Node(0.0, 0.0);
+  auto tail = Node(1.0, 0.0);
   auto edge = Edge(i, &head, &tail);
   EXPECT_EQ(edge.I(), i);
-  EXPECT_EQ(edge.Head()->I(), head.I());
-  EXPECT_EQ(edge.Tail()->I(), tail.I());
+  EXPECT_EQ(edge.Head(), &head);
+  EXPECT_EQ(edge.Tail(), &tail);
 }
 TEST_F(EdgeTest, ElementMethods) {
   Real length = 3.14;
-  auto head = Node(0, 0.0, 0.0);
-  auto tail = Node(1, 0.0, length);
+  auto head = Node(0.0, 0.0);
+  auto tail = Node(0.0, length);
   auto edge = Edge(1, &head, &tail);
   EXPECT_DOUBLE_EQ(edge.Measure(), length);
   auto center = edge.Center();
@@ -55,9 +61,9 @@ class CellTest : public ::testing::Test {
 };
 TEST_F(CellTest, Constructor) {
   auto i = Cell::Id{0};
-  auto a = Node(0, 0.0, 0.0);
-  auto b = Node(1, 1.0, 0.0);
-  auto c = Node(2, 1.0, 1.0);
+  auto a = Node(0.0, 0.0);
+  auto b = Node(1.0, 0.0);
+  auto c = Node(1.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto ca = Edge(2, &c, &a);
@@ -69,9 +75,9 @@ class TriangleTest : public ::testing::Test {
 };
 TEST_F(TriangleTest, Constructor) {
   auto i = Cell::Id{0};
-  auto a = Node(0, 0.0, 0.0);
-  auto b = Node(1, 1.0, 0.0);
-  auto c = Node(2, 0.0, 1.0);
+  auto a = Node(0.0, 0.0);
+  auto b = Node(1.0, 0.0);
+  auto c = Node(0.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto ca = Edge(2, &c, &a);
@@ -83,9 +89,9 @@ TEST_F(TriangleTest, Constructor) {
 TEST_F(TriangleTest, ElementMethods) {
   Real area = 0.5;
   auto i = Cell::Id{0};
-  auto a = Node(0, 0.0, 0.0);
-  auto b = Node(1, 1.0, 0.0);
-  auto c = Node(2, 0.0, 1.0);
+  auto a = Node(0.0, 0.0);
+  auto b = Node(1.0, 0.0);
+  auto c = Node(0.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto ca = Edge(2, &c, &a);
@@ -104,10 +110,10 @@ class RectangleTest : public ::testing::Test {
 };
 TEST_F(RectangleTest, Constructor) {
   auto i = Cell::Id{0};
-  auto a = Node(0, 0.0, 0.0);
-  auto b = Node(1, 1.0, 0.0);
-  auto c = Node(2, 1.0, 1.0);
-  auto d = Node(3, 0.0, 1.0);
+  auto a = Node(0.0, 0.0);
+  auto b = Node(1.0, 0.0);
+  auto c = Node(1.0, 1.0);
+  auto d = Node(0.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto cd = Edge(2, &c, &d);
@@ -120,10 +126,10 @@ TEST_F(RectangleTest, Constructor) {
 TEST_F(RectangleTest, ElementMethods) {
   Real area = 2.0;
   auto i = Cell::Id{0};
-  auto a = Node(0, 0.0, 0.0);
-  auto b = Node(1, 2.0, 0.0);
-  auto c = Node(2, 2.0, 1.0);
-  auto d = Node(3, 0.0, 1.0);
+  auto a = Node(0.0, 0.0);
+  auto b = Node(2.0, 0.0);
+  auto c = Node(2.0, 1.0);
+  auto d = Node(0.0, 1.0);
   auto ab = Edge(0, &a, &b);
   auto bc = Edge(1, &b, &c);
   auto cd = Edge(2, &c, &d);
