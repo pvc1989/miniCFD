@@ -111,28 +111,64 @@ class Cell {
   std::set<Edge*> edges_;
 };
 
-class Triangle : public Element {
+class Triangle : public Element, public Cell {
  public:
+  Triangle(Id i,
+           std::initializer_list<Edge*> edges,
+           std::initializer_list<Node*> vertices)
+      : Cell(i, edges) {
+    assert(vertices.size() == 3);
+    auto iter = vertices.begin();
+    a_ = *iter++;
+    b_ = *iter++; 
+    c_ = *iter++;
+    assert(iter == vertices.end());
+  }
   virtual Real Measure() const override {
-    return 0;
+    Real measure = (b_->X() * c_->Y() + a_->X() * b_->Y() + c_->X() * a_->Y()
+                  - b_->X() * a_->Y() - c_->X() * b_->Y() - a_->X() * c_->Y()
+                   ) / 2;
+    return std::abs(measure);
   }
   virtual Point Center() const override {
-    return Point(0.0, 0.0);
+    Real x = (a_->X() + b_->X() + c_->X()) / 3;
+    Real y = (a_->Y() + b_->Y() + c_->Y()) / 3;
+    return Point(x, y);
   }
  private:
-  std::array<Node*, 3> vertices_;
+  Node* a_;
+  Node* b_;
+  Node* c_;
 };
 
-class Rectangle : public Element {
+class Rectangle : public Element, public Cell {
  public:
+  Rectangle(Id i,
+            std::initializer_list<Edge*> edges,
+            std::initializer_list<Node*> vertices) : Cell(i, edges) {
+    assert(vertices.size() == 4);
+    auto iter = vertices.begin();
+    a_ = *iter++;
+    b_ = *iter++;
+    c_ = *iter++;
+    d_ = *iter++;
+    assert(iter == vertices.end());
+  }
   virtual Real Measure() const override {
-    return 0;
+    Real h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
+    Real w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
+    return h * w;
   }
   virtual Point Center() const override {
-    return Point(0.0, 0.0);
+    Real x = (a_->X() + c_->X()) / 2;
+    Real y = (a_->Y() + c_->Y()) / 2;
+    return Point(x, y);
   }
  private:
-  std::array<Node*, 4> vertices_;
+  Node* a_;
+  Node* b_;
+  Node* c_;
+  Node* d_;
 };
 
 class Mesh {

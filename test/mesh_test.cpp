@@ -11,6 +11,8 @@ using pvc::cfd::Point;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
 using pvc::cfd::Cell;
+using pvc::cfd::Triangle;
+using pvc::cfd::Rectangle;
 using pvc::cfd::Mesh;
 
 class NodeTest : public ::testing::Test {
@@ -61,6 +63,82 @@ TEST_F(CellTest, Constructor) {
   auto ca = Edge(2, &c, &a);
   auto cell = Cell(i, {&ab, &bc, &ca});
   EXPECT_EQ(cell.I(), i);
+}
+
+class TriangleTest : public ::testing::Test {
+};
+TEST_F(TriangleTest, Constructor) {
+  auto i = Cell::Id{0};
+  auto a = Node(0, 0.0, 0.0);
+  auto b = Node(1, 1.0, 0.0);
+  auto c = Node(2, 0.0, 1.0);
+  auto ab = Edge(0, &a, &b);
+  auto bc = Edge(1, &b, &c);
+  auto ca = Edge(2, &c, &a);
+  auto edges = {&ab, &bc, &ca};
+  auto vertices = {&a, &b, &c};
+  auto triangle = Triangle(i, edges, vertices);
+  EXPECT_EQ(triangle.I(), i);
+}
+TEST_F(TriangleTest, ElementMethods) {
+  Real area = 0.5;
+  auto i = Cell::Id{0};
+  auto a = Node(0, 0.0, 0.0);
+  auto d = Node(1, 0.5, 0.0);
+  auto b = Node(2, 1.0, 0.0);
+  auto c = Node(3, 0.0, 1.0);
+  auto ad = Edge(0, &a, &d);
+  auto db = Edge(0, &d, &b);
+  auto bc = Edge(1, &b, &c);
+  auto ca = Edge(2, &c, &a);
+  auto edges = {&ad, &db, &bc, &ca};
+  auto vertices = {&a, &b, &c};
+  auto triangle = Triangle(i, edges, vertices);
+  EXPECT_DOUBLE_EQ(triangle.Measure(), area);
+  auto center = triangle.Center();
+  EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
+  EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
+  auto integrand = [](Point point) { return 0.618; };
+  EXPECT_DOUBLE_EQ(triangle.Integrate(integrand), 0.618 * area);
+}
+
+class RectangleTest : public ::testing::Test {
+};
+TEST_F(RectangleTest, Constructor) {
+  auto i = Cell::Id{0};
+  auto a = Node(0, 0.0, 0.0);
+  auto b = Node(1, 1.0, 0.0);
+  auto c = Node(2, 1.0, 1.0);
+  auto d = Node(3, 0.0, 1.0);
+  auto ab = Edge(0, &a, &b);
+  auto bc = Edge(1, &b, &c);
+  auto cd = Edge(2, &c, &d);
+  auto da = Edge(3, &d, &a);
+  auto edges = {&ab, &bc, &cd, &da};
+  auto vertices = {&a, &b, &c, &d};
+  auto rectangle = Rectangle(i, edges, vertices);
+  EXPECT_EQ(rectangle.I(), i);
+}
+TEST_F(RectangleTest, ElementMethods) {
+  Real area = 2.0;
+  auto i = Cell::Id{0};
+  auto a = Node(0, 0.0, 0.0);
+  auto b = Node(1, 2.0, 0.0);
+  auto c = Node(2, 2.0, 1.0);
+  auto d = Node(3, 0.0, 1.0);
+  auto ab = Edge(0, &a, &b);
+  auto bc = Edge(1, &b, &c);
+  auto cd = Edge(2, &c, &d);
+  auto da = Edge(3, &d, &a);
+  auto edges = {&ab, &bc, &cd, &da};
+  auto vertices = {&a, &b, &c, &d};
+  auto rectangle = Rectangle(i, edges, vertices);
+  EXPECT_DOUBLE_EQ(rectangle.Measure(), area);
+  auto center = rectangle.Center();
+  EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
+  EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
+  auto integrand = [](Point point) { return 0.618; };
+  EXPECT_DOUBLE_EQ(rectangle.Integrate(integrand), 0.618 * area);
 }
 
 class MeshTest : public ::testing::Test {
