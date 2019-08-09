@@ -48,7 +48,7 @@ TEST_F(EdgeTest, ElementMethods) {
   Real length = 3.14;
   auto head = Node(0.0, 0.0);
   auto tail = Node(0.0, length);
-  auto edge = Edge(1, &head, &tail);
+  auto edge = Edge(&head, &tail);
   EXPECT_DOUBLE_EQ(edge.Measure(), length);
   auto center = edge.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());
@@ -64,9 +64,9 @@ TEST_F(CellTest, Constructor) {
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(1.0, 1.0);
-  auto ab = Edge(0, &a, &b);
-  auto bc = Edge(1, &b, &c);
-  auto ca = Edge(2, &c, &a);
+  auto ab = Edge(&a, &b);
+  auto bc = Edge(&b, &c);
+  auto ca = Edge(&c, &a);
   auto cell = Cell(i, {&ab, &bc, &ca});
   EXPECT_EQ(cell.I(), i);
 }
@@ -78,9 +78,9 @@ TEST_F(TriangleTest, Constructor) {
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(0.0, 1.0);
-  auto ab = Edge(0, &a, &b);
-  auto bc = Edge(1, &b, &c);
-  auto ca = Edge(2, &c, &a);
+  auto ab = Edge(&a, &b);
+  auto bc = Edge(&b, &c);
+  auto ca = Edge(&c, &a);
   auto edges = {&ab, &bc, &ca};
   auto vertices = {&a, &b, &c};
   auto triangle = Triangle(i, edges, vertices);
@@ -88,16 +88,15 @@ TEST_F(TriangleTest, Constructor) {
 }
 TEST_F(TriangleTest, ElementMethods) {
   Real area = 0.5;
-  auto i = Cell::Id{0};
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(0.0, 1.0);
-  auto ab = Edge(0, &a, &b);
-  auto bc = Edge(1, &b, &c);
-  auto ca = Edge(2, &c, &a);
+  auto ab = Edge(&a, &b);
+  auto bc = Edge(&b, &c);
+  auto ca = Edge(&c, &a);
   auto edges = {&ab, &bc, &ca};
   auto vertices = {&a, &b, &c};
-  auto triangle = Triangle(i, edges, vertices);
+  auto triangle = Triangle(edges, vertices);
   EXPECT_DOUBLE_EQ(triangle.Measure(), area);
   auto center = triangle.Center();
   EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
@@ -114,10 +113,10 @@ TEST_F(RectangleTest, Constructor) {
   auto b = Node(1.0, 0.0);
   auto c = Node(1.0, 1.0);
   auto d = Node(0.0, 1.0);
-  auto ab = Edge(0, &a, &b);
-  auto bc = Edge(1, &b, &c);
-  auto cd = Edge(2, &c, &d);
-  auto da = Edge(3, &d, &a);
+  auto ab = Edge(&a, &b);
+  auto bc = Edge(&b, &c);
+  auto cd = Edge(&c, &d);
+  auto da = Edge(&d, &a);
   auto edges = {&ab, &bc, &cd, &da};
   auto vertices = {&a, &b, &c, &d};
   auto rectangle = Rectangle(i, edges, vertices);
@@ -130,13 +129,13 @@ TEST_F(RectangleTest, ElementMethods) {
   auto b = Node(2.0, 0.0);
   auto c = Node(2.0, 1.0);
   auto d = Node(0.0, 1.0);
-  auto ab = Edge(0, &a, &b);
-  auto bc = Edge(1, &b, &c);
-  auto cd = Edge(2, &c, &d);
-  auto da = Edge(3, &d, &a);
+  auto ab = Edge(&a, &b);
+  auto bc = Edge(&b, &c);
+  auto cd = Edge(&c, &d);
+  auto da = Edge(&d, &a);
   auto edges = {&ab, &bc, &cd, &da};
   auto vertices = {&a, &b, &c, &d};
-  auto rectangle = Rectangle(i, edges, vertices);
+  auto rectangle = Rectangle(edges, vertices);
   EXPECT_DOUBLE_EQ(rectangle.Measure(), area);
   auto center = rectangle.Center();
   EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());

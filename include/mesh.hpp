@@ -62,8 +62,10 @@ class Edge : public Element {
   using Id = std::size_t;
   // Constructors
   Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
+  Edge(Node* head, Node* tail) : Edge(DefaultId(), head, tail) {}
   // Accessors
   Edge::Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
   Node* Head() const { return head_; }
   Node* Tail() const { return tail_; }
   Cell* PositiveSide() const { return positive_side_; }
@@ -104,8 +106,11 @@ class Cell {
   Cell(Id i, std::initializer_list<Edge*> edges) : i_(i) {
     for (auto e : edges) { edges_.emplace(e); }
   }
+  Cell(std::initializer_list<Edge*> edges) :
+       Cell(DefaultId(), edges) {}
   // Accessors
   Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
   // Iterators
   template <class Visitor>
   void ForEachEdge(Visitor&& visitor) const {
@@ -128,12 +133,15 @@ class Triangle : public Element, public Cell {
     c_ = *iter++;
     assert(iter == vertices.end());
   }
-  virtual Real Measure() const override {
+  Triangle(std::initializer_list<Edge*> edges,
+           std::initializer_list<Node*> vertices)
+           : Triangle(DefaultId(), edges, vertices) {}
+  Real Measure() const override {
     auto det  = a_->X() * b_->Y() + b_->X() * c_->Y() + c_->X() * a_->Y();
          det -= b_->X() * a_->Y() + c_->X() * b_->Y() + a_->X() * c_->Y();
     return std::abs(det / 2);
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     auto x = (a_->X() + b_->X() + c_->X()) / 3;
     auto y = (a_->Y() + b_->Y() + c_->Y()) / 3;
     return Point(x, y);
@@ -158,12 +166,15 @@ class Rectangle : public Element, public Cell {
     d_ = *iter++;
     assert(iter == vertices.end());
   }
-  virtual Real Measure() const override {
+  Rectangle(std::initializer_list<Edge*> edges,
+            std::initializer_list<Node*> vertices)
+            : Rectangle(DefaultId(), edges, vertices) {}
+  Real Measure() const override {
     auto h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
     auto w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
     return h * w;
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     auto x = (a_->X() + c_->X()) / 2;
     auto y = (a_->Y() + c_->Y()) / 2;
     return Point(x, y);
