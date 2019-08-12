@@ -10,7 +10,7 @@ using pvc::cfd::Real;
 using pvc::cfd::Point;
 using pvc::cfd::Node;
 using pvc::cfd::Edge;
-using pvc::cfd::Cell;
+using pvc::cfd::Face;
 using pvc::cfd::Triangle;
 using pvc::cfd::Rectangle;
 using pvc::cfd::Mesh;
@@ -57,24 +57,24 @@ TEST_F(EdgeTest, ElementMethods) {
   EXPECT_DOUBLE_EQ(edge.Integrate(integrand), 0.618 * length);
 }
 
-class CellTest : public ::testing::Test {
+class FaceTest : public ::testing::Test {
 };
-TEST_F(CellTest, Constructor) {
-  auto i = Cell::Id{0};
+TEST_F(FaceTest, Constructor) {
+  auto i = Face::Id{0};
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(1.0, 1.0);
   auto ab = Edge(&a, &b);
   auto bc = Edge(&b, &c);
   auto ca = Edge(&c, &a);
-  auto cell = Cell(i, {&ab, &bc, &ca});
-  EXPECT_EQ(cell.I(), i);
+  auto face = Face(i, {&ab, &bc, &ca});
+  EXPECT_EQ(face.I(), i);
 }
 
 class TriangleTest : public ::testing::Test {
 };
 TEST_F(TriangleTest, Constructor) {
-  auto i = Cell::Id{0};
+  auto i = Face::Id{0};
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(0.0, 1.0);
@@ -108,7 +108,7 @@ TEST_F(TriangleTest, ElementMethods) {
 class RectangleTest : public ::testing::Test {
 };
 TEST_F(RectangleTest, Constructor) {
-  auto i = Cell::Id{0};
+  auto i = Face::Id{0};
   auto a = Node(0.0, 0.0);
   auto b = Node(1.0, 0.0);
   auto c = Node(1.0, 1.0);
@@ -124,7 +124,7 @@ TEST_F(RectangleTest, Constructor) {
 }
 TEST_F(RectangleTest, ElementMethods) {
   Real area = 2.0;
-  auto i = Cell::Id{0};
+  auto i = Face::Id{0};
   auto a = Node(0.0, 0.0);
   auto b = Node(2.0, 0.0);
   auto c = Node(2.0, 1.0);
@@ -150,7 +150,7 @@ TEST_F(MeshTest, Constructor) {
   auto mesh = pvc::cfd::Mesh();
   EXPECT_EQ(mesh.CountNodes(), 0);
   EXPECT_EQ(mesh.CountEdges(), 0);
-  EXPECT_EQ(mesh.CountCells(), 0);
+  EXPECT_EQ(mesh.CountFaces(), 0);
 }
 TEST_F(MeshTest, EmplaceNode) {
   auto mesh = pvc::cfd::Mesh();
@@ -206,7 +206,7 @@ TEST_F(MeshTest, ForEachEdge) {
   };
   mesh.ForEachEdge(check_edges);
 }
-TEST_F(MeshTest, EmplaceCell) {
+TEST_F(MeshTest, EmplaceFace) {
   auto mesh = Mesh();
   // Emplace 4 nodes:
   auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
@@ -215,13 +215,13 @@ TEST_F(MeshTest, EmplaceCell) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
-  // Emplace 2 triangular cells:
-  mesh.EmplaceCell(0, {0, 1, 2});
-  mesh.EmplaceCell(1, {0, 2, 3});
-  EXPECT_EQ(mesh.CountCells(), 2);
+  // Emplace 2 triangular faces:
+  mesh.EmplaceFace(0, {0, 1, 2});
+  mesh.EmplaceFace(1, {0, 2, 3});
+  EXPECT_EQ(mesh.CountFaces(), 2);
   EXPECT_EQ(mesh.CountEdges(), 5);
 }
-TEST_F(MeshTest, ForEachCell) {
+TEST_F(MeshTest, ForEachFace) {
 }
 TEST_F(MeshTest, PositiveSide) {
   auto mesh = Mesh();
@@ -240,28 +240,28 @@ TEST_F(MeshTest, PositiveSide) {
   edges.emplace_back(mesh.EmplaceEdge(3, 0));
   edges.emplace_back(mesh.EmplaceEdge(0, 2));
   EXPECT_EQ(mesh.CountEdges(), edges.size());
-  // Emplace 2 triangular cells:
-  auto cells = std::vector<Cell*>();
-  cells.emplace_back(mesh.EmplaceCell(0, {0, 1, 2}));
-  cells.emplace_back(mesh.EmplaceCell(1, {0, 2, 3}));
-  EXPECT_EQ(mesh.CountCells(), 2);
+  // Emplace 2 triangular faces:
+  auto faces = std::vector<Face*>();
+  faces.emplace_back(mesh.EmplaceFace(0, {0, 1, 2}));
+  faces.emplace_back(mesh.EmplaceFace(1, {0, 2, 3}));
+  EXPECT_EQ(mesh.CountFaces(), 2);
   EXPECT_EQ(mesh.CountEdges(), edges.size());
   // Check each edge's positive side and negative side:
   // edges[0] == {nodes[0], nodes[1]}
-  EXPECT_EQ(edges[0]->PositiveSide(), cells[0]);
+  EXPECT_EQ(edges[0]->PositiveSide(), faces[0]);
   EXPECT_EQ(edges[0]->NegativeSide(), nullptr);
   // edges[1] == {nodes[1], nodes[2]}
-  EXPECT_EQ(edges[1]->PositiveSide(), cells[0]);
+  EXPECT_EQ(edges[1]->PositiveSide(), faces[0]);
   EXPECT_EQ(edges[1]->NegativeSide(), nullptr);
   // edges[4] == {nodes[0], nodes[2]}
-  EXPECT_EQ(edges[4]->PositiveSide(), cells[1]);
-  EXPECT_EQ(edges[4]->NegativeSide(), cells[0]);
+  EXPECT_EQ(edges[4]->PositiveSide(), faces[1]);
+  EXPECT_EQ(edges[4]->NegativeSide(), faces[0]);
   // edges[2] == {nodes[2], nodes[3]}
-  EXPECT_EQ(edges[2]->PositiveSide(), cells[1]);
+  EXPECT_EQ(edges[2]->PositiveSide(), faces[1]);
   EXPECT_EQ(edges[2]->NegativeSide(), nullptr);
   // edges[3] == {nodes[0], nodes[3]}
   EXPECT_EQ(edges[3]->PositiveSide(), nullptr);
-  EXPECT_EQ(edges[3]->NegativeSide(), cells[1]);
+  EXPECT_EQ(edges[3]->NegativeSide(), faces[1]);
 }
 
 int main(int argc, char* argv[]) {

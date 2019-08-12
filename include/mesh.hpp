@@ -56,7 +56,7 @@ class Element {
   }
 };
 
-class Cell;
+class Face;
 class Edge : public Element {
  public:
   using Id = std::size_t;
@@ -68,13 +68,13 @@ class Edge : public Element {
   static Id DefaultId() { return -1; }
   Node* Head() const { return head_; }
   Node* Tail() const { return tail_; }
-  Cell* PositiveSide() const { return positive_side_; }
-  Cell* NegativeSide() const { return negative_side_; }
+  Face* PositiveSide() const { return positive_side_; }
+  Face* NegativeSide() const { return negative_side_; }
   // Modifiers
-  void SetPositiveSide(Cell* positive_side) {
+  void SetPositiveSide(Face* positive_side) {
     positive_side_ = positive_side;
   }
-  void SetNegativeSide(Cell* negative_side) {
+  void SetNegativeSide(Face* negative_side) {
     negative_side_ = negative_side;
   }
   // Element Methods
@@ -93,21 +93,21 @@ class Edge : public Element {
   Id i_;
   Node* head_;
   Node* tail_;
-  Cell* positive_side_{nullptr};
-  Cell* negative_side_{nullptr};
+  Face* positive_side_{nullptr};
+  Face* negative_side_{nullptr};
 };
 
-class Cell {
+class Face {
  public:
   friend class Mesh;
   using Id = std::size_t;
   // Constructors
-  explicit Cell(Id i) : i_(i) {}
-  Cell(Id i, std::initializer_list<Edge*> edges) : i_(i) {
+  explicit Face(Id i) : i_(i) {}
+  Face(Id i, std::initializer_list<Edge*> edges) : i_(i) {
     for (auto e : edges) { edges_.emplace(e); }
   }
-  Cell(std::initializer_list<Edge*> edges) :
-       Cell(DefaultId(), edges) {}
+  Face(std::initializer_list<Edge*> edges) :
+       Face(DefaultId(), edges) {}
   // Accessors
   Id I() const { return i_; }
   static Id DefaultId() { return -1; }
@@ -120,12 +120,12 @@ class Cell {
   std::set<Edge*> edges_;
 };
 
-class Triangle : public Element, public Cell {
+class Triangle : public Element, public Face {
  public:
   Triangle(Id i,
            std::initializer_list<Edge*> edges,
            std::initializer_list<Node*> vertices)
-      : Cell(i, edges) {
+      : Face(i, edges) {
     assert(vertices.size() == 3);
     auto iter = vertices.begin();
     a_ = *iter++;
@@ -153,11 +153,11 @@ class Triangle : public Element, public Cell {
   Node* c_;
 };
 
-class Rectangle : public Element, public Cell {
+class Rectangle : public Element, public Face {
  public:
   Rectangle(Id i,
             std::initializer_list<Edge*> edges,
-            std::initializer_list<Node*> vertices) : Cell(i, edges) {
+            std::initializer_list<Node*> vertices) : Face(i, edges) {
     assert(vertices.size() == 4);
     auto iter = vertices.begin();
     a_ = *iter++;
@@ -190,7 +190,7 @@ class Rectangle : public Element, public Cell {
 class Mesh {
   std::map<Node::Id, std::unique_ptr<Node>> id_to_node_;
   std::map<Edge::Id, std::unique_ptr<Edge>> id_to_edge_;
-  std::map<Cell::Id, std::unique_ptr<Cell>> id_to_cell_;
+  std::map<Face::Id, std::unique_ptr<Face>> id_to_face_;
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
 
  public:
@@ -239,29 +239,29 @@ class Mesh {
       return edge_ptr;
     }
   }
-  Cell* EmplaceCell(Cell::Id i, std::initializer_list<Node::Id> nodes) {
-    auto cell_unique_ptr = std::make_unique<Cell>(i);
-    auto cell_ptr = cell_unique_ptr.get();
-    id_to_cell_.emplace(i, std::move(cell_unique_ptr));
+  Face* EmplaceFace(Face::Id i, std::initializer_list<Node::Id> nodes) {
+    auto face_unique_ptr = std::make_unique<Face>(i);
+    auto face_ptr = face_unique_ptr.get();
+    id_to_face_.emplace(i, std::move(face_unique_ptr));
     auto curr = nodes.begin();
     auto next = nodes.begin() + 1;
     while (next != nodes.end()) {
-      LinkCellToEdge(cell_ptr, *curr, *next);
+      LinkFaceToEdge(face_ptr, *curr, *next);
       curr = next++;
     }
     next = nodes.begin();
-    LinkCellToEdge(cell_ptr, *curr, *next);
-    return cell_ptr;
+    LinkFaceToEdge(face_ptr, *curr, *next);
+    return face_ptr;
   }
 
  private:
-  void LinkCellToEdge(Cell* cell, Node::Id head, Node::Id tail) {
+  void LinkFaceToEdge(Face* face, Node::Id head, Node::Id tail) {
     auto edge = EmplaceEdge(head, tail);
-    cell->edges_.emplace(edge);
+    face->edges_.emplace(edge);
     if (head < tail) {
-      edge->SetPositiveSide(cell);
+      edge->SetPositiveSide(face);
     } else {
-      edge->SetNegativeSide(cell);
+      edge->SetNegativeSide(face);
     }
   }
 
@@ -269,7 +269,7 @@ class Mesh {
   // Count primitive objects.
   auto CountNodes() const { return id_to_node_.size(); }
   auto CountEdges() const { return id_to_edge_.size(); }
-  auto CountCells() const { return id_to_cell_.size(); }
+  auto CountFaces() const { return id_to_face_.size(); }
   // Traverse primitive objects.
   template <typename Visitor>
   void ForEachNode(Visitor&& visitor) const {
@@ -278,7 +278,7 @@ class Mesh {
   void ForEachEdge(Visitor&& visitor) const {
   }
   template <class Visitor>
-  void ForEachCell(Visitor&& visitor) const {
+  void ForEachFace(Visitor&& visitor) const {
   }
 };
 
