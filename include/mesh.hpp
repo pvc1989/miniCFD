@@ -1,3 +1,5 @@
+// Copyright 2019 Weicheng Pei and Minghao Yang
+
 #ifndef PVC_CFD_MESH_HPP_
 #define PVC_CFD_MESH_HPP_
 
@@ -20,7 +22,9 @@ using Real = double;
 
 class Point {
  public:
+  // Constructors
   Point(Real x, Real y) : x_(x), y_(y) {}
+  // Accessors
   Real X() const { return x_; }
   Real Y() const { return y_; }
  private:
@@ -28,18 +32,17 @@ class Point {
   Real y_;
 };
 
-class Node {
+class Node : public Point {
  public:
   using Id = std::size_t;
   // Constructors
-  Node(Id i, Real x, Real y) : i_(i), p_(x, y) {}
+  Node(Id i, Real x, Real y) : Point(x, y), i_(i) {}
+  Node(Real x, Real y) : Node(DefaultId(), x, y) {}
   // Accessors
   Id I() const { return i_; }
-  Real X() const { return p_.X(); }
-  Real Y() const { return p_.Y(); }
+  static Id DefaultId() { return -1; }
  private:
   Id i_;
-  Point p_;
 };
 
 class Element {
@@ -53,93 +56,143 @@ class Element {
   }
 };
 
-class Cell;
+class Face;
 class Edge : public Element {
  public:
   using Id = std::size_t;
   // Constructors
   Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
+  Edge(Node* head, Node* tail) : Edge(DefaultId(), head, tail) {}
   // Accessors
   Edge::Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
   Node* Head() const { return head_; }
   Node* Tail() const { return tail_; }
-  Cell* PositiveSide() const { return positive_side_; }
-  Cell* NegativeSide() const { return negative_side_; }
+  Face* PositiveSide() const { return positive_side_; }
+  Face* NegativeSide() const { return negative_side_; }
   // Modifiers
-  void SetPositiveSide(Cell* positive_side) {
+  void SetPositiveSide(Face* positive_side) {
     positive_side_ = positive_side;
   }
-  void SetNegativeSide(Cell* negative_side) {
+  void SetNegativeSide(Face* negative_side) {
     negative_side_ = negative_side;
   }
   // Element Methods
-  virtual Real Measure() const override {
+  Real Measure() const override {
     auto dx = Tail()->X() - Head()->X();
     auto dy = Tail()->Y() - Head()->Y();
     return std::hypot(dx, dy);
   }
-  virtual Point Center() const override {
+  Point Center() const override {
     auto x = (Head()->X() + Tail()->X()) / 2;
     auto y = (Head()->Y() + Tail()->Y()) / 2;
     return Point(x, y);
   }
+
  private:
   Id i_;
   Node* head_;
   Node* tail_;
-  Cell* positive_side_{nullptr};
-  Cell* negative_side_{nullptr};
+  Face* positive_side_{nullptr};
+  Face* negative_side_{nullptr};
 };
 
-class Cell {
+class Face {
  public:
   friend class Mesh;
   using Id = std::size_t;
   // Constructors
-  explicit Cell(Id i) : i_(i) {}
-  Cell(Id i, std::initializer_list<Edge*> edges) : i_(i) {
+  explicit Face(Id i) : i_(i) {}
+  Face(Id i, std::initializer_list<Edge*> edges) : i_(i) {
     for (auto e : edges) { edges_.emplace(e); }
   }
+  Face(std::initializer_list<Edge*> edges) :
+       Face(DefaultId(), edges) {}
   // Accessors
   Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
   // Iterators
   template <class Visitor>
-  void ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor&& visitor) const {
   }
  private:
   Id i_;
   std::set<Edge*> edges_;
 };
 
-class Triangle : public Element {
+class Triangle : public Element, public Face {
  public:
-  virtual Real Measure() const override {
-    return 0;
+  Triangle(Id i,
+           std::initializer_list<Edge*> edges,
+           std::initializer_list<Node*> vertices)
+      : Face(i, edges) {
+    assert(vertices.size() == 3);
+    auto iter = vertices.begin();
+    a_ = *iter++;
+    b_ = *iter++;
+    c_ = *iter++;
+    assert(iter == vertices.end());
   }
-  virtual Point Center() const override {
-    return Point(0.0, 0.0);
+  Triangle(std::initializer_list<Edge*> edges,
+           std::initializer_list<Node*> vertices)
+           : Triangle(DefaultId(), edges, vertices) {}
+  Real Measure() const override {
+    auto det  = a_->X() * b_->Y() + b_->X() * c_->Y() + c_->X() * a_->Y();
+         det -= b_->X() * a_->Y() + c_->X() * b_->Y() + a_->X() * c_->Y();
+    return std::abs(det / 2);
   }
+  Point Center() const override {
+    auto x = (a_->X() + b_->X() + c_->X()) / 3;
+    auto y = (a_->Y() + b_->Y() + c_->Y()) / 3;
+    return Point(x, y);
+  }
+
  private:
-  std::array<Node*, 3> vertices_;
+  Node* a_;
+  Node* b_;
+  Node* c_;
 };
 
-class Rectangle : public Element {
+class Rectangle : public Element, public Face {
  public:
-  virtual Real Measure() const override {
-    return 0;
+  Rectangle(Id i,
+            std::initializer_list<Edge*> edges,
+            std::initializer_list<Node*> vertices) : Face(i, edges) {
+    assert(vertices.size() == 4);
+    auto iter = vertices.begin();
+    a_ = *iter++;
+    b_ = *iter++;
+    c_ = *iter++;
+    d_ = *iter++;
+    assert(iter == vertices.end());
   }
-  virtual Point Center() const override {
-    return Point(0.0, 0.0);
+  Rectangle(std::initializer_list<Edge*> edges,
+            std::initializer_list<Node*> vertices)
+            : Rectangle(DefaultId(), edges, vertices) {}
+  Real Measure() const override {
+    auto h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
+    auto w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
+    return h * w;
   }
+  Point Center() const override {
+    auto x = (a_->X() + c_->X()) / 2;
+    auto y = (a_->Y() + c_->Y()) / 2;
+    return Point(x, y);
+  }
+
  private:
-  std::array<Node*, 4> vertices_;
+  Node* a_;
+  Node* b_;
+  Node* c_;
+  Node* d_;
 };
 
 class Mesh {
   std::map<Node::Id, std::unique_ptr<Node>> id_to_node_;
   std::map<Edge::Id, std::unique_ptr<Edge>> id_to_edge_;
-  std::map<Cell::Id, std::unique_ptr<Cell>> id_to_cell_;
+  std::map<Face::Id, std::unique_ptr<Face>> id_to_face_;
   std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
+
  public:
   // Emplace primitive objects.
   Node* EmplaceNode(Node::Id i, Real x, Real y) {
@@ -186,44 +239,46 @@ class Mesh {
       return edge_ptr;
     }
   }
-  Cell* EmplaceCell(Cell::Id i, std::initializer_list<Node::Id> nodes) {
-    auto cell_unique_ptr = std::make_unique<Cell>(i);
-    auto cell_ptr = cell_unique_ptr.get();
-    id_to_cell_.emplace(i, std::move(cell_unique_ptr));
+  Face* EmplaceFace(Face::Id i, std::initializer_list<Node::Id> nodes) {
+    auto face_unique_ptr = std::make_unique<Face>(i);
+    auto face_ptr = face_unique_ptr.get();
+    id_to_face_.emplace(i, std::move(face_unique_ptr));
     auto curr = nodes.begin();
     auto next = nodes.begin() + 1;
     while (next != nodes.end()) {
-      LinkCellToEdge(cell_ptr, *curr, *next);
+      LinkFaceToEdge(face_ptr, *curr, *next);
       curr = next++;
     }
     next = nodes.begin();
-    LinkCellToEdge(cell_ptr, *curr, *next);
-    return cell_ptr;
+    LinkFaceToEdge(face_ptr, *curr, *next);
+    return face_ptr;
   }
+
  private:
-  void LinkCellToEdge(Cell* cell, Node::Id head, Node::Id tail) {
+  void LinkFaceToEdge(Face* face, Node::Id head, Node::Id tail) {
     auto edge = EmplaceEdge(head, tail);
-    cell->edges_.emplace(edge);
+    face->edges_.emplace(edge);
     if (head < tail) {
-      edge->SetPositiveSide(cell);
+      edge->SetPositiveSide(face);
     } else {
-      edge->SetNegativeSide(cell);
+      edge->SetNegativeSide(face);
     }
   }
+
  public:
   // Count primitive objects.
   auto CountNodes() const { return id_to_node_.size(); }
   auto CountEdges() const { return id_to_edge_.size(); }
-  auto CountCells() const { return id_to_cell_.size(); }
+  auto CountFaces() const { return id_to_face_.size(); }
   // Traverse primitive objects.
   template <typename Visitor>
-  void ForEachNode(Visitor& visitor) const {
+  void ForEachNode(Visitor&& visitor) const {
   }
   template <class Visitor>
-  void ForEachEdge(Visitor& visitor) const {
+  void ForEachEdge(Visitor&& visitor) const {
   }
   template <class Visitor>
-  void ForEachCell(Visitor& visitor) const {
+  void ForEachFace(Visitor&& visitor) const {
   }
 };
 
