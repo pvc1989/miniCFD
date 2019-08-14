@@ -37,14 +37,29 @@ TEST_F(NodeTest, InitializerListConstructor) {
   auto n1 = N1{x};
   EXPECT_EQ(n1.I(), N1::DefaultId());
   EXPECT_EQ(n1.X(), x);
+  // Test N1(Id, std::initializer_list<Real>):
+  n1 = N1(i, {x});
+  EXPECT_EQ(n1.I(), i);
+  EXPECT_EQ(n1.X(), x);
   // Test N2(std::initializer_list<Real>):
   auto n2 = N2{x, y};
   EXPECT_EQ(n2.I(), N2::DefaultId());
   EXPECT_EQ(n2.X(), x);
   EXPECT_EQ(n2.Y(), y);
+  // Test N1(Id, std::initializer_list<Real>):
+  n2 = N2(i, {x, y});
+  EXPECT_EQ(n2.I(), i);
+  EXPECT_EQ(n2.X(), x);
+  EXPECT_EQ(n2.Y(), y);
   // Test N3(std::initializer_list<Real>):
   auto n3 = N3{x, y, z};
   EXPECT_EQ(n3.I(), N3::DefaultId());
+  EXPECT_EQ(n3.X(), x);
+  EXPECT_EQ(n3.Y(), y);
+  EXPECT_EQ(n3.Z(), z);
+  // Test N1(Id, std::initializer_list<Real>):
+  n3 = N3(i, {x, y, z});
+  EXPECT_EQ(n3.I(), i);
   EXPECT_EQ(n3.X(), x);
   EXPECT_EQ(n3.Y(), y);
   EXPECT_EQ(n3.Z(), z);

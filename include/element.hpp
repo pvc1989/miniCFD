@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <initializer_list>
+#include <utility>
 
 namespace pvc {
 namespace cfd {
@@ -27,7 +28,10 @@ class Mesh<Real, kDim>::Node : public Geometry<Real, kDim>::Point {
   using Id = std::size_t;
   // Constructors
   template<class... XYZ>
-  Node(Id i, XYZ&&... xyz) : Geometry<Real, kDim>::Point{xyz...}, i_(i) {}
+  Node(Id i, XYZ&&... xyz)
+      : i_(i), Geometry<Real, kDim>::Point{std::forward<XYZ>(xyz)...} {}
+  Node(Id i, std::initializer_list<Real> xyz)
+      : i_(i), Geometry<Real, kDim>::Point(xyz) {}
   Node(std::initializer_list<Real> xyz) : Node{DefaultId(), xyz} {}
   // Accessors:
   Id I() const { return i_; }
