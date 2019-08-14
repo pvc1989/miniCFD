@@ -143,6 +143,35 @@ TEST_F(Line2Test, Constructor) {
   EXPECT_EQ(line.Head(), &head);
   EXPECT_EQ(line.Tail(), &tail);
 }
+TEST_F(Line2Test, Geometry) {
+  auto line = Line(&head, &tail);
+  EXPECT_EQ(line.Measure(), 0.5);
+  auto c = line.Center();
+  EXPECT_EQ(c.X() + c.X(), head.X() + tail.X());
+  EXPECT_EQ(c.Y() + c.Y(), head.Y() + tail.Y());
+}
+
+class Line3Test : public ::testing::Test {
+ protected:
+  using Real = double;
+  using Point = pvc::cfd::Geometry<Real, 3>::Point;
+  using Line = pvc::cfd::Geometry<Real, 3>::Line;
+  Point head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
+};
+TEST_F(Line3Test, Constructor) {
+  // Test Line(Point*, Point*):
+  auto line = Line(&head, &tail);
+  EXPECT_EQ(line.Head(), &head);
+  EXPECT_EQ(line.Tail(), &tail);
+}
+TEST_F(Line3Test, Geometry) {
+  auto line = Line(&head, &tail);
+  EXPECT_EQ(line.Measure(), 0.5);
+  auto c = line.Center();
+  EXPECT_EQ(c.X() + c.X(), head.X() + tail.X());
+  EXPECT_EQ(c.Y() + c.Y(), head.Y() + tail.Y());
+  EXPECT_EQ(c.Z() + c.Z(), head.Z() + tail.Z());
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
