@@ -71,7 +71,7 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
   // Operators:
   Real Dot(const Vector& that) {
   }
-  Vector Cross(const Vector& that) {
+  auto Cross(const Vector& that) {
   }
 };
 
