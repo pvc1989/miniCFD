@@ -85,7 +85,7 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
  public:
   // Constructors (forward to Point's constructors):
   template <class... T>
-  Vector(T&&... t) : Point(std::forward<T...>(t...)) {}
+  Vector(T&&... t) : Point{std::forward<T>(t)...} {}
   // Operators:
   Real Dot(const Vector& that) {
     Real dot = 0.0;
@@ -111,6 +111,19 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
     return cross;
   }
 };
+
+template <class Real>
+typename Geometry<Real, 3>::Vector CrossProduct(
+    typename Geometry<Real, 3>::Vector const& lhs,
+    typename Geometry<Real, 3>::Vector const& rhs) {
+  return rhs;
+}
+template <class Real>
+Real CrossProduct(
+    typename Geometry<Real, 2>::Vector const& lhs,
+    typename Geometry<Real, 2>::Vector const& rhs) {
+  return 0;
+}
 
 template <class Real, int kDim>
 class Geometry<Real, kDim>::Line {
