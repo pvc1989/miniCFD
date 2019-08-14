@@ -119,6 +119,13 @@ class Geometry<Real, kDim>::Line {
   Line(Point* head, Point* tail) : head_(head), tail_(tail) {}
   Point* Head() const { return head_; }
   Point* Tail() const { return tail_; }
+  Real Measure() const {
+    auto v = *head - *tail;
+    return std::sqrt(v.dot(v));
+  }
+  Point Center() const {
+    return (*head + *tail) / 2;
+  }
  private:
   Point* head_{nullptr};
   Point* tail_{nullptr};
