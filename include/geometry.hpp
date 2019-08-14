@@ -177,7 +177,7 @@ class Triangle : virtual public Geometry<Real, kDim>::Surface {
 };
 
 template <class Real, int kDim>
-class Rectangle : public Geometry<Real, kDim>::Surface {
+class Rectangle : virtual public Geometry<Real, kDim>::Surface {
  public:
   // Types:
   using Point = typename Geometry<Real, kDim>::Point;

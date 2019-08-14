@@ -102,6 +102,31 @@ class TriangleFace : public Mesh<Real, kDim>::Face,
   Id i_;
 };
 
+template <class Real, int kDim>
+class RectangleFace : public Mesh<Real, kDim>::Face, 
+                     public Rectangle<Real, kDim> {
+ public:
+  // Types:
+  using Id = std::size_t;
+  // Constructors:
+  RectangleFace(Id i,
+               typename Mesh<Real, kDim>::Node* a,
+               typename Mesh<Real, kDim>::Node* b,
+               typename Mesh<Real, kDim>::Node* c,
+               typename Mesh<Real, kDim>::Node* d)
+      : i_(i), Rectangle<Real, kDim>(a, b, c, d) {}
+  RectangleFace(typename Mesh<Real, kDim>::Node* a,
+                typename Mesh<Real, kDim>::Node* b,
+                typename Mesh<Real, kDim>::Node* c,
+                typename Mesh<Real, kDim>::Node* d)
+      : RectangleFace(this->DefaultId(), a, b, c, d) {}  
+  // Accessors:
+  Id I() const override { return i_; }
+  // Mesh methods:
+ private: 
+  Id i_;
+};
+
 }  // namespace cfd
 }  // namespace pvc
 #endif  // PVC_CFD_ELEMENT_HPP_
