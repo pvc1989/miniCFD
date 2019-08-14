@@ -8,6 +8,13 @@
 #include <cmath>
 #include <utility>
 
+namespace std {
+template <class Vector>
+auto abs(Vector const& v) {
+  return std::sqrt(v.Dot(v));
+}
+}  // namespace std
+
 namespace pvc {
 namespace cfd {
 
@@ -17,6 +24,7 @@ class Geometry {
   class Point;
   class Vector;
   class Line;
+  class Surface;
 };
 
 template <class Real, int kDim>
@@ -77,7 +85,7 @@ class Geometry<Real, kDim>::Point {
   std::array<Real, kDim> xyz_;
 };
 
-
+// Non-member operators:
 template <class Real>
 auto CrossProduct(
     typename Geometry<Real, 3>::Vector const& lhs,
@@ -101,7 +109,7 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
   template <class... T>
   Vector(T&&... t) : Point{std::forward<T>(t)...} {}
   // Operators:
-  Real Dot(const Vector& that) {
+  Real Dot(const Vector& that) const {
     Real dot = 0.0;
     for (auto i = 0; i != kDim; ++i) {
       dot += this->xyz_[i] * that.xyz_[i];
@@ -133,6 +141,39 @@ class Geometry<Real, kDim>::Line {
  private:
   Point* head_{nullptr};
   Point* tail_{nullptr};
+};
+
+template <class Real, int kDim>
+class Geometry<Real, kDim>::Surface {
+ public:
+  // Accessors:
+  virtual int CountVertices() const = 0;
+  // Geometric methods:
+  virtual Real Measure() const = 0;
+  virtual Geometry<Real, kDim>::Point Center() const = 0;
+};
+
+template <class Real, int kDim>
+class Triangle : public Geometry<Real, kDim>::Surface {
+ public:
+  // Types:
+  using Point = typename Geometry<Real, kDim>::Point;
+  // Constructors:
+  Triangle(Point* a, Point* b, Point* c) : a_(a), b_(b), c_(c) {}
+  // Accessors:
+  int CountVertices() const override { return 3; }
+  // Geometric methods:
+  Real Measure() const override {
+    auto v = (*b_ - *a_).Cross(*c_ - *a_);
+    return std::abs(v) / 2;
+  }
+  Point Center() const override {
+    return (*a_ + *b_ + *c_) / 3;
+  }
+ private:
+  Point* a_;
+  Point* b_;
+  Point* c_;
 };
 
 }  // namespace cfd
