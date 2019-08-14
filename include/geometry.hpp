@@ -5,6 +5,7 @@
 
 #include <array>
 #include <initializer_list>
+#include <utility>
 
 namespace pvc {
 namespace cfd {
@@ -13,6 +14,7 @@ template <class Real, int kDim>
 class Geometry {
  public:
   class Point;
+  class Vector;
   class Line;
 };
 
@@ -37,8 +39,40 @@ class Geometry<Real, kDim>::Point {
   Real X() const { return X<0>(); }
   Real Y() const { return X<1>(); }
   Real Z() const { return X<2>(); }
+  // Operators:
+  Point operator=(const Point& that) const {
+    return Point(that.xyz_.begin(), that.xyz_.end());
+  }
+  Point operator+(const Point& that) const {
+    auto point = Point(xyz_.begin(), xyz_.end());
+    if (this != &that) {
+      for (auto i = 0; i != kDim; ++i) {
+        point.xyz_[i] += that.xyz_[i];
+      }
+    }
+    return point;
+  }
+  Vector operator-(const Point& that) const {
+  }
+  Point operator*(const Real& scalar) const {
+  }
+  Point operator/(const Real& scalar) const {
+  }
  private:
   std::array<Real, kDim> xyz_;
+};
+
+template <class Real, int kDim>
+class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
+ public:
+  // Constructors (forward to Point's constructors):
+  template <class... T>
+  Vector(T&&... t) : Point(std::forward<T...>(t...)) {}
+  // Operators:
+  Real Dot(const Vector& that) {
+  }
+  Vector Cross(const Vector& that) {
+  }
 };
 
 template <class Real, int kDim>
