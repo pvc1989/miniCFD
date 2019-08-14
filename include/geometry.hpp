@@ -5,6 +5,7 @@
 
 #include <array>
 #include <initializer_list>
+#include <cmath>
 #include <utility>
 
 namespace pvc {
@@ -116,15 +117,18 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
 template <class Real, int kDim>
 class Geometry<Real, kDim>::Line {
  public:
+  // Constructors:
   Line(Point* head, Point* tail) : head_(head), tail_(tail) {}
+  // Accessors:
   Point* Head() const { return head_; }
   Point* Tail() const { return tail_; }
+  // Geometric methods:
   Real Measure() const {
-    auto v = *head - *tail;
-    return std::sqrt(v.dot(v));
+    auto v = *head_ - *tail_;
+    return std::sqrt(v.Dot(v));
   }
   Point Center() const {
-    return (*head + *tail) / 2;
+    return (*head_ + *tail_) / 2;
   }
  private:
   Point* head_{nullptr};
