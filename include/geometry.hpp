@@ -76,6 +76,23 @@ class Geometry<Real, kDim>::Point {
   std::array<Real, kDim> xyz_;
 };
 
+
+template <class Real>
+auto CrossProduct(
+    typename Geometry<Real, 3>::Vector const& lhs,
+    typename Geometry<Real, 3>::Vector const& rhs) {
+  auto x = lhs.Y() * rhs.Z() - lhs.Z() * rhs.Y();
+  auto y = lhs.Z() * rhs.X() - lhs.X() * rhs.Z();
+  auto z = lhs.X() * rhs.Y() - lhs.Y() * rhs.X();
+  return typename Geometry<Real, 3>::Vector{x, y, z};
+}
+template <class Real>
+auto CrossProduct(
+    typename Geometry<Real, 2>::Vector const& lhs,
+    typename Geometry<Real, 2>::Vector const& rhs) {
+  return lhs.X() * rhs.Y() - lhs.Y() * rhs.X();
+}
+
 template <class Real, int kDim>
 class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
  public:
@@ -90,36 +107,11 @@ class Geometry<Real, kDim>::Vector : public Geometry<Real, kDim>::Point {
     }
     return dot;
   }
-  Vector Cross(const Vector& that) {
-    assert(kDim >= 2);
-    std::array<Real, 3> xyz;
-    if (kDim == 2) {
-      xyz[0] = 0.0;
-      xyz[1] = 0.0;
-      xyz[2] = this->xyz_[0] * that.xyz_[1] - this->xyz_[1] * that.xyz_[0];
-    }
-    else if (kDim == 3) {
-      xyz[0] = this->xyz_[1] * that.xyz_[2] - this->xyz_[2] * that.xyz_[1];
-      xyz[1] = this->xyz_[2] * that.xyz_[0] - this->xyz_[0] * that.xyz_[2];
-      xyz[2] = this->xyz_[0] * that.xyz_[1] - this->xyz_[1] * that.xyz_[0];
-    }
-    auto cross = Vector(xyz.begin(), xyz.end());
-    return cross;
+  auto Cross(const Vector& that) const {
+    static_assert(kDim == 2 or kDim == 3);
+    return CrossProduct<Real>(*this, that); 
   }
 };
-
-template <class Real>
-typename Geometry<Real, 3>::Vector CrossProduct(
-    typename Geometry<Real, 3>::Vector const& lhs,
-    typename Geometry<Real, 3>::Vector const& rhs) {
-  return rhs;
-}
-template <class Real>
-Real CrossProduct(
-    typename Geometry<Real, 2>::Vector const& lhs,
-    typename Geometry<Real, 2>::Vector const& rhs) {
-  return 0;
-}
 
 template <class Real, int kDim>
 class Geometry<Real, kDim>::Line {
