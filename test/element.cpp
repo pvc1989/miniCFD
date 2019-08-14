@@ -86,6 +86,38 @@ TEST_F(EdgeTest, Constructor) {
   EXPECT_EQ(edge.Tail(), &tail);
 }
 
+class Triangle3Test : public ::testing::Test {
+ protected:
+  using Real = double;
+  using Face = pvc::cfd::TriangleFace<Real, 3>;
+  using Node = pvc::cfd::Mesh<Real, 3>::Node;
+  using Point = pvc::cfd::Geometry<Real, 3>::Point;
+  const int i{8};
+  Node a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
+};
+TEST_F(Triangle3Test, ConstructorWithId) {
+    // Test Triangle(Id, Node*, Node*, Node*):
+    auto triangle = Face(i, &a, &b, &c);
+    EXPECT_EQ(triangle.CountVertices(), 3);
+    EXPECT_EQ(triangle.I(), i);
+}
+TEST_F(Triangle3Test, ConstructorWithoutId) {
+  // Test Triangle(Node*, Node*, Node*):
+  auto triangle = Face(&a, &b, &c);
+  EXPECT_EQ(triangle.CountVertices(), 3);
+  EXPECT_EQ(triangle.I(), Face::DefaultId());
+}
+TEST_F(Triangle3Test, MeshMethods) {
+  auto triangle = Face(&a, &b, &c);
+  EXPECT_EQ(triangle.Measure(), 0.5);
+  auto center = triangle.Center();
+  EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
+  EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
+  EXPECT_EQ(center.Z() * 3, a.Z() + b.Z() + c.Z());
+  auto integrand = [](const Point& point) { return 3.14; };
+  EXPECT_EQ(triangle.Integrate(integrand), triangle.Measure() * 3.14);
+}
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

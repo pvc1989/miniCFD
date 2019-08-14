@@ -64,6 +64,44 @@ class Mesh<Real, kDim>::Edge : public Geometry<Real, kDim>::Line {
   Id i_;
 };
 
+template <class Real, int kDim>
+class Mesh<Real, kDim>::Face : virtual public Geometry<Real, kDim>::Surface {
+ public:
+  // Types:
+  using Id = std::size_t;
+  // Accessors:
+  virtual Id I() const = 0;
+  static Id DefaultId() { return -1; }
+  // Mesh methods:
+  template <class Integrand>
+  auto Integrate(Integrand&& integrand) const {
+    return integrand(this->Center()) * this->Measure();
+  }
+};
+
+template <class Real, int kDim>
+class TriangleFace : public Mesh<Real, kDim>::Face, 
+                     public Triangle<Real, kDim> {
+ public:
+  // Types:
+  using Id = std::size_t;
+  // Constructors:
+  TriangleFace(Id i,
+               typename Mesh<Real, kDim>::Node* a,
+               typename Mesh<Real, kDim>::Node* b,
+               typename Mesh<Real, kDim>::Node* c)
+      : i_(i), Triangle<Real, kDim>(a, b, c) {}
+  TriangleFace(typename Mesh<Real, kDim>::Node* a,
+               typename Mesh<Real, kDim>::Node* b,
+               typename Mesh<Real, kDim>::Node* c)
+      : TriangleFace(this->DefaultId(), a, b, c) {}  
+  // Accessors:
+  Id I() const override { return i_; }
+  // Mesh methods:
+ private: 
+  Id i_;
+};
+
 }  // namespace cfd
 }  // namespace pvc
 #endif  // PVC_CFD_ELEMENT_HPP_
