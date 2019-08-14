@@ -12,6 +12,26 @@
 
 namespace pvc {
 namespace cfd {
+namespace mesh {
+
+template <class Real, int kDim>
+class Node : public Geometry<Real, kDim>::Point {
+ public:
+  using Id = std::size_t;
+  // Constructors
+  template<class... XYZ>
+  Node(Id i, XYZ&&... xyz)
+      : i_(i), Geometry<Real, kDim>::Point{std::forward<XYZ>(xyz)...} {}
+  Node(Id i, std::initializer_list<Real> xyz)
+      : i_(i), Geometry<Real, kDim>::Point(xyz) {}
+  Node(std::initializer_list<Real> xyz) : Node{DefaultId(), xyz} {}
+  // Accessors:
+  Id I() const { return i_; }
+  static Id DefaultId() { return -1; }
+ private:
+  Id i_;
+};
+}  // namespace mesh
 
 template <class Real, int kDim>
 class Mesh {

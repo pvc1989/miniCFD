@@ -9,9 +9,9 @@
 class NodeTest : public ::testing::Test {
  protected:
   using Real = double;
-  using N1 = pvc::cfd::Mesh<Real, 1>::Node;
-  using N2 = pvc::cfd::Mesh<Real, 2>::Node;
-  using N3 = pvc::cfd::Mesh<Real, 3>::Node;
+  using N1 = pvc::cfd::mesh::Node<Real, 1>;
+  using N2 = pvc::cfd::mesh::Node<Real, 2>;
+  using N3 = pvc::cfd::mesh::Node<Real, 3>;
   const int i{8};
   const Real x{1.0}, y{2.0}, z{3.0};
 };
