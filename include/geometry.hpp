@@ -176,6 +176,31 @@ class Triangle : public Geometry<Real, kDim>::Surface {
   Point* c_;
 };
 
+template <class Real, int kDim>
+class Rectangle : public Geometry<Real, kDim>::Surface {
+ public:
+  // Types:
+  using Point = typename Geometry<Real, kDim>::Point;
+  // Constructors:
+  Rectangle(Point* a, Point* b, Point* c, Point* d)
+      : a_(a), b_(b), c_(c) , d_(d){}
+  // Accessors:
+  int CountVertices() const override { return 4; }
+  // Geometric methods:
+  Real Measure() const override {
+    auto v = (*b_ - *a_).Cross(*c_ - *a_);
+    return std::abs(v);
+  }
+  Point Center() const override {
+    return (*a_ + *c_) / 2;
+  }
+ private:
+  Point* a_;
+  Point* b_;
+  Point* c_;
+  Point* d_;
+};
+
 }  // namespace cfd
 }  // namespace pvc
 #endif  // PVC_CFD_GEOMETRY_HPP_
