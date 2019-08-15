@@ -9,9 +9,9 @@
 class PointTest : public ::testing::Test {
  public:
   using Real = double;
-  using P1 = pvc::cfd::Geometry<Real, 1>::Point;
-  using P2 = pvc::cfd::Geometry<Real, 2>::Point;
-  using P3 = pvc::cfd::Geometry<Real, 3>::Point;
+  using P1 = pvc::cfd::geometry::Point<Real, 1>;
+  using P2 = pvc::cfd::geometry::Point<Real, 2>;
+  using P3 = pvc::cfd::geometry::Point<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
 TEST_F(PointTest, InitializerListConstructor) {
@@ -56,10 +56,10 @@ TEST_F(PointTest, Accessors) {
 class VectorTest : public ::testing::Test {
  public:
   using Real = double;
-  using P2 = pvc::cfd::Geometry<Real, 2>::Point;
-  using P3 = pvc::cfd::Geometry<Real, 3>::Point;
-  using V2 = pvc::cfd::Geometry<Real, 2>::Vector;
-  using V3 = pvc::cfd::Geometry<Real, 3>::Vector;
+  using P2 = pvc::cfd::geometry::Point<Real, 2>;
+  using P3 = pvc::cfd::geometry::Point<Real, 3>;
+  using V2 = pvc::cfd::geometry::Vector<Real, 2>;
+  using V3 = pvc::cfd::geometry::Vector<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
 TEST_F(VectorTest, Constructors) {
@@ -133,8 +133,8 @@ TEST_F(VectorTest, OperatorsForV2) {
 class Line2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Point = pvc::cfd::Geometry<Real, 2>::Point;
-  using Line = pvc::cfd::Geometry<Real, 2>::Line;
+  using Line = pvc::cfd::geometry::Line<Real, 2>;
+  using Point = Line::Point;
   Point head{0.0, 0.0}, tail{0.3, 0.4};
 };
 TEST_F(Line2Test, Constructor) {
@@ -143,7 +143,7 @@ TEST_F(Line2Test, Constructor) {
   EXPECT_EQ(line.Head(), &head);
   EXPECT_EQ(line.Tail(), &tail);
 }
-TEST_F(Line2Test, Geometry) {
+TEST_F(Line2Test, geometry) {
   auto line = Line(&head, &tail);
   EXPECT_EQ(line.Measure(), 0.5);
   auto c = line.Center();
@@ -154,8 +154,8 @@ TEST_F(Line2Test, Geometry) {
 class Line3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Point = pvc::cfd::Geometry<Real, 3>::Point;
-  using Line = pvc::cfd::Geometry<Real, 3>::Line;
+  using Line = pvc::cfd::geometry::Line<Real, 3>;
+  using Point = Line::Point;
   Point head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
 };
 TEST_F(Line3Test, Constructor) {
@@ -164,7 +164,7 @@ TEST_F(Line3Test, Constructor) {
   EXPECT_EQ(line.Head(), &head);
   EXPECT_EQ(line.Tail(), &tail);
 }
-TEST_F(Line3Test, Geometry) {
+TEST_F(Line3Test, geometry) {
   auto line = Line(&head, &tail);
   EXPECT_EQ(line.Measure(), 0.5);
   auto c = line.Center();
@@ -176,7 +176,7 @@ TEST_F(Line3Test, Geometry) {
 class Triangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Triangle = pvc::cfd::Triangle<Real, 2>;
+  using Triangle = pvc::cfd::geometry::Triangle<Real, 2>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
 };
@@ -185,7 +185,7 @@ TEST_F(Triangle2Test, Constructor) {
   auto triangle = Triangle(&a, &b, &c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle2Test, Geometry) {
+TEST_F(Triangle2Test, geometry) {
   auto triangle = Triangle(&a, &b, &c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
@@ -195,7 +195,7 @@ TEST_F(Triangle2Test, Geometry) {
 class Triangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Triangle = pvc::cfd::Triangle<Real, 3>;
+  using Triangle = pvc::cfd::geometry::Triangle<Real, 3>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
 };
@@ -204,7 +204,7 @@ TEST_F(Triangle3Test, Constructor) {
   auto triangle = Triangle(&a, &b, &c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle3Test, Geometry) {
+TEST_F(Triangle3Test, geometry) {
   auto triangle = Triangle(&a, &b, &c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
@@ -216,7 +216,7 @@ TEST_F(Triangle3Test, Geometry) {
 class Rectangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Rectangle = pvc::cfd::Rectangle<Real, 2>;
+  using Rectangle = pvc::cfd::geometry::Rectangle<Real, 2>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
 };
@@ -225,7 +225,7 @@ TEST_F(Rectangle2Test, Constructor) {
   auto rectangle = Rectangle(&a, &b, &c, &d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle2Test, Geometry) {
+TEST_F(Rectangle2Test, geometry) {
   auto rectangle = Rectangle(&a, &b, &c, &d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();
@@ -235,7 +235,7 @@ TEST_F(Rectangle2Test, Geometry) {
 class Rectangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Rectangle = pvc::cfd::Rectangle<Real, 3>;
+  using Rectangle = pvc::cfd::geometry::Rectangle<Real, 3>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};
 };
@@ -244,7 +244,7 @@ TEST_F(Rectangle3Test, Constructor) {
   auto rectangle = Rectangle(&a, &b, &c, &d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle3Test, Geometry) {
+TEST_F(Rectangle3Test, geometry) {
   auto rectangle = Rectangle(&a, &b, &c, &d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();
