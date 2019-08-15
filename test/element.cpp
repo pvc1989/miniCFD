@@ -95,6 +95,36 @@ TEST_F(EdgeTest, MeshMethods) {
   EXPECT_EQ(edge.Integrate(integrand), edge.Measure() * 3.14);
 }
 
+class Triangle2Test : public ::testing::Test {
+ protected:
+  using Real = double;
+  using Face = pvc::cfd::mesh::Triangle<Real, 2>;
+  using Node = Face::Node;
+  const int i{8};
+  Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
+};
+TEST_F(Triangle2Test, ConstructorWithId) {
+    // Test Triangle(Id, Node*, Node*, Node*):
+    auto face = Face(i, &a, &b, &c);
+    EXPECT_EQ(face.CountVertices(), 3);
+    EXPECT_EQ(face.I(), i);
+}
+TEST_F(Triangle2Test, ConstructorWithoutId) {
+  // Test Triangle(Node*, Node*, Node*):
+  auto face = Face(&a, &b, &c);
+  EXPECT_EQ(face.CountVertices(), 3);
+  EXPECT_EQ(face.I(), Face::DefaultId());
+}
+TEST_F(Triangle2Test, MeshMethods) {
+  auto face = Face(&a, &b, &c);
+  EXPECT_EQ(face.Measure(), 0.5);
+  auto center = face.Center();
+  EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
+  EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
+  auto integrand = [](const auto& point) { return 3.14; };
+  EXPECT_EQ(face.Integrate(integrand), face.Measure() * 3.14);
+}
+
 class Triangle3Test : public ::testing::Test {
  protected:
   using Real = double;
@@ -122,6 +152,36 @@ TEST_F(Triangle3Test, MeshMethods) {
   EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
   EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
   EXPECT_EQ(center.Z() * 3, a.Z() + b.Z() + c.Z());
+  auto integrand = [](const auto& point) { return 3.14; };
+  EXPECT_EQ(face.Integrate(integrand), face.Measure() * 3.14);
+}
+
+class Rectangle2Test : public ::testing::Test {
+ protected:
+  using Real = double;
+  using Face = pvc::cfd::mesh::Rectangle<Real, 2>;
+  using Node = Face::Node;
+  const int i{8};
+  Node a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
+};
+TEST_F(Rectangle2Test, ConstructorWithId) {
+    // Test Rectangle(Id, Node*, Node*, Node*, Node*):
+    auto face = Face(i, &a, &b, &c, &d);
+    EXPECT_EQ(face.CountVertices(), 4);
+    EXPECT_EQ(face.I(), i);
+}
+TEST_F(Rectangle2Test, ConstructorWithoutId) {
+  // Test Rectangle(Node*, Node*, Node*, Node*):
+  auto face = Face(&a, &b, &c, &d);
+  EXPECT_EQ(face.CountVertices(), 4);
+  EXPECT_EQ(face.I(), Face::DefaultId());
+}
+TEST_F(Rectangle2Test, MeshMethods) {
+  auto face = Face(&a, &b, &c, &d);
+  EXPECT_EQ(face.Measure(), 1.0);
+  auto center = face.Center();
+  EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
+  EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
   auto integrand = [](const auto& point) { return 3.14; };
   EXPECT_EQ(face.Integrate(integrand), face.Measure() * 3.14);
 }
