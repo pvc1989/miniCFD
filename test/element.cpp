@@ -9,9 +9,9 @@
 class NodeTest : public ::testing::Test {
  protected:
   using Real = double;
-  using N1 = pvc::cfd::mesh::Node<Real, 1>;
-  using N2 = pvc::cfd::mesh::Node<Real, 2>;
-  using N3 = pvc::cfd::mesh::Node<Real, 3>;
+  using N1 = pvc::cfd::element::Node<Real, 1>;
+  using N2 = pvc::cfd::element::Node<Real, 2>;
+  using N3 = pvc::cfd::element::Node<Real, 3>;
   const int i{8};
   const Real x{1.0}, y{2.0}, z{3.0};
 };
@@ -68,7 +68,7 @@ TEST_F(NodeTest, InitializerListConstructor) {
 class EdgeTest : public ::testing::Test {
  protected:
   using Real = double;
-  using Edge = pvc::cfd::mesh::Edge<Real, 2>;
+  using Edge = pvc::cfd::element::Edge<Real, 2>;
   using Node = Edge::Node;
   Node head{0.3, 0.0}, tail{0.0, 0.4};
 };
@@ -98,7 +98,7 @@ TEST_F(EdgeTest, MeshMethods) {
 class Triangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::mesh::Triangle<Real, 2>;
+  using Face = pvc::cfd::element::Triangle<Real, 2>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
@@ -128,7 +128,7 @@ TEST_F(Triangle2Test, MeshMethods) {
 class Triangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::mesh::Triangle<Real, 3>;
+  using Face = pvc::cfd::element::Triangle<Real, 3>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
@@ -159,7 +159,7 @@ TEST_F(Triangle3Test, MeshMethods) {
 class Rectangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::mesh::Rectangle<Real, 2>;
+  using Face = pvc::cfd::element::Rectangle<Real, 2>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
@@ -189,7 +189,7 @@ TEST_F(Rectangle2Test, MeshMethods) {
 class Rectangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::mesh::Rectangle<Real, 3>;
+  using Face = pvc::cfd::element::Rectangle<Real, 3>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};

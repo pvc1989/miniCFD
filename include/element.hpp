@@ -12,7 +12,7 @@
 
 namespace pvc {
 namespace cfd {
-namespace mesh {
+namespace element {
 
 template <class Real, int kDim>
 class Node : public geometry::Point<Real, kDim> {
@@ -78,7 +78,7 @@ class Face : virtual public geometry::Surface<Real, kDim> {
 
 template <class Real, int kDim>
 class Triangle :
-    public Face<Real, kDim>,
+    virtual public Face<Real, kDim>,
     public geometry::Triangle<Real, kDim> {
  public:
   // Types:
@@ -98,7 +98,7 @@ class Triangle :
 
 template <class Real, int kDim>
 class Rectangle :
-    public Face<Real, kDim>,
+    virtual public Face<Real, kDim>,
     public geometry::Rectangle<Real, kDim> {
  public:
   // Types:
