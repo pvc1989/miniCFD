@@ -75,6 +75,7 @@ class Point {
     }
     return point;
   }
+
  protected:
   std::array<Real, kDim> xyz_;
 };
@@ -97,7 +98,7 @@ class Vector : public Point<Real, kDim> {
  public:
   // Constructors (forward to Point's constructors):
   template <class... T>
-  Vector(T&&... t) : Point<Real, kDim>{std::forward<T>(t)...} {}
+  explicit Vector(T&&... t) : Point<Real, kDim>{std::forward<T>(t)...} {}
   // Operators:
   Real Dot(const Vector& that) const {
     Real dot = 0.0;
@@ -108,7 +109,7 @@ class Vector : public Point<Real, kDim> {
   }
   auto Cross(const Vector& that) const {
     static_assert(kDim == 2 or kDim == 3);
-    return CrossProduct<Real>(*this, that); 
+    return CrossProduct<Real>(*this, that);
   }
 };
 
@@ -177,7 +178,7 @@ class Rectangle : virtual public Surface<Real, kDim> {
   using Point = Point<Real, kDim>;
   // Constructors:
   Rectangle(Point* a, Point* b, Point* c, Point* d)
-      : a_(a), b_(b), c_(c) , d_(d){}
+      : a_(a), b_(b), c_(c) , d_(d) {}
   // Accessors:
   int CountVertices() const override { return 4; }
   // Geometric methods:

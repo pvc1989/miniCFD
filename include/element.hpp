@@ -3,12 +3,12 @@
 #ifndef PVC_CFD_ELEMENT_HPP_
 #define PVC_CFD_ELEMENT_HPP_
 
-#include "geometry.hpp"
-
 #include <algorithm>
 #include <cstddef>
 #include <initializer_list>
 #include <utility>
+
+#include "geometry.hpp"
 
 namespace pvc {
 namespace cfd {
@@ -57,6 +57,7 @@ class Edge : public geometry::Line<Real, kDim> {
   auto Integrate(Integrand&& integrand) const {
     return integrand(this->Center()) * this->Measure();
   }
+
  private:
   Id i_;
 };
@@ -88,11 +89,11 @@ class Triangle :
   Triangle(Id i, Node* a, Node* b, Node* c)
       : i_(i), geometry::Triangle<Real, kDim>(a, b, c) {}
   Triangle(Node* a, Node* b, Node* c)
-      : Triangle(this->DefaultId(), a, b, c) {}  
+      : Triangle(this->DefaultId(), a, b, c) {}
   // Accessors:
   Id I() const override { return i_; }
   // Mesh methods:
- private: 
+ private:
   Id i_;
 };
 
@@ -108,15 +109,15 @@ class Rectangle :
   Rectangle(Id i, Node* a, Node* b, Node* c, Node* d)
       : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
   Rectangle(Node* a, Node* b, Node* c, Node* d)
-      : Rectangle(this->DefaultId(), a, b, c, d) {}  
+      : Rectangle(this->DefaultId(), a, b, c, d) {}
   // Accessors:
   Id I() const override { return i_; }
   // Mesh methods:
- private: 
+ private:
   Id i_;
 };
 
-}  // namespace mesh
+}  // namespace element
 }  // namespace cfd
 }  // namespace pvc
 #endif  // PVC_CFD_ELEMENT_HPP_

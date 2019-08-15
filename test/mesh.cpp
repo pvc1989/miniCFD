@@ -39,7 +39,7 @@ class TriangleTest : public ::testing::Test {
   using Domain = Triangle<double>;
   using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
-  
+
   Domain::Id i{0};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
   Boundary ab{&a, &b}, bc{&b, &c}, ca{&c, &a};
