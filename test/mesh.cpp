@@ -81,41 +81,122 @@ TEST_F(RectangleTest, ElementMethods) {
   EXPECT_DOUBLE_EQ(rectangle.Integrate(integrand), 0.618 * rectangle.Measure());
 }
 
-class BuilderTest : public ::testing::Test {
- protected: 
-  Builder builder{};
+class MeshTest : public ::testing::Test {
+ protected:
+  using Domain = Domain<double>;
+  using Boundary = typename Domain::Boundary;
+  using Node = typename Boundary::Node;
+  using Mesh = Mesh<double>;
+  Mesh mesh{};
+  const std::vector<double> x{0.0, 1.0, 1.0, 0.0}, y{0.0, 0.0, 1.0, 1.0};
 };
-TEST_F(BuilderTest, Constructor) {
-  auto mesh = builder.GetMesh();
+TEST_F(MeshTest, Constructor) {
   EXPECT_EQ(mesh.CountNodes(), 0);
-  EXPECT_EQ(mesh.CountEdges(), 0);
-  EXPECT_EQ(mesh.CountFaces(), 0);
+  EXPECT_EQ(mesh.CountBoundaries(), 0);
+  EXPECT_EQ(mesh.CountDomains(), 0);
 }
-TEST_F(BuilderTest, EmplaceNode) {
-  auto mesh = pvc::cfd::Builder();
+TEST_F(MeshTest, EmplaceNode) {
   mesh.EmplaceNode(0, 0.0, 0.0);
   EXPECT_EQ(mesh.CountNodes(), 1);
 }
-TEST_F(BuilderTest, ForEachNode) {
-  auto mesh = Builder();
+TEST_F(MeshTest, ForEachNode) {
   // Emplace 4 nodes:
-  auto x = std::vector<Real>{0.0, 1.0, 1.0, 0.0};
-  auto y = std::vector<Real>{0.0, 0.0, 1.0, 1.0};
   for (auto i = 0; i != x.size(); ++i) {
     mesh.EmplaceNode(i, x[i], y[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Check each node's index and coordinates:
-  auto check_coordinates = [&x, &y](Node const& node) {
+  auto check_coordinates = [&](auto const& node) {
     auto i = node.I();
     EXPECT_EQ(node.X(), x[i]);
     EXPECT_EQ(node.Y(), y[i]);
   };
   mesh.ForEachNode(check_coordinates);
 }
-}  // amr2d
-}  // mesh
-}  // cfd
+TEST_F(MeshTest, EmplaceBoundary) {
+  mesh.EmplaceNode(0, 0.0, 0.0);
+  mesh.EmplaceNode(1, 1.0, 0.0);
+  EXPECT_EQ(mesh.CountNodes(), 2);
+  mesh.EmplaceBoundary(0, 0, 1);
+  EXPECT_EQ(mesh.CountBoundaries(), 1);
+}
+TEST_F(MeshTest, ForEachBoundary) {
+  // Emplace 4 nodes:
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
+  }
+  EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Emplace 6 boundaries:
+  auto e = 0;
+  mesh.EmplaceBoundary(e++, 0, 1);
+  mesh.EmplaceBoundary(e++, 1, 2);
+  mesh.EmplaceBoundary(e++, 2, 3);
+  mesh.EmplaceBoundary(e++, 3, 0);
+  mesh.EmplaceBoundary(e++, 2, 0);
+  mesh.EmplaceBoundary(e++, 3, 1);
+  EXPECT_EQ(mesh.CountBoundaries(), e);
+  // For each boundary: head's index < tail's index
+  auto check_boundaries = [](auto const& boundary) {
+    EXPECT_LT(boundary.Head()->I(), boundary.Tail()->I());
+  };
+  mesh.ForEachBoundary(check_boundaries);
+}
+TEST_F(MeshTest, EmplaceDomain) {
+  // Emplace 4 nodes:
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
+  }
+  EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Emplace 2 triangular domains:
+  mesh.EmplaceDomain(0, {0, 1, 2});
+  mesh.EmplaceDomain(1, {0, 2, 3});
+  EXPECT_EQ(mesh.CountDomains(), 2);
+  EXPECT_EQ(mesh.CountBoundaries(), 5);
+}
+TEST_F(MeshTest, ForEachDomain) {
+}
+TEST_F(MeshTest, PositiveSide) {
+  // Emplace 4 nodes:
+  auto x = std::vector<double>{0.0, 1.0, 1.0, 0.0};
+  auto y = std::vector<double>{0.0, 0.0, 1.0, 1.0};
+  for (auto i = 0; i != x.size(); ++i) {
+    mesh.EmplaceNode(i, x[i], y[i]);
+  }
+  EXPECT_EQ(mesh.CountNodes(), x.size());
+  // Emplace 5 boundaries:
+  auto boundaries = std::vector<Boundary*>();
+  boundaries.emplace_back(mesh.EmplaceBoundary(0, 1));
+  boundaries.emplace_back(mesh.EmplaceBoundary(1, 2));
+  boundaries.emplace_back(mesh.EmplaceBoundary(2, 3));
+  boundaries.emplace_back(mesh.EmplaceBoundary(3, 0));
+  boundaries.emplace_back(mesh.EmplaceBoundary(0, 2));
+  EXPECT_EQ(mesh.CountBoundaries(), boundaries.size());
+  // Emplace 2 triangular domains:
+  auto domains = std::vector<Domain*>();
+  domains.emplace_back(mesh.EmplaceDomain(0, {0, 1, 2}));
+  domains.emplace_back(mesh.EmplaceDomain(1, {0, 2, 3}));
+  EXPECT_EQ(mesh.CountDomains(), 2);
+  EXPECT_EQ(mesh.CountBoundaries(), boundaries.size());
+  // Check each boundary's positive side and negative side:
+  // boundaries[0] == {nodes[0], nodes[1]}
+  EXPECT_EQ(boundaries[0]->GetSide<+1>(), domains[0]);
+  EXPECT_EQ(boundaries[0]->GetSide<-1>(), nullptr);
+  // boundaries[1] == {nodes[1], nodes[2]}
+  EXPECT_EQ(boundaries[1]->GetSide<+1>(), domains[0]);
+  EXPECT_EQ(boundaries[1]->GetSide<-1>(), nullptr);
+  // boundaries[4] == {nodes[0], nodes[2]}
+  EXPECT_EQ(boundaries[4]->GetSide<+1>(), domains[1]);
+  EXPECT_EQ(boundaries[4]->GetSide<-1>(), domains[0]);
+  // boundaries[2] == {nodes[2], nodes[3]}
+  EXPECT_EQ(boundaries[2]->GetSide<+1>(), domains[1]);
+  EXPECT_EQ(boundaries[2]->GetSide<-1>(), nullptr);
+  // boundaries[3] == {nodes[0], nodes[3]}
+  EXPECT_EQ(boundaries[3]->GetSide<+1>(), nullptr);
+  EXPECT_EQ(boundaries[3]->GetSide<-1>(), domains[1]);
+}
+}  // namespace amr2d
+}  // namespace mesh
+}  // namespace cfd
 }  // namespace pvc
 
 int main(int argc, char* argv[]) {
