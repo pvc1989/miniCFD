@@ -3,11 +3,14 @@
 #ifndef PVC_CFD_MESH_HPP_
 #define PVC_CFD_MESH_HPP_
 
+#include "element.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <forward_list>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -17,6 +20,94 @@
 
 namespace pvc {
 namespace cfd {
+namespace mesh {
+namespace amr2d {
+
+template <class Real>
+using Node = element::Node<Real, 2>;
+
+template <class Real>
+class Domain;
+
+template <class Real>
+class Boundary : public element::Edge<Real, 2> {
+ public:
+  // Types:
+  using Node = Node<Real>;
+  using Domain = Domain<Real>;
+  using Id = typename element::Edge<Real, 2>::Id;
+  // Constructors:
+  template <class... Args>
+  Boundary(Args&&... args) : element::Edge<Real, 2>(std::forward<Args>(args)...) {}
+  // Accessors:
+  template <int kSign>
+  Domain* GetSide() const {
+    static_assert(kSign == +1 or kSign == -1);
+    return nullptr;
+  }
+  template <>
+  Domain* GetSide<+1>() const { return positive_side_; };
+  template <>
+  Domain* GetSide<-1>() const { return negative_side_; };
+  // Mutators:
+  template <int kSign>
+  void SetSide(Domain* face) {
+    static_assert(kSign == +1 or kSign == -1);
+  }
+  template <>
+  void SetSide<+1>(Domain* face) { positive_side_ = face; };
+  template <>
+  void SetSide<-1>(Domain* face) { negative_side_ = face; };
+ private:
+  Domain* positive_side_{nullptr};
+  Domain* negative_side_{nullptr};
+};
+
+template <class Real>
+class Domain : virtual public element::Face<Real, 2> {
+ public:
+  // Types:
+  using Boundary = Boundary<Real>;
+  // Constructors:
+  Domain(std::initializer_list<Boundary*> boundaries)
+      : boundaries_{boundaries} {}
+  // Iterators:
+  template <class Visitor>
+  void ForEachBoundary(Visitor&& visitor) {
+    for (auto& b : boundaries_) { visitor(b); }
+  }
+ protected:
+  std::forward_list<Boundary*> boundaries_;
+};
+
+template <class Real>
+class Triangle : public Domain<Real>, public element::Triangle<Real, 2> {
+ public:
+  // Types:
+  using Id = typename element::Triangle<Real, 2>::Id;
+  using Boundary = Boundary<Real>;
+  using Node = typename Boundary::Node;
+  // Constructors:
+  Triangle(Id i, Node* a, Node* b, Node* c, 
+           std::initializer_list<Boundary*> boundaries)
+      : element::Triangle<Real, 2>(i, a, b, c), Domain<Real>{boundaries} {}
+};
+
+template <class Real>
+class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
+ public:
+  // Types:
+  using Id = typename element::Rectangle<Real, 2>::Id;
+  using Boundary = Boundary<Real>;
+  using Node = typename Boundary::Node;
+  // Constructors:
+  Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
+           std::initializer_list<Boundary*> boundaries)
+      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
+};
+
+}  // namespace amr2d
+}  // namespace mesh
 
 using Real = double;
 
