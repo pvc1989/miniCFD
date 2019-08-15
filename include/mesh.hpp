@@ -106,89 +106,6 @@ class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
       : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
 };
 
-}  // namespace amr2d
-}  // namespace mesh
-
-using Real = double;
-
-class Point {
- public:
-  // Constructors
-  Point(Real x, Real y) : x_(x), y_(y) {}
-  // Accessors
-  Real X() const { return x_; }
-  Real Y() const { return y_; }
- private:
-  Real x_;
-  Real y_;
-};
-
-class Node : public Point {
- public:
-  using Id = std::size_t;
-  // Constructors
-  Node(Id i, Real x, Real y) : Point(x, y), i_(i) {}
-  Node(Real x, Real y) : Node(DefaultId(), x, y) {}
-  // Accessors
-  Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
- private:
-  Id i_;
-};
-
-class Element {
- public:
-  virtual Real Measure() const = 0;
-  virtual Point Center() const = 0;
-  template <class Integrand>
-  auto Integrate(Integrand&& integrand) const {
-    // Default implementation:
-    return integrand(Center()) * Measure();
-  }
-};
-
-class Face;
-class Edge : public Element {
- public:
-  using Id = std::size_t;
-  // Constructors
-  Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
-  Edge(Node* head, Node* tail) : Edge(DefaultId(), head, tail) {}
-  // Accessors
-  Edge::Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
-  Node* Head() const { return head_; }
-  Node* Tail() const { return tail_; }
-  Face* PositiveSide() const { return positive_side_; }
-  Face* NegativeSide() const { return negative_side_; }
-  // Modifiers
-  void SetPositiveSide(Face* positive_side) {
-    positive_side_ = positive_side;
-  }
-  void SetNegativeSide(Face* negative_side) {
-    negative_side_ = negative_side;
-  }
-  // Element Methods
-  Real Measure() const override {
-    auto dx = Tail()->X() - Head()->X();
-    auto dy = Tail()->Y() - Head()->Y();
-    return std::hypot(dx, dy);
-  }
-  Point Center() const override {
-    auto x = (Head()->X() + Tail()->X()) / 2;
-    auto y = (Head()->Y() + Tail()->Y()) / 2;
-    return Point(x, y);
-  }
-
- private:
-  Id i_;
-  Node* head_;
-  Node* tail_;
-  Face* positive_side_{nullptr};
-  Face* negative_side_{nullptr};
-};
-
-class Face {
  public:
   friend class Mesh;
   using Id = std::size_t;
@@ -197,87 +114,13 @@ class Face {
   Face(Id i, std::initializer_list<Edge*> edges) : i_(i) {
     for (auto e : edges) { edges_.emplace(e); }
   }
-  Face(std::initializer_list<Edge*> edges) :
-       Face(DefaultId(), edges) {}
-  // Accessors
-  Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
-  // Iterators
   template <class Visitor>
   void ForEachEdge(Visitor&& visitor) const {
   }
+  template <class Visitor>
+  void ForEachFace(Visitor&& visitor) const {
+  }
  private:
-  Id i_;
-  std::set<Edge*> edges_;
-};
-
-class Triangle : public Element, public Face {
- public:
-  Triangle(Id i,
-           std::initializer_list<Edge*> edges,
-           std::initializer_list<Node*> vertices)
-      : Face(i, edges) {
-    assert(vertices.size() == 3);
-    auto iter = vertices.begin();
-    a_ = *iter++;
-    b_ = *iter++;
-    c_ = *iter++;
-    assert(iter == vertices.end());
-  }
-  Triangle(std::initializer_list<Edge*> edges,
-           std::initializer_list<Node*> vertices)
-           : Triangle(DefaultId(), edges, vertices) {}
-  Real Measure() const override {
-    auto det  = a_->X() * b_->Y() + b_->X() * c_->Y() + c_->X() * a_->Y();
-         det -= b_->X() * a_->Y() + c_->X() * b_->Y() + a_->X() * c_->Y();
-    return std::abs(det / 2);
-  }
-  Point Center() const override {
-    auto x = (a_->X() + b_->X() + c_->X()) / 3;
-    auto y = (a_->Y() + b_->Y() + c_->Y()) / 3;
-    return Point(x, y);
-  }
-
- private:
-  Node* a_;
-  Node* b_;
-  Node* c_;
-};
-
-class Rectangle : public Element, public Face {
- public:
-  Rectangle(Id i,
-            std::initializer_list<Edge*> edges,
-            std::initializer_list<Node*> vertices) : Face(i, edges) {
-    assert(vertices.size() == 4);
-    auto iter = vertices.begin();
-    a_ = *iter++;
-    b_ = *iter++;
-    c_ = *iter++;
-    d_ = *iter++;
-    assert(iter == vertices.end());
-  }
-  Rectangle(std::initializer_list<Edge*> edges,
-            std::initializer_list<Node*> vertices)
-            : Rectangle(DefaultId(), edges, vertices) {}
-  Real Measure() const override {
-    auto h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
-    auto w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
-    return h * w;
-  }
-  Point Center() const override {
-    auto x = (a_->X() + c_->X()) / 2;
-    auto y = (a_->Y() + c_->Y()) / 2;
-    return Point(x, y);
-  }
-
- private:
-  Node* a_;
-  Node* b_;
-  Node* c_;
-  Node* d_;
-};
-
 class Mesh {
   std::map<Node::Id, std::unique_ptr<Node>> id_to_node_;
   std::map<Edge::Id, std::unique_ptr<Edge>> id_to_edge_;
