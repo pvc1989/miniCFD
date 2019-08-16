@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <forward_list>
 #include <initializer_list>
 #include <map>
 #include <memory>
@@ -15,273 +16,247 @@
 #include <utility>
 #include <vector>
 
+#include "element.hpp"
+
 namespace pvc {
 namespace cfd {
+namespace mesh {
+namespace amr2d {
 
-using Real = double;
+template <class Real>
+using Node = element::Node<Real, 2>;
 
-class Point {
+template <class Real>
+class Domain;
+
+template <class Real>
+class Boundary : public element::Edge<Real, 2> {
  public:
-  // Constructors
-  Point(Real x, Real y) : x_(x), y_(y) {}
-  // Accessors
-  Real X() const { return x_; }
-  Real Y() const { return y_; }
- private:
-  Real x_;
-  Real y_;
-};
-
-class Node : public Point {
- public:
-  using Id = std::size_t;
-  // Constructors
-  Node(Id i, Real x, Real y) : Point(x, y), i_(i) {}
-  Node(Real x, Real y) : Node(DefaultId(), x, y) {}
-  // Accessors
-  Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
- private:
-  Id i_;
-};
-
-class Element {
- public:
-  virtual Real Measure() const = 0;
-  virtual Point Center() const = 0;
-  template <class Integrand>
-  auto Integrate(Integrand&& integrand) const {
-    // Default implementation:
-    return integrand(Center()) * Measure();
+  // Types:
+  using Node = Node<Real>;
+  using Domain = Domain<Real>;
+  using Id = typename element::Edge<Real, 2>::Id;
+  // Constructors:
+  template <class... Args>
+  explicit Boundary(Args&&... args) :
+      element::Edge<Real, 2>(std::forward<Args>(args)...) {}
+  // Accessors:
+  template <int kSign>
+  Domain* GetSide() const {
+    static_assert(kSign == +1 or kSign == -1);
+    return nullptr;
   }
-};
-
-class Face;
-class Edge : public Element {
- public:
-  using Id = std::size_t;
-  // Constructors
-  Edge(Id i, Node* head, Node* tail) : i_(i), head_(head), tail_(tail) {}
-  Edge(Node* head, Node* tail) : Edge(DefaultId(), head, tail) {}
-  // Accessors
-  Edge::Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
-  Node* Head() const { return head_; }
-  Node* Tail() const { return tail_; }
-  Face* PositiveSide() const { return positive_side_; }
-  Face* NegativeSide() const { return negative_side_; }
-  // Modifiers
-  void SetPositiveSide(Face* positive_side) {
-    positive_side_ = positive_side;
+  template <>
+  Domain* GetSide<+1>() const { return positive_side_; }
+  template <>
+  Domain* GetSide<-1>() const { return negative_side_; }
+  // Mutators:
+  template <int kSign>
+  void SetSide(Domain* domain) {
+    static_assert(kSign == +1 or kSign == -1);
   }
-  void SetNegativeSide(Face* negative_side) {
-    negative_side_ = negative_side;
-  }
-  // Element Methods
-  Real Measure() const override {
-    auto dx = Tail()->X() - Head()->X();
-    auto dy = Tail()->Y() - Head()->Y();
-    return std::hypot(dx, dy);
-  }
-  Point Center() const override {
-    auto x = (Head()->X() + Tail()->X()) / 2;
-    auto y = (Head()->Y() + Tail()->Y()) / 2;
-    return Point(x, y);
-  }
+  template <>
+  void SetSide<+1>(Domain* domain) { positive_side_ = domain; }
+  template <>
+  void SetSide<-1>(Domain* domain) { negative_side_ = domain; }
 
  private:
-  Id i_;
-  Node* head_;
-  Node* tail_;
-  Face* positive_side_{nullptr};
-  Face* negative_side_{nullptr};
+  Domain* positive_side_{nullptr};
+  Domain* negative_side_{nullptr};
 };
 
-class Face {
+template <class Real>
+class Mesh;
+
+template <class Real>
+class Domain : virtual public element::Face<Real, 2> {
+  friend class Mesh<Real>;
  public:
-  friend class Mesh;
-  using Id = std::size_t;
-  // Constructors
-  explicit Face(Id i) : i_(i) {}
-  Face(Id i, std::initializer_list<Edge*> edges) : i_(i) {
-    for (auto e : edges) { edges_.emplace(e); }
-  }
-  Face(std::initializer_list<Edge*> edges) :
-       Face(DefaultId(), edges) {}
-  // Accessors
-  Id I() const { return i_; }
-  static Id DefaultId() { return -1; }
-  // Iterators
+  virtual ~Domain() = default;
+  // Types:
+  using Boundary = Boundary<Real>;
+  using Id = typename element::Face<Real, 2>::Id;
+  // Constructors:
+  Domain(std::initializer_list<Boundary*> boundaries)
+      : boundaries_{boundaries} {}
+  // Iterators:
   template <class Visitor>
-  void ForEachEdge(Visitor&& visitor) const {
+  void ForEachBoundary(Visitor&& visitor) {
+    for (auto& b : boundaries_) { visitor(b); }
   }
- private:
-  Id i_;
-  std::set<Edge*> edges_;
+ protected:
+  std::forward_list<Boundary*> boundaries_;
 };
 
-class Triangle : public Element, public Face {
+template <class Real>
+class Triangle : public Domain<Real>, public element::Triangle<Real, 2> {
  public:
-  Triangle(Id i,
-           std::initializer_list<Edge*> edges,
-           std::initializer_list<Node*> vertices)
-      : Face(i, edges) {
-    assert(vertices.size() == 3);
-    auto iter = vertices.begin();
-    a_ = *iter++;
-    b_ = *iter++;
-    c_ = *iter++;
-    assert(iter == vertices.end());
-  }
-  Triangle(std::initializer_list<Edge*> edges,
-           std::initializer_list<Node*> vertices)
-           : Triangle(DefaultId(), edges, vertices) {}
-  Real Measure() const override {
-    auto det  = a_->X() * b_->Y() + b_->X() * c_->Y() + c_->X() * a_->Y();
-         det -= b_->X() * a_->Y() + c_->X() * b_->Y() + a_->X() * c_->Y();
-    return std::abs(det / 2);
-  }
-  Point Center() const override {
-    auto x = (a_->X() + b_->X() + c_->X()) / 3;
-    auto y = (a_->Y() + b_->Y() + c_->Y()) / 3;
-    return Point(x, y);
-  }
-
- private:
-  Node* a_;
-  Node* b_;
-  Node* c_;
+  // Types:
+  using Id = typename Domain<Real>::Id;
+  using Boundary = Boundary<Real>;
+  using Node = typename Boundary::Node;
+  // Constructors:
+  Triangle(Id i, Node* a, Node* b, Node* c,
+           std::initializer_list<Boundary*> boundaries)
+      : element::Triangle<Real, 2>(i, a, b, c), Domain<Real>{boundaries} {}
 };
 
-class Rectangle : public Element, public Face {
+template <class Real>
+class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
  public:
-  Rectangle(Id i,
-            std::initializer_list<Edge*> edges,
-            std::initializer_list<Node*> vertices) : Face(i, edges) {
-    assert(vertices.size() == 4);
-    auto iter = vertices.begin();
-    a_ = *iter++;
-    b_ = *iter++;
-    c_ = *iter++;
-    d_ = *iter++;
-    assert(iter == vertices.end());
-  }
-  Rectangle(std::initializer_list<Edge*> edges,
-            std::initializer_list<Node*> vertices)
-            : Rectangle(DefaultId(), edges, vertices) {}
-  Real Measure() const override {
-    auto h = std::hypot(a_->X() - b_->X(), a_->Y() - b_->Y());
-    auto w = std::hypot(b_->X() - c_->X(), b_->Y() - c_->Y());
-    return h * w;
-  }
-  Point Center() const override {
-    auto x = (a_->X() + c_->X()) / 2;
-    auto y = (a_->Y() + c_->Y()) / 2;
-    return Point(x, y);
-  }
-
- private:
-  Node* a_;
-  Node* b_;
-  Node* c_;
-  Node* d_;
+  // Types:
+  using Id = typename Domain<Real>::Id;
+  using Boundary = Boundary<Real>;
+  using Node = typename Boundary::Node;
+  // Constructors:
+  Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
+           std::initializer_list<Boundary*> boundaries)
+      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
 };
 
+template <class Real>
 class Mesh {
-  std::map<Node::Id, std::unique_ptr<Node>> id_to_node_;
-  std::map<Edge::Id, std::unique_ptr<Edge>> id_to_edge_;
-  std::map<Face::Id, std::unique_ptr<Face>> id_to_face_;
-  std::map<std::pair<Node::Id, Node::Id>, Edge*> node_pair_to_edge_;
+ public:
+  // Types:
+  using Node = Node<Real>;
+  using Boundary = Boundary<Real>;
+  using Domain = Domain<Real>;
+
+ private:
+  // Types:
+  using NodeId = typename Node::Id;
+  using BoundaryId = typename Boundary::Id;
+  using DomainId = typename Domain::Id;
 
  public:
+  // Constructors:
+  Mesh() = default;
+  // Count primitive objects.
+  auto CountNodes() const { return id_to_node_.size(); }
+  auto CountBoundaries() const { return id_to_boundary_.size(); }
+  auto CountDomains() const { return id_to_domain_.size(); }
+  // Traverse primitive objects.
+  template <class Visitor>
+  void ForEachNode(Visitor&& visitor) const {
+  }
+  template <class Visitor>
+  void ForEachBoundary(Visitor&& visitor) const {
+  }
+  template <class Visitor>
+  void ForEachDomain(Visitor&& visitor) const {
+  }
+
   // Emplace primitive objects.
-  Node* EmplaceNode(Node::Id i, Real x, Real y) {
+  Node* EmplaceNode(NodeId i, Real x, Real y) {
     auto node_unique_ptr = std::make_unique<Node>(i, x, y);
     auto node_ptr = node_unique_ptr.get();
     id_to_node_.emplace(i, std::move(node_unique_ptr));
     return node_ptr;
   }
-  Edge* EmplaceEdge(Edge::Id edge_id,
-                    Node::Id head_id, Node::Id tail_id) {
+  Boundary* EmplaceBoundary(BoundaryId boundary_id,
+                            NodeId head_id, NodeId tail_id) {
     if (head_id > tail_id) { std::swap(head_id, tail_id); }
     auto head_iter = id_to_node_.find(head_id);
     auto tail_iter = id_to_node_.find(tail_id);
     assert(head_iter != id_to_node_.end());
     assert(tail_iter != id_to_node_.end());
-    std::pair<Node::Id, Node::Id> node_pair{head_id, tail_id};
-    // Re-emplace an edge is not allowed:
-    assert(node_pair_to_edge_.count(node_pair) == 0);
-    // Emplace a new edge:
-    auto edge_unique_ptr = std::make_unique<Edge>(edge_id,
+    std::pair<NodeId, NodeId> node_pair{head_id, tail_id};
+    // Re-emplace an boundary is not allowed:
+    assert(node_pair_to_boundary_.count(node_pair) == 0);
+    // Emplace a new boundary:
+    auto boundary_unique_ptr = std::make_unique<Boundary>(boundary_id,
                                                   head_iter->second.get(),
                                                   tail_iter->second.get());
-    auto edge_ptr = edge_unique_ptr.get();
-    node_pair_to_edge_.emplace(node_pair, edge_ptr);
-    id_to_edge_.emplace(edge_id, std::move(edge_unique_ptr));
-    assert(id_to_edge_.size() == node_pair_to_edge_.size());
-    return edge_ptr;
+    auto boundary_ptr = boundary_unique_ptr.get();
+    node_pair_to_boundary_.emplace(node_pair, boundary_ptr);
+    id_to_boundary_.emplace(boundary_id, std::move(boundary_unique_ptr));
+    assert(id_to_boundary_.size() == node_pair_to_boundary_.size());
+    return boundary_ptr;
   }
-  Edge* EmplaceEdge(Node::Id head_id, Node::Id tail_id) {
+  Boundary* EmplaceBoundary(NodeId head_id, NodeId tail_id) {
     if (head_id > tail_id) { std::swap(head_id, tail_id); }
     auto node_pair = std::minmax(head_id, tail_id);
-    auto iter = node_pair_to_edge_.find(node_pair);
-    if (iter != node_pair_to_edge_.end()) {
+    auto iter = node_pair_to_boundary_.find(node_pair);
+    if (iter != node_pair_to_boundary_.end()) {
       return iter->second;
-    } else {  // Emplace a new edge:
-      auto last = id_to_edge_.rbegin();
-      Edge::Id edge_id = 0;
-      if (last != id_to_edge_.rend()) {  // Find the next unused id:
-        edge_id = last->first + 1;
-        while (id_to_edge_.count(edge_id)) { ++edge_id; }
+    } else {  // Emplace a new boundary:
+      auto last = id_to_boundary_.rbegin();
+      BoundaryId boundary_id = 0;
+      if (last != id_to_boundary_.rend()) {  // Find the next unused id:
+        boundary_id = last->first + 1;
+        while (id_to_boundary_.count(boundary_id)) { ++boundary_id; }
       }
-      auto edge_ptr = EmplaceEdge(edge_id, head_id, tail_id);
-      node_pair_to_edge_.emplace(node_pair, edge_ptr);
-      return edge_ptr;
+      auto boundary_ptr = EmplaceBoundary(boundary_id, head_id, tail_id);
+      node_pair_to_boundary_.emplace(node_pair, boundary_ptr);
+      return boundary_ptr;
     }
   }
-  Face* EmplaceFace(Face::Id i, std::initializer_list<Node::Id> nodes) {
-    auto face_unique_ptr = std::make_unique<Face>(i);
-    auto face_ptr = face_unique_ptr.get();
-    id_to_face_.emplace(i, std::move(face_unique_ptr));
+  Domain* EmplaceDomain(DomainId i, std::initializer_list<NodeId> nodes) {
+    std::unique_ptr<Domain> domain_unique_ptr{nullptr};
+    if (nodes.size() == 3) {
+      auto curr = nodes.begin();
+      auto a = *curr++;
+      auto b = *curr++;
+      auto c = *curr++;
+      assert(curr == nodes.end());
+      auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
+                    EmplaceBoundary(c, a)};
+      auto triangle_unique_ptr = std::make_unique<Triangle<Real>>(
+          i,
+          id_to_node_[a].get(), id_to_node_[b].get(), id_to_node_[c].get(),
+          edges);
+      domain_unique_ptr.reset(triangle_unique_ptr.release());
+    } else if (nodes.size() == 4) {
+      auto curr = nodes.begin();
+      auto a = *curr++;
+      auto b = *curr++;
+      auto c = *curr++;
+      auto d = *curr++;
+      assert(curr == nodes.end());
+      auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
+                    EmplaceBoundary(c, d), EmplaceBoundary(d, a)};
+      auto rectangle_unique_ptr = std::make_unique<Rectangle<Real>>(
+          i,
+          id_to_node_[a].get(), id_to_node_[b].get(),
+          id_to_node_[c].get(), id_to_node_[d].get(),
+          edges);
+      domain_unique_ptr.reset(rectangle_unique_ptr.release());
+    } else {
+      assert(false);
+    }
+    auto domain_ptr = domain_unique_ptr.get();
+    id_to_domain_.emplace(i, std::move(domain_unique_ptr));
     auto curr = nodes.begin();
     auto next = nodes.begin() + 1;
     while (next != nodes.end()) {
-      LinkFaceToEdge(face_ptr, *curr, *next);
+      LinkDomainToBoundary(domain_ptr, *curr, *next);
       curr = next++;
     }
     next = nodes.begin();
-    LinkFaceToEdge(face_ptr, *curr, *next);
-    return face_ptr;
+    LinkDomainToBoundary(domain_ptr, *curr, *next);
+    return domain_ptr;
   }
 
  private:
-  void LinkFaceToEdge(Face* face, Node::Id head, Node::Id tail) {
-    auto edge = EmplaceEdge(head, tail);
-    face->edges_.emplace(edge);
+  void LinkDomainToBoundary(Domain* domain, NodeId head, NodeId tail) {
+    auto boundary = EmplaceBoundary(head, tail);
+    domain->boundaries_.emplace_front(boundary);
     if (head < tail) {
-      edge->SetPositiveSide(face);
+      boundary->template SetSide<+1>(domain);
     } else {
-      edge->SetNegativeSide(face);
+      boundary->template SetSide<-1>(domain);
     }
   }
 
- public:
-  // Count primitive objects.
-  auto CountNodes() const { return id_to_node_.size(); }
-  auto CountEdges() const { return id_to_edge_.size(); }
-  auto CountFaces() const { return id_to_face_.size(); }
-  // Traverse primitive objects.
-  template <typename Visitor>
-  void ForEachNode(Visitor&& visitor) const {
-  }
-  template <class Visitor>
-  void ForEachEdge(Visitor&& visitor) const {
-  }
-  template <class Visitor>
-  void ForEachFace(Visitor&& visitor) const {
-  }
+ private:
+  std::map<NodeId, std::unique_ptr<Node>> id_to_node_;
+  std::map<BoundaryId, std::unique_ptr<Boundary>> id_to_boundary_;
+  std::map<DomainId, std::unique_ptr<Domain>> id_to_domain_;
+  std::map<std::pair<NodeId, NodeId>, Boundary*> node_pair_to_boundary_;
 };
 
+}  // namespace amr2d
+}  // namespace mesh
 }  // namespace cfd
 }  // namespace pvc
 #endif  // PVC_CFD_MESH_HPP_
