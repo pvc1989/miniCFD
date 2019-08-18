@@ -9,3 +9,30 @@ add_test(NAME Element COMMAND element)
 add_executable(mesh mesh.cpp)
 target_link_libraries(mesh gtest_main)
 add_test(NAME Mesh COMMAND mesh)
+
+find_package(VTK REQUIRED)
+if (vtkIOExport_LOADED AND vtkIOImport_LOADED)
+vtk_module_config(VTK
+  vtkCommonCore
+  vtkIOLegacy
+  vtkIOXML
+  vtkIOGeometry
+  vtkIOImport
+  vtkIOExport
+  vtksys
+)
+else()
+vtk_module_config(VTK
+  vtkCommonCore
+  vtkIOLegacy
+  vtkIOXML
+  vtkIOGeometry
+  vtkIOImport
+  vtksys
+)
+endif()
+include(${VTK_USE_FILE})
+
+add_executable(reader reader.cpp)
+target_link_libraries(reader ${VTK_LIBRARIES} gtest_main)
+add_test(NAME Reader COMMAND reader)
