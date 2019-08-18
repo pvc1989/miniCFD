@@ -40,11 +40,15 @@ class VtkReader : public Reader<Real> {
  public:
   bool ReadFile(const std::string& file_name) override {
     auto data_set = Dispatch(file_name.c_str());
-    bool status = data_set ? true : false;
-    ReadNodes(data_set);
-    ReadDomains(data_set);
-    if (data_set) { data_set->Delete(); }
-    return status;
+    if (data_set) {
+      mesh_.reset(new Mesh());
+      ReadNodes(data_set);
+      ReadDomains(data_set);
+      data_set->Delete();
+      return true;
+    } else {
+      return false;
+    }
   }
   std::unique_ptr<Mesh> GetMesh() override {
     auto temp = std::make_unique<Mesh>();
