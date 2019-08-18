@@ -144,6 +144,7 @@ class Mesh {
   }
   template <class Visitor>
   void ForEachDomain(Visitor&& visitor) const {
+    for (auto& [id, domain_ptr] : id_to_domain_) { visitor(*domain_ptr); }
   }
 
   // Emplace primitive objects.
