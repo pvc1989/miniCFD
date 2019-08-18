@@ -4,7 +4,9 @@
 #define PVC_CFD_READER_HPP_
 
 #include <string>
+#include <memory>
 
+// For .vtk files:
 #include <vtkDataSetReader.h>
 #include <vtkDataSet.h>
 // For .vtu files:
@@ -25,17 +27,18 @@ namespace mesh {
 template <class Real>
 class Reader {
  public:
-  virtual bool ReadFile(std::string file_name) = 0;
-  virtual amr2d::Mesh<Real> GetMesh() = 0;
+  using Mesh = amr2d::Mesh<Real>;
+  virtual bool ReadFile(const std::string& file_name) = 0;
+  virtual std::unique_ptr<Mesh> GetMesh() = 0;
 };
 
 template <class Real>
 class VtkReader : public Reader<Real> {
   using Mesh = amr2d::Mesh<Real>;
   using NodeId = typename Mesh::Node::Id;
-  Mesh mesh_;
+
  public:
-  bool ReadFile(std::string file_name) override {
+  bool ReadFile(const std::string& file_name) override {
     auto data_set = Dispatch(file_name.c_str());
     bool status = data_set ? true : false;
     ReadNodes(data_set);
@@ -43,8 +46,8 @@ class VtkReader : public Reader<Real> {
     if (data_set) { data_set->Delete(); }
     return status;
   }
-  amr2d::Mesh<Real> GetMesh() override {
-    Mesh temp{};
+  std::unique_ptr<Mesh> GetMesh() override {
+    auto temp = std::make_unique<Mesh>();
     std::swap(temp, mesh_);
     return temp;
   }
@@ -53,7 +56,7 @@ class VtkReader : public Reader<Real> {
     int n = data_set->GetNumberOfPoints();
     for (int i = 0; i < n; i++) {
       auto xyz = data_set->GetPoint(i);
-      mesh_.EmplaceNode(i, xyz[0], xyz[1]);
+      mesh_->EmplaceNode(i, xyz[0], xyz[1]);
     }
   }
   void ReadDomains(vtkDataSet* data_set) {
@@ -65,14 +68,14 @@ class VtkReader : public Reader<Real> {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
-        mesh_.EmplaceDomain(i, {a, b, c});
+        mesh_->EmplaceDomain(i, {a, b, c});
       }
       else if (data_set->GetCellType(i) == 9) {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
         auto d = NodeId(ids->GetId(3));
-        mesh_.EmplaceDomain(i, {a, b, c, d});
+        mesh_->EmplaceDomain(i, {a, b, c, d});
       }
       else {
         continue;
@@ -102,6 +105,9 @@ class VtkReader : public Reader<Real> {
     reader->GetOutput()->Register(reader);
     return vtkDataSet::SafeDownCast(reader->GetOutput());
   }
+
+ private:
+  std::unique_ptr<Mesh> mesh_;
 };
 
 }  // namespace mesh

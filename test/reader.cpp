@@ -19,20 +19,21 @@ class VtkReaderTest : public ::testing::Test {
   VtkReader<double> reader;
 };
 TEST_F(VtkReaderTest, ReadFile) {
-  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_ascii.vtu"));
-  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_binary.vtu"));
+  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_tiny_ascii.vtk"));
+  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_tiny_ascii.vtu"));
 }
 TEST_F(VtkReaderTest, GetMesh) {
-  reader.ReadFile("../test/data/ugrid_ascii.vtu");
+  reader.ReadFile("../test/data/ugrid_tiny_ascii.vtu");
   auto mesh = reader.GetMesh();
-  EXPECT_EQ(mesh.CountNodes(), 9);
-  EXPECT_EQ(mesh.CountBoundaries(), 14);
-  EXPECT_EQ(mesh.CountDomains(), 6);
+  ASSERT_TRUE(mesh);
+  EXPECT_EQ(mesh->CountNodes(), 6);
+  EXPECT_EQ(mesh->CountBoundaries(), 8);
+  EXPECT_EQ(mesh->CountDomains(), 3);
   // sum of each face's area
   double area = 0.0;
   auto visitor = [&area](const Domain& d) { area += d.Measure(); };
-  mesh.ForEachDomain(visitor);
-  EXPECT_EQ(area, 4.0);
+  mesh->ForEachDomain(visitor);
+  EXPECT_EQ(area, 2.0);
 }
 
 }  // namespace mesh
