@@ -11,5 +11,8 @@ mkdir build
 cd build
 cmake -S .. -B .  # cmake 3.13.5+
 cmake --build .
-./test/mesh_test
+./test/geometry
+./test/element
+./test/mesh
+./test/reader
 ```
