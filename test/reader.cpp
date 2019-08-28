@@ -22,21 +22,23 @@ class VtkReaderTest : public ::testing::Test {
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(VtkReaderTest, ReadFile) {
-  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtk"));
-  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtu"));
+  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "tiny.vtk"));
+  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "tiny.vtu"));
 }
 TEST_F(VtkReaderTest, GetMesh) {
-  reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtu");
-  auto mesh = reader.GetMesh();
-  ASSERT_TRUE(mesh);
-  EXPECT_EQ(mesh->CountNodes(), 6);
-  EXPECT_EQ(mesh->CountBoundaries(), 8);
-  EXPECT_EQ(mesh->CountDomains(), 3);
-  // sum of each face's area
-  double area = 0.0;
-  auto visitor = [&area](const Domain& d) { area += d.Measure(); };
-  mesh->ForEachDomain(visitor);
-  EXPECT_EQ(area, 2.0);
+  for (auto suffix : {".vtk", ".vtu"}) {
+    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    auto mesh = reader.GetMesh();
+    ASSERT_TRUE(mesh);
+    EXPECT_EQ(mesh->CountNodes(), 6);
+    EXPECT_EQ(mesh->CountBoundaries(), 8);
+    EXPECT_EQ(mesh->CountDomains(), 3);
+    // sum of each face's area
+    double area = 0.0;
+    auto visitor = [&area](const Domain& d) { area += d.Measure(); };
+    mesh->ForEachDomain(visitor);
+    EXPECT_EQ(area, 2.0);
+  }
 }
 TEST_F(VtkReaderTest, MediumMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
