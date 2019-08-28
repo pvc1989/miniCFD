@@ -2,10 +2,12 @@
 
 #include "reader.hpp"
 
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "mesh.hpp"
+#include "data.hpp"  // defines TEST_DATA_DIR
 
 namespace pvc {
 namespace cfd {
@@ -17,13 +19,14 @@ class VtkReaderTest : public ::testing::Test {
   using Mesh = amr2d::Mesh<Real>;
   using Domain = Mesh::Domain;
   VtkReader<double> reader;
+  const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(VtkReaderTest, ReadFile) {
-  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_tiny_ascii.vtk"));
-  EXPECT_TRUE(reader.ReadFile("../test/data/ugrid_tiny_ascii.vtu"));
+  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtk"));
+  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtu"));
 }
 TEST_F(VtkReaderTest, GetMesh) {
-  reader.ReadFile("../test/data/ugrid_tiny_ascii.vtu");
+  reader.ReadFile(test_data_dir_ + "ugrid_tiny_ascii.vtu");
   auto mesh = reader.GetMesh();
   ASSERT_TRUE(mesh);
   EXPECT_EQ(mesh->CountNodes(), 6);

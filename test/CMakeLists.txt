@@ -33,6 +33,12 @@ vtk_module_config(VTK
 endif()
 include(${VTK_USE_FILE})
 
+configure_file (
+  "${PROJECT_SOURCE_DIR}/test/data.hpp.in"
+  "${PROJECT_BINARY_DIR}/test/data.hpp"
+)
+include_directories("${PROJECT_BINARY_DIR}/test")
+
 add_executable(reader reader.cpp)
 target_link_libraries(reader ${VTK_LIBRARIES} gtest_main)
 add_test(NAME Reader COMMAND reader)
