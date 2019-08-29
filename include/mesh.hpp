@@ -23,15 +23,34 @@ namespace cfd {
 namespace mesh {
 namespace amr2d {
 
-template <class Real>
-using Node = element::Node<Real, 2>;
+struct Empty {};
 
-template <class Real>
+template <class Real, class Data = Empty>
+class Node : public element::Node<Real, 2> {
+ public:
+  Data data;
+  // Types:
+  using Id = typename element::Node<Real, 2>::Id;
+  // Constructors:
+  template <class... Args>
+  explicit Node(Args&&... args) :
+      element::Node<Real, 2>(std::forward<Args>(args)...) {}
+  Node(Id i, std::initializer_list<Real> xyz)
+      : element::Node<Real, 2>(i, xyz) {}
+  Node(std::initializer_list<Real> xyz)
+      : element::Node<Real, 2>{xyz} {}
+};
+
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
 class Domain;
 
-template <class Real>
+template <class Real, class Data = Empty>
 class Boundary : public element::Edge<Real, 2> {
  public:
+  Data data;
   // Types:
   using Node = Node<Real>;
   using Domain = Domain<Real>;
@@ -65,17 +84,25 @@ class Boundary : public element::Edge<Real, 2> {
   Domain* negative_side_{nullptr};
 };
 
-template <class Real>
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
 class Mesh;
 
-template <class Real>
+template <class Real,
+          class NodeData,
+          class BoundaryData,
+          class DomainData>
 class Domain : virtual public element::Face<Real, 2> {
-  friend class Mesh<Real>;
+  friend class Mesh<Real, NodeData, BoundaryData, DomainData>;
  public:
+  DomainData data;
   virtual ~Domain() = default;
   // Types:
-  using Boundary = Boundary<Real>;
+  using Boundary = Boundary<Real, BoundaryData>;
   using Id = typename element::Face<Real, 2>::Id;
+  using Data = DomainData;
   // Constructors:
   Domain(std::initializer_list<Boundary*> boundaries)
       : boundaries_{boundaries} {}
@@ -88,8 +115,8 @@ class Domain : virtual public element::Face<Real, 2> {
   std::forward_list<Boundary*> boundaries_;
 };
 
-template <class Real>
-class Triangle : public Domain<Real>, public element::Triangle<Real, 2> {
+template <class Real, class Data = Empty>
+class Triangle : public Domain<Real, Data>, public element::Triangle<Real, 2> {
  public:
   // Types:
   using Id = typename Domain<Real>::Id;
@@ -101,8 +128,8 @@ class Triangle : public Domain<Real>, public element::Triangle<Real, 2> {
       : element::Triangle<Real, 2>(i, a, b, c), Domain<Real>{boundaries} {}
 };
 
-template <class Real>
-class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
+template <class Real, class Data = Empty>
+class Rectangle : public Domain<Real, Data>, public element::Rectangle<Real, 2> {
  public:
   // Types:
   using Id = typename Domain<Real>::Id;
@@ -114,13 +141,16 @@ class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
       : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
 };
 
-template <class Real>
+template <class Real,
+          class NodeData,
+          class BoundaryData,
+          class DomainData>
 class Mesh {
  public:
   // Types:
-  using Node = Node<Real>;
-  using Boundary = Boundary<Real>;
-  using Domain = Domain<Real>;
+  using Node = Node<Real, NodeData>;
+  using Boundary = Boundary<Real, BoundaryData>;
+  using Domain = Domain<Real, DomainData>;
 
  private:
   // Types:
