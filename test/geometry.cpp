@@ -1,17 +1,22 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#include "geometry.hpp"
-
 #include <vector>
 
+#include "mini/geometry/dim0.hpp"
+#include "mini/geometry/dim1.hpp"
+#include "mini/geometry/dim2.hpp"
+
 #include "gtest/gtest.h"
+
+namespace mini {
+namespace geometry {
 
 class PointTest : public ::testing::Test {
  public:
   using Real = double;
-  using P1 = pvc::cfd::geometry::Point<Real, 1>;
-  using P2 = pvc::cfd::geometry::Point<Real, 2>;
-  using P3 = pvc::cfd::geometry::Point<Real, 3>;
+  using P1 = Point<Real, 1>;
+  using P2 = Point<Real, 2>;
+  using P3 = Point<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
 TEST_F(PointTest, InitializerListConstructor) {
@@ -56,10 +61,10 @@ TEST_F(PointTest, Accessors) {
 class VectorTest : public ::testing::Test {
  public:
   using Real = double;
-  using P2 = pvc::cfd::geometry::Point<Real, 2>;
-  using P3 = pvc::cfd::geometry::Point<Real, 3>;
-  using V2 = pvc::cfd::geometry::Vector<Real, 2>;
-  using V3 = pvc::cfd::geometry::Vector<Real, 3>;
+  using P2 = Point<Real, 2>;
+  using P3 = Point<Real, 3>;
+  using V2 = Vector<Real, 2>;
+  using V3 = Vector<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
 TEST_F(VectorTest, Constructors) {
@@ -133,7 +138,7 @@ TEST_F(VectorTest, OperatorsForV2) {
 class Line2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Line = pvc::cfd::geometry::Line<Real, 2>;
+  using Line = Line<Real, 2>;
   using Point = Line::Point;
   Point head{0.0, 0.0}, tail{0.3, 0.4};
 };
@@ -154,7 +159,7 @@ TEST_F(Line2Test, geometry) {
 class Line3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Line = pvc::cfd::geometry::Line<Real, 3>;
+  using Line = Line<Real, 3>;
   using Point = Line::Point;
   Point head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
 };
@@ -176,7 +181,7 @@ TEST_F(Line3Test, geometry) {
 class Triangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Triangle = pvc::cfd::geometry::Triangle<Real, 2>;
+  using Triangle = Triangle<Real, 2>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
 };
@@ -195,7 +200,7 @@ TEST_F(Triangle2Test, geometry) {
 class Triangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Triangle = pvc::cfd::geometry::Triangle<Real, 3>;
+  using Triangle = Triangle<Real, 3>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
 };
@@ -216,7 +221,7 @@ TEST_F(Triangle3Test, geometry) {
 class Rectangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Rectangle = pvc::cfd::geometry::Rectangle<Real, 2>;
+  using Rectangle = Rectangle<Real, 2>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
 };
@@ -235,7 +240,7 @@ TEST_F(Rectangle2Test, geometry) {
 class Rectangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Rectangle = pvc::cfd::geometry::Rectangle<Real, 3>;
+  using Rectangle = Rectangle<Real, 3>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};
 };
@@ -251,6 +256,9 @@ TEST_F(Rectangle3Test, geometry) {
   EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
   EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
 }
+
+}  // namespace geometry
+}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
