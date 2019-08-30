@@ -30,6 +30,13 @@ class Reader {
 };
 
 template <class Mesh>
+class Writer {
+ public:
+  virtual void SetMesh(Mesh* mesh) = 0;
+  virtual bool WriteFile(const std::string& file_name) = 0;
+};
+
+template <class Mesh>
 class VtkReader : public Reader<Mesh> {
   using NodeId = typename Mesh::Node::Id;
 
@@ -105,6 +112,16 @@ class VtkReader : public Reader<Mesh> {
 
  private:
   std::unique_ptr<Mesh> mesh_;
+};
+
+template <class Mesh>
+class VtkWriter : public Writer<Mesh> {
+ public:
+  void SetMesh(Mesh* mesh) override {
+  }
+  bool WriteFile(const std::string& file_name) override {
+    return false;
+  }
 };
 
 }  // namespace mesh

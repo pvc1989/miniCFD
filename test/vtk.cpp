@@ -55,6 +55,36 @@ TEST_F(VtkReaderTest, MediumMesh) {
   }
 }
 
+class VtkWriterTest : public ::testing::Test {
+ protected:
+  using Mesh = Mesh<double>;
+  using Domain = Mesh::Domain;
+  VtkReader<Mesh> reader;
+  VtkWriter<Mesh> writer;
+  const std::string test_data_dir_{TEST_DATA_DIR};
+};
+TEST_F(VtkWriterTest, TinyMesh) {
+  for (auto suffix : {".vtk", ".vtu"}) {
+    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    auto mesh_old = reader.GetMesh();
+    ASSERT_TRUE(mesh_old);
+    // Write the mesh just read:
+    writer.SetMesh(mesh_old.get());
+    auto filename = std::string("tiny") + suffix;
+    ASSERT_TRUE(writer.WriteFile(filename));
+    // Read the mesh just written:
+    reader.ReadFile(filename);
+    auto mesh_new = reader.GetMesh();
+    // Check consistency:
+    EXPECT_EQ(mesh_old->CountNodes(),
+              mesh_new->CountNodes());
+    EXPECT_EQ(mesh_old->CountBoundaries(),
+              mesh_new->CountBoundaries());
+    EXPECT_EQ(mesh_old->CountDomains(),
+              mesh_new->CountDomains());
+  }
+}
+
 }  // namespace mesh
 }  // namespace mini
 
