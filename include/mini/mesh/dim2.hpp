@@ -187,9 +187,11 @@ class Mesh {
   // Traverse primitive objects.
   template <class Visitor>
   void ForEachNode(Visitor&& visitor) const {
+    for (auto& [id, node_ptr] : id_to_node_) { visitor(*node_ptr); }
   }
   template <class Visitor>
   void ForEachBoundary(Visitor&& visitor) const {
+    for (auto& [id, boundary_ptr] : id_to_boundary_) { visitor(*boundary_ptr); }
   }
   template <class Visitor>
   void ForEachDomain(Visitor&& visitor) const {
