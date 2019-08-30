@@ -1,15 +1,13 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#include "mesh.hpp"
-
 #include <vector>
+
+#include "mini/mesh/dim2.hpp"
 
 #include "gtest/gtest.h"
 
-namespace pvc {
-namespace cfd {
+namespace mini {
 namespace mesh {
-namespace amr2d {
 
 class BoundaryTest : public ::testing::Test {
  protected:
@@ -39,7 +37,6 @@ class TriangleTest : public ::testing::Test {
   using Domain = Triangle<double>;
   using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
-
   Domain::Id i{0};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
   Boundary ab{&a, &b}, bc{&b, &c}, ca{&c, &a};
@@ -194,10 +191,9 @@ TEST_F(MeshTest, PositiveSide) {
   EXPECT_EQ(boundaries[3]->GetSide<+1>(), nullptr);
   EXPECT_EQ(boundaries[3]->GetSide<-1>(), domains[1]);
 }
-}  // namespace amr2d
+
 }  // namespace mesh
-}  // namespace cfd
-}  // namespace pvc
+}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

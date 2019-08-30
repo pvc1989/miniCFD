@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef PVC_CFD_MESH_HPP_
-#define PVC_CFD_MESH_HPP_
+#ifndef MINI_MESH_DIM2_HPP_
+#define MINI_MESH_DIM2_HPP_
 
 #include <algorithm>
 #include <array>
@@ -16,12 +16,11 @@
 #include <utility>
 #include <vector>
 
-#include "element.hpp"
+#include "mini/element/dim1.hpp"
+#include "mini/element/dim2.hpp"
 
-namespace pvc {
-namespace cfd {
+namespace mini {
 namespace mesh {
-namespace amr2d {
 
 struct Empty {};
 
@@ -73,7 +72,7 @@ template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Boundary : public element::Edge<Real, 2> {
  public:
   // Types:
-  using Id = typename element::Edge<Real, 2>::Id;  
+  using Id = typename element::Edge<Real, 2>::Id;
   using Data = BoundaryData;
   using Node = Node<Real, NodeData>;
   using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
@@ -86,7 +85,7 @@ class Boundary : public element::Edge<Real, 2> {
   // Accessors:
   template <int kSign>
   Domain* GetSide() const {
-    static_assert(kSign == +1 or kSign == -1);
+    static_assert(kSign == +1 || kSign == -1);
     return nullptr;
   }
   template <>
@@ -96,7 +95,7 @@ class Boundary : public element::Edge<Real, 2> {
   // Mutators:
   template <int kSign>
   void SetSide(Domain* domain) {
-    static_assert(kSign == +1 or kSign == -1);
+    static_assert(kSign == +1 || kSign == -1);
   }
   template <>
   void SetSide<+1>(Domain* domain) { positive_side_ = domain; }
@@ -306,8 +305,7 @@ class Mesh {
   std::map<std::pair<NodeId, NodeId>, Boundary*> node_pair_to_boundary_;
 };
 
-}  // namespace amr2d
 }  // namespace mesh
-}  // namespace cfd
-}  // namespace pvc
-#endif  // PVC_CFD_MESH_HPP_
+}  // namespace mini
+
+#endif  // MINI_MESH_DIM2_HPP_
