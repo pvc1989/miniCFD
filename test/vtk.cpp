@@ -1,24 +1,22 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#include "reader.hpp"
-
 #include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "mesh.hpp"
+
+#include "mini/mesh/dim2.hpp"
+#include "mini/mesh/vtk.hpp"
 #include "data.hpp"  // defines TEST_DATA_DIR
 
-namespace pvc {
-namespace cfd {
+namespace mini {
 namespace mesh {
 
 class VtkReaderTest : public ::testing::Test {
  protected:
-  using Real = double;
-  using Mesh = amr2d::Mesh<Real>;
+  using Mesh = Mesh<double>;
   using Domain = Mesh::Domain;
-  VtkReader<double> reader;
+  VtkReader<Mesh> reader;
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(VtkReaderTest, ReadFile) {
@@ -58,8 +56,7 @@ TEST_F(VtkReaderTest, MediumMesh) {
 }
 
 }  // namespace mesh
-}  // namespace cfd
-}  // namespace pvc
+}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

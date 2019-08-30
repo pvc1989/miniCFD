@@ -39,6 +39,6 @@ configure_file (
 )
 include_directories("${PROJECT_BINARY_DIR}/test")
 
-add_executable(reader reader.cpp)
-target_link_libraries(reader ${VTK_LIBRARIES} gtest_main)
-add_test(NAME Reader COMMAND reader)
+add_executable(vtk vtk.cpp)
+target_link_libraries(vtk ${VTK_LIBRARIES} gtest_main)
+add_test(NAME VTK COMMAND vtk)

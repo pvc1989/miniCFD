@@ -1,10 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef PVC_CFD_READER_HPP_
-#define PVC_CFD_READER_HPP_
-
-#include <string>
-#include <memory>
+#ifndef MINI_MESH_VTK_HPP_
+#define MINI_MESH_VTK_HPP_
 
 // For .vtk files:
 #include <vtkDataSetReader.h>
@@ -18,23 +15,22 @@
 #include <vtkSmartPointer.h>
 #include <vtksys/SystemTools.hxx>
 
-#include "mesh.hpp"
+#include <string>
+#include <memory>
+#include <utility>
 
-namespace pvc {
-namespace cfd {
+namespace mini {
 namespace mesh {
 
-template <class Real>
+template <class Mesh>
 class Reader {
  public:
-  using Mesh = amr2d::Mesh<Real>;
   virtual bool ReadFile(const std::string& file_name) = 0;
   virtual std::unique_ptr<Mesh> GetMesh() = 0;
 };
 
-template <class Real>
-class VtkReader : public Reader<Real> {
-  using Mesh = amr2d::Mesh<Real>;
+template <class Mesh>
+class VtkReader : public Reader<Mesh> {
   using NodeId = typename Mesh::Node::Id;
 
  public:
@@ -55,6 +51,7 @@ class VtkReader : public Reader<Real> {
     std::swap(temp, mesh_);
     return temp;
   }
+
  private:
   void ReadNodes(vtkDataSet* data_set) {
     int n = data_set->GetNumberOfPoints();
@@ -73,15 +70,13 @@ class VtkReader : public Reader<Real> {
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
         mesh_->EmplaceDomain(i, {a, b, c});
-      }
-      else if (data_set->GetCellType(i) == 9) {
+      } else if (data_set->GetCellType(i) == 9) {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
         auto d = NodeId(ids->GetId(3));
         mesh_->EmplaceDomain(i, {a, b, c, d});
-      }
-      else {
+      } else {
         continue;
       }
     }
@@ -92,11 +87,9 @@ class VtkReader : public Reader<Real> {
     // Dispatch based on the file extension
     if (extension == ".vtu") {
       data_set = Read<vtkXMLUnstructuredGridReader>(file_name);
-    }
-    else if (extension == ".vtk") {
+    } else if (extension == ".vtk") {
       data_set = Read<vtkDataSetReader>(file_name);
-    }
-    else {
+    } else {
       std::cerr << "Unknown extension: " << extension << std::endl;
     }
     return data_set;
@@ -115,6 +108,6 @@ class VtkReader : public Reader<Real> {
 };
 
 }  // namespace mesh
-}  // namespace cfd
-}  // namespace pvc
-#endif  // PVC_CFD_READER_HPP_
+}  // namespace mini
+
+#endif  // MINI_MESH_VTK_HPP_
