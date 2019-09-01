@@ -136,15 +136,16 @@ class Triangle
     : public Domain<Real, NodeData, BoundaryData, DomainData>,
       public element::Triangle<Real, 2> {
  public:
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   // Types:
-  using Id = typename Domain<Real, NodeData, BoundaryData, DomainData>::Id;
-  using Data = DomainData;
-  using Boundary = Boundary<Real, NodeData, BoundaryData, DomainData>;
+  using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
+  using Id = typename Domain::Id;
+  using Data = DomainData;
   // Constructors:
   Triangle(Id i, Node* a, Node* b, Node* c,
            std::initializer_list<Boundary*> boundaries)
-      : element::Triangle<Real, 2>(i, a, b, c), Domain<Real>{boundaries} {}
+      : element::Triangle<Real, 2>(i, a, b, c), Domain{boundaries} {}
 };
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
@@ -152,15 +153,16 @@ class Rectangle
     : public Domain<Real, NodeData, BoundaryData, DomainData>,
       public element::Rectangle<Real, 2> {
  public:
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   // Types:
-  using Id = typename Domain<Real, NodeData, BoundaryData, DomainData>::Id;
-  using Data = DomainData;
-  using Boundary = Boundary<Real, NodeData, BoundaryData, DomainData>;
+  using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
+  using Id = typename Domain::Id;
+  using Data = DomainData;
   // Constructors:
   Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
            std::initializer_list<Boundary*> boundaries)
-      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
+      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain{boundaries} {}
 };
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
@@ -170,6 +172,8 @@ class Mesh {
   using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
+  using Triangle = Triangle<Real, NodeData, BoundaryData, DomainData>;
+  using Rectangle = Rectangle<Real, NodeData, BoundaryData, DomainData>;
 
  private:
   // Types:
@@ -251,7 +255,7 @@ class Mesh {
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, a)};
-      auto triangle_unique_ptr = std::make_unique<Triangle<Real>>(
+      auto triangle_unique_ptr = std::make_unique<Triangle>(
           i,
           id_to_node_[a].get(), id_to_node_[b].get(), id_to_node_[c].get(),
           edges);
@@ -265,7 +269,7 @@ class Mesh {
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, d), EmplaceBoundary(d, a)};
-      auto rectangle_unique_ptr = std::make_unique<Rectangle<Real>>(
+      auto rectangle_unique_ptr = std::make_unique<Rectangle>(
           i,
           id_to_node_[a].get(), id_to_node_[b].get(),
           id_to_node_[c].get(), id_to_node_[d].get(),
