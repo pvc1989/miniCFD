@@ -5,6 +5,7 @@
 
 #include "gtest/gtest.h"
 
+#include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "data.hpp"  // defines TEST_DATA_DIR
@@ -57,13 +58,38 @@ TEST_F(VtkReaderTest, MediumMesh) {
 
 class VtkWriterTest : public ::testing::Test {
  protected:
-  using Mesh = Mesh<double>;
-  using Domain = Mesh::Domain;
-  VtkReader<Mesh> reader;
-  VtkWriter<Mesh> writer;
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(VtkWriterTest, TinyMesh) {
+  auto reader = VtkReader<Mesh<double>>();
+  auto writer = VtkWriter<Mesh<double>>();
+  for (auto suffix : {".vtk", ".vtu"}) {
+    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    auto mesh_old = reader.GetMesh();
+    ASSERT_TRUE(mesh_old);
+    // Write the mesh just read:
+    writer.SetMesh(mesh_old.get());
+    auto filename = std::string("tiny") + suffix;
+    ASSERT_TRUE(writer.WriteFile(filename));
+    // Read the mesh just written:
+    reader.ReadFile(filename);
+    auto mesh_new = reader.GetMesh();
+    // Check consistency:
+    EXPECT_EQ(mesh_old->CountNodes(),
+              mesh_new->CountNodes());
+    EXPECT_EQ(mesh_old->CountBoundaries(),
+              mesh_new->CountBoundaries());
+    EXPECT_EQ(mesh_old->CountDomains(),
+              mesh_new->CountDomains());
+  }
+}
+TEST_F(VtkWriterTest, MeshWithData) {
+  using NodeData = Data<double, 2/* dims */, 2/* scalars */, 2/* vectors */>;
+  using EdgeData = Empty;
+  using CellData = NodeData;
+  using Mesh = Mesh<double, NodeData, EdgeData, CellData>;
+  auto reader = VtkReader<Mesh>();
+  auto writer = VtkWriter<Mesh>();
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFile(test_data_dir_ + "tiny" + suffix);
     auto mesh_old = reader.GetMesh();
