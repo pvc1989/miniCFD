@@ -24,10 +24,12 @@
 #include <vtkSmartPointer.h>
 #include <vtksys/SystemTools.hxx>
 
+#include <array>
 #include <cassert>
 #include <string>
 #include <memory>
 #include <utility>
+#include <iostream>
 
 namespace mini {
 namespace mesh {
@@ -60,6 +62,7 @@ class VtkReader : public Reader<Mesh> {
       vtk_data_set->Delete();
       return true;
     } else {
+      std::cerr << "ReadFile() failed." << std::endl;
       return false;
     }
   }
@@ -168,26 +171,40 @@ class VtkWriter : public Writer<Mesh> {
   Mesh* mesh_;
   vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set;
   void WritePoints() {
-    auto vectors = vtkSmartPointer<vtkFloatArray>::New();
-    vectors->SetName("Node's Position");
-    vectors->SetNumberOfComponents(3);
-    vectors->SetNumberOfTuples(mesh_->CountNodes());
-    auto values = vtkSmartPointer<vtkFloatArray>::New();
-    values->SetName("Average of XYZ");
-    values->SetNumberOfTuples(mesh_->CountNodes());
+    constexpr auto kVectors = Mesh::Node::Data::CountVectors();
+    auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
+    for (int i = 0; i < kVectors; ++i) {
+      vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      vector_data[i]->SetName(Mesh::Node::Data::vector_names[i].c_str());
+      vector_data[i]->SetNumberOfComponents(3);
+      vector_data[i]->SetNumberOfTuples(mesh_->CountNodes());
+    }
+    
+    // constexpr auto kScalars = Mesh::Node::Data::CountScalars();
+    // auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
+    // for (int i = 0; i < kScalars; i++ ) {
+    //   scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+    //   scalar_data[i]->SetName(Mesh::Node::Data::scalar_names[i].c_str());
+    //   scalar_data[i]->SetNumberOfTuples(mesh_->CountNodes());
+    // }
     
     auto vtk_points = vtkSmartPointer<vtkPoints>::New();
     vtk_points->SetNumberOfPoints(mesh_->CountNodes());
     auto insert_point = [&](Node const& node) {
       vtk_points->InsertPoint(node.I(), node.X(), node.Y(), 0.0);
-      vectors->SetTuple3(node.I(), node.X(), node.Y(), 0.0);
-      values->SetValue(node.I(), (node.X() + node.Y()) / 3);
+      for (int i = 0; i < kVectors; ++i) {
+        vector_data[i]->SetTuple3(node.I(), node.X(), node.Y(), 0.0);
+      }
+      // auto v = node.X() * node.X() + node.Y() * node.Y();
+      // scalar_data[0]->SetValue(node.I(), v);
     };
     mesh_->ForEachNode(insert_point);
     vtk_data_set->SetPoints(vtk_points);
     auto point_data = vtk_data_set->GetPointData();
-    point_data->SetVectors(vectors);
-    point_data->SetScalars(values);
+    for (int i = 0; i < kVectors; ++i) {
+      point_data->SetVectors(vector_data[0]);
+    }
+    // point_data->SetScalars(scalar_data[0]);
   }
   void WriteCells() {
     auto vectors = vtkSmartPointer<vtkFloatArray>::New();

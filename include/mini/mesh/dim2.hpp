@@ -18,11 +18,10 @@
 
 #include "mini/element/dim1.hpp"
 #include "mini/element/dim2.hpp"
+#include "mini/mesh/data.hpp"
 
 namespace mini {
 namespace mesh {
-
-struct Empty {};
 
 template <class Real,
           class NodeData = Empty,
