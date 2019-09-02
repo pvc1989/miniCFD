@@ -90,8 +90,9 @@ TEST_F(VtkWriterTest, MeshWithData) {
   using Mesh = Mesh<double, NodeData, EdgeData, CellData>;
   auto reader = VtkReader<Mesh>();
   auto writer = VtkWriter<Mesh>();
+  auto mesh_name = std::string("tiny");
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    reader.ReadFile(test_data_dir_ + mesh_name + suffix);
     auto mesh_old = reader.GetMesh();
     ASSERT_TRUE(mesh_old);
     // Create some data on it:
@@ -109,7 +110,7 @@ TEST_F(VtkWriterTest, MeshWithData) {
     });
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
-    auto filename = std::string("tiny") + suffix;
+    auto filename = mesh_name + "_with_data" + suffix;
     ASSERT_TRUE(writer.WriteFile(filename));
     // Read the mesh just written:
     reader.ReadFile(filename);
