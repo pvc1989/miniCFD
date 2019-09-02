@@ -94,6 +94,19 @@ TEST_F(VtkWriterTest, MeshWithData) {
     reader.ReadFile(test_data_dir_ + "tiny" + suffix);
     auto mesh_old = reader.GetMesh();
     ASSERT_TRUE(mesh_old);
+    // Create some data on it:
+    Mesh::Node::scalar_names.at(0) = "X + Y";
+    Mesh::Node::scalar_names.at(1) = "X - Y";
+    Mesh::Node::vector_names.at(0) = "(X, Y)";
+    Mesh::Node::vector_names.at(1) = "(-X, -Y)";
+    mesh_old->ForEachNode([](Mesh::Node& node) {
+      auto x = node.X();
+      auto y = node.Y();
+      node.data.scalars.at(0) = x + y;
+      node.data.scalars.at(1) = x - y;
+      node.data.vectors.at(0) = {x, y};
+      node.data.vectors.at(1) = {-x, -y};
+    });
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
     auto filename = std::string("tiny") + suffix;

@@ -191,7 +191,6 @@ class VtkWriter : public Writer<Mesh> {
     auto insert_point = [&](Node const& node) {
       vtk_points->InsertPoint(node.I(), node.X(), node.Y(), 0.0);
       for (int i = 0; i < kVectors; ++i) {
-        vector_data[i]->SetTuple3(node.I(), node.X(), node.Y(), 0.0);
       }
       // auto v = node.X() * node.X() + node.Y() * node.Y();
       // scalar_data[0]->SetValue(node.I(), v);
