@@ -10,9 +10,16 @@ namespace mini {
 namespace mesh {
 
 struct Empty {
+ public:
+  using Scalar = int;
+  using Vector = std::array<int, 0>;
   static constexpr int CountScalars() { return 0; }
   static constexpr int CountVectors() { return 0; }
+  static std::array<Scalar, 0> scalars;
+  static std::array<Vector, 0> vectors;
 };
+std::array<Empty::Scalar, 0> Empty::scalars;
+std::array<Empty::Vector, 0> Empty::vectors;
 
 template <class Real, int kDimensions, int kScalars, int kVectors>
 struct Data {
