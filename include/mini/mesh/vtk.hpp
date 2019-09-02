@@ -136,9 +136,7 @@ class VtkWriter : public Writer<Mesh> {
     assert(mesh);
     mesh_ = mesh;
     vtk_data_set = vtkSmartPointer<vtkUnstructuredGrid>::New();
-    //write Points
     WritePoints();
-    //write Cells
     WriteCells();
   }
   bool WriteFile(const std::string& file_name) override {
