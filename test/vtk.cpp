@@ -113,15 +113,15 @@ TEST_F(VtkWriterTest, MeshWithData) {
     ASSERT_TRUE(writer.WriteFile(filename));
     // Read the mesh just written:
     reader.ReadFile(filename);
-    // auto mesh_new = reader.GetMesh();
-    // ASSERT_TRUE(mesh_new);
+    auto mesh_new = reader.GetMesh();
+    ASSERT_TRUE(mesh_new);
     // Check consistency:
-    // EXPECT_EQ(mesh_old->CountNodes(),
-    //           mesh_new->CountNodes());
-    // EXPECT_EQ(mesh_old->CountBoundaries(),
-    //           mesh_new->CountBoundaries());
-    // EXPECT_EQ(mesh_old->CountDomains(),
-    //           mesh_new->CountDomains());
+    EXPECT_EQ(mesh_old->CountNodes(),
+              mesh_new->CountNodes());
+    EXPECT_EQ(mesh_old->CountBoundaries(),
+              mesh_new->CountBoundaries());
+    EXPECT_EQ(mesh_old->CountDomains(),
+              mesh_new->CountDomains());
   }
 }
 
