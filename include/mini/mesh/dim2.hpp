@@ -57,6 +57,8 @@ class Node : public element::Node<Real, 2> {
   using Data = NodeData;
   // Public data members:
   Data data;
+  static std::array<std::string, NodeData::CountScalars()> scalar_names;
+  static std::array<std::string, NodeData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
   explicit Node(Args&&... args) :
@@ -66,6 +68,13 @@ class Node : public element::Node<Real, 2> {
   Node(std::initializer_list<Real> xyz)
       : element::Node<Real, 2>{xyz} {}
 };
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountScalars()>
+Node<Real, NodeData>::scalar_names;
+
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountVectors()>
+Node<Real, NodeData>::vector_names;
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Boundary : public element::Edge<Real, 2> {

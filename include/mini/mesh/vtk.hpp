@@ -173,7 +173,7 @@ class VtkWriter : public Writer<Mesh> {
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      vector_data[i]->SetName(Mesh::Node::Data::vector_names[i].c_str());
+      vector_data[i]->SetName(Mesh::Node::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }

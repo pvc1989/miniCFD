@@ -12,11 +12,7 @@ namespace mesh {
 struct Empty {
   static constexpr int CountScalars() { return 0; }
   static constexpr int CountVectors() { return 0; }
-  static std::array<std::string, 0> scalar_names;
-  static std::array<std::string, 0> vector_names;
 };
-std::array<std::string, 0> Empty::scalar_names;
-std::array<std::string, 0> Empty::vector_names;
 
 template <class Real, int kDimensions, int kScalars, int kVectors>
 struct Data {
@@ -27,13 +23,7 @@ struct Data {
   static constexpr int CountVectors() { return kVectors; }
   std::array<Scalar, kScalars> scalars;
   std::array<Vector, kVectors> vectors;
-  static std::array<std::string, kScalars> scalar_names;
-  static std::array<std::string, kVectors> vector_names;
 };
-template <class Real, int kDimensions, int kScalars, int kVectors>
-std::array<std::string, kScalars> Data<Real, kDimensions, kScalars, kVectors>::scalar_names;
-template <class Real, int kDimensions, int kScalars, int kVectors>
-std::array<std::string, kVectors> Data<Real, kDimensions, kScalars, kVectors>::vector_names;
 
 }  // namespace mesh
 }  // namespace mini
