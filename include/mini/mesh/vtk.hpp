@@ -135,17 +135,17 @@ class VtkWriter : public Writer<Mesh> {
   void SetMesh(Mesh* mesh) override {
     assert(mesh);
     mesh_ = mesh;
-    vtk_data_set = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    vtk_data_set_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
     WritePoints();
     WriteCells();
   }
   bool WriteFile(const std::string& file_name) override {
-    if (vtk_data_set == nullptr) return false;
+    if (vtk_data_set_ == nullptr) return false;
     auto extension = vtksys::SystemTools::GetFilenameLastExtension(file_name);
     // Dispatch based on the file extension
     if (extension == ".vtu") {
       auto writer = vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-      writer->SetInputData(vtk_data_set);
+      writer->SetInputData(vtk_data_set_);
       writer->SetFileName(file_name.c_str());
       writer->SetDataModeToBinary();
       writer->Write();
@@ -153,7 +153,7 @@ class VtkWriter : public Writer<Mesh> {
     }
     else if (extension == ".vtk") {
       auto writer = vtkSmartPointer<vtkDataSetWriter>::New();
-      writer->SetInputData(vtk_data_set);
+      writer->SetInputData(vtk_data_set_);
       writer->SetFileName(file_name.c_str());
       writer->SetFileTypeToBinary();
       writer->Write();
@@ -167,7 +167,7 @@ class VtkWriter : public Writer<Mesh> {
 
  private:
   Mesh* mesh_;
-  vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set;
+  vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set_;
   void WritePoints() {
     constexpr auto kVectors = Mesh::Node::Data::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
@@ -228,7 +228,7 @@ class VtkWriter : public Writer<Mesh> {
                   domain.GetNode(2)->Y()) / 3;
         vectors->SetTuple3(i_cell, x, y, 0.0);
         values->SetValue(i_cell, x + y);
-        vtk_data_set->InsertNextCell(vtk_cell->GetCellType(), id_list);
+        vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
         break;
       }
       case 4: {
@@ -244,7 +244,7 @@ class VtkWriter : public Writer<Mesh> {
                   domain.GetNode(2)->Y() + domain.GetNode(3)->Y()) / 4;
         vectors->SetTuple3(i_cell, x, y, 0.0);
         values->SetValue(i_cell, x + y);
-        vtk_data_set->InsertNextCell(vtk_cell->GetCellType(), id_list);
+        vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
         break;
       }
       default:
@@ -253,7 +253,7 @@ class VtkWriter : public Writer<Mesh> {
       ++i_cell;
     };
     mesh_->ForEachDomain(insert_cell);
-    auto cell_data = vtk_data_set->GetCellData();
+    auto cell_data = vtk_data_set_->GetCellData();
     cell_data->SetVectors(vectors);
     cell_data->SetScalars(values);
   }
