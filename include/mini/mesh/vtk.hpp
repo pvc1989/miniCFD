@@ -215,15 +215,50 @@ class VtkWriter : public Writer<Mesh> {
     }
   }
   void WriteCells() {
+    // Pre-allocate `vtkFloatArray`s for Domain::Data::scalars:
+    constexpr auto kScalars = Mesh::Domain::Data::CountScalars();
+    auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
+    for (int i = 0; i < kScalars; ++i) {
+      scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      scalar_data[i]->SetName(Mesh::Domain::scalar_names[i].c_str());
+      scalar_data[i]->SetNumberOfTuples(mesh_->CountDomains());
+    }
+    // Pre-allocate `vtkFloatArray`s for Domain::Data::vectors:
+    constexpr auto kVectors = Mesh::Domain::Data::CountVectors();
+    auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
+    for (int i = 0; i < kVectors; ++i) {
+      vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      vector_data[i]->SetName(Mesh::Domain::vector_names[i].c_str());
+      vector_data[i]->SetNumberOfComponents(3);
+      vector_data[i]->SetNumberOfTuples(mesh_->CountDomains());
+    }
+    // Insert cells and cell data:
     auto i_cell = 0;
+    mesh_->ForEachDomain([&](Domain const& domain) {
+      InsertCell(domain);
+      // Insert scalar data:
+      for (int i = 0; i < kScalars; ++i) {
+        scalar_data[i]->SetValue(i_cell, domain.data.scalars[i]);
       }
+      // Insert vector data:
+      for (int i = 0; i < kVectors; ++i) {
+        auto& v = domain.data.vectors[i];
+        vector_data[i]->SetTuple3(i_cell, v[0], v[1], 0.0);
       }
+      // Increment counter:
       ++i_cell;
-    };
-    mesh_->ForEachDomain(insert_cell);
+    });
+    // Insert cell data:
     auto cell_data = vtk_data_set_->GetCellData();
-    cell_data->SetVectors(vectors);
-    cell_data->SetScalars(values);
+    for (int i = 0; i < kScalars; ++i) {
+      cell_data->SetActiveScalars(scalar_data[i]->GetName());
+      cell_data->SetScalars(scalar_data[i]);
+    }
+    for (int i = 0; i < kVectors; ++i) {
+      cell_data->SetActiveVectors(vector_data[i]->GetName());
+      cell_data->SetVectors(vector_data[i]);
+    }
+  }
   void InsertCell(Domain const& domain){
     vtkSmartPointer<vtkCell> vtk_cell;
     vtkIdList* id_list{nullptr};
