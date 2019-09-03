@@ -216,30 +216,7 @@ class VtkWriter : public Writer<Mesh> {
   }
   void WriteCells() {
     auto i_cell = 0;
-    auto insert_cell = [&](Domain const& domain) {
-      vtkIdList* id_list{nullptr};
-      switch (domain.CountVertices()) {
-      case 3: {
-        auto vtk_cell = vtkSmartPointer<vtkTriangle>::New();
-        id_list = vtk_cell->GetPointIds();
-        id_list->SetId(0, domain.GetNode(0)->I());
-        id_list->SetId(1, domain.GetNode(1)->I());
-        id_list->SetId(2, domain.GetNode(2)->I());
-        vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
-        break;
       }
-      case 4: {
-        auto vtk_cell = vtkSmartPointer<vtkQuad>::New();
-        id_list = vtk_cell->GetPointIds();
-        id_list->SetId(0, domain.GetNode(0)->I());
-        id_list->SetId(1, domain.GetNode(1)->I());
-        id_list->SetId(2, domain.GetNode(2)->I());
-        id_list->SetId(3, domain.GetNode(3)->I());
-        vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
-        break;
-      }
-      default:
-        std::cerr << "Unknown cell type! " << std::endl;
       }
       ++i_cell;
     };
@@ -247,6 +224,39 @@ class VtkWriter : public Writer<Mesh> {
     auto cell_data = vtk_data_set_->GetCellData();
     cell_data->SetVectors(vectors);
     cell_data->SetScalars(values);
+  void InsertCell(Domain const& domain){
+    vtkSmartPointer<vtkCell> vtk_cell;
+    vtkIdList* id_list{nullptr};
+    switch (domain.CountVertices()) {
+    case 3:
+      BuildVtkTriangle(domain, vtk_cell, id_list);
+      break;
+    case 4:
+      BuildVtkQuad(domain, vtk_cell, id_list);
+      break;
+    default:
+      std::cerr << "Unknown cell type! " << std::endl;
+    }
+    vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
+  }
+  void BuildVtkTriangle(Domain const& domain,
+                        vtkSmartPointer<vtkCell>& vtk_cell,
+                        vtkIdList*& id_list) {
+    vtk_cell = vtkSmartPointer<vtkTriangle>::New();
+    id_list = vtk_cell->GetPointIds();
+    id_list->SetId(0, domain.GetNode(0)->I());
+    id_list->SetId(1, domain.GetNode(1)->I());
+    id_list->SetId(2, domain.GetNode(2)->I());
+  }
+  void BuildVtkQuad(Domain const& domain,
+                    vtkSmartPointer<vtkCell>& vtk_cell,
+                    vtkIdList*& id_list) {
+    vtk_cell = vtkSmartPointer<vtkQuad>::New();
+    id_list = vtk_cell->GetPointIds();
+    id_list->SetId(0, domain.GetNode(0)->I());
+    id_list->SetId(1, domain.GetNode(1)->I());
+    id_list->SetId(2, domain.GetNode(2)->I());
+    id_list->SetId(3, domain.GetNode(3)->I());
   }
 };
 
