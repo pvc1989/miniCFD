@@ -49,3 +49,8 @@ TEST_F(MultiWaveTest, TestFlux) {
 
 }  // namespace riemann
 }  // namespace mini
+
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
