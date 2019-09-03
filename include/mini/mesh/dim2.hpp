@@ -18,11 +18,10 @@
 
 #include "mini/element/dim1.hpp"
 #include "mini/element/dim2.hpp"
+#include "mini/mesh/data.hpp"
 
 namespace mini {
 namespace mesh {
-
-struct Empty {};
 
 template <class Real,
           class NodeData = Empty,
@@ -58,6 +57,8 @@ class Node : public element::Node<Real, 2> {
   using Data = NodeData;
   // Public data members:
   Data data;
+  static std::array<std::string, NodeData::CountScalars()> scalar_names;
+  static std::array<std::string, NodeData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
   explicit Node(Args&&... args) :
@@ -67,6 +68,13 @@ class Node : public element::Node<Real, 2> {
   Node(std::initializer_list<Real> xyz)
       : element::Node<Real, 2>{xyz} {}
 };
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountScalars()>
+Node<Real, NodeData>::scalar_names;
+
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountVectors()>
+Node<Real, NodeData>::vector_names;
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Boundary : public element::Edge<Real, 2> {
@@ -119,6 +127,8 @@ class Domain : virtual public element::Face<Real, 2> {
   using Node = typename Boundary::Node;
   // Public data members:
   Data data;
+  static std::array<std::string, DomainData::CountScalars()> scalar_names;
+  static std::array<std::string, DomainData::CountVectors()> vector_names;
   // Constructors:
   Domain(std::initializer_list<Boundary*> boundaries)
       : boundaries_{boundaries} {}
@@ -130,6 +140,13 @@ class Domain : virtual public element::Face<Real, 2> {
  protected:
   std::forward_list<Boundary*> boundaries_;
 };
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountScalars()>
+Domain<Real, NodeData, BoundaryData, DomainData>::scalar_names;
+
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountVectors()>
+Domain<Real, NodeData, BoundaryData, DomainData>::vector_names;
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Triangle
@@ -191,9 +208,11 @@ class Mesh {
   // Traverse primitive objects.
   template <class Visitor>
   void ForEachNode(Visitor&& visitor) const {
+    for (auto& [id, node_ptr] : id_to_node_) { visitor(*node_ptr); }
   }
   template <class Visitor>
   void ForEachBoundary(Visitor&& visitor) const {
+    for (auto& [id, boundary_ptr] : id_to_boundary_) { visitor(*boundary_ptr); }
   }
   template <class Visitor>
   void ForEachDomain(Visitor&& visitor) const {
