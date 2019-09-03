@@ -46,3 +46,7 @@ add_test(NAME VTK COMMAND vtk)
 add_executable(riemann riemann.cpp)
 target_link_libraries(riemann gtest_main)
 add_test(NAME Riemann COMMAND riemann)
+
+add_executable(model model.cpp)
+target_link_libraries(model ${VTK_LIBRARIES} gtest_main)
+add_test(NAME Model COMMAND model)
