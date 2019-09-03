@@ -127,6 +127,8 @@ class Domain : virtual public element::Face<Real, 2> {
   using Node = typename Boundary::Node;
   // Public data members:
   Data data;
+  static std::array<std::string, DomainData::CountScalars()> scalar_names;
+  static std::array<std::string, DomainData::CountVectors()> vector_names;
   // Constructors:
   Domain(std::initializer_list<Boundary*> boundaries)
       : boundaries_{boundaries} {}
@@ -138,6 +140,13 @@ class Domain : virtual public element::Face<Real, 2> {
  protected:
   std::forward_list<Boundary*> boundaries_;
 };
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountScalars()>
+Domain<Real, NodeData, BoundaryData, DomainData>::scalar_names;
+
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountVectors()>
+Domain<Real, NodeData, BoundaryData, DomainData>::vector_names;
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Triangle
