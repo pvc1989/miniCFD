@@ -57,9 +57,12 @@ TEST_F(VtkReaderTest, MediumMesh) {
 }
 
 class VtkWriterTest : public ::testing::Test {
+ public:
+  static std::string mesh_name;
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
+std::string VtkWriterTest::mesh_name;
 TEST_F(VtkWriterTest, TinyMesh) {
   auto reader = VtkReader<Mesh<double>>();
   auto writer = VtkWriter<Mesh<double>>();
@@ -90,7 +93,6 @@ TEST_F(VtkWriterTest, MeshWithData) {
   using Mesh = Mesh<double, NodeData, EdgeData, CellData>;
   auto reader = VtkReader<Mesh>();
   auto writer = VtkWriter<Mesh>();
-  auto mesh_name = std::string("tiny");
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFromFile(test_data_dir_ + mesh_name + suffix);
     auto mesh_old = reader.GetMesh();
@@ -144,5 +146,10 @@ TEST_F(VtkWriterTest, MeshWithData) {
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+  if (argc == 1) {
+    mini::mesh::VtkWriterTest::mesh_name = "tiny";
+  } else {
+    mini::mesh::VtkWriterTest::mesh_name = argv[1];
+  }
   return RUN_ALL_TESTS();
 }
