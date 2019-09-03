@@ -56,10 +56,11 @@ class VtkReader : public Reader<Mesh> {
   bool ReadFromFile(const std::string& file_name) override {
     auto vtk_data_set = Dispatch(file_name.c_str());
     if (vtk_data_set) {
+      auto vtk_data_set_owner = vtkSmartPointer<vtkDataSet>();
+      vtk_data_set_owner.TakeReference(vtk_data_set);
       mesh_.reset(new Mesh());
       ReadNodes(vtk_data_set);
       ReadDomains(vtk_data_set);
-      vtk_data_set->Delete();
       return true;
     } else {
       std::cerr << "ReadFromFile() failed." << std::endl;
