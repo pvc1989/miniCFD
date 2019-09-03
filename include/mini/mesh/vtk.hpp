@@ -37,7 +37,7 @@ namespace mesh {
 template <class Mesh>
 class Reader {
  public:
-  virtual bool ReadFile(const std::string& file_name) = 0;
+  virtual bool ReadFromFile(const std::string& file_name) = 0;
   virtual std::unique_ptr<Mesh> GetMesh() = 0;
 };
 
@@ -45,7 +45,7 @@ template <class Mesh>
 class Writer {
  public:
   virtual void SetMesh(Mesh* mesh) = 0;
-  virtual bool WriteFile(const std::string& file_name) = 0;
+  virtual bool WriteToFile(const std::string& file_name) = 0;
 };
 
 template <class Mesh>
@@ -53,7 +53,7 @@ class VtkReader : public Reader<Mesh> {
   using NodeId = typename Mesh::Node::Id;
 
  public:
-  bool ReadFile(const std::string& file_name) override {
+  bool ReadFromFile(const std::string& file_name) override {
     auto vtk_data_set = Dispatch(file_name.c_str());
     if (vtk_data_set) {
       mesh_.reset(new Mesh());
@@ -62,7 +62,7 @@ class VtkReader : public Reader<Mesh> {
       vtk_data_set->Delete();
       return true;
     } else {
-      std::cerr << "ReadFile() failed." << std::endl;
+      std::cerr << "ReadFromFile() failed." << std::endl;
       return false;
     }
   }
@@ -139,7 +139,7 @@ class VtkWriter : public Writer<Mesh> {
     WritePoints();
     WriteCells();
   }
-  bool WriteFile(const std::string& file_name) override {
+  bool WriteToFile(const std::string& file_name) override {
     if (vtk_data_set_ == nullptr) return false;
     auto extension = vtksys::SystemTools::GetFilenameLastExtension(file_name);
     // Dispatch based on the file extension

@@ -20,13 +20,13 @@ class VtkReaderTest : public ::testing::Test {
   VtkReader<Mesh> reader;
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-TEST_F(VtkReaderTest, ReadFile) {
-  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "tiny.vtk"));
-  EXPECT_TRUE(reader.ReadFile(test_data_dir_ + "tiny.vtu"));
+TEST_F(VtkReaderTest, ReadFromFile) {
+  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtk"));
+  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtu"));
 }
 TEST_F(VtkReaderTest, GetMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
     auto mesh = reader.GetMesh();
     ASSERT_TRUE(mesh);
     EXPECT_EQ(mesh->CountNodes(), 6);
@@ -41,7 +41,7 @@ TEST_F(VtkReaderTest, GetMesh) {
 }
 TEST_F(VtkReaderTest, MediumMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFile(test_data_dir_ + "medium" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "medium" + suffix);
     auto mesh = reader.GetMesh();
     ASSERT_TRUE(mesh);
     EXPECT_EQ(mesh->CountNodes(), 920);
@@ -64,15 +64,15 @@ TEST_F(VtkWriterTest, TinyMesh) {
   auto reader = VtkReader<Mesh<double>>();
   auto writer = VtkWriter<Mesh<double>>();
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFile(test_data_dir_ + "tiny" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
     auto mesh_old = reader.GetMesh();
     ASSERT_TRUE(mesh_old);
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
     auto filename = std::string("tiny") + suffix;
-    ASSERT_TRUE(writer.WriteFile(filename));
+    ASSERT_TRUE(writer.WriteToFile(filename));
     // Read the mesh just written:
-    reader.ReadFile(filename);
+    reader.ReadFromFile(filename);
     auto mesh_new = reader.GetMesh();
     // Check consistency:
     EXPECT_EQ(mesh_old->CountNodes(),
@@ -92,7 +92,7 @@ TEST_F(VtkWriterTest, MeshWithData) {
   auto writer = VtkWriter<Mesh>();
   auto mesh_name = std::string("tiny");
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFile(test_data_dir_ + mesh_name + suffix);
+    reader.ReadFromFile(test_data_dir_ + mesh_name + suffix);
     auto mesh_old = reader.GetMesh();
     ASSERT_TRUE(mesh_old);
     // Create some data on it:
@@ -124,9 +124,9 @@ TEST_F(VtkWriterTest, MeshWithData) {
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
     auto filename = mesh_name + "_with_data" + suffix;
-    ASSERT_TRUE(writer.WriteFile(filename));
+    ASSERT_TRUE(writer.WriteToFile(filename));
     // Read the mesh just written:
-    reader.ReadFile(filename);
+    reader.ReadFromFile(filename);
     auto mesh_new = reader.GetMesh();
     ASSERT_TRUE(mesh_new);
     // Check consistency:
