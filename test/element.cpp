@@ -1,17 +1,22 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#include "element.hpp"
-
 #include <vector>
 
+#include "mini/element/dim0.hpp"
+#include "mini/element/dim1.hpp"
+#include "mini/element/dim2.hpp"
+
 #include "gtest/gtest.h"
+
+namespace mini {
+namespace element {
 
 class NodeTest : public ::testing::Test {
  protected:
   using Real = double;
-  using N1 = pvc::cfd::element::Node<Real, 1>;
-  using N2 = pvc::cfd::element::Node<Real, 2>;
-  using N3 = pvc::cfd::element::Node<Real, 3>;
+  using N1 = Node<Real, 1>;
+  using N2 = Node<Real, 2>;
+  using N3 = Node<Real, 3>;
   const int i{8};
   const Real x{1.0}, y{2.0}, z{3.0};
 };
@@ -68,7 +73,7 @@ TEST_F(NodeTest, InitializerListConstructor) {
 class EdgeTest : public ::testing::Test {
  protected:
   using Real = double;
-  using Edge = pvc::cfd::element::Edge<Real, 2>;
+  using Edge = Edge<Real, 2>;
   using Node = Edge::Node;
   Node head{0.3, 0.0}, tail{0.0, 0.4};
 };
@@ -98,7 +103,7 @@ TEST_F(EdgeTest, MeshMethods) {
 class Triangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::element::Triangle<Real, 2>;
+  using Face = Triangle<Real, 2>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
@@ -128,7 +133,7 @@ TEST_F(Triangle2Test, MeshMethods) {
 class Triangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::element::Triangle<Real, 3>;
+  using Face = Triangle<Real, 3>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
@@ -159,7 +164,7 @@ TEST_F(Triangle3Test, MeshMethods) {
 class Rectangle2Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::element::Rectangle<Real, 2>;
+  using Face = Rectangle<Real, 2>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
@@ -189,7 +194,7 @@ TEST_F(Rectangle2Test, MeshMethods) {
 class Rectangle3Test : public ::testing::Test {
  protected:
   using Real = double;
-  using Face = pvc::cfd::element::Rectangle<Real, 3>;
+  using Face = Rectangle<Real, 3>;
   using Node = Face::Node;
   const int i{8};
   Node a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};
@@ -216,6 +221,10 @@ TEST_F(Rectangle3Test, MeshMethods) {
   auto integrand = [](const auto& point) { return 3.14; };
   EXPECT_EQ(face.Integrate(integrand), face.Measure() * 3.14);
 }
+
+}  // namespace element
+}  // namespace mini
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

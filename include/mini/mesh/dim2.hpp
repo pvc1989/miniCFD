@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef PVC_CFD_MESH_HPP_
-#define PVC_CFD_MESH_HPP_
+#ifndef MINI_MESH_DIM2_HPP_
+#define MINI_MESH_DIM2_HPP_
 
 #include <algorithm>
 #include <array>
@@ -16,26 +16,76 @@
 #include <utility>
 #include <vector>
 
-#include "element.hpp"
+#include "mini/element/dim1.hpp"
+#include "mini/element/dim2.hpp"
+#include "mini/mesh/data.hpp"
 
-namespace pvc {
-namespace cfd {
+namespace mini {
 namespace mesh {
-namespace amr2d {
 
-template <class Real>
-using Node = element::Node<Real, 2>;
-
-template <class Real>
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
+class Boundary;
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
 class Domain;
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
+class Triangle;
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
+class Rectangle;
+template <class Real,
+          class NodeData = Empty,
+          class BoundaryData = Empty,
+          class DomainData = Empty>
+class Mesh;
 
-template <class Real>
+template <class Real, class NodeData>
+class Node : public element::Node<Real, 2> {
+ public:
+  // Types:
+  using Id = typename element::Node<Real, 2>::Id;
+  using Data = NodeData;
+  // Public data members:
+  Data data;
+  static std::array<std::string, NodeData::CountScalars()> scalar_names;
+  static std::array<std::string, NodeData::CountVectors()> vector_names;
+  // Constructors:
+  template <class... Args>
+  explicit Node(Args&&... args) :
+      element::Node<Real, 2>(std::forward<Args>(args)...) {}
+  Node(Id i, std::initializer_list<Real> xyz)
+      : element::Node<Real, 2>(i, xyz) {}
+  Node(std::initializer_list<Real> xyz)
+      : element::Node<Real, 2>{xyz} {}
+};
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountScalars()>
+Node<Real, NodeData>::scalar_names;
+
+template <class Real, class NodeData>
+std::array<std::string, NodeData::CountVectors()>
+Node<Real, NodeData>::vector_names;
+
+template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Boundary : public element::Edge<Real, 2> {
  public:
   // Types:
-  using Node = Node<Real>;
-  using Domain = Domain<Real>;
   using Id = typename element::Edge<Real, 2>::Id;
+  using Data = BoundaryData;
+  using Node = Node<Real, NodeData>;
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
+  // Public data members:
+  Data data;
   // Constructors:
   template <class... Args>
   explicit Boundary(Args&&... args) :
@@ -43,7 +93,7 @@ class Boundary : public element::Edge<Real, 2> {
   // Accessors:
   template <int kSign>
   Domain* GetSide() const {
-    static_assert(kSign == +1 or kSign == -1);
+    static_assert(kSign == +1 || kSign == -1);
     return nullptr;
   }
   template <>
@@ -53,7 +103,7 @@ class Boundary : public element::Edge<Real, 2> {
   // Mutators:
   template <int kSign>
   void SetSide(Domain* domain) {
-    static_assert(kSign == +1 or kSign == -1);
+    static_assert(kSign == +1 || kSign == -1);
   }
   template <>
   void SetSide<+1>(Domain* domain) { positive_side_ = domain; }
@@ -65,17 +115,20 @@ class Boundary : public element::Edge<Real, 2> {
   Domain* negative_side_{nullptr};
 };
 
-template <class Real>
-class Mesh;
-
-template <class Real>
+template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Domain : virtual public element::Face<Real, 2> {
-  friend class Mesh<Real>;
+  friend class Mesh<Real, NodeData, BoundaryData, DomainData>;
  public:
   virtual ~Domain() = default;
   // Types:
-  using Boundary = Boundary<Real>;
   using Id = typename element::Face<Real, 2>::Id;
+  using Data = DomainData;
+  using Boundary = Boundary<Real, NodeData, BoundaryData, DomainData>;
+  using Node = typename Boundary::Node;
+  // Public data members:
+  Data data;
+  static std::array<std::string, DomainData::CountScalars()> scalar_names;
+  static std::array<std::string, DomainData::CountVectors()> vector_names;
   // Constructors:
   Domain(std::initializer_list<Boundary*> boundaries)
       : boundaries_{boundaries} {}
@@ -87,40 +140,57 @@ class Domain : virtual public element::Face<Real, 2> {
  protected:
   std::forward_list<Boundary*> boundaries_;
 };
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountScalars()>
+Domain<Real, NodeData, BoundaryData, DomainData>::scalar_names;
 
-template <class Real>
-class Triangle : public Domain<Real>, public element::Triangle<Real, 2> {
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, DomainData::CountVectors()>
+Domain<Real, NodeData, BoundaryData, DomainData>::vector_names;
+
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+class Triangle
+    : public Domain<Real, NodeData, BoundaryData, DomainData>,
+      public element::Triangle<Real, 2> {
  public:
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   // Types:
-  using Id = typename Domain<Real>::Id;
-  using Boundary = Boundary<Real>;
+  using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
+  using Id = typename Domain::Id;
+  using Data = DomainData;
   // Constructors:
   Triangle(Id i, Node* a, Node* b, Node* c,
            std::initializer_list<Boundary*> boundaries)
-      : element::Triangle<Real, 2>(i, a, b, c), Domain<Real>{boundaries} {}
+      : element::Triangle<Real, 2>(i, a, b, c), Domain{boundaries} {}
 };
 
-template <class Real>
-class Rectangle : public Domain<Real>, public element::Rectangle<Real, 2> {
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+class Rectangle
+    : public Domain<Real, NodeData, BoundaryData, DomainData>,
+      public element::Rectangle<Real, 2> {
  public:
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   // Types:
-  using Id = typename Domain<Real>::Id;
-  using Boundary = Boundary<Real>;
+  using Boundary = typename Domain::Boundary;
   using Node = typename Boundary::Node;
+  using Id = typename Domain::Id;
+  using Data = DomainData;
   // Constructors:
   Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
            std::initializer_list<Boundary*> boundaries)
-      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain<Real>{boundaries} {}
+      : element::Rectangle<Real, 2>(i, a, b, c, d), Domain{boundaries} {}
 };
 
-template <class Real>
+template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Mesh {
  public:
   // Types:
-  using Node = Node<Real>;
-  using Boundary = Boundary<Real>;
-  using Domain = Domain<Real>;
+  using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
+  using Boundary = typename Domain::Boundary;
+  using Node = typename Boundary::Node;
+  using Triangle = Triangle<Real, NodeData, BoundaryData, DomainData>;
+  using Rectangle = Rectangle<Real, NodeData, BoundaryData, DomainData>;
 
  private:
   // Types:
@@ -138,9 +208,11 @@ class Mesh {
   // Traverse primitive objects.
   template <class Visitor>
   void ForEachNode(Visitor&& visitor) const {
+    for (auto& [id, node_ptr] : id_to_node_) { visitor(*node_ptr); }
   }
   template <class Visitor>
   void ForEachBoundary(Visitor&& visitor) const {
+    for (auto& [id, boundary_ptr] : id_to_boundary_) { visitor(*boundary_ptr); }
   }
   template <class Visitor>
   void ForEachDomain(Visitor&& visitor) const {
@@ -202,7 +274,7 @@ class Mesh {
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, a)};
-      auto triangle_unique_ptr = std::make_unique<Triangle<Real>>(
+      auto triangle_unique_ptr = std::make_unique<Triangle>(
           i,
           id_to_node_[a].get(), id_to_node_[b].get(), id_to_node_[c].get(),
           edges);
@@ -216,7 +288,7 @@ class Mesh {
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, d), EmplaceBoundary(d, a)};
-      auto rectangle_unique_ptr = std::make_unique<Rectangle<Real>>(
+      auto rectangle_unique_ptr = std::make_unique<Rectangle>(
           i,
           id_to_node_[a].get(), id_to_node_[b].get(),
           id_to_node_[c].get(), id_to_node_[d].get(),
@@ -256,8 +328,7 @@ class Mesh {
   std::map<std::pair<NodeId, NodeId>, Boundary*> node_pair_to_boundary_;
 };
 
-}  // namespace amr2d
 }  // namespace mesh
-}  // namespace cfd
-}  // namespace pvc
-#endif  // PVC_CFD_MESH_HPP_
+}  // namespace mini
+
+#endif  // MINI_MESH_DIM2_HPP_
