@@ -4,18 +4,18 @@
     <Piece NumberOfPoints="6" NumberOfCells="3">
       <PointData Vectors="Position">
         <DataArray type="Float32" Name="Position" NumberOfComponents="3" format="ascii" RangeMin="0" RangeMax="2.2360679775">
-          0 0 0 1 0 0
-          1 1 0 0 1 0
-          2 0 0 2 1 0
+          -1 0 0 0 0 0
+          0 1 0 -1 1 0
+          1 0 0 1 1 0
         </DataArray>
       </PointData>
       <CellData>
       </CellData>
       <Points>
         <DataArray type="Float32" Name="Points" NumberOfComponents="3" format="ascii" RangeMin="0" RangeMax="2.2360679775">
-          0 0 0 1 0 0
-          1 1 0 0 1 0
-          2 0 0 2 1 0
+          -1 0 0 0 0 0
+          0 1 0 -1 1 0
+          1 0 0 1 1 0
         </DataArray>
       </Points>
       <Cells>
