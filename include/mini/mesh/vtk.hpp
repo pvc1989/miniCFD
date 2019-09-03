@@ -215,13 +215,6 @@ class VtkWriter : public Writer<Mesh> {
     }
   }
   void WriteCells() {
-    auto vectors = vtkSmartPointer<vtkFloatArray>::New();
-    vectors->SetName("Cell's Position");
-    vectors->SetNumberOfComponents(3);
-    vectors->SetNumberOfTuples(mesh_->CountDomains());
-    auto values = vtkSmartPointer<vtkFloatArray>::New();
-    values->SetName("Cell's X+Y+Z");
-    values->SetNumberOfTuples(mesh_->CountDomains());
     auto i_cell = 0;
     auto insert_cell = [&](Domain const& domain) {
       vtkIdList* id_list{nullptr};
@@ -232,12 +225,6 @@ class VtkWriter : public Writer<Mesh> {
         id_list->SetId(0, domain.GetNode(0)->I());
         id_list->SetId(1, domain.GetNode(1)->I());
         id_list->SetId(2, domain.GetNode(2)->I());
-        auto x = (domain.GetNode(0)->X() + domain.GetNode(1)->X() +
-                  domain.GetNode(2)->X()) / 3;
-        auto y = (domain.GetNode(0)->Y() + domain.GetNode(1)->Y() +
-                  domain.GetNode(2)->Y()) / 3;
-        vectors->SetTuple3(i_cell, x, y, 0.0);
-        values->SetValue(i_cell, x + y);
         vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
         break;
       }
@@ -248,12 +235,6 @@ class VtkWriter : public Writer<Mesh> {
         id_list->SetId(1, domain.GetNode(1)->I());
         id_list->SetId(2, domain.GetNode(2)->I());
         id_list->SetId(3, domain.GetNode(3)->I());
-        auto x = (domain.GetNode(0)->X() + domain.GetNode(1)->X() +
-                  domain.GetNode(2)->X() + domain.GetNode(3)->X()) / 4;
-        auto y = (domain.GetNode(0)->Y() + domain.GetNode(1)->Y() +
-                  domain.GetNode(2)->Y() + domain.GetNode(3)->Y()) / 4;
-        vectors->SetTuple3(i_cell, x, y, 0.0);
-        values->SetValue(i_cell, x + y);
         vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
         break;
       }

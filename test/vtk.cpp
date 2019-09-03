@@ -108,6 +108,19 @@ TEST_F(VtkWriterTest, MeshWithData) {
       node.data.vectors.at(0) = {x, y};
       node.data.vectors.at(1) = {-x, -y};
     });
+    Mesh::Domain::scalar_names.at(0) = "X + Y";
+    Mesh::Domain::scalar_names.at(1) = "X - Y";
+    Mesh::Domain::vector_names.at(0) = "(X, Y)";
+    Mesh::Domain::vector_names.at(1) = "(-X, -Y)";
+    mesh_old->ForEachDomain([](Mesh::Domain& domain) {
+      auto center = domain.Center();
+      auto y = center.Y();
+      auto x = center.X();
+      domain.data.scalars.at(0) = x + y;
+      domain.data.scalars.at(1) = x - y;
+      domain.data.vectors.at(0) = {x, y};
+      domain.data.vectors.at(1) = {-x, -y};
+    });
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
     auto filename = mesh_name + "_with_data" + suffix;
