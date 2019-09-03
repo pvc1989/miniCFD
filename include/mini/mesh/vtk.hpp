@@ -119,8 +119,13 @@ class VtkReader : public Reader<Mesh> {
     auto reader = vtkSmartPointer<Reader>::New();
     reader->SetFileName(file_name);
     reader->Update();
-    reader->GetOutput()->Register(reader);
-    return vtkDataSet::SafeDownCast(reader->GetOutput());
+    auto vtk_data_set = vtkDataSet::SafeDownCast(reader->GetOutput());
+    if (vtk_data_set) {
+      vtk_data_set->Register(reader);
+    } else {
+      std::cerr << "Can not read the file!" << std::endl;
+    }
+    return vtk_data_set;
   }
 
  private:
