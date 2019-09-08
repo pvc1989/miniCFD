@@ -137,6 +137,7 @@ template <class Mesh>
 class VtkWriter : public Writer<Mesh> {
   using Node = typename Mesh::Node;
   using Domain = typename Mesh::Domain;
+
  public:
   void SetMesh(Mesh* mesh) override {
     assert(mesh);
@@ -156,16 +157,14 @@ class VtkWriter : public Writer<Mesh> {
       writer->SetDataModeToBinary();
       writer->Write();
       return true;
-    }
-    else if (extension == ".vtk") {
+    } else if (extension == ".vtk") {
       auto writer = vtkSmartPointer<vtkDataSetWriter>::New();
       writer->SetInputData(vtk_data_set_);
       writer->SetFileName(file_name.c_str());
       writer->SetFileTypeToBinary();
       writer->Write();
       return true;
-    }
-    else {
+    } else {
       std::cerr << "Unknown extension: " << extension << std::endl;
     }
     return false;
@@ -265,7 +264,7 @@ class VtkWriter : public Writer<Mesh> {
       cell_data->SetVectors(vector_data[i]);
     }
   }
-  void InsertCell(Domain const& domain){
+  void InsertCell(Domain const& domain) {
     vtkSmartPointer<vtkCell> vtk_cell;
     vtkIdList* id_list{nullptr};
     switch (domain.CountVertices()) {

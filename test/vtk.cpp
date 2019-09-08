@@ -58,11 +58,11 @@ TEST_F(VtkReaderTest, MediumMesh) {
 
 class VtkWriterTest : public ::testing::Test {
  public:
-  static std::string mesh_name;
+  static const char* mesh_name;
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-std::string VtkWriterTest::mesh_name;
+const char* VtkWriterTest::mesh_name;
 TEST_F(VtkWriterTest, TinyMesh) {
   auto reader = VtkReader<Mesh<double>>();
   auto writer = VtkWriter<Mesh<double>>();
@@ -125,7 +125,7 @@ TEST_F(VtkWriterTest, MeshWithData) {
     });
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
-    auto filename = mesh_name + "_with_data" + suffix;
+    auto filename = std::string(mesh_name) + "_with_data" + suffix;
     ASSERT_TRUE(writer.WriteToFile(filename));
     // Read the mesh just written:
     reader.ReadFromFile(filename);
