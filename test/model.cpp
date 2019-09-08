@@ -34,10 +34,10 @@ class SingleWaveModelTest : public :: testing::Test {
 };
 const char* SingleWaveModelTest::file_name;
 TEST_F(SingleWaveModelTest, SingleStep) {
-  auto riemann = Riemann{/* speed */0.5};
+  Mesh::Domain::scalar_names.at(0) = "U";
   auto u_l = State{-1.0};
   auto u_r = State{+1.0};
-  auto model = Model(riemann);
+  auto model = Model(1.0, 0.0);
   model.ReadMesh(test_data_dir_ + file_name);
   model.SetInitialState([&](Domain& domain) {
     if (domain.Center().X() < 0) {
@@ -48,7 +48,9 @@ TEST_F(SingleWaveModelTest, SingleStep) {
   });
   model.SetWallBoundary([&](Boundary& boundary) {
   });
-  model.SetTimeSteps(/* start */0.0, /* stop */1.0, /* start */1);
+  model.SetTimeSteps(/* start */0.0, /* stop */1.5, /* n_steps */300);
+  model.SetOutputDir("result/");
+  model.SetRefreshRate(4);
   model.Calculate();
 }
 
