@@ -12,7 +12,7 @@ namespace mesh {
 class BoundaryTest : public ::testing::Test {
  protected:
   using Boundary = Boundary<double>;
-  using Node = typename Boundary::Node;
+  using Node = Boundary::Node;
   Boundary::Id i{0};
   Node head{0.3, 0.0}, tail{0.0, 0.4};
 };
@@ -35,8 +35,8 @@ TEST_F(BoundaryTest, ElementMethods) {
 class TriangleTest : public ::testing::Test {
  protected:
   using Domain = Triangle<double>;
-  using Boundary = typename Domain::Boundary;
-  using Node = typename Boundary::Node;
+  using Boundary = Domain::Boundary;
+  using Node = Boundary::Node;
   Domain::Id i{0};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
   Boundary ab{&a, &b}, bc{&b, &c}, ca{&c, &a};
@@ -58,8 +58,8 @@ TEST_F(TriangleTest, ElementMethods) {
 class RectangleTest : public ::testing::Test {
  protected:
   using Domain = Rectangle<double>;
-  using Boundary = typename Domain::Boundary;
-  using Node = typename Boundary::Node;
+  using Boundary = Domain::Boundary;
+  using Node = Boundary::Node;
   Domain::Id i{0};
   Node a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
   Boundary ab{&a, &b}, bc{&b, &c}, cd{&c, &d}, da{&d, &a};
@@ -80,10 +80,10 @@ TEST_F(RectangleTest, ElementMethods) {
 
 class MeshTest : public ::testing::Test {
  protected:
-  using Domain = Domain<double>;
-  using Boundary = typename Domain::Boundary;
-  using Node = typename Boundary::Node;
   using Mesh = Mesh<double>;
+  using Domain = Mesh::Domain;
+  using Boundary = Mesh::Boundary;
+  using Node = Mesh::Node;
   Mesh mesh{};
   const std::vector<double> x{0.0, 1.0, 1.0, 0.0}, y{0.0, 0.0, 1.0, 1.0};
 };

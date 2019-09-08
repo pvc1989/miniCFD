@@ -182,11 +182,11 @@ class VtkWriter : public Writer<Mesh> {
     });
     vtk_data_set_->SetPoints(vtk_points);
     // Convert Node::Data::scalars to vtkFloatArray:
-    constexpr auto kScalars = Mesh::Node::Data::CountScalars();
+    constexpr auto kScalars = Node::Data::CountScalars();
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      scalar_data[i]->SetName(Mesh::Node::scalar_names[i].c_str());
+      scalar_data[i]->SetName(Node::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }
     mesh_->ForEachNode([&](Node const& node) {
@@ -200,11 +200,11 @@ class VtkWriter : public Writer<Mesh> {
       point_data->SetScalars(scalar_data[i]);
     }
     // Convert Node::Data::vectors to vtkFloatArray:
-    constexpr auto kVectors = Mesh::Node::Data::CountVectors();
+    constexpr auto kVectors = Node::Data::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      vector_data[i]->SetName(Mesh::Node::vector_names[i].c_str());
+      vector_data[i]->SetName(Node::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }
@@ -221,19 +221,19 @@ class VtkWriter : public Writer<Mesh> {
   }
   void WriteCells() {
     // Pre-allocate `vtkFloatArray`s for Domain::Data::scalars:
-    constexpr auto kScalars = Mesh::Domain::Data::CountScalars();
+    constexpr auto kScalars = Domain::Data::CountScalars();
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      scalar_data[i]->SetName(Mesh::Domain::scalar_names[i].c_str());
+      scalar_data[i]->SetName(Domain::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountDomains());
     }
     // Pre-allocate `vtkFloatArray`s for Domain::Data::vectors:
-    constexpr auto kVectors = Mesh::Domain::Data::CountVectors();
+    constexpr auto kVectors = Domain::Data::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      vector_data[i]->SetName(Mesh::Domain::vector_names[i].c_str());
+      vector_data[i]->SetName(Domain::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountDomains());
     }
