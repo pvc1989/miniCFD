@@ -19,7 +19,7 @@ class SingleWaveModelTest : public :: testing::Test {
   using BoundaryData = mesh::Data<
       double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
   using DomainData = mesh::Data<
-      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
+      double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
   using Mesh = mesh::Mesh<double, NodeData, BoundaryData, DomainData>;
   using Domain = Mesh::Domain;
   using Boundary = Mesh::Boundary;
