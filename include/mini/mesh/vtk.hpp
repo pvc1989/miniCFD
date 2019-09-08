@@ -28,8 +28,8 @@
 #include <cassert>
 #include <string>
 #include <memory>
+#include <stdexcept>
 #include <utility>
-#include <iostream>
 
 namespace mini {
 namespace mesh {
@@ -111,7 +111,7 @@ class VtkReader : public Reader<Mesh> {
     } else if (extension == ".vtk") {
       vtk_data_set = Read<vtkDataSetReader>(file_name);
     } else {
-      std::cerr << "Unknown extension: " << extension << std::endl;
+      throw std::invalid_argument("Unknown extension!");
     }
     return vtk_data_set;
   }
@@ -124,7 +124,7 @@ class VtkReader : public Reader<Mesh> {
     if (vtk_data_set) {
       vtk_data_set->Register(reader);
     } else {
-      std::cerr << "Can not read the file!" << std::endl;
+      throw std::invalid_argument("Fail to read the file!");
     }
     return vtk_data_set;
   }
@@ -165,7 +165,7 @@ class VtkWriter : public Writer<Mesh> {
       writer->Write();
       return true;
     } else {
-      std::cerr << "Unknown extension: " << extension << std::endl;
+      throw std::invalid_argument("Unknown extension!");
     }
     return false;
   }
@@ -275,7 +275,7 @@ class VtkWriter : public Writer<Mesh> {
       vtk_cell = vtkSmartPointer<vtkQuad>::New();
       break;
     default:
-      std::cerr << "Unknown cell type! " << std::endl;
+      throw std::invalid_argument("Unknown cell type!");
     }
     id_list = vtk_cell->GetPointIds();
     for (int i = 0; i != domain.CountVertices(); ++i) {
