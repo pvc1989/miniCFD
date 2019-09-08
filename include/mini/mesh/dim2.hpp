@@ -281,6 +281,9 @@ class Mesh {
       auto a = *curr++;
       auto b = *curr++;
       auto c = *curr++;
+      if (IsClockWise(a, b, c)) {
+        std::swap(a, c);
+      }
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, a)};
@@ -289,12 +292,22 @@ class Mesh {
           id_to_node_[a].get(), id_to_node_[b].get(), id_to_node_[c].get(),
           edges);
       domain_unique_ptr.reset(triangle_unique_ptr.release());
+      auto domain_ptr = domain_unique_ptr.get();
+      id_to_domain_.emplace(i, std::move(domain_unique_ptr));
+      LinkDomainToBoundary(domain_ptr, a, b);
+      LinkDomainToBoundary(domain_ptr, b, c);
+      LinkDomainToBoundary(domain_ptr, c, a);
+      return domain_ptr;
     } else if (nodes.size() == 4) {
       auto curr = nodes.begin();
       auto a = *curr++;
       auto b = *curr++;
       auto c = *curr++;
       auto d = *curr++;
+      if (IsClockWise(a, b, c)) {
+        std::swap(a, d);
+        std::swap(b, c);
+      }
       assert(curr == nodes.end());
       auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
                     EmplaceBoundary(c, d), EmplaceBoundary(d, a)};
@@ -304,26 +317,29 @@ class Mesh {
           id_to_node_[c].get(), id_to_node_[d].get(),
           edges);
       domain_unique_ptr.reset(rectangle_unique_ptr.release());
+      auto domain_ptr = domain_unique_ptr.get();
+      id_to_domain_.emplace(i, std::move(domain_unique_ptr));
+      LinkDomainToBoundary(domain_ptr, a, b);
+      LinkDomainToBoundary(domain_ptr, b, c);
+      LinkDomainToBoundary(domain_ptr, c, d);
+      LinkDomainToBoundary(domain_ptr, d, a);
+      return domain_ptr;
     } else {
       assert(false);
     }
-    auto domain_ptr = domain_unique_ptr.get();
-    id_to_domain_.emplace(i, std::move(domain_unique_ptr));
-    auto curr = nodes.begin();
-    auto next = nodes.begin() + 1;
-    while (next != nodes.end()) {
-      LinkDomainToBoundary(domain_ptr, *curr, *next);
-      curr = next++;
-    }
-    next = nodes.begin();
-    LinkDomainToBoundary(domain_ptr, *curr, *next);
-    return domain_ptr;
   }
 
  private:
+  bool IsClockWise(NodeId a, NodeId b, NodeId c) {
+    auto pa = id_to_node_[a].get();
+    auto pb = id_to_node_[b].get();
+    auto pc = id_to_node_[c].get();
+    auto ab = *pb - *pa;
+    auto ac = *pc - *pa;
+    return ab.Cross(ac) < 0;
+  }
   void LinkDomainToBoundary(Domain* domain, NodeId head, NodeId tail) {
     auto boundary = EmplaceBoundary(head, tail);
-    domain->boundaries_.emplace_front(boundary);
     if (head < tail) {
       boundary->template SetSide<+1>(domain);
     } else {
