@@ -145,7 +145,7 @@ class Domain : virtual public element::Face<Real, 2> {
   // Iterators:
   template <class Visitor>
   void ForEachBoundary(Visitor&& visitor) {
-    for (auto& b : boundaries_) { visitor(b); }
+    for (auto& b : boundaries_) { visitor(*b); }
   }
  protected:
   std::forward_list<Boundary*> boundaries_;
