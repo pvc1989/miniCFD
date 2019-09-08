@@ -277,70 +277,68 @@ class Mesh {
   Domain* EmplaceDomain(DomainId i, std::initializer_list<NodeId> nodes) {
     std::unique_ptr<Domain> domain_unique_ptr{nullptr};
     if (nodes.size() == 3) {
-      auto curr = nodes.begin();
-      auto a = *curr++;
-      auto b = *curr++;
-      auto c = *curr++;
-      if (IsClockWise(a, b, c)) {
-        std::swap(a, c);
-      }
-      assert(curr == nodes.end());
-      auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
-                    EmplaceBoundary(c, a)};
-      auto triangle_unique_ptr = std::make_unique<Triangle>(
-          i,
-          id_to_node_[a].get(), id_to_node_[b].get(), id_to_node_[c].get(),
-          edges);
-      domain_unique_ptr.reset(triangle_unique_ptr.release());
-      auto domain_ptr = domain_unique_ptr.get();
-      id_to_domain_.emplace(i, std::move(domain_unique_ptr));
-      LinkDomainToBoundary(domain_ptr, a, b);
-      LinkDomainToBoundary(domain_ptr, b, c);
-      LinkDomainToBoundary(domain_ptr, c, a);
-      return domain_ptr;
+      return EmplaceTriangle(i, nodes);
     } else if (nodes.size() == 4) {
-      auto curr = nodes.begin();
-      auto a = *curr++;
-      auto b = *curr++;
-      auto c = *curr++;
-      auto d = *curr++;
-      if (IsClockWise(a, b, c)) {
-        std::swap(a, d);
-        std::swap(b, c);
-      }
-      assert(curr == nodes.end());
-      auto edges = {EmplaceBoundary(a, b), EmplaceBoundary(b, c),
-                    EmplaceBoundary(c, d), EmplaceBoundary(d, a)};
-      auto rectangle_unique_ptr = std::make_unique<Rectangle>(
-          i,
-          id_to_node_[a].get(), id_to_node_[b].get(),
-          id_to_node_[c].get(), id_to_node_[d].get(),
-          edges);
-      domain_unique_ptr.reset(rectangle_unique_ptr.release());
-      auto domain_ptr = domain_unique_ptr.get();
-      id_to_domain_.emplace(i, std::move(domain_unique_ptr));
-      LinkDomainToBoundary(domain_ptr, a, b);
-      LinkDomainToBoundary(domain_ptr, b, c);
-      LinkDomainToBoundary(domain_ptr, c, d);
-      LinkDomainToBoundary(domain_ptr, d, a);
-      return domain_ptr;
+      return EmplaceRectangle(i, nodes);
     } else {
       assert(false);
     }
   }
 
  private:
-  Node* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
-  bool IsClockWise(NodeId a, NodeId b, NodeId c) const {
-    return GetNode(a)->IsClockWise(GetNode(b), GetNode(c));
+  Boundary* EmplaceBoundary(Node* head, Node* tail) {
+    return EmplaceBoundary(head->I(), tail->I());
   }
-  void LinkDomainToBoundary(Domain* domain, NodeId head, NodeId tail) {
+  void LinkDomainToBoundary(Domain* domain, Node* head, Node* tail) {
     auto boundary = EmplaceBoundary(head, tail);
-    if (head < tail) {
+    if (head->I() < tail->I()) {
       boundary->template SetSide<+1>(domain);
     } else {
       boundary->template SetSide<-1>(domain);
     }
+  }
+  Node* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
+  Domain* EmplaceTriangle(DomainId i, std::initializer_list<NodeId> nodes) {
+    auto* p = nodes.begin();
+    auto a = GetNode(p[0]);
+    auto b = GetNode(p[1]);
+    auto c = GetNode(p[2]);
+    if (a->IsClockWise(b, c)) {
+      std::swap(a, c);
+    }
+    auto edges = {EmplaceBoundary(a, b),
+                  EmplaceBoundary(b, c),
+                  EmplaceBoundary(c, a)};
+    auto domain_unique_ptr = std::make_unique<Triangle>(i, a, b, c, edges);
+    auto domain_ptr = domain_unique_ptr.get();
+    id_to_domain_.emplace(i, std::move(domain_unique_ptr));
+    LinkDomainToBoundary(domain_ptr, a, b);
+    LinkDomainToBoundary(domain_ptr, b, c);
+    LinkDomainToBoundary(domain_ptr, c, a);
+    return domain_ptr;
+  }
+  Domain* EmplaceRectangle(DomainId i, std::initializer_list<NodeId> nodes) {
+    auto* p = nodes.begin();
+    auto a = GetNode(p[0]);
+    auto b = GetNode(p[1]);
+    auto c = GetNode(p[2]);
+    auto d = GetNode(p[3]);
+    if (a->IsClockWise(b, c)) {
+      std::swap(a, d);
+      std::swap(b, c);
+    }
+    auto edges = {EmplaceBoundary(a, b),
+                  EmplaceBoundary(b, c),
+                  EmplaceBoundary(c, d),
+                  EmplaceBoundary(d, a)};
+    auto domain_unique_ptr = std::make_unique<Rectangle>(i, a, b, c, d, edges);
+    auto domain_ptr = domain_unique_ptr.get();
+    id_to_domain_.emplace(i, std::move(domain_unique_ptr));
+    LinkDomainToBoundary(domain_ptr, a, b);
+    LinkDomainToBoundary(domain_ptr, b, c);
+    LinkDomainToBoundary(domain_ptr, c, d);
+    LinkDomainToBoundary(domain_ptr, d, a);
+    return domain_ptr;
   }
 
  private:
