@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -86,6 +87,8 @@ class Boundary : public element::Edge<Real, 2> {
   using Domain = Domain<Real, NodeData, BoundaryData, DomainData>;
   // Public data members:
   Data data;
+  static std::array<std::string, BoundaryData::CountScalars()> scalar_names;
+  static std::array<std::string, BoundaryData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
   explicit Boundary(Args&&... args) :
@@ -114,6 +117,13 @@ class Boundary : public element::Edge<Real, 2> {
   Domain* positive_side_{nullptr};
   Domain* negative_side_{nullptr};
 };
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, BoundaryData::CountScalars()>
+Boundary<Real, NodeData, BoundaryData, DomainData>::scalar_names;
+
+template <class Real, class NodeData, class BoundaryData, class DomainData>
+std::array<std::string, BoundaryData::CountVectors()>
+Boundary<Real, NodeData, BoundaryData, DomainData>::vector_names;
 
 template <class Real, class NodeData, class BoundaryData, class DomainData>
 class Domain : virtual public element::Face<Real, 2> {
