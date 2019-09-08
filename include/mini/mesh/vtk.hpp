@@ -179,7 +179,7 @@ class VtkWriter : public Writer<Mesh> {
     auto vtk_points = vtkSmartPointer<vtkPoints>::New();
     vtk_points->SetNumberOfPoints(mesh_->CountNodes());
     mesh_->ForEachNode([&](Node const& node) {
-      vtk_points->InsertPoint(node.I(), node.X(), node.Y(), 0.0);
+      vtk_points->InsertPoint(node.I(), node.X(), node.Y(), node.Z());
     });
     vtk_data_set_->SetPoints(vtk_points);
     // Convert Node::Data::scalars to vtkFloatArray:
@@ -270,34 +270,19 @@ class VtkWriter : public Writer<Mesh> {
     vtkIdList* id_list{nullptr};
     switch (domain.CountVertices()) {
     case 3:
-      BuildVtkTriangle(domain, vtk_cell, id_list);
+      vtk_cell = vtkSmartPointer<vtkTriangle>::New();
       break;
     case 4:
-      BuildVtkQuad(domain, vtk_cell, id_list);
+      vtk_cell = vtkSmartPointer<vtkQuad>::New();
       break;
     default:
       std::cerr << "Unknown cell type! " << std::endl;
     }
+    id_list = vtk_cell->GetPointIds();
+    for (int i = 0; i != domain.CountVertices(); ++i) {
+      id_list->SetId(i, domain.GetNode(i)->I());
+    }
     vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
-  }
-  void BuildVtkTriangle(Domain const& domain,
-                        vtkSmartPointer<vtkCell>& vtk_cell,
-                        vtkIdList*& id_list) {
-    vtk_cell = vtkSmartPointer<vtkTriangle>::New();
-    id_list = vtk_cell->GetPointIds();
-    id_list->SetId(0, domain.GetNode(0)->I());
-    id_list->SetId(1, domain.GetNode(1)->I());
-    id_list->SetId(2, domain.GetNode(2)->I());
-  }
-  void BuildVtkQuad(Domain const& domain,
-                    vtkSmartPointer<vtkCell>& vtk_cell,
-                    vtkIdList*& id_list) {
-    vtk_cell = vtkSmartPointer<vtkQuad>::New();
-    id_list = vtk_cell->GetPointIds();
-    id_list->SetId(0, domain.GetNode(0)->I());
-    id_list->SetId(1, domain.GetNode(1)->I());
-    id_list->SetId(2, domain.GetNode(2)->I());
-    id_list->SetId(3, domain.GetNode(3)->I());
   }
 };
 
