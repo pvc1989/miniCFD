@@ -188,7 +188,7 @@ class Rectangle
   using Data = DomainData;
   // Constructors:
   Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
-           std::initializer_list<Boundary*> boundaries)
+            std::initializer_list<Boundary*> boundaries)
       : element::Rectangle<Real, 2>(i, a, b, c, d), Domain{boundaries} {}
 };
 
