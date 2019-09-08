@@ -40,6 +40,8 @@ class Point {
   Real X() const { return X<0>(); }
   Real Y() const { return X<1>(); }
   Real Z() const { return X<2>(); }
+  // Predicates:
+  bool IsClockWise(Point const* b, Point const* c) const;
   // Operators:
   Point operator=(const Point& that) const {
     return Point(that.xyz_.begin(), that.xyz_.end());
@@ -110,6 +112,15 @@ class Vector : public Point<Real, kDim> {
     return CrossProduct<Real>(*this, that);
   }
 };
+
+template <class Real, int kDim>
+inline bool Point<Real, kDim>::IsClockWise(
+    Point const* b, Point const* c) const {
+  static_assert(kDim == 2);
+  auto ab = *b - *this;
+  auto ac = *c - *this;
+  return ab.Cross(ac) < 0;
+}
 
 }  // namespace geometry
 }  // namespace mini

@@ -330,13 +330,9 @@ class Mesh {
   }
 
  private:
-  bool IsClockWise(NodeId a, NodeId b, NodeId c) {
-    auto pa = id_to_node_[a].get();
-    auto pb = id_to_node_[b].get();
-    auto pc = id_to_node_[c].get();
-    auto ab = *pb - *pa;
-    auto ac = *pc - *pa;
-    return ab.Cross(ac) < 0;
+  Node* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
+  bool IsClockWise(NodeId a, NodeId b, NodeId c) const {
+    return GetNode(a)->IsClockWise(GetNode(b), GetNode(c));
   }
   void LinkDomainToBoundary(Domain* domain, NodeId head, NodeId tail) {
     auto boundary = EmplaceBoundary(head, tail);
