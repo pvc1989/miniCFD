@@ -49,13 +49,18 @@ TEST_F(PointTest, IteratorConstructor) {
   EXPECT_EQ(p3.X<2>(), z);
 }
 TEST_F(PointTest, Accessors) {
+  auto p1 = P1{x};
+  EXPECT_EQ(p1.X(), x);
+  EXPECT_EQ(p1.Y(), 0);
+  EXPECT_EQ(p1.Z(), 0);
+  auto p2 = P2{x, y};
+  EXPECT_EQ(p2.X(), x);
+  EXPECT_EQ(p2.Y(), y);
+  EXPECT_EQ(p2.Z(), 0);
   auto p3 = P3{x, y, z};
   EXPECT_EQ(p3.X(), x);
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
-  EXPECT_EQ(p3.X<0>(), x);
-  EXPECT_EQ(p3.X<1>(), y);
-  EXPECT_EQ(p3.X<2>(), z);
 }
 
 class VectorTest : public ::testing::Test {

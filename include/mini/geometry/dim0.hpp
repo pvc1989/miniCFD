@@ -35,8 +35,7 @@ class Point {
   // Accessors:
   template <int I>
   Real X() const {
-    static_assert(0 <= I && I < kDim);
-    return xyz_[I];
+    return I < kDim ? xyz_[I] : 0;
   }
   Real X() const { return X<0>(); }
   Real Y() const { return X<1>(); }

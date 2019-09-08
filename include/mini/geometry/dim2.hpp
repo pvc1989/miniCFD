@@ -51,6 +51,7 @@ class Triangle : virtual public Surface<Real, kDim> {
   Point Center() const override {
     return (*a_ + *b_ + *c_) / 3;
   }
+
  private:
   Point* a_;
   Point* b_;
@@ -89,6 +90,7 @@ class Rectangle : virtual public Surface<Real, kDim> {
   Point Center() const override {
     return (*a_ + *c_) / 2;
   }
+
  private:
   Point* a_;
   Point* b_;
