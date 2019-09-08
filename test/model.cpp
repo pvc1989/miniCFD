@@ -15,9 +15,12 @@ namespace mini {
 
 class SingleWaveModelTest : public :: testing::Test {
  protected:
-  using Data = mesh::Data<double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
-  using Mesh = mesh::Mesh<double, /* Node */mesh::Empty,
-                          /* Boundary */Data, /* Domain */Data>;
+  using NodeData = mesh::Empty;
+  using BoundaryData = mesh::Data<
+      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
+  using DomainData = mesh::Data<
+      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
+  using Mesh = mesh::Mesh<double, NodeData, BoundaryData, DomainData>;
   using Domain = Mesh::Domain;
   using Boundary = Mesh::Boundary;
   using Riemann = riemann::SingleWave;
@@ -25,15 +28,17 @@ class SingleWaveModelTest : public :: testing::Test {
   using Model = model::FVM<Mesh, Riemann>;
 
  public:
-  static std::string file_name;
+  static const char* file_name;
+ protected:
+  const std::string test_data_dir_{TEST_DATA_DIR};
 };
-std::string SingleWaveModelTest::file_name;
+const char* SingleWaveModelTest::file_name;
 TEST_F(SingleWaveModelTest, SingleStep) {
   auto riemann = Riemann{/* speed */0.5};
   auto u_l = State{-1.0};
   auto u_r = State{+1.0};
   auto model = Model(riemann);
-  model.ReadMesh(TEST_DATA_DIR + file_name);
+  model.ReadMesh(test_data_dir_ + file_name);
   model.SetInitialState([&](Domain& domain) {
     if (domain.Center().X() < 0) {
       domain.data.scalars[0] = u_l;
