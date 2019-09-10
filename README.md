@@ -14,5 +14,7 @@ cmake --build .
 ./test/geometry
 ./test/element
 ./test/mesh
-./test/reader
+./test/vtk
+mkdir result
+./test/model
 ```
