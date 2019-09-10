@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "mini/riemann/linear.hpp"
+#include "mini/riemann/burgers.hpp"
 
 namespace mini {
 namespace riemann {
@@ -27,6 +28,45 @@ TEST_F(SingleWaveTest, TestFlux) {
   // standing wave
   solver = Solver(0.0);
   EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+}
+
+class BurgersTest : public :: testing::Test {
+ protected:
+  using Solver = Burgers;
+  using State = Solver::State;
+  using Flux = Solver::Flux;
+};
+TEST_F(BurgersTest, TestFlux) {
+  auto solver = Solver();
+  // right running shock wave
+  State u_l{2.0}, u_r{1.0};
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  // left running shock wave
+  u_l = -1.0;
+  u_r = -2.0;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_r));
+  // standing shock wave
+  u_l = +1.0;
+  u_r = -1.0;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_r));
+  // right running rare wave
+  u_l = 1.0;
+  u_r = 2.0;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  // left running rare wave
+  u_l = -2.0;
+  u_r = -1.0;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_r));
+  // inside rare wave
+  u_l = -2.0;
+  u_r = +2.0;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(0));
+  // smooth
+  u_l = +1.54;
+  u_r = +1.54;
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_r));
 }
 
 class MultiWaveTest : public :: testing::Test {

@@ -86,33 +86,33 @@ class SingleWave {
   }
   void UpdateModel() {
     auto riemann_solver = [&](Wall& wall) {
-      auto left_domain = wall.template GetSide<+1>();
-      auto right_domain = wall.template GetSide<-1>();
-      if (left_domain && right_domain) {
+      auto left_cell = wall.template GetSide<+1>();
+      auto right_cell = wall.template GetSide<-1>();
+      if (left_cell && right_cell) {
         auto riemann = Riemann(wall.data.scalars[1]);
-        State u_l = left_domain->data.scalars[0];
-        State u_r = right_domain->data.scalars[0];
+        State u_l = left_cell->data.scalars[0];
+        State u_r = right_cell->data.scalars[0];
         Flux f = riemann.GetFluxOnTimeAxis(u_l, u_r);
         wall.data.scalars[0] = f;
-      } else if (left_domain) {
-        wall.data.scalars[0] = left_domain->data.scalars[0] *
+      } else if (left_cell) {
+        wall.data.scalars[0] = left_cell->data.scalars[0] *
                                wall.data.scalars[1];
       } else {
-        wall.data.scalars[0] = right_domain->data.scalars[0] *
+        wall.data.scalars[0] = right_cell->data.scalars[0] *
                                wall.data.scalars[1];
       }
     };
-    auto get_next_u = [&](Cell& domain) {
+    auto get_next_u = [&](Cell& cell) {
       double rhs = 0.0;
-      domain.ForEachWall([&](Wall& wall) {
-        if (wall.template GetSide<+1>() == &domain) {
+      cell.ForEachWall([&](Wall& wall) {
+        if (wall.template GetSide<+1>() == &cell) {
           rhs -= wall.data.scalars[0] * wall.Measure();
         } else {
           rhs += wall.data.scalars[0] * wall.Measure();
         }
       });
-      rhs /= domain.Measure();
-      TimeStepping(&(domain.data.scalars[0]), rhs);
+      rhs /= cell.Measure();
+      TimeStepping(&(cell.data.scalars[0]), rhs);
     };
     mesh_->ForEachWall(riemann_solver);
     mesh_->ForEachCell(get_next_u);
@@ -131,6 +131,124 @@ class SingleWave {
   std::string dir_;
   int refresh_rate_;
 };
+
+template <class Mesh, class Riemann>
+class Burgers {
+  using Wall = typename Mesh::Wall;
+  using Cell = typename Mesh::Cell;
+  using State = typename Riemann::State;
+  using Flux = typename Riemann::Flux;
+  using VtkReader = typename mesh::VtkReader<Mesh>;
+  using VtkWriter = typename mesh::VtkWriter<Mesh>;
+
+ public:
+  Burgers() {}
+  bool ReadMesh(std::string const& file_name) {
+    reader_ = VtkReader();
+    if (reader_.ReadFromFile(file_name)) {
+      mesh_ = reader_.GetMesh();
+      return true;
+    } else {
+      return false;
+    }
+  }
+  // Mutators:
+  template <class Visitor>
+  void SetInitialState(Visitor&& visitor) {
+    mesh_->ForEachCell(visitor);
+  }
+  void SetTimeSteps(double duration, int n_steps, int refresh_rate) {
+    duration_ = duration;
+    n_steps_ = n_steps;
+    step_size_ = duration / n_steps;
+    refresh_rate_ = refresh_rate;
+  }
+  void SetOutputDir(std::string dir) {
+    dir_ = dir;
+  }
+  // Major computation:
+  void Calculate() {
+    writer_ = VtkWriter();
+    auto filename = dir_ + std::to_string(0) + ".vtu";
+    bool pass = OutputCurrentResult(filename);
+    assert(pass);
+    auto riemann_ = Riemann();
+    mesh_->ForEachWall([&](Wall& wall){
+      double cos = (wall.Tail()->Y() - wall.Head()->Y()) /
+                    wall.Measure();
+      double sin = (wall.Head()->X() - wall.Tail()->X()) /
+                    wall.Measure();
+      wall.data.vectors[0] = {cos, sin};
+    });
+    for (int i = 1; i <= n_steps_ && pass; i++) {
+      UpdateModel();
+      if (i % refresh_rate_ == 0) {
+        filename = dir_ + std::to_string(i) + ".vtu";
+        pass = OutputCurrentResult(filename);
+      }
+    }
+    if (pass) {
+      std::cout << "Complete calculation!" << std::endl;
+    } else {
+      std::cout << "Calculation failed!" << std::endl;
+    }
+  }
+
+ private:
+  bool OutputCurrentResult(std::string const& filename) {
+    writer_.SetMesh(mesh_.get());
+    return writer_.WriteToFile(filename);
+  }
+  void UpdateModel() {
+    auto riemann_solver = [&](Wall& wall) {
+      auto left_cell = wall.template GetSide<+1>();
+      auto right_cell = wall.template GetSide<-1>();
+      auto c = wall.data.vectors[0][0];
+      auto s = wall.data.vectors[0][1];
+      if (left_cell && right_cell) {
+        State u_l = left_cell->data.scalars[0];
+        State u_r = right_cell->data.scalars[0];
+        Flux f = riemann_.GetFluxOnTimeAxis(u_l, u_r);
+        wall.data.scalars[0] = f * c;
+      } else if (left_cell) {
+        Flux f = left_cell->data.scalars[0] *
+                 left_cell->data.scalars[0] / 2;
+        wall.data.scalars[0] = f * c;
+      } else {
+        Flux f = right_cell->data.scalars[0] *
+                 right_cell->data.scalars[0] / 2;
+        wall.data.scalars[0] = f * c;
+      }
+    };
+    auto get_next_u = [&](Cell& cell) {
+      double rhs = 0.0;
+      cell.ForEachWall([&](Wall& wall) {
+        if (wall.template GetSide<+1>() == &cell) {
+          rhs -= wall.data.scalars[0] * wall.Measure();
+        } else {
+          rhs += wall.data.scalars[0] * wall.Measure();
+        }
+      });
+      rhs /= cell.Measure();
+      TimeStepping(&(cell.data.scalars[0]), rhs);
+    };
+    mesh_->ForEachWall(riemann_solver);
+    mesh_->ForEachCell(get_next_u);
+  }
+  void TimeStepping(double* u_curr , double du_dt) {
+    *u_curr += du_dt * step_size_;
+  }
+  VtkReader reader_;
+  VtkWriter writer_;
+  std::unique_ptr<Mesh> mesh_;
+  double duration_;
+  int n_steps_;
+  double step_size_;
+  std::string dir_;
+  int refresh_rate_;
+  Riemann riemann_;
+};
+
 
 }  // namespace model
 }  // namespace mini
