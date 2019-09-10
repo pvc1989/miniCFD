@@ -17,13 +17,13 @@ namespace model {
 class SingleWaveTest : public :: testing::Test {
  protected:
   using NodeData = mesh::Empty;
-  using BoundaryData = mesh::Data<
+  using WallData = mesh::Data<
       double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
-  using DomainData = mesh::Data<
+  using CellData = mesh::Data<
       double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
-  using Mesh = mesh::Mesh<double, NodeData, BoundaryData, DomainData>;
-  using Domain = Mesh::Domain;
-  using Boundary = Mesh::Boundary;
+  using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
+  using Cell = Mesh::Cell;
+  using Wall = Mesh::Wall;
   using Riemann = riemann::SingleWave;
   using State = Riemann::State;
   using Model = model::SingleWave<Mesh, Riemann>;
@@ -41,19 +41,17 @@ double SingleWaveTest::duration;
 int SingleWaveTest::n_steps;
 int SingleWaveTest::refresh_rate;
 TEST_F(SingleWaveTest, SingleStep) {
-  Mesh::Domain::scalar_names.at(0) = "U";
+  Mesh::Cell::scalar_names.at(0) = "U";
   auto u_l = State{-1.0};
   auto u_r = State{+1.0};
   auto model = Model(1.0, 0.0);
   model.ReadMesh(test_data_dir_ + file_name);
-  model.SetInitialState([&](Domain& domain) {
-    if (domain.Center().X() < 0) {
-      domain.data.scalars[0] = u_l;
+  model.SetInitialState([&](Cell& cell) {
+    if (cell.Center().X() < 0) {
+      cell.data.scalars[0] = u_l;
     } else {
-      domain.data.scalars[0] = u_r;
+      cell.data.scalars[0] = u_r;
     }
-  });
-  model.SetWallBoundary([&](Boundary& boundary) {
   });
   model.SetTimeSteps(duration, n_steps, refresh_rate);
   model.SetOutputDir("result/");

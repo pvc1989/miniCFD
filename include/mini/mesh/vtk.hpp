@@ -60,7 +60,7 @@ class VtkReader : public Reader<Mesh> {
       vtk_data_set_owner.TakeReference(vtk_data_set);
       mesh_.reset(new Mesh());
       ReadNodes(vtk_data_set);
-      ReadDomains(vtk_data_set);
+      ReadCells(vtk_data_set);
       return true;
     } else {
       std::cerr << "ReadFromFile() failed." << std::endl;
@@ -81,7 +81,7 @@ class VtkReader : public Reader<Mesh> {
       mesh_->EmplaceNode(i, xyz[0], xyz[1]);
     }
   }
-  void ReadDomains(vtkDataSet* vtk_data_set) {
+  void ReadCells(vtkDataSet* vtk_data_set) {
     int n = vtk_data_set->GetNumberOfCells();
     for (int i = 0; i < n; i++) {
       auto cell_i = vtk_data_set->GetCell(i);
@@ -90,13 +90,13 @@ class VtkReader : public Reader<Mesh> {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
-        mesh_->EmplaceDomain(i, {a, b, c});
+        mesh_->EmplaceCell(i, {a, b, c});
       } else if (vtk_data_set->GetCellType(i) == 9) {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
         auto d = NodeId(ids->GetId(3));
-        mesh_->EmplaceDomain(i, {a, b, c, d});
+        mesh_->EmplaceCell(i, {a, b, c, d});
       } else {
         continue;
       }
@@ -136,7 +136,7 @@ class VtkReader : public Reader<Mesh> {
 template <class Mesh>
 class VtkWriter : public Writer<Mesh> {
   using Node = typename Mesh::Node;
-  using Domain = typename Mesh::Domain;
+  using Cell = typename Mesh::Cell;
 
  public:
   void SetMesh(Mesh* mesh) override {
@@ -226,40 +226,40 @@ class VtkWriter : public Writer<Mesh> {
     }
   }
   void WriteCells() {
-    // Pre-allocate `vtkFloatArray`s for Domain::Data::scalars:
-    constexpr auto kScalars = Domain::Data::CountScalars();
+    // Pre-allocate `vtkFloatArray`s for Cell::Data::scalars:
+    constexpr auto kScalars = Cell::Data::CountScalars();
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Domain::scalar_names[i].size() == 0) {
+      if (Cell::scalar_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      scalar_data[i]->SetName(Domain::scalar_names[i].c_str());
-      scalar_data[i]->SetNumberOfTuples(mesh_->CountDomains());
+      scalar_data[i]->SetName(Cell::scalar_names[i].c_str());
+      scalar_data[i]->SetNumberOfTuples(mesh_->CountCells());
     }
-    // Pre-allocate `vtkFloatArray`s for Domain::Data::vectors:
-    constexpr auto kVectors = Domain::Data::CountVectors();
+    // Pre-allocate `vtkFloatArray`s for Cell::Data::vectors:
+    constexpr auto kVectors = Cell::Data::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Domain::vector_names[i].size() == 0) {
+      if (Cell::vector_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      vector_data[i]->SetName(Domain::vector_names[i].c_str());
+      vector_data[i]->SetName(Cell::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
-      vector_data[i]->SetNumberOfTuples(mesh_->CountDomains());
+      vector_data[i]->SetNumberOfTuples(mesh_->CountCells());
     }
     // Insert cells and cell data:
     auto i_cell = 0;
-    mesh_->ForEachDomain([&](Domain const& domain) {
-      InsertCell(domain);
+    mesh_->ForEachCell([&](Cell const& cell) {
+      InsertCell(cell);
       // Insert scalar data:
       for (int i = 0; i < kScalars; ++i) {
-        scalar_data[i]->SetValue(i_cell, domain.data.scalars[i]);
+        scalar_data[i]->SetValue(i_cell, cell.data.scalars[i]);
       }
       // Insert vector data:
       for (int i = 0; i < kVectors; ++i) {
-        auto& v = domain.data.vectors[i];
+        auto& v = cell.data.vectors[i];
         vector_data[i]->SetTuple3(i_cell, v[0], v[1], 0.0);
       }
       // Increment counter:
@@ -276,10 +276,10 @@ class VtkWriter : public Writer<Mesh> {
       cell_data->SetVectors(vector_data[i]);
     }
   }
-  void InsertCell(Domain const& domain) {
+  void InsertCell(Cell const& cell) {
     vtkSmartPointer<vtkCell> vtk_cell;
     vtkIdList* id_list{nullptr};
-    switch (domain.CountVertices()) {
+    switch (cell.CountVertices()) {
     case 3:
       vtk_cell = vtkSmartPointer<vtkTriangle>::New();
       break;
@@ -290,8 +290,8 @@ class VtkWriter : public Writer<Mesh> {
       throw std::invalid_argument("Unknown cell type!");
     }
     id_list = vtk_cell->GetPointIds();
-    for (int i = 0; i != domain.CountVertices(); ++i) {
-      id_list->SetId(i, domain.GetNode(i)->I());
+    for (int i = 0; i != cell.CountVertices(); ++i) {
+      id_list->SetId(i, cell.GetNode(i)->I());
     }
     vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
   }
