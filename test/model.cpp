@@ -19,7 +19,7 @@ class SingleWaveModelTest : public :: testing::Test {
   using BoundaryData = mesh::Data<
       double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
   using DomainData = mesh::Data<
-      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
+      double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
   using Mesh = mesh::Mesh<double, NodeData, BoundaryData, DomainData>;
   using Domain = Mesh::Domain;
   using Boundary = Mesh::Boundary;
@@ -29,10 +29,16 @@ class SingleWaveModelTest : public :: testing::Test {
 
  public:
   static const char* file_name;
+  static double duration;
+  static int n_steps;
+  static int refresh_rate;
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 const char* SingleWaveModelTest::file_name;
+double SingleWaveModelTest::duration;
+int SingleWaveModelTest::n_steps;
+int SingleWaveModelTest::refresh_rate;
 TEST_F(SingleWaveModelTest, SingleStep) {
   Mesh::Domain::scalar_names.at(0) = "U";
   auto u_l = State{-1.0};
@@ -48,9 +54,8 @@ TEST_F(SingleWaveModelTest, SingleStep) {
   });
   model.SetWallBoundary([&](Boundary& boundary) {
   });
-  model.SetTimeSteps(/* start */0.0, /* stop */1.5, /* n_steps */300);
+  model.SetTimeSteps(duration, n_steps, refresh_rate);
   model.SetOutputDir("result/");
-  model.SetRefreshRate(4);
   model.Calculate();
 }
 
@@ -59,7 +64,10 @@ TEST_F(SingleWaveModelTest, SingleStep) {
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   if (argc == 1) {
-    mini::SingleWaveModelTest::file_name = "tiny.vtu";
+    mini::SingleWaveModelTest::file_name = "medium.vtu";
+    mini::SingleWaveModelTest::duration = 1.0;
+    mini::SingleWaveModelTest::n_steps = 50;
+    mini::SingleWaveModelTest::refresh_rate = 1;
   } else {
     mini::SingleWaveModelTest::file_name = argv[1];
   }

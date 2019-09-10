@@ -3,6 +3,7 @@
 #ifndef MINI_MODEL_FVM_HPP_
 #define MINI_MODEL_FVM_HPP_
 
+#include <memory>
 #include <string>
 
 #include "mini/riemann/linear.hpp"
@@ -45,17 +46,14 @@ class FVM {
   void SetWallBoundary(Visitor&& visitor) {
     mesh_->ForEachBoundary(visitor);
   }
-  void SetTimeSteps(double start, double stop, int n_steps) {
-    start_ = start;
-    stop_ = stop;
+  void SetTimeSteps(double duration, int n_steps, int refresh_rate) {
+    duration_ = duration;
     n_steps_ = n_steps;
-    step_size_ = (stop - start) / n_steps;
+    step_size_ = duration / n_steps;
+    refresh_rate_ = refresh_rate;
   }
   void SetOutputDir(std::string dir) {
     dir_ = dir;
-  }
-  void SetRefreshRate(int refresh_steps) {
-    refresh_steps_ = refresh_steps;
   }
   // Major computation:
   void Calculate() {
@@ -64,14 +62,16 @@ class FVM {
     bool pass = OutputCurrentResult(filename);
     assert(pass);
     mesh_->ForEachBoundary([&](Boundary& boundary){
-      double cos = (boundary.Tail()->Y() - boundary.Head()->Y()) / boundary.Measure();
-      double sin = (boundary.Head()->X() - boundary.Tail()->X()) / boundary.Measure();
+      double cos = (boundary.Tail()->Y() - boundary.Head()->Y()) /
+                    boundary.Measure();
+      double sin = (boundary.Head()->X() - boundary.Tail()->X()) /
+                    boundary.Measure();
       double a = cos * a_ + sin * b_;
-      boundary.data.scalars.at(1) = a;
+      boundary.data.scalars[1] = a;
     });
     for (int i = 1; i <= n_steps_ && pass; i++) {
       UpdateModel();
-      if (i % refresh_steps_ == 0) {
+      if (i % refresh_rate_ == 0) {
         filename = dir_ + std::to_string(i) + ".vtu";
         pass = OutputCurrentResult(filename);
       }
@@ -90,50 +90,50 @@ class FVM {
   }
   void UpdateModel() {
     auto riemann_solver = [&](Boundary& boundary) {
-      auto riemann = Riemann(boundary.data.scalars.at(1));
       auto left_domain = boundary.template GetSide<+1>();
       auto right_domain = boundary.template GetSide<-1>();
-      if (left_domain and right_domain) {
+      if (left_domain && right_domain) {
+        auto riemann = Riemann(boundary.data.scalars[1]);
         State u_l = left_domain->data.scalars[0];
         State u_r = right_domain->data.scalars[0];
         Flux f = riemann.GetFluxOnTimeAxis(u_l, u_r);
-        boundary.data.scalars.at(0) = f;
+        boundary.data.scalars[0] = f;
       } else if (left_domain) {
-        boundary.data.scalars.at(0) = left_domain->data.scalars[0] *
-                                      boundary.data.scalars.at(1);
+        boundary.data.scalars[0] = left_domain->data.scalars[0] *
+                                      boundary.data.scalars[1];
       } else {
-        boundary.data.scalars.at(0) = right_domain->data.scalars[0] *
-                                      boundary.data.scalars.at(1);
+        boundary.data.scalars[0] = right_domain->data.scalars[0] *
+                                      boundary.data.scalars[1];
       }
     };
-    auto fvm_solver = [&](Domain& domain) {
-      double du_dt = 0.0;
+    auto get_next_u = [&](Domain& domain) {
+      double rhs = 0.0;
       domain.ForEachBoundary([&](Boundary& boundary) {
         if (boundary.template GetSide<+1>() == &domain) {
-          du_dt -= boundary.data.scalars.at(0) * boundary.Measure();
+          rhs -= boundary.data.scalars[0] * boundary.Measure();
         } else {
-          du_dt += boundary.data.scalars.at(0) * boundary.Measure();
+          rhs += boundary.data.scalars[0] * boundary.Measure();
         }
       });
-      du_dt /= domain.Measure();
-      State u_prev = domain.data.scalars[0];
-      State u_next = u_prev + du_dt * step_size_;
-      domain.data.scalars.at(0) = u_next;
+      rhs /= domain.Measure();
+      TimeStepping(domain.data.scalars[0], rhs);
     };
     mesh_->ForEachBoundary(riemann_solver);
-    mesh_->ForEachDomain(fvm_solver);
+    mesh_->ForEachDomain(get_next_u);
+  }
+  void TimeStepping(double& u_curr , double du_dt) {
+    u_curr += du_dt * step_size_;
   }
   double a_;
   double b_;
   VtkReader reader_;
   VtkWriter writer_;
   std::unique_ptr<Mesh> mesh_;
-  double start_;
-  double stop_;
+  double duration_;
   int n_steps_;
   double step_size_;
   std::string dir_;
-  int refresh_steps_;
+  int refresh_rate_;
 };
 
 }  // namespace model
