@@ -86,33 +86,33 @@ class SingleWave {
   }
   void UpdateModel() {
     auto riemann_solver = [&](Wall& wall) {
-      auto left_domain = wall.template GetSide<+1>();
-      auto right_domain = wall.template GetSide<-1>();
-      if (left_domain && right_domain) {
+      auto left_cell = wall.template GetSide<+1>();
+      auto right_cell = wall.template GetSide<-1>();
+      if (left_cell && right_cell) {
         auto riemann = Riemann(wall.data.scalars[1]);
-        State u_l = left_domain->data.scalars[0];
-        State u_r = right_domain->data.scalars[0];
+        State u_l = left_cell->data.scalars[0];
+        State u_r = right_cell->data.scalars[0];
         Flux f = riemann.GetFluxOnTimeAxis(u_l, u_r);
         wall.data.scalars[0] = f;
-      } else if (left_domain) {
-        wall.data.scalars[0] = left_domain->data.scalars[0] *
+      } else if (left_cell) {
+        wall.data.scalars[0] = left_cell->data.scalars[0] *
                                wall.data.scalars[1];
       } else {
-        wall.data.scalars[0] = right_domain->data.scalars[0] *
+        wall.data.scalars[0] = right_cell->data.scalars[0] *
                                wall.data.scalars[1];
       }
     };
-    auto get_next_u = [&](Cell& domain) {
+    auto get_next_u = [&](Cell& cell) {
       double rhs = 0.0;
-      domain.ForEachWall([&](Wall& wall) {
-        if (wall.template GetSide<+1>() == &domain) {
+      cell.ForEachWall([&](Wall& wall) {
+        if (wall.template GetSide<+1>() == &cell) {
           rhs -= wall.data.scalars[0] * wall.Measure();
         } else {
           rhs += wall.data.scalars[0] * wall.Measure();
         }
       });
-      rhs /= domain.Measure();
-      TimeStepping(&(domain.data.scalars[0]), rhs);
+      rhs /= cell.Measure();
+      TimeStepping(&(cell.data.scalars[0]), rhs);
     };
     mesh_->ForEachWall(riemann_solver);
     mesh_->ForEachCell(get_next_u);
