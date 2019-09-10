@@ -15,7 +15,7 @@ class Burgers {
   using State = double;
   using Flux = double;
   // Constructor:
-  Burgers() {}
+  explicit Burgers(double k) : k_(k) {}
   // Get F on T Axia
   Flux GetFluxOnTimeAxis(State u_l, State u_r) {
     SetInitial(u_l, u_r);
@@ -35,12 +35,12 @@ class Burgers {
   }
   void DetermineWaveStructure() {
     if (u_l_ >= u_r_) {
-      double v = (u_l_ + u_r_) / 2;
+      double v = k_ * (u_l_ + u_r_) / 2;
       v_l_ = v;
       v_r_ = v;
     } else {
-      v_l_ = u_l_;
-      v_r_ = u_r_;
+      v_l_ = k_ * u_l_;
+      v_r_ = k_ * u_r_;
     }
   }
   // Get U at (x, t)
@@ -53,10 +53,15 @@ class Burgers {
       return u_r_;
     }
     else if (v_l_ < slope < v_r_) {
-      return slope;
+      if (-10e-6 < k_ < 10e-6) {
+        return 0.0;
+      } else {
+        return slope / k_;
+      }
     }
-    return slope;
+    return 0.0;
   }
+  double k_;
   State u_l_, u_r_;
   State v_l_, v_r_;
 };

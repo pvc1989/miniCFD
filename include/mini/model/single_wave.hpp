@@ -172,7 +172,6 @@ class Burgers {
     auto filename = dir_ + std::to_string(0) + ".vtu";
     bool pass = OutputCurrentResult(filename);
     assert(pass);
-    auto riemann_ = Riemann();
     mesh_->ForEachWall([&](Wall& wall){
       double cos = (wall.Tail()->Y() - wall.Head()->Y()) /
                     wall.Measure();
@@ -208,16 +207,17 @@ class Burgers {
       if (left_cell && right_cell) {
         State u_l = left_cell->data.scalars[0];
         State u_r = right_cell->data.scalars[0];
+        auto riemann_ = Riemann(c);
         Flux f = riemann_.GetFluxOnTimeAxis(u_l, u_r);
-        wall.data.scalars[0] = f * c;
+        wall.data.scalars[0] = f;
       } else if (left_cell) {
-        Flux f = left_cell->data.scalars[0] *
+        Flux f = c * left_cell->data.scalars[0] *
                  left_cell->data.scalars[0] / 2;
-        wall.data.scalars[0] = f * c;
+        wall.data.scalars[0] = f;
       } else {
-        Flux f = right_cell->data.scalars[0] *
+        Flux f = c * right_cell->data.scalars[0] *
                  right_cell->data.scalars[0] / 2;
-        wall.data.scalars[0] = f * c;
+        wall.data.scalars[0] = f;
       }
     };
     auto get_next_u = [&](Cell& cell) {
@@ -246,7 +246,6 @@ class Burgers {
   double step_size_;
   std::string dir_;
   int refresh_rate_;
-  Riemann riemann_;
 };
 
 

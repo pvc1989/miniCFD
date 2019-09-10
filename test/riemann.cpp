@@ -37,7 +37,7 @@ class BurgersTest : public :: testing::Test {
   using Flux = Solver::Flux;
 };
 TEST_F(BurgersTest, TestFlux) {
-  auto solver = Solver();
+  auto solver = Solver(1.0);
   // right running shock wave
   State u_l{2.0}, u_r{1.0};
   EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));

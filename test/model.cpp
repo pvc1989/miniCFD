@@ -108,8 +108,8 @@ int main(int argc, char* argv[]) {
   if (argc == 1) {
     mini::model::BurgersTest::file_name = "medium.vtu";
     mini::model::BurgersTest::duration = 0.5;
-    mini::model::BurgersTest::n_steps = 1000;
-    mini::model::BurgersTest::refresh_rate = 10;
+    mini::model::BurgersTest::n_steps = 100;
+    mini::model::BurgersTest::refresh_rate = 1;
   } else {
     mini::model::BurgersTest::file_name = argv[1];
   }
