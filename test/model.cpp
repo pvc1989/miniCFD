@@ -93,7 +93,7 @@ TEST_F(BurgersTest, SingleStep) {
   model.ReadMesh(test_data_dir_ + file_name);
   model.SetInitialState([&](Cell& cell) {
     auto x = cell.Center().X();
-    auto y = cell.Center().Y();
+    // auto y = cell.Center().Y();
     cell.data.scalars[0] = -std::sin(kOmega * x);
   });
   model.SetTimeSteps(duration, n_steps, refresh_rate);
@@ -107,9 +107,9 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   if (argc == 1) {
     mini::model::BurgersTest::file_name = "medium.vtu";
-    mini::model::BurgersTest::duration = 0.5;
-    mini::model::BurgersTest::n_steps = 100;
-    mini::model::BurgersTest::refresh_rate = 1;
+    mini::model::BurgersTest::duration = 5.0;
+    mini::model::BurgersTest::n_steps = 200;
+    mini::model::BurgersTest::refresh_rate = 4;
   } else {
     mini::model::BurgersTest::file_name = argv[1];
   }
