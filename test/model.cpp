@@ -9,11 +9,12 @@
 #include "mini/mesh/vtk.hpp"
 #include "data.hpp"  // defines TEST_DATA_DIR
 #include "mini/riemann/linear.hpp"
-#include "mini/model/fvm.hpp"
+#include "mini/model/single_wave.hpp"
 
 namespace mini {
+namespace model {
 
-class SingleWaveModelTest : public :: testing::Test {
+class SingleWaveTest : public :: testing::Test {
  protected:
   using NodeData = mesh::Empty;
   using BoundaryData = mesh::Data<
@@ -25,7 +26,7 @@ class SingleWaveModelTest : public :: testing::Test {
   using Boundary = Mesh::Boundary;
   using Riemann = riemann::SingleWave;
   using State = Riemann::State;
-  using Model = model::FVM<Mesh, Riemann>;
+  using Model = model::SingleWave<Mesh, Riemann>;
 
  public:
   static const char* file_name;
@@ -35,11 +36,11 @@ class SingleWaveModelTest : public :: testing::Test {
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-const char* SingleWaveModelTest::file_name;
-double SingleWaveModelTest::duration;
-int SingleWaveModelTest::n_steps;
-int SingleWaveModelTest::refresh_rate;
-TEST_F(SingleWaveModelTest, SingleStep) {
+const char* SingleWaveTest::file_name;
+double SingleWaveTest::duration;
+int SingleWaveTest::n_steps;
+int SingleWaveTest::refresh_rate;
+TEST_F(SingleWaveTest, SingleStep) {
   Mesh::Domain::scalar_names.at(0) = "U";
   auto u_l = State{-1.0};
   auto u_r = State{+1.0};
@@ -59,17 +60,18 @@ TEST_F(SingleWaveModelTest, SingleStep) {
   model.Calculate();
 }
 
+}  // namespace model
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   if (argc == 1) {
-    mini::SingleWaveModelTest::file_name = "medium.vtu";
-    mini::SingleWaveModelTest::duration = 1.0;
-    mini::SingleWaveModelTest::n_steps = 50;
-    mini::SingleWaveModelTest::refresh_rate = 1;
+    mini::model::SingleWaveTest::file_name = "medium.vtu";
+    mini::model::SingleWaveTest::duration = 1.0;
+    mini::model::SingleWaveTest::n_steps = 50;
+    mini::model::SingleWaveTest::refresh_rate = 1;
   } else {
-    mini::SingleWaveModelTest::file_name = argv[1];
+    mini::model::SingleWaveTest::file_name = argv[1];
   }
   return RUN_ALL_TESTS();
 }

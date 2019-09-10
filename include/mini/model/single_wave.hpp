@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MODEL_FVM_HPP_
-#define MINI_MODEL_FVM_HPP_
+#ifndef MINI_MODEL_SINGLE_WAVE_HPP_
+#define MINI_MODEL_SINGLE_WAVE_HPP_
 
 #include <memory>
 #include <string>
@@ -15,7 +15,7 @@ namespace mini {
 namespace model {
 
 template <class Mesh, class Riemann>
-class FVM {
+class SingleWave {
   using Boundary = typename Mesh::Boundary;
   using Domain = typename Mesh::Domain;
   using State = typename Riemann::State;
@@ -24,7 +24,7 @@ class FVM {
   using VtkWriter = typename mesh::VtkWriter<Mesh>;
 
  public:
-  explicit FVM(double a, double b) {
+  explicit SingleWave(double a, double b) {
     a_ = a;
     b_ = b;
   }
@@ -139,4 +139,4 @@ class FVM {
 }  // namespace model
 }  // namespace mini
 
-#endif  // MINI_MODEL_FVM_HPP_
+#endif  // MINI_MODEL_SINGLE_WAVE_HPP_
