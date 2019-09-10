@@ -30,6 +30,7 @@
 #include <memory>
 #include <utility>
 #include <iostream>
+#include <stdexcept>
 
 namespace mini {
 namespace mesh {
@@ -186,6 +187,9 @@ class VtkWriter : public Writer<Mesh> {
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      if (Mesh::Node::scalar_names[i].size() == 0) {
+        throw std::length_error("Empty name is not allowed.");
+      }
       scalar_data[i]->SetName(Mesh::Node::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }
@@ -204,6 +208,9 @@ class VtkWriter : public Writer<Mesh> {
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      if (Mesh::Node::vector_names[i].size() == 0) {
+        throw std::length_error("Empty name is not allowed.");
+      }
       vector_data[i]->SetName(Mesh::Node::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountNodes());
@@ -225,6 +232,9 @@ class VtkWriter : public Writer<Mesh> {
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      if (Mesh::Domain::scalar_names[i].size() == 0) {
+        throw std::length_error("Empty name is not allowed.");
+      }
       scalar_data[i]->SetName(Mesh::Domain::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountDomains());
     }
@@ -233,6 +243,9 @@ class VtkWriter : public Writer<Mesh> {
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
+      if (Mesh::Domain::vector_names[i].size() == 0) {
+        throw std::length_error("Empty name is not allowed.");
+      }
       vector_data[i]->SetName(Mesh::Domain::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountDomains());
