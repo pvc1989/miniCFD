@@ -61,11 +61,10 @@ class VtkReader : public Reader<Mesh> {
       mesh_.reset(new Mesh());
       ReadNodes(vtk_data_set);
       ReadCells(vtk_data_set);
-      return true;
     } else {
-      std::cerr << "ReadFromFile() failed." << std::endl;
-      return false;
+      throw std::runtime_error("ReadFromFile() failed.");
     }
+    return true;
   }
   std::unique_ptr<Mesh> GetMesh() override {
     auto temp = std::make_unique<Mesh>();

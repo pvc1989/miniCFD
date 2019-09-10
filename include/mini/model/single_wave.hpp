@@ -96,10 +96,10 @@ class SingleWave {
         wall.data.scalars[0] = f;
       } else if (left_domain) {
         wall.data.scalars[0] = left_domain->data.scalars[0] *
-                                      wall.data.scalars[1];
+                               wall.data.scalars[1];
       } else {
         wall.data.scalars[0] = right_domain->data.scalars[0] *
-                                      wall.data.scalars[1];
+                               wall.data.scalars[1];
       }
     };
     auto get_next_u = [&](Cell& domain) {
@@ -112,13 +112,13 @@ class SingleWave {
         }
       });
       rhs /= domain.Measure();
-      TimeStepping(domain.data.scalars[0], rhs);
+      TimeStepping(&(domain.data.scalars[0]), rhs);
     };
     mesh_->ForEachWall(riemann_solver);
     mesh_->ForEachCell(get_next_u);
   }
-  void TimeStepping(double& u_curr , double du_dt) {
-    u_curr += du_dt * step_size_;
+  void TimeStepping(double* u_curr , double du_dt) {
+    *u_curr += du_dt * step_size_;
   }
   double a_;
   double b_;

@@ -91,8 +91,8 @@ class Wall : public element::Edge<Real, 2> {
   static std::array<std::string, WallData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
-  explicit Wall(Args&&... args) :
-      element::Edge<Real, 2>(std::forward<Args>(args)...) {}
+  explicit Wall(Args&&... args)
+      : element::Edge<Real, 2>(std::forward<Args>(args)...) {}
   // Accessors:
   template <int kSign>
   Cell* GetSide() const {
@@ -140,8 +140,7 @@ class Cell : virtual public element::Face<Real, 2> {
   static std::array<std::string, CellData::CountScalars()> scalar_names;
   static std::array<std::string, CellData::CountVectors()> vector_names;
   // Constructors:
-  Cell(std::initializer_list<Wall*> walls)
-      : walls_{walls} {}
+  Cell(std::initializer_list<Wall*> walls) : walls_{walls} {}
   // Iterators:
   template <class Visitor>
   void ForEachWall(Visitor&& visitor) {
@@ -236,8 +235,7 @@ class Mesh {
     id_to_node_.emplace(i, std::move(node_unique_ptr));
     return node_ptr;
   }
-  Wall* EmplaceWall(WallId wall_id,
-                            NodeId head_id, NodeId tail_id) {
+  Wall* EmplaceWall(WallId wall_id, NodeId head_id, NodeId tail_id) {
     if (head_id > tail_id) { std::swap(head_id, tail_id); }
     auto head_iter = id_to_node_.find(head_id);
     auto tail_iter = id_to_node_.find(tail_id);
