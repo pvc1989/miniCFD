@@ -89,11 +89,37 @@ class MultiWaveTest : public :: testing::Test {
 TEST_F(MultiWaveTest, TestFlux) {
   State u_l = {1.0, 11.0};
   State u_r = {2.0, 22.0};
-  // eigen_values = {1, -1}
-  auto solver = Solver(Matrix{-5.0, 4.0, -4.0, 5.0});
-  auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
-  EXPECT_DOUBLE_EQ(f_on_t_axia[0], 57.0);
-  EXPECT_DOUBLE_EQ(f_on_t_axia[1], 60.0);
+  { // eigen_values = {-2, -1}
+    auto solver = Solver(Matrix{-2.0, 0.0, 0.0, -1.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], -4.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], -22.0);
+  }{ // eigen_values = {1, 2}
+    auto solver = Solver(Matrix{1.0, 0.0, 0.0, 2.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], 1.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], 22.0);
+  }{ // eigen_values = {-1, -2}
+    auto solver = Solver(Matrix{-1.0, 0.0, 0.0, -2.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], -2.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], -44.0);
+  }{ // eigen_values = {2, 1}
+    auto solver = Solver(Matrix{2.0, 0.0, 0.0, 1.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], 2.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], 11.0);
+  }{ // eigen_values = {-1, 1}
+    auto solver = Solver(Matrix{-1.0, 0.0, 0.0, +1.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], -2.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], 11.0);
+  }{ // eigen_values = {1, -1}
+    auto solver = Solver(Matrix{-5.0, 4.0, -4.0, 5.0});
+    auto f_on_t_axia = solver.GetFluxOnTimeAxis(u_l, u_r);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[0], 57.0);
+    EXPECT_DOUBLE_EQ(f_on_t_axia[1], 60.0);
+  }
 }
 
 }  // namespace riemann
