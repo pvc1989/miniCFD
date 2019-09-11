@@ -43,6 +43,10 @@ class SingleWaveTest {
       }
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
+    std::string command  = "rm -rf " + model_name_;
+    system(command.c_str());
+    command  = "mkdir " + model_name_;
+    system(command.c_str());
     model.SetOutputDir(model_name_ + "/");
     model.Calculate();
   }
