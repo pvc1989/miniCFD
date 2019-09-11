@@ -64,7 +64,7 @@ class BurgersTest : public :: testing::Test {
  protected:
   using NodeData = mesh::Empty;
   using WallData = mesh::Data<
-      double, 2/* dims */, 1/* scalars */, 1/* vectors */>;
+      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
   using CellData = mesh::Data<
       double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
@@ -72,7 +72,7 @@ class BurgersTest : public :: testing::Test {
   using Wall = Mesh::Wall;
   using Riemann = riemann::Burgers;
   using State = Riemann::State;
-  using Model = model::Burgers<Mesh, Riemann>;
+  using Model = model::SingleWave<Mesh, Riemann>;
 
  public:
   static const char* file_name;
@@ -89,7 +89,7 @@ int BurgersTest::n_steps;
 int BurgersTest::refresh_rate;
 TEST_F(BurgersTest, SingleStep) {
   Mesh::Cell::scalar_names.at(0) = "U";
-  auto model = Model();
+  auto model = Model(1.0, 0.0);
   model.ReadMesh(test_data_dir_ + file_name);
   model.SetInitialState([&](Cell& cell) {
     auto x = cell.Center().X();
