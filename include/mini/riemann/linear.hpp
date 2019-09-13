@@ -79,15 +79,10 @@ class MultiWave {
   explicit MultiWave(Matrix const& a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
   State GetFluxOnTimeAxis(State u_l, State u_r) {
-    // std::cout << eigen_matrix_l_[0][0] << " " << eigen_matrix_l_[0][1] << std::endl;
-    // std::cout << eigen_matrix_l_[1][0] << " " << eigen_matrix_l_[1][1] << std::endl;
-    // std::cout << eigen_matrix_r_[0][0] << " " << eigen_matrix_r_[0][1] << std::endl;
-    // std::cout << eigen_matrix_r_[1][0] << " " << eigen_matrix_r_[1][1] << std::endl;
     Flux flux;
     if (0 <= eigen_values_[0]) {
       flux = GetFlux(u_l);
-    }
-    else if (0 >= eigen_values_[1]) {
+    } else if (0 >= eigen_values_[1]) {
       flux = GetFlux(u_r);
     } else {
       flux = FluxInsideSector(u_l, u_r, 1);
@@ -144,7 +139,6 @@ class MultiWave {
                a_const_[0][1] * a_const_[1][0];
     double delta = std::sqrt(b * b - 4 * c);
     eigen_values_ = {(b - delta) / 2, (b + delta) / 2};
-    
   }
   void GetEigenVectors() {
     double a = a_const_[0][0] - eigen_values_[0];
