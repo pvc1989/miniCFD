@@ -34,18 +34,32 @@ class SingleWaveTest {
     Mesh::Cell::scalar_names.at(0) = "U";
     auto u_l = State{-1.0};
     auto u_r = State{+1.0};
-    auto model = Model(1.0, 0.0);
+    auto model = Model(1.0, 1.0);
     model.ReadMesh(test_data_dir_ + mesh_name_);
-    model.SetInletCondition([&](Wall& wall) {
+    model.SetBoundaryName("left", [&](Wall& wall) {
       return wall.Center().X() == -2.0;
     });
-    model.SetOutletCondition([&](Wall& wall) {
+    model.SetBoundaryName("right", [&](Wall& wall) {
       return wall.Center().X() == +2.0;
     });
-    model.SetPeriodicCondition();
+    model.SetBoundaryName("top", [&](Wall& wall) {
+      return wall.Center().Y() == +1.0;
+    });
+    model.SetBoundaryName("bottom", [&](Wall& wall) {
+      return wall.Center().Y() == -1.0;
+    });
+    // model.SetInletBoundary("left");
+    // model.SetOutletBoundart("right");
+    model.SetPeriodicBoundary("left", "right");
+    model.SetPeriodicBoundary("top", "bottom");
+    // model.SetSolidBoundary("left");
+    // model.SetSolidBoundary("right");
+    // model.SetFreeBoundary("top");
+    // model.SetFreeBoundary("bottom");
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
-      cell.data.scalars[0] = std::sin(x * acos(0.0));
+      auto y = cell.Center().Y();
+      cell.data.scalars[0] = std::sin(x * acos(0.0)) * std::sin(y * 2*acos(0.0));
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
     std::string command  = "rm -rf " + model_name_;

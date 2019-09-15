@@ -7,6 +7,8 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "mini/riemann/linear.hpp"
@@ -43,53 +45,46 @@ class SingleWave {
   }
   // Mutators:
   template <class Visitor>
-  void SetInletCondition(Visitor&& visitor) {
-    for (auto& wall : boundaries_) {
+  void SetBoundaryName(std::string const& name, Visitor&& visitor) {
+    boundaries_.emplace(name, std::vector<Wall*>());
+    auto& part = boundaries_[name];
+    for (auto& wall : boundary_walls_) {
       if (visitor(*wall)) {
-        inlet_boundaries_.emplace_back(wall);
+        part.emplace_back(wall);
       }
     }
   }
-  template <class Visitor>
-  void SetOutletCondition(Visitor&& visitor) {
-    for (auto& wall : boundaries_) {
-      if (visitor(*wall)) {
-        outlet_boundaries_.emplace_back(wall);
-      }
-    }
+  void SetInletBoundary(std::string const& name) {
+    inlet_boundaries_.emplace(name);
   }
-  void SetPeriodicCondition() {
-    assert(inlet_boundaries_.size() == outlet_boundaries_.size());
-    std::sort(outlet_boundaries_.begin(), outlet_boundaries_.end(),
-              [](Wall* a, Wall* b) {return a->Center().Y() < b->Center().Y();});
-    std::sort(inlet_boundaries_.begin(), inlet_boundaries_.end(),
-              [](Wall* a, Wall* b) {return a->Center().Y() < b->Center().Y();});
-    for (int i = 0; i < inlet_boundaries_.size(); i++) {
-      auto in_l = inlet_boundaries_[i]->template GetSide<+1>();
-      auto in_r = inlet_boundaries_[i]->template GetSide<-1>();
-      auto out_l = outlet_boundaries_[i]->template GetSide<+1>();
-      auto out_r = outlet_boundaries_[i]->template GetSide<-1>();
-      if (in_l == nullptr) {
-        if (out_l == nullptr) {
-          inlet_boundaries_[i]->template SetSide<+1>(out_r);
-          outlet_boundaries_[i]->template SetSide<+1>(in_r);
-
-        } else {
-          inlet_boundaries_[i]->template SetSide<+1>(out_l);
-          outlet_boundaries_[i]->template SetSide<-1>(in_r);
-        }
+  void SetOutletBoundary(std::string const& name) {
+    outlet_boundaries_.emplace(name);
+  }
+  void SetPeriodicBoundary(std::string const& name_a, std::string const& name_b) {
+    auto& part_a = boundaries_[name_a];
+    auto& part_b = boundaries_[name_b];
+    assert(part_a.size() == part_b.size());
+    periodic_boundaries_.emplace(name_a, name_b);
+    auto cmp = [](Wall* a, Wall* b) {
+      auto point_a = a->Center();
+      auto point_b = b->Center();
+      if (point_a.Y() != point_b.Y()) {
+        return point_a.Y() < point_b.Y();
       } else {
-        if (out_l == nullptr) {
-          inlet_boundaries_[i]->template SetSide<-1>(out_r);
-          outlet_boundaries_[i]->template SetSide<+1>(in_l);
-
-        } else {
-          inlet_boundaries_[i]->template SetSide<-1>(out_l);
-          outlet_boundaries_[i]->template SetSide<-1>(in_l);
-        }
+        return point_a.X() < point_b.X();
       }
+    };
+    std::sort(part_a.begin(), part_a.end(), cmp);
+    std::sort(part_b.begin(), part_b.end(), cmp);
+    for (int i = 0; i < part_a.size(); i++) {
+      SewEndsOfWalls(part_a[i], part_b[i]);
     }
-    is_periodic_ = true;
+  }
+  void SetFreeBoundary(std::string const& name) {
+    free_boundaries_.emplace(name);
+  }
+  void SetSolidBoundary(std::string const& name) {
+    solid_boundaries_.emplace(name);
   }
   // void SetSolidWallCondition() {}
   template <class Visitor>
@@ -102,11 +97,12 @@ class SingleWave {
     step_size_ = duration / n_steps;
     refresh_rate_ = refresh_rate;
   }
-  void SetOutputDir(std::string dir) {
+  void SetOutputDir(std::string const& dir) {
     dir_ = dir;
   }
   // Major computation:
   void Calculate() {
+    assert(CheckBoundarycondition());
     writer_ = VtkWriter();
     auto filename = dir_ + std::to_string(0) + ".vtu";
     bool pass = OutputCurrentResult(filename);
@@ -132,42 +128,104 @@ class SingleWave {
   }
   void Preprocess() {
     mesh_->ForEachWall([&](Wall& wall){
-      double cos = (wall.Tail()->Y() - wall.Head()->Y()) /
-                    wall.Measure();
-      double sin = (wall.Head()->X() - wall.Tail()->X()) /
-                    wall.Measure();
-      double a = cos * a_ + sin * b_;
-      wall.data.scalars[1] = a;
+      auto length = wall.Measure();
+      double cos = (wall.Tail()->Y() - wall.Head()->Y()) / length;
+      double sin = (wall.Head()->X() - wall.Tail()->X()) / length;
+      wall.data.scalars[1] = cos * a_ + sin * b_;
       auto left_cell = wall.template GetSide<+1>();
       auto right_cell = wall.template GetSide<-1>();
       if (left_cell && right_cell ) {
-        inside_walls_.insert(&wall);
+        inside_walls_.emplace(&wall);
       } else {
-        boundaries_.insert(&wall);
+        boundary_walls_.emplace(&wall);
       }
     });
   }
-  void CalculateEachWall() {
-    assert(is_periodic_);
-    mesh_->ForEachWall([&](Wall& wall) {
-      auto left_cell = wall.template GetSide<+1>();
-      auto right_cell = wall.template GetSide<-1>();
-      auto riemann_ = Riemann(wall.data.scalars[1]);
-      State u_l{0.0}, u_r{0.0};
-      Flux f{0.0};
-      if (left_cell && right_cell) {
-        u_l = left_cell->data.scalars[0];
-        u_r = right_cell->data.scalars[0];
-        f = riemann_.GetFluxOnTimeAxis(u_l, u_r);
-      } else if (left_cell) {
-        u_l = left_cell->data.scalars[0];
-        f = riemann_.GetFluxOnTimeAxis(u_l, u_l);
-      } else if (right_cell) {
-        u_r = right_cell->data.scalars[0];
-        f = riemann_.GetFluxOnTimeAxis(u_r, u_r);
+  bool CheckBoundarycondition() {
+    for (auto& [left, right] : periodic_boundaries_) {
+      std::cout << left << " " << right << std::endl;
+    }
+    int n = 0;
+    for (auto& [name, part] : boundaries_) {
+      n += part.size();
+    }
+    if (n == boundary_walls_.size()) {
+      boundary_walls_.clear();
+    } else {
+      std::cerr << "Lost boundaries!" << std::endl;
+      return false;
+    }
+    return true;
+  }
+  void SewEndsOfWalls(Wall* a, Wall* b) {
+    auto in_l = a->template GetSide<+1>();
+    auto in_r = a->template GetSide<-1>();
+    auto out_l = b->template GetSide<+1>();
+    auto out_r = b->template GetSide<-1>();
+    if (in_l == nullptr) {
+      if (out_l == nullptr) {
+        a->template SetSide<+1>(out_r);
+        b->template SetSide<+1>(in_r);
+      } else {
+        a->template SetSide<+1>(out_l);
+        b->template SetSide<-1>(in_r);
       }
-      wall.data.scalars[0] = f;
-    });
+    } else {
+      if (out_l == nullptr) {
+        a->template SetSide<-1>(out_r);
+        b->template SetSide<+1>(in_l);
+      } else {
+        a->template SetSide<-1>(out_l);
+        b->template SetSide<-1>(in_l);
+      }
+    }
+    inside_walls_.emplace(a);
+    inside_walls_.emplace(b);
+  }
+  void CalculateEachWall() {
+    CalculateInsideWalls();
+    CalculateFreeBoundary();
+    CalculateSolidBoundary();
+  }
+  void CalculateInsideWalls() {
+    for (auto& wall : inside_walls_) {
+      auto riemann_ = Riemann(wall->data.scalars[1]);
+      auto u_l = wall->template GetSide<+1>()->data.scalars[0];
+      auto u_r = wall->template GetSide<-1>()->data.scalars[0];
+      wall->data.scalars[0] = riemann_.GetFluxOnTimeAxis(u_l, u_r);
+    }
+  }
+  void CalculateFreeBoundary() {
+    for (auto& name : free_boundaries_) {
+      for (auto& wall : boundaries_[name]) {
+        auto riemann_ = Riemann(wall->data.scalars[1]);
+        auto u = State(0.0);
+        if (wall->template GetSide<+1>()) {
+          u = wall->template GetSide<+1>()->data.scalars[0];
+        } else {
+          u = wall->template GetSide<-1>()->data.scalars[0];
+        }
+        auto f = riemann_.GetFluxOnTimeAxis(u, u);
+        wall->data.scalars[0] = f;
+      }
+    }
+  }
+  void CalculateSolidBoundary() {
+    for (auto& name : free_boundaries_) {
+      for (auto& wall : boundaries_[name]) {
+        auto riemann_ = Riemann(wall->data.scalars[1]);
+        auto u = State(0.0);
+        auto f = Flux(0.0);
+        if (wall->template GetSide<+1>()) {
+          u = wall->template GetSide<+1>()->data.scalars[0];
+          f = riemann_.GetFluxOnTimeAxis(u, -u);
+        } else {
+          u = wall->template GetSide<-1>()->data.scalars[0];
+          f = riemann_.GetFluxOnTimeAxis(-u, u);
+        }
+        wall->data.scalars[0] = f;
+      }
+    }
   }
   void UpdateModel() {
     CalculateEachWall();
@@ -197,11 +255,14 @@ class SingleWave {
   double step_size_;
   std::string dir_;
   int refresh_rate_;
-  bool is_periodic_;
   std::set<Wall*> inside_walls_;
-  std::set<Wall*> boundaries_;
-  std::vector<Wall*> inlet_boundaries_;
-  std::vector<Wall*> outlet_boundaries_;
+  std::set<Wall*> boundary_walls_;
+  std::unordered_map<std::string, std::vector<Wall*>> boundaries_;
+  std::set<std::string> inlet_boundaries_;
+  std::set<std::string> outlet_boundaries_;
+  std::set<std::pair<std::string, std::string>> periodic_boundaries_;
+  std::set<std::string> free_boundaries_;
+  std::set<std::string> solid_boundaries_;
 };
 }  // namespace model
 }  // namespace mini
