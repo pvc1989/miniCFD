@@ -116,9 +116,6 @@ TEST_F(MultiWaveTest, TestNonTrivialMatrix) {
   EXPECT_DOUBLE_EQ(f_on_t_axia[1], 60.0);
 }
 
-  }
-}
-
 }  // namespace riemann
 }  // namespace mini
 
