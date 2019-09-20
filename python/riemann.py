@@ -132,13 +132,13 @@ class Euler(RiemannSolver):
     else:  # no vacuum
       # 2-field: always a contact
       du = u_R - u_L
-      equation_for_p = lambda p: (self._f(p, p_L, rho_L) +
+      func = lambda p: (self._f(p, p_L, rho_L) +
                                   self._f(p, p_R, rho_R) + du)
       roots, infodict, ierror, message = fsolve(
-        func=equation_for_p,
+        func,
         fprime=lambda p: (self._f_prime(p, p_L, rho_L) +
                           self._f_prime(p, p_R, rho_R)),
-        x0=self._guess_p0(p_L, p_R, equation_for_p),
+        x0=self._guess(p_L, func),
         full_output=True)
       assert ierror == 1, message
       p_2 = roots[0]
@@ -197,7 +197,7 @@ class Euler(RiemannSolver):
   def _f(self, p_2, p_1, rho_1):
     f = 0.0
     if p_2 > p_1:
-      f = (p_2 - p_1) / np.sqrt(rho_1 * self._P(p_1=p_1, p_2=p_2))
+      f = (p_2 - p_1) / np.sqrt(rho_1 * self._P(p_1, p_2))
     elif p_2 < p_1:
       power = self._gas.gamma_minus_1() / self._gas.gamma() / 2
       assert p_2/p_1 >= 0, (p_2, p_1, p_2/p_1, p_1/p_2)
@@ -209,7 +209,7 @@ class Euler(RiemannSolver):
     return f
 
   def _f_prime(self, p_2, p_1, rho_1):
-    assert p_1*p_2 != 0, (p_1, p_2)
+    assert p_1 != 0 or p_2 != 0, (p_1, p_2)
     df = 1.0
     if p_2 > p_1:
       P = self._P(p_1=p_1, p_2=p_2)
@@ -228,25 +228,10 @@ class Euler(RiemannSolver):
     return (p_1 * self._gas.gamma_minus_1() +
             p_2 * self._gas.gamma_plus_1()) / 2
 
-  def _guess_p0(self, p_L, p_R, equation_for_p):
-    if p_L <= p_R:
-      p_min = p_L
-      p_max = p_R
-    else:
-      p_min = p_R
-      p_max = p_L
-    f_min = equation_for_p(p_min)
-    f_max = equation_for_p(p_max)
-    if f_min > 0 and f_max > 0:
-      # print('close to 0')
-      p0 = 1e-8
-    elif f_min < 0 and f_max < 0:
-      # print('close to infinity')
-      p0 = p_max
-    else:
-      # print('between pL and pR')
-      p0 = p_min
-    return p0
+  def _guess(self, p, func):
+    while (func(p) > 0):
+      p *= 0.5
+    return p
 
   @staticmethod
   def _shock(u_2, p_2, u_1, p_1, rho_1):
