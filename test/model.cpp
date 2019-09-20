@@ -21,12 +21,12 @@ template <class Riemann>
 class SingleWaveTest {
  public:
   explicit SingleWaveTest(char** argv)
-      : model_name_{argv[1]}, 
+      : model_name_{argv[1]},
         mesh_name_{argv[2]},
         start_{std::atof(argv[3])},
         stop_{std::atof(argv[4])},
         n_steps_{std::atoi(argv[5])},
-        output_rate_{std::atoi(argv[6])} { 
+        output_rate_{std::atoi(argv[6])} {
     duration_ = stop_ - start_;
   }
 
@@ -59,7 +59,8 @@ class SingleWaveTest {
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
       auto y = cell.Center().Y();
-      cell.data.scalars[0] = std::sin(x * acos(0.0)) * std::sin(y * 2*acos(0.0));
+      cell.data.scalars[0] = std::sin(x * acos(0.0)) *
+                             std::sin(y * acos(0.0) * 2);
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
     std::string command  = "rm -rf " + model_name_;
@@ -97,12 +98,12 @@ template <class Riemann>
 class DoubleWaveTest {
  public:
   explicit DoubleWaveTest(char** argv)
-      : model_name_{argv[1]}, 
+      : model_name_{argv[1]},
         mesh_name_{argv[2]},
         start_{std::atof(argv[3])},
         stop_{std::atof(argv[4])},
         n_steps_{std::atoi(argv[5])},
-        output_rate_{std::atoi(argv[6])} { 
+        output_rate_{std::atoi(argv[6])} {
     duration_ = stop_ - start_;
   }
 
@@ -158,7 +159,6 @@ class DoubleWaveTest {
   double stop_;
   int n_steps_;
   int output_rate_;
-
 };
 
 }  // namespace model
@@ -174,7 +174,8 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
   } else if (argc == 7) {
     using LinearTest = mini::model::SingleWaveTest<mini::riemann::SingleWave>;
-    using DoubleLinearTest = mini::model::DoubleWaveTest<mini::riemann::MultiWave<2>>;
+    using DoubleLinearTest = mini::model::DoubleWaveTest<
+        mini::riemann::MultiWave<2>>;
     using BurgersTest = mini::model::SingleWaveTest<mini::riemann::Burgers>;
     if (std::strcmp(argv[1], "linear") == 0) {
       auto model = LinearTest(argv);
