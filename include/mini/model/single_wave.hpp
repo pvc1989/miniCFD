@@ -60,7 +60,8 @@ class SingleWave {
   void SetOutletBoundary(std::string const& name) {
     outlet_boundaries_.emplace(name);
   }
-  void SetPeriodicBoundary(std::string const& name_a, std::string const& name_b) {
+  void SetPeriodicBoundary(std::string const& name_a,
+                           std::string const& name_b) {
     auto& part_a = boundaries_[name_a];
     auto& part_b = boundaries_[name_b];
     assert(part_a.size() == part_b.size());
@@ -134,7 +135,7 @@ class SingleWave {
       wall.data.scalars[1] = cos * a_ + sin * b_;
       auto left_cell = wall.template GetSide<+1>();
       auto right_cell = wall.template GetSide<-1>();
-      if (left_cell && right_cell ) {
+      if (left_cell && right_cell) {
         inside_walls_.emplace(&wall);
       } else {
         boundary_walls_.emplace(&wall);
