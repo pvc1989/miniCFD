@@ -18,42 +18,35 @@ class Exact {
   using Flux = std::array<double, 3>;
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
-    // Determine p_2
+    // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u - left.u;
-    auto u_change_left  = SpeedChange(left);
+    auto u_change__left = SpeedChange(left);
     auto u_change_right = SpeedChange(right);
     auto f = [&](double p) {
-      return u_change_left(p) + u_change_right(p) + u_change_given;
+      return u_change__left(p) + u_change_right(p) + u_change_given;
     };
     auto f_prime = [&](double p) {
-      return u_change_left.Prime(p) + u_change_right.Prime(p);
+      return u_change__left.Prime(p) + u_change_right.Prime(p);
     };
     if (f(0) < 0) {  // Ordinary case: Wave[2] is a contact.
-      auto p_2 = left.p;
-      while (f(p_2) > 0) { p_2 *= 0.5; }
-      p_2 = FindRoot(f, f_prime, p_2);
-      auto u_2 = left.u + right.u + u_change_right(p_2) - u_change_left(p_2);
-      u_2 *= 0.5;
-      if (u_2 > 0) {  // Axis[t] is to the left of Wave[2].
-        if (p_2 >= left.p) {  // Wave[1] is a shock.
-          auto u_shock = left.u + (p_2 - left.p) / ((u_2 - left.u) * left.rho);
-          if (u_shock >= 0) {  // Axis[t] is to the left of Wave[1].
-            return GetFlux(left);
-          } else {  // Axis[t] is between Wave[1] and Wave[2].
-            auto rho_2 = left.rho * (left.u - u_shock) / (u_2 - u_shock);
-            return GetFlux({rho_2, u_2, p_2});
-          }
-        } else {  // p_2 < left.p : Wave[1] is an expansion.
+      auto star = State{0, 0, FindRoot(f, f_prime, left.p)};
+      star.u = 0.5 * (right.u + u_change_right(star.p)
+                      +left.u - u_change__left(star.p));
+      if (0 < star.u) {  // Axis[t] <<< Wave[2]
+        if (star.p >= left.p) {  // Wave[1] is a shock.
+          return GetFluxNearShock<1>(left, &star);
+        } else {  // star.p < left.p : Wave[1] is an expansion.
           auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
-          auto a_left = Gas::GetSpeedOfSound(left);
-          auto gri_2 = left.u + a_left * Gas::GammaMinusOneUnderTwo();
-          auto a_2 = a_left + (left.u - u_2) * Gas::GammaMinusOneOverTwo();
-          if (u_2 < a_2) {
-            // Axis[t] is between Wave[1] and Wave[2].
-            auto rho_2 = Gas::Gamma() * p_2 / (a_2 * a_2);
-            return GetFlux({rho_2, u_2, p_2});
-          } else if (left.u > a_left) {
-            // Axis[t] is to the left of Wave[1].
+          auto left_a = Gas::GetSpeedOfSound(left);
+          auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
+          auto star_a = left_a;
+          star_a += (left.u - star.u) * Gas::GammaMinusOneOverTwo();
+          if (star.u < star_a) {
+            // Wave[1] <<< Axis[t] <<< Wave[2].
+            star.rho = Gas::Gamma() * star.p / (star_a * star_a);
+            return GetFlux(star);
+          } else if (left.u > left_a) {
+            // Axis[t] <<< Wave[1].
             return GetFlux(left);
           } else {  // Axis[t] is inside Wave[1].
             constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
@@ -63,30 +56,22 @@ class Exact {
             return GetFlux({rho, a, a * a * rho * Gas::OneOverGamma()});
           }
         }
-      } else {  // u_2 < 0, so Axis[t] is to the right of Wave[2].
-        if (p_2 >= right.p) {  // Wave[3] is a shock.
-          auto u_shock = right.u;
-          u_shock += (p_2 - right.p) / ((u_2 - right.u) * right.rho);
-          if (u_shock <= 0) {
-            // Axis[t] is to the right of Wave[3].
-            return GetFlux(right);
-          } else {
-            // Axis[t] is between Wave[2] and Wave[3].
-            auto rho_2 = right.rho * (right.u - u_shock) / (u_2 - u_shock);
-            return GetFlux({rho_2, u_2, p_2});
-          }
-        } else {  // p_2 < right.p
+      } else {  // star.u < 0, so Axis[t] is BETWEEN Wave[2] and Wave[3].
+        if (star.p >= right.p) {  // Wave[3] is a shock.
+          return GetFluxNearShock<3>(right, &star);
+        } else {  // star.p < right.p
           // Wave[3] is an expansion.
           auto gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
           auto a_right = Gas::GetSpeedOfSound(right);
           auto gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
-          auto a_2 = a_right + (u_2 - right.u) * Gas::GammaMinusOneOverTwo();
-          if (u_2 + a_2 > 0) {
-            // Axis[t] is between Wave[3] and Wave[2].
-            auto rho_2 = Gas::Gamma() * p_2 / (a_2 * a_2);
-            return GetFlux({rho_2, u_2, p_2});
+          auto star_a = a_right;
+          star_a += (star.u - right.u) * Gas::GammaMinusOneOverTwo();
+          if (star.u + star_a > 0) {
+            // Axis[t] is BETWEEN Wave[3] and Wave[2].
+            star.rho = Gas::Gamma() * star.p / (star_a * star_a);
+            return GetFlux({star.rho, star.u, star.p});
           } else if (right.u + a_right < 0) {
-            // Axis[t] is to the right of Wave[3].
+            // Axis[t] is to the RIGHT of Wave[3].
             return GetFlux(right);
           } else {  // Axis[t] is inside Wave[3].
             constexpr auto r = -Gas::GammaMinusOne() / Gas::GammaPlusOne();
@@ -97,17 +82,16 @@ class Exact {
           }
         }
       }
-    } else {  // The region between Wave[1] and Wave[3] is vaccumed.
-      double rho_2{0}, u_2{0}, p_2{0};
-      auto a_left = std::sqrt(Gas::Gamma() * left.p / left.rho);
-      if (left.u > a_left) {  // Axis[t] is to the left of Wave[1].
+    } else {  // The region BETWEEN Wave[1] and Wave[3] is vaccumed.
+      auto left_a = std::sqrt(Gas::Gamma() * left.p / left.rho);
+      if (left.u > left_a) {  // Axis[t] <<< Wave[1].
         return GetFlux(left);
-      } else if (right.u + a_left < 0) {  // Axis[t] is to the right of Wave[3].
+      } else if (right.u + left_a < 0) {  // Wave[3] <<< Axis[t].
         return GetFlux(right);
-      } else {  // Axis[t] is to between Wave[1] and Wave[3].
+      } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
         auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
-        auto a_left = Gas::GetSpeedOfSound(left);
-        auto gri_2 = left.u + a_left * Gas::GammaMinusOneUnderTwo();
+        auto left_a = Gas::GetSpeedOfSound(left);
+        auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
         if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
           constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
           auto a = r * gri_2;
@@ -115,7 +99,7 @@ class Exact {
                               Gas::OneOverGammaMinusOne());
           return GetFlux({rho, a, a * a * rho * Gas::OneOverGamma()});
         } else {  // gri_2 < 0
-          // Axis[t] is to the right of Wave[1].
+          // Axis[t] is to the RIGHT of Wave[1].
           gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
           auto a_right = Gas::GetSpeedOfSound(right);
           gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
@@ -134,7 +118,7 @@ class Exact {
     }
   }
   // Get F from U
-  Flux GetFlux(State const& state) {
+  static Flux GetFlux(State const& state) {
     auto rho_u = state.rho * state.u;
     auto rho_u_u = rho_u * state.u;
     return {rho_u, rho_u_u + state.p,
@@ -145,13 +129,42 @@ class Exact {
  private:
   template <class F, class Fprime>
   static double FindRoot(F&& f, Fprime&& f_prime, double x, double eps = 1e-8) {
-    assert(f(x) < 0);
+    while (f(x) > 0) {
+      x *= 0.5;
+    }
     while (f(x) < -eps) {
       x -= f(x) / f_prime(x);
     }
     assert(std::abs(f(x)) < eps);
     return x;
   }
+  template <int kField>
+  static Flux GetFluxNearShock(State const& before, State* after) {
+    auto shock = Shock<kField>(before, *after);
+    if (shock.Before0()) {  // i.e. (x=0, t) is AFTER the shock.
+      after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
+      return GetFlux(*after);
+    } else {
+      return GetFlux(before);
+    }
+  }
+
+  template <int kField>
+  class Shock {
+    static_assert(kField == 1 || kField == 3);
+   public:
+    double u;
+    Shock(State const& before, State const& after) : u(before.u) {
+      u += (after.p - before.p) / ((after.u - before.u) * before.rho);
+    }
+    double GetDensityAfterIt(State const& before, State const& after) const {
+      return before.rho * (before.u - u) / (after.u - u);
+    }
+    bool Before0() const {
+      return kField < 2 ? u < 0 : 0 < u;
+    }
+  };
+
   class SpeedChange {
    public:
     explicit SpeedChange(State const& before)
