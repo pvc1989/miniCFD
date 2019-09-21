@@ -7,6 +7,34 @@
 namespace mini {
 namespace gas {
 
+template <int kDim>
+class State;
+template <>
+class State<1> {
+ public:
+  // Types:
+  using Density = double;
+  using Speed = double;
+  using Pressure = double;
+  // Data:
+  Density rho;
+  Speed u;
+  Pressure p;
+  // Constructors:
+  State(Density rho, Speed u, Pressure p) : rho(rho), u(u), p(p) {}
+};
+template <>
+class State<2> : public State<1> {
+ public:
+  // Data:
+  Speed v;
+  // Constructors:
+  State(Density rho, Speed u, Speed v, Pressure p)
+      : State<1>(rho, u, p), v(v) {}
+  State(State<1> const& state, Speed v)
+      : State<1>(state), v(v) {}
+};
+
 template <int kInteger = 1, int kDecimal = 4>
 class Ideal {
  private:
@@ -16,15 +44,6 @@ class Ideal {
   }
   static constexpr double gamma_ = kInteger + Shift(kDecimal);
  public:
-  // Types:
-  using Density = double;
-  using Speed = double;
-  using Pressure = double;
-  // Types:
-  struct State {
-    State(Density rho, Speed u, Pressure p) : rho(rho), u(u), p(p) {}
-    double rho, u, p;
-  };
   // Constants:
   static constexpr double Gamma() { return gamma_; }
   static constexpr double OneOverGamma() {
@@ -55,7 +74,8 @@ class Ideal {
     return 2 / GammaMinusOne();
   }
   // State equations:
-  static Speed GetSpeedOfSound(State const& state) {
+  template <class State>
+  static double GetSpeedOfSound(State const& state) {
     return state.rho == 0 ? 0 : std::sqrt(Gamma() * state.p / state.rho);
   }
 };

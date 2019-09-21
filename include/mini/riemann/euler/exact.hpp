@@ -11,10 +11,10 @@ namespace riemann {
 namespace euler {
 
 template <class Gas>
-class Exact {
+class ExactImplementor {
  public:
   // Types:
-  using State = typename Gas::State;
+  using State = gas::State<1>;
   using Flux = std::array<double, 3>;
   // Get F from U
   static Flux GetFlux(State const& state) {
@@ -25,7 +25,7 @@ class Exact {
                        + 0.5 * rho_u_u)};
   }
   // Get U on t-Axis
-  State GetStateOnTimeAxis(State const& left, State const& right) {
+  static State GetStateOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u - left.u;
     auto u_change__left = SpeedChange(left);
@@ -58,7 +58,7 @@ class Exact {
     }
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     return GetFlux(GetStateOnTimeAxis(left, right));
   }
 
@@ -223,6 +223,36 @@ class Exact {
         }
       }
     }
+  }
+};
+
+template <class Gas, int kDim = 1>
+class Exact;
+template <class Gas>
+class Exact<Gas, 1> : public ExactImplementor<Gas> {};
+template <class Gas>
+class Exact<Gas, 2> {
+ public:
+  // Types:
+  using State = gas::State<2>;
+  using Flux = std::array<double, 4>;
+  // Get F from U
+  static Flux GetFlux(State const& state) {
+    auto rho_u = state.rho * state.u;
+    auto rho_v = state.rho * state.v;
+    auto rho_u_u = rho_u * state.u;
+    return {rho_u, rho_u_u + state.p, rho_v * state.u,
+            state.u * (state.p * Gas::GammaOverGammaMinusOne()
+                       + 0.5 * (rho_u_u + rho_v * state.v))};
+  }
+  // Get F on t-Axis
+  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+    return GetFlux(GetStateOnTimeAxis(left, right));
+  }
+  // Get U on t-Axis
+  static State GetStateOnTimeAxis(State const& left, State const& right) {
+    auto state = Exact<Gas, 1>::GetStateOnTimeAxis(left, right);
+    return {state, state.u > 0 ? left.v : right.v};
   }
 };
 
