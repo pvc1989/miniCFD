@@ -68,8 +68,7 @@ TEST_F(ExactTest, TestVaccumed) {
 
 class Exact2dTest : public ::testing::Test {
  protected:
-  using Gas = gas::Ideal<1, 4>;
-  using Solver = euler::Exact<Gas, 2>;
+  using Solver = euler::Exact<gas::Ideal<1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
   using Flux = Solver::Flux;

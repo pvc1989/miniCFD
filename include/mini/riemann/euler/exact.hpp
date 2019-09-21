@@ -10,20 +10,11 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class Gas>
-class ExactImplementor {
+template <class Gas, int kDim>
+class Implementor {
  public:
   // Types:
-  using State = gas::State<1>;
-  using Flux = std::array<double, 3>;
-  // Get F from U
-  static Flux GetFlux(State const& state) {
-    auto rho_u = state.rho * state.u;
-    auto rho_u_u = rho_u * state.u;
-    return {rho_u, rho_u_u + state.p,
-            state.u * (state.p * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * rho_u_u)};
-  }
+  using State = gas::State<kDim>;
   // Get U on t-Axis
   static State GetStateOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
@@ -37,7 +28,8 @@ class ExactImplementor {
       return u_change__left.Prime(p) + u_change_right.Prime(p);
     };
     if (f(0) < 0) {  // Ordinary case: Wave[2] is a contact.
-      auto star = State{0, 0, FindRoot(f, f_prime, left.p)};
+      auto star = State{0, 0, 0};
+      star.p = FindRoot(f, f_prime, left.p);
       star.u = 0.5 * (right.u + u_change_right(star.p)
                       +left.u - u_change__left(star.p));
       if (0 < star.u) {  // Axis[t] <<< Wave[2]
@@ -56,10 +48,6 @@ class ExactImplementor {
     } else {  // The region BETWEEN Wave[1] and Wave[3] is vaccumed.
       return GetStateNearVaccum(left, right);
     }
-  }
-  // Get F on t-Axis
-  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
-    return GetFlux(GetStateOnTimeAxis(left, right));
   }
 
  private:
@@ -229,12 +217,37 @@ class ExactImplementor {
 template <class Gas, int kDim = 1>
 class Exact;
 template <class Gas>
-class Exact<Gas, 1> : public ExactImplementor<Gas> {};
-template <class Gas>
-class Exact<Gas, 2> {
+class Exact<Gas, 1> : public Implementor<Gas, 1> {
+  using Base = Implementor<Gas, 1>;
+
  public:
   // Types:
-  using State = gas::State<2>;
+  using State = typename Base::State;
+  using Flux = std::array<double, 3>;
+  // Get F from U
+  static Flux GetFlux(State const& state) {
+    auto rho_u = state.rho * state.u;
+    auto rho_u_u = rho_u * state.u;
+    return {rho_u, rho_u_u + state.p,
+            state.u * (state.p * Gas::GammaOverGammaMinusOne()
+                       + 0.5 * rho_u_u)};
+  }
+  // Get F on t-Axis
+  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+    return GetFlux(GetStateOnTimeAxis(left, right));
+  }
+  // Get U on t-Axis
+  static State GetStateOnTimeAxis(State const& left, State const& right) {
+    return Base::GetStateOnTimeAxis(left, right);
+  }
+};
+template <class Gas>
+class Exact<Gas, 2> : public Implementor<Gas, 2> {
+  using Base = Implementor<Gas, 2>;
+
+ public:
+  // Types:
+  using State = typename Base::State;
   using Flux = std::array<double, 4>;
   // Get F from U
   static Flux GetFlux(State const& state) {
@@ -251,8 +264,9 @@ class Exact<Gas, 2> {
   }
   // Get U on t-Axis
   static State GetStateOnTimeAxis(State const& left, State const& right) {
-    auto state = Exact<Gas, 1>::GetStateOnTimeAxis(left, right);
-    return {state, state.u > 0 ? left.v : right.v};
+    auto state = Base::GetStateOnTimeAxis(left, right);
+    state.v = state.u > 0 ? left.v : right.v;
+    return state;
   }
 };
 
