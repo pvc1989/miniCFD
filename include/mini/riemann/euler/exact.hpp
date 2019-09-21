@@ -127,6 +127,7 @@ class Exact {
   }
 
  private:
+  // Helper method and class for the star region:
   template <class F, class Fprime>
   static double FindRoot(F&& f, Fprime&& f_prime, double x, double eps = 1e-8) {
     while (f(x) > 0) {
@@ -138,35 +139,6 @@ class Exact {
     assert(std::abs(f(x)) < eps);
     return x;
   }
-  template <int kField>
-  static Flux GetFluxNearShock(State const& before, State* after) {
-    static_assert(kField == 1 || kField == 3);
-    auto shock = Shock<kField>(before, *after);
-    if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
-      after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
-      return GetFlux(*after);
-    } else {
-      return GetFlux(before);
-    }
-  }
-  template <int kField>
-  class Shock {
-   public:
-    double u;
-    Shock(State const& before, State const& after) : u(before.u) {
-      u += (after.p - before.p) / ((after.u - before.u) * before.rho);
-    }
-    double GetDensityAfterIt(State const& before, State const& after) const {
-      return before.rho * (before.u - u) / (after.u - u);
-    }
-  };
-  template <int kField>
-  static bool TimeAxisAfterWave(Shock<kField> const& wave);
-  template <>
-  static bool TimeAxisAfterWave(Shock<1> const& wave) { return wave.u < 0; }
-  template <>
-  static bool TimeAxisAfterWave(Shock<3> const& wave) { return wave.u > 0; }
-
   class SpeedChange {
    public:
     explicit SpeedChange(State const& before)
@@ -209,6 +181,35 @@ class Exact {
    private:
     double rho_before_, p_before_, a_before_, p_const_;
   };
+  // Shock and related methods:
+  template <int kField>
+  class Shock {
+   public:
+    double u;
+    Shock(State const& before, State const& after) : u(before.u) {
+      u += (after.p - before.p) / ((after.u - before.u) * before.rho);
+    }
+    double GetDensityAfterIt(State const& before, State const& after) const {
+      return before.rho * (before.u - u) / (after.u - u);
+    }
+  };
+  template <int kField>
+  static bool TimeAxisAfterWave(Shock<kField> const& wave);
+  template <>
+  static bool TimeAxisAfterWave(Shock<1> const& wave) { return wave.u < 0; }
+  template <>
+  static bool TimeAxisAfterWave(Shock<3> const& wave) { return wave.u > 0; }
+  template <int kField>
+  static Flux GetFluxNearShock(State const& before, State* after) {
+    static_assert(kField == 1 || kField == 3);
+    auto shock = Shock<kField>(before, *after);
+    if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
+      after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
+      return GetFlux(*after);
+    } else {
+      return GetFlux(before);
+    }
+  }
 };
 
 }  // namespace euler
