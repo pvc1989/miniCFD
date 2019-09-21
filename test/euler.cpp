@@ -86,41 +86,46 @@ class Exact2dTest : public ::testing::Test {
   }
 };
 TEST_F(Exact2dTest, TestSod) {
-  State left{1.0, 0.0, v__left, 1.0}, right{0.125, 0.0, v_right, 0.1};
+  State  left{1.000, 0.0, 1.0, v__left};
+  State right{0.125, 0.0, 0.1, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.426319, +0.927453, v__left, 0.303130}));
+              solver.GetFlux({0.426319, +0.927453, 0.303130, v__left}));
   CompareFlux(solver.GetFluxOnTimeAxis(right, left),
-              solver.GetFlux({0.426319, -0.927453, v__left, 0.303130}));
+              solver.GetFlux({0.426319, -0.927453, 0.303130, v__left}));
 }
 TEST_F(Exact2dTest, TestShockCollision) {
-  State  left{5.99924, 19.5975, v__left, 460.894};
-  State right{5.99242, 6.19633, v_right, 46.0950};
+  State  left{5.99924, 19.5975, 460.894, v__left};
+  State right{5.99242, 6.19633, 46.0950, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({5.99924, 19.5975, v__left, 460.894}));
+              solver.GetFlux({5.99924, 19.5975, 460.894, v__left}));
 }
 TEST_F(Exact2dTest, TestBlastFromLeft) {
-  State left{1.0, 0.0, v__left, 1000}, right{1.0, 0.0, v_right, 0.01};
+  State  left{1.0, 0.0, 1e+3, v__left};
+  State right{1.0, 0.0, 1e-2, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.575062, 19.59745, v__left, 460.8938}));
+              solver.GetFlux({0.575062, 19.59745, 460.8938, v__left}));
 }
 TEST_F(Exact2dTest, TestBlastFromRight) {
-  State left{1.0, 0.0, v__left, 0.01}, right{1.0, 0.0, v_right, 100};
+  State  left{1.0, 0.0, 1e-2, v__left};
+  State right{1.0, 0.0, 1e+2, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
+              solver.GetFlux({0.575113, -6.196328, 46.09504, v_right}));
 }
 TEST_F(Exact2dTest, TestAlmostVaccumed) {
-  State left{1.0, -2.0, v__left, 0.4}, right{1.0, +2.0, v_right, 0.4};
+  State  left{1.0, -2.0, 0.4, v__left};
+  State right{1.0, +2.0, 0.4, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.21852, 0.0, v__left, 0.001894}));
+              solver.GetFlux({0.21852, 0.0, 0.001894, v__left}));
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
+              solver.GetFlux({0.21852, 0.0, 0.001894, v_right}));
 }
 TEST_F(Exact2dTest, TestVaccumed) {
-  State left{1.0, -4.0, v__left, 0.4}, right{1.0, +4.0, v_right, 0.4};
+  State  left{1.0, -4.0, 0.4, v__left};
+  State right{1.0, +4.0, 0.4, v_right};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.0, 0.0, v__left, 0.0}));
+              solver.GetFlux({0.0, 0.0, 0.0, v__left}));
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
-              solver.GetFlux({0.0, 0.0, v_right, 0.0}));
+              solver.GetFlux({0.0, 0.0, 0.0, v_right}));
 }
 
 }  // namespace riemann
