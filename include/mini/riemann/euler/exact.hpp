@@ -140,18 +140,17 @@ class Exact {
   }
   template <int kField>
   static Flux GetFluxNearShock(State const& before, State* after) {
+    static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
-    if (shock.Before0()) {  // i.e. (x=0, t) is AFTER the shock.
+    if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
       after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
       return GetFlux(*after);
     } else {
       return GetFlux(before);
     }
   }
-
   template <int kField>
   class Shock {
-    static_assert(kField == 1 || kField == 3);
    public:
     double u;
     Shock(State const& before, State const& after) : u(before.u) {
@@ -160,10 +159,13 @@ class Exact {
     double GetDensityAfterIt(State const& before, State const& after) const {
       return before.rho * (before.u - u) / (after.u - u);
     }
-    bool Before0() const {
-      return kField < 2 ? u < 0 : 0 < u;
-    }
   };
+  template <int kField>
+  static bool TimeAxisAfterWave(Shock<kField> const& wave);
+  template <>
+  static bool TimeAxisAfterWave(Shock<1> const& wave) { return wave.u < 0; }
+  template <>
+  static bool TimeAxisAfterWave(Shock<3> const& wave) { return wave.u > 0; }
 
   class SpeedChange {
    public:
