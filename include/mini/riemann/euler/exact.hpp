@@ -44,85 +44,17 @@ class Exact {
         if (star.p >= left.p) {  // Wave[1] is a shock.
           return GetFluxNearShock<1>(left, &star);
         } else {  // star.p < left.p : Wave[1] is an expansion.
-          auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
-          auto left_a = Gas::GetSpeedOfSound(left);
-          auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
-          auto star_a = left_a;
-          star_a += (left.u - star.u) * Gas::GammaMinusOneOverTwo();
-          if (star.u < star_a) {
-            // Wave[1] <<< Axis[t] <<< Wave[2].
-            star.rho = Gas::Gamma() * star.p / (star_a * star_a);
-            return GetFlux(star);
-          } else if (left.u > left_a) {
-            // Axis[t] <<< Wave[1].
-            return GetFlux(left);
-          } else {  // Axis[t] is inside Wave[1].
-            constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
-            auto a = r * gri_2;
-            auto rho = std::pow(a * a / gri_1 * Gas::OneOverGamma(),
-                                Gas::OneOverGammaMinusOne());
-            return GetFlux({rho, a, a * a * rho * Gas::OneOverGamma()});
-          }
+          return GetFluxNearExpansion<1>(left, &star);
         }
-      } else {  // star.u < 0, so Axis[t] is BETWEEN Wave[2] and Wave[3].
+      } else {  // star.u < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
         if (star.p >= right.p) {  // Wave[3] is a shock.
           return GetFluxNearShock<3>(right, &star);
-        } else {  // star.p < right.p
-          // Wave[3] is an expansion.
-          auto gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
-          auto a_right = Gas::GetSpeedOfSound(right);
-          auto gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
-          auto star_a = a_right;
-          star_a += (star.u - right.u) * Gas::GammaMinusOneOverTwo();
-          if (star.u + star_a > 0) {
-            // Axis[t] is BETWEEN Wave[3] and Wave[2].
-            star.rho = Gas::Gamma() * star.p / (star_a * star_a);
-            return GetFlux({star.rho, star.u, star.p});
-          } else if (right.u + a_right < 0) {
-            // Axis[t] is to the RIGHT of Wave[3].
-            return GetFlux(right);
-          } else {  // Axis[t] is inside Wave[3].
-            constexpr auto r = -Gas::GammaMinusOne() / Gas::GammaPlusOne();
-            auto a = r * gri_2;
-            auto rho = std::pow(a * a / gri_1 * Gas::OneOverGamma(),
-                                Gas::OneOverGammaMinusOne());
-            return GetFlux({rho, -a, a * a * rho * Gas::OneOverGamma()});
-          }
+        } else {  // star.p < right.p : Wave[3] is an expansion.
+          return GetFluxNearExpansion<3>(right, &star);
         }
       }
     } else {  // The region BETWEEN Wave[1] and Wave[3] is vaccumed.
-      auto left_a = std::sqrt(Gas::Gamma() * left.p / left.rho);
-      if (left.u > left_a) {  // Axis[t] <<< Wave[1].
-        return GetFlux(left);
-      } else if (right.u + left_a < 0) {  // Wave[3] <<< Axis[t].
-        return GetFlux(right);
-      } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
-        auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
-        auto left_a = Gas::GetSpeedOfSound(left);
-        auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
-        if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
-          constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
-          auto a = r * gri_2;
-          auto rho = std::pow(a * a / gri_1 * Gas::OneOverGamma(),
-                              Gas::OneOverGammaMinusOne());
-          return GetFlux({rho, a, a * a * rho * Gas::OneOverGamma()});
-        } else {  // gri_2 < 0
-          // Axis[t] is to the RIGHT of Wave[1].
-          gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
-          auto a_right = Gas::GetSpeedOfSound(right);
-          gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
-          if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
-            constexpr auto r = -Gas::GammaMinusOne() / Gas::GammaPlusOne();
-            auto a = r * gri_2;
-            auto rho = std::pow(a * a / gri_1 * Gas::OneOverGamma(),
-                                Gas::OneOverGammaMinusOne());
-            return GetFlux({rho, -a, a * a * rho * Gas::OneOverGamma()});
-          } else {
-            // Axis[t] is inside the vaccumed region.
-            return {0, 0, 0};
-          }
-        }
-      }
+      return GetFluxNearVaccum(left, right);
     }
   }
 
@@ -208,6 +140,84 @@ class Exact {
       return GetFlux(*after);
     } else {
       return GetFlux(before);
+    }
+  }
+  // Expansion and related methods:
+  template <int kField>
+  class Expansion {
+   public:
+    double a_before, a_after;  // speed of sound before/after the wave
+    double gri_1, gri_2;  // Generalized Riemann Invariants
+    Expansion(State const& before, State const& after)
+        : a_before(Gas::GetSpeedOfSound(before)),
+          gri_1(before.p / (std::pow(before.rho, Gas::Gamma()))) {
+      gri_2 = AddOrMinus<kField>(
+        before.u, a_before * Gas::GammaMinusOneUnderTwo());
+      a_after = AddOrMinus<kField>(
+        a_before, (before.u - after.u) * Gas::GammaMinusOneOverTwo());
+    }
+  };
+  template <int kField>
+  static constexpr double AddOrMinus(double x, double y);
+  template <>
+  static constexpr double AddOrMinus<1>(double x, double y) { return x + y; }
+  template <>
+  static constexpr double AddOrMinus<3>(double x, double y) { return x - y; }
+  template <int kField>
+  static bool TimeAxisAfterWave(double u, double a);
+  template <>
+  static bool TimeAxisAfterWave<1>(double u, double a) { return u - a < 0; }
+  template <>
+  static bool TimeAxisAfterWave<3>(double u, double a) { return u + a > 0; }
+  template <int kField>
+  static bool TimeAxisBeforeWave(double u, double a);
+  template <>
+  static bool TimeAxisBeforeWave<1>(double u, double a) { return u - a > 0; }
+  template <>
+  static bool TimeAxisBeforeWave<3>(double u, double a) { return u + a < 0; }
+  static Flux GetFluxInsideExpansion(double gri_1, double gri_2) {
+    constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
+    auto a = r * gri_2;
+    auto a_square = a * a;
+    auto rho = std::pow(a_square / gri_1 * Gas::OneOverGamma(),
+                        Gas::OneOverGammaMinusOne());
+    return GetFlux({rho, a, a_square * rho * Gas::OneOverGamma()});
+  }
+  template <int kField>
+  static Flux GetFluxNearExpansion(State const& before, State* after) {
+    static_assert(kField == 1 || kField == 3);
+    auto wave = Expansion<kField>(before, *after);
+    if (TimeAxisAfterWave<kField>(after->u, wave.a_after)) {
+      after->rho = Gas::Gamma() * after->p / (wave.a_after * wave.a_after);
+      return GetFlux(*after);
+    } else if (TimeAxisBeforeWave<kField>(before.u, wave.a_before)) {
+      return GetFlux(before);
+    } else {  // Axis[t] is inside the Expansion.
+      return GetFluxInsideExpansion(wave.gri_1, wave.gri_2);
+    }
+  }
+  static Flux GetFluxNearVaccum(State const& left, State const& right) {
+    auto left_a = Gas::GetSpeedOfSound(left);
+    if (left.u > left_a) {  // Axis[t] <<< Wave[1].
+      return GetFlux(left);
+    } else if (right.u + left_a < 0) {  // Wave[3] <<< Axis[t].
+      return GetFlux(right);
+    } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
+      auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
+      auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
+      if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
+        return GetFluxInsideExpansion(gri_1, gri_2);
+      } else {  // gri_2 < 0
+        // Axis[t] is to the RIGHT of Wave[1].
+        gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
+        auto a_right = Gas::GetSpeedOfSound(right);
+        gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
+        if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
+          return GetFluxInsideExpansion(gri_1, gri_2);
+        } else {  // Axis[t] is inside the vaccumed region.
+          return {0, 0, 0};
+        }
+      }
     }
   }
 };
