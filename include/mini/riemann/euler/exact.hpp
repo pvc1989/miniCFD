@@ -16,6 +16,14 @@ class Exact {
   // Types:
   using State = typename Gas::State;
   using Flux = std::array<double, 3>;
+  // Get F from U
+  static Flux GetFlux(State const& state) {
+    auto rho_u = state.rho * state.u;
+    auto rho_u_u = rho_u * state.u;
+    return {rho_u, rho_u_u + state.p,
+            state.u * (state.p * Gas::GammaOverGammaMinusOne()
+                       + 0.5 * rho_u_u)};
+  }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
@@ -116,14 +124,6 @@ class Exact {
         }
       }
     }
-  }
-  // Get F from U
-  static Flux GetFlux(State const& state) {
-    auto rho_u = state.rho * state.u;
-    auto rho_u_u = rho_u * state.u;
-    return {rho_u, rho_u_u + state.p,
-            state.u * (state.p * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * rho_u_u)};
   }
 
  private:
