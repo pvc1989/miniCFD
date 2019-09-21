@@ -29,10 +29,8 @@ class State<2> : public State<1> {
   // Data:
   Speed v;
   // Constructors:
-  State(Density rho, Speed u, Speed v, Pressure p)
+  State(Density rho, Speed u, Pressure p, Speed v = 0.0)
       : State<1>(rho, u, p), v(v) {}
-  State(State<1> const& state, Speed v)
-      : State<1>(state), v(v) {}
 };
 
 template <int kInteger = 1, int kDecimal = 4>
