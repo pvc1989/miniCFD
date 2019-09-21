@@ -24,8 +24,8 @@ class Exact {
             state.u * (state.p * Gas::GammaOverGammaMinusOne()
                        + 0.5 * rho_u_u)};
   }
-  // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  // Get U on t-Axis
+  State GetStateOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u - left.u;
     auto u_change__left = SpeedChange(left);
@@ -42,20 +42,24 @@ class Exact {
                       +left.u - u_change__left(star.p));
       if (0 < star.u) {  // Axis[t] <<< Wave[2]
         if (star.p >= left.p) {  // Wave[1] is a shock.
-          return GetFluxNearShock<1>(left, &star);
+          return GetStateNearShock<1>(left, &star);
         } else {  // star.p < left.p : Wave[1] is an expansion.
-          return GetFluxNearExpansion<1>(left, &star);
+          return GetStateNearExpansion<1>(left, &star);
         }
       } else {  // star.u < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
         if (star.p >= right.p) {  // Wave[3] is a shock.
-          return GetFluxNearShock<3>(right, &star);
+          return GetStateNearShock<3>(right, &star);
         } else {  // star.p < right.p : Wave[3] is an expansion.
-          return GetFluxNearExpansion<3>(right, &star);
+          return GetStateNearExpansion<3>(right, &star);
         }
       }
     } else {  // The region BETWEEN Wave[1] and Wave[3] is vaccumed.
-      return GetFluxNearVaccum(left, right);
+      return GetStateNearVaccum(left, right);
     }
+  }
+  // Get F on t-Axis
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+    return GetFlux(GetStateOnTimeAxis(left, right));
   }
 
  private:
@@ -132,14 +136,14 @@ class Exact {
   template <>
   static bool TimeAxisAfterWave(Shock<3> const& wave) { return wave.u > 0; }
   template <int kField>
-  static Flux GetFluxNearShock(State const& before, State* after) {
+  static State GetStateNearShock(State const& before, State* after) {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
       after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
-      return GetFlux(*after);
+      return *after;
     } else {
-      return GetFlux(before);
+      return before;
     }
   }
   // Expansion and related methods:
@@ -175,45 +179,45 @@ class Exact {
   static bool TimeAxisBeforeWave<1>(double u, double a) { return u - a > 0; }
   template <>
   static bool TimeAxisBeforeWave<3>(double u, double a) { return u + a < 0; }
-  static Flux GetFluxInsideExpansion(double gri_1, double gri_2) {
+  static State GetStateInsideExpansion(double gri_1, double gri_2) {
     constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
     auto a = r * gri_2;
     auto a_square = a * a;
     auto rho = std::pow(a_square / gri_1 * Gas::OneOverGamma(),
                         Gas::OneOverGammaMinusOne());
-    return GetFlux({rho, a, a_square * rho * Gas::OneOverGamma()});
+    return {rho, a, a_square * rho * Gas::OneOverGamma()};
   }
   template <int kField>
-  static Flux GetFluxNearExpansion(State const& before, State* after) {
+  static State GetStateNearExpansion(State const& before, State* after) {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
     if (TimeAxisAfterWave<kField>(after->u, wave.a_after)) {
       after->rho = Gas::Gamma() * after->p / (wave.a_after * wave.a_after);
-      return GetFlux(*after);
+      return *after;
     } else if (TimeAxisBeforeWave<kField>(before.u, wave.a_before)) {
-      return GetFlux(before);
+      return before;
     } else {  // Axis[t] is inside the Expansion.
-      return GetFluxInsideExpansion(wave.gri_1, wave.gri_2);
+      return GetStateInsideExpansion(wave.gri_1, wave.gri_2);
     }
   }
-  static Flux GetFluxNearVaccum(State const& left, State const& right) {
+  static State GetStateNearVaccum(State const& left, State const& right) {
     auto left_a = Gas::GetSpeedOfSound(left);
     if (left.u > left_a) {  // Axis[t] <<< Wave[1].
-      return GetFlux(left);
+      return left;
     } else if (right.u + left_a < 0) {  // Wave[3] <<< Axis[t].
-      return GetFlux(right);
+      return right;
     } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
       auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
       auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
       if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
-        return GetFluxInsideExpansion(gri_1, gri_2);
+        return GetStateInsideExpansion(gri_1, gri_2);
       } else {  // gri_2 < 0
         // Axis[t] is to the RIGHT of Wave[1].
         gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
         auto a_right = Gas::GetSpeedOfSound(right);
         gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
-          return GetFluxInsideExpansion(gri_1, gri_2);
+          return GetStateInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vaccumed region.
           return {0, 0, 0};
         }
