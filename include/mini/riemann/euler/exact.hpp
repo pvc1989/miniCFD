@@ -15,8 +15,11 @@ class Implementor {
  public:
   // Types:
   using State = gas::State<kDim>;
+  using Speed = typename State::Speed;
+  // Data:
+  Speed star_u{0.0};
   // Get U on t-Axis
-  static State GetStateOnTimeAxis(State const& left, State const& right) {
+  State GetStateOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u - left.u;
     auto u_change__left = SpeedChange(left);
@@ -32,6 +35,7 @@ class Implementor {
       star.p = FindRoot(f, f_prime, left.p);
       star.u = 0.5 * (right.u + u_change_right(star.p)
                       +left.u - u_change__left(star.p));
+      star_u = star.u;
       if (0 < star.u) {  // Axis[t] <<< Wave[2]
         if (star.p >= left.p) {  // Wave[1] is a shock.
           return GetStateNearShock<1>(left, &star);
@@ -233,11 +237,11 @@ class Exact<Gas, 1> : public Implementor<Gas, 1> {
                        + 0.5 * rho_u_u)};
   }
   // Get F on t-Axis
-  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     return GetFlux(GetStateOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  static State GetStateOnTimeAxis(State const& left, State const& right) {
+  State GetStateOnTimeAxis(State const& left, State const& right) {
     return Base::GetStateOnTimeAxis(left, right);
   }
 };
@@ -259,13 +263,13 @@ class Exact<Gas, 2> : public Implementor<Gas, 2> {
                        + 0.5 * (rho_u_u + rho_v * state.v))};
   }
   // Get F on t-Axis
-  static Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     return GetFlux(GetStateOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  static State GetStateOnTimeAxis(State const& left, State const& right) {
+  State GetStateOnTimeAxis(State const& left, State const& right) {
     auto state = Base::GetStateOnTimeAxis(left, right);
-    state.v = state.u > 0 ? left.v : right.v;
+    state.v = this->star_u > 0 ? left.v : right.v;
     return state;
   }
 };
