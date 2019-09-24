@@ -46,10 +46,14 @@ class Triangle : virtual public Surface<Real, kDim> {
   // Geometric methods:
   Real Measure() const override {
     auto v = (*b_ - *a_).Cross(*c_ - *a_);
-    return std::abs(v) / 2;
+    return std::abs(v) * 0.5;
   }
   Point Center() const override {
-    return (*a_ + *b_ + *c_) / 3;
+    auto center = *a_;
+    center += *b_;
+    center += *c_;
+    center /= 3.0;
+    return center;
   }
 
  private:
@@ -88,7 +92,10 @@ class Rectangle : virtual public Surface<Real, kDim> {
     return std::abs(v);
   }
   Point Center() const override {
-    return (*a_ + *c_) / 2;
+    auto center = *a_;
+    center += *c_;
+    center *= 0.5;
+    return center;
   }
 
  private:
