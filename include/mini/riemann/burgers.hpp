@@ -12,52 +12,36 @@ namespace riemann {
 class Burgers {
  public:
   // Types:
+  using Jacobi = double;
   using State = double;
   using Flux = double;
   // Constructor:
+  Burgers() : k_(1) {}
   explicit Burgers(double k) : k_(k) {}
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(State u_l, State u_r) {
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) const {
     if (k_ == 0.0) { return 0.0; }
-    SetInitial(u_l, u_r);
-    DetermineWaveStructure();
-    return GetFlux(GetState(/* slope */0.0));
+    State left_ = k_ * left;
+    State right_ = k_ * right;
+    if (left_ >= right_) {  // shock
+      left_ = (left_ + right_) / 2;
+      right_ = left_;
+    }
+    if (0 <= left_) {
+      return GetFlux(left);
+    } else if (0 >= right_) {
+      return GetFlux(right);
+    } else {  // left_ < slope < right_
+      return GetFlux(0 / k_);
+    }
   }
   // Get F of U
-  Flux GetFlux(State state) const {
-    return state * state * k_ / 2.0;
+  Flux GetFlux(State const& state) const {
+    return state * state * k_ / 2;
   }
 
  private:
-  using Slope = double;
-  // Set U_l and U_r
-  void SetInitial(State u_l, State u_r) {
-    u_l_ = u_l;
-    u_r_ = u_r;
-  }
-  void DetermineWaveStructure() {
-    a_l_ = k_ * u_l_;
-    a_r_ = k_ * u_r_;
-    if (a_l_ >= a_r_) {  // shock
-      a_l_ = (a_l_ + a_r_) / 2;
-      a_r_ = a_l_;
-    } else {  // expansion
-      // a_l_, a_r_ already calculated.
-    }
-  }
-  // Get U on {(x, t) : x = slope * t}
-  State GetState(Slope slope) {
-    if (slope <= a_l_) {
-      return u_l_;
-    } else if (slope >= a_r_) {
-      return u_r_;
-    } else {  // a_l_ < slope < a_r_
-      return slope / k_;
-    }
-  }
   double k_;
-  State u_l_, u_r_;
-  Slope a_l_, a_r_;
 };
 
 }  //  namespace riemann
