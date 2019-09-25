@@ -26,6 +26,16 @@ Column<Value, kRows> operator*(
   }
   return product;
 }
+template <class Value, int kRows, int kColumns>
+Matrix<Value, kRows, kColumns> operator*(
+    Matrix<Value, kRows, kColumns> const& matrix,
+    Value const& value) {
+  auto product = matrix;
+  for (auto& row : product) {
+    row *= value;
+  }
+  return product;
+}
 
 }  // namespace algebra
 }  // namespace mini

@@ -78,6 +78,14 @@ TEST_F(MatrixTest, TestMatrixProduct) {
   EXPECT_EQ(p[0], m[0][0]*v[0] + m[0][1]*v[1]);
   EXPECT_EQ(p[1], m[1][0]*v[0] + m[1][1]*v[1]);
 }
+TEST_F(MatrixTest, TestScalarMultiplication) {
+  auto m = Matrix{{1, 2}, {3, 4}};
+  auto p = m * 2;
+  EXPECT_EQ(p[0][0], 2);
+  EXPECT_EQ(p[0][1], 4);
+  EXPECT_EQ(p[1][0], 6);
+  EXPECT_EQ(p[1][1], 8);
+}
 
 }  // namespace algebra
 }  // namespace mini
