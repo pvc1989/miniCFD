@@ -6,7 +6,8 @@
 #include <cmath>
 #include <array>
 
-#include "mini/geometry/dim0.hpp"
+#include "mini/algebra/column.hpp"
+#include "mini/algebra/matrix.hpp"
 
 namespace mini {
 namespace riemann {
@@ -39,9 +40,9 @@ class SingleWave {
 template <int kWaves = 2>
 class MultiWave {
  public:
-  using Column = geometry::Vector<double, kWaves>;
+  using Column = algebra::Column<double, kWaves>;
   using Row = Column;
-  using Matrix = geometry::Vector<Row, kWaves>;
+  using Matrix = algebra::Matrix<double, kWaves, kWaves>;
   using Jacobi = Matrix;
   using State = Column;
   using Flux = Column;
@@ -62,17 +63,10 @@ class MultiWave {
   }
   // Get F of U
   Flux GetFlux(State const& state) const {
-    return Dot(a_const_, state);
+    return a_const_ * state;
   }
 
  private:
-  Column Dot(Matrix const& m, Column const& c) const {
-    auto result = Column();
-    for (int i = 0; i < kWaves; i++) {
-      result[i] = m[i].Dot(c);
-    }
-    return result;
-  }
   State FluxInsideSector(State const& left, State const& right, int k) const {
     Flux flux{0, 0};
     for (int i = 0; i < k; i++) {
