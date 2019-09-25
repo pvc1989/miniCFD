@@ -36,14 +36,19 @@ class Ausm {
     flux[2] = state.u * (e + state.p);
     return flux;
   }
-
+  double GetTangentialComponent(double left, double right) {
+    return left * left_tangential_weight_ + right * right_tangential_weight_;
+  }
  private:
+  double  left_tangential_weight_;
+  double  right_tangential_weight_;
   Flux GetPositiveFlux(State const& state) {
     double p_positive   = state.p;
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u / a;
     double mach_positive = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u * state.u / 2;
+    left_tangential_weight_ = mach_positive * state.rho * a;
     Flux flux = {1, state.u, h};
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) / 4;
@@ -66,6 +71,7 @@ class Ausm {
     double mach = state.u / a;
     double mach_negative = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u * state.u / 2;
+    right_tangential_weight_ = mach_negative * state.rho * a;
     Flux flux = {1, state.u, h};
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) / 4;

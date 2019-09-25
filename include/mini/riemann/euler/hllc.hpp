@@ -35,6 +35,7 @@ class Hllc {
     else if (wave_star_ < 0.0) {
       flux = GetStarFlux(right, wave_right_);
     }
+    rho_u_time_axis_ = flux[0];
     return flux;
   }
   // Get F of U
@@ -47,12 +48,21 @@ class Hllc {
     flux[2] = state.u * (energy_ + state.p);
     return flux;
   }
+  // Get position of wave_star
+  double GetTangentialComponent(double left, double right) {
+    if (wave_star_ >= 0.0) {
+      return rho_u_time_axis_ * left;
+    } else {
+      return rho_u_time_axis_ * right;
+    }
+  }
 
  private:
   double wave_star_;
   double wave_left_;
   double wave_right_;
   double energy_;
+  double rho_u_time_axis_;
   void Initialize(const State& left, const State& right) {
     double rho_average = (left.rho + right.rho) / 2;
     double a_left = Gas::GetSpeedOfSound(left);
@@ -64,9 +74,9 @@ class Hllc {
     wave_left_ = left.u - a_left * GetQ(p_estimate ,left.p);
     wave_right_ = right.u + a_right * GetQ(p_estimate ,right.p);
     wave_star_ = (right.p - left.p + 
-                  left.rho * left.u * (wave_left_ - left.u) -
+                   left.rho *  left.u * ( wave_left_ -  left.u) -
                   right.rho * right.u * (wave_right_ - right.u)) /
-                 (left.rho * (wave_left_ - left.u) - 
+                  (left.rho * ( wave_left_ -  left.u) - 
                   right.rho * (wave_right_ - right.u));
   }
   double GetQ(const double& p_estimate, const double& p_k) {
