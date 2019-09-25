@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "mini/algebra/column.hpp"
+#include "mini/algebra/matrix.hpp"
 
 namespace mini {
 namespace algebra {
@@ -48,6 +49,34 @@ TEST_F(ColumnTest, TestDotProduct) {
   EXPECT_EQ(u.Dot(v), 0);
   EXPECT_EQ(v.Dot(v), 0);
   EXPECT_EQ(v.Dot(u), 0);
+}
+
+class MatrixTest : public ::testing::Test {
+ protected:
+  using Matrix = Matrix<int, 2, 2>;
+  using Column = Column<int, 2>;
+};
+TEST_F(MatrixTest, TestConstuctors) {
+  { Matrix m; }
+  { Matrix m{{1, 2}, {3, 4}}; }
+  { Matrix m = {{1, 2}, {3, 4}}; }
+  { auto m = Matrix(); }
+  { auto m = Matrix{}; }
+  { auto m = Matrix{{1, 2}, {3, 4}}; }
+}
+TEST_F(MatrixTest, TestIndexing) {
+  auto m = Matrix{{1, 2}, {3, 4}};
+  EXPECT_EQ(m[0][0], 1);
+  EXPECT_EQ(m[0][1], 2);
+  EXPECT_EQ(m[1][0], 3);
+  EXPECT_EQ(m[1][1], 4);
+}
+TEST_F(MatrixTest, TestMatrixProduct) {
+  auto m = Matrix{{1, 2}, {3, 4}};
+  auto v = Column{5, 6};
+  auto p = m * v;
+  EXPECT_EQ(p[0], m[0][0]*v[0] + m[0][1]*v[1]);
+  EXPECT_EQ(p[1], m[1][0]*v[0] + m[1][1]*v[1]);
 }
 
 }  // namespace algebra
