@@ -282,7 +282,7 @@ class Mesh {
       assert(false);
     }
   }
-
+  static constexpr int Dim() { return 2; }
  private:
   Wall* EmplaceWall(Node* head, Node* tail) {
     return EmplaceWall(head->I(), tail->I());
