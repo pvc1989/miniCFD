@@ -85,32 +85,32 @@ class MultiWaveTest : public ::testing::Test {
   using Flux = Solver::Flux;
   using Column = Solver::Column;
   using Matrix = Solver::Matrix;
-  State left = {1.0, 11.0}, right{2.0, 22.0};
+  State left{1.0, 11.0}, right{2.0, 22.0};
 };
 TEST_F(MultiWaveTest, TestTwoLeftRunningWaves) {
   // eigen_values = {-2, -1}
-  auto solver = Solver(Matrix{-2.0, 0.0, 0.0, -1.0});
+  auto solver = Solver(Matrix{{-2.0, 0.0}, {0.0, -1.0}});
   auto f_on_t_axia = solver.GetFluxOnTimeAxis(left, right);
   EXPECT_DOUBLE_EQ(f_on_t_axia[0], -4.0);
   EXPECT_DOUBLE_EQ(f_on_t_axia[1], -22.0);
 }
 TEST_F(MultiWaveTest, TestTwoRightRunningWaves) {
   // eigen_values = {1, 2}
-  auto solver = Solver(Matrix{1.0, 0.0, 0.0, 2.0});
+  auto solver = Solver(Matrix{{1.0, 0.0}, {0.0, 2.0}});
   auto f_on_t_axia = solver.GetFluxOnTimeAxis(left, right);
   EXPECT_DOUBLE_EQ(f_on_t_axia[0], 1.0);
   EXPECT_DOUBLE_EQ(f_on_t_axia[1], 22.0);
 }
 TEST_F(MultiWaveTest, TestBetweenTwoWaves) {
   // eigen_values = {-1, 1}
-  auto solver = Solver(Matrix{-1.0, 0.0, 0.0, +1.0});
+  auto solver = Solver(Matrix{{-1.0, 0.0}, {0.0, +1.0}});
   auto f_on_t_axia = solver.GetFluxOnTimeAxis(left, right);
   EXPECT_DOUBLE_EQ(f_on_t_axia[0], -2.0);
   EXPECT_DOUBLE_EQ(f_on_t_axia[1], 11.0);
 }
 TEST_F(MultiWaveTest, TestNonTrivialMatrix) {
   // eigen_values = {1, -1}
-  auto solver = Solver(Matrix{-5.0, 4.0, -4.0, 5.0});
+  auto solver = Solver(Matrix{{-5.0, 4.0}, {-4.0, 5.0}});
   auto f_on_t_axia = solver.GetFluxOnTimeAxis(left, right);
   EXPECT_DOUBLE_EQ(f_on_t_axia[0], 57.0);
   EXPECT_DOUBLE_EQ(f_on_t_axia[1], 60.0);
