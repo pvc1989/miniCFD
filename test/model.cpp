@@ -11,7 +11,7 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/linear.hpp"
 #include "mini/riemann/burgers.hpp"
-#include "mini/model/double_wave.hpp"
+#include "mini/model/godunov.hpp"
 #include "data.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
@@ -32,9 +32,9 @@ class SingleWaveTest {
 
   void Run() {
     Mesh::Cell::scalar_names.at(0) = "U";
-    auto u_l = State{-1.0};
-    auto u_r = State{+1.0};
-    auto model = Model{1.0, 1.0};
+    auto u_l = State{+1.0};
+    auto u_r = State{-1.0};
+    auto model = Model{1.0, 0.0};
     model.ReadMesh(test_data_dir_ + mesh_name_);
     model.SetBoundaryName("left", [&](Wall& wall) {
       return wall.Center().X() == -2.0;
@@ -62,9 +62,9 @@ class SingleWaveTest {
       // cell.data.state = std::sin(x * acos(0.0)) *
       //                   std::sin(y * acos(0.0) * 2);
       if (x < -0.0) {
-        cell.data.state = +2;
+        cell.data.state = u_l;
       } else {
-        cell.data.state = +1;
+        cell.data.state = u_r;
       }
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
@@ -115,7 +115,7 @@ class SingleWaveTest {
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
   using Cell = typename Mesh::Cell;
   using Wall = typename Mesh::Wall;
-  using Model = model::DoubleWave<Mesh, RiemannKdim>;
+  using Model = model::Godunov<Mesh, RiemannKdim>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;
@@ -226,7 +226,7 @@ class DoubleWaveTest {
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
   using Cell = typename Mesh::Cell;
   using Wall = typename Mesh::Wall;
-  using Model = model::DoubleWave<Mesh, RiemannKdim>;
+  using Model = model::Godunov<Mesh, RiemannKdim>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;

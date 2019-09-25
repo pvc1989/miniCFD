@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MODEL_DOUBLE_WAVE_HPP_
-#define MINI_MODEL_DOUBLE_WAVE_HPP_
+#ifndef MINI_MODEL_GODUNOV_HPP_
+#define MINI_MODEL_GODUNOV_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "mini/riemann/linear.hpp"
+// #include "mini/riemann/linear.hpp"
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
@@ -21,19 +21,17 @@ namespace mini {
 namespace model {
 
 template <class Mesh, class Riemann>
-class DoubleWave {
+class Godunov {
   using Wall = typename Mesh::Wall;
   using Cell = typename Mesh::Cell;
   using Jacobi = typename Riemann::Jacobi;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
-  // using Vector = geometry::Vector<double, Mesh::Dim()>;
-  // using CoMatrices = geometry::Vector<Matrix, Mesh::Dim()>;
   using VtkReader = typename mesh::VtkReader<Mesh>;
   using VtkWriter = typename mesh::VtkWriter<Mesh>;
 
  public:
-  DoubleWave(std::initializer_list<Jacobi> jacobi) {
+  Godunov(std::initializer_list<Jacobi> jacobi) {
     std::uninitialized_copy(jacobi.begin(), jacobi.end(), jacobi_.begin());
   }
   bool ReadMesh(std::string const& file_name) {
@@ -289,4 +287,4 @@ class DoubleWave {
 }  // namespace model
 }  // namespace mini
 
-#endif  // MINI_MODEL_DOUBLE_WAVE_HPP_
+#endif  // MINI_MODEL_GODUNOV_HPP_
