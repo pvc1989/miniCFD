@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-// #include "mini/riemann/linear.hpp"
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
@@ -27,15 +26,15 @@ class Godunov {
   using Jacobi = typename Riemann::Jacobi;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
-  using VtkReader = typename mesh::VtkReader<Mesh>;
-  using VtkWriter = typename mesh::VtkWriter<Mesh>;
+  using Reader = mesh::VtkReader<Mesh>;
+  using Writer = mesh::VtkWriter<Mesh>;
 
  public:
   Godunov(std::initializer_list<Jacobi> jacobi) {
     std::uninitialized_copy(jacobi.begin(), jacobi.end(), jacobi_.begin());
   }
   bool ReadMesh(std::string const& file_name) {
-    reader_ = VtkReader();
+    reader_ = Reader();
     if (reader_.ReadFromFile(file_name)) {
       mesh_ = reader_.GetMesh();
       Preprocess();
@@ -104,7 +103,7 @@ class Godunov {
   // Major computation:
   void Calculate() {
     assert(CheckBoundarycondition());
-    writer_ = VtkWriter();
+    writer_ = Writer();
     auto filename = dir_ + std::to_string(0) + ".vtu";
     bool pass = OutputCurrentResult(filename);
     assert(pass);
@@ -266,8 +265,8 @@ class Godunov {
 
  private:
   std::array<Jacobi, Mesh::Dim()> jacobi_;
-  VtkReader reader_;
-  VtkWriter writer_;
+  Reader reader_;
+  Writer writer_;
   std::unique_ptr<Mesh> mesh_;
   double duration_;
   int n_steps_;
