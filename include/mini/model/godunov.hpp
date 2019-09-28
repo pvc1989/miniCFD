@@ -23,16 +23,12 @@ template <class Mesh, class Riemann>
 class Godunov {
   using Wall = typename Mesh::Wall;
   using Cell = typename Mesh::Cell;
-  using Jacobi = typename Riemann::Jacobi;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
   using Reader = mesh::VtkReader<Mesh>;
   using Writer = mesh::VtkWriter<Mesh>;
 
  public:
-  Godunov(std::initializer_list<Jacobi> jacobi) {
-    std::uninitialized_copy(jacobi.begin(), jacobi.end(), jacobi_.begin());
-  }
   bool ReadMesh(std::string const& file_name) {
     reader_ = Reader();
     if (reader_.ReadFromFile(file_name)) {
@@ -134,7 +130,7 @@ class Godunov {
       auto length = wall.Measure();
       auto n1 = (wall.Tail()->Y() - wall.Head()->Y()) / length;
       auto n2 = (wall.Head()->X() - wall.Tail()->X()) / length;
-      wall.data.riemann = Riemann({n1, n2}, {jacobi_[0], jacobi_[1]});
+      wall.data.riemann.Rotate(n1, n2);
       auto left_cell = wall.template GetSide<+1>();
       auto right_cell = wall.template GetSide<-1>();
       if (left_cell && right_cell) {
@@ -162,27 +158,26 @@ class Godunov {
         u_r = right_cell->data.state;
         wall.data.flux = riemann_->GetFluxOnTimeAxis(u_r, u_r);
       }
+      wall.data.flux *= wall.Measure();
     });
     mesh_->ForEachCell([&](Cell& cell) {
-      State rhs{};
+      auto net_flux = Flux{};
       cell.ForEachWall([&](Wall& wall) {
         if (wall.template GetSide<+1>() == &cell) {
-          rhs -= wall.data.flux * wall.Measure();
+          net_flux -= wall.data.flux;
         } else {
-          rhs += wall.data.flux * wall.Measure();
+          net_flux += wall.data.flux;
         }
       });
-      rhs /= cell.Measure();
-      TimeStepping(&(cell.data.state), rhs);
+      net_flux /= cell.Measure();
+      TimeStepping(&(cell.data.state), &net_flux);
     });
   }
-  void TimeStepping(State* u_curr , State du_dt) {
-    *u_curr += du_dt * step_size_;
+  void TimeStepping(State* u_curr , Flux* du_dt) {
+    *du_dt *= step_size_;
+    *u_curr += *du_dt;
   }
   bool CheckBoundarycondition() {
-    for (auto& [left, right] : periodic_boundaries_) {
-      std::cout << left << " " << right << std::endl;
-    }
     int n = 0;
     for (auto& [name, part] : boundaries_) {
       n += part.size();
@@ -264,7 +259,6 @@ class Godunov {
   }
 
  private:
-  std::array<Jacobi, Mesh::Dim()> jacobi_;
   Reader reader_;
   Writer writer_;
   std::unique_ptr<Mesh> mesh_;
