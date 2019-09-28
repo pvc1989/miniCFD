@@ -3,11 +3,109 @@
 #define MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
 
 #include <cmath>
+#include <initializer_list>
+
+#include "mini/algebra/column.hpp"
 
 namespace mini {
 namespace riemann {
 namespace nonlinear {
 namespace euler {
+
+template <int kDim>
+class Tuple {
+ public:
+  // Types:
+  using Scalar = double;
+  using Vector = algebra::Column<Scalar, kDim>;
+  // Data:
+  Scalar mass{0};
+  Vector momentum{0};
+  Scalar energy{0};
+  // Constructors:
+  Tuple() = default;
+  Tuple(Scalar const& rho,
+        Scalar const& u,
+        Scalar const& p)
+      : mass{rho}, energy{p}, momentum{u} {}
+  Tuple(Scalar const& rho,
+        Scalar const& u, Scalar const& v,
+        Scalar const& p)
+      : mass{rho}, energy{p}, momentum{u, v} {}
+  // Arithmetic Operators:
+  Tuple& operator+=(Tuple const& that) {
+    this->mass += that.mass;
+    this->energy += that.energy;
+    this->momentum += that.momentum;
+    return *this;
+  }
+  Tuple& operator-=(Tuple const& that) {
+    this->mass -= that.mass;
+    this->energy -= that.energy;
+    this->momentum -= that.momentum;
+    return *this;
+  }
+  Tuple& operator*=(Scalar const& s) {
+    this->mass *= s;
+    this->energy *= s;
+    this->momentum *= s;
+    return *this;
+  }
+  Tuple& operator/=(Scalar const& s) {
+    this->mass /= s;
+    this->energy /= s;
+    this->momentum /= s;
+    return *this;
+  }
+  // Other Operations:
+  bool operator==(Tuple const& that) const {
+    return (this->mass == that.mass) && (this->energy == that.energy) &&
+           (this->momentum == that.momentum);
+  }
+  Tuple& Rotate(Vector const& normal) {
+    static_assert(kDim == 2);
+    /* Calculate the normal component: */
+    auto momentum_n = momentum.Dot(normal);
+    /* Calculate the tangential component:
+       auto tangent = Vector{ -normal[1], normal[0] };
+       auto momentum_t = momentum.Dot(tangent);
+    */
+    momentum[1] *= normal[0];
+    momentum[1] -= normal[1] * momentum[0];
+    /* Write the normal component: */
+    momentum[0] = momentum_n;
+    return *this;
+  }
+};
+template <int kDim>
+class Flux : public Tuple<kDim> {
+  // Types:
+  using Base = Tuple<kDim>;
+  // Constructors:
+  using Base::Base;
+};
+template <int kDim>
+class Primitive : public Tuple<kDim> {
+ public:
+  // Types:
+  using Base = Tuple<kDim>;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using Density = Scalar;
+  using Pressure = Scalar;
+  using Speed = Scalar;
+  // Constructors:
+  using Base::Base;
+  // Accessors and Mutators:
+  Density const& rho() const { return this->mass; }
+  Pressure const& p() const { return this->energy; }
+  Speed const& u() const { return this->momentum[0]; }
+  Speed const& v() const { return this->momentum[1]; }
+  Density& rho() { return this->mass; }
+  Pressure& p() { return this->energy; }
+  Speed& u() { return this->momentum[0]; }
+  Speed& v() { return this->momentum[1]; }
+};
 
 template <int kDim>
 class State;

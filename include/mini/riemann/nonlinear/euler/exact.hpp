@@ -4,7 +4,6 @@
 #define MINI_RIEMANN_NONLINEAR_EULER_EXACT_HPP_
 
 #include <cmath>
-#include <array>
 
 #include "mini/riemann/nonlinear/euler/types.hpp"
 
@@ -17,7 +16,8 @@ template <class Gas, int kDim>
 class Implementor {
  public:
   // Types:
-  using State = State<kDim>;
+  using Flux = Flux<kDim>;
+  using State = Primitive<kDim>;
   using Speed = typename State::Speed;
   // Data:
   Speed star_u{0.0};
@@ -230,7 +230,7 @@ class Exact<Gas, 1> : public Implementor<Gas, 1> {
  public:
   // Types:
   using State = typename Base::State;
-  using Flux = std::array<double, 3>;
+  using Flux = typename Base::Flux;
   // Get F from U
   static Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
@@ -255,7 +255,7 @@ class Exact<Gas, 2> : public Implementor<Gas, 2> {
  public:
   // Types:
   using State = typename Base::State;
-  using Flux = std::array<double, 4>;
+  using Flux = typename Base::Flux;
   // Get F from U
   static Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();

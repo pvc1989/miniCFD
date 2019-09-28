@@ -19,20 +19,24 @@ class ExactTest : public ::testing::Test {
   using State = Solver::State;
   using Flux = Solver::Flux;
   Solver solver;
-  static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    for (int i = 0; i != 3; ++i) {
-      if (rhs[i] == 0) {
-        EXPECT_EQ(lhs[i], rhs[i]);
-      } else {
-        EXPECT_NEAR(lhs[i] / rhs[i], 1, 1e-4);
-      }
+  static void ExpectNear(double x, double y, double eps) {
+    if (x == 0) {
+      EXPECT_EQ(y, 0);
+    } else {
+      EXPECT_NEAR(y / x, 1, eps);
     }
+  }
+  static void CompareFlux(Flux const& lhs, Flux const& rhs) {
+    constexpr double eps = 1e-4;
+    ExpectNear(lhs.mass, rhs.mass, eps);
+    ExpectNear(lhs.energy, rhs.energy, eps);
+    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
   }
 };
 TEST_F(ExactTest, TestFlux) {
   auto rho{0.1}, u{0.2}, p{0.3};
   auto flux = Flux{rho * u, rho * u * u + p, u};
-  flux[2] *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
+  flux.energy *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
 TEST_F(ExactTest, TestSod) {
@@ -76,14 +80,19 @@ class Exact2dTest : public ::testing::Test {
   using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
-  static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    for (int i = 0; i != 4; ++i) {
-      if (rhs[i] == 0) {
-        EXPECT_EQ(lhs[i], rhs[i]);
-      } else {
-        EXPECT_NEAR(lhs[i] / rhs[i], 1, 1e-4);
-      }
+  static void ExpectNear(double x, double y, double eps) {
+    if (x == 0) {
+      EXPECT_EQ(y, 0);
+    } else {
+      EXPECT_NEAR(y / x, 1, eps);
     }
+  }
+  static void CompareFlux(Flux const& lhs, Flux const& rhs) {
+    constexpr double eps = 1e-4;
+    ExpectNear(lhs.mass, rhs.mass, eps);
+    ExpectNear(lhs.energy, rhs.energy, eps);
+    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
+    ExpectNear(lhs.momentum[1], rhs.momentum[1], eps);
   }
 };
 TEST_F(Exact2dTest, TestSod) {
