@@ -38,10 +38,10 @@ endif()
 include(${VTK_USE_FILE})
 
 configure_file (
-  "${PROJECT_SOURCE_DIR}/test/data.hpp.in"
-  "${PROJECT_BINARY_DIR}/test/data.hpp"
+  "${PROJECT_SOURCE_DIR}/data/path.hpp.in"
+  "${PROJECT_BINARY_DIR}/mini/data/path.hpp"
 )
-include_directories("${PROJECT_BINARY_DIR}/test")
+include_directories("${PROJECT_BINARY_DIR}")
 
 add_executable(vtk vtk.cpp)
 target_link_libraries(vtk ${VTK_LIBRARIES} gtest_main)
@@ -49,6 +49,6 @@ add_test(NAME VTK COMMAND vtk)
 
 add_subdirectory(riemann)
 
-add_executable(model model.cpp)
-target_link_libraries(model ${VTK_LIBRARIES} gtest_main)
-add_test(NAME Model COMMAND model)
+# add_executable(model model.cpp)
+# target_link_libraries(model ${VTK_LIBRARIES} gtest_main)
+# add_test(NAME Model COMMAND model)

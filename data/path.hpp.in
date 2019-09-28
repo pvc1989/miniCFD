@@ -1,0 +1,2 @@
+// These settings will be passed to "${PROJECT_BINARY_DIR}/mini/data/path.hpp".
+#define TEST_DATA_DIR "@PROJECT_SOURCE_DIR@/data/"
