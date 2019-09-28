@@ -91,6 +91,18 @@ class Primitive : public Tuple<kDim> {
   Speed& u() { return this->momentum[0]; }
   Speed& v() { return this->momentum[1]; }
 };
+template <int kDim>
+struct Conservative : Tuple<kDim>{
+  // Types:
+  using Base = Tuple<kDim>;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using Density = Scalar;
+  using Pressure = Scalar;
+  using Speed = Scalar;
+  // Constructors:
+  using Base::Base;
+};
 template <int kInteger = 1, int kDecimal = 4>
 class IdealGas {
  private:
@@ -129,10 +141,34 @@ class IdealGas {
   static constexpr double GammaMinusOneUnderTwo() {
     return 2 / GammaMinusOne();
   }
-  // State equations:
-  template <class State>
-  static double GetSpeedOfSound(State const& state) {
+  // Converters:
+  template <int kDim>
+  static double GetSpeedOfSound(Primitive<kDim> const& state) {
     return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
+  }
+  template <int kDim>
+  static Primitive<kDim>& ConservativeToPrimitive(Conservative<kDim>* state) {
+    auto& rho = state->mass;
+    if (rho) {
+      // momentum = rho * u
+      state->momentum /= rho;
+      auto& u = state->momentum;
+      // energy = p/(gamma - 1) + 0.5*rho*|u|^2
+      state->energy -= 0.5 * rho * u.Dot(u);
+      state->energy *= GammaMinusOne();
+    }
+    return reinterpret_cast<Primitive<kDim>&>(*state);
+  }
+  template <int kDim>
+  static Conservative<kDim>& PrimitiveToConservative(Primitive<kDim>* state) {
+    auto& rho = state->mass;
+    auto& u = state->momentum;
+    // energy = p/(gamma - 1) + 0.5*rho*|u|^2
+    state->energy *= OneOverGammaMinusOne();  // p / (gamma - 1)
+    state->energy += 0.5 * rho * u.Dot(u);  // + 0.5 * rho * |u|^2
+    // momentum = rho * u
+    state->momentum *= rho;
+    return reinterpret_cast<Conservative<kDim>&>(*state);
   }
 };
 
