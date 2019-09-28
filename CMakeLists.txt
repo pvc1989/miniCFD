@@ -36,3 +36,4 @@ endif()
 # Now simply link against gtest or gtest_main as needed.
 include_directories ("${PROJECT_SOURCE_DIR}/include")
 add_subdirectory(test)
+add_subdirectory(demo)
