@@ -5,12 +5,11 @@
 #include "gtest/gtest.h"
 
 #include "mini/gas/ideal.hpp"
-#include "mini/riemann/euler/ausm.hpp"
-#include "mini/riemann/euler/exact.hpp"
-#include "mini/riemann/euler/hllc.hpp"
+#include "mini/riemann/nonlinear/euler/exact.hpp"
 
 namespace mini {
 namespace riemann {
+namespace nonlinear {
 
 class ExactTest : public ::testing::Test {
  protected:
@@ -129,6 +128,7 @@ TEST_F(Exact2dTest, TestVaccumed) {
               solver.GetFlux({0.0, 0.0, v_right, 0.0}));
 }
 
+}  // namespace nonlinear
 }  // namespace riemann
 }  // namespace mini
 
