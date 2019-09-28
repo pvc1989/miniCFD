@@ -15,9 +15,13 @@ template <class Gas, int kDim>
 class Implementor {
  public:
   // Types:
+  using Conservative = Conservative<kDim>;
+  using Primitive = Primitive<kDim>;
+  using State = Primitive;
   using Flux = Flux<kDim>;
-  using State = Primitive<kDim>;
-  using Speed = typename State::Speed;
+  using Scalar = typename State::Scalar;
+  using Vector = typename State::Vector;
+  using Speed = Scalar;
   // Data:
   Speed star_u{0.0};
   // Get U on t-Axis
@@ -220,15 +224,20 @@ class Implementor {
   }
 };
 
-template <class Gas, int kDim = 1>
+template <class GasModel, int kDim = 1>
 class Exact;
-template <class Gas>
-class Exact<Gas, 1> : public Implementor<Gas, 1> {
-  using Base = Implementor<Gas, 1>;
+template <class GasModel>
+class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
+  using Base = Implementor<GasModel, 1>;
 
  public:
   // Types:
-  using State = typename Base::State;
+  using Gas = GasModel;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Primitive;
   using Flux = typename Base::Flux;
   // Get F from U
   static Flux GetFlux(State const& state) {
@@ -247,13 +256,18 @@ class Exact<Gas, 1> : public Implementor<Gas, 1> {
     return Base::GetStateOnTimeAxis(left, right);
   }
 };
-template <class Gas>
-class Exact<Gas, 2> : public Implementor<Gas, 2> {
-  using Base = Implementor<Gas, 2>;
+template <class GasModel>
+class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
+  using Base = Implementor<GasModel, 2>;
 
  public:
   // Types:
-  using State = typename Base::State;
+  using Gas = GasModel;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Primitive;
   using Flux = typename Base::Flux;
   // Get F from U
   static Flux GetFlux(State const& state) {
