@@ -81,6 +81,7 @@ class Primitive : public Tuple<kDim> {
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
+  explicit Primitive(Base const& tuple) : Base(tuple) {}
   // Accessors and Mutators:
   Density const& rho() const { return this->mass; }
   Pressure const& p() const { return this->energy; }
@@ -102,6 +103,7 @@ struct Conservative : Tuple<kDim>{
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
+  explicit Conservative(Base const& tuple) : Base(tuple) {}
 };
 template <int kInteger = 1, int kDecimal = 4>
 class IdealGas {
@@ -147,7 +149,7 @@ class IdealGas {
     return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
-  static Primitive<kDim>& ConservativeToPrimitive(Conservative<kDim>* state) {
+  static Primitive<kDim>& ConservativeToPrimitive(Tuple<kDim>* state) {
     auto& rho = state->mass;
     if (rho) {
       // momentum = rho * u
@@ -161,13 +163,13 @@ class IdealGas {
   }
   template <int kDim>
   static Primitive<kDim> ConservativeToPrimitive(
-      Conservative<kDim> const& state) {
-    auto state_copy = state;
-    ConservativeToPrimitive(&state_copy);
-    return state_copy;
+      Conservative<kDim> const& conservative) {
+    auto primitive = Primitive{conservative};
+    ConservativeToPrimitive(&primitive);
+    return primitive;
   }
   template <int kDim>
-  static Conservative<kDim>& PrimitiveToConservative(Primitive<kDim>* state) {
+  static Conservative<kDim>& PrimitiveToConservative(Tuple<kDim>* state) {
     auto& rho = state->mass;
     auto& u = state->momentum;
     // energy = p/(gamma - 1) + 0.5*rho*|u|^2
@@ -179,10 +181,10 @@ class IdealGas {
   }
   template <int kDim>
   static Conservative<kDim> PrimitiveToConservative(
-      Primitive<kDim> const& state) {
-    auto state_copy = state;
-    PrimitiveToConservative(&state_copy);
-    return state_copy;
+      Primitive<kDim> const& primitive) {
+    auto conservative = Conservative{primitive};
+    PrimitiveToConservative(&conservative);
+    return conservative;
   }
 };
 

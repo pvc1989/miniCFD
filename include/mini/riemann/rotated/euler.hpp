@@ -30,13 +30,13 @@ class Euler {
     normal_[1] = n_2;
   }
   Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right) {
-    auto left__primitive = Gas::ConservativeToPrimitive( left);
+    auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
-    GlobalToNormal(&(left__primitive->momentum));
-    GlobalToNormal(&(right_primitive->momentum));
-    auto flux = UnrotatedEuler::GetFluxOnTimeAxis(left__primitive,
-                                                  right_primitive);
-    NormalToGlobal(&(flux->momentum));
+    GlobalToNormal(&(left__primitive.momentum));
+    GlobalToNormal(&(right_primitive.momentum));
+    auto flux = unrotated_euler_.GetFluxOnTimeAxis(
+        left__primitive, right_primitive);
+    NormalToGlobal(&(flux.momentum));
     return flux;
   }
   void GlobalToNormal(Vector* v) {
@@ -59,6 +59,7 @@ class Euler {
   }
 
  private:
+  UnrotatedEuler unrotated_euler_;
   Vector normal_;
 };
 
