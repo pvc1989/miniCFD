@@ -47,13 +47,10 @@ add_executable(vtk vtk.cpp)
 target_link_libraries(vtk ${VTK_LIBRARIES} gtest_main)
 add_test(NAME VTK COMMAND vtk)
 
-add_executable(riemann riemann.cpp)
-target_link_libraries(riemann gtest_main)
-add_test(NAME Riemann COMMAND riemann)
-
 add_executable(euler euler.cpp)
 target_link_libraries(euler gtest_main)
 add_test(NAME Euler COMMAND euler)
+add_subdirectory(riemann)
 
 add_executable(model model.cpp)
 target_link_libraries(model ${VTK_LIBRARIES} gtest_main)
