@@ -61,20 +61,6 @@ class Tuple {
     return (this->mass == that.mass) && (this->energy == that.energy) &&
            (this->momentum == that.momentum);
   }
-  Tuple& Rotate(Vector const& normal) {
-    static_assert(kDim == 2);
-    /* Calculate the normal component: */
-    auto momentum_n = momentum.Dot(normal);
-    /* Calculate the tangential component:
-       auto tangent = Vector{ -normal[1], normal[0] };
-       auto momentum_t = momentum.Dot(tangent);
-    */
-    momentum[1] *= normal[0];
-    momentum[1] -= normal[1] * momentum[0];
-    /* Write the normal component: */
-    momentum[0] = momentum_n;
-    return *this;
-  }
 };
 template <int kDim>
 class Flux : public Tuple<kDim> {
@@ -105,48 +91,6 @@ class Primitive : public Tuple<kDim> {
   Speed& u() { return this->momentum[0]; }
   Speed& v() { return this->momentum[1]; }
 };
-
-template <int kDim>
-class State;
-template <>
-class State<1> {
- public:
-  // Types:
-  using Scalar = double;
-  using Density = double;
-  using Speed = double;
-  using Pressure = double;
-  // Constructors:
-  State(Density rho, Speed u, Pressure p) : rho_(rho), u_(u), p_(p) {}
-  // Accessors and Mutators:
-  Scalar const& rho() const { return rho_; }
-  Scalar const& u() const { return u_; }
-  Scalar const& p() const { return p_; }
-  Scalar& rho() { return rho_; }
-  Scalar& u() { return u_; }
-  Scalar& p() { return p_; }
- protected:
-  // Data:
-  Density rho_;
-  Speed u_;
-  Pressure p_;
-};
-template <>
-class State<2> : public State<1> {
- public:
-  // Constructors:
-  State(Density rho, Speed u, Speed v, Pressure p)
-      : State<1>(rho, u, p), v_(v) {}
-  State(Density rho, Speed u, Pressure p)
-      : State(rho, u, 0.0, p) {}
-  // Accessors and Mutators:
-  Scalar const& v() const { return v_; }
-  Scalar& v() { return v_; }
- protected:
-  // Data:
-  Speed v_;
-};
-
 template <int kInteger = 1, int kDecimal = 4>
 class IdealGas {
  private:
