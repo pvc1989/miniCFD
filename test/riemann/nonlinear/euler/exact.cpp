@@ -4,17 +4,18 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/gas/ideal.hpp"
+#include "mini/riemann/nonlinear/euler/types.hpp"
 #include "mini/riemann/nonlinear/euler/exact.hpp"
 
 namespace mini {
 namespace riemann {
 namespace nonlinear {
+namespace euler {
 
 class ExactTest : public ::testing::Test {
  protected:
-  using Gas = gas::Ideal<1, 4>;
-  using Solver = euler::Exact<Gas>;
+  using Gas = IdealGas<1, 4>;
+  using Solver = Exact<Gas>;
   using State = Solver::State;
   using Flux = Solver::Flux;
   Solver solver;
@@ -69,7 +70,7 @@ TEST_F(ExactTest, TestVaccumed) {
 
 class Exact2dTest : public ::testing::Test {
  protected:
-  using Solver = euler::Exact<gas::Ideal<1, 4>, 2>;
+  using Solver = Exact<IdealGas<1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
   using Flux = Solver::Flux;
@@ -128,6 +129,7 @@ TEST_F(Exact2dTest, TestVaccumed) {
               solver.GetFlux({0.0, 0.0, v_right, 0.0}));
 }
 
+}  // namespace euler
 }  // namespace nonlinear
 }  // namespace riemann
 }  // namespace mini

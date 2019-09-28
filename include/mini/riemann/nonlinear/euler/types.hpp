@@ -1,11 +1,13 @@
 //  Copyright 2019 Weicheng Pei and Minghao Yang
-#ifndef MINI_GAS_IDEAL_HPP_
-#define MINI_GAS_IDEAL_HPP_
+#ifndef MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
+#define MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
 
 #include <cmath>
 
 namespace mini {
-namespace gas {
+namespace riemann {
+namespace nonlinear {
+namespace euler {
 
 template <int kDim>
 class State;
@@ -36,7 +38,7 @@ class State<2> : public State<1> {
 };
 
 template <int kInteger = 1, int kDecimal = 4>
-class Ideal {
+class IdealGas {
  private:
   static_assert(kInteger >= 1 && kDecimal >= 0);
   static constexpr double Shift(double x) {
@@ -80,7 +82,9 @@ class Ideal {
   }
 };
 
-}  // namespace gas
+}  // namespace euler
+}  // namespace nonlinear
+}  // namespace riemann
 }  // namespace mini
 
-#endif  //  MINI_GAS_IDEAL_HPP_
+#endif  //  MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_

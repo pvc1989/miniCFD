@@ -6,6 +6,8 @@
 #include <cmath>
 #include <array>
 
+#include "mini/riemann/nonlinear/euler/types.hpp"
+
 namespace mini {
 namespace riemann {
 namespace nonlinear {
@@ -15,7 +17,7 @@ template <class Gas, int kDim>
 class Implementor {
  public:
   // Types:
-  using State = gas::State<kDim>;
+  using State = State<kDim>;
   using Speed = typename State::Speed;
   // Data:
   Speed star_u{0.0};
