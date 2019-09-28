@@ -15,26 +15,39 @@ template <>
 class State<1> {
  public:
   // Types:
+  using Scalar = double;
   using Density = double;
   using Speed = double;
   using Pressure = double;
-  // Data:
-  Density rho;
-  Speed u;
-  Pressure p;
   // Constructors:
-  State(Density rho, Speed u, Pressure p) : rho(rho), u(u), p(p) {}
+  State(Density rho, Speed u, Pressure p) : rho_(rho), u_(u), p_(p) {}
+  // Accessors and Mutators:
+  Scalar const& rho() const { return rho_; }
+  Scalar const& u() const { return u_; }
+  Scalar const& p() const { return p_; }
+  Scalar& rho() { return rho_; }
+  Scalar& u() { return u_; }
+  Scalar& p() { return p_; }
+ protected:
+  // Data:
+  Density rho_;
+  Speed u_;
+  Pressure p_;
 };
 template <>
 class State<2> : public State<1> {
  public:
-  // Data:
-  Speed v;
   // Constructors:
   State(Density rho, Speed u, Speed v, Pressure p)
-      : State<1>(rho, u, p), v(v) {}
+      : State<1>(rho, u, p), v_(v) {}
   State(Density rho, Speed u, Pressure p)
       : State(rho, u, 0.0, p) {}
+  // Accessors and Mutators:
+  Scalar const& v() const { return v_; }
+  Scalar& v() { return v_; }
+ protected:
+  // Data:
+  Speed v_;
 };
 
 template <int kInteger = 1, int kDecimal = 4>
@@ -78,7 +91,7 @@ class IdealGas {
   // State equations:
   template <class State>
   static double GetSpeedOfSound(State const& state) {
-    return state.rho == 0 ? 0 : std::sqrt(Gamma() * state.p / state.rho);
+    return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
 };
 

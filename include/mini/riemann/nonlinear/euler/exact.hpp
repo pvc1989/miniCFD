@@ -24,7 +24,7 @@ class Implementor {
   // Get U on t-Axis
   State GetStateOnTimeAxis(State const& left, State const& right) {
     // Construct the function of speed change, aka the pressure function.
-    auto u_change_given = right.u - left.u;
+    auto u_change_given = right.u() - left.u();
     auto u_change__left = SpeedChange(left);
     auto u_change_right = SpeedChange(right);
     auto f = [&](double p) {
@@ -35,20 +35,20 @@ class Implementor {
     };
     if (f(0) < 0) {  // Ordinary case: Wave[2] is a contact.
       auto star = State{0, 0, 0};
-      star.p = FindRoot(f, f_prime, left.p);
-      star.u = 0.5 * (right.u + u_change_right(star.p)
-                      +left.u - u_change__left(star.p));
-      star_u = star.u;
-      if (0 < star.u) {  // Axis[t] <<< Wave[2]
-        if (star.p >= left.p) {  // Wave[1] is a shock.
+      star.p() = FindRoot(f, f_prime, left.p());
+      star.u() = 0.5 * (right.u() + u_change_right(star.p())
+                      +left.u() - u_change__left(star.p()));
+      star_u = star.u();
+      if (0 < star.u()) {  // Axis[t] <<< Wave[2]
+        if (star.p() >= left.p()) {  // Wave[1] is a shock.
           return GetStateNearShock<1>(left, &star);
-        } else {  // star.p < left.p : Wave[1] is an expansion.
+        } else {  // star.p() < left.p() : Wave[1] is an expansion.
           return GetStateNearExpansion<1>(left, &star);
         }
-      } else {  // star.u < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
-        if (star.p >= right.p) {  // Wave[3] is a shock.
+      } else {  // star.u() < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
+        if (star.p() >= right.p()) {  // Wave[3] is a shock.
           return GetStateNearShock<3>(right, &star);
-        } else {  // star.p < right.p : Wave[3] is an expansion.
+        } else {  // star.p() < right.p() : Wave[3] is an expansion.
           return GetStateNearExpansion<3>(right, &star);
         }
       }
@@ -73,10 +73,10 @@ class Implementor {
   class SpeedChange {
    public:
     explicit SpeedChange(State const& before)
-        : rho_before_(before.rho), p_before_(before.p),
-          a_before_(before.rho == 0 ? 0 : Gas::GetSpeedOfSound(before)),
-          p_const_(before.p * Gas::GammaMinusOneOverTwo()) {
-      assert(before.rho >= 0 && before.p >= 0);
+        : rho_before_(before.rho()), p_before_(before.p()),
+          a_before_(before.rho() == 0 ? 0 : Gas::GetSpeedOfSound(before)),
+          p_const_(before.p() * Gas::GammaMinusOneOverTwo()) {
+      assert(before.rho() >= 0 && before.p() >= 0);
     }
     double operator()(double p_after) const {
       double value;
@@ -117,11 +117,11 @@ class Implementor {
   class Shock {
    public:
     double u;
-    Shock(State const& before, State const& after) : u(before.u) {
-      u += (after.p - before.p) / ((after.u - before.u) * before.rho);
+    Shock(State const& before, State const& after) : u(before.u()) {
+      u += (after.p() - before.p()) / ((after.u() - before.u()) * before.rho());
     }
     double GetDensityAfterIt(State const& before, State const& after) const {
-      return before.rho * (before.u - u) / (after.u - u);
+      return before.rho() * (before.u() - u) / (after.u() - u);
     }
   };
   template <int kField>
@@ -135,7 +135,7 @@ class Implementor {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
-      after->rho = before.rho * (before.u - shock.u) / (after->u - shock.u);
+      after->rho() = before.rho() * (before.u() - shock.u) / (after->u() - shock.u);
       return *after;
     } else {
       return before;
@@ -149,11 +149,11 @@ class Implementor {
     double gri_1, gri_2;  // Generalized Riemann Invariants
     Expansion(State const& before, State const& after)
         : a_before(Gas::GetSpeedOfSound(before)),
-          gri_1(before.p / (std::pow(before.rho, Gas::Gamma()))) {
+          gri_1(before.p() / (std::pow(before.rho(), Gas::Gamma()))) {
       gri_2 = AddOrMinus<kField>(
-        before.u, a_before * Gas::GammaMinusOneUnderTwo());
+        before.u(), a_before * Gas::GammaMinusOneUnderTwo());
       a_after = AddOrMinus<kField>(
-        a_before, (before.u - after.u) * Gas::GammaMinusOneOverTwo());
+        a_before, (before.u() - after.u()) * Gas::GammaMinusOneOverTwo());
     }
   };
   template <int kField>
@@ -186,10 +186,10 @@ class Implementor {
   static State GetStateNearExpansion(State const& before, State* after) {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
-    if (TimeAxisAfterWave<kField>(after->u, wave.a_after)) {
-      after->rho = Gas::Gamma() * after->p / (wave.a_after * wave.a_after);
+    if (TimeAxisAfterWave<kField>(after->u(), wave.a_after)) {
+      after->rho() = Gas::Gamma() * after->p() / (wave.a_after * wave.a_after);
       return *after;
-    } else if (TimeAxisBeforeWave<kField>(before.u, wave.a_before)) {
+    } else if (TimeAxisBeforeWave<kField>(before.u(), wave.a_before)) {
       return before;
     } else {  // Axis[t] is inside the Expansion.
       return GetStateInsideExpansion(wave.gri_1, wave.gri_2);
@@ -197,20 +197,20 @@ class Implementor {
   }
   static State GetStateNearVaccum(State const& left, State const& right) {
     auto left_a = Gas::GetSpeedOfSound(left);
-    if (left.u > left_a) {  // Axis[t] <<< Wave[1].
+    if (left.u() > left_a) {  // Axis[t] <<< Wave[1].
       return left;
-    } else if (right.u + left_a < 0) {  // Wave[3] <<< Axis[t].
+    } else if (right.u() + left_a < 0) {  // Wave[3] <<< Axis[t].
       return right;
     } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
-      auto gri_1 = left.p / (std::pow(left.rho, Gas::Gamma()));
-      auto gri_2 = left.u + left_a * Gas::GammaMinusOneUnderTwo();
+      auto gri_1 = left.p() / (std::pow(left.rho(), Gas::Gamma()));
+      auto gri_2 = left.u() + left_a * Gas::GammaMinusOneUnderTwo();
       if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
         return GetStateInsideExpansion(gri_1, gri_2);
       } else {  // gri_2 < 0
         // Axis[t] is to the RIGHT of Wave[1].
-        gri_1 = right.p / (std::pow(right.rho, Gas::Gamma()));
+        gri_1 = right.p() / (std::pow(right.rho(), Gas::Gamma()));
         auto a_right = Gas::GetSpeedOfSound(right);
-        gri_2 = right.u - a_right * Gas::GammaMinusOneUnderTwo();
+        gri_2 = right.u() - a_right * Gas::GammaMinusOneUnderTwo();
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
           return GetStateInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vaccumed region.
@@ -233,10 +233,10 @@ class Exact<Gas, 1> : public Implementor<Gas, 1> {
   using Flux = std::array<double, 3>;
   // Get F from U
   static Flux GetFlux(State const& state) {
-    auto rho_u = state.rho * state.u;
-    auto rho_u_u = rho_u * state.u;
-    return {rho_u, rho_u_u + state.p,
-            state.u * (state.p * Gas::GammaOverGammaMinusOne()
+    auto rho_u = state.rho() * state.u();
+    auto rho_u_u = rho_u * state.u();
+    return {rho_u, rho_u_u + state.p(),
+            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
                        + 0.5 * rho_u_u)};
   }
   // Get F on t-Axis
@@ -258,12 +258,12 @@ class Exact<Gas, 2> : public Implementor<Gas, 2> {
   using Flux = std::array<double, 4>;
   // Get F from U
   static Flux GetFlux(State const& state) {
-    auto rho_u = state.rho * state.u;
-    auto rho_v = state.rho * state.v;
-    auto rho_u_u = rho_u * state.u;
-    return {rho_u, rho_u_u + state.p, rho_v * state.u,
-            state.u * (state.p * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * (rho_u_u + rho_v * state.v))};
+    auto rho_u = state.rho() * state.u();
+    auto rho_v = state.rho() * state.v();
+    auto rho_u_u = rho_u * state.u();
+    return {rho_u, rho_u_u + state.p(), rho_v * state.u(),
+            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
+                       + 0.5 * (rho_u_u + rho_v * state.v()))};
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
@@ -272,7 +272,7 @@ class Exact<Gas, 2> : public Implementor<Gas, 2> {
   // Get U on t-Axis
   State GetStateOnTimeAxis(State const& left, State const& right) {
     auto state = Base::GetStateOnTimeAxis(left, right);
-    state.v = this->star_u > 0 ? left.v : right.v;
+    state.v() = this->star_u > 0 ? left.v() : right.v();
     return state;
   }
 };
