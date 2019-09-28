@@ -1,13 +1,14 @@
 //  Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_RIEMANN_EULER_EXACT_HPP_
-#define MINI_RIEMANN_EULER_EXACT_HPP_
+#ifndef MINI_RIEMANN_NONLINEAR_EULER_EXACT_HPP_
+#define MINI_RIEMANN_NONLINEAR_EULER_EXACT_HPP_
 
 #include <cmath>
 #include <array>
 
 namespace mini {
 namespace riemann {
+namespace nonlinear {
 namespace euler {
 
 template <class Gas, int kDim>
@@ -275,7 +276,8 @@ class Exact<Gas, 2> : public Implementor<Gas, 2> {
 };
 
 }  // namespace euler
+}  // namespace nonlinear
 }  // namespace riemann
 }  // namespace mini
 
-#endif  //  MINI_RIEMANN_EULER_EXACT_HPP_
+#endif  //  MINI_RIEMANN_NONLINEAR_EULER_EXACT_HPP_
