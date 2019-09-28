@@ -160,6 +160,13 @@ class IdealGas {
     return reinterpret_cast<Primitive<kDim>&>(*state);
   }
   template <int kDim>
+  static Primitive<kDim> ConservativeToPrimitive(
+      Conservative<kDim> const& state) {
+    auto state_copy = state;
+    ConservativeToPrimitive(&state_copy);
+    return state_copy;
+  }
+  template <int kDim>
   static Conservative<kDim>& PrimitiveToConservative(Primitive<kDim>* state) {
     auto& rho = state->mass;
     auto& u = state->momentum;
@@ -169,6 +176,13 @@ class IdealGas {
     // momentum = rho * u
     state->momentum *= rho;
     return reinterpret_cast<Conservative<kDim>&>(*state);
+  }
+  template <int kDim>
+  static Conservative<kDim> PrimitiveToConservative(
+      Primitive<kDim> const& state) {
+    auto state_copy = state;
+    PrimitiveToConservative(&state_copy);
+    return state_copy;
   }
 };
 
