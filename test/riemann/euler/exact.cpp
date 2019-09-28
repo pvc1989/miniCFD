@@ -4,12 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/riemann/nonlinear/euler/types.hpp"
-#include "mini/riemann/nonlinear/euler/exact.hpp"
+#include "mini/riemann/euler/types.hpp"
+#include "mini/riemann/euler/exact.hpp"
 
 namespace mini {
 namespace riemann {
-namespace nonlinear {
 namespace euler {
 
 class ExactTest : public ::testing::Test {
@@ -139,7 +138,6 @@ TEST_F(Exact2dTest, TestVaccumed) {
 }
 
 }  // namespace euler
-}  // namespace nonlinear
 }  // namespace riemann
 }  // namespace mini
 

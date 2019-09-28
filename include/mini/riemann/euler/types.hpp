@@ -1,6 +1,6 @@
 //  Copyright 2019 Weicheng Pei and Minghao Yang
-#ifndef MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
-#define MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
+#ifndef MINI_RIEMANN_EULER_TYPES_HPP_
+#define MINI_RIEMANN_EULER_TYPES_HPP_
 
 #include <cmath>
 #include <initializer_list>
@@ -9,7 +9,6 @@
 
 namespace mini {
 namespace riemann {
-namespace nonlinear {
 namespace euler {
 
 template <int kDim>
@@ -194,8 +193,7 @@ class IdealGas {
 };
 
 }  // namespace euler
-}  // namespace nonlinear
 }  // namespace riemann
 }  // namespace mini
 
-#endif  //  MINI_RIEMANN_NONLINEAR_EULER_TYPES_HPP_
+#endif  //  MINI_RIEMANN_EULER_TYPES_HPP_

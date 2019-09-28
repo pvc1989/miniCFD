@@ -1,5 +1,5 @@
-#ifndef MINI_RIEMANN_HLLC_HPP_
-#define MINI_RIEMANN_HLLC_HPP_
+#ifndef MINI_RIEMANN_EULER_HLLC_HPP_
+#define MINI_RIEMANN_EULER_HLLC_HPP_
 
 #include <array>
 #include <algorithm>
@@ -105,8 +105,8 @@ class Hllc {
   }
 };
 
-}  //  namespace
+}  //  namespace euler
 }  //  namespace riemann
 }  //  namespace mini
 
-#endif  //  MINI_RIEMANN_HLLC_HPP_
+#endif  //  MINI_RIEMANN_EULER_HLLC_HPP_

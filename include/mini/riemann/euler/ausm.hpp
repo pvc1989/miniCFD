@@ -1,5 +1,5 @@
-#ifndef MINI_RIEMANN_AUSM_HPP_
-#define MINI_RIEMANN_AUSM_HPP_
+#ifndef MINI_RIEMANN_EULER_AUSM_HPP_
+#define MINI_RIEMANN_EULER_AUSM_HPP_
 
 #include <array>
 #include <algorithm>
@@ -93,4 +93,4 @@ class Ausm {
 }  //  namespace riemann
 }  //  namespace mini
 
-#endif  //  MINI_RIEMANN_AUSM_HPP_
+#endif  //  MINI_RIEMANN_EULER_AUSM_HPP_
