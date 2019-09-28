@@ -1,7 +1,7 @@
-//  Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_RIEMANN_LINEAR_HPP_
-#define MINI_RIEMANN_LINEAR_HPP_
+#ifndef MINI_RIEMANN_LINEAR_DOUBLE_HPP_
+#define MINI_RIEMANN_LINEAR_DOUBLE_HPP_
 
 #include <cmath>
 #include <array>
@@ -11,31 +11,7 @@
 
 namespace mini {
 namespace riemann {
-
-class SingleWave {
- public:
-  // Types:
-  using Jacobi = double;
-  using State = double;
-  using Flux = double;
-  using Speed = double;
-  // Constructor:
-  SingleWave() : a_const_(1) {}
-  explicit SingleWave(Jacobi const& a_const) : a_const_(a_const) {}
-  // Get F on T Axia
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) const {
-    if (0 < a_const_) {
-      return left * a_const_;
-    } else {
-      return right* a_const_;
-    }
-  }
-  // Get F of U
-  Flux GetFlux(State const& state) const { return state * a_const_ ; }
-
- private:
-  Jacobi a_const_;
-};
+namespace linear {
 
 template <int kWaves = 2>
 class MultiWave {
@@ -133,7 +109,8 @@ class MultiWave {
   Matrix eigen_matrix_l_;
 };
 
-}  //  namespace riemann
-}  //  namespace mini
+}  // namespace linear
+}  // namespace riemann
+}  // namespace mini
 
-#endif  //  MINI_RIEMANN_LINEAR_HPP_
+#endif  // MINI_RIEMANN_LINEAR_DOUBLE_HPP_

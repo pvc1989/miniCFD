@@ -1,13 +1,14 @@
 //  Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_RIEMANN_BURGERS_HPP_
-#define MINI_RIEMANN_BURGERS_HPP_
+#ifndef MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
+#define MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
 
 #include <cmath>
 #include <array>
 
 namespace mini {
 namespace riemann {
+namespace nonlinear {
 
 class Burgers {
  public:
@@ -41,10 +42,11 @@ class Burgers {
   }
 
  private:
-  double k_;
+  Jacobi k_;
 };
 
-}  //  namespace riemann
-}  //  namespace mini
+}  // namespace nonlinear
+}  // namespace riemann
+}  // namespace mini
 
-#endif  //  MINI_RIEMANN_BURGERS_HPP_
+#endif  // MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
