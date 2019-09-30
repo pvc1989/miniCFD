@@ -59,11 +59,12 @@ endif()
 include(${VTK_USE_FILE})
 # End of VTK related settings
 
+# Additional headers that depends on ${PROJECT_BINARY_DIR}
 configure_file (
   "${PROJECT_SOURCE_DIR}/data/path.hpp.in"
-  "${PROJECT_BINARY_DIR}/mini/data/path.hpp"
+  "${PROJECT_BINARY_DIR}/include/mini/data/path.hpp"
 )
-include_directories("${PROJECT_BINARY_DIR}")
+include_directories("${PROJECT_BINARY_DIR}/include")
 
 add_subdirectory(test)
 add_subdirectory(demo)
