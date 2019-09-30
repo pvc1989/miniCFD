@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
+project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
 
-# Download and unpack googletest at configure time
+# GOOGLETEST related settings
+# Download and unpack `googletest` at configure time
 configure_file(CMakeLists.txt.in googletest/download/CMakeLists.txt)
 execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
   RESULT_VARIABLE result
@@ -15,25 +17,53 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build .
 if(result)
   message(FATAL_ERROR "Build step for googletest failed: ${result}")
 endif()
-
-# Prevent overriding the parent project's compiler/linker
-# settings on Windows
+# Prevent overriding the parent project's compiler/linker settings on Windows
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
-# Add googletest directly to our build. This defines
-# the gtest and gtest_main targets.
+# Add `googletest` directly to our build.
+# This defines the `gtest` and `gtest_main`s targets.
 add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest/src
                  ${CMAKE_CURRENT_BINARY_DIR}/googletest/build
                  EXCLUDE_FROM_ALL)
-
-# The gtest/gtest_main targets carry header search path
-# dependencies automatically when using CMake 2.8.11 or
-# later. Otherwise we have to add them here ourselves.
+# The `gtest`/`gtest_main` targets carry header search path
+# dependencies automatically when using CMake 2.8.11 or later.
+# Otherwise we have to add them here ourselves.
 if (CMAKE_VERSION VERSION_LESS 2.8.11)
   include_directories("${gtest_SOURCE_DIR}/include")
 endif()
-
 # Now simply link against gtest or gtest_main as needed.
 include_directories ("${PROJECT_SOURCE_DIR}/include")
+# End of GOOGLETEST related settings
+
+# VTK related settings
+find_package(VTK REQUIRED)
+if (vtkIOExport_LOADED AND vtkIOImport_LOADED)
+vtk_module_config(VTK
+  vtkCommonCore
+  vtkIOLegacy
+  vtkIOXML
+  vtkIOGeometry
+  vtkIOImport
+  vtkIOExport
+  vtksys
+)
+else()
+vtk_module_config(VTK
+  vtkCommonCore
+  vtkIOLegacy
+  vtkIOXML
+  vtkIOGeometry
+  vtkIOImport
+  vtksys
+)
+endif()
+include(${VTK_USE_FILE})
+# End of VTK related settings
+
+configure_file (
+  "${PROJECT_SOURCE_DIR}/data/path.hpp.in"
+  "${PROJECT_BINARY_DIR}/mini/data/path.hpp"
+)
+include_directories("${PROJECT_BINARY_DIR}")
+
 add_subdirectory(test)
 add_subdirectory(demo)
