@@ -19,7 +19,3 @@ target_link_libraries(vtk ${VTK_LIBRARIES} gtest_main)
 add_test(NAME VTK COMMAND vtk)
 
 add_subdirectory(riemann)
-
-add_executable(model model.cpp)
-target_link_libraries(model ${VTK_LIBRARIES} gtest_main)
-add_test(NAME Model COMMAND model)

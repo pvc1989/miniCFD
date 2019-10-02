@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS -fpermissive)
 
 # GOOGLETEST related settings
 # Download and unpack `googletest` at configure time
@@ -36,7 +37,6 @@ include_directories ("${PROJECT_SOURCE_DIR}/include")
 
 # VTK related settings
 find_package(VTK REQUIRED)
-if (vtkIOExport_LOADED AND vtkIOImport_LOADED)
 vtk_module_config(VTK
   vtkCommonCore
   vtkIOLegacy
@@ -46,16 +46,6 @@ vtk_module_config(VTK
   vtkIOExport
   vtksys
 )
-else()
-vtk_module_config(VTK
-  vtkCommonCore
-  vtkIOLegacy
-  vtkIOXML
-  vtkIOGeometry
-  vtkIOImport
-  vtksys
-)
-endif()
 include(${VTK_USE_FILE})
 # End of VTK related settings
 
