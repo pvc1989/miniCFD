@@ -9,10 +9,11 @@
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
-#include "mini/riemann/linear.hpp"
-#include "mini/riemann/burgers.hpp"
+#include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/rotated/double.hpp"
+#include "mini/riemann/rotated/burgers.hpp"
 #include "mini/model/godunov.hpp"
-#include "data.hpp"  // defines TEST_DATA_DIR
+#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace model {
@@ -34,7 +35,9 @@ class SingleWaveTest {
     Mesh::Cell::scalar_names.at(0) = "U";
     auto u_l = State{+1.0};
     auto u_r = State{-1.0};
-    auto model = Model{1.0, 0.0};
+    auto model = Model();
+    Riemann::global_coefficient[0] = 1.0;
+    Riemann::global_coefficient[1] = 0.0;
     model.ReadMesh(test_data_dir_ + mesh_name_);
     model.SetBoundaryName("left", [&](Wall& wall) {
       return wall.Center().X() == -2.0;
@@ -68,11 +71,11 @@ class SingleWaveTest {
       }
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
-    std::string command  = "rm -rf " + model_name_;
-    system(command.c_str());
-    command  = "mkdir " + model_name_;
-    system(command.c_str());
-    model.SetOutputDir(model_name_ + "/");
+    auto output_dir = std::string("result/demo/") + model_name_;
+    model.SetOutputDir(output_dir + "/");
+    system(("rm -rf " + output_dir).c_str());
+    system(("mkdir -p " + output_dir).c_str());
+    // Commit the calculation:
     model.Calculate();
   }
 
@@ -80,29 +83,12 @@ class SingleWaveTest {
   using Jacobi = typename Riemann::Jacobi;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
-  class RiemannKdim : public Riemann {
-   public:
-    RiemannKdim() = default;
-    RiemannKdim(std::initializer_list<double> normal,
-                std::initializer_list<Jacobi> jacobi)
-        : Riemann(Rotate(normal, jacobi)) {}
-    static Jacobi Rotate(std::initializer_list<double> normal,
-                         std::initializer_list<Jacobi> jacobi) {
-      int kDim = normal.end() - normal.begin();
-      auto* n = normal.begin();
-      auto* a = jacobi.begin();
-      auto a_n = a[0] * n[0];
-      for (int i = 1; i != kDim; ++i) {
-        a_n += a[1] * n[1];
-      }
-      return a_n;
-    }
-  };
+  using Coefficient = algebra::Column<Jacobi, 2>;
   // Types:
   using NodeData = mesh::Empty;
   struct WallData : public mesh::Empty {
     Flux flux;
-    RiemannKdim riemann;
+    Riemann riemann;
   };
   struct CellData : public mesh::Data<
       double, 2/* dims */, 1/* scalars */, 0/* vectors */> {
@@ -115,7 +101,7 @@ class SingleWaveTest {
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
   using Cell = typename Mesh::Cell;
   using Wall = typename Mesh::Wall;
-  using Model = model::Godunov<Mesh, RiemannKdim>;
+  using Model = model::Godunov<Mesh, Riemann>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;
@@ -145,9 +131,9 @@ class DoubleWaveTest {
     Mesh::Cell::scalar_names.at(1) = "U_1";
     auto u_l = State{1.0, 2.0};
     auto u_r = State{1.5, 2.5};
-    auto a = Jacobi{{1, 0}, {0, -1}};
-    auto b = Jacobi{{1, 0}, {0, -1}};
-    auto model = Model{a, b};
+    auto model = Model();
+    Riemann::global_coefficient[0] = Jacobi{{1, 0}, {0, -1}};
+    Riemann::global_coefficient[1] = Jacobi{{1, 0}, {0, -1}};
     model.ReadMesh(test_data_dir_ + mesh_name_);
     model.SetBoundaryName("left", [&](Wall& wall) {
       return wall.Center().X() == -2.0;
@@ -178,11 +164,11 @@ class DoubleWaveTest {
       }
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
-    std::string command  = "rm -rf " + model_name_;
-    system(command.c_str());
-    command  = "mkdir " + model_name_;
-    system(command.c_str());
-    model.SetOutputDir(model_name_ + "/");
+    auto output_dir = std::string("result/demo/") + model_name_;
+    model.SetOutputDir(output_dir + "/");
+    system(("rm -rf " + output_dir).c_str());
+    system(("mkdir -p " + output_dir).c_str());
+    // Commit the calculation:
     model.Calculate();
   }
 
@@ -190,24 +176,6 @@ class DoubleWaveTest {
   using Jacobi = typename Riemann::Jacobi;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
-  class RiemannKdim : public Riemann {
-   public:
-    RiemannKdim() = default;
-    RiemannKdim(std::initializer_list<double> normal,
-                std::initializer_list<Jacobi> jacobi)
-        : Riemann(Rotate(normal, jacobi)) {}
-    static Jacobi Rotate(std::initializer_list<double> normal,
-                         std::initializer_list<Jacobi> jacobi) {
-      int kDim = normal.end() - normal.begin();
-      auto* n = normal.begin();
-      auto* a = jacobi.begin();
-      auto a_n = a[0] * n[0];
-      for (int i = 1; i != kDim; ++i) {
-        a_n += a[1] * n[1];
-      }
-      return a_n;
-    }
-  };
   // Types:
   using NodeData = mesh::Empty;
   struct WallData : public mesh::Empty {
@@ -226,7 +194,7 @@ class DoubleWaveTest {
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
   using Cell = typename Mesh::Cell;
   using Wall = typename Mesh::Wall;
-  using Model = model::Godunov<Mesh, RiemannKdim>;
+  using Model = model::Godunov<Mesh, Riemann>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;
@@ -239,30 +207,31 @@ class DoubleWaveTest {
 };
 
 }  // namespace model
-
 }  // namespace mini
 
 
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     std::cout << "usage: model ";  // argv[0] == "model"
-    std::cout << "<linear|burgers|doublelinear> ";
+    std::cout << "<linear|burgers|double> ";
     std::cout << "<mesh> ";
     std::cout << "<start> <stop> <steps> ";
     std::cout << "<output_rate> ";
     std::cout << std::endl;
   } else if (argc == 7) {
-    using LinearTest = mini::model::SingleWaveTest<mini::riemann::SingleWave>;
-    using DoubleLinearTest = mini::model::DoubleWaveTest<
-                             mini::riemann::MultiWave<2>>;
-    using BurgersTest = mini::model::SingleWaveTest<mini::riemann::Burgers>;
+    using Single = mini::riemann::rotated::Single;
+    using LinearTest = mini::model::SingleWaveTest<Single>;
+    using Double = mini::riemann::rotated::Double;
+    using DoubleLinearTest = mini::model::DoubleWaveTest<Double>;
+    using Burgers = mini::riemann::rotated::Burgers;
+    using BurgersTest = mini::model::SingleWaveTest<Burgers>;
     if (std::strcmp(argv[1], "linear") == 0) {
       auto model = LinearTest(argv);
       model.Run();
     } else if (std::strcmp(argv[1], "burgers") == 0) {
       auto model = BurgersTest(argv);
       model.Run();
-    } else if (std::strcmp(argv[1], "doublelinear") == 0) {
+    } else if (std::strcmp(argv[1], "double") == 0) {
       auto model = DoubleLinearTest(argv);
       model.Run();
     } else {
