@@ -12,7 +12,7 @@ namespace linear {
 
 class DoubleWaveTest : public ::testing::Test {
  protected:
-  using Solver = MultiWave<2>;
+  using Solver = Double;
   using State = Solver::State;
   using Flux = Solver::Flux;
   using Column = Solver::Column;

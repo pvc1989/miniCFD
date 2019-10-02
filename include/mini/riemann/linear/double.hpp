@@ -13,18 +13,21 @@ namespace mini {
 namespace riemann {
 namespace linear {
 
-template <int kWaves = 2>
-class MultiWave {
+class Double {
  public:
-  using Column = algebra::Column<double, kWaves>;
+  static constexpr int kDim = 2;
+  using Scalar = double;
+  using Vector = algebra::Column<double, kDim>;
+  using Column = Vector;
   using Row = Column;
-  using Matrix = algebra::Matrix<double, kWaves, kWaves>;
+  using Matrix = algebra::Matrix<double, 2, 2>;
   using Jacobi = Matrix;
+  using Coefficient = algebra::Column<Jacobi, kDim>;
   using State = Column;
   using Flux = Column;
   // Constructor:
-  MultiWave() = default;
-  explicit MultiWave(Jacobi const& a_const) : a_const_(a_const) { Decompose(); }
+  Double() = default;
+  explicit Double(Jacobi const& a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
   State GetFluxOnTimeAxis(State const& left, State const& right) const {
     Flux flux;
@@ -51,7 +54,7 @@ class MultiWave {
       flux[0] += temp * eigen_matrix_r_[0][i];
       flux[1] += temp * eigen_matrix_r_[1][i];
     }
-    for (int i = k; i < kWaves; i++) {
+    for (int i = k; i < 2; i++) {
       Row l = {eigen_matrix_l_[i][0], eigen_matrix_l_[i][1]};
       double temp = l.Dot(left) * eigen_values_[i];
       flux[0] += temp * eigen_matrix_r_[0][i];
@@ -101,8 +104,6 @@ class MultiWave {
     eigen_matrix_l_[1][0] = -eigen_matrix_r_[1][0] / det;
     eigen_matrix_l_[1][1] =  eigen_matrix_r_[0][0] / det;
   }
-
- private:
   Jacobi a_const_;
   Column eigen_values_;
   Matrix eigen_matrix_r_;
