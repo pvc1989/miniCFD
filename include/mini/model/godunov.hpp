@@ -132,8 +132,8 @@ class Godunov {
       auto n1 = (wall.Tail()->Y() - wall.Head()->Y()) / length;
       auto n2 = (wall.Head()->X() - wall.Tail()->X()) / length;
       wall.data.riemann.Rotate(n1, n2);
-      auto left_cell = wall.template GetSide<+1>();
-      auto right_cell = wall.template GetSide<-1>();
+      auto left_cell = wall.GetPositiveSide();
+      auto right_cell = wall.GetNegativeSide();
       if (left_cell && right_cell) {
         inside_walls_.emplace(&wall);
       } else {
@@ -143,8 +143,8 @@ class Godunov {
   }
   void UpdataModel() {
     mesh_->ForEachWall([&](Wall& wall) {
-      auto left_cell = wall.template GetSide<+1>();
-      auto right_cell = wall.template GetSide<-1>();
+      auto left_cell = wall.GetPositiveSide();
+      auto right_cell = wall.GetNegativeSide();
       auto riemann_ = &wall.data.riemann;
       auto u_l = State();
       auto u_r = State();
@@ -164,7 +164,7 @@ class Godunov {
     mesh_->ForEachCell([&](Cell& cell) {
       auto net_flux = Flux{};
       cell.ForEachWall([&](Wall& wall) {
-        if (wall.template GetSide<+1>() == &cell) {
+        if (wall.GetPositiveSide() == &cell) {
           net_flux -= wall.data.flux;
         } else {
           net_flux += wall.data.flux;
@@ -192,25 +192,25 @@ class Godunov {
     return true;
   }
   void SewEndsOfWalls(Wall* a, Wall* b) {
-    auto in_l = a->template GetSide<+1>();
-    auto in_r = a->template GetSide<-1>();
-    auto out_l = b->template GetSide<+1>();
-    auto out_r = b->template GetSide<-1>();
+    auto in_l = a->GetPositiveSide();
+    auto in_r = a->GetNegativeSide();
+    auto out_l = b->GetPositiveSide();
+    auto out_r = b->GetNegativeSide();
     if (in_l == nullptr) {
       if (out_l == nullptr) {
-        a->template SetSide<+1>(out_r);
-        b->template SetSide<+1>(in_r);
+        a->SetPositiveSide(out_r);
+        b->SetPositiveSide(in_r);
       } else {
-        a->template SetSide<+1>(out_l);
-        b->template SetSide<-1>(in_r);
+        a->SetPositiveSide(out_l);
+        b->SetNegativeSide(in_r);
       }
     } else {
       if (out_l == nullptr) {
-        a->template SetSide<-1>(out_r);
-        b->template SetSide<+1>(in_l);
+        a->SetNegativeSide(out_r);
+        b->SetPositiveSide(in_l);
       } else {
-        a->template SetSide<-1>(out_l);
-        b->template SetSide<-1>(in_l);
+        a->SetNegativeSide(out_l);
+        b->SetNegativeSide(in_l);
       }
     }
     inside_walls_.emplace(a);
@@ -224,8 +224,8 @@ class Godunov {
   void CalculateInsideWalls() {
     for (auto& wall : inside_walls_) {
       auto riemann_ = wall->data.riemann;
-      auto u_l = wall->template GetSide<+1>()->data.state;
-      auto u_r = wall->template GetSide<-1>()->data.state;
+      auto u_l = wall->GetPositiveSide()->data.state;
+      auto u_r = wall->GetNegativeSide()->data.state;
       wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_r);
     }
   }
@@ -234,10 +234,10 @@ class Godunov {
       for (auto& wall : boundaries_[name]) {
         auto riemann_ = wall->data.riemann;
         auto u = State();
-        if (wall->template GetSide<+1>()) {
-          u = wall->template GetSide<+1>()->data.state;
+        if (wall->GetPositiveSide()) {
+          u = wall->GetPositiveSide()->data.state;
         } else {
-          u = wall->template GetSide<-1>()->data.state;
+          u = wall->GetNegativeSide()->data.state;
         }
         wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
       }
@@ -248,11 +248,11 @@ class Godunov {
       for (auto& wall : boundaries_[name]) {
         auto riemann_ = wall->data.riemann;
         auto u = State();
-        if (wall->template GetSide<+1>()) {
-          u = wall->template GetSide<+1>()->data.state;
+        if (wall->GetPositiveSide()) {
+          u = wall->GetPositiveSide()->data.state;
           wall.data.flux = riemann_->GetFluxOnTimeAxis(u, -u);
         } else {
-          u = wall->template GetSide<-1>()->data.state;
+          u = wall->GetNegativeSide()->data.state;
           wall.data.flux = riemann_->GetFluxOnTimeAxis(-u, u);
         }
       }

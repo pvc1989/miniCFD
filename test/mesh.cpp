@@ -214,20 +214,20 @@ TEST_F(MeshTest, GetSide) {
   EXPECT_EQ(mesh.CountWalls(), walls.size());
   // Check each wall's positive side and negative side:
   // walls[0] == {nodes[0], nodes[1]}
-  EXPECT_EQ(walls[0]->GetSide<+1>(), cells[0]);
-  EXPECT_EQ(walls[0]->GetSide<-1>(), nullptr);
+  EXPECT_EQ(walls[0]->GetPositiveSide(), cells[0]);
+  EXPECT_EQ(walls[0]->GetNegativeSide(), nullptr);
   // walls[1] == {nodes[1], nodes[2]}
-  EXPECT_EQ(walls[1]->GetSide<+1>(), cells[0]);
-  EXPECT_EQ(walls[1]->GetSide<-1>(), nullptr);
+  EXPECT_EQ(walls[1]->GetPositiveSide(), cells[0]);
+  EXPECT_EQ(walls[1]->GetNegativeSide(), nullptr);
   // walls[4] == {nodes[0], nodes[2]}
-  EXPECT_EQ(walls[4]->GetSide<+1>(), cells[1]);
-  EXPECT_EQ(walls[4]->GetSide<-1>(), cells[0]);
+  EXPECT_EQ(walls[4]->GetPositiveSide(), cells[1]);
+  EXPECT_EQ(walls[4]->GetNegativeSide(), cells[0]);
   // walls[2] == {nodes[2], nodes[3]}
-  EXPECT_EQ(walls[2]->GetSide<+1>(), cells[1]);
-  EXPECT_EQ(walls[2]->GetSide<-1>(), nullptr);
+  EXPECT_EQ(walls[2]->GetPositiveSide(), cells[1]);
+  EXPECT_EQ(walls[2]->GetNegativeSide(), nullptr);
   // walls[3] == {nodes[0], nodes[3]}
-  EXPECT_EQ(walls[3]->GetSide<+1>(), nullptr);
-  EXPECT_EQ(walls[3]->GetSide<-1>(), cells[1]);
+  EXPECT_EQ(walls[3]->GetPositiveSide(), nullptr);
+  EXPECT_EQ(walls[3]->GetNegativeSide(), cells[1]);
 }
 
 }  // namespace mesh

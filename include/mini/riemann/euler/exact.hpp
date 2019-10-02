@@ -11,6 +11,25 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
+template <int kField>
+constexpr double AddOrMinus(double x, double y);
+template <>
+constexpr double AddOrMinus<1>(double x, double y) { return x + y; }
+template <>
+constexpr double AddOrMinus<3>(double x, double y) { return x - y; }
+template <int kField>
+bool TimeAxisAfterExpansion(double u, double a);
+template <>
+bool TimeAxisAfterExpansion<1>(double u, double a) { return u - a < 0; }
+template <>
+bool TimeAxisAfterExpansion<3>(double u, double a) { return u + a > 0; }
+template <int kField>
+bool TimeAxisBeforeExpansion(double u, double a);
+template <>
+bool TimeAxisBeforeExpansion<1>(double u, double a) { return u - a > 0; }
+template <>
+bool TimeAxisBeforeExpansion<3>(double u, double a) { return u + a < 0; }
+
 template <class Gas, int kDim>
 class Implementor {
  public:
@@ -127,17 +146,13 @@ class Implementor {
       return before.rho() * (before.u() - u) / (after.u() - u);
     }
   };
-  template <int kField>
-  static bool TimeAxisAfterWave(Shock<kField> const& wave);
-  template <>
-  static bool TimeAxisAfterWave(Shock<1> const& wave) { return wave.u < 0; }
-  template <>
-  static bool TimeAxisAfterWave(Shock<3> const& wave) { return wave.u > 0; }
+  static bool TimeAxisAfterShock(Shock<1> const& wave) { return wave.u < 0; }
+  static bool TimeAxisAfterShock(Shock<3> const& wave) { return wave.u > 0; }
   template <int kField>
   static State GetStateNearShock(State const& before, State* after) {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
-    if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
+    if (TimeAxisAfterShock(shock)) {  // i.e. (x=0, t) is AFTER the shock.
       after->rho() = before.rho() * (before.u() - shock.u) / (after->u() - shock.u);
       return *after;
     } else {
@@ -159,24 +174,6 @@ class Implementor {
         a_before, (before.u() - after.u()) * Gas::GammaMinusOneOverTwo());
     }
   };
-  template <int kField>
-  static constexpr double AddOrMinus(double x, double y);
-  template <>
-  static constexpr double AddOrMinus<1>(double x, double y) { return x + y; }
-  template <>
-  static constexpr double AddOrMinus<3>(double x, double y) { return x - y; }
-  template <int kField>
-  static bool TimeAxisAfterWave(double u, double a);
-  template <>
-  static bool TimeAxisAfterWave<1>(double u, double a) { return u - a < 0; }
-  template <>
-  static bool TimeAxisAfterWave<3>(double u, double a) { return u + a > 0; }
-  template <int kField>
-  static bool TimeAxisBeforeWave(double u, double a);
-  template <>
-  static bool TimeAxisBeforeWave<1>(double u, double a) { return u - a > 0; }
-  template <>
-  static bool TimeAxisBeforeWave<3>(double u, double a) { return u + a < 0; }
   static State GetStateInsideExpansion(double gri_1, double gri_2) {
     constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
     auto a = r * gri_2;
@@ -189,10 +186,10 @@ class Implementor {
   static State GetStateNearExpansion(State const& before, State* after) {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
-    if (TimeAxisAfterWave<kField>(after->u(), wave.a_after)) {
+    if (TimeAxisAfterExpansion<kField>(after->u(), wave.a_after)) {
       after->rho() = Gas::Gamma() * after->p() / (wave.a_after * wave.a_after);
       return *after;
-    } else if (TimeAxisBeforeWave<kField>(before.u(), wave.a_before)) {
+    } else if (TimeAxisBeforeExpansion<kField>(before.u(), wave.a_before)) {
       return before;
     } else {  // Axis[t] is inside the Expansion.
       return GetStateInsideExpansion(wave.gri_1, wave.gri_2);

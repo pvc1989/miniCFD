@@ -94,24 +94,11 @@ class Wall : public element::Edge<Real, 2> {
   explicit Wall(Args&&... args)
       : element::Edge<Real, 2>(std::forward<Args>(args)...) {}
   // Accessors:
-  template <int kSign>
-  Cell* GetSide() const {
-    static_assert(kSign == +1 || kSign == -1);
-    return nullptr;
-  }
-  template <>
-  Cell* GetSide<+1>() const { return positive_side_; }
-  template <>
-  Cell* GetSide<-1>() const { return negative_side_; }
+  Cell* GetPositiveSide() const { return positive_side_; }
+  Cell* GetNegativeSide() const { return negative_side_; }
   // Mutators:
-  template <int kSign>
-  void SetSide(Cell* cell) {
-    static_assert(kSign == +1 || kSign == -1);
-  }
-  template <>
-  void SetSide<+1>(Cell* cell) { positive_side_ = cell; }
-  template <>
-  void SetSide<-1>(Cell* cell) { negative_side_ = cell; }
+  void SetPositiveSide(Cell* cell) { positive_side_ = cell; }
+  void SetNegativeSide(Cell* cell) { negative_side_ = cell; }
 
  private:
   Cell* positive_side_{nullptr};
@@ -290,9 +277,9 @@ class Mesh {
   void LinkCellToWall(Cell* cell, Node* head, Node* tail) {
     auto wall = EmplaceWall(head, tail);
     if (head->I() < tail->I()) {
-      wall->template SetSide<+1>(cell);
+      wall->SetPositiveSide(cell);
     } else {
-      wall->template SetSide<-1>(cell);
+      wall->SetNegativeSide(cell);
     }
   }
   Node* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
