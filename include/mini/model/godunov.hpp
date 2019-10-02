@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <memory>
 #include <set>
 #include <string>
@@ -100,15 +101,17 @@ class Godunov {
   void Calculate() {
     assert(CheckBoundarycondition());
     writer_ = Writer();
+    // Write the frame of initial state:
     auto filename = dir_ + std::to_string(0) + ".vtu";
-    bool pass = OutputCurrentResult(filename);
+    bool pass = WriteCurrentFrame(filename);
     assert(pass);
+    // Write other steps:
     for (int i = 1; i <= n_steps_ && pass; i++) {
-      UpdataModel();
+      UpdateModel();
       if (i % refresh_rate_ == 0) {
         filename = dir_ + std::to_string(i) + ".vtu";
-        pass = OutputCurrentResult(filename);
-        std::cout << "Progress: " << 100.0 * i / n_steps_ << "%" << std::endl;
+        pass = WriteCurrentFrame(filename);
+        std::printf("Progress: %.1f%%\n", 100.0 * i / n_steps_);
       }
     }
     if (pass) {
@@ -119,7 +122,7 @@ class Godunov {
   }
 
  private:
-  bool OutputCurrentResult(std::string const& filename) {
+  bool WriteCurrentFrame(std::string const& filename) {
     mesh_->ForEachCell([&](Cell& cell) {
       cell.data.Write();
     });
@@ -141,7 +144,7 @@ class Godunov {
       }
     });
   }
-  void UpdataModel() {
+  void UpdateModel() {
     mesh_->ForEachWall([&](Wall& wall) {
       auto left_cell = wall.GetPositiveSide();
       auto right_cell = wall.GetNegativeSide();
