@@ -24,7 +24,10 @@ class Line {
     return std::sqrt(v.Dot(v));
   }
   Point Center() const {
-    return (*head_ + *tail_) / 2;
+    auto center = *head_;
+    center += *tail_;
+    center *= 0.5;
+    return center;
   }
  private:
   Point* head_{nullptr};

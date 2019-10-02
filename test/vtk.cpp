@@ -8,7 +8,7 @@
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
-#include "data.hpp"  // defines TEST_DATA_DIR
+#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace mesh {
@@ -16,7 +16,7 @@ namespace mesh {
 class VtkReaderTest : public ::testing::Test {
  protected:
   using Mesh = Mesh<double>;
-  using Domain = Mesh::Domain;
+  using Cell = Mesh::Cell;
   VtkReader<Mesh> reader;
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
@@ -30,12 +30,12 @@ TEST_F(VtkReaderTest, GetMesh) {
     auto mesh = reader.GetMesh();
     ASSERT_TRUE(mesh);
     EXPECT_EQ(mesh->CountNodes(), 6);
-    EXPECT_EQ(mesh->CountBoundaries(), 8);
-    EXPECT_EQ(mesh->CountDomains(), 3);
+    EXPECT_EQ(mesh->CountWalls(), 8);
+    EXPECT_EQ(mesh->CountCells(), 3);
     // sum of each face's area
     double area = 0.0;
-    auto visitor = [&area](const Domain& d) { area += d.Measure(); };
-    mesh->ForEachDomain(visitor);
+    auto visitor = [&area](const Cell& d) { area += d.Measure(); };
+    mesh->ForEachCell(visitor);
     EXPECT_EQ(area, 2.0);
   }
 }
@@ -46,23 +46,23 @@ TEST_F(VtkReaderTest, MediumMesh) {
     ASSERT_TRUE(mesh);
     EXPECT_EQ(mesh->CountNodes(), 920);
     auto n_lines = (918*3 + 400*4 + 12*10) / 2;
-    EXPECT_EQ(mesh->CountBoundaries(), n_lines);
-    EXPECT_EQ(mesh->CountDomains(), 918/* Triangles */ + 400/* Rectangles */);
+    EXPECT_EQ(mesh->CountWalls(), n_lines);
+    EXPECT_EQ(mesh->CountCells(), 918/* Triangles */ + 400/* Rectangles */);
     // sum of each face's area
     double area = 0.0;
-    auto visitor = [&area](const Domain& d) { area += d.Measure(); };
-    mesh->ForEachDomain(visitor);
+    auto visitor = [&area](const Cell& d) { area += d.Measure(); };
+    mesh->ForEachCell(visitor);
     EXPECT_NEAR(area, 8.0, 1e-6);
   }
 }
 
 class VtkWriterTest : public ::testing::Test {
  public:
-  static std::string mesh_name;
+  static const char* mesh_name;
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-std::string VtkWriterTest::mesh_name;
+const char* VtkWriterTest::mesh_name;
 TEST_F(VtkWriterTest, TinyMesh) {
   auto reader = VtkReader<Mesh<double>>();
   auto writer = VtkWriter<Mesh<double>>();
@@ -80,10 +80,10 @@ TEST_F(VtkWriterTest, TinyMesh) {
     // Check consistency:
     EXPECT_EQ(mesh_old->CountNodes(),
               mesh_new->CountNodes());
-    EXPECT_EQ(mesh_old->CountBoundaries(),
-              mesh_new->CountBoundaries());
-    EXPECT_EQ(mesh_old->CountDomains(),
-              mesh_new->CountDomains());
+    EXPECT_EQ(mesh_old->CountWalls(),
+              mesh_new->CountWalls());
+    EXPECT_EQ(mesh_old->CountCells(),
+              mesh_new->CountCells());
   }
 }
 TEST_F(VtkWriterTest, MeshWithData) {
@@ -110,22 +110,22 @@ TEST_F(VtkWriterTest, MeshWithData) {
       node.data.vectors.at(0) = {x, y};
       node.data.vectors.at(1) = {-x, -y};
     });
-    Mesh::Domain::scalar_names.at(0) = "X + Y";
-    Mesh::Domain::scalar_names.at(1) = "X - Y";
-    Mesh::Domain::vector_names.at(0) = "(X, Y)";
-    Mesh::Domain::vector_names.at(1) = "(-X, -Y)";
-    mesh_old->ForEachDomain([](Mesh::Domain& domain) {
-      auto center = domain.Center();
+    Mesh::Cell::scalar_names.at(0) = "X + Y";
+    Mesh::Cell::scalar_names.at(1) = "X - Y";
+    Mesh::Cell::vector_names.at(0) = "(X, Y)";
+    Mesh::Cell::vector_names.at(1) = "(-X, -Y)";
+    mesh_old->ForEachCell([](Mesh::Cell& cell) {
+      auto center = cell.Center();
       auto y = center.Y();
       auto x = center.X();
-      domain.data.scalars.at(0) = x + y;
-      domain.data.scalars.at(1) = x - y;
-      domain.data.vectors.at(0) = {x, y};
-      domain.data.vectors.at(1) = {-x, -y};
+      cell.data.scalars.at(0) = x + y;
+      cell.data.scalars.at(1) = x - y;
+      cell.data.vectors.at(0) = {x, y};
+      cell.data.vectors.at(1) = {-x, -y};
     });
     // Write the mesh just read:
     writer.SetMesh(mesh_old.get());
-    auto filename = mesh_name + "_with_data" + suffix;
+    auto filename = std::string(mesh_name) + "_with_data" + suffix;
     ASSERT_TRUE(writer.WriteToFile(filename));
     // Read the mesh just written:
     reader.ReadFromFile(filename);
@@ -134,10 +134,10 @@ TEST_F(VtkWriterTest, MeshWithData) {
     // Check consistency:
     EXPECT_EQ(mesh_old->CountNodes(),
               mesh_new->CountNodes());
-    EXPECT_EQ(mesh_old->CountBoundaries(),
-              mesh_new->CountBoundaries());
-    EXPECT_EQ(mesh_old->CountDomains(),
-              mesh_new->CountDomains());
+    EXPECT_EQ(mesh_old->CountWalls(),
+              mesh_new->CountWalls());
+    EXPECT_EQ(mesh_old->CountCells(),
+              mesh_new->CountCells());
   }
 }
 
