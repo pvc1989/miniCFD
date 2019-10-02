@@ -79,11 +79,8 @@ class Box {
     model.SetBoundaryName("bottom", [&](Wall& wall) {
       return std::abs(wall.Center().Y() + 0.5) < eps;
     });
-    // model.SetPeriodicBoundary("top", "bottom");
-    model.SetFreeBoundary("top");
-    model.SetFreeBoundary("bottom");
-    model.SetFreeBoundary("left");
-    model.SetFreeBoundary("right");
+    model.SetPeriodicBoundary("top", "bottom");
+    model.SetPeriodicBoundary("left", "right");
     // Set Initial Conditions:
     // TODO: move to main()
     /* Sod */
@@ -93,6 +90,8 @@ class Box {
     auto  left = State{1, -2, 0, 0.4};
     auto right = State{1, +2, 0, 0.4};
      */
+    Gas::PrimitiveToConservative(&left);
+    Gas::PrimitiveToConservative(&right);
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
       auto y = cell.Center().Y();
