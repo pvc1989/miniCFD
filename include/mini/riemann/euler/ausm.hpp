@@ -1,3 +1,5 @@
+// Copyright 2019 Weicheng Pei and Minghao Yang
+
 #ifndef MINI_RIEMANN_EULER_AUSM_HPP_
 #define MINI_RIEMANN_EULER_AUSM_HPP_
 
@@ -9,7 +11,7 @@
 
 namespace mini {
 namespace riemann {
-namespace euler{
+namespace euler {
 
 template <class GasModel, int kDim = 1>
 class Ausm;
@@ -40,6 +42,7 @@ class Ausm<GasModel, 1> {
             state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
                        + 0.5 * rho_u_u)};
   }
+
  private:
   Flux GetPositiveFlux(State const& state) {
     double p_positive   = state.p();
@@ -51,8 +54,7 @@ class Ausm<GasModel, 1> {
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) * 0.25;
       p_positive = state.p() * (mach + 1) * 0.5;
-    }
-    else if (mach < -1) {
+    } else if (mach < -1) {
       mach_positive = 0.0;
       p_positive = 0.0;
     }
@@ -71,8 +73,7 @@ class Ausm<GasModel, 1> {
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) * 0.25;
       p_negative = - state.p() * (mach - 1) * 0.5;
-    }
-    else if (mach > 1) {
+    } else if (mach > 1) {
       mach_negative = 0.0;
       p_negative = 0.0;
     }
@@ -122,8 +123,7 @@ class Ausm<GasModel, 2> {
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) * 0.25;
       p_positive = state.p() * (mach + 1) * 0.5;
-    }
-    else if (mach < -1) {
+    } else if (mach < -1) {
       mach_positive = 0.0;
       p_positive = 0.0;
     }
@@ -142,8 +142,7 @@ class Ausm<GasModel, 2> {
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) * 0.25;
       p_negative = - state.p() * (mach - 1) * 0.5;
-    }
-    else if (mach > 1) {
+    } else if (mach > 1) {
       mach_negative = 0.0;
       p_negative = 0.0;
     }

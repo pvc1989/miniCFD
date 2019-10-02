@@ -138,7 +138,8 @@ class Implementor {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterWave(shock)) {  // i.e. (x=0, t) is AFTER the shock.
-      after->rho() = before.rho() * (before.u() - shock.u) / (after->u() - shock.u);
+      after->rho() = before.rho() * (before.u() - shock.u) /
+                                    (after->u() - shock.u);
       return *after;
     } else {
       return before;

@@ -113,6 +113,7 @@ class IdealGas {
     return x < 1.0 ? x : Shift(x / 10.0);
   }
   static constexpr double gamma_ = kInteger + Shift(kDecimal);
+
  public:
   // Constants:
   static constexpr double Gamma() { return gamma_; }
