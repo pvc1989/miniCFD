@@ -12,7 +12,7 @@ namespace linear {
 
 class SingleWaveTest : public ::testing::Test {
  protected:
-  using Solver = SingleWave;
+  using Solver = Single;
   using State = Solver::State;
   using Flux = Solver::Flux;
   using Speed = Solver::Speed;

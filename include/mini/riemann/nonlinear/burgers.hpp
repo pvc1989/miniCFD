@@ -3,8 +3,11 @@
 #ifndef MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
 #define MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
 
-#include <cmath>
 #include <array>
+#include <cmath>
+
+#include "mini/algebra/column.hpp"
+#include "mini/algebra/matrix.hpp"
 
 namespace mini {
 namespace riemann {
@@ -12,10 +15,14 @@ namespace nonlinear {
 
 class Burgers {
  public:
+  static constexpr int kDim = 2;
   // Types:
+  using Scalar = double;
+  using Vector = algebra::Column<double, kDim>;
   using Jacobi = double;
   using State = double;
   using Flux = double;
+  using Coefficient = algebra::Column<Jacobi, kDim>;
   // Constructor:
   Burgers() : k_(1) {}
   explicit Burgers(double k) : k_(k) {}

@@ -13,17 +13,21 @@ namespace mini {
 namespace riemann {
 namespace linear {
 
-class SingleWave {
+class Single {
  public:
+  static constexpr int kDim = 2;
   // Types:
+  using Scalar = double;
+  using Vector = algebra::Column<double, kDim>;
   using Jacobi = double;
+  using Coefficient = algebra::Column<Jacobi, kDim>;
   using State = double;
   using Flux = double;
   using Speed = double;
   // Constructor:
-  SingleWave() : a_const_(1) {}
-  explicit SingleWave(Jacobi const& a_const) : a_const_(a_const) {}
-  // Get F on T Axia
+  Single() : a_const_(1) {}
+  explicit Single(Jacobi const& a_const) : a_const_(a_const) {}
+  // Get F on T Axia:
   Flux GetFluxOnTimeAxis(State const& left, State const& right) const {
     if (0 < a_const_) {
       return left * a_const_;
