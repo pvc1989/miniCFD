@@ -16,5 +16,5 @@ cmake --build .
 ./test/mesh
 ./test/vtk
 mkdir result
-./test/model
+./demo/euler/box sod box.vtk 0.0 1.0 600 3
 ```
