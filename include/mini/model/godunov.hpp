@@ -145,18 +145,16 @@ class Godunov {
     mesh_->ForEachWall([&](Wall& wall) {
       auto left_cell = wall.GetPositiveSide();
       auto right_cell = wall.GetNegativeSide();
-      auto riemann_ = &wall.data.riemann;
-      auto u_l = State();
-      auto u_r = State();
+      auto const& riemann_ = &wall.data.riemann;
       if (left_cell && right_cell) {
-        u_l = left_cell->data.state;
-        u_r = right_cell->data.state;
+        auto const& u_l = left_cell->data.state;
+        auto const& u_r = right_cell->data.state;
         wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_r);
       } else if (left_cell) {
-        u_l = left_cell->data.state;
+        auto const& u_l = left_cell->data.state;
         wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_l);
       } else {
-        u_r = right_cell->data.state;
+        auto const& u_r = right_cell->data.state;
         wall.data.flux = riemann_->GetFluxOnTimeAxis(u_r, u_r);
       }
       wall.data.flux *= wall.Measure();
@@ -223,36 +221,35 @@ class Godunov {
   }
   void CalculateInsideWalls() {
     for (auto& wall : inside_walls_) {
-      auto riemann_ = wall->data.riemann;
-      auto u_l = wall->GetPositiveSide()->data.state;
-      auto u_r = wall->GetNegativeSide()->data.state;
+      auto const& riemann_ = wall->data.riemann;
+      auto const& u_l = wall->GetPositiveSide()->data.state;
+      auto const& u_r = wall->GetNegativeSide()->data.state;
       wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_r);
     }
   }
   void CalculateFreeBoundary() {
     for (auto& name : free_boundaries_) {
       for (auto& wall : boundaries_[name]) {
-        auto riemann_ = wall->data.riemann;
-        auto u = State();
+        auto const& riemann_ = wall->data.riemann;
         if (wall->GetPositiveSide()) {
-          u = wall->GetPositiveSide()->data.state;
+          auto const& u = wall->GetPositiveSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
         } else {
-          u = wall->GetNegativeSide()->data.state;
+          auto const& u = wall->GetNegativeSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
         }
-        wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
       }
     }
   }
   void CalculateSolidBoundary() {
     for (auto& name : free_boundaries_) {
       for (auto& wall : boundaries_[name]) {
-        auto riemann_ = wall->data.riemann;
-        auto u = State();
+        auto const& riemann_ = wall->data.riemann;
         if (wall->GetPositiveSide()) {
-          u = wall->GetPositiveSide()->data.state;
+          auto const& u = wall->GetPositiveSide()->data.state;
           wall.data.flux = riemann_->GetFluxOnTimeAxis(u, -u);
         } else {
-          u = wall->GetNegativeSide()->data.state;
+          auto const& u = wall->GetNegativeSide()->data.state;
           wall.data.flux = riemann_->GetFluxOnTimeAxis(-u, u);
         }
       }
