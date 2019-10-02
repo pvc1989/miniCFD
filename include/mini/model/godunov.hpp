@@ -108,6 +108,7 @@ class Godunov {
       if (i % refresh_rate_ == 0) {
         filename = dir_ + std::to_string(i) + ".vtu";
         pass = OutputCurrentResult(filename);
+        std::cout << "Progress: " << 100.0 * i / n_steps_ << "%" << std::endl;
       }
     }
     if (pass) {
