@@ -2,17 +2,18 @@
 
 #include <cmath>
 #include <cstring>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
-#include "mini/riemann/linear.hpp"
-#include "mini/riemann/burgers.hpp"
-#include "mini/model/single_wave.hpp"
-#include "mini/model/double_wave.hpp"
-#include "data.hpp"  // defines TEST_DATA_DIR
+#include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/rotated/double.hpp"
+#include "mini/riemann/rotated/burgers.hpp"
+#include "mini/model/godunov.hpp"
+#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace model {
@@ -32,9 +33,11 @@ class SingleWaveTest {
 
   void Run() {
     Mesh::Cell::scalar_names.at(0) = "U";
-    auto u_l = State{-1.0};
-    auto u_r = State{+1.0};
-    auto model = Model(1.0, 1.0);
+    auto u_l = State{+1.0};
+    auto u_r = State{-1.0};
+    auto model = Model();
+    Riemann::global_coefficient[0] = 1.0;
+    Riemann::global_coefficient[1] = 0.0;
     model.ReadMesh(test_data_dir_ + mesh_name_);
     model.SetBoundaryName("left", [&](Wall& wall) {
       return wall.Center().X() == -2.0;
@@ -59,30 +62,46 @@ class SingleWaveTest {
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
       auto y = cell.Center().Y();
-      cell.data.scalars[0] = std::sin(x * acos(0.0)) *
-                             std::sin(y * acos(0.0) * 2);
+      // cell.data.state = std::sin(x * acos(0.0)) *
+      //                   std::sin(y * acos(0.0) * 2);
+      if (x < -0.0) {
+        cell.data.state = u_l;
+      } else {
+        cell.data.state = u_r;
+      }
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
-    std::string command  = "rm -rf " + model_name_;
-    system(command.c_str());
-    command  = "mkdir " + model_name_;
-    system(command.c_str());
-    model.SetOutputDir(model_name_ + "/");
+    auto output_dir = std::string("result/demo/") + model_name_;
+    model.SetOutputDir(output_dir + "/");
+    system(("rm -rf " + output_dir).c_str());
+    system(("mkdir -p " + output_dir).c_str());
+    // Commit the calculation:
     model.Calculate();
   }
 
  protected:
+  using Jacobi = typename Riemann::Jacobi;
+  using State = typename Riemann::State;
+  using Flux = typename Riemann::Flux;
+  using Coefficient = algebra::Column<Jacobi, 2>;
   // Types:
   using NodeData = mesh::Empty;
-  using WallData = mesh::Data<
-      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
-  using CellData = mesh::Data<
-      double, 2/* dims */, 1/* scalars */, 0/* vectors */>;
+  struct WallData : public mesh::Empty {
+    Flux flux;
+    Riemann riemann;
+  };
+  struct CellData : public mesh::Data<
+      double, 2/* dims */, 1/* scalars */, 0/* vectors */> {
+   public:
+    State state;
+    void Write() {
+      scalars[0] = state;
+    }
+  };
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
-  using Cell = Mesh::Cell;
-  using Wall = Mesh::Wall;
-  using State = typename Riemann::State;
-  using Model = model::SingleWave<Mesh, Riemann>;
+  using Cell = typename Mesh::Cell;
+  using Wall = typename Mesh::Wall;
+  using Model = model::Godunov<Mesh, Riemann>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;
@@ -110,46 +129,72 @@ class DoubleWaveTest {
   void Run() {
     Mesh::Cell::scalar_names.at(0) = "U_0";
     Mesh::Cell::scalar_names.at(1) = "U_1";
-    auto u_l = State{7.0, 6.0};
-    auto u_r = State{4.0, 3.0};
-    auto a = Matrix{0, -1, -1, 0};
-    auto b = Matrix{0, 0, 0, 0};
-    auto model = Model(a, b);
+    auto u_l = State{1.0, 2.0};
+    auto u_r = State{1.5, 2.5};
+    auto model = Model();
+    Riemann::global_coefficient[0] = Jacobi{{1, 0}, {0, -1}};
+    Riemann::global_coefficient[1] = Jacobi{{1, 0}, {0, -1}};
     model.ReadMesh(test_data_dir_ + mesh_name_);
+    model.SetBoundaryName("left", [&](Wall& wall) {
+      return wall.Center().X() == -2.0;
+    });
+    model.SetBoundaryName("right", [&](Wall& wall) {
+      return wall.Center().X() == +2.0;
+    });
+    model.SetBoundaryName("top", [&](Wall& wall) {
+      return wall.Center().Y() == +1.0;
+    });
+    model.SetBoundaryName("bottom", [&](Wall& wall) {
+      return wall.Center().Y() == -1.0;
+    });
+    // model.SetInletBoundary("left");
+    // model.SetOutletBoundart("right");
+    model.SetPeriodicBoundary("left", "right");
+    model.SetPeriodicBoundary("top", "bottom");
+    // model.SetSolidBoundary("left");
+    // model.SetSolidBoundary("right");
+    // model.SetFreeBoundary("top");
+    // model.SetFreeBoundary("bottom");
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
-      if (x < -1.5) {
-        cell.data.scalars[0] = u_l[0];
-        cell.data.scalars[1] = u_l[1];
+      if (x < -0.0) {
+        cell.data.state = u_l;
       } else {
-        cell.data.scalars[0] = u_r[0];
-        cell.data.scalars[1] = u_r[1];
+        cell.data.state = u_r;
       }
-      // cell.data.scalars[0] = std::sin(x * acos(0));
-      // cell.data.scalars[1] = std::sin(2 * x * acos(0));
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
-    std::string command  = "rm -rf " + model_name_;
-    system(command.c_str());
-    command  = "mkdir " + model_name_;
-    system(command.c_str());
-    model.SetOutputDir(model_name_ + "/");
+    auto output_dir = std::string("result/demo/") + model_name_;
+    model.SetOutputDir(output_dir + "/");
+    system(("rm -rf " + output_dir).c_str());
+    system(("mkdir -p " + output_dir).c_str());
+    // Commit the calculation:
     model.Calculate();
   }
 
  protected:
+  using Jacobi = typename Riemann::Jacobi;
+  using State = typename Riemann::State;
+  using Flux = typename Riemann::Flux;
   // Types:
   using NodeData = mesh::Empty;
-  using WallData = mesh::Data<
-      double, 2/* dims */, 2/* scalars */, 2/* vectors */>;
-  using CellData = mesh::Data<
-      double, 2/* dims */, 2/* scalars */, 0/* vectors */>;
+  struct WallData : public mesh::Empty {
+    Flux flux;
+    Riemann riemann;
+  };
+  struct CellData : public mesh::Data<
+      double, 2/* dims */, 2/* scalars */, 0/* vectors */> {
+   public:
+    State state;
+    void Write() {
+      scalars[0] = state[0];
+      scalars[1] = state[1];
+    }
+  };
   using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
-  using Cell = Mesh::Cell;
-  using Wall = Mesh::Wall;
-  using State = typename Riemann::State;
-  using Matrix = typename Riemann::Matrix;
-  using Model = model::DoubleWave<Mesh, Riemann>;
+  using Cell = typename Mesh::Cell;
+  using Wall = typename Mesh::Wall;
+  using Model = model::Godunov<Mesh, Riemann>;
   // Data:
   const std::string test_data_dir_{TEST_DATA_DIR};
   const std::string model_name_;
@@ -164,28 +209,32 @@ class DoubleWaveTest {
 }  // namespace model
 }  // namespace mini
 
+
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     std::cout << "usage: model ";  // argv[0] == "model"
-    std::cout << "<linear|burgers|doublelinear> ";
+    std::cout << "<linear|burgers|double> ";
     std::cout << "<mesh> ";
     std::cout << "<start> <stop> <steps> ";
     std::cout << "<output_rate> ";
     std::cout << std::endl;
   } else if (argc == 7) {
-    using LinearTest = mini::model::SingleWaveTest<mini::riemann::SingleWave>;
-    using DoubleLinearTest = mini::model::DoubleWaveTest<
-        mini::riemann::MultiWave<2>>;
-    using BurgersTest = mini::model::SingleWaveTest<mini::riemann::Burgers>;
+    using Single = mini::riemann::rotated::Single;
+    using LinearTest = mini::model::SingleWaveTest<Single>;
+    using Double = mini::riemann::rotated::Double;
+    using DoubleLinearTest = mini::model::DoubleWaveTest<Double>;
+    using Burgers = mini::riemann::rotated::Burgers;
+    using BurgersTest = mini::model::SingleWaveTest<Burgers>;
     if (std::strcmp(argv[1], "linear") == 0) {
       auto model = LinearTest(argv);
       model.Run();
     } else if (std::strcmp(argv[1], "burgers") == 0) {
       auto model = BurgersTest(argv);
       model.Run();
-    } else if (std::strcmp(argv[1], "doublelinear") == 0) {
+    } else if (std::strcmp(argv[1], "double") == 0) {
       auto model = DoubleLinearTest(argv);
       model.Run();
+    } else {
     }
   }
 }

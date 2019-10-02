@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
 #include <initializer_list>
 
@@ -17,7 +18,7 @@ class Column : public std::array<Value, kSize> {
   Column() = default;
   template <class Iterator>
   Column(Iterator first, Iterator last) {
-    assert(last - first == kSize);
+    assert(last - first <= kSize);
     std::uninitialized_copy(first, last, this->begin());
   }
   Column(std::initializer_list<Value> init)

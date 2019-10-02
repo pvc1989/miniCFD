@@ -4,87 +4,81 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/gas/ideal.hpp"
-#include "mini/riemann/euler/exact.hpp"
+#include "mini/riemann/euler/types.hpp"
+#include "mini/riemann/euler/hllc.hpp"
 
 namespace mini {
 namespace riemann {
+namespace euler {
 
-class ExactTest : public ::testing::Test {
+class HllcTest : public ::testing::Test {
  protected:
-  using Gas = gas::Ideal<1, 4>;
-  using Solver = euler::Exact<Gas>;
+  using Gas = IdealGas<1, 4>;
+  using Solver = Hllc<Gas>;
   using State = Solver::State;
   using Flux = Solver::Flux;
   Solver solver;
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    for (int i = 0; i != 3; ++i) {
-      if (rhs[i] == 0) {
-        EXPECT_EQ(lhs[i], rhs[i]);
-      } else {
-        EXPECT_NEAR(lhs[i] / rhs[i], 1, 1e-4);
-      }
-    }
+    EXPECT_DOUBLE_EQ(lhs.mass, rhs.mass);
+    EXPECT_DOUBLE_EQ(lhs.energy, rhs.energy);
+    EXPECT_DOUBLE_EQ(lhs.momentum[0], rhs.momentum[0]);
   }
 };
-TEST_F(ExactTest, TestFlux) {
+TEST_F(HllcTest, TestFlux) {
   auto rho{0.1}, u{0.2}, p{0.3};
   auto flux = Flux{rho * u, rho * u * u + p, u};
-  flux[2] *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
+  flux.energy *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
-TEST_F(ExactTest, TestSod) {
+TEST_F(HllcTest, TestSod) {
   State left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.426319, +0.927453, 0.303130}));
   CompareFlux(solver.GetFluxOnTimeAxis(right, left),
               solver.GetFlux({0.426319, -0.927453, 0.303130}));
 }
-TEST_F(ExactTest, TestShockCollision) {
+TEST_F(HllcTest, TestShockCollision) {
   State left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({5.99924, 19.5975, 460.894}));
 }
-TEST_F(ExactTest, TestBlastFromLeft) {
+TEST_F(HllcTest, TestBlastFromLeft) {
   State left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575062, 19.59745, 460.8938}));
 }
-TEST_F(ExactTest, TestBlastFromRight) {
+TEST_F(HllcTest, TestBlastFromRight) {
   State left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, 46.09504}));
 }
-TEST_F(ExactTest, TestAlmostVaccumed) {
+TEST_F(HllcTest, TestAlmostVaccumed) {
   State left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, 0.001894}));
 }
-TEST_F(ExactTest, TestVaccumed) {
+TEST_F(HllcTest, TestVaccumed) {
   State left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, 0.0}));
 }
 
-class Exact2dTest : public ::testing::Test {
+class Hllc2dTest : public ::testing::Test {
  protected:
-  using Solver = euler::Exact<gas::Ideal<1, 4>, 2>;
+  using Solver = Hllc<IdealGas<1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
   using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    for (int i = 0; i != 4; ++i) {
-      if (rhs[i] == 0) {
-        EXPECT_EQ(lhs[i], rhs[i]);
-      } else {
-        EXPECT_NEAR(lhs[i] / rhs[i], 1, 1e-4);
-      }
-    }
+    EXPECT_DOUBLE_EQ(lhs.mass, rhs.mass);
+    EXPECT_DOUBLE_EQ(lhs.energy, rhs.energy);
+    EXPECT_DOUBLE_EQ(lhs.momentum[0], rhs.momentum[0]);
+    EXPECT_DOUBLE_EQ(lhs.momentum[1], rhs.momentum[1]);
   }
 };
-TEST_F(Exact2dTest, TestSod) {
+TEST_F(Hllc2dTest, TestSod) {
   State  left{1.000, 0.0, v__left, 1.0};
   State right{0.125, 0.0, v_right, 0.1};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
@@ -92,25 +86,25 @@ TEST_F(Exact2dTest, TestSod) {
   CompareFlux(solver.GetFluxOnTimeAxis(right, left),
               solver.GetFlux({0.426319, -0.927453, v__left, 0.303130}));
 }
-TEST_F(Exact2dTest, TestShockCollision) {
+TEST_F(Hllc2dTest, TestShockCollision) {
   State  left{5.99924, 19.5975, v__left, 460.894};
   State right{5.99242, 6.19633, v_right, 46.0950};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({5.99924, 19.5975, v__left, 460.894}));
 }
-TEST_F(Exact2dTest, TestBlastFromLeft) {
+TEST_F(Hllc2dTest, TestBlastFromLeft) {
   State  left{1.0, 0.0, v__left, 1e+3};
   State right{1.0, 0.0, v_right, 1e-2};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575062, 19.59745, v__left, 460.8938}));
 }
-TEST_F(Exact2dTest, TestBlastFromRight) {
+TEST_F(Hllc2dTest, TestBlastFromRight) {
   State  left{1.0, 0.0, v__left, 1e-2};
   State right{1.0, 0.0, v_right, 1e+2};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
 }
-TEST_F(Exact2dTest, TestAlmostVaccumed) {
+TEST_F(Hllc2dTest, TestAlmostVaccumed) {
   State  left{1.0, -2.0, v__left, 0.4};
   State right{1.0, +2.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
@@ -118,7 +112,7 @@ TEST_F(Exact2dTest, TestAlmostVaccumed) {
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
 }
-TEST_F(Exact2dTest, TestVaccumed) {
+TEST_F(Hllc2dTest, TestVaccumed) {
   State  left{1.0, -4.0, v__left, 0.4};
   State right{1.0, +4.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
@@ -127,6 +121,7 @@ TEST_F(Exact2dTest, TestVaccumed) {
               solver.GetFlux({0.0, 0.0, v_right, 0.0}));
 }
 
+}  // namespace euler
 }  // namespace riemann
 }  // namespace mini
 

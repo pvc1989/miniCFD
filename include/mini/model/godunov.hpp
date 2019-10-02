@@ -1,9 +1,11 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MODEL_SINGLE_WAVE_HPP_
-#define MINI_MODEL_SINGLE_WAVE_HPP_
+#ifndef MINI_MODEL_GODUNOV_HPP_
+#define MINI_MODEL_GODUNOV_HPP_
 
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 #include <memory>
 #include <set>
 #include <string>
@@ -11,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "mini/riemann/linear.hpp"
 #include "mini/mesh/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
@@ -20,21 +21,17 @@ namespace mini {
 namespace model {
 
 template <class Mesh, class Riemann>
-class SingleWave {
+class Godunov {
   using Wall = typename Mesh::Wall;
   using Cell = typename Mesh::Cell;
   using State = typename Riemann::State;
   using Flux = typename Riemann::Flux;
-  using VtkReader = typename mesh::VtkReader<Mesh>;
-  using VtkWriter = typename mesh::VtkWriter<Mesh>;
+  using Reader = mesh::VtkReader<Mesh>;
+  using Writer = mesh::VtkWriter<Mesh>;
 
  public:
-  explicit SingleWave(double a, double b) {
-    a_ = a;
-    b_ = b;
-  }
   bool ReadMesh(std::string const& file_name) {
-    reader_ = VtkReader();
+    reader_ = Reader();
     if (reader_.ReadFromFile(file_name)) {
       mesh_ = reader_.GetMesh();
       Preprocess();
@@ -87,7 +84,6 @@ class SingleWave {
   void SetSolidBoundary(std::string const& name) {
     solid_boundaries_.emplace(name);
   }
-  // void SetSolidWallCondition() {}
   template <class Visitor>
   void SetInitialState(Visitor&& visitor) {
     mesh_->ForEachCell(visitor);
@@ -98,21 +94,24 @@ class SingleWave {
     step_size_ = duration / n_steps;
     refresh_rate_ = refresh_rate;
   }
-  void SetOutputDir(std::string const& dir) {
+  void SetOutputDir(std::string dir) {
     dir_ = dir;
   }
   // Major computation:
   void Calculate() {
     assert(CheckBoundarycondition());
-    writer_ = VtkWriter();
+    writer_ = Writer();
+    // Write the frame of initial state:
     auto filename = dir_ + std::to_string(0) + ".vtu";
-    bool pass = OutputCurrentResult(filename);
+    bool pass = WriteCurrentFrame(filename);
     assert(pass);
+    // Write other steps:
     for (int i = 1; i <= n_steps_ && pass; i++) {
       UpdateModel();
       if (i % refresh_rate_ == 0) {
         filename = dir_ + std::to_string(i) + ".vtu";
-        pass = OutputCurrentResult(filename);
+        pass = WriteCurrentFrame(filename);
+        std::printf("Progress: %.1f%%\n", 100.0 * i / n_steps_);
       }
     }
     if (pass) {
@@ -123,18 +122,21 @@ class SingleWave {
   }
 
  private:
-  bool OutputCurrentResult(std::string const& filename) {
+  bool WriteCurrentFrame(std::string const& filename) {
+    mesh_->ForEachCell([&](Cell& cell) {
+      cell.data.Write();
+    });
     writer_.SetMesh(mesh_.get());
     return writer_.WriteToFile(filename);
   }
   void Preprocess() {
     mesh_->ForEachWall([&](Wall& wall){
       auto length = wall.Measure();
-      double cos = (wall.Tail()->Y() - wall.Head()->Y()) / length;
-      double sin = (wall.Head()->X() - wall.Tail()->X()) / length;
-      wall.data.scalars[1] = cos * a_ + sin * b_;
-      auto left_cell = wall.template GetSide<+1>();
-      auto right_cell = wall.template GetSide<-1>();
+      auto n1 = (wall.Tail()->Y() - wall.Head()->Y()) / length;
+      auto n2 = (wall.Head()->X() - wall.Tail()->X()) / length;
+      wall.data.riemann.Rotate(n1, n2);
+      auto left_cell = wall.GetPositiveSide();
+      auto right_cell = wall.GetNegativeSide();
       if (left_cell && right_cell) {
         inside_walls_.emplace(&wall);
       } else {
@@ -142,10 +144,42 @@ class SingleWave {
       }
     });
   }
+  void UpdateModel() {
+    mesh_->ForEachWall([&](Wall& wall) {
+      auto left_cell = wall.GetPositiveSide();
+      auto right_cell = wall.GetNegativeSide();
+      auto const& riemann_ = &wall.data.riemann;
+      if (left_cell && right_cell) {
+        auto const& u_l = left_cell->data.state;
+        auto const& u_r = right_cell->data.state;
+        wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_r);
+      } else if (left_cell) {
+        auto const& u_l = left_cell->data.state;
+        wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_l);
+      } else {
+        auto const& u_r = right_cell->data.state;
+        wall.data.flux = riemann_->GetFluxOnTimeAxis(u_r, u_r);
+      }
+      wall.data.flux *= wall.Measure();
+    });
+    mesh_->ForEachCell([&](Cell& cell) {
+      auto net_flux = Flux{};
+      cell.ForEachWall([&](Wall& wall) {
+        if (wall.GetPositiveSide() == &cell) {
+          net_flux -= wall.data.flux;
+        } else {
+          net_flux += wall.data.flux;
+        }
+      });
+      net_flux /= cell.Measure();
+      TimeStepping(&(cell.data.state), &net_flux);
+    });
+  }
+  void TimeStepping(State* u_curr , Flux* du_dt) {
+    *du_dt *= step_size_;
+    *u_curr += *du_dt;
+  }
   bool CheckBoundarycondition() {
-    for (auto& [left, right] : periodic_boundaries_) {
-      std::cout << left << " " << right << std::endl;
-    }
     int n = 0;
     for (auto& [name, part] : boundaries_) {
       n += part.size();
@@ -159,25 +193,25 @@ class SingleWave {
     return true;
   }
   void SewEndsOfWalls(Wall* a, Wall* b) {
-    auto in_l = a->template GetSide<+1>();
-    auto in_r = a->template GetSide<-1>();
-    auto out_l = b->template GetSide<+1>();
-    auto out_r = b->template GetSide<-1>();
+    auto in_l = a->GetPositiveSide();
+    auto in_r = a->GetNegativeSide();
+    auto out_l = b->GetPositiveSide();
+    auto out_r = b->GetNegativeSide();
     if (in_l == nullptr) {
       if (out_l == nullptr) {
-        a->template SetSide<+1>(out_r);
-        b->template SetSide<+1>(in_r);
+        a->SetPositiveSide(out_r);
+        b->SetPositiveSide(in_r);
       } else {
-        a->template SetSide<+1>(out_l);
-        b->template SetSide<-1>(in_r);
+        a->SetPositiveSide(out_l);
+        b->SetNegativeSide(in_r);
       }
     } else {
       if (out_l == nullptr) {
-        a->template SetSide<-1>(out_r);
-        b->template SetSide<+1>(in_l);
+        a->SetNegativeSide(out_r);
+        b->SetPositiveSide(in_l);
       } else {
-        a->template SetSide<-1>(out_l);
-        b->template SetSide<-1>(in_l);
+        a->SetNegativeSide(out_l);
+        b->SetNegativeSide(in_l);
       }
     }
     inside_walls_.emplace(a);
@@ -190,66 +224,44 @@ class SingleWave {
   }
   void CalculateInsideWalls() {
     for (auto& wall : inside_walls_) {
-      auto riemann_ = Riemann(wall->data.scalars[1]);
-      auto u_l = wall->template GetSide<+1>()->data.scalars[0];
-      auto u_r = wall->template GetSide<-1>()->data.scalars[0];
-      wall->data.scalars[0] = riemann_.GetFluxOnTimeAxis(u_l, u_r);
+      auto const& riemann_ = wall->data.riemann;
+      auto const& u_l = wall->GetPositiveSide()->data.state;
+      auto const& u_r = wall->GetNegativeSide()->data.state;
+      wall.data.flux = riemann_->GetFluxOnTimeAxis(u_l, u_r);
     }
   }
   void CalculateFreeBoundary() {
     for (auto& name : free_boundaries_) {
       for (auto& wall : boundaries_[name]) {
-        auto riemann_ = Riemann(wall->data.scalars[1]);
-        auto u = State(0.0);
-        if (wall->template GetSide<+1>()) {
-          u = wall->template GetSide<+1>()->data.scalars[0];
+        auto const& riemann_ = wall->data.riemann;
+        if (wall->GetPositiveSide()) {
+          auto const& u = wall->GetPositiveSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
         } else {
-          u = wall->template GetSide<-1>()->data.scalars[0];
+          auto const& u = wall->GetNegativeSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(u, u);
         }
-        auto f = riemann_.GetFluxOnTimeAxis(u, u);
-        wall->data.scalars[0] = f;
       }
     }
   }
   void CalculateSolidBoundary() {
     for (auto& name : free_boundaries_) {
       for (auto& wall : boundaries_[name]) {
-        auto riemann_ = Riemann(wall->data.scalars[1]);
-        auto u = State(0.0);
-        auto f = Flux(0.0);
-        if (wall->template GetSide<+1>()) {
-          u = wall->template GetSide<+1>()->data.scalars[0];
-          f = riemann_.GetFluxOnTimeAxis(u, -u);
+        auto const& riemann_ = wall->data.riemann;
+        if (wall->GetPositiveSide()) {
+          auto const& u = wall->GetPositiveSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(u, -u);
         } else {
-          u = wall->template GetSide<-1>()->data.scalars[0];
-          f = riemann_.GetFluxOnTimeAxis(-u, u);
+          auto const& u = wall->GetNegativeSide()->data.state;
+          wall.data.flux = riemann_->GetFluxOnTimeAxis(-u, u);
         }
-        wall->data.scalars[0] = f;
       }
     }
   }
-  void UpdateModel() {
-    CalculateEachWall();
-    mesh_->ForEachCell([&](Cell& cell) {
-      double rhs = 0.0;
-      cell.ForEachWall([&](Wall& wall) {
-        if (wall.template GetSide<+1>() == &cell) {
-          rhs -= wall.data.scalars[0] * wall.Measure();
-        } else {
-          rhs += wall.data.scalars[0] * wall.Measure();
-        }
-      });
-      rhs /= cell.Measure();
-      TimeStepping(&(cell.data.scalars[0]), rhs);
-    });
-  }
-  void TimeStepping(double* u_curr , double du_dt) {
-    *u_curr += du_dt * step_size_;
-  }
-  double a_;
-  double b_;
-  VtkReader reader_;
-  VtkWriter writer_;
+
+ private:
+  Reader reader_;
+  Writer writer_;
   std::unique_ptr<Mesh> mesh_;
   double duration_;
   int n_steps_;
@@ -265,7 +277,8 @@ class SingleWave {
   std::set<std::string> free_boundaries_;
   std::set<std::string> solid_boundaries_;
 };
+
 }  // namespace model
 }  // namespace mini
 
-#endif  // MINI_MODEL_SINGLE_WAVE_HPP_
+#endif  // MINI_MODEL_GODUNOV_HPP_
