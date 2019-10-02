@@ -10,6 +10,8 @@
 #include "mini/mesh/dim2.hpp"
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
+#include "mini/riemann/euler/ausm.hpp"
+#include "mini/riemann/euler/hllc.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/model/godunov.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
