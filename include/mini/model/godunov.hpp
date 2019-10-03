@@ -261,6 +261,7 @@ class Godunov {
   }
 
  private:
+  std::string model_name_;
   Reader reader_;
   Writer writer_;
   std::unique_ptr<Mesh> mesh_;
