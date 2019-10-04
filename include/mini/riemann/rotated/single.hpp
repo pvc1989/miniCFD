@@ -1,3 +1,4 @@
+// Copyright 2019 Weicheng Pei and Minghao Yang
 #ifndef MINI_RIEMANN_ROTATED_SINGLE_HPP_
 #define MINI_RIEMANN_ROTATED_SINGLE_HPP_
 
@@ -14,4 +15,4 @@ using Single = Simple<linear::Single>;
 }  // namespace riemann
 }  // namespace mini
 
-#endif  //  MINI_RIEMANN_ROTATED_SINGLE_HPP_
+#endif  // MINI_RIEMANN_ROTATED_SINGLE_HPP_
