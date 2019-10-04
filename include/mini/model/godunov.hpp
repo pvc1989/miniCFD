@@ -83,13 +83,8 @@ class Godunov {
       if (i % refresh_rate_ == 0) {
         filename = dir_ + model_name_ + "." +std::to_string(i) + ".vtu";
         pass = WriteCurrentFrame(filename);
-        std::printf("Progress: %.1f%%\n", 100.0 * i / n_steps_);
       }
-    }
-    if (pass) {
-      std::cout << "Complete calculation!" << std::endl;
-    } else {
-      std::cout << "Calculation failed!" << std::endl;
+      std::printf("Progress: %d/%d\n", i, n_steps_);
     }
   }
 

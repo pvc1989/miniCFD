@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
-#include <set>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -20,17 +19,14 @@ class Manager {
  public:
   // Types:
   using Wall = typename Mesh::Wall;
-  using Walls = std::set<Wall*>;
   using Part = std::vector<Wall*>;
-  using Parts = std::unordered_map<std::string, std::unique_ptr<Part>>;
-  //
+  // Mutators:
   void AddInteriorWall(Wall* wall) {
-    interior_walls_.emplace(wall);
+    interior_walls_.emplace_back(wall);
   }
   void AddBoundaryWall(Wall* wall) {
-    boundary_walls_.emplace(wall);
+    boundary_walls_.emplace_back(wall);
   }
-  // Mutators:
   template <class Visitor>
   void SetBoundaryName(std::string const& name, Visitor&& visitor) {
     name_to_part_.emplace(name, std::make_unique<Part>());
@@ -42,15 +38,15 @@ class Manager {
     }
   }
   void SetPeriodicBoundary(std::string const& head, std::string const& tail) {
-    periodic_boundaries_.emplace(name_to_part_[head].get(),
-                                 name_to_part_[tail].get());
+    periodic_part_pairs_.emplace_back(name_to_part_[head].get(),
+                                      name_to_part_[tail].get());
     SetPeriodicBoundary(name_to_part_[head].get(), name_to_part_[tail].get());
   }
   void SetFreeBoundary(std::string const& name) {
-    free_boundaries_.emplace(name_to_part_[name].get());
+    free_parts_.emplace_back(name_to_part_[name].get());
   }
   void SetSolidBoundary(std::string const& name) {
-    solid_boundaries_.emplace(name_to_part_[name].get());
+    solid_parts_.emplace_back(name_to_part_[name].get());
   }
   void ClearBoundaryCondition() {
     if (CheckBoundaryConditions()) {
@@ -68,7 +64,7 @@ class Manager {
   }
   template<class Visitor>
   void ForEachPeriodicWall(Visitor&& visit) {
-    for (auto& [left, right] : periodic_boundaries_) {
+    for (auto& [left, right] : periodic_part_pairs_) {
       for (int i = 0; i < left->size(); i++) {
         visit(left->at(i));
         right->at(i)->data.flux = left->at(i)->data.flux;
@@ -77,7 +73,7 @@ class Manager {
   }
   template<class Visitor>
   void ForEachFreeWall(Visitor&& visit) {
-    for (auto& part : free_boundaries_) {
+    for (auto& part : free_parts_) {
       for (auto& wall : *part) {
         visit(wall);
       }
@@ -85,7 +81,7 @@ class Manager {
   }
   template<class Visitor>
   void ForEachSolidWall(Visitor&& visit) {
-    for (auto& part : solid_boundaries_) {
+    for (auto& part : solid_parts_) {
       for (auto& wall : *part) {
         visit(wall);
       }
@@ -94,12 +90,12 @@ class Manager {
 
  private:
   // Data members:
-  Walls interior_walls_;
-  Walls boundary_walls_;
-  Parts name_to_part_;
-  std::set<Part*> free_boundaries_;
-  std::set<Part*> solid_boundaries_;
-  std::set<std::pair<Part*, Part*>> periodic_boundaries_;
+  std::vector<Wall*> interior_walls_;
+  std::vector<Wall*> boundary_walls_;
+  std::vector<Part*> free_parts_;
+  std::vector<Part*> solid_parts_;
+  std::vector<std::pair<Part*, Part*>> periodic_part_pairs_;
+  std::unordered_map<std::string, std::unique_ptr<Part>> name_to_part_;
   // Implement details:
   void SetPeriodicBoundary(Part* head, Part* tail) {
     assert(head->size() == tail->size());

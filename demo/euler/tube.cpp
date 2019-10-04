@@ -89,6 +89,8 @@ class Tube {
     auto  left = State{1, -2, 0, 0.4};
     auto right = State{1, +2, 0, 0.4};
      */
+    Gas::PrimitiveToConservative(&left);
+    Gas::PrimitiveToConservative(&right);
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
       if (x < -0.0) {

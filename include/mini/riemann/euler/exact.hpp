@@ -153,7 +153,8 @@ class Implementor {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterShock(shock)) {  // i.e. (x=0, t) is AFTER the shock.
-      after->rho() = before.rho() * (before.u() - shock.u) / (after->u() - shock.u);
+      after->rho() = before.rho();
+      after->rho() *= (before.u() - shock.u) / (after->u() - shock.u);
       return *after;
     } else {
       return before;
@@ -199,7 +200,9 @@ class Implementor {
     auto left_a = Gas::GetSpeedOfSound(left);
     if (left.u() > left_a) {  // Axis[t] <<< Wave[1].
       return left;
-    } else if (right.u() + left_a < 0) {  // Wave[3] <<< Axis[t].
+    }
+    auto right_a = Gas::GetSpeedOfSound(right);
+    if (right.u() + right_a < 0) {  // Wave[3] <<< Axis[t].
       return right;
     } else {  // Wave[1] <<< Axis[t] <<< Wave[3].
       auto gri_1 = left.p() / (std::pow(left.rho(), Gas::Gamma()));
@@ -209,8 +212,7 @@ class Implementor {
       } else {  // gri_2 < 0
         // Axis[t] is to the RIGHT of Wave[1].
         gri_1 = right.p() / (std::pow(right.rho(), Gas::Gamma()));
-        auto a_right = Gas::GetSpeedOfSound(right);
-        gri_2 = right.u() - a_right * Gas::GammaMinusOneUnderTwo();
+        gri_2 = right.u() - right_a * Gas::GammaMinusOneUnderTwo();
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
           return GetStateInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vaccumed region.
