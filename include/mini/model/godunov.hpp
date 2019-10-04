@@ -30,6 +30,7 @@ class Godunov {
   using Writer = mesh::VtkWriter<Mesh>;
 
  public:
+  explicit Godunov(std::string const& name) : model_name_(name) {}
   bool ReadMesh(std::string const& file_name) {
     reader_ = Reader();
     if (reader_.ReadFromFile(file_name)) {
@@ -102,14 +103,14 @@ class Godunov {
     assert(CheckBoundarycondition());
     writer_ = Writer();
     // Write the frame of initial state:
-    auto filename = dir_ + std::to_string(0) + ".vtu";
+    auto filename = dir_ + model_name_ + "." + std::to_string(0) + ".vtu";
     bool pass = WriteCurrentFrame(filename);
     assert(pass);
     // Write other steps:
     for (int i = 1; i <= n_steps_ && pass; i++) {
       UpdateModel();
       if (i % refresh_rate_ == 0) {
-        filename = dir_ + std::to_string(i) + ".vtu";
+        filename = dir_ + model_name_ + "." +std::to_string(i) + ".vtu";
         pass = WriteCurrentFrame(filename);
       }
       std::printf("Progress: %d/%d\n", i, n_steps_);
@@ -255,6 +256,7 @@ class Godunov {
   }
 
  private:
+  std::string model_name_;
   Reader reader_;
   Writer writer_;
   std::unique_ptr<Mesh> mesh_;

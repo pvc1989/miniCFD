@@ -61,7 +61,7 @@ class Tube {
     Cell::scalar_names.at(0) = "rho";
     Cell::scalar_names.at(1) = "p";
     Cell::vector_names.at(0) = "u";
-    auto model = Model();
+    auto model = Model(model_name_);
     model.ReadMesh(test_data_dir_ + mesh_name_);
     // Set Boundary Conditions:
     constexpr auto eps = 1e-5;

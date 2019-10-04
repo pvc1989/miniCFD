@@ -35,7 +35,7 @@ class SingleWaveTest {
     Mesh::Cell::scalar_names.at(0) = "U";
     auto u_l = State{+1.0};
     auto u_r = State{-1.0};
-    auto model = Model();
+    auto model = Model(model_name_);
     Riemann::global_coefficient[0] = 1.0;
     Riemann::global_coefficient[1] = 0.0;
     model.ReadMesh(test_data_dir_ + mesh_name_);
@@ -131,7 +131,7 @@ class DoubleWaveTest {
     Mesh::Cell::scalar_names.at(1) = "U_1";
     auto u_l = State{1.0, 2.0};
     auto u_r = State{1.5, 2.5};
-    auto model = Model();
+    auto model = Model(model_name_);
     Riemann::global_coefficient[0] = Jacobi{{1, 0}, {0, -1}};
     Riemann::global_coefficient[1] = Jacobi{{1, 0}, {0, -1}};
     model.ReadMesh(test_data_dir_ + mesh_name_);
