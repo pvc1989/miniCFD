@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -21,9 +22,7 @@ class Manager {
   using Wall = typename Mesh::Wall;
   using Walls = std::set<Wall*>;
   using Part = std::vector<Wall*>;
-  using Parts = std::unordered_map<std::string, Part>;
-  using Names = std::set<std::vector<Wall*>*>;
-  using Pairs = std::set<std::pair<Part*, Part*>>;
+  using Parts = std::unordered_map<std::string, std::unique_ptr<Part>>;
   //
   void AddInteriorWall(Wall* wall) {
     interior_walls_.emplace(wall);
@@ -34,24 +33,24 @@ class Manager {
   // Mutators:
   template <class Visitor>
   void SetBoundaryName(std::string const& name, Visitor&& visitor) {
-    name_to_part_.emplace(name, Part());
+    name_to_part_.emplace(name, std::make_unique<Part>());
     auto& part = name_to_part_[name];
     for (auto& wall : boundary_walls_) {
       if (visitor(*wall)) {
-        part.emplace_back(wall);
+        part->emplace_back(wall);
       }
     }
   }
   void SetPeriodicBoundary(std::string const& head, std::string const& tail) {
-    periodic_boundaries_.emplace(&(name_to_part_[head]),
-                                 &(name_to_part_[tail]));
-    SetPeriodicBoundary(&(name_to_part_[head]), &(name_to_part_[tail]));
+    periodic_boundaries_.emplace(name_to_part_[head].get(),
+                                 name_to_part_[tail].get());
+    SetPeriodicBoundary(name_to_part_[head].get(), name_to_part_[tail].get());
   }
   void SetFreeBoundary(std::string const& name) {
-    free_boundaries_.emplace(&(name_to_part_[name]));
+    free_boundaries_.emplace(name_to_part_[name].get());
   }
   void SetSolidBoundary(std::string const& name) {
-    solid_boundaries_.emplace(&(name_to_part_[name]));
+    solid_boundaries_.emplace(name_to_part_[name].get());
   }
   void ClearBoundaryCondition() {
     if (CheckBoundaryConditions()) {
@@ -100,7 +99,7 @@ class Manager {
   Parts name_to_part_;
   std::set<Part*> free_boundaries_;
   std::set<Part*> solid_boundaries_;
-  Pairs periodic_boundaries_;
+  std::set<std::pair<Part*, Part*>> periodic_boundaries_;
   // Implement details:
   void SetPeriodicBoundary(Part* head, Part* tail) {
     assert(head->size() == tail->size());
@@ -145,7 +144,7 @@ class Manager {
   bool CheckBoundaryConditions() {
     int n = 0;
     for (auto& [name, part] : name_to_part_) {
-      n += part.size();
+      n += part->size();
     }
     return n == boundary_walls_.size();
   }
