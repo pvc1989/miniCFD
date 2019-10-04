@@ -30,6 +30,12 @@ class Simple {
     auto flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
     return flux;
   }
+  Flux GetFluxOnSolidWall(State const& state) {
+    return {};
+  }
+  Flux GetFluxOnFreeWall(State const& state) {
+    return unrotated_simple_.GetFlux(state);
+  }
   static Coefficient global_coefficient;
 
  private:
