@@ -39,6 +39,20 @@ class Euler {
     NormalToGlobal(&(flux.momentum));
     return flux;
   }
+  Flux GetFluxOnSolidWall(Conservative const& conservative) {
+    auto primitive = Gas::ConservativeToPrimitive(conservative);
+    auto flux = Flux();
+    flux.momentum[0] = primitive.p();
+    NormalToGlobal(&(flux.momentum));
+    return flux;
+  }
+  Flux GetFluxOnFreeWall(Conservative const& conservative) {
+    auto primitive = Gas::ConservativeToPrimitive(conservative);
+    GlobalToNormal(&(primitive.momentum));
+    auto flux = unrotated_euler_.GetFlux(primitive);
+    NormalToGlobal(&(flux.momentum));
+    return flux;
+  }
   void GlobalToNormal(Vector* v) {
     auto& n = normal_;
     /* Calculate the normal component: */

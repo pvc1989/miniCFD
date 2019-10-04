@@ -1,3 +1,4 @@
+// Copyright 2019 Weicheng Pei and Minghao Yang
 #ifndef MINI_RIEMANN_ROTATED_SIMPLE_HPP_
 #define MINI_RIEMANN_ROTATED_SIMPLE_HPP_
 
@@ -24,11 +25,17 @@ class Simple {
   void Rotate(Scalar const& n_1, Scalar const& n_2) {
     auto a_normal = global_coefficient[0] * n_1;
     a_normal += global_coefficient[1] * n_2;
-    unrotated_simple_= UnrotatedSimple(a_normal);
+    unrotated_simple_ = UnrotatedSimple(a_normal);
   }
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     auto flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
     return flux;
+  }
+  Flux GetFluxOnSolidWall(State const& state) {
+    return {};
+  }
+  Flux GetFluxOnFreeWall(State const& state) {
+    return unrotated_simple_.GetFlux(state);
   }
   static Coefficient global_coefficient;
 
@@ -43,4 +50,4 @@ Simple<UnrotatedSimple>::global_coefficient;
 }  // namespace riemann
 }  // namespace mini
 
-#endif  //  MINI_RIEMANN_ROTATED_SIMPLE_HPP_
+#endif  // MINI_RIEMANN_ROTATED_SIMPLE_HPP_
