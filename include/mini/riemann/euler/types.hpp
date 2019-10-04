@@ -152,13 +152,21 @@ class IdealGas {
   template <int kDim>
   static Primitive<kDim>& ConservativeToPrimitive(Tuple<kDim>* state) {
     auto& rho = state->mass;
-    if (rho) {
+    if (rho > 0) {
       // momentum = rho * u
       state->momentum /= rho;
       auto& u = state->momentum;
       // energy = p/(gamma - 1) + 0.5*rho*|u|^2
       state->energy -= 0.5 * rho * u.Dot(u);
       state->energy *= GammaMinusOne();
+      if (state->energy < 0) {
+        assert(-0.0001 < state->energy);
+        state->energy = 0;
+      }
+    } else {
+      assert(rho == 0);
+      state->momentum *= 0.0;
+      state->energy = 0.0;
     }
     return reinterpret_cast<Primitive<kDim>&>(*state);
   }
