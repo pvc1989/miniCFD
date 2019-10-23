@@ -85,7 +85,7 @@ class Tube {
     /* Sod */
     auto  left = State{1.00, 0, 0, 1.0};
     auto right = State{.125, 0, 0, 0.1};
-    /* Almost vaccumed
+    /* Almost vacuumed
     auto  left = State{1, -2, 0, 0.4};
     auto right = State{1, +2, 0, 0.4};
      */

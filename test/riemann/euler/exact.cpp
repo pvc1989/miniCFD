@@ -132,8 +132,8 @@ TEST_F(Exact2dTest, TestSod) {
               solver.GetFlux({0.426319, -0.927453, v__left, 0.303130}));
 }
 TEST_F(Exact2dTest, TestShockCollision) {
-  State  left{5.99924, 19.5975, v__left, 460.894};
-  State right{5.99242, 6.19633, v_right, 46.0950};
+  State  left{5.99924, 19.59750, v__left, 460.894};
+  State right{5.99242, -6.19633, v_right, 46.0950};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({5.99924, 19.5975, v__left, 460.894}));
 }
