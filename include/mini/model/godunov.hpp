@@ -3,6 +3,7 @@
 #ifndef MINI_MODEL_GODUNOV_HPP_
 #define MINI_MODEL_GODUNOV_HPP_
 
+#include <cstdio>
 #include <memory>
 #include <set>
 #include <string>
