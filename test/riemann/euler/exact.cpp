@@ -61,12 +61,12 @@ TEST_F(ExactTest, TestBlastFromRight) {
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, 46.09504}));
 }
-TEST_F(ExactTest, TestAlmostVaccumed) {
+TEST_F(ExactTest, TestAlmostVacuumed) {
   State left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, 0.001894}));
 }
-TEST_F(ExactTest, TestVaccumed) {
+TEST_F(ExactTest, TestVacuumed) {
   State left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, 0.0}));
@@ -121,7 +121,7 @@ TEST_F(Exact2dTest, TestBlastFromRight) {
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
 }
-TEST_F(Exact2dTest, TestAlmostVaccumed) {
+TEST_F(Exact2dTest, TestAlmostVacuumed) {
   State  left{1.0, -2.0, v__left, 0.4};
   State right{1.0, +2.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
@@ -129,7 +129,7 @@ TEST_F(Exact2dTest, TestAlmostVaccumed) {
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
 }
-TEST_F(Exact2dTest, TestVaccumed) {
+TEST_F(Exact2dTest, TestVacuumed) {
   State  left{1.0, -4.0, v__left, 0.4};
   State right{1.0, +4.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
