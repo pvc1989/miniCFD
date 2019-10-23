@@ -39,6 +39,19 @@ TEST_F(ExactTest, TestFlux) {
   flux.energy *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
+TEST_F(ExactTest, TestEqualStates) {
+  State left{1.0, 0.0, 1.0};
+  State const& right = left;
+  CompareFlux(solver.GetFlux(left), solver.GetFlux(right));
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(left));
+  left.u() = +1.0;
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(left));
+  left.u() = -1.0;
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(left));
+}
 TEST_F(ExactTest, TestSod) {
   State left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
@@ -95,6 +108,21 @@ class Exact2dTest : public ::testing::Test {
     ExpectNear(lhs.momentum[1], rhs.momentum[1], eps);
   }
 };
+TEST_F(Exact2dTest, TestEqualStates) {
+  State  left{1.0, 0.0, v__left, 1.0};
+  State right{1.0, 0.0, v_right, 1.0};
+  CompareFlux(solver.GetFlux(left), solver.GetFlux(right));
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(left));
+  left.u() = +1.0;
+  right.u() = left.u();
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(left));
+  left.u() = -1.0;
+  right.u() = left.u();
+  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+              solver.GetFlux(right));
+}
 TEST_F(Exact2dTest, TestSod) {
   State  left{1.000, 0.0, v__left, 1.0};
   State right{0.125, 0.0, v_right, 0.1};
