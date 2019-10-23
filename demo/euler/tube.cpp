@@ -85,7 +85,15 @@ class Tube {
     /* Sod */
     auto  left = State{1.00, 0, 0, 1.0};
     auto right = State{.125, 0, 0, 0.1};
-    /* Almost vaccumed
+    /* Collision (start=0, stop=0.04, steps=2000)
+    auto  left = State{5.99924, 19.59750, 0, 460.894};
+    auto right = State{5.99242, -6.19633, 0, 46.0950};
+     */
+    /* Lax (start=0, stop=0.02, steps=2000)
+    auto  left = State{1, 0, 0, 1000};
+    auto right = State{1, 0, 0, 0.01};
+     */
+    /* Almost vacuumed
     auto  left = State{1, -2, 0, 0.4};
     auto right = State{1, +2, 0, 0.4};
      */
@@ -133,7 +141,7 @@ int main(int argc, char* argv[]) {
     Tube(argv).Run();
   } else {
     std::cout << "usage: tube ";
-    std::cout << "<sod|vaccum> ";
+    std::cout << "<sod|vacuum> ";
     std::cout << "<mesh> ";
     std::cout << "<start> <stop> <steps> ";
     std::cout << "<output_rate> ";
