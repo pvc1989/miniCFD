@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
     Tube(argv).Run();
   } else {
     std::cout << "usage: tube ";
-    std::cout << "<sod|vaccum> ";
+    std::cout << "<sod|vacuum> ";
     std::cout << "<mesh> ";
     std::cout << "<start> <stop> <steps> ";
     std::cout << "<output_rate> ";

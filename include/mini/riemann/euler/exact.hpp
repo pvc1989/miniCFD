@@ -74,8 +74,8 @@ class Implementor {
           return GetStateNearExpansion<3>(right, &star);
         }
       }
-    } else {  // The region BETWEEN Wave[1] and Wave[3] is vaccumed.
-      return GetStateNearVaccum(left, right);
+    } else {  // The region BETWEEN Wave[1] and Wave[3] is vacuumed.
+      return GetStateNearVacuum(left, right);
     }
   }
 
@@ -196,7 +196,7 @@ class Implementor {
       return GetStateInsideExpansion(wave.gri_1, wave.gri_2);
     }
   }
-  static State GetStateNearVaccum(State const& left, State const& right) {
+  static State GetStateNearVacuum(State const& left, State const& right) {
     auto left_a = Gas::GetSpeedOfSound(left);
     if (left.u() > left_a) {  // Axis[t] <<< Wave[1].
       return left;
@@ -215,7 +215,7 @@ class Implementor {
         gri_2 = right.u() - right_a * Gas::GammaMinusOneUnderTwo();
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
           return GetStateInsideExpansion(gri_1, gri_2);
-        } else {  // Axis[t] is inside the vaccumed region.
+        } else {  // Axis[t] is inside the vacuumed region.
           return {0, 0, 0};
         }
       }

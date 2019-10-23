@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     Box(argv).Run();
   } else {
     std::cout << "usage: box ";
-    std::cout << "<sod|vaccum> ";
+    std::cout << "<sod|vacuum> ";
     std::cout << "<mesh> ";
     std::cout << "<start> <stop> <steps> ";
     std::cout << "<output_rate> ";
