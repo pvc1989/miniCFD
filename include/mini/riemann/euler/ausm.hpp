@@ -114,11 +114,12 @@ class Ausm<GasModel, 2> {
 
  private:
   Flux GetPositiveFlux(State const& state) {
-    double p_positive   = state.p();
+    double p_positive = state.p();
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_positive = mach;
-    double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5;
+    double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5 +
+                                              state.v() * state.v() * 0.5;
     Flux flux = {1, state.u(), state.v(), h};
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) * 0.25;
@@ -137,7 +138,8 @@ class Ausm<GasModel, 2> {
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_negative = mach;
-    double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5;
+    double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5 +
+                                              state.v() * state.v() * 0.5;
     Flux flux = {1, state.u(), state.v(), h};
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) * 0.25;
