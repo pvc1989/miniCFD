@@ -150,13 +150,13 @@ class Implementor {
     double u;
     Shock(State const& before, State const& after) : u(before.u()) {
       auto divisor = (after.u() - before.u()) * before.rho();
-      assert(divisor != 0);
-      u += (after.p() - before.p()) / divisor;
+      u += (divisor ? (after.p() - before.p()) / divisor
+                    : before.u());
     }
     double GetDensityAfterIt(State const& before, State const& after) const {
       auto divisor = after.u() - u;
-      assert(divisor != 0);
-      return before.rho() * (before.u() - u) / divisor;
+      return divisor ? before.rho() * (before.u() - u) / divisor
+                     : before.rho();
     }
   };
   static bool TimeAxisAfterShock(Shock<1> const& wave) { return wave.u < 0; }
