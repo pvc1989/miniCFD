@@ -3,6 +3,7 @@
 #ifndef MINI_RIEMANN_EULER_EXACT_HPP_
 #define MINI_RIEMANN_EULER_EXACT_HPP_
 
+#include <cassert>
 #include <cmath>
 
 #include "mini/riemann/euler/types.hpp"
@@ -87,7 +88,9 @@ class Implementor {
       x *= 0.5;
     }
     while (f(x) < -eps) {
-      x -= f(x) / f_prime(x);
+      auto divisor = f_prime(x);
+      assert(divisor != 0);
+      x -= f(x) / divisor;
     }
     assert(std::abs(f(x)) < eps);
     return x;
@@ -104,7 +107,9 @@ class Implementor {
       double value;
       assert(p_after >= 0);
       if (p_after >= p_before_) {  // shock
-        value = (p_after - p_before_) / std::sqrt(rho_before_ * P(p_after));
+        auto divisor = std::sqrt(rho_before_ * P(p_after));
+        assert(divisor != 0);
+        value = (p_after - p_before_) / divisor;
       } else {  // expansion
         constexpr auto exp = Gas::GammaMinusOneOverTwo() / Gas::Gamma();
         value = std::pow(p_after / p_before_, exp) - 1;
@@ -118,10 +123,14 @@ class Implementor {
       if (p_after >= p_before_) {  // shock
         auto p = P(p_after);
         value = Gas::GammaPlusOneOverFour() * (p_before_ - p_after);
-        value = (1 + value / p) / std::sqrt(rho_before_ * p);
+        auto divisor = std::sqrt(rho_before_ * p);
+        assert(divisor != 0);
+        value = (1 + value / p) / divisor;
       } else {  // expansion
         constexpr double exp = -Gas::GammaPlusOneOverTwo() / Gas::Gamma();
-        value = std::pow(p_after / p_before_, exp) / (rho_before_ * a_before_);
+        auto divisor = rho_before_ * a_before_;
+        assert(divisor != 0);
+        value = std::pow(p_after / p_before_, exp) / divisor;
       }
       return value;
     }
@@ -140,10 +149,14 @@ class Implementor {
    public:
     double u;
     Shock(State const& before, State const& after) : u(before.u()) {
-      u += (after.p() - before.p()) / ((after.u() - before.u()) * before.rho());
+      auto divisor = (after.u() - before.u()) * before.rho();
+      assert(divisor != 0);
+      u += (after.p() - before.p()) / divisor;
     }
     double GetDensityAfterIt(State const& before, State const& after) const {
-      return before.rho() * (before.u() - u) / (after.u() - u);
+      auto divisor = after.u() - u;
+      assert(divisor != 0);
+      return before.rho() * (before.u() - u) / divisor;
     }
   };
   static bool TimeAxisAfterShock(Shock<1> const& wave) { return wave.u < 0; }
@@ -154,7 +167,9 @@ class Implementor {
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterShock(shock)) {  // i.e. (x=0, t) is AFTER the shock.
       after->rho() = before.rho();
-      after->rho() *= (before.u() - shock.u) / (after->u() - shock.u);
+      auto divisor = after->u() - shock.u;
+      assert(divisor != 0);
+      after->rho() *= (before.u() - shock.u) / divisor;
       return *after;
     } else {
       return before;
@@ -188,7 +203,9 @@ class Implementor {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
     if (TimeAxisAfterExpansion<kField>(after->u(), wave.a_after)) {
-      after->rho() = Gas::Gamma() * after->p() / (wave.a_after * wave.a_after);
+      auto divisor = wave.a_after * wave.a_after;
+      assert(divisor != 0);
+      after->rho() = Gas::Gamma() * after->p() / divisor;
       return *after;
     } else if (TimeAxisBeforeExpansion<kField>(before.u(), wave.a_before)) {
       return before;
