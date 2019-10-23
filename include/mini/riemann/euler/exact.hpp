@@ -59,7 +59,7 @@ class Implementor {
       auto star = State{0, 0, 0};
       star.p() = FindRoot(f, f_prime, left.p());
       star.u() = 0.5 * (right.u() + u_change_right(star.p())
-                      +left.u() - u_change__left(star.p()));
+                        +left.u() - u_change__left(star.p()));
       star_u = star.u();
       if (0 < star.u()) {  // Axis[t] <<< Wave[2]
         if (star.p() >= left.p()) {  // Wave[1] is a shock.
@@ -244,7 +244,7 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(),
             state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * rho_u_u)};
+                         + 0.5 * rho_u_u)};
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
@@ -275,7 +275,7 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(), rho_v * state.u(),
             state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * (rho_u_u + rho_v * state.v()))};
+                         + 0.5 * (rho_u_u + rho_v * state.v()))};
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
