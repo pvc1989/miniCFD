@@ -19,3 +19,5 @@ target_link_libraries(vtk ${VTK_LIBRARIES} gtest_main)
 add_test(NAME VTK COMMAND vtk)
 
 add_subdirectory(riemann)
+
+add_subdirectory(basis)
