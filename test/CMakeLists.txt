@@ -26,5 +26,6 @@ add_executable(vtk1d vtk1d.cpp)
 target_link_libraries(vtk1d ${VTK_LIBRARIES} gtest_main)
 add_test(NAME VTK1D COMMAND vtk1d)
 
+add_subdirectory(integrator)
 add_subdirectory(polynomial)
 add_subdirectory(riemann)
