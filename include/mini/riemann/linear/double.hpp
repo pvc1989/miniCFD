@@ -26,7 +26,7 @@ class Double {
   using State = Column;
   using Flux = Column;
   // Constructor:
-  Double() = default;
+  Double() : a_const_{{1, 0}, {0, -1}} {Decompose(); }
   explicit Double(Jacobi const& a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
   State GetFluxOnTimeAxis(State const& left, State const& right) const {

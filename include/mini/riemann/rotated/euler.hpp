@@ -74,7 +74,7 @@ class Euler {
 
  private:
   UnrotatedEuler unrotated_euler_;
-  Vector normal_;
+  Vector normal_{1.0, 0.0};
 };
 
 }  // namespace rotated
