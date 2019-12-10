@@ -3,6 +3,8 @@
 #ifndef MINI_GEOMETRY_DIM1_HPP_
 #define MINI_GEOMETRY_DIM1_HPP_
 
+#include <iostream>
+
 #include "mini/geometry/dim0.hpp"
 
 namespace mini {
@@ -16,6 +18,17 @@ class Line {
   // Constructors:
   Line(Point* head, Point* tail) : head_(head), tail_(tail) {}
   // Accessors:
+  int CountVertices() const { return 2; }
+  Point* GetPoint(int i) const {
+    switch (i)  {
+    case 0:
+      return head_;
+    case 1:
+      return tail_;
+    default:
+      return nullptr;
+    }
+  }
   Point* Head() const { return head_; }
   Point* Tail() const { return tail_; }
   // Geometric methods:

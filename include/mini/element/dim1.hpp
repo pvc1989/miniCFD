@@ -25,6 +25,9 @@ class Edge : public geometry::Line<Real, kDim> {
   // Accessors:
   Edge::Id I() const { return i_; }
   static Id DefaultId() { return -1; }
+  Node* GetNode(int i) const {
+    return static_cast<Node*>(this->GetPoint(i));
+  }
   auto Head() const {
     return static_cast<Node*>(geometry::Line<Real, kDim>::Head());
   }
