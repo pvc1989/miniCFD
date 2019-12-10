@@ -8,56 +8,59 @@
 namespace mini {
 namespace polynomial {
 
-template <int kDof>
-using Vector = algebra::Column<double, kDof>;
-
-template <int kDegree>
-constexpr double legendre(double x) {
-  constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
-  constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
-  return legendre<kDegree-1>(x) * a_prev * x
-       + legendre<kDegree-2>(x) * a_prev_prev;
-}
-template <>
-constexpr double legendre<0>(double x) { return 1.0; }
-template <>
-constexpr double legendre<1>(double x) { return x; }
-
-template <int kDegree>
-constexpr void legendre_recursive(double x, double* result) {
-  constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
-  constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
-  legendre_recursive<kDegree-1>(x, result-1);
-  *result = *(result-1) * a_prev * x 
-          + *(result-2) * a_prev_prev;
-}
-template <>
-constexpr void legendre_recursive<0>(double x, double* result) {
-  *result = 1.0;
-}
-template <>
-constexpr void legendre_recursive<1>(double x, double* result) {
-  *result = x;
-}
-
-template <int kDegree>
-constexpr Vector<kDegree+1> legendre_array(double x) {
-  Vector<kDegree+1> result;
-  result[0] = 1.0;
-  legendre_recursive<kDegree>(x, &result[kDegree]);
-  return result;
-}
-
 template <int kDegree>
 struct Legendre {
  public:
-  using Vector = algebra::Column<double, kDegree+1>;
-  static constexpr double GetValue(double x) {
-    return 0.0;
+  static double GetValue(double x) {
+    constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
+    constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
+    return Legendre<kDegree-1>::GetValue(x) * a_prev * x
+         + Legendre<kDegree-2>::GetValue(x) * a_prev_prev;
   }
-  static constexpr Vector GetAllValues(double x) {
-    auto result = Vector{1.0};
+  using Vector = algebra::Column<double, kDegree+1>;
+  static Vector GetAllValues(double x) {
+    Vector result{1.0};
+    Legendre<kDegree>::FillAllValues(x, &result[kDegree]);
     return result;
+  }
+  static void FillAllValues(double x, double* result) {
+    constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
+    constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
+    Legendre<kDegree-1>::FillAllValues(x, result-1);
+    *result = *(result-1) * a_prev * x 
+            + *(result-2) * a_prev_prev;
+  }
+};
+
+template <>
+struct Legendre<0> {
+ public:
+  static double GetValue(double x) {
+    return 1.0;
+  }
+  using Vector = algebra::Column<double, 1>;
+  static Vector GetAllValues(double x) {
+    Vector result{1.0};
+    return result;
+  }
+  static void FillAllValues(double x, double* result) {
+    *result = 1.0;
+  }
+};
+
+template <>
+struct Legendre<1> {
+ public:
+  static double GetValue(double x) {
+    return x;
+  }
+  using Vector = algebra::Column<double, 2>;
+  static Vector GetAllValues(double x) {
+    Vector result{1.0, x};
+    return result;
+  }
+  static void FillAllValues(double x, double* result) {
+    *result = x;
   }
 };
 
