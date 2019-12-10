@@ -13,33 +13,51 @@ namespace mini {
 namespace polynomial {
 
 class LegendreTest : public ::testing::Test {
- protected: 
-  static constexpr int kDegree = 4;
-  static constexpr int kDof = kDegree + 1;
-  using Scalar = double;
-  using Vector = algebra::Column<Scalar, kDof>;
+ protected:
+  void ExpectNearZero(double x) { EXPECT_NEAR(x, 0.0, 1e-15); }
+  // Generic comparison:
+  template <int kDegree>
+  constexpr bool Compare(double* v, double x) {
+    static_assert(kDegree >= 0);
+    ExpectNearZero(*v - Legendre<kDegree>::GetValue(x));
+    return kDegree > 0 ? Compare<kDegree-1>(v-1, x) : true;
+  }
+  template <>
+  constexpr bool Compare<0>(double* v, double x) {
+    ExpectNearZero(*v - 1.0);
+    return true;
+  }
 };
-TEST_F(LegendreTest, LegendreSingle) {
+TEST_F(LegendreTest, GetValue) {
   double e = 1e-15;
-  EXPECT_DOUBLE_EQ(std::abs(legendre<0>(0)), 1);
-  EXPECT_LT(std::abs(legendre<1>(0)), e);
-  EXPECT_LT(std::abs(legendre<2>(+std::sqrt(1.0/3))), e);
-  EXPECT_LT(std::abs(legendre<2>(-std::sqrt(1.0/3))), e);
-  EXPECT_LT(std::abs(legendre<3>(0)), e);
-  EXPECT_LT(std::abs(legendre<3>(+std::sqrt(3.0/5))), e);
-  EXPECT_LT(std::abs(legendre<3>(-std::sqrt(3.0/5))), e);
-  EXPECT_LT(std::abs(legendre<4>(+std::sqrt(3.0/7 - 2.0/7*std::sqrt(6.0/5)))), e);
-  EXPECT_LT(std::abs(legendre<4>(-std::sqrt(3.0/7 - 2.0/7*std::sqrt(6.0/5)))), e);
-  EXPECT_LT(std::abs(legendre<4>(+std::sqrt(3.0/7 + 2.0/7*std::sqrt(6.0/5)))), e);
-  EXPECT_LT(std::abs(legendre<4>(-std::sqrt(3.0/7 + 2.0/7*std::sqrt(6.0/5)))), e);
-  EXPECT_LT(std::abs(legendre<5>(0)), e);
-  EXPECT_LT(std::abs(legendre<5>(+std::sqrt(5 - 2*std::sqrt(10.0/7)) / 3)), e);
-  EXPECT_LT(std::abs(legendre<5>(-std::sqrt(5 - 2*std::sqrt(10.0/7)) / 3)), e);
-  EXPECT_LT(std::abs(legendre<5>(+std::sqrt(5 + 2*std::sqrt(10.0/7)) / 3)), e);
-  EXPECT_LT(std::abs(legendre<5>(-std::sqrt(5 + 2*std::sqrt(10.0/7)) / 3)), e);
+  // P_{0}(x) = 1
+  ExpectNearZero(Legendre<0>::GetValue(0) - 1);
+  // P_{1}(x) = x
+  ExpectNearZero(Legendre<1>::GetValue(0));
+  // P_{2}(x) = (x*x - 3) / 2.0
+  ExpectNearZero(Legendre<2>::GetValue(+std::sqrt(1.0/3)));
+  ExpectNearZero(Legendre<2>::GetValue(-std::sqrt(1.0/3)));
+  // P_{3}(x) = 
+  ExpectNearZero(Legendre<3>::GetValue(0));
+  ExpectNearZero(Legendre<3>::GetValue(+std::sqrt(3.0/5)));
+  ExpectNearZero(Legendre<3>::GetValue(-std::sqrt(3.0/5)));
+  // P_{4}(x) =
+  double r_1 = std::sqrt(3.0/7 - 2.0/7*std::sqrt(6.0/5));
+  ExpectNearZero(Legendre<4>::GetValue(+r_1));
+  ExpectNearZero(Legendre<4>::GetValue(-r_1));
+  double r_3 = std::sqrt(3.0/7 + 2.0/7*std::sqrt(6.0/5));
+  ExpectNearZero(Legendre<4>::GetValue(+r_3));
+  ExpectNearZero(Legendre<4>::GetValue(-r_3));
+  // P_{5}(x) = 
+  ExpectNearZero(Legendre<5>::GetValue(0));
+  r_1 = std::sqrt(5 - 2*std::sqrt(10.0/7)) / 3;
+  ExpectNearZero(Legendre<5>::GetValue(+r_1));
+  ExpectNearZero(Legendre<5>::GetValue(-r_1));
+  r_3 = std::sqrt(5 + 2*std::sqrt(10.0/7)) / 3;
+  ExpectNearZero(Legendre<5>::GetValue(+r_3));
+  ExpectNearZero(Legendre<5>::GetValue(-r_3));
 }
-
-TEST_F(LegendreTest, LegendreArray) {
+TEST_F(LegendreTest, GetAllValues) {
   std::vector<double> x_array;
   double x = -1.0;
   while (x <= 1.0) {
@@ -47,12 +65,9 @@ TEST_F(LegendreTest, LegendreArray) {
     x += 0.1;
   }
   for (auto x : x_array) {
-    auto value = legendre_array<kDegree>(x);  
-    EXPECT_DOUBLE_EQ(value[0], legendre<0>(x));
-    EXPECT_DOUBLE_EQ(value[1], legendre<1>(x));
-    EXPECT_DOUBLE_EQ(value[2], legendre<2>(x));
-    EXPECT_DOUBLE_EQ(value[3], legendre<3>(x));
-    EXPECT_DOUBLE_EQ(value[4], legendre<4>(x));
+    constexpr int kDegree = 8;
+    auto values = Legendre<kDegree>::GetAllValues(x);
+    Compare<kDegree>(&values[kDegree], x);
   }
 }
 

@@ -48,6 +48,19 @@ constexpr Vector<kDegree+1> legendre_array(double x) {
   return result;
 }
 
+template <int kDegree>
+struct Legendre {
+ public:
+  using Vector = algebra::Column<double, kDegree+1>;
+  static constexpr double GetValue(double x) {
+    return 0.0;
+  }
+  static constexpr Vector GetAllValues(double x) {
+    auto result = Vector{1.0};
+    return result;
+  }
+};
+
 }  // namespace polynomial
 }  // namespace mini
 
