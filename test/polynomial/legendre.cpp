@@ -5,12 +5,12 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/basis/legendre.hpp"
 #include "mini/algebra/column.hpp"
+#include "mini/polynomial/legendre.hpp"
 
 
 namespace mini {
-namespace basis {
+namespace polynomial {
 
 class LegendreTest : public ::testing::Test {
  protected: 
