@@ -19,6 +19,7 @@
 #include <vtkCellTypes.h>
 #include <vtkCell.h>
 #include <vtkFloatArray.h>
+#include <vtkLine.h>
 #include <vtkTriangle.h>
 #include <vtkQuad.h>
 #include <vtkSmartPointer.h>
@@ -90,6 +91,10 @@ class VtkReader : public Reader<Mesh> {
         auto b = NodeId(ids->GetId(1));
         auto c = NodeId(ids->GetId(2));
         mesh_->EmplaceCell(i, {a, b, c});
+      } else if (vtk_data_set->GetCellType(i) == 3) {
+        auto a = NodeId(ids->GetId(0));
+        auto b = NodeId(ids->GetId(1));
+        mesh_->EmplaceCell(i, {a, b});
       } else if (vtk_data_set->GetCellType(i) == 9) {
         auto a = NodeId(ids->GetId(0));
         auto b = NodeId(ids->GetId(1));
@@ -279,6 +284,9 @@ class VtkWriter : public Writer<Mesh> {
     vtkSmartPointer<vtkCell> vtk_cell;
     vtkIdList* id_list{nullptr};
     switch (cell.CountVertices()) {
+    case 2:
+      vtk_cell = vtkSmartPointer<vtkLine>::New();
+      break;
     case 3:
       vtk_cell = vtkSmartPointer<vtkTriangle>::New();
       break;

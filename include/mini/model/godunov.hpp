@@ -44,10 +44,6 @@ class Godunov {
     wall_manager_.SetInletBoundary(name);
     inlet_ = inlet;
   }
-  void SetOutletBoundary(std::string const& name, State& outlet) {
-    wall_manager_.SetOutletBoundary(name);
-    outlet_ = outlet;
-  }
   void SetFreeBoundary(std::string const& name) {
     wall_manager_.SetFreeBoundary(name);
   }
@@ -168,7 +164,7 @@ class Godunov {
         auto const& u = wall->GetNegativeSide()->data.state;
         wall->data.flux = riemann_.GetFluxOnSolidWall(u);
       }
-      wall->data.flux *= wall->Measure();;
+      wall->data.flux *= wall->Measure();
     });
   }
   void UpdateEachCell() {

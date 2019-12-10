@@ -33,42 +33,59 @@ class SingleWaveTest {
 
   void Run() {
     Mesh::Cell::scalar_names.at(0) = "U";
-    auto u_l = State{+1.0};
-    auto u_r = State{-1.0};
+    auto u_l = State{-1.0};
+    auto u_r = State{+1.0};
     auto model = Model(model_name_);
     Riemann::global_coefficient[0] = 1.0;
-    Riemann::global_coefficient[1] = 0.0;
+    Riemann::global_coefficient[1] = 1.0;
     model.ReadMesh(test_data_dir_ + mesh_name_);
+    // Set Boundary Conditions:
+    constexpr auto eps = 1e-5;
     model.SetBoundaryName("left", [&](Wall& wall) {
-      return wall.Center().X() == -2.0;
+      return std::abs(wall.Center().X() + 0.5) < eps;
     });
     model.SetBoundaryName("right", [&](Wall& wall) {
-      return wall.Center().X() == +2.0;
+      return std::abs(wall.Center().X() - 0.5) < eps;
     });
     model.SetBoundaryName("top", [&](Wall& wall) {
-      return wall.Center().Y() == +1.0;
+      return std::abs(wall.Center().Y() - 0.01) < eps;
     });
     model.SetBoundaryName("bottom", [&](Wall& wall) {
-      return wall.Center().Y() == -1.0;
+      return std::abs(wall.Center().Y() + 0.01) < eps;
     });
+    // model.SetBoundaryName("left", [&](Wall& wall) {
+    //   return std::abs(wall.Center().X() + 2) < eps;
+    // });
+    // model.SetBoundaryName("right", [&](Wall& wall) {
+    //   return std::abs(wall.Center().X() - 2) < eps;
+    // });
+    // model.SetBoundaryName("top", [&](Wall& wall) {
+    //   return std::abs(wall.Center().Y() - 1) < eps;
+    // });
+    // model.SetBoundaryName("bottom", [&](Wall& wall) {
+    //   return std::abs(wall.Center().Y() + 1) < eps;
+    // });
     // model.SetInletBoundary("left");
     // model.SetOutletBoundart("right");
     model.SetPeriodicBoundary("left", "right");
-    model.SetPeriodicBoundary("top", "bottom");
-    // model.SetSolidBoundary("left");
-    // model.SetSolidBoundary("right");
-    // model.SetFreeBoundary("top");
-    // model.SetFreeBoundary("bottom");
+    // model.SetPeriodicBoundary("top", "bottom");
+    // model.SetPeriodicBoundary("top", "bottom");
+    model.SetSolidBoundary("top");
+    model.SetSolidBoundary("bottom");
+    // model.SetFreeBoundary("left");
+    // model.SetFreeBoundary("right");
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
       auto y = cell.Center().Y();
-      // cell.data.state = std::sin(x * acos(0.0)) *
+      // cell.data.state = std::sin(x * acos(0.0) * 2) *
       //                   std::sin(y * acos(0.0) * 2);
-      if (x < -0.0) {
-        cell.data.state = u_l;
-      } else {
-        cell.data.state = u_r;
-      }
+      // if (x < -0.0) {
+      //   cell.data.state = u_l;
+      // } else {
+      //   cell.data.state = u_r;
+      // }
+      // auto pi = std::acos(-1);
+      cell.data.state = std::sin(x * acos(0.0) * 4);
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
     auto output_dir = std::string("result/demo/") + model_name_;
@@ -133,35 +150,40 @@ class DoubleWaveTest {
     auto u_r = State{1.5, 2.5};
     auto model = Model(model_name_);
     Riemann::global_coefficient[0] = Jacobi{{1, 0}, {0, -1}};
-    Riemann::global_coefficient[1] = Jacobi{{1, 0}, {0, -1}};
+    Riemann::global_coefficient[1] = Jacobi{{0, 0}, {0, 0}};
     model.ReadMesh(test_data_dir_ + mesh_name_);
+    // Set Boundary Conditions:
+    constexpr auto eps = 1e-5;
     model.SetBoundaryName("left", [&](Wall& wall) {
-      return wall.Center().X() == -2.0;
+      return std::abs(wall.Center().X() + 0.5) < eps;
     });
     model.SetBoundaryName("right", [&](Wall& wall) {
-      return wall.Center().X() == +2.0;
+      return std::abs(wall.Center().X() - 0.5) < eps;
     });
     model.SetBoundaryName("top", [&](Wall& wall) {
-      return wall.Center().Y() == +1.0;
+      return std::abs(wall.Center().Y() - 0.01) < eps;
     });
     model.SetBoundaryName("bottom", [&](Wall& wall) {
-      return wall.Center().Y() == -1.0;
+      return std::abs(wall.Center().Y() + 0.01) < eps;
     });
     // model.SetInletBoundary("left");
     // model.SetOutletBoundart("right");
     model.SetPeriodicBoundary("left", "right");
-    model.SetPeriodicBoundary("top", "bottom");
-    // model.SetSolidBoundary("left");
-    // model.SetSolidBoundary("right");
-    // model.SetFreeBoundary("top");
-    // model.SetFreeBoundary("bottom");
+    // model.SetPeriodicBoundary("top", "bottom");
+    model.SetSolidBoundary("top");
+    model.SetSolidBoundary("bottom");
+    // model.SetFreeBoundary("left");
+    // model.SetFreeBoundary("right");
     model.SetInitialState([&](Cell& cell) {
       auto x = cell.Center().X();
-      if (x < -0.0) {
-        cell.data.state = u_l;
-      } else {
-        cell.data.state = u_r;
-      }
+      // if (x < -0.0) {
+      //   cell.data.state = u_l;
+      // } else {
+      //   cell.data.state = u_r;
+      // }
+      auto pi = std::acos(-1);
+      cell.data.state[0] = std::sin(x * pi * 4);
+      cell.data.state[1] = std::cos(x * pi * 4);
     });
     model.SetTimeSteps(duration_, n_steps_, output_rate_);
     auto output_dir = std::string("result/demo/") + model_name_;
