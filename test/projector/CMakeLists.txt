@@ -1,2 +1,3 @@
-add_executable(line line.cpp)
-target_link_libraries(line gtest_main)
+add_executable(test_projector_line line.cpp)
+set_target_properties(test_projector_line PROPERTIES OUTPUT_NAME line)
+target_link_libraries(test_projector_line gtest_main)
