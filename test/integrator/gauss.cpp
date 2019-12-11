@@ -43,6 +43,22 @@ TEST_F(GaussTest, OnePoint) {
   TestScalarFunction<1>();
   TestVectorFunction<1>();
 }
+TEST_F(GaussTest, TwoPoint) {
+  TestScalarFunction<2>();
+  TestVectorFunction<2>();
+}
+TEST_F(GaussTest, ThreePoint) {
+  TestScalarFunction<3>();
+  TestVectorFunction<3>();
+}
+TEST_F(GaussTest, FourPoint) {
+  TestScalarFunction<4>();
+  TestVectorFunction<4>();
+}
+TEST_F(GaussTest, FivePoint) {
+  TestScalarFunction<5>();
+  TestVectorFunction<5>();
+}
 
 }  // namespace integrator
 }  // namespace mini
