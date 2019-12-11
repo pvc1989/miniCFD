@@ -15,12 +15,46 @@ class GaussTest : public ::testing::Test {
     // \int_{-1}^{+1} x^{p} dx
     return p % 2 ? 0.0 : 2.0 / (p + 1);
   }
+  double eps = 1e-15;
 };
 TEST_F(GaussTest, OnePoint) {
-  constexpr int kDegree = 1;
+  constexpr int kPoints = 1;
+  constexpr int kDegree = kPoints * 2 - 1;
   for (int p = 0; p != kDegree; ++p) {
     auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_DOUBLE_EQ(Gauss<kDegree>::Integrate(integrand), MonomialIntegral(p));
+    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
+  }
+}
+TEST_F(GaussTest, TwoPoint) {
+  constexpr int kPoints = 2;
+  constexpr int kDegree = kPoints * 2 - 1;
+  for (int p = 0; p != kDegree; ++p) {
+    auto integrand = [&](double x) { return std::pow(x, p); };
+    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
+  }
+}
+TEST_F(GaussTest, ThreePoint) {
+  constexpr int kPoints = 3;
+  constexpr int kDegree = kPoints * 2 - 1;
+  for (int p = 0; p != kDegree; ++p) {
+    auto integrand = [&](double x) { return std::pow(x, p); };
+    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
+  }
+}
+TEST_F(GaussTest, FourPoint) {
+  constexpr int kPoints = 4;
+  constexpr int kDegree = kPoints * 2 - 1;
+  for (int p = 0; p != kDegree; ++p) {
+    auto integrand = [&](double x) { return std::pow(x, p); };
+    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
+  }
+}
+TEST_F(GaussTest, FivePoint) {
+  constexpr int kPoints = 5;
+  constexpr int kDegree = kPoints * 2 - 1;
+  for (int p = 0; p != kDegree; ++p) {
+    auto integrand = [&](double x) { return std::pow(x, p); };
+    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
   }
 }
 
