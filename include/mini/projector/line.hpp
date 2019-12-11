@@ -3,7 +3,7 @@
 #define MINI_PROJECTOR_LINE_HPP_
 
 #include "mini/algebra/column.hpp"
-#include "mini/geometry/dim0.hpp"
+#include "mini/geometry/point.hpp"
 #include "mini/integrator/gauss.hpp"
 #include "mini/polynomial/legendre.hpp"
 
@@ -14,15 +14,12 @@ template <int kDegree>
 class Line {
  public:
   using Point = geometry::Point<double, 1>;
-  Line(Point const& head, Point const& tail) {
-    head_ = &head;
-    tail_ = &tail;
-    jacob_ = (tail.X() - head.X()) / 2;
-    x_mid_ = (tail.X() + head.X()) / 2;
-  }
-  using Vector = algebra::Column<double, kDegree+1>;
+  Line(Point const& head, Point const& tail)
+      : jacobian_((tail.X() - head.X()) / 2),
+        x_center_((tail.X() + head.X()) / 2) {}
+  using Column = algebra::Column<double, kDegree+1>;
   template <class Function>
-  Vector GetCoefficients(Function&& function) const {
+  Column GetCoefficients(Function&& function) const {
     auto integrand = [&](double x) {
       auto value = polynomial::Legendre<kDegree>::GetAllValues(x);
       value *= function(LocalToGlobal(x));
@@ -30,21 +27,19 @@ class Line {
     };
     auto result = integrator::Gauss<kDegree+1>::Integrate(integrand);
     for (int i = 0; i <= kDegree; i++) {
-      result[i] *= polynomial::norms[i];
+      result[i] *= polynomial::normalizer[i];
     }
     return result;
   }
  
  private:
-  const Point* head_;
-  const Point* tail_;
-  double jacob_;
-  double x_mid_;
+  double jacobian_;
+  double x_center_;
   auto LocalToGlobal(double x) const {
-    return x * jacob_ + x_mid_;
+    return x * jacobian_ + x_center_;
   }
   auto GlobalToLocal(double x) const {
-    return (x - x_mid_) / jacob_;
+    return (x - x_center_) / jacobian_;
   }
 };
 
