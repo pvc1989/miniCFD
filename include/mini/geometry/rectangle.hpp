@@ -1,10 +1,10 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+#ifndef MINI_GEOMETRY_RECTANGLE_HPP_
+#define MINI_GEOMETRY_RECTANGLE_HPP_
 
-#ifndef MINI_GEOMETRY_DIM2_HPP_
-#define MINI_GEOMETRY_DIM2_HPP_
-
-#include "mini/geometry/dim0.hpp"
-#include "mini/geometry/dim1.hpp"
+#include "mini/geometry/point.hpp"
+#include "mini/geometry/line.hpp"
+#include "mini/geometry/vector.hpp"
 
 namespace mini {
 namespace geometry {
@@ -107,4 +107,4 @@ class Rectangle : virtual public Surface<Real, kDim> {
 
 }  // namespace geometry
 }  // namespace mini
-#endif  // MINI_GEOMETRY_DIM2_HPP_
+#endif  // MINI_GEOMETRY_RECTANGLE_HPP_

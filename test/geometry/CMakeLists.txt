@@ -1,0 +1,19 @@
+add_executable(test_geometry_point point.cpp)
+set_target_properties(test_geometry_point PROPERTIES OUTPUT_NAME point)
+target_link_libraries(test_geometry_point gtest_main)
+
+add_executable(test_geometry_vector vector.cpp)
+set_target_properties(test_geometry_vector PROPERTIES OUTPUT_NAME vector)
+target_link_libraries(test_geometry_vector gtest_main)
+
+add_executable(test_geometry_line line.cpp)
+set_target_properties(test_geometry_line PROPERTIES OUTPUT_NAME line)
+target_link_libraries(test_geometry_line gtest_main)
+
+add_executable(test_geometry_triangle triangle.cpp)
+set_target_properties(test_geometry_triangle PROPERTIES OUTPUT_NAME triangle)
+target_link_libraries(test_geometry_triangle gtest_main)
+
+add_executable(test_geometry_rectangle rectangle.cpp)
+set_target_properties(test_geometry_rectangle PROPERTIES OUTPUT_NAME rectangle)
+target_link_libraries(test_geometry_rectangle gtest_main)

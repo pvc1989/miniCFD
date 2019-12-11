@@ -1,11 +1,11 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
-
-#ifndef MINI_GEOMETRY_DIM1_HPP_
-#define MINI_GEOMETRY_DIM1_HPP_
+#ifndef MINI_GEOMETRY_LINE_HPP_
+#define MINI_GEOMETRY_LINE_HPP_
 
 #include <iostream>
 
-#include "mini/geometry/dim0.hpp"
+#include "mini/geometry/point.hpp"
+#include "mini/geometry/vector.hpp"
 
 namespace mini {
 namespace geometry {
@@ -49,4 +49,4 @@ class Line {
 
 }  // namespace geometry
 }  // namespace mini
-#endif  // MINI_GEOMETRY_DIM1_HPP_
+#endif  // MINI_GEOMETRY_LINE_HPP_
