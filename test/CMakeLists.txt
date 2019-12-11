@@ -26,4 +26,5 @@ add_test(NAME VTK1D COMMAND vtk1d)
 
 add_subdirectory(integrator)
 add_subdirectory(polynomial)
+add_subdirectory(projector)
 add_subdirectory(riemann)
