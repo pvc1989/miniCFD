@@ -17,6 +17,14 @@ class GaussTest : public ::testing::Test {
     return p % 2 ? 0.0 : 2.0 / (p + 1);
   }
   template <int kPoints>
+  void TestScalarFunction() {
+    for (int p = 0; p != 2 * kPoints; ++p) {
+      auto integrand = [&](double x) { return std::pow(x, p); };
+      EXPECT_DOUBLE_EQ(Gauss<kPoints>::Integrate(integrand),
+                       MonomialIntegral(p));
+    }
+  }
+  template <int kPoints>
   void TestVectorFunction() {
     auto integrand = [&](double x) {
       auto result = algebra::Column<double, 2 * kPoints>();
@@ -32,11 +40,7 @@ class GaussTest : public ::testing::Test {
   }
 };
 TEST_F(GaussTest, OnePoint) {
-  constexpr int kDegree = 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_DOUBLE_EQ(Gauss<kDegree>::Integrate(integrand), MonomialIntegral(p));
-  }
+  TestScalarFunction<1>();
   TestVectorFunction<1>();
 }
 
