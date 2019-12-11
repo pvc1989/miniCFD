@@ -34,21 +34,21 @@ TEST_F(LegendreTest, GetValue) {
   ExpectNearZero(Legendre<0>::GetValue(0) - 1);
   // P_{1}(x) = x
   ExpectNearZero(Legendre<1>::GetValue(0));
-  // P_{2}(x) = (x^2 - 3) / 2.0
+  // P_{2}(x) = (x*x - 3) / 2.0
   ExpectNearZero(Legendre<2>::GetValue(+std::sqrt(1.0/3)));
   ExpectNearZero(Legendre<2>::GetValue(-std::sqrt(1.0/3)));
-  // P_{3}(x) = 1/2 * (5 * x^3 - 3 * x)
+  // P_{3}(x) = 
   ExpectNearZero(Legendre<3>::GetValue(0));
   ExpectNearZero(Legendre<3>::GetValue(+std::sqrt(3.0/5)));
   ExpectNearZero(Legendre<3>::GetValue(-std::sqrt(3.0/5)));
-  // P_{4}(x) = 1/8 * (35 * x^4 - 30 * x^2 + 3)
+  // P_{4}(x) =
   double r_1 = std::sqrt(3.0/7 - 2.0/7*std::sqrt(6.0/5));
   ExpectNearZero(Legendre<4>::GetValue(+r_1));
   ExpectNearZero(Legendre<4>::GetValue(-r_1));
   double r_3 = std::sqrt(3.0/7 + 2.0/7*std::sqrt(6.0/5));
   ExpectNearZero(Legendre<4>::GetValue(+r_3));
   ExpectNearZero(Legendre<4>::GetValue(-r_3));
-  // P_{5}(x) = 1/8 * (63 * x^5 - 70 * x^3 + 15 * x)
+  // P_{5}(x) = 
   ExpectNearZero(Legendre<5>::GetValue(0));
   r_1 = std::sqrt(5 - 2*std::sqrt(10.0/7)) / 3;
   ExpectNearZero(Legendre<5>::GetValue(+r_1));

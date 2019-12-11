@@ -1,5 +1,6 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 #include "mini/integrator/gauss.hpp"
+#include "mini/algebra/column.hpp"
 
 #include <cmath>
 
@@ -15,47 +16,32 @@ class GaussTest : public ::testing::Test {
     // \int_{-1}^{+1} x^{p} dx
     return p % 2 ? 0.0 : 2.0 / (p + 1);
   }
-  double eps = 1e-15;
+  template <int kPoints>
+  void TestScalarFunction() {
+    for (int p = 0; p != 2 * kPoints; ++p) {
+      auto integrand = [&](double x) { return std::pow(x, p); };
+      EXPECT_DOUBLE_EQ(Gauss<kPoints>::Integrate(integrand),
+                       MonomialIntegral(p));
+    }
+  }
+  template <int kPoints>
+  void TestVectorFunction() {
+    auto integrand = [&](double x) {
+      auto result = algebra::Column<double, 2 * kPoints>();
+      for (int p = 0; p != 2 * kPoints; ++p) {
+        result[p] = std::pow(x, p);
+      }
+      return result;
+    };
+    auto result = Gauss<kPoints>::Integrate(integrand);
+    for (int p = 0; p != 2 * kPoints; ++p) {
+      EXPECT_DOUBLE_EQ(result[p], MonomialIntegral(p));
+    }
+  }
 };
 TEST_F(GaussTest, OnePoint) {
-  constexpr int kPoints = 1;
-  constexpr int kDegree = kPoints * 2 - 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
-  }
-}
-TEST_F(GaussTest, TwoPoint) {
-  constexpr int kPoints = 2;
-  constexpr int kDegree = kPoints * 2 - 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
-  }
-}
-TEST_F(GaussTest, ThreePoint) {
-  constexpr int kPoints = 3;
-  constexpr int kDegree = kPoints * 2 - 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
-  }
-}
-TEST_F(GaussTest, FourPoint) {
-  constexpr int kPoints = 4;
-  constexpr int kDegree = kPoints * 2 - 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
-  }
-}
-TEST_F(GaussTest, FivePoint) {
-  constexpr int kPoints = 5;
-  constexpr int kDegree = kPoints * 2 - 1;
-  for (int p = 0; p != kDegree; ++p) {
-    auto integrand = [&](double x) { return std::pow(x, p); };
-    EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand), MonomialIntegral(p), eps);
-  }
+  TestScalarFunction<1>();
+  TestVectorFunction<1>();
 }
 
 }  // namespace integrator
