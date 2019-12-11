@@ -64,6 +64,13 @@ struct Legendre<1> {
   }
 };
 
+static constexpr std::array<double, 6> norms{(2 * 0 + 1.0) / 2,
+                                             (2 * 1 + 1.0) / 2,
+                                             (2 * 2 + 1.0) / 2,
+                                             (2 * 3 + 1.0) / 2,
+                                             (2 * 4 + 1.0) / 2,
+                                             (2 * 5 + 1.0) / 2};
+
 }  // namespace polynomial
 }  // namespace mini
 
