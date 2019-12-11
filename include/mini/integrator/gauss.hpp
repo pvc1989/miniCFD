@@ -28,7 +28,7 @@ class Gauss {
     result *= GaussPairs<kPoints>::w[0];
     for (int i = 1; i != kPoints; ++i) {
       auto value = function(GaussPairs<kPoints>::x[i]);
-      value += GaussPairs<kPoints>::w[i];
+      value *= GaussPairs<kPoints>::w[i];
       result += value;
     }
     return result;
