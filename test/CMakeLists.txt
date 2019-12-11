@@ -1,6 +1,4 @@
-add_executable(algebra algebra.cpp)
-target_link_libraries(algebra gtest_main)
-add_test(NAME Algebra COMMAND algebra)
+add_subdirectory(algebra)
 
 add_executable(geometry geometry.cpp)
 target_link_libraries(geometry gtest_main)
