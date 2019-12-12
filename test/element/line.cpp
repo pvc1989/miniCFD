@@ -8,28 +8,28 @@
 namespace mini {
 namespace element {
 
-class EdgeTest : public ::testing::Test {
+class LineTest : public ::testing::Test {
  protected:
   using Real = double;
-  using Edge = Edge<Real, 2>;
-  using Node = Edge::Node;
-  Node head{0.3, 0.0}, tail{0.0, 0.4};
+  using Line = Line<Real, 2>;
+  using Point = Line::Point;
+  Point head{0.3, 0.0}, tail{0.0, 0.4};
 };
-TEST_F(EdgeTest, Constructor) {
-  auto i = Edge::Id{0};
-  // Test Edge(Id, Node*, Node*):
-  auto edge = Edge(i, &head, &tail);
+TEST_F(LineTest, Constructor) {
+  auto i = Line::Id{0};
+  // Test Line(Id, Point*, Point*):
+  auto edge = Line(i, &head, &tail);
   EXPECT_EQ(edge.I(), i);
   EXPECT_EQ(edge.Head(), &head);
   EXPECT_EQ(edge.Tail(), &tail);
-  // Test Edge(Node*, Node*):
-  edge = Edge(&head, &tail);
-  EXPECT_EQ(edge.I(), Edge::DefaultId());
+  // Test Line(Point*, Point*):
+  edge = Line(&head, &tail);
+  EXPECT_EQ(edge.I(), Line::DefaultId());
   EXPECT_EQ(edge.Head(), &head);
   EXPECT_EQ(edge.Tail(), &tail);
 }
-TEST_F(EdgeTest, MeshMethods) {
-  auto edge = Edge(&head, &tail);
+TEST_F(LineTest, MeshMethods) {
+  auto edge = Line(&head, &tail);
   EXPECT_EQ(edge.Measure(), 0.5);
   auto center = edge.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());

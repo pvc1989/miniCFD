@@ -14,16 +14,16 @@ namespace element {
 
 template <class Real, int kDim>
 class Rectangle :
-    virtual public Face<Real, kDim>,
+    virtual public Surface<Real, kDim>,
     public geometry::Rectangle<Real, kDim> {
  public:
   // Types:
   using Id = std::size_t;
-  using Node = Node<Real, kDim>;
+  using Point = Point<Real, kDim>;
   // Constructors:
-  Rectangle(Id i, Node* a, Node* b, Node* c, Node* d)
+  Rectangle(Id i, Point* a, Point* b, Point* c, Point* d)
       : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
-  Rectangle(Node* a, Node* b, Node* c, Node* d)
+  Rectangle(Point* a, Point* b, Point* c, Point* d)
       : Rectangle(this->DefaultId(), a, b, c, d) {}
   // Accessors:
   Id I() const override { return i_; }

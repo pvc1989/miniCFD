@@ -12,17 +12,14 @@ namespace mini {
 namespace element {
 
 template <class Real, int kDim>
-class Face : virtual public geometry::Surface<Real, kDim> {
+class Surface : virtual public geometry::Surface<Real, kDim> {
  public:
   // Types:
   using Id = std::size_t;
-  using Node = Node<Real, kDim>;
+  using Point = Point<Real, kDim>;
   // Accessors:
   virtual Id I() const = 0;
   static Id DefaultId() { return -1; }
-  Node* GetNode(int i) const {
-    return static_cast<Node*>(this->GetPoint(i));
-  }
   // Mesh methods:
   template <class Integrand>
   auto Integrate(Integrand&& integrand) const {

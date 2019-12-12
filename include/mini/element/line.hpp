@@ -12,26 +12,26 @@ namespace mini {
 namespace element {
 
 template <class Real, int kDim>
-class Edge : public geometry::Line<Real, kDim> {
+class Line : public geometry::Line<Real, kDim> {
  public:
   // Types:
   using Id = std::size_t;
-  using Node = Node<Real, kDim>;
+  using Point = Point<Real, kDim>;
   // Constructors:
-  Edge(Id i, Node* head, Node* tail)
+  Line(Id i, Point* head, Point* tail)
       : i_(i), geometry::Line<Real, kDim>(head, tail) {}
-  Edge(Node* head, Node* tail) : Edge(DefaultId(), head, tail) {}
+  Line(Point* head, Point* tail) : Line(DefaultId(), head, tail) {}
   // Accessors:
-  Edge::Id I() const { return i_; }
+  Line::Id I() const { return i_; }
   static Id DefaultId() { return -1; }
-  Node* GetNode(int i) const {
-    return static_cast<Node*>(this->GetPoint(i));
+  Point* GetPoint(int i) const {
+    return static_cast<Point*>(geometry::Line<Real, kDim>::GetPoint(i));
   }
   auto Head() const {
-    return static_cast<Node*>(geometry::Line<Real, kDim>::Head());
+    return static_cast<Point*>(geometry::Line<Real, kDim>::Head());
   }
   auto Tail() const {
-    return static_cast<Node*>(geometry::Line<Real, kDim>::Tail());
+    return static_cast<Point*>(geometry::Line<Real, kDim>::Tail());
   }
   // Mesh methods:
   template <class Integrand>
