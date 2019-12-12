@@ -14,7 +14,7 @@ class Surface {
   using Point = Point<Real, kDim>;
   // Accessors:
   virtual int CountVertices() const = 0;
-  virtual Point* GetPoint(int i) const = 0;
+  virtual Point const& GetPoint(int i) const = 0;
   // Geometric methods:
   virtual Real Measure() const = 0;
   virtual Point Center() const = 0;

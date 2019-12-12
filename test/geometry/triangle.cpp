@@ -8,40 +8,41 @@
 namespace mini {
 namespace geometry {
 
-class Triangle2Test : public ::testing::Test {
+class Triangle2dTest : public ::testing::Test {
  protected:
   using Real = double;
   using Triangle = Triangle<Real, 2>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
 };
-TEST_F(Triangle2Test, Constructor) {
-  // Test Triangle(Point*, Point*, Point*):
-  auto triangle = Triangle(&a, &b, &c);
+TEST_F(Triangle2dTest, Constructor) {
+  // Test Triangle(Point const&, Point const&, Point const&):
+  auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle2Test, geometry) {
-  auto triangle = Triangle(&a, &b, &c);
+TEST_F(Triangle2dTest, geometry) {
+  auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
   EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
   EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
+  EXPECT_EQ(center.Z() * 3, a.Z() + b.Z() + c.Z());
 }
 
-class Triangle3Test : public ::testing::Test {
+class Triangle3dTest : public ::testing::Test {
  protected:
   using Real = double;
   using Triangle = Triangle<Real, 3>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
 };
-TEST_F(Triangle3Test, Constructor) {
-  // Test Triangle(Point*, Point*, Point*):
-  auto triangle = Triangle(&a, &b, &c);
+TEST_F(Triangle3dTest, Constructor) {
+  // Test Triangle(Point const&, Point const&, Point const&):
+  auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle3Test, geometry) {
-  auto triangle = Triangle(&a, &b, &c);
+TEST_F(Triangle3dTest, geometry) {
+  auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
   EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());

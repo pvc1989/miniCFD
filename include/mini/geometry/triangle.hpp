@@ -2,8 +2,9 @@
 #ifndef MINI_GEOMETRY_TRIANGLE_HPP_
 #define MINI_GEOMETRY_TRIANGLE_HPP_
 
+#include <stdexcept>
+
 #include "mini/geometry/point.hpp"
-#include "mini/geometry/line.hpp"
 #include "mini/geometry/surface.hpp"
 #include "mini/geometry/vector.hpp"
 
@@ -16,38 +17,42 @@ class Triangle : virtual public Surface<Real, kDim> {
   // Types:
   using Point = Point<Real, kDim>;
   // Constructors:
-  Triangle(Point* a, Point* b, Point* c) : a_(a), b_(b), c_(c) {}
+  Triangle(Point const& a, Point const& b, Point const& c)
+      : a_(&a), b_(&b), c_(&c) {}
   // Accessors:
   int CountVertices() const override { return 3; }
-  Point* GetPoint(int i) const override {
+  Point const& A() const { return *a_; }
+  Point const& B() const { return *b_; }
+  Point const& C() const { return *c_; }
+  Point const& GetPoint(int i) const override {
     switch (i)  {
     case 0:
-      return a_;
+      return A();
     case 1:
-      return b_;
+      return B();
     case 2:
-      return c_;
+      return C();
     default:
-      return nullptr;
+      throw std::out_of_range("A `Triangle` has 3 `Point`s.");
     }
   }
   // Geometric methods:
   Real Measure() const override {
-    auto v = (*b_ - *a_).Cross(*c_ - *a_);
+    auto v = (B() - A()).Cross(C() - A());
     return std::abs(v) * 0.5;
   }
   Point Center() const override {
-    auto center = *a_;
-    center += *b_;
-    center += *c_;
+    auto center = A();
+    center += B();
+    center += C();
     center /= 3.0;
     return center;
   }
 
  private:
-  Point* a_;
-  Point* b_;
-  Point* c_;
+  Point const* a_;
+  Point const* b_;
+  Point const* c_;
 };
 
 }  // namespace geometry

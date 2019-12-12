@@ -8,43 +8,45 @@
 namespace mini {
 namespace geometry {
 
-class Rectangle2Test : public ::testing::Test {
+class Rectangle2dTest : public ::testing::Test {
  protected:
   using Real = double;
   using Rectangle = Rectangle<Real, 2>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
 };
-TEST_F(Rectangle2Test, Constructor) {
-  // Test Rectangle(Point*, Point*, Point*):
-  auto rectangle = Rectangle(&a, &b, &c, &d);
+TEST_F(Rectangle2dTest, Constructor) {
+  // Test Rectangle(Point const&, Point const&, Point const&):
+  auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle2Test, geometry) {
-  auto rectangle = Rectangle(&a, &b, &c, &d);
+TEST_F(Rectangle2dTest, GeometricMethods) {
+  auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();
   EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
   EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
+  EXPECT_EQ(center.Z() * 4, a.Z() + b.Z() + c.Z() + d.Z());
 }
-class Rectangle3Test : public ::testing::Test {
+class Rectangle3dTest : public ::testing::Test {
  protected:
   using Real = double;
   using Rectangle = Rectangle<Real, 3>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};
 };
-TEST_F(Rectangle3Test, Constructor) {
-  // Test Rectangle(Point*, Point*, Point*):
-  auto rectangle = Rectangle(&a, &b, &c, &d);
+TEST_F(Rectangle3dTest, Constructor) {
+  // Test Rectangle(Point const&, Point const&, Point const&):
+  auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle3Test, geometry) {
-  auto rectangle = Rectangle(&a, &b, &c, &d);
+TEST_F(Rectangle3dTest, GeometricMethods) {
+  auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();
   EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
   EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
+  EXPECT_EQ(center.Z() * 4, a.Z() + b.Z() + c.Z() + d.Z());
 }
 
 }  // namespace geometry
