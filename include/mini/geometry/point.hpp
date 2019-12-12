@@ -2,11 +2,6 @@
 #ifndef MINI_GEOMETRY_POINT_HPP_
 #define MINI_GEOMETRY_POINT_HPP_
 
-#include <array>
-#include <initializer_list>
-#include <cmath>
-#include <utility>
-
 #include "mini/algebra/column.hpp"
 
 namespace mini {
@@ -14,6 +9,7 @@ namespace geometry {
 
 template <class Real, int kDim>
 class Vector;
+
 template <class Real, int kDim>
 class Point : public algebra::Column<Real, kDim> {
   using Base = algebra::Column<Real, kDim>;
@@ -21,8 +17,6 @@ class Point : public algebra::Column<Real, kDim> {
  public:
   // Constructors:
   using Base::Base;
-  explicit Point(Base const& that) : Base(that.begin(), that.end()) {}
-
   // Accessors:
   template <int I>
   Real X() const {
@@ -34,10 +28,8 @@ class Point : public algebra::Column<Real, kDim> {
   // Predicates:
   bool IsClockWise(Point const& b, Point const& c) const {
     static_assert(kDim == 2);
+    // The difference of two `Point`s is a `Vector`, which has a `Cross` method.
     return (b - *this).Cross(c - *this) < 0;
-  }
-  bool IsClockWise(Point const* b, Point const* c) const {
-    return IsClockWise(*b, *c);
   }
 };
 // Binary operators:
