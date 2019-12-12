@@ -1,5 +1,7 @@
-add_executable(single single.cpp)
-target_link_libraries(single gtest_main)
+add_executable(test_riemann_linear_single single.cpp)
+set_target_properties(test_riemann_linear_single PROPERTIES OUTPUT_NAME single)
+target_link_libraries(test_riemann_linear_single gtest_main)
 
-add_executable(double double.cpp)
-target_link_libraries(double gtest_main)
+add_executable(test_riemann_linear_double double.cpp)
+set_target_properties(test_riemann_linear_double PROPERTIES OUTPUT_NAME double)
+target_link_libraries(test_riemann_linear_double gtest_main)

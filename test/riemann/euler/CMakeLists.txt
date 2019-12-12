@@ -1,11 +1,15 @@
-add_executable(types types.cpp)
-target_link_libraries(types gtest_main)
+add_executable(test_riemann_euler_types types.cpp)
+set_target_properties(test_riemann_euler_types PROPERTIES OUTPUT_NAME types)
+target_link_libraries(test_riemann_euler_types gtest_main)
 
-add_executable(exact exact.cpp)
-target_link_libraries(exact gtest_main)
+add_executable(test_riemann_euler_exact exact.cpp)
+set_target_properties(test_riemann_euler_exact PROPERTIES OUTPUT_NAME exact)
+target_link_libraries(test_riemann_euler_exact gtest_main)
 
-add_executable(hllc hllc.cpp)
-target_link_libraries(hllc gtest_main)
+add_executable(test_riemann_euler_hllc hllc.cpp)
+set_target_properties(test_riemann_euler_hllc PROPERTIES OUTPUT_NAME hllc)
+target_link_libraries(test_riemann_euler_hllc gtest_main)
 
-add_executable(ausm ausm.cpp)
-target_link_libraries(ausm gtest_main)
+add_executable(test_riemann_euler_ausm ausm.cpp)
+set_target_properties(test_riemann_euler_ausm PROPERTIES OUTPUT_NAME ausm)
+target_link_libraries(test_riemann_euler_ausm gtest_main)
