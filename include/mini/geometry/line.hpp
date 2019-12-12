@@ -2,7 +2,7 @@
 #ifndef MINI_GEOMETRY_LINE_HPP_
 #define MINI_GEOMETRY_LINE_HPP_
 
-#include <iostream>
+#include <stdexcept>
 
 #include "mini/geometry/point.hpp"
 #include "mini/geometry/vector.hpp"
@@ -16,21 +16,21 @@ class Line {
   // Types:
   using Point = Point<Real, kDim>;
   // Constructors:
-  Line(Point* head, Point* tail) : head_(head), tail_(tail) {}
+  Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
   // Accessors:
   int CountVertices() const { return 2; }
-  Point* GetPoint(int i) const {
+  Point const& Head() const { return *head_; }
+  Point const& Tail() const { return *tail_; }
+  Point const& GetPoint(int i) const {
     switch (i)  {
     case 0:
-      return head_;
+      return Head();
     case 1:
-      return tail_;
+      return Tail();
     default:
-      return nullptr;
+      throw std::out_of_range("A `Line` has two `Point`s.");
     }
   }
-  Point* Head() const { return head_; }
-  Point* Tail() const { return tail_; }
   // Geometric methods:
   Real Measure() const {
     auto v = *head_ - *tail_;
@@ -42,9 +42,10 @@ class Line {
     center *= 0.5;
     return center;
   }
+
  private:
-  Point* head_{nullptr};
-  Point* tail_{nullptr};
+  Point const* head_;
+  Point const* tail_;
 };
 
 }  // namespace geometry
