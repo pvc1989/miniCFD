@@ -1,13 +1,12 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
-
-#ifndef MINI_ELEMENT_DIM1_HPP_
-#define MINI_ELEMENT_DIM1_HPP_
+#ifndef MINI_ELEMENT_LINE_HPP_
+#define MINI_ELEMENT_LINE_HPP_
 
 #include <cstddef>
 #include <initializer_list>
 
-#include "mini/geometry/dim1.hpp"
-#include "mini/element/dim0.hpp"
+#include "mini/geometry/line.hpp"
+#include "mini/element/point.hpp"
 
 namespace mini {
 namespace element {
@@ -47,4 +46,4 @@ class Edge : public geometry::Line<Real, kDim> {
 }  // namespace element
 }  // namespace mini
 
-#endif  // MINI_ELEMENT_DIM1_HPP_
+#endif  // MINI_ELEMENT_LINE_HPP_

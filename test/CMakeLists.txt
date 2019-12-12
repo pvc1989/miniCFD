@@ -1,9 +1,7 @@
 add_subdirectory(algebra)
 add_subdirectory(geometry)
+add_subdirectory(element)
 
-add_executable(element element.cpp)
-target_link_libraries(element gtest_main)
-add_test(NAME Element COMMAND element)
 
 add_executable(mesh mesh.cpp)
 target_link_libraries(mesh gtest_main)

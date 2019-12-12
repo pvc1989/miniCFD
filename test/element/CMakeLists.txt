@@ -1,0 +1,15 @@
+add_executable(test_element_point point.cpp)
+set_target_properties(test_element_point PROPERTIES OUTPUT_NAME point)
+target_link_libraries(test_element_point gtest_main)
+
+add_executable(test_element_line line.cpp)
+set_target_properties(test_element_line PROPERTIES OUTPUT_NAME line)
+target_link_libraries(test_element_line gtest_main)
+
+add_executable(test_element_triangle triangle.cpp)
+set_target_properties(test_element_triangle PROPERTIES OUTPUT_NAME triangle)
+target_link_libraries(test_element_triangle gtest_main)
+
+add_executable(test_element_rectangle rectangle.cpp)
+set_target_properties(test_element_rectangle PROPERTIES OUTPUT_NAME rectangle)
+target_link_libraries(test_element_rectangle gtest_main)
