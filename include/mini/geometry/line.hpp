@@ -33,12 +33,12 @@ class Line {
   }
   // Geometric methods:
   Real Measure() const {
-    auto v = *head_ - *tail_;
+    auto v = Head() - Tail();
     return std::sqrt(v.Dot(v));
   }
   Point Center() const {
-    auto center = *head_;
-    center += *tail_;
+    auto center = Head();
+    center += Tail();
     center *= 0.5;
     return center;
   }

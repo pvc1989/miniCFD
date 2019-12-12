@@ -21,13 +21,14 @@ class Rectangle :
   using Id = std::size_t;
   using Point = Point<Real, kDim>;
   // Constructors:
-  Rectangle(Id i, Point* a, Point* b, Point* c, Point* d)
+  Rectangle(Id i,
+            Point const& a, Point const& b, Point const& c, Point const& d)
       : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
-  Rectangle(Point* a, Point* b, Point* c, Point* d)
+  Rectangle(Point const& a, Point const& b, Point const& c, Point const& d)
       : Rectangle(this->DefaultId(), a, b, c, d) {}
   // Accessors:
   Id I() const override { return i_; }
-  // Mesh methods:
+
  private:
   Id i_;
 };

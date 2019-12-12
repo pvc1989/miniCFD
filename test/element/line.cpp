@@ -13,29 +13,35 @@ class LineTest : public ::testing::Test {
   using Real = double;
   using Line = Line<Real, 2>;
   using Point = Line::Point;
-  Point head{0.3, 0.0}, tail{0.0, 0.4};
+  Point head{1, {0.3, 0.0}}, tail{2, {0.0, 0.4}};
 };
-TEST_F(LineTest, Constructor) {
+TEST_F(LineTest, ConstructorWithId) {
+  // Test Line(Id, Point const&, Point const&):
   auto i = Line::Id{0};
-  // Test Line(Id, Point*, Point*):
-  auto edge = Line(i, &head, &tail);
-  EXPECT_EQ(edge.I(), i);
-  EXPECT_EQ(edge.Head(), &head);
-  EXPECT_EQ(edge.Tail(), &tail);
-  // Test Line(Point*, Point*):
-  edge = Line(&head, &tail);
-  EXPECT_EQ(edge.I(), Line::DefaultId());
-  EXPECT_EQ(edge.Head(), &head);
-  EXPECT_EQ(edge.Tail(), &tail);
+  auto line = Line(i, head, tail);
+  EXPECT_EQ(line.I(), i);
+  EXPECT_EQ(line.Head(), head);
+  EXPECT_EQ(line.Tail(), tail);
+  EXPECT_EQ(line.Head().I(), head.I());
+  EXPECT_EQ(line.Tail().I(), tail.I());
+}
+TEST_F(LineTest, ConstructorWithoutId) {
+  // Test Line(Point const&, Point const&):
+  auto line = Line(head, tail);
+  EXPECT_EQ(line.I(), Line::DefaultId());
+  EXPECT_EQ(line.Head(), head);
+  EXPECT_EQ(line.Tail(), tail);
+  EXPECT_EQ(line.Head().I(), head.I());
+  EXPECT_EQ(line.Tail().I(), tail.I());
 }
 TEST_F(LineTest, MeshMethods) {
-  auto edge = Line(&head, &tail);
-  EXPECT_EQ(edge.Measure(), 0.5);
-  auto center = edge.Center();
+  auto line = Line(head, tail);
+  EXPECT_EQ(line.Measure(), 0.5);
+  auto center = line.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());
   EXPECT_EQ(center.Y() * 2, head.Y() + tail.Y());
   auto integrand = [](const auto& point) { return 3.14; };
-  EXPECT_EQ(edge.Integrate(integrand), edge.Measure() * 3.14);
+  EXPECT_EQ(line.Integrate(integrand), line.Measure() * 3.14);
 }
 
 }  // namespace element
