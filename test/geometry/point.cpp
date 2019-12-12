@@ -1,5 +1,6 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 #include "mini/geometry/point.hpp"
+#include "mini/geometry/vector.hpp"
 
 #include <vector>
 
@@ -20,10 +21,13 @@ TEST_F(PointTest, InitializerListConstructor) {
   // Test P1(std::initializer_list<Real>):
   auto p1 = P1{x};
   EXPECT_EQ(p1.X(), x);
+  EXPECT_EQ(p1.Y(), 0);
+  EXPECT_EQ(p1.Z(), 0);
   // Test P2(std::initializer_list<Real>):
   auto p2 = P2{x, y};
   EXPECT_EQ(p2.X(), x);
   EXPECT_EQ(p2.Y(), y);
+  EXPECT_EQ(p2.Z(), 0);
   // Test P3(std::initializer_list<Real>):
   auto p3 = P3{x, y, z};
   EXPECT_EQ(p3.X(), x);
@@ -35,10 +39,13 @@ TEST_F(PointTest, IteratorConstructor) {
   // Test P1(Iterator, Iterator):
   auto p1 = P1{xyz.begin(), xyz.begin()+1};
   EXPECT_EQ(p1.X(), x);
+  EXPECT_EQ(p1.Y(), 0);
+  EXPECT_EQ(p1.Z(), 0);
   // Test P2(Iterator, Iterator):
   auto p2 = P2{xyz.begin(), xyz.begin()+2};
   EXPECT_EQ(p2.X(), x);
   EXPECT_EQ(p2.Y(), y);
+  EXPECT_EQ(p2.Z(), 0);
   // Test P3(Iterator, Iterator):
   auto p3 = P3{xyz.begin(), xyz.begin()+3};
   EXPECT_EQ(p3.X(), x);
@@ -58,6 +65,13 @@ TEST_F(PointTest, Accessors) {
   EXPECT_EQ(p3.X(), p3.X<0>());
   EXPECT_EQ(p3.Y(), p3.X<1>());
   EXPECT_EQ(p3.Z(), p3.X<2>());
+}
+TEST_F(PointTest, Predicates) {
+  auto a = P2{0, 0};
+  auto b = P2{1, 0};
+  auto c = P2{1, 1};
+  EXPECT_FALSE(a.IsClockWise(b, c));
+  EXPECT_TRUE(a.IsClockWise(c, b));
 }
 
 }  // namespace geometry
