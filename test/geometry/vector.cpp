@@ -20,19 +20,30 @@ class VectorTest : public ::testing::Test {
   using V3 = Vector<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
-TEST_F(VectorTest, Constructors) {
+TEST_F(VectorTest, InitializerListConstructor) {
   // Test V1(std::initializer_list<Real>):
   auto v1 = V1{x};
   EXPECT_EQ(v1.X(), x);
+  EXPECT_EQ(v1.Y(), 0);
+  EXPECT_EQ(v1.Z(), 0);
   // Test V2(std::initializer_list<Real>):
   auto v2 = V2{x, y};
   EXPECT_EQ(v2.X(), x);
   EXPECT_EQ(v2.Y(), y);
+  EXPECT_EQ(v2.Z(), 0);
   // Test P3(std::initializer_list<Real>):
   auto v3 = V3{x, y, z};
   EXPECT_EQ(v3.X(), x);
   EXPECT_EQ(v3.Y(), y);
   EXPECT_EQ(v3.Z(), z);
+}
+TEST_F(VectorTest, Converter) {
+  auto p = P3{x, y, z};
+  auto v = V3(p);
+  EXPECT_EQ(v.X(), p.X());
+  EXPECT_EQ(v.Y(), p.Y());
+  EXPECT_EQ(v.Z(), p.Z());
+  EXPECT_EQ(v, static_cast<V3>(p));
 }
 TEST_F(VectorTest, OperatorsForV3) {
   auto v = V3{x, y, z};
