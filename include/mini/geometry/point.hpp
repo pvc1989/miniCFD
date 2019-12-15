@@ -17,6 +17,13 @@ class Point : public algebra::Column<Real, kDim> {
  public:
   // Constructors:
   using Base::Base;
+  Point(std::initializer_list<Real> init) {
+    auto target = this->begin();
+    auto source = init.begin();
+    auto n = kDim < init.size() ? kDim : init.size();
+    for (int i = 0; i != n; ++i) { *target++ = *source++; }
+    while (n++ != kDim) { *target++ = 0; }
+  }
   // Accessors:
   template <int I>
   Real X() const {

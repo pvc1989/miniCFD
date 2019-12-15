@@ -33,6 +33,22 @@ TEST_F(PointTest, InitializerListConstructor) {
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
 }
+TEST_F(PointTest, LongerInitializerListConstructor) {
+  // Test P2(std::initializer_list<Real>):
+  // dim() < size():
+  auto p2 = P2{x, y, z};
+  EXPECT_EQ(p2.X(), x);
+  EXPECT_EQ(p2.Y(), y);
+  EXPECT_EQ(p2.Z(), 0);
+}
+TEST_F(PointTest, ShorterInitializerListConstructor) {
+  // Test P2(std::initializer_list<Real>):
+  // dim() > size():
+  auto p2 = P2{x};
+  EXPECT_EQ(p2.X(), x);
+  EXPECT_EQ(p2.Y(), 0);
+  EXPECT_EQ(p2.Z(), 0);
+}
 TEST_F(PointTest, IteratorConstructor) {
   auto xyz = {x, y, z};
   // Test P1(Iterator, Iterator):
