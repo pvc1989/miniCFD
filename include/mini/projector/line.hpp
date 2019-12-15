@@ -6,6 +6,7 @@
 #include "mini/geometry/point.hpp"
 #include "mini/integrator/gauss.hpp"
 #include "mini/polynomial/legendre.hpp"
+#include "mini/polynomial/line.hpp"
 
 namespace mini {
 namespace projector {
@@ -30,6 +31,12 @@ class Line {
       result[i] *= polynomial::normalizer[i];
     }
     return result;
+  }
+  using Polynomial = polynomial::Line<kDegree>;
+  template <class Function>
+  Polynomial GetApproximate(Function&& function) const {
+    auto coefficients = GetCoefficients(function);
+    return Polynomial(this, coefficients);
   }
  
  private:
