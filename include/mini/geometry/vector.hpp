@@ -2,11 +2,6 @@
 #ifndef MINI_GEOMETRY_VECTOR_HPP_
 #define MINI_GEOMETRY_VECTOR_HPP_
 
-#include <array>
-#include <initializer_list>
-#include <cmath>
-#include <utility>
-
 #include "mini/geometry/point.hpp"
 
 namespace mini {
@@ -25,7 +20,7 @@ class Vector : public Point<Real, kDim> {
  public:
   // Constructors:
   using Base::Base;
-  explicit Vector(Base const& that) : Base(that.begin(), that.end()) {}
+  explicit Vector(Base const& that) : Base(that) {}
   // Operators:
   auto Cross(Vector const& that) const {
     static_assert(kDim == 2 || kDim == 3);
