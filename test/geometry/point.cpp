@@ -1,6 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 #include "mini/geometry/point.hpp"
-#include "mini/geometry/vector.hpp"
 
 #include <vector>
 
@@ -65,13 +64,6 @@ TEST_F(PointTest, Accessors) {
   EXPECT_EQ(p3.X(), p3.X<0>());
   EXPECT_EQ(p3.Y(), p3.X<1>());
   EXPECT_EQ(p3.Z(), p3.X<2>());
-}
-TEST_F(PointTest, Predicates) {
-  auto a = P2{0, 0};
-  auto b = P2{1, 0};
-  auto c = P2{1, 1};
-  EXPECT_FALSE(a.IsClockWise(b, c));
-  EXPECT_TRUE(a.IsClockWise(c, b));
 }
 
 }  // namespace geometry

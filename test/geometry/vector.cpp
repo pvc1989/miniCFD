@@ -90,6 +90,17 @@ TEST_F(VectorTest, OperatorsForV2) {
   EXPECT_EQ(v.Cross(u), x*x + y*y);
   EXPECT_EQ(v.Cross(u) + u.Cross(v), 0);
 }
+TEST_F(VectorTest, PointMethods) {
+  auto a = P2{0, 0};
+  auto b = P2{1, 0};
+  auto c = P2{1, 1};
+  EXPECT_FALSE(IsClockWise(a, b, c));
+  EXPECT_TRUE(IsClockWise(a, c, b));
+  auto ab = b - a;
+  EXPECT_EQ(ab.X(), b.X() - a.X());
+  EXPECT_EQ(ab.Y(), b.Y() - a.Y());
+  EXPECT_EQ(ab.Z(), b.Z() - a.Z());
+}
 
 }  // namespace geometry
 }  // namespace mini

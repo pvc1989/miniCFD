@@ -25,12 +25,6 @@ class Point : public algebra::Column<Real, kDim> {
   Real X() const { return X<0>(); }
   Real Y() const { return X<1>(); }
   Real Z() const { return X<2>(); }
-  // Predicates:
-  bool IsClockWise(Point const& b, Point const& c) const {
-    static_assert(kDim == 2);
-    // The difference of two `Point`s is a `Vector`, which has a `Cross` method.
-    return (b - *this).Cross(c - *this) < 0;
-  }
 };
 // Binary operators:
 template <class Real, int kDim>
@@ -39,14 +33,6 @@ Point<Real, kDim> operator+(
     Point<Real, kDim> const& rhs) {
   auto v = lhs;
   v += rhs;
-  return v;
-}
-template <class Real, int kDim>
-Vector<Real, kDim> operator-(
-    Point<Real, kDim> const& lhs,
-    Point<Real, kDim> const& rhs) {
-  auto v = Vector<Real, kDim>(lhs);
-  v -= rhs;
   return v;
 }
 template <class Scalar, int kSize>

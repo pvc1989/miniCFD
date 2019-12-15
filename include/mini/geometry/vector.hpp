@@ -40,6 +40,7 @@ Vector<Real, kDim> operator+(
   v += rhs;
   return v;
 }
+// Implement CrossProduct()
 template <class Real>
 auto CrossProduct(Vector<Real, 3> const& lhs, Vector<Real, 3> const& rhs) {
   auto x = lhs.Y() * rhs.Z() - lhs.Z() * rhs.Y();
@@ -50,6 +51,24 @@ auto CrossProduct(Vector<Real, 3> const& lhs, Vector<Real, 3> const& rhs) {
 template <class Real>
 auto CrossProduct(Vector<Real, 2> const& lhs, Vector<Real, 2> const& rhs) {
   return lhs.X() * rhs.Y() - lhs.Y() * rhs.X();
+}
+
+// Point Methods
+template <class Real, int kDim>
+Vector<Real, kDim> operator-(
+    Point<Real, kDim> const& lhs,
+    Point<Real, kDim> const& rhs) {
+  auto v = Vector<Real, kDim>(lhs);
+  v -= rhs;
+  return v;
+}
+// Predicates:
+template <class Real>
+bool IsClockWise(Point<Real, 2> const& a,
+                 Point<Real, 2> const& b,
+                 Point<Real, 2> const& c) {
+  // The difference of two `Point`s is a `Vector`, which has a `Cross` method.
+  return (b - a).Cross(c - a) < 0;
 }
 
 }  // namespace geometry
