@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #include "mini/geometry/rectangle.hpp"
 
 #include <vector>
@@ -8,19 +9,19 @@
 namespace mini {
 namespace geometry {
 
-class Rectangle2dTest : public ::testing::Test {
+class TestRectangle2d : public ::testing::Test {
  protected:
   using Real = double;
   using Rectangle = Rectangle<Real, 2>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
 };
-TEST_F(Rectangle2dTest, Constructor) {
+TEST_F(TestRectangle2d, Constructor) {
   // Test Rectangle(Point const&, Point const&, Point const&):
   auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle2dTest, GeometricMethods) {
+TEST_F(TestRectangle2d, GeometricMethods) {
   auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();
@@ -28,19 +29,19 @@ TEST_F(Rectangle2dTest, GeometricMethods) {
   EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
   EXPECT_EQ(center.Z() * 4, a.Z() + b.Z() + c.Z() + d.Z());
 }
-class Rectangle3dTest : public ::testing::Test {
+class TestRectangle3d : public ::testing::Test {
  protected:
   using Real = double;
   using Rectangle = Rectangle<Real, 3>;
   using Point = Rectangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{1.0, 1.0, 0.0}, d{0.0, 1.0, 0.0};
 };
-TEST_F(Rectangle3dTest, Constructor) {
+TEST_F(TestRectangle3d, Constructor) {
   // Test Rectangle(Point const&, Point const&, Point const&):
   auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.CountVertices(), 4);
 }
-TEST_F(Rectangle3dTest, GeometricMethods) {
+TEST_F(TestRectangle3d, GeometricMethods) {
   auto rectangle = Rectangle(a, b, c, d);
   EXPECT_EQ(rectangle.Measure(), 1.0);
   auto center = rectangle.Center();

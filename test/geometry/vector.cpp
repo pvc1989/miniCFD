@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #include "mini/geometry/vector.hpp"
 #include "mini/geometry/point.hpp"
 
@@ -9,7 +10,7 @@
 namespace mini {
 namespace geometry {
 
-class VectorTest : public ::testing::Test {
+class TestVector : public ::testing::Test {
  public:
   using Real = double;
   using P1 = Point<Real, 1>;
@@ -20,7 +21,7 @@ class VectorTest : public ::testing::Test {
   using V3 = Vector<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
-TEST_F(VectorTest, InitializerListConstructor) {
+TEST_F(TestVector, InitializerListConstructor) {
   // Test V1(std::initializer_list<Real>):
   auto v1 = V1{x};
   EXPECT_EQ(v1.X(), x);
@@ -37,7 +38,7 @@ TEST_F(VectorTest, InitializerListConstructor) {
   EXPECT_EQ(v3.Y(), y);
   EXPECT_EQ(v3.Z(), z);
 }
-TEST_F(VectorTest, Converter) {
+TEST_F(TestVector, Converter) {
   auto p = P3{x, y, z};
   auto v = V3(p);
   EXPECT_EQ(v.X(), p.X());
@@ -45,7 +46,7 @@ TEST_F(VectorTest, Converter) {
   EXPECT_EQ(v.Z(), p.Z());
   EXPECT_EQ(v, static_cast<V3>(p));
 }
-TEST_F(VectorTest, OperatorsForV3) {
+TEST_F(TestVector, OperatorsForV3) {
   auto v = V3{x, y, z};
   // Test v + v:
   auto sum = v + v;
@@ -75,7 +76,7 @@ TEST_F(VectorTest, OperatorsForV3) {
   EXPECT_EQ(cross.Y(), 0);
   EXPECT_EQ(cross.Z(), 0);
 }
-TEST_F(VectorTest, OperatorsForV2) {
+TEST_F(TestVector, OperatorsForV2) {
   auto v = V2{x, y};
   // Test v + v:
   auto sum = v + v;
@@ -101,7 +102,7 @@ TEST_F(VectorTest, OperatorsForV2) {
   EXPECT_EQ(v.Cross(u), x*x + y*y);
   EXPECT_EQ(v.Cross(u) + u.Cross(v), 0);
 }
-TEST_F(VectorTest, PointMethods) {
+TEST_F(TestVector, PointMethods) {
   auto a = P2{0, 0};
   auto b = P2{1, 0};
   auto c = P2{1, 1};

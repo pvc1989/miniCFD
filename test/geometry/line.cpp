@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #include "mini/geometry/line.hpp"
 
 #include <vector>
@@ -8,20 +9,20 @@
 namespace mini {
 namespace geometry {
 
-class Line2dTest : public ::testing::Test {
+class TestLine2d : public ::testing::Test {
  protected:
   using Real = double;
   using Line = Line<Real, 2>;
   using Point = Line::Point;
   Point head{0.0, 0.0}, tail{0.3, 0.4};
 };
-TEST_F(Line2dTest, Constructor) {
+TEST_F(TestLine2d, Constructor) {
   // Test Line(Point const&, Point const&):
   auto line = Line(head, tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
-TEST_F(Line2dTest, GeometricMethods) {
+TEST_F(TestLine2d, GeometricMethods) {
   auto line = Line(head, tail);
   EXPECT_EQ(line.Measure(), 0.5);
   auto c = line.Center();
@@ -30,20 +31,20 @@ TEST_F(Line2dTest, GeometricMethods) {
   EXPECT_EQ(c.Z() + c.Z(), head.Z() + tail.Z());
 }
 
-class Line3dTest : public ::testing::Test {
+class TestLine3d : public ::testing::Test {
  protected:
   using Real = double;
   using Line = Line<Real, 3>;
   using Point = Line::Point;
   Point head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
 };
-TEST_F(Line3dTest, Constructor) {
+TEST_F(TestLine3d, Constructor) {
   // Test Line(Point const&, Point const&):
   auto line = Line(head, tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
-TEST_F(Line3dTest, GeometricMethods) {
+TEST_F(TestLine3d, GeometricMethods) {
   auto line = Line(head, tail);
   EXPECT_EQ(line.Measure(), 0.5);
   auto c = line.Center();

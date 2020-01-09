@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #include "mini/geometry/point.hpp"
 
 #include <vector>
@@ -8,7 +9,7 @@
 namespace mini {
 namespace geometry {
 
-class PointTest : public ::testing::Test {
+class TestPoint : public ::testing::Test {
  public:
   using Real = double;
   using P1 = Point<Real, 1>;
@@ -16,7 +17,7 @@ class PointTest : public ::testing::Test {
   using P3 = Point<Real, 3>;
   const Real x{1.0}, y{2.0}, z{3.0};
 };
-TEST_F(PointTest, InitializerListConstructor) {
+TEST_F(TestPoint, ConstructFromInitializerList) {
   // Test P1(std::initializer_list<Real>):
   auto p1 = P1{x};
   EXPECT_EQ(p1.X(), x);
@@ -33,7 +34,7 @@ TEST_F(PointTest, InitializerListConstructor) {
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
 }
-TEST_F(PointTest, LongerInitializerListConstructor) {
+TEST_F(TestPoint, ConstructFromInitializerListLongerThanDimension) {
   // Test P2(std::initializer_list<Real>):
   // dim() < size():
   auto p2 = P2{x, y, z};
@@ -41,7 +42,7 @@ TEST_F(PointTest, LongerInitializerListConstructor) {
   EXPECT_EQ(p2.Y(), y);
   EXPECT_EQ(p2.Z(), 0);
 }
-TEST_F(PointTest, ShorterInitializerListConstructor) {
+TEST_F(TestPoint, ConstructFromInitializerListShorterThanDimension) {
   // Test P2(std::initializer_list<Real>):
   // dim() > size():
   auto p2 = P2{x};
@@ -49,7 +50,7 @@ TEST_F(PointTest, ShorterInitializerListConstructor) {
   EXPECT_EQ(p2.Y(), 0);
   EXPECT_EQ(p2.Z(), 0);
 }
-TEST_F(PointTest, IteratorConstructor) {
+TEST_F(TestPoint, ConstructFromIterators) {
   auto xyz = {x, y, z};
   // Test P1(Iterator, Iterator):
   auto p1 = P1{xyz.begin(), xyz.begin()+1};
@@ -67,7 +68,7 @@ TEST_F(PointTest, IteratorConstructor) {
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
 }
-TEST_F(PointTest, Accessors) {
+TEST_F(TestPoint, Accessors) {
   auto p1 = P1{x};
   EXPECT_EQ(p1.X(), p1.X<0>());
   EXPECT_EQ(p1.Y(), p1.X<1>());

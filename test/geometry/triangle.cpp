@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #include "mini/geometry/triangle.hpp"
 
 #include <vector>
@@ -8,19 +9,19 @@
 namespace mini {
 namespace geometry {
 
-class Triangle2dTest : public ::testing::Test {
+class TestTriangle2d : public ::testing::Test {
  protected:
   using Real = double;
   using Triangle = Triangle<Real, 2>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
 };
-TEST_F(Triangle2dTest, Constructor) {
+TEST_F(TestTriangle2d, Constructor) {
   // Test Triangle(Point const&, Point const&, Point const&):
   auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle2dTest, geometry) {
+TEST_F(TestTriangle2d, geometry) {
   auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
@@ -29,19 +30,19 @@ TEST_F(Triangle2dTest, geometry) {
   EXPECT_EQ(center.Z() * 3, a.Z() + b.Z() + c.Z());
 }
 
-class Triangle3dTest : public ::testing::Test {
+class TestTriangle3d : public ::testing::Test {
  protected:
   using Real = double;
   using Triangle = Triangle<Real, 3>;
   using Point = Triangle::Point;
   Point a{0.0, 0.0, 0.0}, b{1.0, 0.0, 0.0}, c{0.0, 1.0, 0.0};
 };
-TEST_F(Triangle3dTest, Constructor) {
+TEST_F(TestTriangle3d, Constructor) {
   // Test Triangle(Point const&, Point const&, Point const&):
   auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.CountVertices(), 3);
 }
-TEST_F(Triangle3dTest, geometry) {
+TEST_F(TestTriangle3d, geometry) {
   auto triangle = Triangle(a, b, c);
   EXPECT_EQ(triangle.Measure(), 0.5);
   auto center = triangle.Center();
