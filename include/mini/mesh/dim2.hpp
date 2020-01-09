@@ -265,6 +265,8 @@ class Mesh {
       return EmplaceTriangle(i, nodes);
     } else if (nodes.size() == 4) {
       return EmplaceRectangle(i, nodes);
+    } else if (nodes.size() == 2) {
+      return nullptr;
     } else {
       assert(false);
     }

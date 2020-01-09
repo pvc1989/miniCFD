@@ -40,11 +40,9 @@ class Godunov {
   void SetBoundaryName(std::string const& name, Visitor&& visitor) {
     wall_manager_.SetBoundaryName(name, visitor);
   }
-  void SetInletBoundary(std::string const& name) {
+  void SetInletBoundary(std::string const& name, State& inlet) {
     wall_manager_.SetInletBoundary(name);
-  }
-  void SetOutletBoundary(std::string const& name) {
-    wall_manager_.SetOutletBoundary(name);
+    inlet_ = inlet;
   }
   void SetFreeBoundary(std::string const& name) {
     wall_manager_.SetFreeBoundary(name);
@@ -120,6 +118,21 @@ class Godunov {
       wall->data.flux = riemann_.GetFluxOnTimeAxis(u_l, u_r);
       wall->data.flux *= wall->Measure();
     });
+    wall_manager_.ForEachInletWall([&](Wall* wall){
+      auto& riemann_ = wall->data.riemann;
+      auto const& u_l = wall->GetPositiveSide()->data.state;
+      auto const& u_r = wall->GetNegativeSide()->data.state;
+      auto left_cell = wall->GetPositiveSide();
+      auto right_cell = wall->GetNegativeSide();
+      if (left_cell) {
+        auto& u_l = left_cell->data.state;
+        wall->data.flux = riemann_.GetFluxOnTimeAxis(u_l, inlet_);
+      } else {
+        auto& u_r = right_cell->data.state; 
+        wall->data.flux = riemann_.GetFluxOnTimeAxis(inlet_, u_r);
+      }
+      wall->data.flux *= wall->Measure();
+    });
     wall_manager_.ForEachPeriodicWall([](Wall* wall){
       auto& riemann_ = wall->data.riemann;
       auto const& u_l = wall->GetPositiveSide()->data.state;
@@ -151,7 +164,7 @@ class Godunov {
         auto const& u = wall->GetNegativeSide()->data.state;
         wall->data.flux = riemann_.GetFluxOnSolidWall(u);
       }
-      wall->data.flux *= wall->Measure();;
+      wall->data.flux *= wall->Measure();
     });
   }
   void UpdateEachCell() {
@@ -185,6 +198,7 @@ class Godunov {
   int refresh_rate_;
   std::set<Wall*> inside_wall_;
   Manager<Mesh> wall_manager_;
+  State inlet_;
 };
 
 }  // namespace model

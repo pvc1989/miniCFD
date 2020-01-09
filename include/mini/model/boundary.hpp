@@ -37,6 +37,9 @@ class Manager {
       }
     }
   }
+  void SetInletBoundary(std::string const& name) {
+    inlet_parts_.emplace_back(name_to_part_[name].get());
+  }
   void SetPeriodicBoundary(std::string const& head, std::string const& tail) {
     periodic_part_pairs_.emplace_back(name_to_part_[head].get(),
                                       name_to_part_[tail].get());
@@ -87,6 +90,14 @@ class Manager {
       }
     }
   }
+  template<class Visitor>
+  void ForEachInletWall(Visitor&& visit) {
+    for (auto& part : inlet_parts_) {
+      for (auto& wall : *part) {
+        visit(wall);
+      }
+    }
+  }
 
  private:
   // Data members:
@@ -94,6 +105,7 @@ class Manager {
   std::vector<Wall*> boundary_walls_;
   std::vector<Part*> free_parts_;
   std::vector<Part*> solid_parts_;
+  std::vector<Part*> inlet_parts_;
   std::vector<std::pair<Part*, Part*>> periodic_part_pairs_;
   std::unordered_map<std::string, std::unique_ptr<Part>> name_to_part_;
   // Implement details:

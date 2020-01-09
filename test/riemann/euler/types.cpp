@@ -10,12 +10,12 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-class IdealGasTest : public ::testing::Test {
+class TestIdealGas : public ::testing::Test {
  protected:
   using Gas = IdealGas<1, 4>;
   static constexpr auto gamma = Gas::Gamma();
 };
-TEST_F(IdealGasTest, TestConverters) {
+TEST_F(TestIdealGas, TestConverters) {
   auto rho{0.1}, u{+0.2}, v{-0.2}, p{0.3};
   auto primitive = Primitive<2>{rho, u, v, p};
   auto conservative = Conservative<2>{

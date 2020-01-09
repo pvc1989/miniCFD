@@ -56,5 +56,8 @@ configure_file (
 )
 include_directories("${PROJECT_BINARY_DIR}/include")
 
-add_subdirectory(test)
+include(CTest)
+if(BUILD_TESTING)
+  add_subdirectory(test)
+endif()
 add_subdirectory(demo)

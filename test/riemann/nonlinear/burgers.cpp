@@ -10,12 +10,12 @@ namespace mini {
 namespace riemann {
 namespace nonlinear {
 
-class BurgersTest : public ::testing::Test {
+class TestBurgers : public ::testing::Test {
  protected:
   using Solver = Burgers;
   using State = Solver::State;
 };
-TEST_F(BurgersTest, TestNonZeroK) {
+TEST_F(TestBurgers, TestNonZeroK) {
   for (auto k : {+2.0, -2.0}) {
     auto solver = Solver(k);
     // smooth

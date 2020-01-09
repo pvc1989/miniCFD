@@ -12,7 +12,7 @@ namespace mini {
 namespace riemann {
 namespace rotated{
 
-class RotatedEulerTest : public ::testing::Test {
+class TestRotatedEulerTest : public ::testing::Test {
  protected:
   using Gas = euler::IdealGas<1, 4>;
   using UnrotatedSolver = euler::Exact<Gas, 2>;
@@ -23,7 +23,7 @@ class RotatedEulerTest : public ::testing::Test {
   using Flux = Solver::Flux;
   Solver solver;
 };
-TEST_F(RotatedEulerTest, TestVectorConverter) {
+TEST_F(TestRotatedEulerTest, TestVectorConverter) {
   Vector n{+0.6, 0.8}, t{-0.8, 0.6}, v{3.0, 4.0}, v_copy{3.0, 4.0};
   solver.Rotate(n);
   solver.GlobalToNormal(&v);

@@ -1,25 +1,13 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_DATA_HPP_
-#define MINI_MESH_DATA_HPP_
+#ifndef MINI_ELEMENT_DATA_HPP_
+#define MINI_ELEMENT_DATA_HPP_
 
 #include <array>
 #include <string>
 
 namespace mini {
-namespace mesh {
-
-struct Empty {
- public:
-  using Scalar = int;
-  using Vector = std::array<int, 0>;
-  static constexpr int CountScalars() { return 0; }
-  static constexpr int CountVectors() { return 0; }
-  static std::array<Scalar, 0> scalars;
-  static std::array<Vector, 0> vectors;
-};
-std::array<Empty::Scalar, 0> Empty::scalars;
-std::array<Empty::Vector, 0> Empty::vectors;
+namespace element {
 
 template <class Real, int kDimensions, int kScalars, int kVectors>
 struct Data {
@@ -32,7 +20,9 @@ struct Data {
   std::array<Vector, kVectors> vectors;
 };
 
-}  // namespace mesh
+using Empty = Data<int, 0, 0, 0>;
+
+}  // namespace element
 }  // namespace mini
 
-#endif  // MINI_MESH_DATA_HPP_
+#endif  // MINI_ELEMENT_DATA_HPP_
