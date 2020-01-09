@@ -10,14 +10,14 @@ namespace mini {
 namespace riemann {
 namespace linear {
 
-class SingleWaveTest : public ::testing::Test {
+class TestSingleWaveTest : public ::testing::Test {
  protected:
   using Solver = Single;
   using State = Solver::State;
   using Flux = Solver::Flux;
   using Speed = Solver::Speed;
 };
-TEST_F(SingleWaveTest, TestFlux) {
+TEST_F(TestSingleWaveTest, TestFlux) {
   State u_l{2.0}, u_r{1.0};
   // right running wave
   auto solver = Solver(/* speed = */1.0);

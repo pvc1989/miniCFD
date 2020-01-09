@@ -1,3 +1,4 @@
 add_executable(test_riemann_nonlinear_burgers burgers.cpp)
 set_target_properties(test_riemann_nonlinear_burgers PROPERTIES OUTPUT_NAME burgers)
 target_link_libraries(test_riemann_nonlinear_burgers gtest_main)
+add_test(NAME TestRiemannNonlinearBurgers COMMAND burgers)
