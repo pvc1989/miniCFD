@@ -1,3 +1,4 @@
 add_executable(test_polynomial_legendre legendre.cpp)
 set_target_properties(test_polynomial_legendre PROPERTIES OUTPUT_NAME legendre)
 target_link_libraries(test_polynomial_legendre gtest_main)
+add_test(NAME TestPolynomialLegendre COMMAND legendre)

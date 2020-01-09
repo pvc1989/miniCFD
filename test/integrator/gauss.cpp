@@ -10,7 +10,7 @@
 namespace mini {
 namespace integrator {
 
-class GaussTest : public ::testing::Test {
+class TestGauss : public ::testing::Test {
  protected:
   double MonomialIntegral(int p) {
     // \int_{-1}^{+1} x^{p} dx
@@ -39,23 +39,23 @@ class GaussTest : public ::testing::Test {
     }
   }
 };
-TEST_F(GaussTest, OnePoint) {
+TEST_F(TestGauss, OnePoint) {
   TestScalarFunction<1>();
   TestVectorFunction<1>();
 }
-TEST_F(GaussTest, TwoPoint) {
+TEST_F(TestGauss, TwoPoint) {
   TestScalarFunction<2>();
   TestVectorFunction<2>();
 }
-TEST_F(GaussTest, ThreePoint) {
+TEST_F(TestGauss, ThreePoint) {
   TestScalarFunction<3>();
   TestVectorFunction<3>();
 }
-TEST_F(GaussTest, FourPoint) {
+TEST_F(TestGauss, FourPoint) {
   TestScalarFunction<4>();
   TestVectorFunction<4>();
 }
-TEST_F(GaussTest, FivePoint) {
+TEST_F(TestGauss, FivePoint) {
   TestScalarFunction<5>();
   TestVectorFunction<5>();
 }

@@ -12,7 +12,7 @@
 namespace mini {
 namespace polynomial {
 
-class LegendreTest : public ::testing::Test {
+class TestLegendre : public ::testing::Test {
  protected:
   void ExpectNearZero(double x) { EXPECT_NEAR(x, 0.0, 1e-15); }
   // Generic comparison:
@@ -28,7 +28,7 @@ class LegendreTest : public ::testing::Test {
     return true;
   }
 };
-TEST_F(LegendreTest, GetValue) {
+TEST_F(TestLegendre, GetValue) {
   double e = 1e-15;
   // P_{0}(x) = 1
   ExpectNearZero(Legendre<0>::GetValue(0) - 1);
@@ -57,7 +57,7 @@ TEST_F(LegendreTest, GetValue) {
   ExpectNearZero(Legendre<5>::GetValue(+r_3));
   ExpectNearZero(Legendre<5>::GetValue(-r_3));
 }
-TEST_F(LegendreTest, GetAllValues) {
+TEST_F(TestLegendre, GetAllValues) {
   std::vector<double> x_array;
   double x = -1.0;
   while (x <= 1.0) {
