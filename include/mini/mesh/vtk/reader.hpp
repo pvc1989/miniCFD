@@ -40,6 +40,8 @@ namespace vtk {
 
 template <class Mesh>
 class Reader {
+ private:
+  std::unique_ptr<Mesh> mesh_;
 
  public:
   bool ReadFromFile(const std::string& file_name) {
@@ -140,9 +142,6 @@ class Reader {
       (*vtk_data_set)->Register(reader);
     }
   }
-
- private:
-  std::unique_ptr<Mesh> mesh_;
 };
 
 template <class Mesh>
