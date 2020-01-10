@@ -35,14 +35,7 @@ namespace mini {
 namespace mesh {
 
 template <class Mesh>
-class Writer {
- public:
-  virtual void SetMesh(Mesh* mesh) = 0;
-  virtual bool WriteToFile(const std::string& file_name) = 0;
-};
-
-template <class Mesh>
-class VtkWriter : public Writer<Mesh> {
+class VtkWriter {
  private:  // data members:
   Mesh* mesh_;
   vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set_;
@@ -52,14 +45,14 @@ class VtkWriter : public Writer<Mesh> {
   using Cell = typename Mesh::Cell;
 
  public:
-  void SetMesh(Mesh* mesh) override {
+  void SetMesh(Mesh* mesh) {
     assert(mesh);
     mesh_ = mesh;
     vtk_data_set_ = vtkSmartPointer<vtkUnstructuredGrid>::New();
     WritePoints();
     WriteCells();
   }
-  bool WriteToFile(const std::string& file_name) override {
+  bool WriteToFile(const std::string& file_name) {
     if (vtk_data_set_ == nullptr) return false;
     auto extension = vtksys::SystemTools::GetFilenameLastExtension(file_name);
     // Dispatch based on the file extension

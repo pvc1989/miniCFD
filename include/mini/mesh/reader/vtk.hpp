@@ -38,18 +38,11 @@ namespace mini {
 namespace mesh {
 
 template <class Mesh>
-class Reader {
- public:
-  virtual bool ReadFromFile(const std::string& file_name) = 0;
-  virtual std::unique_ptr<Mesh> GetMesh() = 0;
-};
-
-template <class Mesh>
-class VtkReader : public Reader<Mesh> {
   using NodeId = typename Mesh::Node::Id;
+class VtkReader {
 
  public:
-  bool ReadFromFile(const std::string& file_name) override {
+  bool ReadFromFile(const std::string& file_name) {
     auto vtk_data_set = Dispatch(file_name.c_str());
     if (vtk_data_set) {
       auto vtk_data_set_owner = vtkSmartPointer<vtkDataSet>();
@@ -64,7 +57,7 @@ class VtkReader : public Reader<Mesh> {
     }
     return true;
   }
-  std::unique_ptr<Mesh> GetMesh() override {
+  std::unique_ptr<Mesh> GetMesh() {
     auto temp = std::make_unique<Mesh>();
     std::swap(temp, mesh_);
     return temp;
