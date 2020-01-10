@@ -42,7 +42,7 @@ class VtkReader {
 
  public:
   bool ReadFromFile(const std::string& file_name) {
-    auto vtk_data_set = Dispatch(file_name.c_str());
+    auto vtk_data_set = FileNameToDataSet(file_name.c_str());
     if (vtk_data_set) {
       auto vtk_data_set_owner = vtkSmartPointer<vtkDataSet>();
       vtk_data_set_owner.TakeReference(vtk_data_set);
@@ -116,29 +116,28 @@ class VtkReader {
   }
   void ReadCellData(vtkDataSet* vtk_data_set) {
   }
-  vtkDataSet* Dispatch(const char* file_name) {
+  vtkDataSet* FileNameToDataSet(const char* file_name) {
     vtkDataSet* vtk_data_set{nullptr};
     auto extension = vtksys::SystemTools::GetFilenameLastExtension(file_name);
     // Dispatch based on the file extension
     if (extension == ".vtu") {
-      vtk_data_set = Read<vtkXMLUnstructuredGridReader>(file_name);
+      BindReader<vtkXMLUnstructuredGridReader>(file_name, &vtk_data_set);
     } else if (extension == ".vtk") {
-      vtk_data_set = Read<vtkDataSetReader>(file_name);
+      BindReader<vtkDataSetReader>(file_name, &vtk_data_set);
     } else {
       throw std::invalid_argument("Only `.vtk` and `.vtu` are supported!");
     }
     return vtk_data_set;
   }
   template <class Reader>
-  vtkDataSet* Read(const char* file_name) {
+  BindReader(const char* file_name, vtkDataSet** vtk_data_set) {
     auto reader = vtkSmartPointer<Reader>::New();
     reader->SetFileName(file_name);
     reader->Update();
-    auto vtk_data_set = vtkDataSet::SafeDownCast(reader->GetOutput());
-    if (vtk_data_set) {
-      vtk_data_set->Register(reader);
+    *vtk_data_set = vtkDataSet::SafeDownCast(reader->GetOutput());
+    if (*vtk_data_set) {
+      (*vtk_data_set)->Register(reader);
     }
-    return vtk_data_set;
   }
 
  private:
