@@ -52,7 +52,7 @@ class VtkReader {
       ReadNodeData(vtk_data_set);
       ReadCellData(vtk_data_set);
     } else {
-      throw std::runtime_error("ReadFromFile() failed.");
+      throw std::runtime_error("Unable to read \"" + file_name + "\".");
     }
     return true;
   }
@@ -125,7 +125,7 @@ class VtkReader {
     } else if (extension == ".vtk") {
       vtk_data_set = Read<vtkDataSetReader>(file_name);
     } else {
-      throw std::invalid_argument("Unknown extension!");
+      throw std::invalid_argument("Only `.vtk` and `.vtu` are supported!");
     }
     return vtk_data_set;
   }
@@ -137,8 +137,6 @@ class VtkReader {
     auto vtk_data_set = vtkDataSet::SafeDownCast(reader->GetOutput());
     if (vtk_data_set) {
       vtk_data_set->Register(reader);
-    } else {
-      throw std::invalid_argument("Fail to read the file!");
     }
     return vtk_data_set;
   }
