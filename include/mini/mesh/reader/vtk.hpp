@@ -76,27 +76,44 @@ class VtkReader {
   void ReadCells(vtkDataSet* vtk_data_set) {
     int n = vtk_data_set->GetNumberOfCells();
     for (int i = 0; i < n; i++) {
-      auto cell_i = vtk_data_set->GetCell(i);
-      auto ids = cell_i->GetPointIds();
-      if (vtk_data_set->GetCellType(i) == 5) {
-        auto a = NodeId(ids->GetId(0));
-        auto b = NodeId(ids->GetId(1));
-        auto c = NodeId(ids->GetId(2));
-        mesh_->EmplaceCell(i, {a, b, c});
-      } else if (vtk_data_set->GetCellType(i) == 3) {
-        auto a = NodeId(ids->GetId(0));
-        auto b = NodeId(ids->GetId(1));
-        mesh_->EmplaceCell(i, {a, b});
-      } else if (vtk_data_set->GetCellType(i) == 9) {
-        auto a = NodeId(ids->GetId(0));
-        auto b = NodeId(ids->GetId(1));
-        auto c = NodeId(ids->GetId(2));
-        auto d = NodeId(ids->GetId(3));
-        mesh_->EmplaceCell(i, {a, b, c, d});
-      } else {
-        continue;
-      }
-    }
+      auto cell = vtk_data_set->GetCell(i);
+      auto type = vtk_data_set->GetCellType(i);
+      auto id_list = cell_i->GetPointIds();
+      switch (type) {
+        case /* 1 */VTK_VERTEX: {
+          auto a = id_list->GetId(0);
+          mesh_->EmplaceCell(i, {a});
+          break;
+        }
+        case /* 3 */VTK_LINE: {
+          auto a = id_list->GetId(0);
+          auto b = id_list->GetId(1);
+          mesh_->EmplaceCell(i, {a, b});
+        }
+        case /* 5 */VTK_TRIANGLE: {
+          auto a = id_list->GetId(0);
+          auto b = id_list->GetId(1);
+          auto c = id_list->GetId(2);
+          mesh_->EmplaceCell(i, {a, b, c});
+          break;
+        }
+        case /* 9 */VTK_QUAD: {
+          auto a = id_list->GetId(0);
+          auto b = id_list->GetId(1);
+          auto c = id_list->GetId(2);
+          auto d = id_list->GetId(3);
+          mesh_->EmplaceCell(i, {a, b, c, d});
+          break;
+        }
+        case /* 10 */VTK_TETRA: {
+        }
+        case /* 12 */VTK_HEXAHEDRON: {
+        }
+        default: {
+          assert(false);
+        }
+      }  // switch (type)
+    }  // for each cell
   }
   void ReadCellData(vtkDataSet* vtk_data_set) {
   }
