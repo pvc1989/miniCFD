@@ -1,7 +1,7 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_WRITER_VTK_HPP_
-#define MINI_MESH_WRITER_VTK_HPP_
+#ifndef MINI_MESH_VTK_WRITER_HPP_
+#define MINI_MESH_VTK_WRITER_HPP_
 
 // For `.vtk` files:
 #include <vtkDataSet.h>
@@ -33,9 +33,10 @@
 
 namespace mini {
 namespace mesh {
+namespace vtk {
 
 template <class Mesh>
-class VtkWriter {
+class Writer {
  private:  // data members:
   Mesh* mesh_;
   vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set_;
@@ -204,7 +205,8 @@ class VtkWriter {
   }
 };
 
+}  // namespace vtk
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_WRITER_VTK_HPP_
+#endif  // MINI_MESH_VTK_WRITER_HPP_

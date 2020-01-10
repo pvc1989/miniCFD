@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_READER_VTK_HPP_
-#define MINI_MESH_READER_VTK_HPP_
+#ifndef MINI_MESH_VTK_READER_HPP_
+#define MINI_MESH_VTK_READER_HPP_
 
 // For `.vtk` files:
 #include <vtkDataSet.h>
@@ -36,9 +36,10 @@
 
 namespace mini {
 namespace mesh {
+namespace vtk {
 
 template <class Mesh>
-class VtkReader {
+class Reader {
 
  public:
   bool ReadFromFile(const std::string& file_name) {
@@ -144,7 +145,8 @@ class VtkReader {
   std::unique_ptr<Mesh> mesh_;
 };
 
+}  // namespace vtk
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_READER_VTK_HPP_
+#endif  // MINI_MESH_VTK_READER_HPP_
