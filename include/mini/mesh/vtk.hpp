@@ -3,25 +3,27 @@
 #ifndef MINI_MESH_VTK_HPP_
 #define MINI_MESH_VTK_HPP_
 
-// For .vtk files:
+// For `.vtk` files:
+#include <vtkDataSet.h>
 #include <vtkDataSetReader.h>
 #include <vtkDataSetWriter.h>
-#include <vtkDataSet.h>
-// For .vtu files:
+// For `.vtu` files:
+#include <vtkUnstructuredGrid.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <vtkXMLUnstructuredGridWriter.h>
-#include <vtkUnstructuredGrid.h>
-// DataAttributes:
+// DataSetAttributes:
 #include <vtkFieldData.h>
 #include <vtkPointData.h>
 #include <vtkCellData.h>
-// Helps:
+// Cells:
+#include <vtkCellType.h>  // define types of cells
 #include <vtkCellTypes.h>
 #include <vtkCell.h>
-#include <vtkFloatArray.h>
 #include <vtkLine.h>
 #include <vtkTriangle.h>
 #include <vtkQuad.h>
+// Helpers:
+#include <vtkFloatArray.h>
 #include <vtkSmartPointer.h>
 #include <vtksys/SystemTools.hxx>
 
