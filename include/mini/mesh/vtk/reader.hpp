@@ -145,6 +145,13 @@ class Reader {
   std::unique_ptr<Mesh> mesh_;
 };
 
+template <class Mesh>
+std::unique_ptr<Mesh> Read(const std::string& file_name) {
+  auto reader = Reader<Mesh>();
+  reader.ReadFromFile(file_name);
+  return reader.GetMesh();
+}
+
 }  // namespace vtk
 }  // namespace mesh
 }  // namespace mini
