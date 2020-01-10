@@ -38,7 +38,6 @@ namespace mini {
 namespace mesh {
 
 template <class Mesh>
-  using NodeId = typename Mesh::Node::Id;
 class VtkReader {
 
  public:
@@ -68,7 +67,7 @@ class VtkReader {
     int n = vtk_data_set->GetNumberOfPoints();
     for (int i = 0; i < n; i++) {
       auto xyz = vtk_data_set->GetPoint(i);
-      mesh_->EmplaceNode(i, xyz[0], xyz[1]);
+      mesh_->EmplaceNode(i, xyz[0], xyz[1], xyz[2]);
     }
   }
   void ReadNodeData(vtkDataSet* vtk_data_set) {
