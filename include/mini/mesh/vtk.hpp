@@ -64,6 +64,8 @@ class VtkReader : public Reader<Mesh> {
       mesh_.reset(new Mesh());
       ReadNodes(vtk_data_set);
       ReadCells(vtk_data_set);
+      ReadNodeData(vtk_data_set);
+      ReadCellData(vtk_data_set);
     } else {
       throw std::runtime_error("ReadFromFile() failed.");
     }
@@ -82,6 +84,8 @@ class VtkReader : public Reader<Mesh> {
       auto xyz = vtk_data_set->GetPoint(i);
       mesh_->EmplaceNode(i, xyz[0], xyz[1]);
     }
+  }
+  void ReadNodeData(vtkDataSet* vtk_data_set) {
   }
   void ReadCells(vtkDataSet* vtk_data_set) {
     int n = vtk_data_set->GetNumberOfCells();
@@ -107,6 +111,8 @@ class VtkReader : public Reader<Mesh> {
         continue;
       }
     }
+  }
+  void ReadCellData(vtkDataSet* vtk_data_set) {
   }
   vtkDataSet* Dispatch(const char* file_name) {
     vtkDataSet* vtk_data_set{nullptr};
