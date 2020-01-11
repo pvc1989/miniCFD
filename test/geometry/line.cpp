@@ -16,9 +16,15 @@ class TestLine2d : public ::testing::Test {
   using Point = Line::Point;
   Point head{0.0, 0.0}, tail{0.3, 0.4};
 };
-TEST_F(TestLine2d, Constructor) {
-  // Test Line(Point const&, Point const&):
+TEST_F(TestLine2d, ConstructFromReferences) {
+  // Test Line(Point&, Point&):
   auto line = Line(head, tail);
+  EXPECT_EQ(line.Head(), head);
+  EXPECT_EQ(line.Tail(), tail);
+}
+TEST_F(TestLine2d, ConstructFromPointers) {
+  // Test Line(Point*, Point*):
+  auto line = Line(&head, &tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
@@ -38,9 +44,15 @@ class TestLine3d : public ::testing::Test {
   using Point = Line::Point;
   Point head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
 };
-TEST_F(TestLine3d, Constructor) {
-  // Test Line(Point const&, Point const&):
+TEST_F(TestLine3d, ConstructFromReferences) {
+  // Test Line(Point&, Point&):
   auto line = Line(head, tail);
+  EXPECT_EQ(line.Head(), head);
+  EXPECT_EQ(line.Tail(), tail);
+}
+TEST_F(TestLine3d, ConstructFromPointers) {
+  // Test Line(Point*, Point*):
+  auto line = Line(&head, &tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
