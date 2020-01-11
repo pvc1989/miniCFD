@@ -22,9 +22,9 @@ class Line {
   // Constructors:
   Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
   // Accessors:
-  int CountVertices() const { return 2; }
   Point const& Head() const { return *head_; }
   Point const& Tail() const { return *tail_; }
+  static int CountPoints() { return 2; }
   Point const& GetPoint(int i) const {
     switch (i)  {
     case 0:
