@@ -22,8 +22,8 @@ class Line {
   // Constructors:
   Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
   // Accessors:
-  Point const& Head() const { return *head_; }
-  Point const& Tail() const { return *tail_; }
+  const Point& Head() const { return *head_ptr_; }
+  const Point& Tail() const { return *tail_ptr_; }
   static int CountPoints() { return 2; }
   Point const& GetPoint(int i) const {
     switch (i)  {
@@ -48,8 +48,8 @@ class Line {
   }
 
  private:
-  Point const* head_;
-  Point const* tail_;
+  Point* head_ptr_;
+  Point* tail_ptr_;
 };
 
 }  // namespace geometry
