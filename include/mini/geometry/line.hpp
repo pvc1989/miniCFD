@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #ifndef MINI_GEOMETRY_LINE_HPP_
 #define MINI_GEOMETRY_LINE_HPP_
 
@@ -15,6 +16,9 @@ class Line {
  public:
   // Types:
   using Point = Point<Real, kDim>;
+  using Vector = Vector<Real, kDim>;
+
+ public:
   // Constructors:
   Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
   // Accessors:
@@ -33,11 +37,11 @@ class Line {
   }
   // Geometric methods:
   Real Measure() const {
-    auto v = Head() - Tail();
+    Vector v = Head() - Tail();
     return std::sqrt(v.Dot(v));
   }
   Point Center() const {
-    auto center = Head();
+    Point center = Head();
     center += Tail();
     center *= 0.5;
     return center;
@@ -50,4 +54,5 @@ class Line {
 
 }  // namespace geometry
 }  // namespace mini
+
 #endif  // MINI_GEOMETRY_LINE_HPP_
