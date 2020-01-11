@@ -20,12 +20,22 @@ class Line {
 
  public:
   // Constructors:
-  Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
+  Line(Point* head_ptr, Point* tail_ptr)
+      : head_ptr_(head_ptr), tail_ptr_(tail_ptr) {}
+  Line(Point& head, Point& tail) : Line(&head, &tail) {}
   // Accessors:
+  Point* GetHeadPtr() { return head_ptr_; }
+  Point* GetTailPtr() { return tail_ptr_; }
+  Point& GetHeadRef() { return *GetHeadPtr(); }
+  Point& GetTailRef() { return *GetTailPtr(); }
+  const Point* GetHeadPtr() const { return head_ptr_; }
+  const Point* GetTailPtr() const { return tail_ptr_; }
+  const Point& GetHeadRef() const { return *GetHeadPtr(); }
+  const Point& GetTailRef() const { return *GetTailPtr(); }
   const Point& Head() const { return *head_ptr_; }
   const Point& Tail() const { return *tail_ptr_; }
   static int CountPoints() { return 2; }
-  Point const& GetPoint(int i) const {
+  const Point& GetPoint(int i) const {
     switch (i)  {
     case 0:
       return Head();
