@@ -11,10 +11,7 @@ mkdir build
 cd build
 cmake -S .. -B .  # cmake 3.13.5+
 cmake --build .
-./test/geometry
-./test/element
-./test/mesh
-./test/vtk
+ctest
 mkdir result
 ./demo/euler/tube sod tube.vtk 0.0 0.5 500 5
 ./demo/euler/box  sod  box.vtk 0.0 1.0 800 5
