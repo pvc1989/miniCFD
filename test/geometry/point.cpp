@@ -68,6 +68,15 @@ TEST_F(TestPoint, ConstructFromIterators) {
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
 }
+TEST_F(TestPoint, EqualOperator) {
+  auto p = P2{x, y};
+  EXPECT_EQ(p, p);
+  auto q = p;
+  EXPECT_EQ(p, q);
+  auto r = P2{x+1, y};
+  EXPECT_NE(p, r);
+  auto s = P2{x, y+1};
+  EXPECT_NE(p, s);
 }
 
 }  // namespace geometry
