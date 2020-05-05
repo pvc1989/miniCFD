@@ -12,23 +12,22 @@
 namespace mini {
 namespace polynomial {
 
+void ExpectNearZero(double x) { EXPECT_NEAR(x, 0.0, 1e-15); }
+// Generic comparison:
+template <int kDegree>
+bool Compare(double* v, double x) {
+  static_assert(kDegree >= 0);
+  ExpectNearZero(*v - Legendre<kDegree>::GetValue(x));
+  return kDegree > 0 ? Compare<kDegree-1>(v-1, x) : true;
+}
+template <>
+bool Compare<0>(double* v, double x) {
+  ExpectNearZero(*v - 1.0);
+  return true;
+}
 class TestLegendre : public ::testing::Test {
- protected:
-  void ExpectNearZero(double x) { EXPECT_NEAR(x, 0.0, 1e-15); }
-  // Generic comparison:
-  template <int kDegree>
-  constexpr bool Compare(double* v, double x) {
-    static_assert(kDegree >= 0);
-    ExpectNearZero(*v - Legendre<kDegree>::GetValue(x));
-    return kDegree > 0 ? Compare<kDegree-1>(v-1, x) : true;
-  }
-  template <>
-  constexpr bool Compare<0>(double* v, double x) {
-    ExpectNearZero(*v - 1.0);
-    return true;
-  }
 };
-TEST_F(TestLegendre, GetValue) {
+TEST_F(TestLegendre, GetValueAtRoots) {
   double e = 1e-15;
   // P_{0}(x) = 1
   ExpectNearZero(Legendre<0>::GetValue(0) - 1);
