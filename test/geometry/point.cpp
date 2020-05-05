@@ -68,19 +68,6 @@ TEST_F(TestPoint, ConstructFromIterators) {
   EXPECT_EQ(p3.Y(), y);
   EXPECT_EQ(p3.Z(), z);
 }
-TEST_F(TestPoint, Accessors) {
-  auto p1 = P1{x};
-  EXPECT_EQ(p1.X(), p1.X<0>());
-  EXPECT_EQ(p1.Y(), p1.X<1>());
-  EXPECT_EQ(p1.Z(), p1.X<2>());
-  auto p2 = P2{x, y};
-  EXPECT_EQ(p2.X(), p2.X<0>());
-  EXPECT_EQ(p2.Y(), p2.X<1>());
-  EXPECT_EQ(p2.Z(), p2.X<2>());
-  auto p3 = P3{x, y, z};
-  EXPECT_EQ(p3.X(), p3.X<0>());
-  EXPECT_EQ(p3.Y(), p3.X<1>());
-  EXPECT_EQ(p3.Z(), p3.X<2>());
 }
 
 }  // namespace geometry
