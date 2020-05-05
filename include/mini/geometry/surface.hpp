@@ -11,13 +11,13 @@ template <class Real, int kDim>
 class Surface {
  public:
   // Types:
-  using Point = Point<Real, kDim>;
+  using PointType = Point<Real, kDim>;
   // Accessors:
   virtual int CountVertices() const = 0;
-  virtual Point const& GetPoint(int i) const = 0;
+  virtual const PointType& GetPoint(int i) const = 0;
   // Geometric methods:
   virtual Real Measure() const = 0;
-  virtual Point Center() const = 0;
+  virtual PointType Center() const = 0;
 };
 
 }  // namespace geometry
