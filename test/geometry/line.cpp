@@ -13,18 +13,12 @@ class TestLine2d : public ::testing::Test {
  protected:
   using Real = double;
   using L2 = Line<Real, 2>;
-  using P2 = L2::P;
+  using P2 = L2::PointType;
   P2 head{0.0, 0.0}, tail{0.3, 0.4};
 };
-TEST_F(TestLine2d, ConstructFromReferences) {
-  // Test L2(Point&, Point&):
+TEST_F(TestLine2d, Constructor) {
+  // Test L2(const P2 &, const P2 &):
   auto line = L2(head, tail);
-  EXPECT_EQ(line.Head(), head);
-  EXPECT_EQ(line.Tail(), tail);
-}
-TEST_F(TestLine2d, ConstructFromPointers) {
-  // Test L2(Point*, Point*):
-  auto line = L2(&head, &tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
@@ -41,18 +35,12 @@ class TestLine3d : public ::testing::Test {
  protected:
   using Real = double;
   using L3 = Line<Real, 3>;
-  using P3 = L3::P;
+  using P3 = L3::PointType;
   P3 head{0.0, 0.0, 0.0}, tail{0.3, 0.4, 0.0};
 };
-TEST_F(TestLine3d, ConstructFromReferences) {
-  // Test L3(Point&, Point&):
+TEST_F(TestLine3d, Constructor) {
+  // Test L3(const P3 &, const P3 &):
   auto line = L3(head, tail);
-  EXPECT_EQ(line.Head(), head);
-  EXPECT_EQ(line.Tail(), tail);
-}
-TEST_F(TestLine3d, ConstructFromPointers) {
-  // Test L3(Point*, Point*):
-  auto line = L3(&head, &tail);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
 }
