@@ -15,51 +15,51 @@ template <class Real, int kDim>
 class Line {
  public:
   // Types:
-  using Point = Point<Real, kDim>;
-  using Vector = Vector<Real, kDim>;
+  using P = Point<Real, kDim>;
+  using V = Vector<Real, kDim>;
 
  public:
   // Constructors:
-  Line(Point* head_ptr, Point* tail_ptr)
+  Line(P* head_ptr, P* tail_ptr)
       : head_ptr_(head_ptr), tail_ptr_(tail_ptr) {}
-  Line(Point& head, Point& tail) : Line(&head, &tail) {}
+  Line(P& head, P& tail) : Line(&head, &tail) {}
   // Accessors:
-  Point* GetHeadPtr() { return head_ptr_; }
-  Point* GetTailPtr() { return tail_ptr_; }
-  Point& GetHeadRef() { return *GetHeadPtr(); }
-  Point& GetTailRef() { return *GetTailPtr(); }
-  const Point* GetHeadPtr() const { return head_ptr_; }
-  const Point* GetTailPtr() const { return tail_ptr_; }
-  const Point& GetHeadRef() const { return *GetHeadPtr(); }
-  const Point& GetTailRef() const { return *GetTailPtr(); }
-  const Point& Head() const { return *head_ptr_; }
-  const Point& Tail() const { return *tail_ptr_; }
-  static int CountPoints() { return 2; }
-  const Point& GetPoint(int i) const {
+  P* GetHeadPtr() { return head_ptr_; }
+  P* GetTailPtr() { return tail_ptr_; }
+  P& GetHeadRef() { return *GetHeadPtr(); }
+  P& GetTailRef() { return *GetTailPtr(); }
+  const P* GetHeadPtr() const { return head_ptr_; }
+  const P* GetTailPtr() const { return tail_ptr_; }
+  const P& GetHeadRef() const { return *GetHeadPtr(); }
+  const P& GetTailRef() const { return *GetTailPtr(); }
+  const P& Head() const { return *head_ptr_; }
+  const P& Tail() const { return *tail_ptr_; }
+  static int CountPs() { return 2; }
+  const P& GetP(int i) const {
     switch (i)  {
     case 0:
       return Head();
     case 1:
       return Tail();
     default:
-      throw std::out_of_range("A `Line` has two `Point`s.");
+      throw std::out_of_range("A `Line` has two `P`s.");
     }
   }
   // Geometric methods:
   Real Measure() const {
-    Vector v = Head() - Tail();
+    V v = Head() - Tail();
     return std::sqrt(v.Dot(v));
   }
-  Point Center() const {
-    Point center = Head();
+  P Center() const {
+    P center = Head();
     center += Tail();
     center *= 0.5;
     return center;
   }
 
  private:
-  Point* head_ptr_;
-  Point* tail_ptr_;
+  P* head_ptr_;
+  P* tail_ptr_;
 };
 
 }  // namespace geometry

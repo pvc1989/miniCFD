@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS -fpermissive)
 
 # GOOGLETEST related settings
 # Download and unpack `googletest` at configure time
