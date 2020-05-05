@@ -13,19 +13,23 @@ namespace geometry {
 
 template <class Real, int kDim>
 class Rectangle : virtual public Surface<Real, kDim> {
+ protected:
+  using Base = Surface<Real, kDim>;
+
  public:
   // Types:
-  using Point = Point<Real, kDim>;
+  using PointType = typename Base::PointType;
   // Constructors:
-  Rectangle(Point const& a, Point const& b, Point const& c, Point const& d)
-      : a_(&a), b_(&b), c_(&c) , d_(&d) {}
+  Rectangle(const PointType& a, const PointType& b,
+            const PointType& c, const PointType& d)
+      : a_(a), b_(b), c_(c) , d_(d) {}
   // Accessors:
   int CountVertices() const override { return 4; }
-  Point const& A() const { return *a_; }
-  Point const& B() const { return *b_; }
-  Point const& C() const { return *c_; }
-  Point const& D() const { return *d_; }
-  Point const& GetPoint(int i) const override {
+  const PointType& A() const { return a_; }
+  const PointType& B() const { return b_; }
+  const PointType& C() const { return c_; }
+  const PointType& D() const { return d_; }
+  const PointType& GetPoint(int i) const override {
     switch (i)  {
     case 0:
       return A();
@@ -44,7 +48,7 @@ class Rectangle : virtual public Surface<Real, kDim> {
     auto v = (B() - A()).Cross(C() - A());
     return std::abs(v);
   }
-  Point Center() const override {
+  PointType Center() const override {
     auto center = A();
     center += C();
     center *= 0.5;
@@ -52,10 +56,10 @@ class Rectangle : virtual public Surface<Real, kDim> {
   }
 
  private:
-  Point const* a_;
-  Point const* b_;
-  Point const* c_;
-  Point const* d_;
+  const PointType& a_;
+  const PointType& b_;
+  const PointType& c_;
+  const PointType& d_;
 };
 
 }  // namespace geometry
