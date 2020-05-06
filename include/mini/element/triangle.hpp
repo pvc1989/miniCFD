@@ -17,22 +17,20 @@ template <class Real, int kDim>
 class Triangle :
     virtual public Surface<Real, kDim>,
     public geometry::Triangle<Real, kDim> {
-  using Base = geometry::Triangle<Real, kDim>;
 
  public:
   // Types:
-  using Id = std::size_t;
-  using Point = Point<Real, kDim>;
+  using IndexType = typename Surface<Real, kDim>::IndexType;
+  using PointType = typename Surface<Real, kDim>::PointType;
   // Constructors:
-  Triangle(Id i, Point const& a, Point const& b, Point const& c)
+  Triangle(IndexType i,
+           const PointType& a, const PointType& b, const PointType& c)
       : i_(i), geometry::Triangle<Real, kDim>(a, b, c) {}
-  Triangle(Point const& a, Point const& b, Point const& c)
-      : Triangle(this->DefaultId(), a, b, c) {}
   // Accessors:
-  Id I() const override { return i_; }
+  IndexType I() const override { return i_; }
 
  private:
-  Id i_;
+  IndexType i_;
 };
 
 }  // namespace element

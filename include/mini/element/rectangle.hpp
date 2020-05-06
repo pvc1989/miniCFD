@@ -16,21 +16,21 @@ template <class Real, int kDim>
 class Rectangle :
     virtual public Surface<Real, kDim>,
     public geometry::Rectangle<Real, kDim> {
+
  public:
   // Types:
-  using Id = std::size_t;
-  using Point = Point<Real, kDim>;
+  using IndexType = typename Surface<Real, kDim>::IndexType;
+  using PointType = typename Surface<Real, kDim>::PointType;
   // Constructors:
-  Rectangle(Id i,
-            Point const& a, Point const& b, Point const& c, Point const& d)
+  Rectangle(IndexType i,
+            const PointType& a, const PointType& b,
+            const PointType& c, const PointType& d)
       : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
-  Rectangle(Point const& a, Point const& b, Point const& c, Point const& d)
-      : Rectangle(this->DefaultId(), a, b, c, d) {}
   // Accessors:
-  Id I() const override { return i_; }
+  IndexType I() const override { return i_; }
 
  private:
-  Id i_;
+  IndexType i_;
 };
 
 }  // namespace element
