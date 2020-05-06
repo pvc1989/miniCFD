@@ -20,7 +20,6 @@ class TestRotatedEulerTest : public ::testing::Test {
   using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
   using State = Solver::State;
-  using Flux = Solver::Flux;
   Solver solver;
 };
 TEST_F(TestRotatedEulerTest, TestVectorConverter) {
