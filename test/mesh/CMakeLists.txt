@@ -1,6 +1,7 @@
-add_executable(test_mesh_mesh1d mesh1d.cpp)
-set_target_properties(test_mesh_mesh1d PROPERTIES OUTPUT_NAME mesh1d)
-target_link_libraries(test_mesh_mesh1d gtest_main)
+add_executable(test_mesh_dim1 dim1.cpp)
+set_target_properties(test_mesh_dim1 PROPERTIES OUTPUT_NAME dim1)
+target_link_libraries(test_mesh_dim1 gtest_main)
+add_test(NAME TestMeshDim1 COMMAND dim1)
 
 add_executable(test_mesh_dim2 dim2.cpp)
 set_target_properties(test_mesh_dim2 PROPERTIES OUTPUT_NAME dim2)
