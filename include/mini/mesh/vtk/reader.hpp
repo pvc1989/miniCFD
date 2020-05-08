@@ -42,6 +42,7 @@ template <class Mesh>
 class Reader {
  private:
   std::unique_ptr<Mesh> mesh_;
+  using IndexType = typename Mesh::NodeType::IndexType;
 
  public:
   bool ReadFromFile(const std::string& file_name) {
@@ -80,31 +81,31 @@ class Reader {
     for (int i = 0; i < n; i++) {
       auto cell = vtk_data_set->GetCell(i);
       auto type = vtk_data_set->GetCellType(i);
-      auto id_list = cell_i->GetPointIds();
+      auto id_list = cell->GetPointIds();
       switch (type) {
         case /* 1 */VTK_VERTEX: {
-          auto a = id_list->GetId(0);
+          IndexType a = id_list->GetId(0);
           mesh_->EmplaceCell(i, {a});
           break;
         }
         case /* 3 */VTK_LINE: {
-          auto a = id_list->GetId(0);
-          auto b = id_list->GetId(1);
+          IndexType a = id_list->GetId(0);
+          IndexType b = id_list->GetId(1);
           mesh_->EmplaceCell(i, {a, b});
           break;
         }
         case /* 5 */VTK_TRIANGLE: {
-          auto a = id_list->GetId(0);
-          auto b = id_list->GetId(1);
-          auto c = id_list->GetId(2);
+          IndexType a = id_list->GetId(0);
+          IndexType b = id_list->GetId(1);
+          IndexType c = id_list->GetId(2);
           mesh_->EmplaceCell(i, {a, b, c});
           break;
         }
         case /* 9 */VTK_QUAD: {
-          auto a = id_list->GetId(0);
-          auto b = id_list->GetId(1);
-          auto c = id_list->GetId(2);
-          auto d = id_list->GetId(3);
+          IndexType a = id_list->GetId(0);
+          IndexType b = id_list->GetId(1);
+          IndexType c = id_list->GetId(2);
+          IndexType d = id_list->GetId(3);
           mesh_->EmplaceCell(i, {a, b, c, d});
           break;
         }
@@ -136,7 +137,7 @@ class Reader {
     return vtk_data_set;
   }
   template <class Reader>
-  BindReader(const char* file_name, vtkDataSet** vtk_data_set) {
+  void BindReader(const char* file_name, vtkDataSet** vtk_data_set) {
     auto reader = vtkSmartPointer<Reader>::New();
     reader->SetFileName(file_name);
     reader->Update();

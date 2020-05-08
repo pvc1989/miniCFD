@@ -42,8 +42,8 @@ class Writer {
   vtkSmartPointer<vtkUnstructuredGrid> vtk_data_set_;
 
  private:  // types:
-  using Node = typename Mesh::Node;
-  using Cell = typename Mesh::Cell;
+  using NodeType = typename Mesh::NodeType;
+  using CellType = typename Mesh::CellType;
 
  public:
   void SetMesh(Mesh* mesh) {
@@ -79,25 +79,25 @@ class Writer {
 
  private:
   void WritePoints() {
-    // Convert Node::XYZ to vtkPoints:
+    // Convert NodeType::XYZ to vtkPoints:
     auto vtk_points = vtkSmartPointer<vtkPoints>::New();
     vtk_points->SetNumberOfPoints(mesh_->CountNodes());
-    mesh_->ForEachNode([&](Node const& node) {
+    mesh_->ForEachNode([&](NodeType const& node) {
       vtk_points->InsertPoint(node.I(), node.X(), node.Y(), node.Z());
     });
     vtk_data_set_->SetPoints(vtk_points);
-    // Convert Node::Data::scalars to vtkFloatArray:
-    constexpr auto kScalars = Node::Data::CountScalars();
+    // Convert NodeType::DataType::scalars to vtkFloatArray:
+    constexpr auto kScalars = NodeType::DataType::CountScalars();
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Node::scalar_names[i].size() == 0) {
+      if (NodeType::scalar_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      scalar_data[i]->SetName(Node::scalar_names[i].c_str());
+      scalar_data[i]->SetName(NodeType::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }
-    mesh_->ForEachNode([&](Node const& node) {
+    mesh_->ForEachNode([&](NodeType const& node) {
       for (int i = 0; i < kScalars; ++i) {
         scalar_data[i]->SetValue(node.I(), node.data.scalars[i]);
       }
@@ -107,19 +107,19 @@ class Writer {
       point_data->SetActiveScalars(scalar_data[i]->GetName());
       point_data->SetScalars(scalar_data[i]);
     }
-    // Convert Node::Data::vectors to vtkFloatArray:
-    constexpr auto kVectors = Node::Data::CountVectors();
+    // Convert NodeType::DataType::vectors to vtkFloatArray:
+    constexpr auto kVectors = NodeType::DataType::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Node::vector_names[i].size() == 0) {
+      if (NodeType::vector_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      vector_data[i]->SetName(Node::vector_names[i].c_str());
+      vector_data[i]->SetName(NodeType::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountNodes());
     }
-    mesh_->ForEachNode([&](Node const& node) {
+    mesh_->ForEachNode([&](NodeType const& node) {
       for (int i = 0; i < kVectors; ++i) {
         auto& v = node.data.vectors[i];
         vector_data[i]->SetTuple3(node.I(), v[0], v[1], 0.0);
@@ -131,32 +131,32 @@ class Writer {
     }
   }
   void WriteCells() {
-    // Pre-allocate `vtkFloatArray`s for Cell::Data::scalars:
-    constexpr auto kScalars = Cell::Data::CountScalars();
+    // Pre-allocate `vtkFloatArray`s for CellType::DataType::scalars:
+    constexpr auto kScalars = CellType::DataType::CountScalars();
     auto scalar_data = std::array<vtkSmartPointer<vtkFloatArray>, kScalars>();
     for (int i = 0; i < kScalars; ++i) {
       scalar_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Cell::scalar_names[i].size() == 0) {
+      if (CellType::scalar_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      scalar_data[i]->SetName(Cell::scalar_names[i].c_str());
+      scalar_data[i]->SetName(CellType::scalar_names[i].c_str());
       scalar_data[i]->SetNumberOfTuples(mesh_->CountCells());
     }
-    // Pre-allocate `vtkFloatArray`s for Cell::Data::vectors:
-    constexpr auto kVectors = Cell::Data::CountVectors();
+    // Pre-allocate `vtkFloatArray`s for CellType::DataType::vectors:
+    constexpr auto kVectors = CellType::DataType::CountVectors();
     auto vector_data = std::array<vtkSmartPointer<vtkFloatArray>, kVectors>();
     for (int i = 0; i < kVectors; ++i) {
       vector_data[i] = vtkSmartPointer<vtkFloatArray>::New();
-      if (Cell::vector_names[i].size() == 0) {
+      if (CellType::vector_names[i].size() == 0) {
         throw std::length_error("Empty name is not allowed.");
       }
-      vector_data[i]->SetName(Cell::vector_names[i].c_str());
+      vector_data[i]->SetName(CellType::vector_names[i].c_str());
       vector_data[i]->SetNumberOfComponents(3);
       vector_data[i]->SetNumberOfTuples(mesh_->CountCells());
     }
     // Insert cells and cell data:
     auto i_cell = 0;
-    mesh_->ForEachCell([&](Cell const& cell) {
+    mesh_->ForEachCell([&](CellType const& cell) {
       InsertCell(cell);
       // Insert scalar data:
       for (int i = 0; i < kScalars; ++i) {
@@ -181,7 +181,7 @@ class Writer {
       cell_data->SetVectors(vector_data[i]);
     }
   }
-  void InsertCell(Cell const& cell) {
+  void InsertCell(CellType const& cell) {
     vtkSmartPointer<vtkCell> vtk_cell;
     vtkIdList* id_list{nullptr};
     switch (cell.CountVertices()) {
@@ -199,7 +199,7 @@ class Writer {
     }
     id_list = vtk_cell->GetPointIds();
     for (int i = 0; i != cell.CountVertices(); ++i) {
-      id_list->SetId(i, cell.GetNode(i)->I());
+      id_list->SetId(i, cell.GetNode(i).I());
     }
     vtk_data_set_->InsertNextCell(vtk_cell->GetCellType(), id_list);
   }
