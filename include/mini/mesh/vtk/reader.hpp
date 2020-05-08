@@ -91,6 +91,7 @@ class Reader {
           auto a = id_list->GetId(0);
           auto b = id_list->GetId(1);
           mesh_->EmplaceCell(i, {a, b});
+          break;
         }
         case /* 5 */VTK_TRIANGLE: {
           auto a = id_list->GetId(0);
@@ -108,8 +109,10 @@ class Reader {
           break;
         }
         case /* 10 */VTK_TETRA: {
+          break;
         }
         case /* 12 */VTK_HEXAHEDRON: {
+          break;
         }
         default: {
           assert(false);
