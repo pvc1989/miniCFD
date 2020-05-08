@@ -35,17 +35,19 @@ include_directories ("${PROJECT_SOURCE_DIR}/include")
 # End of GOOGLETEST related settings
 
 # VTK related settings
-find_package(VTK REQUIRED)
-vtk_module_config(VTK
+find_package(VTK COMPONENTS
   vtkCommonCore
+  vtkCommonDataModel
   vtkIOLegacy
   vtkIOXML
   vtkIOGeometry
   vtkIOImport
   vtkIOExport
   vtksys
-)
-include(${VTK_USE_FILE})
+QUIET)
+if (VTK_VERSION VERSION_LESS "8.90.0")
+  include(${VTK_USE_FILE})
+endif ()
 # End of VTK related settings
 
 # Additional headers that depends on ${PROJECT_BINARY_DIR}
