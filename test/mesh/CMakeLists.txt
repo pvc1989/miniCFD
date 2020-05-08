@@ -10,10 +10,10 @@ add_test(NAME TestMeshDim2 COMMAND dim2)
 
 add_executable(test_mesh_vtk1d vtk1d.cpp)
 set_target_properties(test_mesh_vtk1d PROPERTIES OUTPUT_NAME vtk1d)
-target_link_libraries(test_mesh_vtk1d gtest_main)
+target_link_libraries(test_mesh_vtk1d ${VTK_LIBRARIES} gtest_main)
 add_test(NAME TestMeshVtk1d COMMAND vtk1d)
 
 add_executable(test_mesh_vtk2d vtk2d.cpp)
 set_target_properties(test_mesh_vtk2d PROPERTIES OUTPUT_NAME vtk2d)
-target_link_libraries(test_mesh_vtk2d gtest_main)
+target_link_libraries(test_mesh_vtk2d ${VTK_LIBRARIES} gtest_main)
 add_test(NAME TestMeshVtk2d COMMAND vtk2d)
