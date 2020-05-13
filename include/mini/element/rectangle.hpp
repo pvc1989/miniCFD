@@ -19,18 +19,18 @@ class Rectangle :
 
  public:
   // Types:
-  using IndexType = typename Surface<Real, kDim>::IndexType;
+  using IdType = typename Surface<Real, kDim>::IdType;
   using PointType = typename Surface<Real, kDim>::PointType;
   // Constructors:
-  Rectangle(IndexType i,
+  Rectangle(IdType i,
             const PointType& a, const PointType& b,
             const PointType& c, const PointType& d)
       : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
   // Accessors:
-  IndexType I() const override { return i_; }
+  IdType I() const override { return i_; }
 
  private:
-  IndexType i_;
+  IdType i_;
 };
 
 }  // namespace element

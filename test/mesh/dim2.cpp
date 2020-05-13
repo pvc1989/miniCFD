@@ -13,7 +13,7 @@ class WallTest : public ::testing::Test {
  protected:
   using WallType = Wall<double>;
   using NodeType = WallType::NodeType;
-  WallType::IndexType i{0};
+  WallType::IdType i{0};
   NodeType head{1, 0.3, 0.0}, tail{2, 0.0, 0.4};
 };
 TEST_F(WallTest, Constructor) {
@@ -41,7 +41,7 @@ class TriangleTest : public ::testing::Test {
   using CellType = Triangle<double>;
   using WallType = CellType::WallType;
   using NodeType = WallType::NodeType;
-  CellType::IndexType i{0};
+  CellType::IdType i{0};
   NodeType a{1, 0.0, 0.0}, b{2, 1.0, 0.0}, c{3, 0.0, 1.0};
   WallType ab{1, a, b}, bc{2, b, c}, ca{3, c, a};
 };
@@ -68,7 +68,7 @@ class RectangleTest : public ::testing::Test {
   using CellType = Rectangle<double>;
   using WallType = CellType::WallType;
   using NodeType = WallType::NodeType;
-  CellType::IndexType i{0};
+  CellType::IdType i{0};
   NodeType a{1, 0.0, 0.0}, b{2, 1.0, 0.0}, c{3, 1.0, 1.0}, d{4, 0.0, 1.0};
   WallType ab{1, a, b}, bc{2, b, c}, cd{3, c, d}, da{4, d, a};
 };

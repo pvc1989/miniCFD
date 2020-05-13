@@ -58,7 +58,7 @@ template <class Real, class NodeData>
 class Node : public element::Point<Real, 2> {
  public:
   // Types:
-  using IndexType = typename element::Point<Real, 2>::IndexType;
+  using IdType = typename element::Point<Real, 2>::IdType;
   using DataType = NodeData;
   // Public data members:
   DataType data;
@@ -68,7 +68,7 @@ class Node : public element::Point<Real, 2> {
   template <class... Args>
   explicit Node(Args&&... args) :
       element::Point<Real, 2>(std::forward<Args>(args)...) {}
-  Node(IndexType i, std::initializer_list<Real> xyz)
+  Node(IdType i, std::initializer_list<Real> xyz)
       : element::Point<Real, 2>(i, xyz) {}
 };
 template <class Real, class NodeData>
@@ -83,7 +83,7 @@ template <class Real, class NodeData, class WallData, class CellData>
 class Wall : public element::Line<Real, 2> {
  public:
   // Types:
-  using IndexType = typename element::Line<Real, 2>::IndexType;
+  using IdType = typename element::Line<Real, 2>::IdType;
   using DataType = WallData;
   using NodeType = Node<Real, NodeData>;
   using CellType = Cell<Real, NodeData, WallData, CellData>;
@@ -120,7 +120,7 @@ class Cell : virtual public element::Surface<Real, 2> {
  public:
   virtual ~Cell() = default;
   // Types:
-  using IndexType = typename element::Surface<Real, 2>::IndexType;
+  using IdType = typename element::Surface<Real, 2>::IdType;
   using DataType = CellData;
   using WallType = Wall<Real, NodeData, WallData, CellData>;
   using NodeType = typename WallType::NodeType;
@@ -158,10 +158,10 @@ class Triangle
   // Types:
   using WallType = typename CellType::WallType;
   using NodeType = typename WallType::NodeType;
-  using IndexType = typename CellType::IndexType;
+  using IdType = typename CellType::IdType;
   using DataType = CellData;
   // Constructors:
-  Triangle(IndexType i, const NodeType& a, const NodeType& b, const NodeType& c,
+  Triangle(IdType i, const NodeType& a, const NodeType& b, const NodeType& c,
            std::initializer_list<WallType*> walls)
       : element::Triangle<Real, 2>(i, a, b, c), CellType{walls} {}
 };
@@ -175,10 +175,10 @@ class Rectangle
   // Types:
   using WallType = typename CellType::WallType;
   using NodeType = typename WallType::NodeType;
-  using IndexType = typename CellType::IndexType;
+  using IdType = typename CellType::IdType;
   using DataType = CellData;
   // Constructors:
-  Rectangle(IndexType i,
+  Rectangle(IdType i,
             const NodeType& a, const NodeType& b,
             const NodeType& c, const NodeType& d,
             std::initializer_list<WallType*> walls)
@@ -197,9 +197,9 @@ class Mesh {
 
  private:
   // Types:
-  using NodeId = typename NodeType::IndexType;
-  using WallId = typename WallType::IndexType;
-  using CellId = typename CellType::IndexType;
+  using NodeId = typename NodeType::IdType;
+  using WallId = typename WallType::IdType;
+  using CellId = typename CellType::IdType;
 
  public:
   // Constructors:

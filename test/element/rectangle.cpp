@@ -13,12 +13,12 @@ class RectangleTest : public ::testing::Test {
   using Real = double;
   using Surface = Rectangle<Real, 3>;
   using Point = Surface::PointType;
-  const Surface::IndexType i{8};
+  const Surface::IdType i{8};
   Point a{1, {0.0, 0.0, 0.0}}, b{2, {1.0, 0.0, 0.0}};
   Point c{3, {1.0, 1.0, 0.0}}, d{4, {0.0, 1.0, 0.0}};
 };
 TEST_F(RectangleTest, Constructor) {
-    // Test Rectangle(Index, const Point &, const Point &, const Point &):
+    // Test Rectangle(Id, const Point &, const Point &, const Point &):
     auto surface = Surface(i, a, b, c, d);
     EXPECT_EQ(surface.I(), i);
     EXPECT_EQ(surface.A(), a);

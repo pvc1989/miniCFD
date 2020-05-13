@@ -15,18 +15,18 @@ template <class Real, int kDim>
 class Point : public geometry::Point<Real, kDim> {
  public:
   // Types:
-  using IndexType = std::size_t;
+  using IdType = std::size_t;
   // Constructors:
   template<class... XYZ>
-  Point(IndexType i, XYZ&&... xyz)
+  Point(IdType i, XYZ&&... xyz)
       : i_(i), geometry::Point<Real, kDim>{std::forward<XYZ>(xyz)...} {}
-  Point(IndexType i, std::initializer_list<Real> xyz)
+  Point(IdType i, std::initializer_list<Real> xyz)
       : i_(i), geometry::Point<Real, kDim>(xyz) {}
   // Accessors:
-  IndexType I() const { return i_; }
+  IdType I() const { return i_; }
 
  private:
-  IndexType i_;
+  IdType i_;
 };
 
 }  // namespace element

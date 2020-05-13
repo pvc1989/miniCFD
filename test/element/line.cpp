@@ -13,11 +13,11 @@ class LineTest : public ::testing::Test {
   using Real = double;
   using L2 = Line<Real, 2>;
   using P2 = L2::PointType;
-  const L2::IndexType i{8};
+  const L2::IdType i{8};
   P2 head{1, {0.3, 0.0}}, tail{2, {0.0, 0.4}};
 };
 TEST_F(LineTest, Constructor) {
-  // Test Line(Index, const Point &, const Point &):
+  // Test Line(Id, const Point &, const Point &):
   auto line = L2(i, head, tail);
   EXPECT_EQ(line.I(), i);
   EXPECT_EQ(line.Head(), head);

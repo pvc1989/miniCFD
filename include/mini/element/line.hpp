@@ -18,13 +18,13 @@ class Line : public geometry::Line<Real, kDim> {
 
  public:
   // Types:
-  using IndexType = std::size_t;
+  using IdType = std::size_t;
   using PointType = Point<Real, kDim>;
   // Constructors:
-  Line(IndexType i, const PointType& head, const PointType& tail)
+  Line(IdType i, const PointType& head, const PointType& tail)
       : i_(i), Base(head, tail) {}
   // Accessors:
-  Line::IndexType I() const { return i_; }
+  Line::IdType I() const { return i_; }
   // Up-casts:
   const PointType& Head() const {
     return static_cast<const PointType&>(Base::Head());
@@ -39,7 +39,7 @@ class Line : public geometry::Line<Real, kDim> {
   }
 
  private:
-  IndexType i_;
+  IdType i_;
 };
 
 }  // namespace element

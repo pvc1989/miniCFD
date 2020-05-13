@@ -42,7 +42,7 @@ template <class Mesh>
 class Reader {
  private:
   std::unique_ptr<Mesh> mesh_;
-  using IndexType = typename Mesh::NodeType::IndexType;
+  using IdType = typename Mesh::NodeType::IdType;
 
  public:
   bool ReadFromFile(const std::string& file_name) {
@@ -84,28 +84,28 @@ class Reader {
       auto id_list = cell->GetPointIds();
       switch (type) {
         case /* 1 */VTK_VERTEX: {
-          IndexType a = id_list->GetId(0);
+          IdType a = id_list->GetId(0);
           mesh_->EmplaceCell(i, {a});
           break;
         }
         case /* 3 */VTK_LINE: {
-          IndexType a = id_list->GetId(0);
-          IndexType b = id_list->GetId(1);
+          IdType a = id_list->GetId(0);
+          IdType b = id_list->GetId(1);
           mesh_->EmplaceCell(i, {a, b});
           break;
         }
         case /* 5 */VTK_TRIANGLE: {
-          IndexType a = id_list->GetId(0);
-          IndexType b = id_list->GetId(1);
-          IndexType c = id_list->GetId(2);
+          IdType a = id_list->GetId(0);
+          IdType b = id_list->GetId(1);
+          IdType c = id_list->GetId(2);
           mesh_->EmplaceCell(i, {a, b, c});
           break;
         }
         case /* 9 */VTK_QUAD: {
-          IndexType a = id_list->GetId(0);
-          IndexType b = id_list->GetId(1);
-          IndexType c = id_list->GetId(2);
-          IndexType d = id_list->GetId(3);
+          IdType a = id_list->GetId(0);
+          IdType b = id_list->GetId(1);
+          IdType c = id_list->GetId(2);
+          IdType d = id_list->GetId(3);
           mesh_->EmplaceCell(i, {a, b, c, d});
           break;
         }

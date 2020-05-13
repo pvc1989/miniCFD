@@ -20,17 +20,17 @@ class Triangle :
 
  public:
   // Types:
-  using IndexType = typename Surface<Real, kDim>::IndexType;
+  using IdType = typename Surface<Real, kDim>::IdType;
   using PointType = typename Surface<Real, kDim>::PointType;
   // Constructors:
-  Triangle(IndexType i,
+  Triangle(IdType i,
            const PointType& a, const PointType& b, const PointType& c)
       : i_(i), geometry::Triangle<Real, kDim>(a, b, c) {}
   // Accessors:
-  IndexType I() const override { return i_; }
+  IdType I() const override { return i_; }
 
  private:
-  IndexType i_;
+  IdType i_;
 };
 
 }  // namespace element
