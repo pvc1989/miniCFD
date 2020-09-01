@@ -15,11 +15,10 @@ template <class Real, int kDim>
 class Surface : virtual public geometry::Surface<Real, kDim> {
  public:
   // Types:
-  using Id = std::size_t;
-  using Point = Point<Real, kDim>;
+  using IdType = std::size_t;
+  using PointType = Point<Real, kDim>;
   // Accessors:
-  virtual Id I() const = 0;
-  static Id DefaultId() { return -1; }
+  virtual IdType I() const = 0;
   // Mesh methods:
   template <class Integrand>
   auto Integrate(Integrand&& integrand) const {

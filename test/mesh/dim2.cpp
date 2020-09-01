@@ -11,80 +11,92 @@ namespace mesh {
 
 class WallTest : public ::testing::Test {
  protected:
-  using Wall = Wall<double>;
-  using Node = Wall::Node;
-  Wall::Id i{0};
-  Node head{0.3, 0.0}, tail{0.0, 0.4};
+  using WallType = Wall<double>;
+  using NodeType = WallType::NodeType;
+  WallType::IdType i{0};
+  NodeType head{1, 0.3, 0.0}, tail{2, 0.0, 0.4};
 };
 TEST_F(WallTest, Constructor) {
-  auto wall = Wall(i, &head, &tail);
+  auto wall = WallType(i, head, tail);
   EXPECT_EQ(wall.I(), i);
-  EXPECT_EQ(wall.Head(), &head);
-  EXPECT_EQ(wall.Tail(), &tail);
+  EXPECT_EQ(wall.Head(), head);
+  EXPECT_EQ(wall.Tail(), tail);
 }
-TEST_F(WallTest, ElementMethods) {
-  auto wall = Wall(&head, &tail);
+TEST_F(WallTest, GeometryMethods) {
+  auto wall = WallType(i, head, tail);
   EXPECT_DOUBLE_EQ(wall.Measure(), 0.5);
   auto center = wall.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());
   EXPECT_EQ(center.Y() * 2, head.Y() + tail.Y());
+  EXPECT_EQ(center.Z() * 2, head.Z() + tail.Z());
+}
+TEST_F(WallTest, ElementMethods) {
+  auto wall = WallType(i, head, tail);
   auto integrand = [](const auto& point) { return 0.618; };
   EXPECT_DOUBLE_EQ(wall.Integrate(integrand), 0.618 * wall.Measure());
 }
 
 class TriangleTest : public ::testing::Test {
  protected:
-  using Cell = Triangle<double>;
-  using Wall = Cell::Wall;
-  using Node = Wall::Node;
-  Cell::Id i{0};
-  Node a{0.0, 0.0}, b{1.0, 0.0}, c{0.0, 1.0};
-  Wall ab{&a, &b}, bc{&b, &c}, ca{&c, &a};
+  using CellType = Triangle<double>;
+  using WallType = CellType::WallType;
+  using NodeType = WallType::NodeType;
+  CellType::IdType i{0};
+  NodeType a{1, 0.0, 0.0}, b{2, 1.0, 0.0}, c{3, 0.0, 1.0};
+  WallType ab{1, a, b}, bc{2, b, c}, ca{3, c, a};
 };
 TEST_F(TriangleTest, Constructor) {
-  auto triangle = Cell(i, &a, &b, &c, {&ab, &bc, &ca});
+  auto triangle = CellType(i, a, b, c, {&ab, &bc, &ca});
   EXPECT_EQ(triangle.I(), i);
 }
-TEST_F(TriangleTest, ElementMethods) {
-  auto triangle = Cell(i, &a, &b, &c, {&ab, &bc, &ca});
-  EXPECT_DOUBLE_EQ(triangle.Measure(), 0.5);
-  auto center = triangle.Center();
+TEST_F(TriangleTest, GeometryMethods) {
+  auto cell = CellType(i, a, b, c, {&ab, &bc, &ca});
+  EXPECT_DOUBLE_EQ(cell.Measure(), 0.5);
+  auto center = cell.Center();
   EXPECT_EQ(center.X() * 3, a.X() + b.X() + c.X());
   EXPECT_EQ(center.Y() * 3, a.Y() + b.Y() + c.Y());
+  EXPECT_EQ(center.Z() * 3, a.Z() + b.Z() + c.Z());
+}
+TEST_F(TriangleTest, ElementMethods) {
+  auto cell = CellType(i, a, b, c, {&ab, &bc, &ca});
   auto integrand = [](const auto& point) { return 0.618; };
-  EXPECT_DOUBLE_EQ(triangle.Integrate(integrand), 0.618 * triangle.Measure());
+  EXPECT_DOUBLE_EQ(cell.Integrate(integrand), 0.618 * cell.Measure());
 }
 
 class RectangleTest : public ::testing::Test {
  protected:
-  using Cell = Rectangle<double>;
-  using Wall = Cell::Wall;
-  using Node = Wall::Node;
-  Cell::Id i{0};
-  Node a{0.0, 0.0}, b{1.0, 0.0}, c{1.0, 1.0}, d{0.0, 1.0};
-  Wall ab{&a, &b}, bc{&b, &c}, cd{&c, &d}, da{&d, &a};
+  using CellType = Rectangle<double>;
+  using WallType = CellType::WallType;
+  using NodeType = WallType::NodeType;
+  CellType::IdType i{0};
+  NodeType a{1, 0.0, 0.0}, b{2, 1.0, 0.0}, c{3, 1.0, 1.0}, d{4, 0.0, 1.0};
+  WallType ab{1, a, b}, bc{2, b, c}, cd{3, c, d}, da{4, d, a};
 };
 TEST_F(RectangleTest, Constructor) {
-  auto rectangle = Cell(i, &a, &b, &c, &d, {&ab, &bc, &cd, &da});
+  auto rectangle = CellType(i, a, b, c, d, {&ab, &bc, &cd, &da});
   EXPECT_EQ(rectangle.I(), i);
 }
-TEST_F(RectangleTest, ElementMethods) {
-  auto rectangle = Cell(i, &a, &b, &c, &d, {&ab, &bc, &cd, &da});
-  EXPECT_DOUBLE_EQ(rectangle.Measure(), 1.0);
-  auto center = rectangle.Center();
+TEST_F(RectangleTest, GeometryMethods) {
+  auto cell = CellType(i, a, b, c, d, {&ab, &bc, &cd, &da});
+  EXPECT_DOUBLE_EQ(cell.Measure(), 1.0);
+  auto center = cell.Center();
   EXPECT_EQ(center.X() * 4, a.X() + b.X() + c.X() + d.X());
   EXPECT_EQ(center.Y() * 4, a.Y() + b.Y() + c.Y() + d.Y());
+  EXPECT_EQ(center.Z() * 4, a.Z() + b.Z() + c.Z() + d.Z());
+}
+TEST_F(RectangleTest, ElementMethods) {
+  auto cell = CellType(i, a, b, c, d, {&ab, &bc, &cd, &da});
   auto integrand = [](const auto& point) { return 0.618; };
-  EXPECT_DOUBLE_EQ(rectangle.Integrate(integrand), 0.618 * rectangle.Measure());
+  EXPECT_DOUBLE_EQ(cell.Integrate(integrand), 0.618 * cell.Measure());
 }
 
 class MeshTest : public ::testing::Test {
  protected:
-  using Mesh = Mesh<double>;
-  using Cell = Mesh::Cell;
-  using Wall = Mesh::Wall;
-  using Node = Mesh::Node;
-  Mesh mesh{};
+  using MeshType = Mesh<double>;
+  using CellType = MeshType::CellType;
+  using WallType = MeshType::WallType;
+  using NodeType = MeshType::NodeType;
+  MeshType mesh{};
   const std::vector<double> x{0.0, 1.0, 1.0, 0.0}, y{0.0, 0.0, 1.0, 1.0};
 };
 TEST_F(MeshTest, DefaultConstructor) {
@@ -93,6 +105,7 @@ TEST_F(MeshTest, DefaultConstructor) {
   EXPECT_EQ(mesh.CountCells(), 0);
 }
 TEST_F(MeshTest, EmplaceNode) {
+  EXPECT_EQ(mesh.CountNodes(), 0);
   mesh.EmplaceNode(0, 0.0, 0.0);
   EXPECT_EQ(mesh.CountNodes(), 1);
 }
@@ -103,16 +116,18 @@ TEST_F(MeshTest, ForEachNode) {
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Check each node's index and coordinates:
-  mesh.ForEachNode([&](Node const& node) {
+  mesh.ForEachNode([&](NodeType const& node) {
     auto i = node.I();
     EXPECT_EQ(node.X(), x[i]);
     EXPECT_EQ(node.Y(), y[i]);
   });
 }
 TEST_F(MeshTest, EmplaceWall) {
+  EXPECT_EQ(mesh.CountNodes(), 0);
   mesh.EmplaceNode(0, 0.0, 0.0);
   mesh.EmplaceNode(1, 1.0, 0.0);
   EXPECT_EQ(mesh.CountNodes(), 2);
+  EXPECT_EQ(mesh.CountWalls(), 0);
   mesh.EmplaceWall(0, 0, 1);
   EXPECT_EQ(mesh.CountWalls(), 1);
 }
@@ -125,22 +140,22 @@ TEST_F(MeshTest, ForEachWall) {
      0 ----- 1
   */
   // Emplace 4 nodes:
-  for (auto i = 0; i != x.size(); ++i) {
-    mesh.EmplaceNode(i, x[i], y[i]);
+  for (auto n = 0; n != x.size(); ++n) {
+    mesh.EmplaceNode(n, x[n], y[n]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 6 walls:
-  auto e = 0;
-  mesh.EmplaceWall(e++, 0, 1);
-  mesh.EmplaceWall(e++, 1, 2);
-  mesh.EmplaceWall(e++, 2, 3);
-  mesh.EmplaceWall(e++, 3, 0);
-  mesh.EmplaceWall(e++, 2, 0);
-  mesh.EmplaceWall(e++, 3, 1);
-  EXPECT_EQ(mesh.CountWalls(), e);
+  auto w = 0;
+  mesh.EmplaceWall(w++, 0, 1);
+  mesh.EmplaceWall(w++, 1, 2);
+  mesh.EmplaceWall(w++, 2, 3);
+  mesh.EmplaceWall(w++, 3, 0);
+  mesh.EmplaceWall(w++, 2, 0);
+  mesh.EmplaceWall(w++, 3, 1);
+  EXPECT_EQ(mesh.CountWalls(), w);
   // For each wall: head's index < tail's index
-  mesh.ForEachWall([](Wall const& wall) {
-    EXPECT_LT(wall.Head()->I(), wall.Tail()->I());
+  mesh.ForEachWall([](WallType const& wall) {
+    EXPECT_LT(wall.Head().I(), wall.Tail().I());
   });
 }
 TEST_F(MeshTest, EmplaceCell) {
@@ -152,8 +167,8 @@ TEST_F(MeshTest, EmplaceCell) {
      0 ----- 1
   */
   // Emplace 4 nodes:
-  for (auto i = 0; i != x.size(); ++i) {
-    mesh.EmplaceNode(i, x[i], y[i]);
+  for (auto n = 0; n != x.size(); ++n) {
+    mesh.EmplaceNode(n, x[n], y[n]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 2 triangular cells:
@@ -171,19 +186,14 @@ TEST_F(MeshTest, ForEachCell) {
      0 ----- 1
   */
   // Emplace 4 nodes:
-  for (auto i = 0; i != x.size(); ++i) {
-    mesh.EmplaceNode(i, x[i], y[i]);
+  for (auto n = 0; n != x.size(); ++n) {
+    mesh.EmplaceNode(n, x[n], y[n]);
   }
   // Emplace 1 clock-wise triangle and 1 clock-wise rectangle:
   mesh.EmplaceCell(0, {0, 2, 1});
   mesh.EmplaceCell(2, {0, 3, 2, 1});
-  // Check counter-clock-wise property:
-  mesh.ForEachCell([](Cell const& cell) {
-    auto a = cell.GetPoint(0);
-    auto b = cell.GetPoint(1);
-    auto c = cell.GetPoint(2);
-    EXPECT_FALSE(a->IsClockWise(b, c));
-  });
+  EXPECT_EQ(mesh.CountCells(), 2);
+  EXPECT_EQ(mesh.CountWalls(), 5);
 }
 TEST_F(MeshTest, GetSide) {
   /*
@@ -194,12 +204,12 @@ TEST_F(MeshTest, GetSide) {
      0 -- [0] -- 1
   */
   // Emplace 4 nodes:
-  for (auto i = 0; i != x.size(); ++i) {
-    mesh.EmplaceNode(i, x[i], y[i]);
+  for (auto n = 0; n != x.size(); ++n) {
+    mesh.EmplaceNode(n, x[n], y[n]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 5 walls:
-  auto walls = std::vector<Wall*>();
+  auto walls = std::vector<WallType*>();
   walls.emplace_back(mesh.EmplaceWall(0, 1));
   walls.emplace_back(mesh.EmplaceWall(1, 2));
   walls.emplace_back(mesh.EmplaceWall(2, 3));
@@ -207,7 +217,7 @@ TEST_F(MeshTest, GetSide) {
   walls.emplace_back(mesh.EmplaceWall(0, 2));
   EXPECT_EQ(mesh.CountWalls(), walls.size());
   // Emplace 2 triangular cells:
-  auto cells = std::vector<Cell*>();
+  auto cells = std::vector<CellType*>();
   cells.emplace_back(mesh.EmplaceCell(0, {0, 1, 2}));
   cells.emplace_back(mesh.EmplaceCell(1, {0, 2, 3}));
   EXPECT_EQ(mesh.CountCells(), 2);

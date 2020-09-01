@@ -35,10 +35,10 @@ template <class Gas, int kDim>
 class Implementor {
  public:
   // Types:
-  using Conservative = Conservative<kDim>;
-  using Primitive = Primitive<kDim>;
-  using State = Primitive;
-  using Flux = Flux<kDim>;
+  using FluxType = Flux<kDim>;
+  using ConservativeType = Conservative<kDim>;
+  using PrimitiveType = Primitive<kDim>;
+  using State = PrimitiveType;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
@@ -242,6 +242,7 @@ class Implementor {
 
 template <class GasModel, int kDim = 1>
 class Exact;
+
 template <class GasModel>
 class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
   using Base = Implementor<GasModel, 1>;
@@ -251,12 +252,12 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
   using Gas = GasModel;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using Conservative = typename Base::Conservative;
-  using Primitive = typename Base::Primitive;
-  using State = Primitive;
-  using Flux = typename Base::Flux;
+  using FluxType = typename Base::FluxType;
+  using ConservativeType = typename Base::ConservativeType;
+  using PrimitiveType = typename Base::PrimitiveType;
+  using State = PrimitiveType;
   // Get F from U
-  static Flux GetFlux(State const& state) {
+  static FluxType GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(),
@@ -264,7 +265,7 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
                          + 0.5 * rho_u_u)};
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
     return GetFlux(GetStateOnTimeAxis(left, right));
   }
   // Get U on t-Axis
@@ -281,12 +282,12 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
   using Gas = GasModel;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using Conservative = typename Base::Conservative;
-  using Primitive = typename Base::Primitive;
-  using State = Primitive;
-  using Flux = typename Base::Flux;
+  using FluxType = typename Base::FluxType;
+  using ConservativeType = typename Base::ConservativeType;
+  using PrimitiveType = typename Base::PrimitiveType;
+  using State = PrimitiveType;
   // Get F from U
-  static Flux GetFlux(State const& state) {
+  static FluxType GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_v = state.rho() * state.v();
     auto rho_u_u = rho_u * state.u();
@@ -295,7 +296,7 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
                          + 0.5 * (rho_u_u + rho_v * state.v()))};
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
     return GetFlux(GetStateOnTimeAxis(left, right));
   }
   // Get U on t-Axis

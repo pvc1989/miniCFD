@@ -18,13 +18,13 @@ template <class Mesh>
 class Manager {
  public:
   // Types:
-  using Wall = typename Mesh::Wall;
-  using Part = std::vector<Wall*>;
+  using WallType = typename Mesh::WallType;
+  using Part = std::vector<WallType*>;
   // Mutators:
-  void AddInteriorWall(Wall* wall) {
+  void AddInteriorWall(WallType* wall) {
     interior_walls_.emplace_back(wall);
   }
-  void AddBoundaryWall(Wall* wall) {
+  void AddBoundaryWall(WallType* wall) {
     boundary_walls_.emplace_back(wall);
   }
   template <class Visitor>
@@ -55,7 +55,7 @@ class Manager {
     if (CheckBoundaryConditions()) {
       boundary_walls_.clear();
     } else {
-      throw std::length_error("Some `Wall`s do not have BC info.");
+      throw std::length_error("Some `WallType`s do not have BC info.");
     }
   }
   // Iterators:
@@ -101,8 +101,8 @@ class Manager {
 
  private:
   // Data members:
-  std::vector<Wall*> interior_walls_;
-  std::vector<Wall*> boundary_walls_;
+  std::vector<WallType*> interior_walls_;
+  std::vector<WallType*> boundary_walls_;
   std::vector<Part*> free_parts_;
   std::vector<Part*> solid_parts_;
   std::vector<Part*> inlet_parts_;
@@ -111,7 +111,7 @@ class Manager {
   // Implement details:
   void SetPeriodicBoundary(Part* head, Part* tail) {
     assert(head->size() == tail->size());
-    auto cmp = [](Wall* a, Wall* b) {
+    auto cmp = [](WallType* a, WallType* b) {
       auto point_a = a->Center();
       auto point_b = b->Center();
       if (point_a.Y() != point_b.Y()) {
@@ -126,7 +126,7 @@ class Manager {
       SewMatchingWalls(head->at(i), tail->at(i));
     }
   }
-  void SewMatchingWalls(Wall* a, Wall* b) {
+  void SewMatchingWalls(WallType* a, WallType* b) {
     auto left___in = a->GetPositiveSide();
     auto right__in = a->GetNegativeSide();
     auto left__out = b->GetPositiveSide();

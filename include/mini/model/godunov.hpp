@@ -8,7 +8,8 @@
 #include <set>
 #include <string>
 
-#include "mini/mesh/vtk.hpp"
+#include "mini/mesh/vtk/reader.hpp"
+#include "mini/mesh/vtk/writer.hpp"
 #include "mini/model/boundary.hpp"
 
 namespace mini {
@@ -16,12 +17,12 @@ namespace model {
 
 template <class Mesh, class Riemann>
 class Godunov {
-  using Wall = typename Mesh::Wall;
-  using Cell = typename Mesh::Cell;
+  using WallType = typename Mesh::WallType;
+  using CellType = typename Mesh::CellType;
   using State = typename Riemann::State;
-  using Flux = typename Riemann::Flux;
-  using Reader = mesh::VtkReader<Mesh>;
-  using Writer = mesh::VtkWriter<Mesh>;
+  using FluxType = typename Riemann::FluxType;
+  using Reader = mesh::vtk::Reader<Mesh>;
+  using Writer = mesh::vtk::Writer<Mesh>;
 
  public:
   explicit Godunov(std::string const& name) : model_name_(name) {}
@@ -89,17 +90,17 @@ class Godunov {
 
  private:
   bool WriteCurrentFrame(std::string const& filename) {
-    mesh_->ForEachCell([&](Cell& cell) {
+    mesh_->ForEachCell([&](CellType& cell) {
       cell.data.Write();
     });
     writer_.SetMesh(mesh_.get());
     return writer_.WriteToFile(filename);
   }
   void Preprocess() {
-    mesh_->ForEachWall([&](Wall& wall){
+    mesh_->ForEachWall([&](WallType& wall){
       auto length = wall.Measure();
-      auto n1 = (wall.Tail()->Y() - wall.Head()->Y()) / length;
-      auto n2 = (wall.Head()->X() - wall.Tail()->X()) / length;
+      auto n1 = (wall.Tail().Y() - wall.Head().Y()) / length;
+      auto n2 = (wall.Head().X() - wall.Tail().X()) / length;
       wall.data.riemann.Rotate(n1, n2);
       auto left_cell = wall.GetPositiveSide();
       auto right_cell = wall.GetNegativeSide();
@@ -111,14 +112,14 @@ class Godunov {
     });
   }
   void UpdateEachWall() {
-    wall_manager_.ForEachInteriorWall([](Wall* wall){
+    wall_manager_.ForEachInteriorWall([](WallType* wall){
       auto& riemann_ = wall->data.riemann;
       auto const& u_l = wall->GetPositiveSide()->data.state;
       auto const& u_r = wall->GetNegativeSide()->data.state;
       wall->data.flux = riemann_.GetFluxOnTimeAxis(u_l, u_r);
       wall->data.flux *= wall->Measure();
     });
-    wall_manager_.ForEachInletWall([&](Wall* wall){
+    wall_manager_.ForEachInletWall([&](WallType* wall){
       auto& riemann_ = wall->data.riemann;
       auto const& u_l = wall->GetPositiveSide()->data.state;
       auto const& u_r = wall->GetNegativeSide()->data.state;
@@ -133,14 +134,14 @@ class Godunov {
       }
       wall->data.flux *= wall->Measure();
     });
-    wall_manager_.ForEachPeriodicWall([](Wall* wall){
+    wall_manager_.ForEachPeriodicWall([](WallType* wall){
       auto& riemann_ = wall->data.riemann;
       auto const& u_l = wall->GetPositiveSide()->data.state;
       auto const& u_r = wall->GetNegativeSide()->data.state;
       wall->data.flux = riemann_.GetFluxOnTimeAxis(u_l, u_r);
       wall->data.flux *= wall->Measure();
     });
-    wall_manager_.ForEachFreeWall([](Wall* wall){
+    wall_manager_.ForEachFreeWall([](WallType* wall){
       auto& riemann_ = wall->data.riemann;
       auto left_cell = wall->GetPositiveSide();
       auto right_cell = wall->GetNegativeSide();
@@ -153,7 +154,7 @@ class Godunov {
       }
       wall->data.flux *= wall->Measure();
     });
-    wall_manager_.ForEachSolidWall([](Wall* wall){
+    wall_manager_.ForEachSolidWall([](WallType* wall){
       auto& riemann_ = wall->data.riemann;
       auto left_cell = wall->GetPositiveSide();
       auto right_cell = wall->GetNegativeSide();
@@ -168,9 +169,9 @@ class Godunov {
     });
   }
   void UpdateEachCell() {
-    mesh_->ForEachCell([&](Cell& cell) {
-      auto net_flux = Flux{};
-      cell.ForEachWall([&](Wall& wall) {
+    mesh_->ForEachCell([&](CellType& cell) {
+      auto net_flux = FluxType{};
+      cell.ForEachWall([&](WallType& wall) {
         if (wall.GetPositiveSide() == &cell) {
           net_flux -= wall.data.flux;
         } else {
@@ -181,7 +182,7 @@ class Godunov {
       TimeStepping(&(cell.data.state), &net_flux);
     });
   }
-  void TimeStepping(State* u_curr , Flux* du_dt) {
+  void TimeStepping(State* u_curr , FluxType* du_dt) {
     *du_dt *= step_size_;
     *u_curr += *du_dt;
   }
@@ -196,7 +197,7 @@ class Godunov {
   double step_size_;
   std::string dir_;
   int refresh_rate_;
-  std::set<Wall*> inside_wall_;
+  std::set<WallType*> inside_wall_;
   Manager<Mesh> wall_manager_;
   State inlet_;
 };

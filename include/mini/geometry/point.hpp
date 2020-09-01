@@ -12,7 +12,13 @@ class Vector;
 
 template <class Real, int kDim>
 class Point : public algebra::Column<Real, kDim> {
+ protected:
   using Base = algebra::Column<Real, kDim>;
+  // Accessors:
+  template <int I>
+  Real X() const {
+    return I < kDim ? this->at(I) : 0;
+  }
 
  public:
   // Constructors:
@@ -25,10 +31,6 @@ class Point : public algebra::Column<Real, kDim> {
     while (n++ != kDim) { *target++ = 0; }
   }
   // Accessors:
-  template <int I>
-  Real X() const {
-    return I < kDim ? this->at(I) : 0;
-  }
   Real X() const { return X<0>(); }
   Real Y() const { return X<1>(); }
   Real Z() const { return X<2>(); }

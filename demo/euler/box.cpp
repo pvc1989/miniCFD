@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "mini/mesh/data.hpp"
+#include "mini/element/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
@@ -25,14 +25,14 @@ class Box {
   // Types (Riemann related):
   using Gas = typename Riemann::Gas;
   using State = typename Riemann::State;
-  using Flux = typename Riemann::Flux;
-  // Types (Mesh related):
+  using FluxType = typename Riemann::FluxType;
+  // Types (MeshType related):
   using NodeData = mesh::Empty;
   struct WallData : public mesh::Empty {
-    Flux flux;
+    FluxType flux;
     Riemann riemann;
   };
-  struct CellData : public mesh::Data<
+  struct CellData : public element::Data<
       double, 2/* dims */, 2/* scalars */, 1/* vectors */> {
    public:
     State state;
@@ -44,10 +44,10 @@ class Box {
       vectors[0][1] = primitive.v();
     }
   };
-  using Mesh = mesh::Mesh<double, NodeData, WallData, CellData>;
-  using Cell = typename Mesh::Cell;
-  using Wall = typename Mesh::Wall;
-  using Model = model::Godunov<Mesh, Riemann>;
+  using MeshType = mesh::Mesh<double, NodeData, WallData, CellData>;
+  using CellType = typename MeshType::CellType;
+  using WallType = typename MeshType::WallType;
+  using Model = model::Godunov<MeshType, Riemann>;
 
  public:
   explicit Box(char** argv)
@@ -60,23 +60,23 @@ class Box {
     duration_ = stop_ - start_;
   }
   void Run() {
-    Cell::scalar_names.at(0) = "rho";
-    Cell::scalar_names.at(1) = "p";
-    Cell::vector_names.at(0) = "u";
+    CellType::scalar_names.at(0) = "rho";
+    CellType::scalar_names.at(1) = "p";
+    CellType::vector_names.at(0) = "u";
     auto model = Model(model_name_);
     model.ReadMesh(test_data_dir_ + mesh_name_);
     // Set Boundary Conditions:
     constexpr auto eps = 1e-5;
-    model.SetBoundaryName("left", [&](Wall& wall) {
+    model.SetBoundaryName("left", [&](WallType& wall) {
       return std::abs(wall.Center().X() + 0.5) < eps;
     });
-    model.SetBoundaryName("right", [&](Wall& wall) {
+    model.SetBoundaryName("right", [&](WallType& wall) {
       return std::abs(wall.Center().X() - 0.5) < eps;
     });
-    model.SetBoundaryName("top", [&](Wall& wall) {
+    model.SetBoundaryName("top", [&](WallType& wall) {
       return std::abs(wall.Center().Y() - 0.5) < eps;
     });
-    model.SetBoundaryName("bottom", [&](Wall& wall) {
+    model.SetBoundaryName("bottom", [&](WallType& wall) {
       return std::abs(wall.Center().Y() + 0.5) < eps;
     });
     model.SetPeriodicBoundary("top", "bottom");
@@ -92,7 +92,7 @@ class Box {
      */
     Gas::PrimitiveToConservative(&left);
     Gas::PrimitiveToConservative(&right);
-    model.SetInitialState([&](Cell& cell) {
+    model.SetInitialState([&](CellType& cell) {
       auto x = cell.Center().X();
       auto y = cell.Center().Y();
       if (x*x + y*y < 0.04) {  // r < 0.2

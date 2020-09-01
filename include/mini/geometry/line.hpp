@@ -1,4 +1,5 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
+
 #ifndef MINI_GEOMETRY_LINE_HPP_
 #define MINI_GEOMETRY_LINE_HPP_
 
@@ -14,14 +15,17 @@ template <class Real, int kDim>
 class Line {
  public:
   // Types:
-  using Point = Point<Real, kDim>;
+  using PointType = Point<Real, kDim>;
+
+ public:
   // Constructors:
-  Line(Point const& head, Point const& tail) : head_(&head), tail_(&tail) {}
+  Line(const PointType& head, const PointType& tail)
+      : head_(head), tail_(tail) {}
   // Accessors:
-  int CountVertices() const { return 2; }
-  Point const& Head() const { return *head_; }
-  Point const& Tail() const { return *tail_; }
-  Point const& GetPoint(int i) const {
+  const PointType& Head() const { return head_; }
+  const PointType& Tail() const { return tail_; }
+  static int CountPoints() { return 2; }
+  const PointType& GetPoint(int i) const {
     switch (i)  {
     case 0:
       return Head();
@@ -36,7 +40,7 @@ class Line {
     auto v = Head() - Tail();
     return std::sqrt(v.Dot(v));
   }
-  Point Center() const {
+  PointType Center() const {
     auto center = Head();
     center += Tail();
     center *= 0.5;
@@ -44,10 +48,11 @@ class Line {
   }
 
  private:
-  Point const* head_;
-  Point const* tail_;
+  const PointType& head_;
+  const PointType& tail_;
 };
 
 }  // namespace geometry
 }  // namespace mini
+
 #endif  // MINI_GEOMETRY_LINE_HPP_

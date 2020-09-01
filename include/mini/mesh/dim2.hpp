@@ -17,12 +17,16 @@
 #include <utility>
 #include <vector>
 
-#include "mini/element/dim1.hpp"
-#include "mini/element/dim2.hpp"
-#include "mini/mesh/data.hpp"
+#include "mini/element/data.hpp"
+#include "mini/element/line.hpp"
+#include "mini/element/rectangle.hpp"
+#include "mini/element/triangle.hpp"
+#include "mini/geometry/vector.hpp"
 
 namespace mini {
 namespace mesh {
+
+using element::Empty;
 
 template <class Real,
           class NodeData = Empty,
@@ -51,23 +55,21 @@ template <class Real,
 class Mesh;
 
 template <class Real, class NodeData>
-class Node : public element::Node<Real, 2> {
+class Node : public element::Point<Real, 2> {
  public:
   // Types:
-  using Id = typename element::Node<Real, 2>::Id;
-  using Data = NodeData;
+  using IdType = typename element::Point<Real, 2>::IdType;
+  using DataType = NodeData;
   // Public data members:
-  Data data;
+  DataType data;
   static std::array<std::string, NodeData::CountScalars()> scalar_names;
   static std::array<std::string, NodeData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
   explicit Node(Args&&... args) :
-      element::Node<Real, 2>(std::forward<Args>(args)...) {}
-  Node(Id i, std::initializer_list<Real> xyz)
-      : element::Node<Real, 2>(i, xyz) {}
-  Node(std::initializer_list<Real> xyz)
-      : element::Node<Real, 2>{xyz} {}
+      element::Point<Real, 2>(std::forward<Args>(args)...) {}
+  Node(IdType i, std::initializer_list<Real> xyz)
+      : element::Point<Real, 2>(i, xyz) {}
 };
 template <class Real, class NodeData>
 std::array<std::string, NodeData::CountScalars()>
@@ -78,31 +80,31 @@ std::array<std::string, NodeData::CountVectors()>
 Node<Real, NodeData>::vector_names;
 
 template <class Real, class NodeData, class WallData, class CellData>
-class Wall : public element::Edge<Real, 2> {
+class Wall : public element::Line<Real, 2> {
  public:
   // Types:
-  using Id = typename element::Edge<Real, 2>::Id;
-  using Data = WallData;
-  using Node = Node<Real, NodeData>;
-  using Cell = Cell<Real, NodeData, WallData, CellData>;
+  using IdType = typename element::Line<Real, 2>::IdType;
+  using DataType = WallData;
+  using NodeType = Node<Real, NodeData>;
+  using CellType = Cell<Real, NodeData, WallData, CellData>;
   // Public data members:
-  Data data;
+  DataType data;
   static std::array<std::string, WallData::CountScalars()> scalar_names;
   static std::array<std::string, WallData::CountVectors()> vector_names;
   // Constructors:
   template <class... Args>
   explicit Wall(Args&&... args)
-      : element::Edge<Real, 2>(std::forward<Args>(args)...) {}
+      : element::Line<Real, 2>(std::forward<Args>(args)...) {}
   // Accessors:
-  Cell* GetPositiveSide() const { return positive_side_; }
-  Cell* GetNegativeSide() const { return negative_side_; }
+  CellType* GetPositiveSide() const { return positive_side_; }
+  CellType* GetNegativeSide() const { return negative_side_; }
   // Mutators:
-  void SetPositiveSide(Cell* cell) { positive_side_ = cell; }
-  void SetNegativeSide(Cell* cell) { negative_side_ = cell; }
+  void SetPositiveSide(CellType* cell) { positive_side_ = cell; }
+  void SetNegativeSide(CellType* cell) { negative_side_ = cell; }
 
  private:
-  Cell* positive_side_{nullptr};
-  Cell* negative_side_{nullptr};
+  CellType* positive_side_{nullptr};
+  CellType* negative_side_{nullptr};
 };
 template <class Real, class NodeData, class WallData, class CellData>
 std::array<std::string, WallData::CountScalars()>
@@ -113,28 +115,31 @@ std::array<std::string, WallData::CountVectors()>
 Wall<Real, NodeData, WallData, CellData>::vector_names;
 
 template <class Real, class NodeData, class WallData, class CellData>
-class Cell : virtual public element::Face<Real, 2> {
+class Cell : virtual public element::Surface<Real, 2> {
   friend class Mesh<Real, NodeData, WallData, CellData>;
  public:
   virtual ~Cell() = default;
   // Types:
-  using Id = typename element::Face<Real, 2>::Id;
-  using Data = CellData;
-  using Wall = Wall<Real, NodeData, WallData, CellData>;
-  using Node = typename Wall::Node;
+  using IdType = typename element::Surface<Real, 2>::IdType;
+  using DataType = CellData;
+  using WallType = Wall<Real, NodeData, WallData, CellData>;
+  using NodeType = typename WallType::NodeType;
   // Public data members:
-  Data data;
+  DataType data;
   static std::array<std::string, CellData::CountScalars()> scalar_names;
   static std::array<std::string, CellData::CountVectors()> vector_names;
   // Constructors:
-  Cell(std::initializer_list<Wall*> walls) : walls_{walls} {}
+  Cell(std::initializer_list<WallType*> walls) : walls_{walls} {}
   // Iterators:
   template <class Visitor>
   void ForEachWall(Visitor&& visitor) {
     for (auto& b : walls_) { visitor(*b); }
   }
+  const NodeType& GetNode(int i) const {
+    return static_cast<const NodeType&>(this->GetPoint(i));
+  }
  protected:
-  std::forward_list<Wall*> walls_;
+  std::forward_list<WallType*> walls_;
 };
 template <class Real, class NodeData, class WallData, class CellData>
 std::array<std::string, CellData::CountScalars()>
@@ -149,16 +154,16 @@ class Triangle
     : public Cell<Real, NodeData, WallData, CellData>,
       public element::Triangle<Real, 2> {
  public:
-  using Cell = Cell<Real, NodeData, WallData, CellData>;
+  using CellType = Cell<Real, NodeData, WallData, CellData>;
   // Types:
-  using Wall = typename Cell::Wall;
-  using Node = typename Wall::Node;
-  using Id = typename Cell::Id;
-  using Data = CellData;
+  using WallType = typename CellType::WallType;
+  using NodeType = typename WallType::NodeType;
+  using IdType = typename CellType::IdType;
+  using DataType = CellData;
   // Constructors:
-  Triangle(Id i, Node* a, Node* b, Node* c,
-           std::initializer_list<Wall*> walls)
-      : element::Triangle<Real, 2>(i, a, b, c), Cell{walls} {}
+  Triangle(IdType i, const NodeType& a, const NodeType& b, const NodeType& c,
+           std::initializer_list<WallType*> walls)
+      : element::Triangle<Real, 2>(i, a, b, c), CellType{walls} {}
 };
 
 template <class Real, class NodeData, class WallData, class CellData>
@@ -166,33 +171,35 @@ class Rectangle
     : public Cell<Real, NodeData, WallData, CellData>,
       public element::Rectangle<Real, 2> {
  public:
-  using Cell = Cell<Real, NodeData, WallData, CellData>;
+  using CellType = Cell<Real, NodeData, WallData, CellData>;
   // Types:
-  using Wall = typename Cell::Wall;
-  using Node = typename Wall::Node;
-  using Id = typename Cell::Id;
-  using Data = CellData;
+  using WallType = typename CellType::WallType;
+  using NodeType = typename WallType::NodeType;
+  using IdType = typename CellType::IdType;
+  using DataType = CellData;
   // Constructors:
-  Rectangle(Id i, Node* a, Node* b, Node* c, Node* d,
-            std::initializer_list<Wall*> walls)
-      : element::Rectangle<Real, 2>(i, a, b, c, d), Cell{walls} {}
+  Rectangle(IdType i,
+            const NodeType& a, const NodeType& b,
+            const NodeType& c, const NodeType& d,
+            std::initializer_list<WallType*> walls)
+      : element::Rectangle<Real, 2>(i, a, b, c, d), CellType{walls} {}
 };
 
 template <class Real, class NodeData, class WallData, class CellData>
 class Mesh {
  public:
   // Types:
-  using Cell = Cell<Real, NodeData, WallData, CellData>;
-  using Wall = typename Cell::Wall;
-  using Node = typename Wall::Node;
-  using Triangle = Triangle<Real, NodeData, WallData, CellData>;
-  using Rectangle = Rectangle<Real, NodeData, WallData, CellData>;
+  using CellType = Cell<Real, NodeData, WallData, CellData>;
+  using WallType = typename CellType::WallType;
+  using NodeType = typename WallType::NodeType;
+  using TriangleType = Triangle<Real, NodeData, WallData, CellData>;
+  using RectangleType = Rectangle<Real, NodeData, WallData, CellData>;
 
  private:
   // Types:
-  using NodeId = typename Node::Id;
-  using WallId = typename Wall::Id;
-  using CellId = typename Cell::Id;
+  using NodeId = typename NodeType::IdType;
+  using WallId = typename WallType::IdType;
+  using CellId = typename CellType::IdType;
 
  public:
   // Constructors:
@@ -216,13 +223,13 @@ class Mesh {
   }
 
   // Emplace primitive objects.
-  Node* EmplaceNode(NodeId i, Real x, Real y) {
-    auto node_unique_ptr = std::make_unique<Node>(i, x, y);
+  NodeType* EmplaceNode(NodeId i, Real x, Real y, Real z=0.0) {
+    auto node_unique_ptr = std::make_unique<NodeType>(i, x, y);
     auto node_ptr = node_unique_ptr.get();
     id_to_node_.emplace(i, std::move(node_unique_ptr));
     return node_ptr;
   }
-  Wall* EmplaceWall(WallId wall_id, NodeId head_id, NodeId tail_id) {
+  WallType* EmplaceWall(WallId wall_id, NodeId head_id, NodeId tail_id) {
     if (head_id > tail_id) { std::swap(head_id, tail_id); }
     auto head_iter = id_to_node_.find(head_id);
     auto tail_iter = id_to_node_.find(tail_id);
@@ -232,16 +239,15 @@ class Mesh {
     // Re-emplace an wall is not allowed:
     assert(node_pair_to_wall_.count(node_pair) == 0);
     // Emplace a new wall:
-    auto wall_unique_ptr = std::make_unique<Wall>(wall_id,
-                                                  head_iter->second.get(),
-                                                  tail_iter->second.get());
+    auto wall_unique_ptr = std::make_unique<WallType>(
+        wall_id, *(head_iter->second), *(tail_iter->second));
     auto wall_ptr = wall_unique_ptr.get();
     node_pair_to_wall_.emplace(node_pair, wall_ptr);
     id_to_wall_.emplace(wall_id, std::move(wall_unique_ptr));
     assert(id_to_wall_.size() == node_pair_to_wall_.size());
     return wall_ptr;
   }
-  Wall* EmplaceWall(NodeId head_id, NodeId tail_id) {
+  WallType* EmplaceWall(NodeId head_id, NodeId tail_id) {
     if (head_id > tail_id) { std::swap(head_id, tail_id); }
     auto node_pair = std::minmax(head_id, tail_id);
     auto iter = node_pair_to_wall_.find(node_pair);
@@ -259,24 +265,27 @@ class Mesh {
       return wall_ptr;
     }
   }
-  Cell* EmplaceCell(CellId i, std::initializer_list<NodeId> nodes) {
-    std::unique_ptr<Cell> cell_unique_ptr{nullptr};
+  CellType* EmplaceCell(CellId i, std::initializer_list<NodeId> nodes) {
+    std::unique_ptr<CellType> cell_unique_ptr{nullptr};
     if (nodes.size() == 3) {
       return EmplaceTriangle(i, nodes);
     } else if (nodes.size() == 4) {
       return EmplaceRectangle(i, nodes);
     } else if (nodes.size() == 2) {
       return nullptr;
+    } else if (nodes.size() == 1) {
+      return nullptr;
     } else {
       assert(false);
     }
   }
   static constexpr int Dim() { return 2; }
+
  private:
-  Wall* EmplaceWall(Node* head, Node* tail) {
+  WallType* EmplaceWall(NodeType* head, NodeType* tail) {
     return EmplaceWall(head->I(), tail->I());
   }
-  void LinkCellToWall(Cell* cell, Node* head, Node* tail) {
+  void LinkCellToWall(CellType* cell, NodeType* head, NodeType* tail) {
     auto wall = EmplaceWall(head, tail);
     if (head->I() < tail->I()) {
       wall->SetPositiveSide(cell);
@@ -284,19 +293,20 @@ class Mesh {
       wall->SetNegativeSide(cell);
     }
   }
-  Node* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
-  Cell* EmplaceTriangle(CellId i, std::initializer_list<NodeId> nodes) {
+  NodeType* GetNode(NodeId i) const { return id_to_node_.at(i).get(); }
+  CellType* EmplaceTriangle(CellId i, std::initializer_list<NodeId> nodes) {
     auto* p = nodes.begin();
-    auto a = GetNode(p[0]);
-    auto b = GetNode(p[1]);
-    auto c = GetNode(p[2]);
-    if (a->IsClockWise(b, c)) {
+    auto* a = GetNode(p[0]);
+    auto* b = GetNode(p[1]);
+    auto* c = GetNode(p[2]);
+    if (IsClockWise(*a, *b, *c)) {
       std::swap(a, c);
     }
     auto edges = {EmplaceWall(a, b),
                   EmplaceWall(b, c),
                   EmplaceWall(c, a)};
-    auto cell_unique_ptr = std::make_unique<Triangle>(i, a, b, c, edges);
+    auto cell_unique_ptr = std::make_unique<TriangleType>(
+        i, *a, *b, *c, edges);
     auto cell_ptr = cell_unique_ptr.get();
     id_to_cell_.emplace(i, std::move(cell_unique_ptr));
     LinkCellToWall(cell_ptr, a, b);
@@ -304,13 +314,13 @@ class Mesh {
     LinkCellToWall(cell_ptr, c, a);
     return cell_ptr;
   }
-  Cell* EmplaceRectangle(CellId i, std::initializer_list<NodeId> nodes) {
+  CellType* EmplaceRectangle(CellId i, std::initializer_list<NodeId> nodes) {
     auto* p = nodes.begin();
-    auto a = GetNode(p[0]);
-    auto b = GetNode(p[1]);
-    auto c = GetNode(p[2]);
-    auto d = GetNode(p[3]);
-    if (a->IsClockWise(b, c)) {
+    auto* a = GetNode(p[0]);
+    auto* b = GetNode(p[1]);
+    auto* c = GetNode(p[2]);
+    auto* d = GetNode(p[3]);
+    if (IsClockWise(*a, *b, *c)) {
       std::swap(a, d);
       std::swap(b, c);
     }
@@ -318,7 +328,8 @@ class Mesh {
                   EmplaceWall(b, c),
                   EmplaceWall(c, d),
                   EmplaceWall(d, a)};
-    auto cell_unique_ptr = std::make_unique<Rectangle>(i, a, b, c, d, edges);
+    auto cell_unique_ptr = std::make_unique<RectangleType>(
+        i, *a, *b, *c, *d, edges);
     auto cell_ptr = cell_unique_ptr.get();
     id_to_cell_.emplace(i, std::move(cell_unique_ptr));
     LinkCellToWall(cell_ptr, a, b);
@@ -329,10 +340,10 @@ class Mesh {
   }
 
  private:
-  std::map<NodeId, std::unique_ptr<Node>> id_to_node_;
-  std::map<WallId, std::unique_ptr<Wall>> id_to_wall_;
-  std::map<CellId, std::unique_ptr<Cell>> id_to_cell_;
-  std::map<std::pair<NodeId, NodeId>, Wall*> node_pair_to_wall_;
+  std::map<NodeId, std::unique_ptr<NodeType>> id_to_node_;
+  std::map<WallId, std::unique_ptr<WallType>> id_to_wall_;
+  std::map<CellId, std::unique_ptr<CellType>> id_to_cell_;
+  std::map<std::pair<NodeId, NodeId>, WallType*> node_pair_to_wall_;
 };
 
 }  // namespace mesh

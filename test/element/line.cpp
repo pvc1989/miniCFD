@@ -11,35 +11,30 @@ namespace element {
 class LineTest : public ::testing::Test {
  protected:
   using Real = double;
-  using Line = Line<Real, 2>;
-  using Point = Line::Point;
-  Point head{1, {0.3, 0.0}}, tail{2, {0.0, 0.4}};
+  using L2 = Line<Real, 2>;
+  using P2 = L2::PointType;
+  const L2::IdType i{8};
+  P2 head{1, {0.3, 0.0}}, tail{2, {0.0, 0.4}};
 };
-TEST_F(LineTest, ConstructorWithId) {
-  // Test Line(Id, Point const&, Point const&):
-  auto i = Line::Id{0};
-  auto line = Line(i, head, tail);
+TEST_F(LineTest, Constructor) {
+  // Test Line(Id, const Point &, const Point &):
+  auto line = L2(i, head, tail);
   EXPECT_EQ(line.I(), i);
   EXPECT_EQ(line.Head(), head);
   EXPECT_EQ(line.Tail(), tail);
   EXPECT_EQ(line.Head().I(), head.I());
   EXPECT_EQ(line.Tail().I(), tail.I());
 }
-TEST_F(LineTest, ConstructorWithoutId) {
-  // Test Line(Point const&, Point const&):
-  auto line = Line(head, tail);
-  EXPECT_EQ(line.I(), Line::DefaultId());
-  EXPECT_EQ(line.Head(), head);
-  EXPECT_EQ(line.Tail(), tail);
-  EXPECT_EQ(line.Head().I(), head.I());
-  EXPECT_EQ(line.Tail().I(), tail.I());
-}
-TEST_F(LineTest, MeshMethods) {
-  auto line = Line(head, tail);
+TEST_F(LineTest, GeometryMethods) {
+  auto line = L2(i, head, tail);
   EXPECT_EQ(line.Measure(), 0.5);
   auto center = line.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());
   EXPECT_EQ(center.Y() * 2, head.Y() + tail.Y());
+  EXPECT_EQ(center.Z() * 2, head.Z() + tail.Z());
+}
+TEST_F(LineTest, ElementMethods) {
+  auto line = L2(i, head, tail);
   auto integrand = [](const auto& point) { return 3.14; };
   EXPECT_EQ(line.Integrate(integrand), line.Measure() * 3.14);
 }

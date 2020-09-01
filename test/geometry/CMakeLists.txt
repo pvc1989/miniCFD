@@ -13,6 +13,11 @@ set_target_properties(test_geometry_line PROPERTIES OUTPUT_NAME line)
 target_link_libraries(test_geometry_line gtest_main)
 add_test(NAME TestGeometryLine COMMAND Line)
 
+add_executable(test_geometry_surface surface.cpp)
+set_target_properties(test_geometry_surface PROPERTIES OUTPUT_NAME surface)
+target_link_libraries(test_geometry_surface gtest_main)
+add_test(NAME TestGeometrySurface COMMAND surface)
+
 add_executable(test_geometry_triangle triangle.cpp)
 set_target_properties(test_geometry_triangle PROPERTIES OUTPUT_NAME triangle)
 target_link_libraries(test_geometry_triangle gtest_main)
