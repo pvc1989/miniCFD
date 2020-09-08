@@ -17,9 +17,9 @@
 #include <utility>
 #include <vector>
 
-#include "mini/element/dim1.hpp"
-#include "mini/element/dim2.hpp"
-#include "mini/mesh/data.hpp"
+#include "mini/element/line.hpp"
+#include "mini/element/surface.hpp"
+#include "mini/element/data.hpp"
 
 namespace mini {
 namespace mesh {

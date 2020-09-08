@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "mini/mesh/data.hpp"
+#include "mini/element/data.hpp"
 #include "mini/mesh/dim2.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
