@@ -1,0 +1,6 @@
+[submodule "ThirdParty/CGNS"]
+	path = ThirdParty/CGNS
+	url = https://github.com/CGNS/CGNS.git
+[submodule "ThirdParty/GoogleTest"]
+	path = ThirdParty/GoogleTest
+	url = https://github.com/google/googletest.git
