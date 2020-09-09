@@ -38,6 +38,31 @@ else (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
 endif (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
 # End of GoogleTest related settings
 
+option(${PROJECT_NAME}_ENABLE_MPI "Enable MPI-based parallel computating." "ON")
+if (${PROJECT_NAME}_ENABLE_MPI)
+  find_path(MPI_INC NAMES "mpi.h")
+  find_library(MPI_LIB NAMES mpi)
+endif (${PROJECT_NAME}_ENABLE_MPI)
+
+option(${PROJECT_NAME}_SUBMODULE_CGNS "Add CGNS as a git submodule." "ON")
+if (${PROJECT_NAME}_SUBMODULE_CGNS)
+  set(CGNS_ENABLE_HDF5 ON CACHE BOOL "Build CGNS on top of HDF5." FORCE)
+  if (${PROJECT_NAME}_ENABLE_MPI)
+    set(CGNS_ENABLE_PARALLEL ON CACHE BOOL "Enable parallel CGNS interface." FORCE)
+    set(HDF5_NEED_MPI ON CACHE BOOL "Link HDF5 to MPI." FORCE)
+  endif (${PROJECT_NAME}_ENABLE_MPI)
+  add_subdirectory(ThirdParty/CGNS)
+  set(CGNS_INC "${cgns_SOURCE_DIR}/src;${cgns_BINARY_DIR}/src")
+  find_library(CGNS_LIB NAMES cgns PATHS "${cgns_BINARY_DIR}/src" NO_DEFAULT_PATH)
+else (${PROJECT_NAME}_SUBMODULE_CGNS) # Find installed VTK.
+  if (${PROJECT_NAME}_ENABLE_MPI)
+    find_path(CGNS_INC "pcgnslib.h" HINTS ENV CGNS_ROOT PATH_SUFFIXES include)
+  else (${PROJECT_NAME}_ENABLE_MPI)
+    find_path(CGNS_INC "cgnslib.h" HINTS ENV CGNS_ROOT PATH_SUFFIXES include)
+  endif (${PROJECT_NAME}_ENABLE_MPI)
+  find_library(CGNS_LIB cgns HINTS ENV CGNS_ROOT PATH_SUFFIXES lib)
+endif (${PROJECT_NAME}_SUBMODULE_CGNS)
+
 option(${PROJECT_NAME}_ENABLE_VTK "Enable VTK-based IO." "OFF")
 if (${PROJECT_NAME}_ENABLE_VTK)
   find_package(VTK COMPONENTS
