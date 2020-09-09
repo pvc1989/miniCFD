@@ -53,7 +53,6 @@ if (${PROJECT_NAME}_SUBMODULE_CGNS)
   endif (${PROJECT_NAME}_ENABLE_MPI)
   add_subdirectory(ThirdParty/CGNS)
   set(CGNS_INC "${cgns_SOURCE_DIR}/src;${cgns_BINARY_DIR}/src")
-  find_library(CGNS_LIB NAMES cgns PATHS "${cgns_BINARY_DIR}/src" NO_DEFAULT_PATH)
 else (${PROJECT_NAME}_SUBMODULE_CGNS) # Find installed VTK.
   if (${PROJECT_NAME}_ENABLE_MPI)
     find_path(CGNS_INC "pcgnslib.h" HINTS ENV CGNS_ROOT PATH_SUFFIXES include)
