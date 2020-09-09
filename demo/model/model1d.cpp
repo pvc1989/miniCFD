@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include "mini/mesh/data.hpp"
+#include "mini/element/data.hpp"
 #include "mini/mesh/dim1.hpp"
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
