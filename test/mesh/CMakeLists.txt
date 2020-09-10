@@ -18,7 +18,7 @@ if (${PROJECT_NAME}_ENABLE_VTK)
   add_test(NAME TestMeshVtk2d COMMAND vtk2d)
 endif (${PROJECT_NAME}_ENABLE_VTK)
 
-include_directories(${CGNS_INC} ${MPI_INC})
+include_directories(${CGNS_INC})
 link_libraries(cgns_shared)
 
 add_executable(test_mesh_cgns cgns.cpp)

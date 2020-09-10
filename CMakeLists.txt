@@ -4,8 +4,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 # GoogleTest related settings
 option(${PROJECT_NAME}_SUBMODULE_GOOGLETEST "Add GoogleTest as a git submodule." "ON")
+# Prevent overriding the parent project's compiler/linker settings on Windows
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 if (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
-  add_subdirectory(ThirdParty/GoogleTest)
+  add_subdirectory(ThirdParty/GoogleTest EXCLUDE_FROM_ALL)
 else (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
   # Download and unpack `googletest` at configure time
   configure_file(CMakeLists.txt.in googletest/download/CMakeLists.txt)
@@ -21,8 +23,6 @@ else (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
   if (result)
     message(FATAL_ERROR "Build step for googletest failed: ${result}")
   endif ()
-  # Prevent overriding the parent project's compiler/linker settings on Windows
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
   # Add `googletest` directly to our build.
   # This defines the `gtest` and `gtest_main`s targets.
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest/src
