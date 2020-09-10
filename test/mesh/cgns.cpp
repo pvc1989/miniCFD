@@ -14,11 +14,11 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-class CgnsReaderTest : public ::testing::Test {
+class ReaderTest : public ::testing::Test {
  protected:
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
-TEST_F(CgnsReaderTest, ReadFromFile) {
+TEST_F(ReaderTest, ReadFromFile) {
   int file_id;
   auto file_name = test_data_dir_ + "ugrid_2d.cgns";
   if (cg_open(file_name.c_str(), CG_MODE_READ, &file_id)) {
