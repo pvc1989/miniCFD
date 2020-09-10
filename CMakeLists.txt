@@ -26,8 +26,8 @@ else (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
   # Add `googletest` directly to our build.
   # This defines the `gtest` and `gtest_main`s targets.
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest/src
-                  ${CMAKE_CURRENT_BINARY_DIR}/googletest/build
-                  EXCLUDE_FROM_ALL)
+                   ${CMAKE_CURRENT_BINARY_DIR}/googletest/build
+                   EXCLUDE_FROM_ALL)
   # The `gtest`/`gtest_main` targets carry header search path
   # dependencies automatically when using CMake 2.8.11 or later.
   # Otherwise we have to add them here ourselves.
@@ -90,7 +90,7 @@ include_directories("${PROJECT_BINARY_DIR}/include")
 
 option(${PROJECT_NAME}_BUILD_TESTS "Build tests for this project." "ON")
 if (${PROJECT_NAME}_BUILD_TESTS)
-include(CTest)
+  include(CTest)
   add_subdirectory(test)
 endif ()
 
