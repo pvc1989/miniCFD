@@ -11,33 +11,33 @@ namespace mesh {
 
 class NodeTest : public ::testing::Test {
  protected:
-  using Node = Node<double>;
-  Node::Id i{0};
+  using NodeType = Node<double>;
+  NodeType::IdType i{0};
 };
 TEST_F(NodeTest, Constructor) {
   double x = 0.3;
-  auto node = Node(i, x);
+  auto node = NodeType(i, x);
   EXPECT_EQ(node.I(), i);
   EXPECT_EQ(node.X(), x);
 }
 
 class CellTest : public ::testing::Test {
  protected:
-  using Cell = Cell<double>;
-  using Node = Cell::Node;
-  Cell::Id i{0};
-  Node head{0.3}, tail{0.4};
+  using CellType = Cell<double>;
+  using NodeType = typename CellType::NodeType;
+  CellType::IdType i{0};
+  NodeType head{1, 0.3}, tail{2, 0.4};
 };
 TEST_F(CellTest, Constructor) {
-  auto cell = Cell(i, &head, &tail);
+  auto cell = CellType(i, head, tail);
   EXPECT_EQ(cell.I(), i);
-  EXPECT_EQ(cell.Head(), &head);
-  EXPECT_EQ(cell.Tail(), &tail);
-  EXPECT_EQ(cell.Head()->X(), 0.3);
-  EXPECT_EQ(cell.Tail()->X(), 0.4);
+  EXPECT_EQ(cell.Head(), head);
+  EXPECT_EQ(cell.Tail(), tail);
+  EXPECT_EQ(cell.Head().X(), 0.3);
+  EXPECT_EQ(cell.Tail().X(), 0.4);
 }
 TEST_F(CellTest, ElementMethods) {
-  auto cell = Cell(0, &head, &tail);
+  auto cell = CellType(0, head, tail);
   EXPECT_DOUBLE_EQ(cell.Measure(), 0.1);
   auto center = cell.Center();
   EXPECT_EQ(center.X() * 2, head.X() + tail.X());
@@ -47,10 +47,10 @@ TEST_F(CellTest, ElementMethods) {
 
 class MeshTest : public ::testing::Test {
  protected:
-  using Mesh = Mesh<double>;
-  using Cell = Mesh::Cell;
-  using Node = Mesh::Node;
-  Mesh mesh{};
+  using MeshType = Mesh<double>;
+  using CellType = typename MeshType::CellType;
+  using NodeType = typename MeshType::NodeType;
+  MeshType mesh{};
   const std::vector<double> x{0.0, 1.0, 2.0, 3.0};
 };
 TEST_F(MeshTest, DefaultConstructor) {
@@ -67,8 +67,8 @@ TEST_F(MeshTest, ForEachNode) {
     mesh.EmplaceNode(i, x[i]);
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
-  // Check each node's index and coordinates:
-  mesh.ForEachNode([&](Node const& node) {
+  // Check each NodeType's index and coordinates:
+  mesh.ForEachNode([&](NodeType const& node) {
     auto i = node.I();
     EXPECT_EQ(node.X(), x[i]);
   });
@@ -96,8 +96,8 @@ TEST_F(MeshTest, ForEachCell) {
   mesh.EmplaceCell(e++, 2, 3);
   EXPECT_EQ(mesh.CountCells(), e);
   // For each cell: head's index < tail's index
-  mesh.ForEachCell([](Cell const& cell) {
-    EXPECT_LT(cell.Head()->I(), cell.Tail()->I());
+  mesh.ForEachCell([](CellType const& cell) {
+    EXPECT_LT(cell.Head().I(), cell.Tail().I());
   });
 }
 TEST_F(MeshTest, GetSide) {
@@ -105,13 +105,13 @@ TEST_F(MeshTest, GetSide) {
      0 ----- 1 ----- 2 ----- 3
   */
   // Emplace 4 nodes:
-  auto nodes = std::vector<Node*>();
+  auto nodes = std::vector<NodeType*>();
   for (auto i = 0; i != x.size(); ++i) {
     nodes.emplace_back(mesh.EmplaceNode(i, x[i]));
   }
   EXPECT_EQ(mesh.CountNodes(), x.size());
   // Emplace 3 line cells:
-  auto cells = std::vector<Cell*>();
+  auto cells = std::vector<CellType*>();
   cells.emplace_back(mesh.EmplaceCell(0, 0, 1));
   cells.emplace_back(mesh.EmplaceCell(1, 1, 2));
   cells.emplace_back(mesh.EmplaceCell(2, 2, 3));
