@@ -13,19 +13,20 @@
 
 namespace mini {
 namespace mesh {
+namespace vtk {
 
-class VtkReaderTest : public ::testing::Test {
+class ReaderTest : public ::testing::Test {
  protected:
   using MeshType = Mesh<double>;
   using CellType = MeshType::CellType;
-  vtk::Reader<MeshType> reader;
+  Reader<MeshType> reader;
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-TEST_F(VtkReaderTest, ReadFromFile) {
+TEST_F(ReaderTest, ReadFromFile) {
   EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtk"));
   EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtu"));
 }
-TEST_F(VtkReaderTest, GetMesh) {
+TEST_F(ReaderTest, GetMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
     auto mesh = reader.GetMesh();
@@ -40,7 +41,7 @@ TEST_F(VtkReaderTest, GetMesh) {
     EXPECT_EQ(area, 2.0);
   }
 }
-TEST_F(VtkReaderTest, MediumMesh) {
+TEST_F(ReaderTest, MediumMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFromFile(test_data_dir_ + "medium" + suffix);
     // auto mesh = reader.GetMesh();
@@ -57,16 +58,16 @@ TEST_F(VtkReaderTest, MediumMesh) {
   }
 }
 
-class VtkWriterTest : public ::testing::Test {
+class WriterTest : public ::testing::Test {
  public:
   static const char* mesh_name;
  protected:
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
-const char* VtkWriterTest::mesh_name;
-TEST_F(VtkWriterTest, TinyMesh) {
-  auto reader = vtk::Reader<Mesh<double>>();
-  auto writer = vtk::Writer<Mesh<double>>();
+const char* WriterTest::mesh_name;
+TEST_F(WriterTest, TinyMesh) {
+  auto reader = Reader<Mesh<double>>();
+  auto writer = Writer<Mesh<double>>();
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
     auto mesh_old = reader.GetMesh();
@@ -87,13 +88,13 @@ TEST_F(VtkWriterTest, TinyMesh) {
               mesh_new->CountCells());
   }
 }
-TEST_F(VtkWriterTest, MeshWithData) {
+TEST_F(WriterTest, MeshWithData) {
   using NodeData = element::Data<double, 2/* dims */, 2/* scalars */, 2/* vectors */>;
   using EdgeData = Empty;
   using CellData = NodeData;
   using MeshType = Mesh<double, NodeData, EdgeData, CellData>;
-  auto reader = vtk::Reader<MeshType>();
-  auto writer = vtk::Writer<MeshType>();
+  auto reader = Reader<MeshType>();
+  auto writer = Writer<MeshType>();
   for (auto suffix : {".vtk", ".vtu"}) {
     reader.ReadFromFile(test_data_dir_ + mesh_name + suffix);
     auto mesh_old = reader.GetMesh();
@@ -142,15 +143,16 @@ TEST_F(VtkWriterTest, MeshWithData) {
   }
 }
 
+}  // namespace vtk
 }  // namespace mesh
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   if (argc == 1) {
-    mini::mesh::VtkWriterTest::mesh_name = "tiny";
+    mini::mesh::vtk::WriterTest::mesh_name = "tiny";
   } else {
-    mini::mesh::VtkWriterTest::mesh_name = argv[1];
+    mini::mesh::vtk::WriterTest::mesh_name = argv[1];
   }
   return RUN_ALL_TESTS();
 }
