@@ -6,6 +6,8 @@
 #include <memory>
 #include <string>
 
+#include "cgnslib.h"
+
 namespace mini {
 namespace mesh {
 namespace cgns {
@@ -13,8 +15,17 @@ namespace cgns {
 template <class Mesh>
 class Reader {
  public:
-  bool ReadFromFile(const std::string& file_name);
-  std::unique_ptr<Mesh> GetMesh();
+  bool ReadFromFile(const std::string& file_name) {
+    mesh_ = std::make_unique<Mesh>();
+    return mesh_->OpenFile(file_name);
+  }
+  std::unique_ptr<Mesh> GetMesh() {
+    std::unique_ptr<Mesh> temp(mesh_.release());
+    return temp;
+  }
+
+ private:
+  std::unique_ptr<Mesh> mesh_;
 };
 
 }  // namespace cgns
