@@ -79,6 +79,9 @@ if (${PROJECT_NAME}_ENABLE_VTK)
   endif ()
 endif (${PROJECT_NAME}_ENABLE_VTK)
 
+add_subdirectory(ThirdParty/METIS EXCLUDE_FROM_ALL)
+set(METIS_INC "${METIS_BINARY_DIR}/include")
+
 # Additional headers that depends on ${PROJECT_SOURCE_DIR}
 include_directories("${PROJECT_SOURCE_DIR}/include")
 # Additional headers that depends on ${PROJECT_BINARY_DIR}
