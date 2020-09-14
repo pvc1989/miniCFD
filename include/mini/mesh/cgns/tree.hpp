@@ -17,13 +17,39 @@ namespace mesh {
 namespace cgns {
 
 template <class Real>
+class Zone {
+ public:
+  Zone() = default;
+  Zone(char* name, int id, int* zone_size)
+    : name_(name), zone_id_(id) {
+      vertex_size_ = zone_size[0];
+      cell_size_ = zone_size[1];
+      boundary_size_ = zone_size[2];
+  }
+  int GetId() const {
+    return zone_id_;
+  }
+  std::string GetName() const {
+    return name_;
+  }
+  
+ private: 
+  int zone_id_;
+  int vertex_size_;
+  int cell_size_;
+  int boundary_size_;
+  std::string name_;
+};
+
+template <class Real>
 class Base {
  public:
+  using Zone = Zone<Real>;
   Base() = default;
   Base(char* name, int id, int cell_dim, int phys_dim)
-    : name_(name), id_(id), cell_dim_(cell_dim), phys_dim_(phys_dim) {}
+    : name_(name), base_id_(id), cell_dim_(cell_dim), phys_dim_(phys_dim) {}
   int GetId() const {
-    return id_;
+    return base_id_;
   }
   int GetCellDim() const {
     return cell_dim_;
@@ -34,12 +60,26 @@ class Base {
   std::string GetName() const {
     return name_;
   }
-
+  void ReadZones(const int& file_id) {
+    cg_nzones(file_id, base_id_, &n_zones_);
+    for (int zone_id = 1; zone_id <= n_zones_; ++zone_id) {
+      char zone_name[33];
+      int zone_size[3][1];
+      cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
+      auto zone_ptr = std::make_unique<Zone>(zone_name, zone_id, zone_size[0]);
+      // zone_ptr->ReadGridCoordinates();
+      // zone_ptr->ReadElements();
+      zones_.emplace(zone_id, std::move(zone_ptr));
+    }
+  }
+  
  private: 
-  int id_;
+  int base_id_;
+  int n_zones_{0};
   int cell_dim_;
   int phys_dim_;
   std::string name_;
+  std::map<int, std::unique_ptr<Zone>> zones_;
 };
 
 template <class Real>
@@ -50,26 +90,16 @@ class Tree {
   Tree() = default;
   bool OpenFile(const std::string& file_name) {
     name_ = file_name;
-    if (cg_open(name_.c_str(), CG_MODE_READ, &id_)) {
+    if (cg_open(name_.c_str(), CG_MODE_READ, &file_id_)) {
       cg_error_exit();
       return false;
     }
-    cg_nbases(id_, &n_bases_);
-    for (int base_id = 1; base_id <= n_bases_; ++base_id) {
-      char base_name[33];
-      int cell_dim{-1}, phys_dim{-1};
-      cg_base_read(id_, base_id, base_name, &cell_dim, &phys_dim);
-      // bases_[base_id] = std::make_unique<Base>(base_name, base_id,
-      //                                          cell_dim, phys_dim);
-      bases_.emplace(std::make_pair(base_id,
-                                    std::make_unique<Base>(base_name, base_id,
-                                                           cell_dim, phys_dim)));
-    }
-    cg_close(id_);
+    ReadBases();
+    cg_close(file_id_);
     return true;
   }
   int GetId() const {
-    return id_;
+    return file_id_;
   }
   std::string GetName() const {
     return name_;
@@ -82,10 +112,23 @@ class Tree {
   }
 
  private:
-  int id_{-1};
+  int file_id_{-1};
   int n_bases_{0};
   std::string name_;
   std::map<int, std::unique_ptr<Base>> bases_;
+
+  void ReadBases() {
+    cg_nbases(file_id_, &n_bases_);
+    for (int base_id = 1; base_id <= n_bases_; ++base_id) {
+      char base_name[33];
+      int cell_dim{-1}, phys_dim{-1};
+      cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
+      auto base_ptr = std::make_unique<Base>(base_name, base_id,
+                                             cell_dim, phys_dim);
+      base_ptr->ReadZones(file_id_);
+      bases_.emplace(base_id, std::move(base_ptr));
+    }
+  }
 };
 
 }  // namespace cgns
