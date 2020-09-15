@@ -19,11 +19,7 @@ namespace cgns {
 template <class Real>
 struct Coordinates {
   Coordinates() = default;
-  Coordinates(int size) {
-    x = std::vector<Real>(size);
-    y = std::vector<Real>(size);
-    z = std::vector<Real>(size);
-  }
+  Coordinates(int size) : x(size), y(size), z(size) {}
   std::vector<Real> x;
   std::vector<Real> y;
   std::vector<Real> z;
@@ -32,15 +28,11 @@ struct Coordinates {
 template <class Real>
 class Zone {
  public:
-  using Coordinates = Coordinates<Real>;
+  using CoordinatesType = Coordinates<Real>;
   Zone() = default;
   Zone(char* name, int id, int* zone_size)
-    : name_(name), zone_id_(id) {
-      vertex_size_ = zone_size[0];
-      cell_size_ = zone_size[1];
-      boundary_size_ = zone_size[2];
-      coordinates_ = Coordinates(vertex_size_);
-  }
+    : name_(name), zone_id_(id), cell_size_(zone_size[1]),
+      coordinates_(zone_size[0]) {}
   int GetId() const {
     return zone_id_;
   }
@@ -48,37 +40,35 @@ class Zone {
     return name_;
   }
   int GetVertexSize() const {
-    return vertex_size_;
+    return coordinates_.x.size();
   }
   int GetCellSize() const {
     return cell_size_;
   }
-  Coordinates& GetCoordinates() {
+  const CoordinatesType& GetCoordinates() const {
     return coordinates_;
   }
-  void ReadGridCoordinates(const int& file_id, const int& base_id) {
-    int irmin, irmax;
+  void ReadCoordinates(int file_id, int base_id) {
+    int first, last;
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
-                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.x.data());
+                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.x.data());
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateY",
-                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.y.data());
+                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.y.data());
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateZ",
-                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.z.data());
+                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.z.data());
   }
   
  private: 
   int zone_id_;
-  int vertex_size_;
   int cell_size_;
-  int boundary_size_;
   std::string name_;
-  Coordinates coordinates_;
+  CoordinatesType coordinates_;
 };
 
 template <class Real>
 class Base {
  public:
-  using Zone = Zone<Real>;
+  using ZoneType = Zone<Real>;
   Base() = default;
   Base(char* name, int id, int cell_dim, int phys_dim)
     : name_(name), base_id_(id), cell_dim_(cell_dim), phys_dim_(phys_dim) {}
@@ -97,7 +87,7 @@ class Base {
   int CountZones() const {
     return n_zones_;
   }
-  Zone& GetZone(int id) {
+  const ZoneType& GetZone(int id) const {
     return *(zones_.at(id).get());
   }
   void ReadZones(const int& file_id) {
@@ -106,9 +96,8 @@ class Base {
       char zone_name[33];
       int zone_size[3][1];
       cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
-      auto zone_ptr = std::make_unique<Zone>(zone_name, zone_id, zone_size[0]);
-      zone_ptr->ReadGridCoordinates(file_id, base_id_);
-      // zone_ptr->ReadElements();
+      auto zone_ptr = std::make_unique<ZoneType>(zone_name, zone_id, zone_size[0]);
+      zone_ptr->ReadCoordinates(file_id, base_id_);
       zones_.emplace(zone_id, std::move(zone_ptr));
     }
   }
@@ -119,14 +108,14 @@ class Base {
   int cell_dim_;
   int phys_dim_;
   std::string name_;
-  std::map<int, std::unique_ptr<Zone>> zones_;
+  std::map<int, std::unique_ptr<ZoneType>> zones_;
 };
 
 template <class Real>
 class Tree {
  public:
   // Types:
-  using Base = Base<Real>;
+  using BaseType = Base<Real>;
   Tree() = default;
   bool OpenFile(const std::string& file_name) {
     name_ = file_name;
@@ -147,7 +136,7 @@ class Tree {
   int CountBases() const {
     return n_bases_;
   }
-  Base& GetBase(int id) {
+  BaseType& GetBase(int id) {
     return *(bases_.at(id).get());
   }
 
@@ -155,7 +144,7 @@ class Tree {
   int file_id_{-1};
   int n_bases_{0};
   std::string name_;
-  std::map<int, std::unique_ptr<Base>> bases_;
+  std::map<int, std::unique_ptr<BaseType>> bases_;
 
   void ReadBases() {
     cg_nbases(file_id_, &n_bases_);
@@ -163,7 +152,7 @@ class Tree {
       char base_name[33];
       int cell_dim{-1}, phys_dim{-1};
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
-      auto base_ptr = std::make_unique<Base>(base_name, base_id,
+      auto base_ptr = std::make_unique<BaseType>(base_name, base_id,
                                              cell_dim, phys_dim);
       base_ptr->ReadZones(file_id_);
       bases_.emplace(base_id, std::move(base_ptr));
