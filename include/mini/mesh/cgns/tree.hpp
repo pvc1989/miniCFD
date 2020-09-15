@@ -17,20 +17,53 @@ namespace mesh {
 namespace cgns {
 
 template <class Real>
+struct Coordinates {
+  Coordinates() = default;
+  Coordinates(int size) {
+    x = std::vector<Real>(size);
+    y = std::vector<Real>(size);
+    z = std::vector<Real>(size);
+  }
+  std::vector<Real> x;
+  std::vector<Real> y;
+  std::vector<Real> z;
+};
+
+template <class Real>
 class Zone {
  public:
+  using Coordinates = Coordinates<Real>;
   Zone() = default;
   Zone(char* name, int id, int* zone_size)
     : name_(name), zone_id_(id) {
       vertex_size_ = zone_size[0];
       cell_size_ = zone_size[1];
       boundary_size_ = zone_size[2];
+      coordinates_ = Coordinates(vertex_size_);
   }
   int GetId() const {
     return zone_id_;
   }
   std::string GetName() const {
     return name_;
+  }
+  int GetVertexSize() const {
+    return vertex_size_;
+  }
+  int GetCellSize() const {
+    return cell_size_;
+  }
+  Coordinates& GetCoordinates() {
+    return coordinates_;
+  }
+  void ReadGridCoordinates(const int& file_id, const int& base_id) {
+    int irmin, irmax;
+    cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
+                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.x.data());
+    cg_coord_read(file_id, base_id, zone_id_, "CoordinateY",
+                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.y.data());
+    cg_coord_read(file_id, base_id, zone_id_, "CoordinateZ",
+                  CGNS_ENUMV(RealSingle), &irmin, &irmax, coordinates_.z.data());
   }
   
  private: 
@@ -39,6 +72,7 @@ class Zone {
   int cell_size_;
   int boundary_size_;
   std::string name_;
+  Coordinates coordinates_;
 };
 
 template <class Real>
@@ -60,6 +94,12 @@ class Base {
   std::string GetName() const {
     return name_;
   }
+  int CountZones() const {
+    return n_zones_;
+  }
+  Zone& GetZone(int id) {
+    return *(zones_.at(id).get());
+  }
   void ReadZones(const int& file_id) {
     cg_nzones(file_id, base_id_, &n_zones_);
     for (int zone_id = 1; zone_id <= n_zones_; ++zone_id) {
@@ -67,7 +107,7 @@ class Base {
       int zone_size[3][1];
       cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
       auto zone_ptr = std::make_unique<Zone>(zone_name, zone_id, zone_size[0]);
-      // zone_ptr->ReadGridCoordinates();
+      zone_ptr->ReadGridCoordinates(file_id, base_id_);
       // zone_ptr->ReadElements();
       zones_.emplace(zone_id, std::move(zone_ptr));
     }
