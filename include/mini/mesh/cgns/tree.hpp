@@ -16,6 +16,13 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
+static const std::map<CGNS_ENUMT(ElementType_t), int> n_vertex_of_type
+    {{CGNS_ENUMV(NODE)   , 1},
+     {CGNS_ENUMV(BAR_2)  , 2},
+     {CGNS_ENUMV(TRI_3)  , 3},
+     {CGNS_ENUMV(QUAD_4) , 4},
+     {CGNS_ENUMV(TETRA_4), 4}};
+
 template <class Real>
 struct Coordinates {
   Coordinates() = default;
@@ -26,9 +33,21 @@ struct Coordinates {
 };
 
 template <class Real>
+struct Section {
+  Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
+        : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
+          elements((last-first+1)*n_vertex_of_type.at(ty)) {}
+  std::string name;
+  int id, first, last, n_boundary;
+  CGNS_ENUMT(ElementType_t) type;
+  std::vector<int> elements;   
+};
+
+template <class Real>
 class Zone {
  public:
   using CoordinatesType = Coordinates<Real>;
+  using SectionType = Section<Real>;
   Zone() = default;
   Zone(char* name, int id, int* zone_size)
     : name_(name), zone_id_(id), cell_size_(zone_size[1]),
@@ -45,9 +64,16 @@ class Zone {
   int GetCellSize() const {
     return cell_size_;
   }
+  int CountSections() const {
+    return sections_.size();
+  }
   const CoordinatesType& GetCoordinates() const {
     return coordinates_;
   }
+  const SectionType& GetSection(int id) const {
+    return *(sections_.at(id).get());
+  }
+
   void ReadCoordinates(int file_id, int base_id) {
     int first, last;
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
@@ -57,12 +83,31 @@ class Zone {
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateZ",
                   CGNS_ENUMV(RealSingle), &first, &last, coordinates_.z.data());
   }
-  
+  void ReadElements(int file_id, int base_id) {
+    int n_sections;
+    cg_nsections(file_id, base_id, zone_id_, &n_sections);
+    for (int section_id = 1; section_id <= n_sections; ++section_id) {
+      char section_name[33];
+      CGNS_ENUMT(ElementType_t) element_type;
+      int first, last, n_boundary, parent_flag;
+      cg_section_read(file_id, base_id, zone_id_, section_id, section_name,
+                      &element_type, &first, &last, &n_boundary, &parent_flag);
+      auto section_ptr = std::make_unique<SectionType>(section_name, section_id,
+                                                       first, last, n_boundary,
+                                                       element_type);
+      int parent_data;
+      cg_elements_read(file_id, base_id, zone_id_, section_id,
+                       section_ptr->elements.data(), &parent_data);
+      sections_.emplace(section_id, std::move(section_ptr));
+    }
+  }
+   
  private: 
   int zone_id_;
   int cell_size_;
   std::string name_;
   CoordinatesType coordinates_;
+  std::map<int, std::unique_ptr<SectionType>> sections_;
 };
 
 template <class Real>
@@ -98,6 +143,7 @@ class Base {
       cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
       auto zone_ptr = std::make_unique<ZoneType>(zone_name, zone_id, zone_size[0]);
       zone_ptr->ReadCoordinates(file_id, base_id_);
+      zone_ptr->ReadElements(file_id, base_id_);
       zones_.emplace(zone_id, std::move(zone_ptr));
     }
   }
@@ -153,7 +199,7 @@ class Tree {
       int cell_dim{-1}, phys_dim{-1};
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
       auto base_ptr = std::make_unique<BaseType>(base_name, base_id,
-                                             cell_dim, phys_dim);
+                                                 cell_dim, phys_dim);
       base_ptr->ReadZones(file_id_);
       bases_.emplace(base_id, std::move(base_ptr));
     }
