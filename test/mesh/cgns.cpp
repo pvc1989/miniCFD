@@ -163,7 +163,6 @@ TEST_F(ReaderTest, ReadZone) {
         EXPECT_STREQ(my_section.name.c_str(), cg_section.name.c_str());
         EXPECT_EQ(my_section.elements.size(), cg_section.elements.size());
         int n_vertexs = my_section.elements.size();
-        std::cout << n_vertexs << std::endl;
         for (int index = 0; index < n_vertexs; ++index) {
           EXPECT_EQ(my_section.elements.at(index), cg_section.elements.at(index));
         }
