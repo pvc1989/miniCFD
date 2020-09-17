@@ -23,7 +23,7 @@ TEST_F(Partitioner, PartMeshDual) {
     Partition a mesh into k parts based on a partitioning of its dual graph.
    */
   // Build a simple mesh:
-  idx_t n_elems_x{30}, n_elems_y{1};
+  idx_t n_elems_x{30}, n_elems_y{30};
   idx_t n_elems = n_elems_x * n_elems_y;
   idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
   idx_t n_nodes = n_nodes_x * n_nodes_y;
@@ -47,19 +47,6 @@ TEST_F(Partitioner, PartMeshDual) {
   ++curr_elem;
   EXPECT_EQ(curr_elem, elem_range.end());
   EXPECT_EQ(curr_node, elem_nodes.end());
-  // Print the mesh:
-  /*
-  std::cout << n_elems << std::endl;
-  curr_node = elem_nodes.begin();
-  for (int i = 0; i != n_elems; ++i) {
-    for (int j = 0; j != 4; ++j) {
-      std::cout << 1 + *curr_node++ // node index starts from 1 in mesh file
-                << ' ';
-    }
-    std::cout << std::endl;
-  }
-  EXPECT_EQ(curr_node, elem_nodes.end());
-   */
   // Partition the mesh:
   auto elem_parts = std::vector<idx_t>(n_elems);
   auto node_parts = std::vector<idx_t>(n_nodes);
@@ -76,7 +63,21 @@ TEST_F(Partitioner, PartMeshDual) {
     &edge_cut, elem_parts.data(), node_parts.data()
   );
   EXPECT_EQ(result, METIS_OK);
+  // Print the mesh:
+  /*
+  std::cout << n_elems << std::endl;
+  curr_node = elem_nodes.begin();
+  for (int i = 0; i != n_elems; ++i) {
+    for (int j = 0; j != 4; ++j) {
+      std::cout << 1 + *curr_node++ // node index starts from 1 in mesh file
+                << ' ';
+    }
+    std::cout << std::endl;
+  }
+  EXPECT_EQ(curr_node, elem_nodes.end());
+   */
   // Print the result:
+  /*
   std::cout << "part id of each elem: ";
   for (auto x : elem_parts) {
     std::cout << x << ' ';
@@ -87,6 +88,39 @@ TEST_F(Partitioner, PartMeshDual) {
     std::cout << x << ' ';
   }
   std::cout << std::endl;
+   */
+  // Write partitioned mesh:
+  auto output = test_data_dir_ + "partitioned_mesh.vtk";
+  auto* file = fopen(output.c_str(), "w");
+  fprintf(file, "# vtk DataFile Version 2.0\n");  // Version and Identifier
+  fprintf(file, "An unstructed mesh partitioned by METIS.\n");  // Header
+  fprintf(file, "ASCII\n");  // File Format
+  // DataSet Structure
+  fprintf(file, "DATASET UNSTRUCTURED_GRID\n");
+  fprintf(file, "POINTS %d float\n", n_nodes);
+  for (int i = 0; i != n_nodes_x; ++i) {
+    for (int j = 0; j != n_nodes_y; ++j) {
+      fprintf(file, "%f %f 0.0\n", (float) i, (float) j);
+    }
+  }
+  fprintf(file, "CELLS %d %d\n", n_elems, n_elems * 5);
+  curr_node = elem_nodes.begin();
+  for (int i = 0; i != n_elems; ++i) {
+    fprintf(file, "4 %d %d %d %d\n",
+            curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
+    curr_node += 4;
+  }
+  fprintf(file, "CELL_TYPES %d\n", n_elems);
+  for (int i = 0; i != n_elems; ++i) {
+    fprintf(file, "9\n");  // VTK_QUAD = 9
+  }
+  fprintf(file, "CELL_DATA %d\n", n_elems);
+  fprintf(file, "SCALARS PartID float 1\n");
+  fprintf(file, "LOOKUP_TABLE elem_parts\n");
+  for (auto x : elem_parts) {
+    fprintf(file, "%f\n", (float) x);
+  }
+  fclose(file);
 }
 
 }  // namespace metis
