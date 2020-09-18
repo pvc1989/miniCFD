@@ -1,2 +1,3 @@
-// These settings will be passed to "${PROJECT_BINARY_DIR}/mini/data/path.hpp".
+// These settings will be passed to "${PROJECT_BINARY_DIR}/include/mini/data/path.hpp".
 #define TEST_DATA_DIR "@PROJECT_SOURCE_DIR@/data/"
+#define PROJECT_BINARY_DIR "@PROJECT_BINARY_DIR@"
