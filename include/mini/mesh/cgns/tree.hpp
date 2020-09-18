@@ -35,7 +35,7 @@ struct Coordinates {
 
 template <class Real>
 struct Section {
-  Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
+  Section(std::string sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
       : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
         elements((last-first+1)*n_vertex_of_type.at(ty)) {}
   std::string name;
@@ -50,7 +50,7 @@ class Zone {
   using CoordinatesType = Coordinates<Real>;
   using SectionType = Section<Real>;
   Zone() = default;
-  Zone(char* name, int id, int* zone_size)
+  Zone(std::string name, int id, int* zone_size)
       : name_(name), zone_id_(id), cell_size_(zone_size[1]),
         coordinates_(zone_size[0]) {}
   int GetId() const {
@@ -88,10 +88,10 @@ class Zone {
     int n_sections;
     cg_nsections(file_id, base_id, zone_id_, &n_sections);
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
-      char section_name[33];
+      std::string section_name;
       CGNS_ENUMT(ElementType_t) element_type;
       int first, last, n_boundary, parent_flag;
-      cg_section_read(file_id, base_id, zone_id_, section_id, section_name,
+      cg_section_read(file_id, base_id, zone_id_, section_id, section_name.data(),
                       &element_type, &first, &last, &n_boundary, &parent_flag);
       auto& section = sections_.emplace_back(section_name, section_id, first,
                                              last, n_boundary, element_type);
@@ -114,7 +114,7 @@ class Base {
  public:
   using ZoneType = Zone<Real>;
   Base() = default;
-  Base(char* name, int id, int cell_dim, int phys_dim)
+  Base(std::string name, int id, int cell_dim, int phys_dim)
     : name_(name), base_id_(id), cell_dim_(cell_dim), phys_dim_(phys_dim) {}
   int GetId() const {
     return base_id_;
@@ -137,9 +137,9 @@ class Base {
   void ReadZones(const int& file_id) {
     cg_nzones(file_id, base_id_, &n_zones_);
     for (int zone_id = 1; zone_id <= n_zones_; ++zone_id) {
-      char zone_name[33];
+      std::string zone_name;
       int zone_size[3][1];
-      cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
+      cg_zone_read(file_id, base_id_, zone_id, zone_name.data(), zone_size[0]);
       auto& zone = zones_.emplace_back(zone_name, zone_id, zone_size[0]);
       zone.ReadCoordinates(file_id, base_id_);
       zone.ReadElements(file_id, base_id_);
@@ -193,9 +193,9 @@ class Tree {
   void ReadBases() {
     cg_nbases(file_id_, &n_bases_);
     for (int base_id = 1; base_id <= n_bases_; ++base_id) {
-      char base_name[33];
+      std::string base_name;
       int cell_dim{-1}, phys_dim{-1};
-      cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
+      cg_base_read(file_id_, base_id, base_name.data(), &cell_dim, &phys_dim);
       auto& base = bases_.emplace_back(base_name, base_id, cell_dim, phys_dim);
       base.ReadZones(file_id_);
     }
