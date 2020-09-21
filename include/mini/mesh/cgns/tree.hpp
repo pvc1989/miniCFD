@@ -52,7 +52,7 @@ struct Solution {
   std::string name;
   int id;
   CGNS_ENUMT(GridLocation_t) location;
-  std::map<std::string, std::unique_ptr<Field>> fields;
+  std::map<std::string, Field> fields;
 };
 
 template <class Real>
@@ -141,10 +141,10 @@ class Zone {
         } else if (location == CGNS_ENUMV(CellCenter)) {
           last = cell_size_;
         }
-        auto sol_array = std::make_unique<Field>(last);
+        std::string name = std::string(field_name);
+        solution.fields.emplace(name, Field(last));
         cg_field_read(file_id, base_id, zone_id_, sol_id, field_name,
-                      datatype, &first, &last, sol_array.get()->data());
-        solution.fields.emplace(std::string(field_name), std::move(sol_array));
+                      datatype, &first, &last, solution.fields[name].data());
       }
     }
   }

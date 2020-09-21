@@ -21,6 +21,30 @@ class ReaderTest : public ::testing::Test {
   using Coordinates = std::vector<std::vector<double>>;
   Reader<MeshType> reader;
   std::string const test_data_dir_{TEST_DATA_DIR};
+  using Field = std::vector<double>;
+  struct Solution {
+    std::string name; int id; CGNS_ENUMT(GridLocation_t) location;
+    std::map<std::string, Field> fields;
+    Solution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
+        : name(sn), id(si), location(lc) {}
+  };
+  struct Section {
+    std::string name; int id, first, last, n_boundary;
+    CGNS_ENUMT(ElementType_t) type;
+    std::vector<int> elements;
+    Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
+        : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
+          elements((last-first+1)*n_vertex_of_type.at(ty)) {}
+  };
+  struct ZoneInfo {
+    std::string name; int id, vertex_size, cell_size;
+    std::vector<double> x, y, z;
+    std::map<int, Section> sections;
+    std::vector<Solution> solutions;
+    ZoneInfo(char* zn, int zi, int* zone_size) 
+        : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
+          x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {}
+  };
 };
 TEST_F(ReaderTest, ReadFromFile) {
   auto file_name = test_data_dir_ + "ugrid_2d.cgns";
@@ -66,36 +90,10 @@ TEST_F(ReaderTest, ReadBase) {
 }
 
 TEST_F(ReaderTest, ReadZone) {
-  // auto file_name = test_data_dir_ + "ugrid_2d.cgns";
-  // file for FlowSoluton test
-  auto file_name = test_data_dir_ + "fixed_grid.cgns";
+  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
-  using Field = std::vector<double>;
-  struct Solution {
-    std::string name; int id; CGNS_ENUMT(GridLocation_t) location;
-    std::map<std::string, std::unique_ptr<Field>> fields;
-    Solution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
-        : name(sn), id(si), location(lc) {}
-  };
-  struct Section {
-    std::string name; int id, first, last, n_boundary;
-    CGNS_ENUMT(ElementType_t) type;
-    std::vector<int> elements;
-    Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
-        : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          elements((last-first+1)*n_vertex_of_type.at(ty)) {}
-  };
-  struct ZoneInfo {
-    std::string name; int id, vertex_size, cell_size;
-    std::vector<double> x, y, z;
-    std::map<int, Section> sections;
-    std::vector<Solution> solutions;
-    ZoneInfo(char* zn, int zi, int* zone_size) 
-        : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
-          x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {}
-  };
   auto zone_info = std::vector<ZoneInfo>();
   int n_bases{-1};
   cg_nbases(file_id, &n_bases);
@@ -103,7 +101,7 @@ TEST_F(ReaderTest, ReadZone) {
     int n_zones{-1};
     cg_nzones(file_id, base_id, &n_zones);
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
-      char* zone_name;
+      char zone_name[33];
       int zone_size[3][1];
       cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
       auto& cg_zone = zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
@@ -131,34 +129,6 @@ TEST_F(ReaderTest, ReadZone) {
         cg_elements_read(file_id, base_id, zone_id, section_id,
                          cg_section.elements.data(), &parent_data);
         cg_zone.sections.insert({section_id, cg_section});
-      }
-      // read flow solutions
-      int n_solutions;
-      cg_nsols(file_id, base_id, zone_id, &n_solutions);
-      for (int sol_id = 1; sol_id <= n_solutions; ++sol_id) {
-        char sol_name[33];
-        CGNS_ENUMT(GridLocation_t) location;
-        cg_sol_info(file_id, base_id, zone_id, sol_id, sol_name, &location);
-        auto& cg_solution = cg_zone.solutions.emplace_back(sol_name, sol_id, location);
-        // read field
-        int n_fields;
-        cg_nfields(file_id, base_id, zone_id, sol_id, &n_fields);
-        for (int field_id = 1; field_id <= n_fields; ++field_id) {
-          CGNS_ENUMT(DataType_t) datatype;
-          char field_name[33];
-          cg_field_info(file_id, base_id, zone_id, sol_id, field_id, &datatype,
-                        field_name);
-          int first{1}, last{1};
-          if (location == CGNS_ENUMV(Vertex)) {
-            last = cg_zone.vertex_size;
-          } else if (location == CGNS_ENUMV(CellCenter)) {
-            last = cg_zone.cell_size;
-          }
-          auto sol_array = std::make_unique<Field>(last);
-          cg_field_read(file_id, base_id, zone_id, sol_id, field_name,
-                        datatype, &first, &last, sol_array.get()->data());
-          cg_solution.fields.emplace(std::string(field_name), std::move(sol_array));
-        }
       }
     }
   }
@@ -205,24 +175,67 @@ TEST_F(ReaderTest, ReadZone) {
           EXPECT_EQ(my_section.elements.at(index), cg_section.elements.at(index));
         }
       }
-      // compara flow solutions
-      auto n_sols = my_zone.CountSolutions();
-      for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
-        auto& my_sol = my_zone.GetSolution(sol_id);
-        auto& cg_sol = cg_zone.solutions.at(sol_id-1);
-        EXPECT_EQ(my_sol.id, cg_sol.id);
-        EXPECT_STREQ(my_sol.name.c_str(), cg_sol.name.c_str());
-        EXPECT_EQ(my_sol.fields.size(), cg_sol.fields.size());
-        for (auto& [name, field] : my_sol.fields) {
-          EXPECT_EQ(field->size(), cg_sol.fields[name]->size());
-          for (int index = 0; index < field->size(); ++index) {
-            EXPECT_DOUBLE_EQ(field->at(index), cg_sol.fields[name]->at(index));
-          }
-        }
-      }
     }
   }
   cg_close(file_id);
+}
+
+TEST_F(ReaderTest, ReadSolution) {
+  auto file_name = test_data_dir_ + "fixed_grid.cgns";
+  // read by mini::mesh::cgns
+  reader.ReadFromFile(file_name);
+  auto mesh = reader.GetMesh();
+  // read by cgnslib
+  int file_id{-1};
+  cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
+  int base_id{1}, zone_id{1}, n_sols{0};
+  char zone_name[33];
+  int zone_size[3][1];
+  cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
+  auto cg_zone = ZoneInfo(zone_name, zone_id, zone_size[0]);
+  cg_nsols(file_id, base_id, zone_id, &n_sols);
+  cg_zone.solutions.reserve(n_sols);
+  for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
+    char sol_name[33];
+    CGNS_ENUMT(GridLocation_t) location;
+    cg_sol_info(file_id, base_id, zone_id, sol_id, sol_name, &location);
+    auto& cg_solution = cg_zone.solutions.emplace_back(sol_name, sol_id, location);
+    // read field
+    int n_fields;
+    cg_nfields(file_id, base_id, zone_id, sol_id, &n_fields);
+    for (int field_id = 1; field_id <= n_fields; ++field_id) {
+      CGNS_ENUMT(DataType_t) datatype;
+      char field_name[33];
+      cg_field_info(file_id, base_id, zone_id, sol_id, field_id, &datatype,
+                    field_name);
+      int first{1}, last{1};
+      if (location == CGNS_ENUMV(Vertex)) {
+        last = cg_zone.vertex_size;
+      } else if (location == CGNS_ENUMV(CellCenter)) {
+        last = cg_zone.cell_size;
+      }
+      std::string name = std::string(field_name);
+      cg_solution.fields.emplace(name, Field(last));
+      cg_field_read(file_id, base_id, zone_id, sol_id, field_name,
+                    datatype, &first, &last, cg_solution.fields[name].data());
+    }
+  }
+  cg_close(file_id);
+  // compara flow solutions
+  auto& my_zone = mesh->GetBase(base_id).GetZone(zone_id);
+  for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
+    auto& my_sol = my_zone.GetSolution(sol_id);
+    auto& cg_sol = cg_zone.solutions.at(sol_id-1);
+    EXPECT_EQ(my_sol.id, cg_sol.id);
+    EXPECT_STREQ(my_sol.name.c_str(), cg_sol.name.c_str());
+    EXPECT_EQ(my_sol.fields.size(), cg_sol.fields.size());
+    for (auto& [name, field] : my_sol.fields) {
+      EXPECT_EQ(field.size(), cg_sol.fields[name].size());
+      for (int index = 0; index < field.size(); ++index) {
+        EXPECT_DOUBLE_EQ(field.at(index), cg_sol.fields[name].at(index));
+      }
+    }
+  }
 }
 
 // TEST_F(ReaderTest, ReadFromFile) {
