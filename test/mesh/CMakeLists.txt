@@ -18,12 +18,14 @@ if (${PROJECT_NAME}_ENABLE_VTK)
   add_test(NAME TestMeshVtk2d COMMAND vtk2d)
 endif (${PROJECT_NAME}_ENABLE_VTK)
 
+if (FALSE)
 include_directories(${CGNS_INC})
 link_libraries(cgns_shared)
 
 add_executable(test_mesh_cgns cgns.cpp)
 set_target_properties(test_mesh_cgns PROPERTIES OUTPUT_NAME cgns)
 add_test(NAME TestMeshCgns COMMAND cgns)
+endif ()
 
 add_executable(test_mesh_metis metis.cpp)
 target_include_directories(test_mesh_metis PRIVATE ${METIS_INC})
