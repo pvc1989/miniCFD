@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cmath>
 #include <initializer_list>
+#include <memory>
 
 namespace mini {
 namespace algebra {

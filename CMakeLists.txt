@@ -79,6 +79,9 @@ if (${PROJECT_NAME}_ENABLE_VTK)
   endif ()
 endif (${PROJECT_NAME}_ENABLE_VTK)
 
+add_subdirectory(ThirdParty/METIS)
+set(METIS_INC "${METIS_BINARY_DIR}/include")
+
 # Additional headers that depends on ${PROJECT_SOURCE_DIR}
 include_directories("${PROJECT_SOURCE_DIR}/include")
 # Additional headers that depends on ${PROJECT_BINARY_DIR}
@@ -94,7 +97,7 @@ if (${PROJECT_NAME}_BUILD_TESTS)
   add_subdirectory(test)
 endif ()
 
-option(${PROJECT_NAME}_BUILD_DEMOS "Build demos for this project." "ON")
+option(${PROJECT_NAME}_BUILD_DEMOS "Build demos for this project." "OFF")
 if (${PROJECT_NAME}_BUILD_DEMOS)
   add_subdirectory(demo)
 endif (${PROJECT_NAME}_BUILD_DEMOS)
