@@ -1,5 +1,7 @@
 # miniCFD
 
+![](https://github.com/pvcStillInGradSchool/miniCFD/workflows/Build/badge.svg)
+
 ## Intention
 This repo is a minimum implementation of *Data Structures and Algorithms (DSA)* used in *Computational Fluid Dynamics (CFD)*.
 

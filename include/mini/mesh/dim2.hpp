@@ -266,17 +266,12 @@ class Mesh {
     }
   }
   CellType* EmplaceCell(CellId i, std::initializer_list<NodeId> nodes) {
-    std::unique_ptr<CellType> cell_unique_ptr{nullptr};
     if (nodes.size() == 3) {
       return EmplaceTriangle(i, nodes);
     } else if (nodes.size() == 4) {
       return EmplaceRectangle(i, nodes);
-    } else if (nodes.size() == 2) {
-      return nullptr;
-    } else if (nodes.size() == 1) {
-      return nullptr;
     } else {
-      assert(false);
+      return nullptr;
     }
   }
   static constexpr int Dim() { return 2; }
