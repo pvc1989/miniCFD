@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }} # For each os, run this job on it.
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
     steps:
     - name: Install Dependencies on Linux
       if: startsWith(runner.os, 'Linux')
@@ -16,9 +16,6 @@ jobs:
     - name: Install Dependencies on macOS
       if: startsWith(runner.os, 'macOS')
       run: brew install hdf5-mpi
-    - name: Install Dependencies on Windows
-      if: startsWith(runner.os, 'Windows')
-      run: choco install hdf5-mpi
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
