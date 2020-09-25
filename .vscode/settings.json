@@ -1,0 +1,5 @@
+{
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "cmake.buildDirectory": "${workspaceFolder}/build/${buildType}_by_GCC_on_macOS",
+  "cmake.generator": "Ninja",
+}
