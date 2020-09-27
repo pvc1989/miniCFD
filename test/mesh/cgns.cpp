@@ -31,10 +31,10 @@ class ReaderTest : public ::testing::Test {
   struct Section {
     std::string name; int id, first, last, n_boundary;
     CGNS_ENUMT(ElementType_t) type;
-    std::vector<int> elements;
+    std::vector<int> connectivity;
     Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          elements((last-first+1)*n_vertex_of_type.at(ty)) {}
+          connectivity((last-first+1) * CountNodesByType(ty)) {}
   };
   struct ZoneInfo {
     std::string name; int id, vertex_size, cell_size;
@@ -106,14 +106,13 @@ TEST_F(ReaderTest, ReadZone) {
       cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
       auto& cg_zone = zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
       // read coordinates
-      int first = 0;
-      int last = cg_zone.x.size();
+      cgsize_t first{1}, last{cg_zone.x.size()};
       cg_coord_read(file_id, base_id, zone_id, "CoordinateX",
-                    CGNS_ENUMV(RealSingle), &first, &last, cg_zone.x.data());
+                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.x.data());
       cg_coord_read(file_id, base_id, zone_id, "CoordinateY",
-                    CGNS_ENUMV(RealSingle), &first, &last, cg_zone.y.data());
+                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.y.data());
       cg_coord_read(file_id, base_id, zone_id, "CoordinateZ",
-                    CGNS_ENUMV(RealSingle), &first, &last, cg_zone.z.data());
+                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.z.data());
       // read elements
       int n_sections;
       cg_nsections(file_id, base_id, zone_id, &n_sections);
@@ -127,7 +126,7 @@ TEST_F(ReaderTest, ReadZone) {
                            element_type);
         int parent_data;
         cg_elements_read(file_id, base_id, zone_id, section_id,
-                         cg_section.elements.data(), &parent_data);
+                         cg_section.connectivity.data(), &parent_data);
         cg_zone.sections.insert({section_id, cg_section});
       }
     }
@@ -150,10 +149,10 @@ TEST_F(ReaderTest, ReadZone) {
       auto& cg_zone = zone_info[index++];
       EXPECT_STREQ(my_zone.GetName().c_str(), cg_zone.name.c_str());
       EXPECT_EQ(my_zone.GetId(), cg_zone.id);
-      EXPECT_EQ(my_zone.GetVertexSize(), cg_zone.x.size());
-      EXPECT_EQ(my_zone.GetCellSize(), cg_zone.cell_size);
+      EXPECT_EQ(my_zone.CountNodes(), cg_zone.x.size());
+      EXPECT_EQ(my_zone.CountCells(), cg_zone.cell_size);
       // compare coordinates
-      auto n_nodes = my_zone.GetVertexSize();
+      auto n_nodes = my_zone.CountNodes();
       auto& my_coor = my_zone.GetCoordinates();
       for (int node_id = 0; node_id < n_nodes; ++node_id) {
         EXPECT_DOUBLE_EQ(my_coor.x[node_id], cg_zone.x[node_id]);
@@ -169,10 +168,12 @@ TEST_F(ReaderTest, ReadZone) {
         EXPECT_EQ(my_section.first, cg_section.first);
         EXPECT_EQ(my_section.last, cg_section.last);
         EXPECT_STREQ(my_section.name.c_str(), cg_section.name.c_str());
-        EXPECT_EQ(my_section.elements.size(), cg_section.elements.size());
-        int n_vertexs = my_section.elements.size();
-        for (int index = 0; index < n_vertexs; ++index) {
-          EXPECT_EQ(my_section.elements.at(index), cg_section.elements.at(index));
+        EXPECT_EQ(my_section.connectivity.size(),
+                  cg_section.connectivity.size());
+        int n_nodes = my_section.connectivity.size();
+        for (int index = 0; index < n_nodes; ++index) {
+          EXPECT_EQ(my_section.connectivity.at(index),
+                    cg_section.connectivity.at(index));
         }
       }
     }

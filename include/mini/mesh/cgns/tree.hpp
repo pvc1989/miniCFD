@@ -16,18 +16,27 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-static const std::map<CGNS_ENUMT(ElementType_t), int> n_vertex_of_type
-    {{CGNS_ENUMV(NODE)   , 1},
+static const std::map<CGNS_ENUMT(ElementType_t), int> n_vertex_of_type {
+     {CGNS_ENUMV(NODE)   , 1},
      {CGNS_ENUMV(BAR_2)  , 2},
      {CGNS_ENUMV(TRI_3)  , 3},
      {CGNS_ENUMV(QUAD_4) , 4},
      {CGNS_ENUMV(TETRA_4), 4},
-     {CGNS_ENUMV(HEXA_8) , 8}};
+     {CGNS_ENUMV(HEXA_8) , 8}
+};
+inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
+  return n_vertex_of_type.at(type);
+}
 
-template <class Real>
+template <class Real> 
 struct Coordinates {
   Coordinates() = default;
   Coordinates(int size) : x(size), y(size), z(size) {}
+  Coordinates(Coordinates const &) = default;
+  Coordinates(Coordinates &&) = default;
+  Coordinates& operator=(const Coordinates&) noexcept = default;
+  Coordinates& operator=(Coordinates&&) noexcept = default;
+  ~Coordinates() noexcept = default;
   std::vector<Real> x;
   std::vector<Real> y;
   std::vector<Real> z;
@@ -37,11 +46,14 @@ template <class Real>
 struct Section {
   Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
       : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-        elements((last-first+1)*n_vertex_of_type.at(ty)) {}
+        connectivity((last-first+1)*n_vertex_of_type.at(ty)) {}
   std::string name;
-  int id, first, last, n_boundary;
+  int id, first, last, n_boundary;  // see CGNS/SIDS
   CGNS_ENUMT(ElementType_t) type;
-  std::vector<int> elements;   
+  std::vector<int> connectivity;
+  int CountCells() const {
+    return last - first + 1;
+  }
 };
 
 using Field = std::vector<double>;
@@ -71,11 +83,20 @@ class Zone {
   std::string GetName() const {
     return name_;
   }
-  int GetVertexSize() const {
+  int CountNodes() const {
     return coordinates_.x.size();
   }
-  int GetCellSize() const {
+  int CountCells() const {
     return cell_size_;
+  }
+  int CountCellsByType(CGNS_ENUMT(ElementType_t) type) const {
+    int cell_size{0};
+    for (auto& section : sections_) {
+      if (section.type == type) {
+        cell_size += section.CountCells();
+      }
+    }
+    return cell_size;
   }
   int CountSections() const {
     return sections_.size();
@@ -94,13 +115,13 @@ class Zone {
   }
  
   void ReadCoordinates(int file_id, int base_id) {
-    int first, last;
+    cgsize_t first{1}, last{CountNodes()};
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
-                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.x.data());
+                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.x.data());
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateY",
-                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.y.data());
+                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.y.data());
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateZ",
-                  CGNS_ENUMV(RealSingle), &first, &last, coordinates_.z.data());
+                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.z.data());
   }
   void ReadElements(int file_id, int base_id) {
     int n_sections;
@@ -116,7 +137,7 @@ class Zone {
                                              last, n_boundary, element_type);
       int parent_data;
       cg_elements_read(file_id, base_id, zone_id_, section_id,
-                       section.elements.data(), &parent_data);
+                       section.connectivity.data(), &parent_data);
     }
   }
   void ReadSolutions(int file_id, int base_id) {
