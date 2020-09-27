@@ -7,6 +7,7 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
+#include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/tree.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
@@ -289,23 +290,6 @@ TEST_F(ReaderTest, ReadSolution) {
     }
   }
 }
-
-// TEST_F(ReaderTest, ReadFromFile) {
-//   int file_id;
-//   auto file_name = test_data_dir_ + "ugrid_2d.cgns";
-//   if (cg_open(file_name.c_str(), CG_MODE_READ, &file_id)) {
-//     cg_error_exit();
-//   }
-//   else {
-//     int n_bases, n_zones;
-//     cg_nbases(file_id, &n_bases);
-//     if (n_bases) {
-//       cg_nzones(file_id, n_bases, &n_zones);
-//       std::printf("There are %d `Base`s and %d `Zone`s.\n", n_bases, n_zones);
-//     }
-//     cg_close(file_id);
-//   }
-// }
 
 }  // namespace cgns
 }  // namespace mesh
