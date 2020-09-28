@@ -74,7 +74,7 @@ class Zone {
   using SectionType = Section<Real>;
   using SolutionType = Solution<Real>;
   Zone() = default;
-  Zone(char* name, int id, int* zone_size)
+  Zone(char* name, int id, cgsize_t* zone_size)
       : name_(name), zone_id_(id), cell_size_(zone_size[1]),
         coordinates_(zone_size[0]) {}
   int GetId() const {
@@ -115,7 +115,8 @@ class Zone {
   }
  
   void ReadCoordinates(int file_id, int base_id) {
-    cgsize_t first{1}, last{CountNodes()};
+    cgsize_t first = 1;
+    cgsize_t last = CountNodes();
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
                   CGNS_ENUMV(RealDouble), &first, &last, coordinates_.x.data());
     cg_coord_read(file_id, base_id, zone_id_, "CoordinateY",
@@ -171,7 +172,7 @@ class Zone {
   }
  private: 
   int zone_id_;
-  int cell_size_;
+  cgsize_t cell_size_;
   std::string name_;
   CoordinatesType coordinates_;
   std::vector<SectionType> sections_;
@@ -209,7 +210,7 @@ class Base {
     zones_.reserve(n_zones);
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       char zone_name[33];
-      int zone_size[3][1];
+      cgsize_t zone_size[3][1];
       cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
       auto& zone = zones_.emplace_back(zone_name, zone_id, zone_size[0]);
       zone.ReadCoordinates(file_id, base_id_);

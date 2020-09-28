@@ -102,11 +102,12 @@ TEST_F(ReaderTest, ReadZone) {
     cg_nzones(file_id, base_id, &n_zones);
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       char zone_name[33];
-      int zone_size[3][1];
+      cgsize_t zone_size[3][1];
       cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
       auto& cg_zone = zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
       // read coordinates
-      cgsize_t first{1}, last{cg_zone.x.size()};
+      cgsize_t first = 1;
+      cgsize_t last = cg_zone.x.size();
       cg_coord_read(file_id, base_id, zone_id, "CoordinateX",
                     CGNS_ENUMV(RealDouble), &first, &last, cg_zone.x.data());
       cg_coord_read(file_id, base_id, zone_id, "CoordinateY",
@@ -191,7 +192,7 @@ TEST_F(ReaderTest, ReadSolution) {
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
   int base_id{1}, zone_id{1}, n_sols{0};
   char zone_name[33];
-  int zone_size[3][1];
+  cgsize_t zone_size[3][1];
   cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
   auto cg_zone = ZoneInfo(zone_name, zone_id, zone_size[0]);
   cg_nsols(file_id, base_id, zone_id, &n_sols);
