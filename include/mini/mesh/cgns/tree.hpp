@@ -70,16 +70,51 @@ struct Coordinates {
 
 template <class Real>
 struct Section {
-  Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
-      : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-        connectivity((last-first+1) * CountNodesByType(ty)) {}
-  std::string name;
-  int id, first, last, n_boundary;  // see CGNS/SIDS
-  CGNS_ENUMT(ElementType_t) type;
-  std::vector<int> connectivity;
-  int CountCells() const {
-    return last - first + 1;
+ public:  // Constructors:
+  Section(char const* name, int id, cgsize_t first, cgsize_t size,
+          int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
+      : name_{name}, id_{id}, first_{first}, size_{size},
+        n_boundary_cells_{n_boundary_cells}, type_{type},
+        connectivity_(size * CountNodesByType(type)) {}
+ public:  // Copy Control:
+  Section(const Section&) = default;
+  Section& operator=(const Section&) = default;
+  Section(Section&&) noexcept = default;
+  Section& operator=(Section&&) noexcept = default;
+  ~Section() noexcept = default;
+ public:  // Accessors:
+  std::string const& GetName() const { return name_; }
+  int GetId() const { return id_; }
+  cgsize_t GetOneBasedCellIdMin() const { return first_; }
+  cgsize_t GetOneBasedCellIdMax() const { return first_ + size_ - 1; }
+  cgsize_t CountCells() const { return size_; }
+  cgsize_t* GetConnectivity() { return connectivity_.data(); }
+  cgsize_t* GetConnectivityByNilBasedCellId(cgsize_t cell_id) {
+    return connectivity_.data() + CountNodesByType(type_) * cell_id;
   }
+  cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) {
+    return GetConnectivityByNilBasedCellId(cell_id - 1);
+  }
+  const cgsize_t* GetConnectivity() const { return connectivity_.data(); }
+  const cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) const {
+    return GetConnectivityByNilBasedCellId(cell_id - 1);
+  }
+  const cgsize_t* GetConnectivityByNilBasedCellId(cgsize_t cell_id) const {
+    return connectivity_.data() + CountNodesByType(type_) * cell_id;
+  }
+  CGNS_ENUMT(ElementType_t) GetType() const { return type_; }
+ public:  // Mutators:
+  void Read(int file_id, int base_id, int zone_id) {
+    auto section_id = GetId();
+    cg_elements_read(file_id, base_id, zone_id, section_id,
+                     GetConnectivity(), NULL/* int* parent_data */);
+  }
+ private:  // Data Members:
+  std::vector<cgsize_t> connectivity_;
+  std::string name_;
+  int id_, n_boundary_cells_;
+  cgsize_t first_, size_;
+  CGNS_ENUMT(ElementType_t) type_;
 };
 
 using Field = std::vector<double>;
@@ -144,21 +179,23 @@ class Zone {
     auto zone_id = GetId();
     coordinates_.Read(file_id, base_id, zone_id);
   }
-  void ReadElements(int file_id, int base_id) {
+  void ReadSections(int file_id, int base_id) {
+    auto zone_id = GetId();
     int n_sections;
-    cg_nsections(file_id, base_id, zone_id_, &n_sections);
+    cg_nsections(file_id, base_id, zone_id, &n_sections);
     sections_.reserve(n_sections);
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       char section_name[33];
-      CGNS_ENUMT(ElementType_t) element_type;
-      int first, last, n_boundary, parent_flag;
-      cg_section_read(file_id, base_id, zone_id_, section_id, section_name,
-                      &element_type, &first, &last, &n_boundary, &parent_flag);
-      auto& section = sections_.emplace_back(section_name, section_id, first,
-                                             last, n_boundary, element_type);
-      int parent_data;
-      cg_elements_read(file_id, base_id, zone_id_, section_id,
-                       section.connectivity.data(), &parent_data);
+      CGNS_ENUMT(ElementType_t) cell_type;
+      cgsize_t first, last;
+      int n_boundary_cells, parent_flag;
+      cg_section_read(file_id, base_id, zone_id, section_id,
+                      section_name, &cell_type, &first, &last,
+                      &n_boundary_cells, &parent_flag);
+      auto& section = sections_.emplace_back(
+          section_name, section_id, first, /* size = */last - first + 1,
+          n_boundary_cells, cell_type);
+      section.Read(file_id, base_id, zone_id);
     }
   }
   void ReadSolutions(int file_id, int base_id) {
@@ -234,7 +271,7 @@ class Base {
       cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
       auto& zone = zones_.emplace_back(zone_name, zone_id, zone_size[0]);
       zone.ReadCoordinates(file_id, base_id_);
-      zone.ReadElements(file_id, base_id_);
+      zone.ReadSections(file_id, base_id_);
       zone.ReadSolutions(file_id, base_id_);
     }
   }
