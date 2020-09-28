@@ -36,13 +36,33 @@ inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
 
 template <class Real> 
 struct Coordinates {
-  Coordinates() = default;
-  Coordinates(int size) : x(size), y(size), z(size) {}
+ public:  // Constructors:
+  explicit Coordinates(int size) : x(size), y(size), z(size) {}
+ public:  // Copy Control:
   Coordinates(Coordinates const &) = default;
   Coordinates(Coordinates &&) = default;
   Coordinates& operator=(const Coordinates&) noexcept = default;
   Coordinates& operator=(Coordinates&&) noexcept = default;
   ~Coordinates() noexcept = default;
+ public:  // Accessors:
+  int CountNodes() const { 
+    return x.size();
+  }
+ public:  // Mutators:
+  void Read(int file_id, int base_id, int zone_id) {
+    // All id's are 1-based when passing to CGNS/MLL.
+    cgsize_t first = 1;
+    cgsize_t last = CountNodes();
+    auto data_type = std::is_same_v<Real, double> ?
+        CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
+    cg_coord_read(file_id, base_id, zone_id, "CoordinateX",
+                  data_type, &first, &last, x.data());
+    cg_coord_read(file_id, base_id, zone_id, "CoordinateY",
+                  data_type, &first, &last, y.data());
+    cg_coord_read(file_id, base_id, zone_id, "CoordinateZ",
+                  data_type, &first, &last, z.data());
+  }
+ public:  // Data Members:
   std::vector<Real> x;
   std::vector<Real> y;
   std::vector<Real> z;
@@ -119,16 +139,10 @@ class Zone {
   const SolutionType& GetSolution(int id) const {
     return solutions_.at(id-1);
   }
- 
+ public:  // Mutators:
   void ReadCoordinates(int file_id, int base_id) {
-    cgsize_t first = 1;
-    cgsize_t last = CountNodes();
-    cg_coord_read(file_id, base_id, zone_id_, "CoordinateX",
-                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.x.data());
-    cg_coord_read(file_id, base_id, zone_id_, "CoordinateY",
-                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.y.data());
-    cg_coord_read(file_id, base_id, zone_id_, "CoordinateZ",
-                  CGNS_ENUMV(RealDouble), &first, &last, coordinates_.z.data());
+    auto zone_id = GetId();
+    coordinates_.Read(file_id, base_id, zone_id);
   }
   void ReadElements(int file_id, int base_id) {
     int n_sections;
