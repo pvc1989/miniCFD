@@ -16,16 +16,22 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-static const std::map<CGNS_ENUMT(ElementType_t), int> n_vertex_of_type {
-     {CGNS_ENUMV(NODE)   , 1},
-     {CGNS_ENUMV(BAR_2)  , 2},
-     {CGNS_ENUMV(TRI_3)  , 3},
-     {CGNS_ENUMV(QUAD_4) , 4},
-     {CGNS_ENUMV(TETRA_4), 4},
-     {CGNS_ENUMV(HEXA_8) , 8}
-};
 inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
-  return n_vertex_of_type.at(type);
+  switch (type) {
+  case CGNS_ENUMV(NODE):
+    return 1;
+  case CGNS_ENUMV(BAR_2):
+    return 2;
+  case CGNS_ENUMV(TRI_3):
+    return 3;
+  case CGNS_ENUMV(QUAD_4):
+  case CGNS_ENUMV(TETRA_4):
+    return 4;
+  case CGNS_ENUMV(HEXA_8):
+    return 8;
+  default:
+    return 0;
+  }
 }
 
 template <class Real> 
@@ -46,7 +52,7 @@ template <class Real>
 struct Section {
   Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
       : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-        connectivity((last-first+1)*n_vertex_of_type.at(ty)) {}
+        connectivity((last-first+1) * CountNodesByType(ty)) {}
   std::string name;
   int id, first, last, n_boundary;  // see CGNS/SIDS
   CGNS_ENUMT(ElementType_t) type;
