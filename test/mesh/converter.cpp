@@ -31,65 +31,73 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
   // convert the cgns_mesh
   auto converter = Converter();
   auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
-  auto& elem_ptr = metis_mesh.csr_matrix_of_elem.pointer;
-  auto& elem_ind = metis_mesh.csr_matrix_of_elem.index;
+  auto& elem_ptr = metis_mesh->csr_matrix_of_cell.pointer;
+  auto& elem_ind = metis_mesh->csr_matrix_of_cell.index;
   auto& global_to_local_of_nodes = converter.global_to_local_of_nodes;
   auto& local_to_global_of_nodes = converter.local_to_global_of_nodes;
-  auto& global_to_local_of_elems = converter.global_to_local_of_elems;
+  auto& global_to_local_of_cells = converter.global_to_local_of_cells;
   // test for the converted metis_mesh
-  int base_id{1}, zone_id{1};
-  auto& zone = cgns_mesh->GetBase(base_id).GetZone(zone_id);
-  int n_elements_in_curr_zone{0};
+  int base_id{1};
+  auto& base = cgns_mesh->GetBase(base_id);
+  auto n_zones = base.CountZones();
+  int n_cells_tatal{0};
   int elem_ind_size{0};
-  std::vector<int> section2d_ids;
-  std::map<int, int> n_nodes_to_n_elements;
-  for (int section_id = 1; section_id <= zone.CountSections(); ++section_id) {
-    auto& section = zone.GetSection(section_id);
-    int n_nodes_of_curr_elem = n_vertex_of_type.at(section.type);
-    if (n_nodes_of_curr_elem >= 3) {
-      section2d_ids.emplace_back(section_id);
-      n_nodes_to_n_elements[n_nodes_of_curr_elem] = section.elements.size();
-      n_elements_in_curr_zone += n_nodes_to_n_elements[n_nodes_of_curr_elem];
-      elem_ind_size += n_nodes_of_curr_elem * n_nodes_to_n_elements[n_nodes_of_curr_elem];
+  int n_nodes_tatal{0};
+  for (int zone_id = 1; zone_id <= n_zones; zone_id++) {
+    auto& zone = base.GetZone(zone_id);
+    std::cout << "Zone id : " << zone_id << std::endl;
+    for (int node_id = 0; node_id < zone.CountNodes(); ++node_id) {
+      EXPECT_EQ(global_to_local_of_nodes[n_nodes_tatal+node_id].node_id,
+                node_id + 1);
     }
-  }
-  EXPECT_EQ(global_to_local_of_nodes.size(), zone.GetVertexSize() + 1);
-  EXPECT_EQ(global_to_local_of_elems.size(), n_elements_in_curr_zone + 1);
-  EXPECT_EQ(elem_ptr.size(), n_elements_in_curr_zone + 1);
-  EXPECT_EQ(elem_ind.size(), elem_ind_size);
-  // for each node in curr zone
-  for (int node_id = 1; node_id <= zone.GetVertexSize(); node_id++) {
-    EXPECT_EQ(local_to_global_of_nodes[zone_id][node_id], node_id);
-  }
-  // for each section in curr zone
-  int global_id_of_first_elem_in_curr_sect{1};
-  int global_id_of_last_elem_in_curr_sect{0};
-  for (auto section_id : section2d_ids) {
-    auto& section = zone.GetSection(section_id);
-    int n_nodes_of_curr_elem = n_vertex_of_type.at(section.type);
-    auto& elements = section.elements;
-    // for each elem in curr section
-    global_id_of_last_elem_in_curr_sect = global_id_of_first_elem_in_curr_sect + elements.size();
-    int local_id_of_curr_elem{0};
-    for (int global_id_of_curr_elem = global_id_of_first_elem_in_curr_sect;
-             global_id_of_curr_elem < global_id_of_last_elem_in_curr_sect;
-           ++global_id_of_curr_elem, ++local_id_of_curr_elem) {
-      EXPECT_EQ(global_to_local_of_elems[global_id_of_curr_elem].zone_id,
-                zone_id);
-      EXPECT_EQ(global_to_local_of_elems[global_id_of_curr_elem].element_id,
-                local_id_of_curr_elem);
-      // for each node in curr elem
-      auto head_node = elem_ind.begin() + elem_ptr[global_id_of_curr_elem];
-      auto tail_node = elem_ind.begin() + elem_ptr[global_id_of_curr_elem+1];
-      EXPECT_EQ(*tail_node - *head_node, n_nodes_of_curr_elem);
-      for (auto curr_node = head_node; curr_node != tail_node; ++curr_node) {
-        auto* curr_elem = &elements[local_id_of_curr_elem * n_nodes_of_curr_elem];
-        EXPECT_EQ(global_to_local_of_nodes[*curr_node].node_id,
-                  curr_elem[curr_node - head_node]);
+    n_nodes_tatal += zone.CountNodes();
+    std::cout << "Node num : " << zone.CountNodes() << std::endl;
+    for (int section_id = 1; section_id <= zone.CountSections(); ++section_id) {
+      auto& section = zone.GetSection(section_id);
+      auto n_nodes_per_cell = CountNodesByType(section.GetType());
+      if (n_nodes_per_cell <= 2) continue;
+      std::cout << "Section id : " << section_id << "  ";
+      auto connectivity = section.GetConnectivity();
+      auto n_cells_local = section.CountCells();
+      auto connectivity_size = n_cells_local * n_nodes_per_cell;
+      n_cells_tatal += n_cells_local;
+      std::cout << "Cell num : " << n_cells_local << std::endl;
+      std::cout << " Cell " << section.GetOneBasedCellIdMin();
+      std::cout << " = ";
+      std::cout << *connectivity;
+      for (int node_id = 1; node_id < n_nodes_per_cell; ++node_id) {
+        std::cout << "-" << *(connectivity+node_id);
       }
+      std::cout <<std::endl;
+      int ptr_id{0};
+      for (int index = 0; index < connectivity_size; index += n_nodes_per_cell) {
+        int a{0}, b{0};
+        for (int node_id = 0; node_id < n_nodes_per_cell; ++node_id) {
+          auto offset = index + node_id;
+          a += *(connectivity+offset);
+          b += elem_ind[elem_ind_size + offset] + 1;
+        }
+        EXPECT_EQ(a, b);
+        elem_ptr[ptr_id++] = elem_ind_size + index;
+      }
+      elem_ind_size += section.CountCells() * n_nodes_per_cell;
     }
-    global_id_of_first_elem_in_curr_sect = global_id_of_last_elem_in_curr_sect;
+    std::cout << std::endl;
   }
+  EXPECT_EQ(global_to_local_of_nodes.size(), n_nodes_tatal);
+  EXPECT_EQ(elem_ptr.size(), n_cells_tatal + 1);
+  EXPECT_EQ(elem_ind.size(), elem_ind_size);
+  EXPECT_EQ(global_to_local_of_cells.size(), n_cells_tatal);
+
+  EXPECT_EQ(global_to_local_of_cells[0].zone_id, 1);
+  EXPECT_EQ(global_to_local_of_cells[0].section_id, 6);
+  EXPECT_EQ(global_to_local_of_cells[0].cell_id, 51);
+  EXPECT_EQ(global_to_local_of_cells[673].zone_id, 2);
+  EXPECT_EQ(global_to_local_of_cells[673].section_id, 11);
+  EXPECT_EQ(global_to_local_of_cells[673].cell_id, 97);
+  EXPECT_EQ(global_to_local_of_cells[944].zone_id, 2);
+  EXPECT_EQ(global_to_local_of_cells[944].section_id, 12);
+  EXPECT_EQ(global_to_local_of_cells[944].cell_id, 368);
 }
 
 }  // namespace cgns

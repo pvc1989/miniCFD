@@ -7,7 +7,6 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/tree.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
