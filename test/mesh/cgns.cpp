@@ -21,6 +21,7 @@ class ReaderTest : public ::testing::Test {
   using Coordinates = std::vector<std::vector<double>>;
   Reader<MeshType> reader;
   std::string const test_data_dir_{TEST_DATA_DIR};
+  double abs_error = 0.00001;
   using Field = std::vector<double>;
   struct Solution {
     std::string name; int id; CGNS_ENUMT(GridLocation_t) location;
@@ -88,7 +89,50 @@ TEST_F(ReaderTest, ReadBase) {
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
   }
 }
-
+TEST_F(ReaderTest, ReadCoordinates) {
+  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  // read by mini::mesh::cgns
+  reader.ReadFromFile(file_name);
+  auto mesh = reader.GetMesh();
+  {
+    // check coordinates in zones[1]
+    auto& coordinates = mesh->GetBase(1).GetZone(1).GetCoordinates();
+    auto& x = coordinates.x;
+    EXPECT_DOUBLE_EQ(x.at(0), -2.0);
+    EXPECT_DOUBLE_EQ(x.at(1), -2.0);
+    EXPECT_NEAR(x.at(371), -1.926790, abs_error);
+    EXPECT_NEAR(x.at(372), -1.926790, abs_error);
+    auto& y = coordinates.y;
+    EXPECT_DOUBLE_EQ(y.at(0), +1.0);
+    EXPECT_DOUBLE_EQ(y.at(1), -1.0);
+    EXPECT_NEAR(y.at(371), -0.926795, abs_error);
+    EXPECT_NEAR(y.at(372), +0.926795, abs_error);
+    auto& z = coordinates.z;
+    EXPECT_DOUBLE_EQ(z.at(0), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(1), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(371), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(372), 0.0);
+  }
+  {
+    // check coordinates in zones[2]
+    auto& coordinates = mesh->GetBase(1).GetZone(2).GetCoordinates();
+    auto& x = coordinates.x;
+    EXPECT_DOUBLE_EQ(x.at(0), 2.0);
+    EXPECT_DOUBLE_EQ(x.at(1), 0.0);
+    EXPECT_NEAR(x.at(582), -0.072475, abs_error);
+    EXPECT_NEAR(x.at(583), -0.163400, abs_error);
+    auto& y = coordinates.y;
+    EXPECT_DOUBLE_EQ(y.at(0), -1.0);
+    EXPECT_DOUBLE_EQ(y.at(1), +1.0);
+    EXPECT_NEAR(y.at(582), +0.927525, abs_error);
+    EXPECT_NEAR(y.at(583), -0.375511, abs_error);
+    auto& z = coordinates.z;
+    EXPECT_DOUBLE_EQ(z.at(0), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(1), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(582), 0.0);
+    EXPECT_DOUBLE_EQ(z.at(583), 0.0);
+  }
+}
 TEST_F(ReaderTest, ReadZone) {
   auto file_name = test_data_dir_ + "ugrid_2d.cgns";
   // read by cgnslib
@@ -152,14 +196,6 @@ TEST_F(ReaderTest, ReadZone) {
       EXPECT_EQ(my_zone.GetId(), cg_zone.id);
       EXPECT_EQ(my_zone.CountNodes(), cg_zone.x.size());
       EXPECT_EQ(my_zone.CountCells(), cg_zone.cell_size);
-      // compare coordinates
-      auto n_nodes = my_zone.CountNodes();
-      auto& my_coor = my_zone.GetCoordinates();
-      for (int node_id = 0; node_id < n_nodes; ++node_id) {
-        EXPECT_DOUBLE_EQ(my_coor.x[node_id], cg_zone.x[node_id]);
-        EXPECT_DOUBLE_EQ(my_coor.y[node_id], cg_zone.y[node_id]);
-        EXPECT_DOUBLE_EQ(my_coor.z[node_id], cg_zone.z[node_id]);
-      }
       // compare elements
       auto n_sections = my_zone.CountSections();
       for (int section_id = 1; section_id <= n_sections; ++section_id) {
