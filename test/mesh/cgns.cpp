@@ -133,6 +133,62 @@ TEST_F(ReaderTest, ReadCoordinates) {
     EXPECT_DOUBLE_EQ(z.at(583), 0.0);
   }
 }
+TEST_F(ReaderTest, ReadSections) {
+  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  // read by mini::mesh::cgns
+  reader.ReadFromFile(file_name);
+  auto mesh = reader.GetMesh();
+  {
+    auto& section = mesh->GetBase(1).GetZone(1).GetSection(6);
+    EXPECT_EQ(section.GetOneBasedCellIdMin(), 51);
+    EXPECT_EQ(section.GetOneBasedCellIdMax(), 723);
+    EXPECT_EQ(section.GetName(), "3_S_5_10");
+    EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
+    const cgsize_t* array;  // head of 1-based-node-id list
+    array = section.GetConnectivityByNilBasedCellId(0);
+    EXPECT_EQ(array[0], 43);
+    EXPECT_EQ(array[1], 155);
+    EXPECT_EQ(array[2], 154);
+    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    EXPECT_EQ(array[0], 102);
+    EXPECT_EQ(array[1], 196);
+    EXPECT_EQ(array[2], 98);
+  }
+  {
+    auto& section = mesh->GetBase(1).GetZone(2).GetSection(11);
+    EXPECT_EQ(section.GetOneBasedCellIdMin(), 97);
+    EXPECT_EQ(section.GetOneBasedCellIdMax(), 367);
+    EXPECT_EQ(section.GetName(), "3_S_5_11");
+    EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
+    const cgsize_t* array;  // head of 1-based-node-id list
+    array = section.GetConnectivityByNilBasedCellId(0);
+    EXPECT_EQ(array[0], 347);
+    EXPECT_EQ(array[1], 510);
+    EXPECT_EQ(array[2], 349);
+    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    EXPECT_EQ(array[0], 367);
+    EXPECT_EQ(array[1], 503);
+    EXPECT_EQ(array[2], 492);
+  }
+  {
+    auto& section = mesh->GetBase(1).GetZone(2).GetSection(12);
+    EXPECT_EQ(section.GetOneBasedCellIdMin(), 368);
+    EXPECT_EQ(section.GetOneBasedCellIdMax(), 767);
+    EXPECT_EQ(section.GetName(), "4_S_9_12");
+    EXPECT_EQ(section.GetType(), CGNS_ENUMV(QUAD_4));
+    const cgsize_t* array;  // head of 1-based-node-id list
+    array = section.GetConnectivityByNilBasedCellId(0);
+    EXPECT_EQ(array[0], 4);
+    EXPECT_EQ(array[1], 456);
+    EXPECT_EQ(array[2], 416);
+    EXPECT_EQ(array[3], 543);
+    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    EXPECT_EQ(array[0], 467);
+    EXPECT_EQ(array[1], 2);
+    EXPECT_EQ(array[2], 469);
+    EXPECT_EQ(array[3], 142);
+  }
+}
 TEST_F(ReaderTest, ReadZone) {
   auto file_name = test_data_dir_ + "ugrid_2d.cgns";
   // read by cgnslib
@@ -149,31 +205,6 @@ TEST_F(ReaderTest, ReadZone) {
       cgsize_t zone_size[3][1];
       cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
       auto& cg_zone = zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
-      // read coordinates
-      cgsize_t first = 1;
-      cgsize_t last = cg_zone.x.size();
-      cg_coord_read(file_id, base_id, zone_id, "CoordinateX",
-                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.x.data());
-      cg_coord_read(file_id, base_id, zone_id, "CoordinateY",
-                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.y.data());
-      cg_coord_read(file_id, base_id, zone_id, "CoordinateZ",
-                    CGNS_ENUMV(RealDouble), &first, &last, cg_zone.z.data());
-      // read elements
-      int n_sections;
-      cg_nsections(file_id, base_id, zone_id, &n_sections);
-      for (int section_id = 1; section_id <= n_sections; ++section_id) {
-        char section_name[33];
-        CGNS_ENUMT(ElementType_t) element_type;
-        int first, last, n_boundary, parent_flag;
-        cg_section_read(file_id, base_id, zone_id, section_id, section_name,
-                        &element_type, &first, &last, &n_boundary, &parent_flag);
-        Section cg_section(section_name, section_id, first, last, n_boundary,
-                           element_type);
-        int parent_data;
-        cg_elements_read(file_id, base_id, zone_id, section_id,
-                         cg_section.connectivity.data(), &parent_data);
-        cg_zone.sections.insert({section_id, cg_section});
-      }
     }
   }
   cg_close(file_id);
@@ -196,23 +227,6 @@ TEST_F(ReaderTest, ReadZone) {
       EXPECT_EQ(my_zone.GetId(), cg_zone.id);
       EXPECT_EQ(my_zone.CountNodes(), cg_zone.x.size());
       EXPECT_EQ(my_zone.CountCells(), cg_zone.cell_size);
-      // compare elements
-      auto n_sections = my_zone.CountSections();
-      for (int section_id = 1; section_id <= n_sections; ++section_id) {
-        auto& my_section = my_zone.GetSection(section_id);
-        auto& cg_section = cg_zone.sections.at(section_id);
-        EXPECT_EQ(my_section.GetId(), cg_section.id);
-        EXPECT_EQ(my_section.GetOneBasedCellIdMin(), cg_section.first);
-        EXPECT_EQ(my_section.GetOneBasedCellIdMax(), cg_section.last);
-        EXPECT_STREQ(my_section.GetName().c_str(), cg_section.name.c_str());
-        // EXPECT_EQ(my_section.connectivity.size(),
-        //           cg_section.connectivity.size());
-        int n_nodes = my_section.CountCells();
-        for (int index = 0; index < n_nodes; ++index) {
-          // EXPECT_EQ(my_section.connectivity.at(index),
-          //           cg_section.connectivity.at(index));
-        }
-      }
     }
   }
   cg_close(file_id);
