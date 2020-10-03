@@ -141,7 +141,7 @@ class Zone {
   int GetId() const {
     return zone_id_;
   }
-  std::string GetName() const {
+  const std::string& GetName() const {
     return name_;
   }
   int CountNodes() const {
@@ -252,7 +252,7 @@ class Base {
   int GetPhysDim() const {
     return phys_dim_;
   }
-  std::string GetName() const {
+  const std::string& GetName() const {
     return name_;
   }
   int CountZones() const {
@@ -303,13 +303,13 @@ class Tree {
   int GetId() const {
     return file_id_;
   }
-  std::string GetName() const {
+  const std::string& GetName() const {
     return name_;
   }
   int CountBases() const {
     return bases_.size();
   }
-  BaseType& GetBase(int id) {
+  const BaseType& GetBase(int id) const {
     return bases_.at(id-1);
   }
 

@@ -43,14 +43,14 @@ struct MetisMesh {
 struct Converter {
   using CgneMesh = Tree<double>;
   Converter() = default;
-  std::unique_ptr<MetisMesh> ConvertToMetisMesh(CgneMesh* mesh);
   std::vector<NodeInfo> global_to_local_of_nodes;
   std::map<int, std::vector<int>> local_to_global_of_nodes;
   std::vector<CellInfo> global_to_local_of_cells;
+  std::unique_ptr<MetisMesh> ConvertToMetisMesh(const CgneMesh* mesh);
 };
 
 std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
-    Converter::CgneMesh* cgns_mesh) {
+    const Converter::CgneMesh* cgns_mesh) {
   assert(cgns_mesh->CountBases() == 1);
   auto metis_mesh = std::make_unique<MetisMesh>();
   auto& base = cgns_mesh->GetBase(1);
