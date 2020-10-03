@@ -89,18 +89,18 @@ struct Section {
   cgsize_t GetOneBasedCellIdMax() const { return first_ + size_ - 1; }
   cgsize_t CountCells() const { return size_; }
   cgsize_t* GetConnectivity() { return connectivity_.data(); }
-  cgsize_t* GetConnectivityByNilBasedCellId(cgsize_t cell_id) {
-    return connectivity_.data() + CountNodesByType(type_) * cell_id;
+  cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) {
+    return connectivity_.data() + CountNodesByType(type_) * row;
   }
   cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) {
-    return GetConnectivityByNilBasedCellId(cell_id - 1);
+    return GetConnectivityByNilBasedRow(cell_id - first_);
   }
   const cgsize_t* GetConnectivity() const { return connectivity_.data(); }
   const cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) const {
-    return GetConnectivityByNilBasedCellId(cell_id - 1);
+    return GetConnectivityByNilBasedRow(cell_id - first_);
   }
-  const cgsize_t* GetConnectivityByNilBasedCellId(cgsize_t cell_id) const {
-    return connectivity_.data() + CountNodesByType(type_) * cell_id;
+  const cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) const {
+    return connectivity_.data() + CountNodesByType(type_) * row;
   }
   CGNS_ENUMT(ElementType_t) GetType() const { return type_; }
  public:  // Mutators:
