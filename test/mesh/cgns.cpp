@@ -145,11 +145,14 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(section.GetName(), "3_S_5_10");
     EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByNilBasedCellId(0);
+    array = section.GetConnectivityByOneBasedCellId(51);
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
     EXPECT_EQ(array[0], 43);
     EXPECT_EQ(array[1], 155);
     EXPECT_EQ(array[2], 154);
-    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    array = section.GetConnectivityByOneBasedCellId(723);
+    auto row = section.CountCells() - 1;
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
     EXPECT_EQ(array[0], 102);
     EXPECT_EQ(array[1], 196);
     EXPECT_EQ(array[2], 98);
@@ -161,11 +164,14 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(section.GetName(), "3_S_5_11");
     EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByNilBasedCellId(0);
+    array = section.GetConnectivityByOneBasedCellId(97);
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
     EXPECT_EQ(array[0], 347);
     EXPECT_EQ(array[1], 510);
     EXPECT_EQ(array[2], 349);
-    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    array = section.GetConnectivityByOneBasedCellId(367);
+    auto row = section.CountCells() - 1;
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
     EXPECT_EQ(array[0], 367);
     EXPECT_EQ(array[1], 503);
     EXPECT_EQ(array[2], 492);
@@ -177,12 +183,15 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(section.GetName(), "4_S_9_12");
     EXPECT_EQ(section.GetType(), CGNS_ENUMV(QUAD_4));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByNilBasedCellId(0);
+    array = section.GetConnectivityByOneBasedCellId(368);
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
     EXPECT_EQ(array[0], 4);
     EXPECT_EQ(array[1], 456);
     EXPECT_EQ(array[2], 416);
     EXPECT_EQ(array[3], 543);
-    array = section.GetConnectivityByOneBasedCellId(section.CountCells());
+    array = section.GetConnectivityByOneBasedCellId(767);
+    auto row = section.CountCells() - 1;
+    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
     EXPECT_EQ(array[0], 467);
     EXPECT_EQ(array[1], 2);
     EXPECT_EQ(array[2], 469);
