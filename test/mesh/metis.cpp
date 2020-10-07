@@ -1,5 +1,6 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
+#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -17,20 +18,18 @@ namespace metis {
 class Partitioner : public ::testing::Test {
  protected:
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
+  static void BuildSimpleMesh(idx_t n_elems_x, idx_t n_elems_y,
+      std::vector<idx_t> *elem_nodes, std::vector<idx_t> *elem_range);
 };
-TEST_F(Partitioner, PartMeshDual) {
-  /*
-    Partition a mesh into k parts based on a partitioning of its dual graph.
-   */
-  // Build a simple mesh:
-  idx_t n_elems_x{100}, n_elems_y{40};
+void Partitioner::BuildSimpleMesh(idx_t n_elems_x, idx_t n_elems_y,
+    std::vector<idx_t> *elem_nodes, std::vector<idx_t> *elem_range) {
   idx_t n_elems = n_elems_x * n_elems_y;
   idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
   idx_t n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<idx_t> elem_nodes(n_elems * 4);  // indices of nodes in each elem
-  std::vector<idx_t> elem_range(n_elems + 1);  // use to slice elem_nodes
-  auto curr_node = elem_nodes.begin();
-  auto curr_elem = elem_range.begin();
+  elem_nodes->resize(n_elems * 4);  // indices of nodes in each elem
+  elem_range->resize(n_elems + 1);  // use to slice elem_nodes
+  auto curr_node = elem_nodes->begin();
+  auto curr_elem = elem_range->begin();
   *curr_elem = 0;
   for (int j = 0; j != n_elems_y; ++j) {
     for (int i = 0; i != n_elems_x; ++i) {
@@ -45,8 +44,23 @@ TEST_F(Partitioner, PartMeshDual) {
     }
   }
   ++curr_elem;
-  EXPECT_EQ(curr_elem, elem_range.end());
-  EXPECT_EQ(curr_node, elem_nodes.end());
+  assert(curr_node == elem_nodes->end());
+  assert(curr_elem == elem_range->end());
+}
+TEST_F(Partitioner, PartMeshDual) {
+  /*
+    Partition a mesh into k parts based on a partitioning of its dual graph.
+   */
+  // Build a simple mesh:
+  idx_t n_elems_x{100}, n_elems_y{40};
+  idx_t n_elems = n_elems_x * n_elems_y;
+  idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
+  idx_t n_nodes = n_nodes_x * n_nodes_y;
+  std::vector<idx_t> elem_nodes;  // indices of nodes in each elem
+  std::vector<idx_t> elem_range;  // use to slice elem_nodes
+  BuildSimpleMesh(n_elems_x, n_elems_y, &elem_nodes, &elem_range);
+  EXPECT_EQ(elem_nodes.size(), n_elems * 4);
+  EXPECT_EQ(elem_range.size(), n_elems + 1);
   // Partition the mesh:
   auto elem_weights = std::vector<idx_t>(n_elems, 1);
   for (int j = 0; j != n_elems_y; ++j) {
@@ -110,7 +124,7 @@ TEST_F(Partitioner, PartMeshDual) {
     }
   }
   fprintf(file, "CELLS %d %d\n", n_elems, n_elems * 5);
-  curr_node = elem_nodes.begin();
+  auto curr_node = elem_nodes.begin();
   while (curr_node != elem_nodes.end()) {
     fprintf(file, "4 %d %d %d %d\n",
             curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
