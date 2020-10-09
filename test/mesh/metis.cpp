@@ -18,23 +18,23 @@ namespace metis {
 class Partitioner : public ::testing::Test {
  protected:
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
-  static void BuildSimpleMesh(idx_t n_elems_x, idx_t n_elems_y,
-      std::vector<idx_t> *elem_nodes, std::vector<idx_t> *elem_range);
+  static void BuildSimpleMesh(idx_t n_cells_x, idx_t n_cells_y,
+      std::vector<idx_t> *cell_nodes, std::vector<idx_t> *cell_range);
 };
-void Partitioner::BuildSimpleMesh(idx_t n_elems_x, idx_t n_elems_y,
-    std::vector<idx_t> *elem_nodes, std::vector<idx_t> *elem_range) {
-  idx_t n_elems = n_elems_x * n_elems_y;
-  idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
+void Partitioner::BuildSimpleMesh(idx_t n_cells_x, idx_t n_cells_y,
+    std::vector<idx_t> *cell_nodes, std::vector<idx_t> *cell_range) {
+  idx_t n_cells = n_cells_x * n_cells_y;
+  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   idx_t n_nodes = n_nodes_x * n_nodes_y;
-  elem_nodes->resize(n_elems * 4);  // indices of nodes in each elem
-  elem_range->resize(n_elems + 1);  // use to slice elem_nodes
-  auto curr_node = elem_nodes->begin();
-  auto curr_elem = elem_range->begin();
-  *curr_elem = 0;
-  for (int j = 0; j != n_elems_y; ++j) {
-    for (int i = 0; i != n_elems_x; ++i) {
-      auto next = 4 + *curr_elem;
-      *++curr_elem = next;
+  cell_nodes->resize(n_cells * 4);  // indices of nodes in each cell
+  cell_range->resize(n_cells + 1);  // use to slice cell_nodes
+  auto curr_node = cell_nodes->begin();
+  auto curr_cell = cell_range->begin();
+  *curr_cell = 0;
+  for (int j = 0; j != n_cells_y; ++j) {
+    for (int i = 0; i != n_cells_x; ++i) {
+      auto next = 4 + *curr_cell;
+      *++curr_cell = next;
       auto k_node = i + j * n_nodes_x;  // node index starts from 0 in C code
       *curr_node++ = k_node++;
       *curr_node++ = k_node;
@@ -43,63 +43,63 @@ void Partitioner::BuildSimpleMesh(idx_t n_elems_x, idx_t n_elems_y,
       *curr_node++ = k_node;
     }
   }
-  ++curr_elem;
-  assert(curr_node == elem_nodes->end());
-  assert(curr_elem == elem_range->end());
+  ++curr_cell;
+  assert(curr_node == cell_nodes->end());
+  assert(curr_cell == cell_range->end());
 }
 TEST_F(Partitioner, PartMeshDual) {
   /*
     Partition a mesh into k parts based on a partitioning of its dual graph.
    */
   // Build a simple mesh:
-  idx_t n_elems_x{100}, n_elems_y{40};
-  idx_t n_elems = n_elems_x * n_elems_y;
-  idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
+  idx_t n_cells_x{100}, n_cells_y{40};
+  idx_t n_cells = n_cells_x * n_cells_y;
+  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   idx_t n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<idx_t> elem_nodes;  // indices of nodes in each elem
-  std::vector<idx_t> elem_range;  // use to slice elem_nodes
-  BuildSimpleMesh(n_elems_x, n_elems_y, &elem_nodes, &elem_range);
-  EXPECT_EQ(elem_nodes.size(), n_elems * 4);
-  EXPECT_EQ(elem_range.size(), n_elems + 1);
+  std::vector<idx_t> cell_nodes;  // indices of nodes in each cell
+  std::vector<idx_t> cell_range;  // use to slice cell_nodes
+  BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
+  EXPECT_EQ(cell_nodes.size(), n_cells * 4);
+  EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Partition the mesh:
-  auto elem_weights = std::vector<idx_t>(n_elems, 1);
-  for (int j = 0; j != n_elems_y; ++j) {
-    for (int i = 0; i != n_elems_x/4; ++i) {
-      elem_weights[i + j * n_elems_x] = 4;
+  auto cell_weights = std::vector<idx_t>(n_cells, 1);
+  for (int j = 0; j != n_cells_y; ++j) {
+    for (int i = 0; i != n_cells_x/4; ++i) {
+      cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto elem_parts = std::vector<idx_t>(n_elems);
+  auto cell_parts = std::vector<idx_t>(n_cells);
   auto node_parts = std::vector<idx_t>(n_nodes);
   idx_t n_parts{8}, n_common_nodes{2}, edge_cut{0};
   // idx_t options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   auto result = METIS_PartMeshDual(
-    &n_elems, &n_nodes, elem_range.data(), elem_nodes.data(), 
-    elem_weights.data(),
+    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(), 
+    cell_weights.data(),
     NULL/* idx_t t *vsize */,
     &n_common_nodes, &n_parts,
     NULL/* real t *tpwgts */,
     NULL/* options */,
-    &edge_cut, elem_parts.data(), node_parts.data()
+    &edge_cut, cell_parts.data(), node_parts.data()
   );
   EXPECT_EQ(result, METIS_OK);
   // Print the mesh:
   /*
-  std::cout << n_elems << std::endl;
-  curr_node = elem_nodes.begin();
-  for (int i = 0; i != n_elems; ++i) {
+  std::cout << n_cells << std::endl;
+  curr_node = cell_nodes.begin();
+  for (int i = 0; i != n_cells; ++i) {
     for (int j = 0; j != 4; ++j) {
       std::cout << 1 + *curr_node++ // node index starts from 1 in mesh file
                 << ' ';
     }
     std::cout << std::endl;
   }
-  EXPECT_EQ(curr_node, elem_nodes.end());
+  EXPECT_EQ(curr_node, cell_nodes.end());
    */
   // Print the result:
   /*
-  std::cout << "part id of each elem: ";
-  for (auto x : elem_parts) {
+  std::cout << "part id of each cell: ";
+  for (auto x : cell_parts) {
     std::cout << x << ' ';
   }
   std::cout << std::endl;
@@ -123,26 +123,26 @@ TEST_F(Partitioner, PartMeshDual) {
       fprintf(file, "%f %f 0.0\n", (float) i, (float) j);
     }
   }
-  fprintf(file, "CELLS %d %d\n", n_elems, n_elems * 5);
-  auto curr_node = elem_nodes.begin();
-  while (curr_node != elem_nodes.end()) {
+  fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
+  auto curr_node = cell_nodes.begin();
+  while (curr_node != cell_nodes.end()) {
     fprintf(file, "4 %d %d %d %d\n",
             curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
     curr_node += 4;
   }
-  fprintf(file, "CELL_TYPES %d\n", n_elems);
-  for (int i = 0; i != n_elems; ++i) {
+  fprintf(file, "CELL_TYPES %d\n", n_cells);
+  for (int i = 0; i != n_cells; ++i) {
     fprintf(file, "9\n");  // VTK_QUAD = 9
   }
-  fprintf(file, "CELL_DATA %d\n", n_elems);
+  fprintf(file, "CELL_DATA %d\n", n_cells);
   fprintf(file, "SCALARS CellPartID float 1\n");
-  fprintf(file, "LOOKUP_TABLE elem_parts\n");
-  for (auto x : elem_parts) {
+  fprintf(file, "LOOKUP_TABLE cell_parts\n");
+  for (auto x : cell_parts) {
     fprintf(file, "%f\n", (float) x);
   }
   fprintf(file, "SCALARS CellWeight float 1\n");
-  fprintf(file, "LOOKUP_TABLE elem_weights\n");
-  for (auto x : elem_weights) {
+  fprintf(file, "LOOKUP_TABLE cell_weights\n");
+  for (auto x : cell_weights) {
     fprintf(file, "%f\n", (float) x);
   }
   fprintf(file, "POINT_DATA %d\n", n_nodes);
@@ -158,45 +158,45 @@ TEST_F(Partitioner, PartGraphKway) {
     Partition a mesh's dual graph into k parts.
    */
   // Build a simple mesh:
-  idx_t n_elems_x{100}, n_elems_y{40};
-  idx_t n_elems = n_elems_x * n_elems_y;
-  idx_t n_nodes_x{n_elems_x + 1}, n_nodes_y{n_elems_y + 1};
+  idx_t n_cells_x{100}, n_cells_y{40};
+  idx_t n_cells = n_cells_x * n_cells_y;
+  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   idx_t n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<idx_t> elem_nodes;  // indices of nodes in each elem
-  std::vector<idx_t> elem_range;  // use to slice elem_nodes
-  BuildSimpleMesh(n_elems_x, n_elems_y, &elem_nodes, &elem_range);
-  EXPECT_EQ(elem_nodes.size(), n_elems * 4);
-  EXPECT_EQ(elem_range.size(), n_elems + 1);
+  std::vector<idx_t> cell_nodes;  // indices of nodes in each cell
+  std::vector<idx_t> cell_range;  // use to slice cell_nodes
+  BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
+  EXPECT_EQ(cell_nodes.size(), n_cells * 4);
+  EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Build the dual graph:
   idx_t n_common_nodes{2}, index_base{0};
-  idx_t *range_of_each_elem, *neighbors_of_each_elem;
+  idx_t *range_of_each_cell, *neighbors_of_each_cell;
   auto result = METIS_MeshToDual(
-    &n_elems, &n_nodes, elem_range.data(), elem_nodes.data(), 
+    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(), 
     &n_common_nodes, &index_base,
-    &range_of_each_elem, &neighbors_of_each_elem
+    &range_of_each_cell, &neighbors_of_each_cell
   );
   EXPECT_EQ(result, METIS_OK);
   // Partition the mesh:
-  auto elem_weights = std::vector<idx_t>(n_elems, 1);
-  for (int j = 0; j != n_elems_y; ++j) {
-    for (int i = 0; i != n_elems_x/4; ++i) {
-      elem_weights[i + j * n_elems_x] = 4;
+  auto cell_weights = std::vector<idx_t>(n_cells, 1);
+  for (int j = 0; j != n_cells_y; ++j) {
+    for (int i = 0; i != n_cells_x/4; ++i) {
+      cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto elem_parts = std::vector<idx_t>(n_elems);
+  auto cell_parts = std::vector<idx_t>(n_cells);
   idx_t n_constraints{1}, n_parts{8}, edge_cut{0};
   // idx_t options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   result = METIS_PartGraphKway(
-    &n_elems, &n_constraints, range_of_each_elem, neighbors_of_each_elem, 
-    elem_weights.data()/* computational cost */,
+    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell, 
+    cell_weights.data()/* computational cost */,
     NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
     &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, elem_parts.data()
+    NULL/* options */, &edge_cut, cell_parts.data()
   );
   EXPECT_EQ(result, METIS_OK);
-  METIS_Free(range_of_each_elem);
-  METIS_Free(neighbors_of_each_elem);
+  METIS_Free(range_of_each_cell);
+  METIS_Free(neighbors_of_each_cell);
   // Write partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
   auto* file = fopen(output.c_str(), "w");
@@ -211,26 +211,26 @@ TEST_F(Partitioner, PartGraphKway) {
       fprintf(file, "%f %f 0.0\n", (float) i, (float) j);
     }
   }
-  fprintf(file, "CELLS %d %d\n", n_elems, n_elems * 5);
-  auto curr_node = elem_nodes.begin();
-  while (curr_node != elem_nodes.end()) {
+  fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
+  auto curr_node = cell_nodes.begin();
+  while (curr_node != cell_nodes.end()) {
     fprintf(file, "4 %d %d %d %d\n",
             curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
     curr_node += 4;
   }
-  fprintf(file, "CELL_TYPES %d\n", n_elems);
-  for (int i = 0; i != n_elems; ++i) {
+  fprintf(file, "CELL_TYPES %d\n", n_cells);
+  for (int i = 0; i != n_cells; ++i) {
     fprintf(file, "9\n");  // VTK_QUAD = 9
   }
-  fprintf(file, "CELL_DATA %d\n", n_elems);
+  fprintf(file, "CELL_DATA %d\n", n_cells);
   fprintf(file, "SCALARS CellPartID float 1\n");
-  fprintf(file, "LOOKUP_TABLE elem_parts\n");
-  for (auto x : elem_parts) {
+  fprintf(file, "LOOKUP_TABLE cell_parts\n");
+  for (auto x : cell_parts) {
     fprintf(file, "%f\n", (float) x);
   }
   fprintf(file, "SCALARS CellWeight float 1\n");
-  fprintf(file, "LOOKUP_TABLE elem_weights\n");
-  for (auto x : elem_weights) {
+  fprintf(file, "LOOKUP_TABLE cell_weights\n");
+  for (auto x : cell_weights) {
     fprintf(file, "%f\n", (float) x);
   }
   fclose(file);
