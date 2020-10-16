@@ -23,10 +23,10 @@ class ReaderTest : public ::testing::Test {
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ReaderTest, ReadFromFile) {
-  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "line_tiny.vtk"));
+  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "/line_tiny.vtk"));
 }
 TEST_F(ReaderTest, GetMesh) {
-  reader.ReadFromFile(test_data_dir_ + "line_tiny.vtk");
+  reader.ReadFromFile(test_data_dir_ + "/line_tiny.vtk");
   auto mesh = reader.GetMesh();
   ASSERT_TRUE(mesh);
   EXPECT_EQ(mesh->CountNodes(), 101);
@@ -48,7 +48,7 @@ const char* WriterTest::mesh_name;
 TEST_F(WriterTest, LineMesh) {
   auto reader = Reader<Mesh<double>>();
   auto writer = Writer<Mesh<double>>();
-  reader.ReadFromFile(test_data_dir_ + "line_tiny.vtk");
+  reader.ReadFromFile(test_data_dir_ + "/line_tiny.vtk");
   auto mesh_old = reader.GetMesh();
   ASSERT_TRUE(mesh_old);
   // Write the mesh just read:
@@ -70,7 +70,7 @@ TEST_F(WriterTest, MeshWithData) {
   using Mesh = Mesh<double, NodeData, CellData>;
   auto reader = Reader<Mesh>();
   auto writer = Writer<Mesh>();
-  reader.ReadFromFile(test_data_dir_ + "line_tiny.vtk");
+  reader.ReadFromFile(test_data_dir_ + "/line_tiny.vtk");
   auto mesh_old = reader.GetMesh();
   ASSERT_TRUE(mesh_old);
   // Create some data on it:
