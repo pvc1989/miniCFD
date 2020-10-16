@@ -22,7 +22,7 @@ class ConverterTest : public ::testing::Test {
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ConverterTest, ConvertToMetisMesh) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by mini::mesh::cgns
   reader.ReadFromFile(file_name);
   auto cgns_mesh = reader.GetMesh();

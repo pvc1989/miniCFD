@@ -48,17 +48,17 @@ class ReaderTest : public ::testing::Test {
   };
 };
 TEST_F(ReaderTest, ReadFromFile) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   EXPECT_TRUE(reader.ReadFromFile(file_name));
 }
 TEST_F(ReaderTest, GetMesh) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   EXPECT_TRUE(reader.ReadFromFile(file_name));
   auto mesh = reader.GetMesh();
   EXPECT_NE(mesh, nullptr);
 }
 TEST_F(ReaderTest, ReadBase) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
@@ -90,7 +90,7 @@ TEST_F(ReaderTest, ReadBase) {
   }
 }
 TEST_F(ReaderTest, ReadCoordinates) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by mini::mesh::cgns
   reader.ReadFromFile(file_name);
   auto mesh = reader.GetMesh();
@@ -134,7 +134,7 @@ TEST_F(ReaderTest, ReadCoordinates) {
   }
 }
 TEST_F(ReaderTest, ReadSections) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by mini::mesh::cgns
   reader.ReadFromFile(file_name);
   auto mesh = reader.GetMesh();
@@ -199,7 +199,7 @@ TEST_F(ReaderTest, ReadSections) {
   }
 }
 TEST_F(ReaderTest, ReadZone) {
-  auto file_name = test_data_dir_ + "ugrid_2d.cgns";
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
@@ -242,7 +242,7 @@ TEST_F(ReaderTest, ReadZone) {
 }
 
 TEST_F(ReaderTest, ReadSolution) {
-  auto file_name = test_data_dir_ + "fixed_grid.cgns";
+  auto file_name = test_data_dir_ + "/fixed_grid.cgns";
   // read by mini::mesh::cgns
   reader.ReadFromFile(file_name);
   auto mesh = reader.GetMesh();

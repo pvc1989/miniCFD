@@ -23,12 +23,12 @@ class ReaderTest : public ::testing::Test {
   const std::string test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ReaderTest, ReadFromFile) {
-  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtk"));
-  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "tiny.vtu"));
+  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "/tiny.vtk"));
+  EXPECT_TRUE(reader.ReadFromFile(test_data_dir_ + "/tiny.vtu"));
 }
 TEST_F(ReaderTest, GetMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "/tiny" + suffix);
     auto mesh = reader.GetMesh();
     ASSERT_TRUE(mesh);
     EXPECT_EQ(mesh->CountNodes(), 6);
@@ -43,7 +43,7 @@ TEST_F(ReaderTest, GetMesh) {
 }
 TEST_F(ReaderTest, MediumMesh) {
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFromFile(test_data_dir_ + "medium" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "/medium" + suffix);
     // auto mesh = reader.GetMesh();
     // ASSERT_TRUE(mesh);
     // EXPECT_EQ(mesh->CountNodes(), 920);
@@ -69,7 +69,7 @@ TEST_F(WriterTest, TinyMesh) {
   auto reader = Reader<Mesh<double>>();
   auto writer = Writer<Mesh<double>>();
   for (auto suffix : {".vtk", ".vtu"}) {
-    reader.ReadFromFile(test_data_dir_ + "tiny" + suffix);
+    reader.ReadFromFile(test_data_dir_ + "/tiny" + suffix);
     auto mesh_old = reader.GetMesh();
     ASSERT_TRUE(mesh_old);
     // Write the mesh just read:
