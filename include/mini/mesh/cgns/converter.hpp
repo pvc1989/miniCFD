@@ -44,9 +44,9 @@ struct Converter {
   using CgneMesh = Tree<double>;
   Converter() = default;
   std::unique_ptr<MetisMesh> ConvertToMetisMesh(const CgneMesh* mesh);
-  std::vector<NodeInfo> global_to_local_for_nodes;
-  std::map<int, std::vector<int>> local_to_global_for_nodes;
-  std::vector<CellInfo> global_to_local_for_cells;
+  std::vector<NodeInfo> metis_to_cgns_for_nodes;
+  std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
+  std::vector<CellInfo> metis_to_cgns_for_cells;
 };
 
 std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
@@ -75,14 +75,14 @@ std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
     auto& zone = base.GetZone(zone_id);
     // read nodes in current zone
     auto n_nodes_of_curr_zone = zone.CountNodes();
-    local_to_global_for_nodes.emplace(zone_id, std::vector<int>());
-    auto& nodes = local_to_global_for_nodes.at(zone_id);
+    cgns_to_metis_for_nodes.emplace(zone_id, std::vector<int>());
+    auto& nodes = cgns_to_metis_for_nodes.at(zone_id);
     nodes.reserve(n_nodes_of_curr_zone+1);
     nodes.emplace_back(-1);
-    global_to_local_for_nodes.reserve(global_to_local_for_nodes.size() +
+    metis_to_cgns_for_nodes.reserve(metis_to_cgns_for_nodes.size() +
                                       n_nodes_of_curr_zone);
     for (int node_id = 1; node_id <= n_nodes_of_curr_zone; ++node_id) {
-      global_to_local_for_nodes.emplace_back(zone_id, node_id);
+      metis_to_cgns_for_nodes.emplace_back(zone_id, node_id);
       nodes.emplace_back(n_nodes_of_curr_base++);
     }
     // read cells in current zone
@@ -92,12 +92,12 @@ std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
       if (types.find(section.GetType()) == types.end()) continue;
       auto n_cells_of_curr_sect = section.CountCells();
       auto n_nodes_per_cell = CountNodesByType(section.GetType());
-      global_to_local_for_cells.reserve(global_to_local_for_cells.size() +
+      metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
                                         n_cells_of_curr_sect);
       cell_ptr.reserve(cell_ptr.size() + n_cells_of_curr_sect);
       for (int cell_id = section.GetOneBasedCellIdMin();
            cell_id <= section.GetOneBasedCellIdMax(); ++cell_id) {
-        global_to_local_for_cells.emplace_back(zone_id, section_id, cell_id);
+        metis_to_cgns_for_cells.emplace_back(zone_id, section_id, cell_id);
         cell_ptr.emplace_back(pointer_value+=n_nodes_per_cell);
       }
       auto connectivity_size = n_nodes_per_cell * n_cells_of_curr_sect;
