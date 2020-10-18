@@ -34,6 +34,7 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
   auto& metis_to_cgns_for_nodes = converter.metis_to_cgns_for_nodes;
   auto& cgns_to_metis_for_nodes = converter.cgns_to_metis_for_nodes;
   auto& metis_to_cgns_for_cells = converter.metis_to_cgns_for_cells;
+  auto& cgns_to_metis_for_cells = converter.cgns_to_metis_for_cells;
   // test the converted metis_mesh
   int base_id{1};
   auto& base = cgns_mesh->GetBase(base_id);
@@ -57,6 +58,11 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
     auto n_nodes = cell_ptr[i_cell+1] - cell_ptr[i_cell];
     auto& zone = base.GetZone(cell_info.zone_id);
     auto& section = zone.GetSection(cell_info.section_id);
+    auto begin = section.GetOneBasedCellIdMin();
+    auto zone_id = cell_info.zone_id;
+    auto sect_id = cell_info.section_id;
+    auto cell_id = cell_info.cell_id;
+    EXPECT_EQ(cgns_to_metis_for_cells[zone_id][sect_id][cell_id-begin], (int)i_cell);
     auto* nodes = section.GetConnectivityByOneBasedCellId(cell_info.cell_id);
     for (int i_node = 0; i_node != n_nodes; ++i_node) {
       // for each node in this cell

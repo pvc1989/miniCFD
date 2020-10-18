@@ -47,6 +47,7 @@ struct Converter {
   std::vector<NodeInfo> metis_to_cgns_for_nodes;
   std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
   std::vector<CellInfo> metis_to_cgns_for_cells;
+  std::map<int, std::map<int, std::vector<int>>> cgns_to_metis_for_cells;
 };
 
 std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
@@ -86,17 +87,22 @@ std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
       nodes.emplace_back(n_nodes_of_curr_base++);
     }
     // read cells in current zone
+    cgns_to_metis_for_cells.emplace(zone_id, std::map<int, std::vector<int>>());
     auto n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
+      auto [iter, succ] = cgns_to_metis_for_cells[zone_id].emplace(section_id, std::vector<int>());
+      auto& metis_ids_in_section = iter->second;
       auto& section = zone.GetSection(section_id);
       if (types.find(section.GetType()) == types.end()) continue;
       auto n_cells_of_curr_sect = section.CountCells();
+
       auto n_nodes_per_cell = CountNodesByType(section.GetType());
       metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
-                                        n_cells_of_curr_sect);
+                                      n_cells_of_curr_sect);
       cell_ptr.reserve(cell_ptr.size() + n_cells_of_curr_sect);
       for (int cell_id = section.GetOneBasedCellIdMin();
            cell_id <= section.GetOneBasedCellIdMax(); ++cell_id) {
+        metis_ids_in_section.emplace_back(metis_to_cgns_for_cells.size());
         metis_to_cgns_for_cells.emplace_back(zone_id, section_id, cell_id);
         cell_ptr.emplace_back(pointer_value+=n_nodes_per_cell);
       }
