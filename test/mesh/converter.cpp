@@ -31,10 +31,10 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
   auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
   auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
   auto& cell_ind = metis_mesh->csr_matrix_for_cells.index;
-  auto& metis_to_cgns_for_nodes = converter.metis_to_cgns_for_nodes;
-  auto& cgns_to_metis_for_nodes = converter.cgns_to_metis_for_nodes;
-  auto& metis_to_cgns_for_cells = converter.metis_to_cgns_for_cells;
-  auto& cgns_to_metis_for_cells = converter.cgns_to_metis_for_cells;
+  auto& metis_to_cgns_for_nodes = converter.convert_map.metis_to_cgns_for_nodes;
+  auto& cgns_to_metis_for_nodes = converter.convert_map.cgns_to_metis_for_nodes;
+  auto& metis_to_cgns_for_cells = converter.convert_map.metis_to_cgns_for_cells;
+  auto& cgns_to_metis_for_cells = converter.convert_map.cgns_to_metis_for_cells;
   // test the converted metis_mesh
   int base_id{1};
   auto& base = cgns_mesh->GetBase(base_id);
