@@ -31,29 +31,32 @@ struct CellInfo {
   int cell_id{0};
 };
 
+template <typename T>
 struct CompressedSparseRowMatrix {
-  std::vector<int> pointer;
-  std::vector<int> index;
+  std::vector<T> pointer;
+  std::vector<T> index;
 };
 
+template <typename T>
 struct MetisMesh {
-  CompressedSparseRowMatrix csr_matrix_for_cells;
+  CompressedSparseRowMatrix<T> csr_matrix_for_cells;
 };
 
+template <typename T>
 struct Converter {
   using CgneMesh = Tree<double>;
   Converter() = default;
-  std::unique_ptr<MetisMesh> ConvertToMetisMesh(const CgneMesh* mesh);
+  std::unique_ptr<MetisMesh<T>> ConvertToMetisMesh(const CgneMesh* mesh);
   std::vector<NodeInfo> metis_to_cgns_for_nodes;
   std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
   std::vector<CellInfo> metis_to_cgns_for_cells;
   std::map<int, std::map<int, std::vector<int>>> cgns_to_metis_for_cells;
 };
-
-std::unique_ptr<MetisMesh> Converter::ConvertToMetisMesh(
-    const Converter::CgneMesh* cgns_mesh) {
+template <typename T>
+std::unique_ptr<MetisMesh<T>> Converter<T>::ConvertToMetisMesh(
+    const Converter<T>::CgneMesh* cgns_mesh) {
   assert(cgns_mesh->CountBases() == 1);
-  auto metis_mesh = std::make_unique<MetisMesh>();
+  auto metis_mesh = std::make_unique<MetisMesh<T>>();
   auto& base = cgns_mesh->GetBase(1);
   auto cell_dim = base.GetCellDim();
   std::set<CGNS_ENUMT(ElementType_t)> types;

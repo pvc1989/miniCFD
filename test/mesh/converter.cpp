@@ -27,7 +27,7 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
   reader.ReadFromFile(file_name);
   auto cgns_mesh = reader.GetMesh();
   // convert cgns_mesh to metis_mesh
-  auto converter = Converter();
+  auto converter = Converter<int>();
   auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
   auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
   auto& cell_ind = metis_mesh->csr_matrix_for_cells.index;

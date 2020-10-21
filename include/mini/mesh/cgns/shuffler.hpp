@@ -16,7 +16,7 @@ namespace mini {
 namespace mesh {
 namespace metis {
 
-using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix;
+using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<idx_t>;
 template <typename T>
 void GetNodePartsByConnectivity(const CSRM& cell_csrm, const std::vector<T>& cell_parts,
                                 T n_parts, int n_nodes, std::vector<T>& node_parts) {
