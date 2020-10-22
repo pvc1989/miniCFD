@@ -163,13 +163,13 @@ class Zone {
     return solutions_.at(id-1);
   }
   const CoordinatesType& GetCoordinates() const {
-    return GetCoordinates();
+    return coordinates_;
   }
   const SectionType& GetSection(int id) const {
-    return GetSection(id);
+    return sections_.at(id-1);
   }
   const SolutionType& GetSolution(int id) const {
-    return GetSolution(id);
+    return solutions_.at(id-1);
   }
  public:  // Mutators:
   void ReadCoordinates(int file_id, int base_id) {
@@ -259,7 +259,7 @@ class Base {
     return zones_.at(id-1);
   }
   const ZoneType& GetZone(int id) const {
-    return GetZone(id);
+    return zones_.at(id-1);
   }
   void ReadZones(const int& file_id) {
     int n_zones;
@@ -313,7 +313,7 @@ class Tree {
     return bases_.at(id-1);
   }
   const BaseType& GetBase(int id) const {
-    return GetBase(id);
+    return bases_.at(id-1);
   }
 
  private:
