@@ -17,21 +17,9 @@ namespace mesh {
 namespace cgns {
 
 inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
-  switch (type) {
-  case CGNS_ENUMV(NODE):
-    return 1;
-  case CGNS_ENUMV(BAR_2):
-    return 2;
-  case CGNS_ENUMV(TRI_3):
-    return 3;
-  case CGNS_ENUMV(QUAD_4):
-  case CGNS_ENUMV(TETRA_4):
-    return 4;
-  case CGNS_ENUMV(HEXA_8):
-    return 8;
-  default:
-    return 0;
-  }
+  int npe;
+  cg_npe(type, &npe);
+  return npe;
 }
 
 template <class Real> 
