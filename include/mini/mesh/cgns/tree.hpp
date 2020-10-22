@@ -153,14 +153,23 @@ class Zone {
   int CountSolutions() const {
     return solutions_.size();
   }
-  const CoordinatesType& GetCoordinates() const {
+  CoordinatesType& GetCoordinates() {
     return coordinates_;
   }
-  const SectionType& GetSection(int id) const {
+  SectionType& GetSection(int id) {
     return sections_.at(id-1);
   }
-  const SolutionType& GetSolution(int id) const {
+  SolutionType& GetSolution(int id) {
     return solutions_.at(id-1);
+  }
+  const CoordinatesType& GetCoordinates() const {
+    return GetCoordinates();
+  }
+  const SectionType& GetSection(int id) const {
+    return GetSection(id);
+  }
+  const SolutionType& GetSolution(int id) const {
+    return GetSolution(id);
   }
  public:  // Mutators:
   void ReadCoordinates(int file_id, int base_id) {
@@ -246,8 +255,11 @@ class Base {
   int CountZones() const {
     return zones_.size();
   }
-  const ZoneType& GetZone(int id) const {
+  ZoneType& GetZone(int id) {
     return zones_.at(id-1);
+  }
+  const ZoneType& GetZone(int id) const {
+    return GetZone(id);
   }
   void ReadZones(const int& file_id) {
     int n_zones;
@@ -297,8 +309,11 @@ class Tree {
   int CountBases() const {
     return bases_.size();
   }
-  const BaseType& GetBase(int id) const {
+  BaseType& GetBase(int id) {
     return bases_.at(id-1);
+  }
+  const BaseType& GetBase(int id) const {
+    return GetBase(id);
   }
 
  private:
