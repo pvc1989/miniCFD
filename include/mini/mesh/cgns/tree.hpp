@@ -60,6 +60,14 @@ struct Coordinates {
     cg_coord_read(file_id, base_id, zone_id, "CoordinateZ",
                   data_type, &first, &last, z.data());
   }
+  void Write(const int& file_id, const int& base_id, const int& zone_id) {
+    int coord_id;
+    auto data_type = std::is_same_v<Real, double> ?
+        CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
+    cg_coord_write(file_id, base_id, zone_id, data_type, "CoordinateX", x.data(), &coord_id);
+    cg_coord_write(file_id, base_id, zone_id, data_type, "CoordinateY", y.data(), &coord_id);
+    cg_coord_write(file_id, base_id, zone_id, data_type, "CoordinateZ", z.data(), &coord_id);
+  }
  public:  // Data Members:
   std::vector<Real> x;
   std::vector<Real> y;
@@ -106,6 +114,11 @@ struct Section {
     auto section_id = GetId();
     cg_elements_read(file_id, base_id, zone_id, section_id,
                      GetConnectivity(), NULL/* int* parent_data */);
+  }
+  void Write(const int& file_id, const int& base_id, const int& zone_id) {
+    int section_id;
+    cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_, GetOneBasedCellIdMin(),
+                     GetOneBasedCellIdMax(), 0, GetConnectivity(), &section_id);
   }
  private:  // Data Members:
   std::vector<cgsize_t> connectivity_;
@@ -234,6 +247,15 @@ class Zone {
       }
     }
   }
+  void Write(const int& file_id, const int& base_id) {
+    int zone_id; int node_size = (int)coordinates_.x.size();
+    cgsize_t zone_size[3] = {node_size, cell_size_, 0};
+    cg_zone_write(file_id, base_id, name_.c_str(), zone_size,
+                  CGNS_ENUMV(Unstructured), &zone_id);
+    coordinates_.Write(file_id, base_id, zone_id);
+    for (auto& section : sections_) { section.Write(file_id, base_id, zone_id); }
+    // for (auto& solution : solutions_) { solution.Write(file_id, base_id, zone_id); }
+  }
  private: 
   int zone_id_;
   cgsize_t cell_size_;
@@ -285,6 +307,11 @@ class Base {
       zone.ReadSolutions(file_id, base_id_);
     }
   }
+  void Write(const int& file_id) {
+    int base_id;
+    cg_base_write(file_id, name_.c_str(), cell_dim_, phys_dim_, &base_id);
+    for (auto& zone : zones_) { zone.Write(file_id, base_id); }
+  }
   
  private: 
   int base_id_;
@@ -309,6 +336,14 @@ class Tree {
     ReadBases();
     cg_close(file_id_);
     return true;
+  }
+  void WriteToFile(const std::string& file_name) {
+    int file_id;
+    if (cg_open(file_name.c_str(),CG_MODE_WRITE,&file_id)) {
+      cg_error_exit();
+    }
+    for (auto& base : bases_) { base.Write(file_id); }
+    cg_close(file_id);
   }
   int GetId() const {
     return file_id_;
