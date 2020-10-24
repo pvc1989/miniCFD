@@ -66,15 +66,6 @@ std::unique_ptr<MetisMesh<T>> Converter<T>::ConvertToMetisMesh(
   auto metis_mesh = std::make_unique<MetisMesh<T>>();
   auto& base = cgns_mesh->GetBase(1);
   auto cell_dim = base.GetCellDim();
-  std::set<CGNS_ENUMT(ElementType_t)> types;
-  if (cell_dim == 2) {
-    types.insert(CGNS_ENUMV(TRI_3));
-    types.insert(CGNS_ENUMV(QUAD_4));
-  }
-  else if (cell_dim == 3) {
-    types.insert(CGNS_ENUMV(TETRA_4));
-    types.insert(CGNS_ENUMV(HEXA_8));
-  }
   auto n_zones = base.CountZones();
   int n_nodes_of_curr_base{0};
   auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
@@ -103,7 +94,7 @@ std::unique_ptr<MetisMesh<T>> Converter<T>::ConvertToMetisMesh(
       auto [iter, succ] = cgns_to_metis_for_cells[zone_id].emplace(section_id, std::vector<int>());
       auto& metis_ids_in_section = iter->second;
       auto& section = zone.GetSection(section_id);
-      if (types.find(section.GetType()) == types.end()) continue;
+      if (!CheckTypeDim(section.GetType(), cell_dim)) continue;
       auto n_cells_of_curr_sect = section.CountCells();
 
       auto n_nodes_per_cell = CountNodesByType(section.GetType());

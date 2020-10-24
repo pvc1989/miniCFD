@@ -21,6 +21,16 @@ inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
   cg_npe(type, &npe);
   return npe;
 }
+inline bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
+  if (cell_dim == 2) {
+    if (type == CGNS_ENUMV(TRI_3) || type == CGNS_ENUMV(QUAD_4) ||
+        type == CGNS_ENUMV( MIXED )) return true;
+  } else {
+    if (type == CGNS_ENUMV(TETRA_4) || type == CGNS_ENUMV(HEXA_8) ||
+        type == CGNS_ENUMV( MIXED )) return true;
+  }
+  return false;
+}
 
 template <class Real> 
 struct Coordinates {
