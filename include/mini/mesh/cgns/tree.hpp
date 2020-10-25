@@ -344,6 +344,17 @@ class Base {
       zone.ReadSectionsWithDim(file_id, base_id_, cell_dim_);
     }
   }
+  void ReadConnectivityForMetis(const int& file_id) {
+    int n_zones;
+    cg_nzones(file_id, base_id_, &n_zones);
+    zones_.reserve(n_zones);
+    for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
+      char zone_name[33]; cgsize_t zone_size[3][1];
+      cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
+      auto& zone = zones_.emplace_back(zone_name, zone_id, zone_size[0]);
+      zone.ReadSectionsWithDim(file_id, base_id_, cell_dim_);
+    }
+  }
   void Write(const int& file_id) {
     int base_id;
     cg_base_write(file_id, name_.c_str(), cell_dim_, phys_dim_, &base_id);
@@ -416,6 +427,7 @@ class Tree {
   std::vector<BaseType> bases_;
 
   void ReadBases() {
+    bases_.clear();
     int n_bases;
     cg_nbases(file_id_, &n_bases);
     bases_.reserve(n_bases);
@@ -438,6 +450,19 @@ class Tree {
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
       auto& base = bases_.emplace_back(base_name, base_id, cell_dim, phys_dim);
       base.ReadGmshZones(file_id_);
+    }
+  }
+  void ReadConnectivityForMetis() {
+    bases_.clear();
+    int n_bases;
+    cg_nbases(file_id_, &n_bases);
+    bases_.reserve(n_bases);
+    for (int base_id = 1; base_id <= n_bases; ++base_id) {
+      char base_name[33];
+      int cell_dim{-1}, phys_dim{-1};
+      cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
+      auto& base = bases_.emplace_back(base_name, base_id, cell_dim, phys_dim);
+      base.ReadConnectivityForMetis(file_id_);
     }
   }
 };

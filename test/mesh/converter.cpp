@@ -22,11 +22,14 @@ class ConverterTest : public ::testing::Test {
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ConverterTest, ConvertToMetisMesh) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto cgns_mesh = reader.GetMesh();
+  // auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+  // // read by mini::mesh::cgns
+  // reader.ReadFromFile(file_name);
+  // auto cgns_mesh = reader.GetMesh();
   // convert cgns_mesh to metis_mesh
+  auto file_name = test_data_dir_ + "/new_ugrid_2d.cgns";
+  auto cgns_mesh = std::make_unique<MeshType>();
+  cgns_mesh->ReadConnectivityFromFile(file_name);
   auto converter = Converter<int>();
   auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
   auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
