@@ -115,6 +115,10 @@ struct Section {
     cg_elements_read(file_id, base_id, zone_id, section_id,
                      GetConnectivity(), NULL/* int* parent_data */);
   }
+  void Read(int file_id, int base_id, int zone_id, int section_id) {
+    cg_elements_read(file_id, base_id, zone_id, section_id, GetConnectivity(),
+                          NULL/* int* parent_data */);
+  }
   void Write(const int& file_id, const int& base_id, const int& zone_id) {
     int section_id;
     cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_, GetOneBasedCellIdMin(),
@@ -218,6 +222,26 @@ class Zone {
       section.Read(file_id, base_id, zone_id);
     }
   }
+  void ReadSectionsWithDim(int file_id, int base_id, int cell_dim) {
+    auto zone_id = GetId();
+    int n_sections;
+    cg_nsections(file_id, base_id, zone_id, &n_sections);
+    cgsize_t range_min{1}, range_max; int new_section_id{1};
+    for (int section_id = 1; section_id <= n_sections; ++section_id) {
+      char section_name[33]; CGNS_ENUMT(ElementType_t) cell_type;
+      cgsize_t first, last; int n_boundary_cells, parent_flag;
+      cg_section_read(file_id, base_id, zone_id, section_id, section_name, &cell_type,
+                      &first, &last, &n_boundary_cells, &parent_flag);
+      if (!CheckTypeDim(cell_type, cell_dim)) continue;
+      int n_cells = last - first + 1; cgsize_t connectivity_size;
+      cg_ElementDataSize(file_id, base_id, zone_id, section_id, &connectivity_size);
+      range_max = range_min + n_cells - 1;
+      auto& section = sections_.emplace_back(section_name, new_section_id++,
+        range_min, n_cells, n_boundary_cells, cell_type);
+      section.Read(file_id, base_id, zone_id, section_id);
+      range_min = range_max + 1;
+    }
+  }
   void ReadSolutions(int file_id, int base_id) {
     int n_solutions;
     cg_nsols(file_id, base_id, zone_id_, &n_solutions);
@@ -307,6 +331,18 @@ class Base {
       zone.ReadSolutions(file_id, base_id_);
     }
   }
+  void ReadGmshZones(const int& file_id) {
+    int n_zones;
+    cg_nzones(file_id, base_id_, &n_zones);
+    zones_.reserve(n_zones);
+    for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
+      char zone_name[33]; cgsize_t zone_size[3][1];
+      cg_zone_read(file_id, base_id_, zone_id, zone_name, zone_size[0]);
+      auto& zone = zones_.emplace_back(zone_name, zone_id, zone_size[0]);
+      zone.ReadCoordinates(file_id, base_id_);
+      zone.ReadSectionsWithDim(file_id, base_id_, cell_dim_);
+    }
+  }
   void Write(const int& file_id) {
     int base_id;
     cg_base_write(file_id, name_.c_str(), cell_dim_, phys_dim_, &base_id);
@@ -336,6 +372,18 @@ class Tree {
     ReadBases();
     cg_close(file_id_);
     return true;
+  }
+  void OpenFileWithGmshCells(const std::string& file_name) {
+    name_ = file_name;
+    if (cg_open(name_.c_str(), CG_MODE_READ, &file_id_)) { cg_error_exit(); }
+    ReadGmshBases();
+    cg_close(file_id_);
+  }
+  void ReadConnectivityFromFile(const std::string& file_name) {
+    name_ = file_name;
+    if (cg_open(name_.c_str(), CG_MODE_READ, &file_id_)) { cg_error_exit(); }
+    ReadConnectivityForMetis();
+    cg_close(file_id_);
   }
   void WriteToFile(const std::string& file_name) {
     int file_id;
@@ -376,6 +424,19 @@ class Tree {
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
       auto& base = bases_.emplace_back(base_name, base_id, cell_dim, phys_dim);
       base.ReadZones(file_id_);
+    }
+  }
+  void ReadGmshBases() {
+    bases_.clear();
+    int n_bases;
+    cg_nbases(file_id_, &n_bases);
+    bases_.reserve(n_bases);
+    for (int base_id = 1; base_id <= n_bases; ++base_id) {
+      char base_name[33];
+      int cell_dim{-1}, phys_dim{-1};
+      cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
+      auto& base = bases_.emplace_back(base_name, base_id, cell_dim, phys_dim);
+      base.ReadGmshZones(file_id_);
     }
   }
 };
