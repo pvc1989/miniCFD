@@ -121,8 +121,9 @@ struct Section {
   }
   void Write(const int& file_id, const int& base_id, const int& zone_id) {
     int section_id;
-    cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_, GetOneBasedCellIdMin(),
-                     GetOneBasedCellIdMax(), 0, GetConnectivity(), &section_id);
+    cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_,
+      GetOneBasedCellIdMin(), GetOneBasedCellIdMax(), 0, GetConnectivity(),
+      &section_id);
   }
  private:  // Data Members:
   std::vector<cgsize_t> connectivity_;
