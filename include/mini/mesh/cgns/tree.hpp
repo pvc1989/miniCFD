@@ -290,6 +290,10 @@ class Zone {
     for (auto& section : sections_) { section.Write(file_id, base_id, zone_id); }
     for (auto& solution : solutions_) { solution.Write(file_id, base_id, zone_id); }
   }
+  void AddSolution(int sol_id, char* sol_name,
+                   CGNS_ENUMT(GridLocation_t) location) {
+    solutions_.reserve(sol_id);
+    solutions_.emplace_back(sol_name, sol_id, location);                 
   }
  private: 
   int zone_id_;
