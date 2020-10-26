@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <cstdio>
+#include <filesystem>
+#include <map>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -20,60 +22,135 @@ namespace mini {
 namespace mesh {
 namespace metis{
 
-class Shuffler : public ::testing::Test {
+class ShufflerTest : public ::testing::Test {
+ protected:
+  using MeshType = mini::mesh::cgns::Tree<double>;
+  using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<idx_t>;
+  using ConvertMapType = mini::mesh::cgns::ConvertMap;
+  using FieldType = mini::mesh::cgns::Field;
+  std::string const test_data_dir_{TEST_DATA_DIR};
+  static void PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts, CSRM& cell_csrm,
+                            std::vector<idx_t>& cell_parts);
+  static void SetCellPartData(ConvertMapType& convert_map,
+                              const std::vector<idx_t>& cell_parts,
+                              MeshType* cgns_mesh);
 };
-
-TEST_F(Shuffler, ShuffleByParts) {
-  // Select local indices from global indices.
-  int n = 5;
-  std::vector<int> global_cell_parts{0, 1, 2, 0, 1, 2, 1, 0, 1, 0};
-  std::vector<int> selected_cell_indices{0, 2, 4, 5, 8};
-  std::vector<int> local_cell_parts;
-  SelectByIndices<int>(global_cell_parts, selected_cell_indices, local_cell_parts);
-  for (int i = 0; i < n; ++i) {
-    EXPECT_EQ(local_cell_parts[i], global_cell_parts[selected_cell_indices[i]]);
+void ShufflerTest::PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts,
+                                 CSRM& cell_csrm,
+                                 std::vector<idx_t>& cell_parts) {
+  idx_t n_common_nodes{2}, index_base{0};
+  idx_t *range_of_each_cell, *neighbors_of_each_cell;
+  auto result = METIS_MeshToDual(
+    &n_cells, &n_nodes, cell_csrm.pointer.data(), cell_csrm.index.data(), 
+    &n_common_nodes, &index_base,
+    &range_of_each_cell, &neighbors_of_each_cell
+  );
+  EXPECT_EQ(result, METIS_OK);
+  idx_t n_constraints{1}, edge_cut{0};
+  result = METIS_PartGraphKway(
+    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell, 
+    NULL/* computational cost */,
+    NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
+    &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
+    NULL/* options */, &edge_cut, cell_parts.data()
+  );
+  EXPECT_EQ(result, METIS_OK);                                 
+}
+void ShufflerTest::SetCellPartData(ConvertMapType& convert_map,
+                                   const std::vector<idx_t>& cell_parts,
+                                   MeshType* cgns_mesh) {
+  auto& cgns_to_metis_for_cells = convert_map.cgns_to_metis_for_cells;
+  auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
+  for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
+    auto& zone = base.GetZone(zone_id);
+    int solution_id = zone.CountSolutions() + 1;
+    char solution_name[33] = "CellData";
+    zone.AddSolution(solution_id, solution_name, CGNS_ENUMV(CellCenter));
+    auto& solution = zone.GetSolution(solution_id);
+    std::string field_name("CellPart");
+    solution.fields.emplace(field_name.c_str(), FieldType(zone.CountCells()));
+    auto& field = solution.fields.at(field_name);
+    int n_sections = zone.CountSections();
+    for (int section_id = 1; section_id <= n_sections; ++section_id) {
+      auto& section = zone.GetSection(section_id);
+      int n_cells = section.CountCells();
+      std::vector<int> parts(n_cells);
+      for (int local_id = 0; local_id < n_cells; ++local_id) {
+        int global_id = cgns_to_metis_for_cells[zone_id][section_id][local_id];
+        parts[local_id] = cell_parts[global_id];
+      }
+      int range_min{section.GetOneBasedCellIdMin()-1};
+      int range_max{section.GetOneBasedCellIdMax()-1};
+      for (int cell_id = range_min; cell_id <= range_max; ++cell_id) {
+        field[cell_id] = (double) parts[cell_id-range_min];
+      }
+    }
   }
+}
+TEST_F(ShufflerTest, ShuffleByParts) {
   // Reorder the indices by parts
-  n = 10;
+  int n = 10;
   std::vector<int> old_index{2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   std::vector<int>     parts{1, 0, 0, 2, 0, 1, 2, 1,  0,  2};
-  std::vector<int> new_order;
-  ReorderByParts<int>(parts, new_order);
+  std::vector<int> new_order(n);
+  ReorderByParts<int>(parts, new_order.data());
   std::vector<int> expected_new_order{1, 2, 4, 8, 0, 5, 7, 3, 6, 9};
   for (int i = 0; i < n; ++ i) {
     EXPECT_EQ(new_order[i], expected_new_order[i]);
   }
   // Shuffle data array by new order
   std::vector<double> old_array{1.0, 0.0, 0.1, 2.0, 0.2, 1.1, 2.1, 1.2, 0.3, 2.2};
-  std::vector<double> new_array;
-  ShuffleDataArray<double, int>(old_array, new_order, new_array);
+  ShuffleDataArray<double>(new_order, old_array.data());
   std::vector<double> expected_new_array{0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2};
   for (int i = 0; i < n; ++i) {
-    EXPECT_DOUBLE_EQ(new_array[i], expected_new_array[i]);
+    EXPECT_DOUBLE_EQ(old_array[i], expected_new_array[i]);
   }
   // Shuffle cell connectivity by new order
   n = 4;
-  std::vector<int> cell_parts{2, 0, 0, 1};
-  std::vector<int> node_parts{2, 0, 0, 1, 1, 0};
   std::vector<int> new_cell_order{1, 2, 3, 0};
-  std::vector<int> old_to_new_for_node{0, 2, 3, 6, 4, 5, 1};
-  std::vector<int> old_connectivity = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4 ,5};
-  std::vector<int> new_connectivity;
-  ShuffleConnectivity<int>(old_to_new_for_node, new_cell_order,
-                           old_connectivity, new_connectivity);
-  std::vector<int> expected_new_connectivity{3, 6, 1,   1, 6, 5,   6, 4, 5,
-                                             2, 3, 1};
-  for (int i = 0; i < new_connectivity.size(); ++i) {
-    EXPECT_DOUBLE_EQ(new_connectivity[i], expected_new_connectivity[i]);
+  std::vector<int> connectivity = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4 ,5};
+  int npe = 3;
+  ShuffleConnectivity<int>(new_cell_order, npe, connectivity.data());
+  std::vector<int> expected_new_connectivity{2, 3, 6,   6, 3, 5,   3, 4, 5,
+                                             1, 2, 6,};
+  for (int i = 0; i < connectivity.size(); ++i) {
+    EXPECT_EQ(connectivity[i], expected_new_connectivity[i]);
   }
+}
+TEST_F(ShufflerTest, PartitionCgnsMesh) {
+  mini::mesh::cgns::Converter<idx_t> converter;
+  using MeshDataType = double;
+  using MetisId = idx_t;
+  Shuffler<MetisId, MeshDataType> shuffler;
+  auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
+  auto new_file_name = test_data_dir_ + "/new_ugrid_2d.cgns";
+  if (std::filesystem::exists(new_file_name)) std::filesystem::remove(new_file_name);
+  auto cgns_mesh = std::make_unique<MeshType>();
+  cgns_mesh->OpenFileWithGmshCells(old_file_name);
+  // cgns_mesh->ReadConnectivityFromFile(new_file_name);
+  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
+  auto& cell_csrm = metis_mesh->csr_matrix_for_cells;
+  idx_t n_parts{8};
+  auto& convert_map = converter.convert_map;
+  int n_cells = convert_map.metis_to_cgns_for_cells.size();
+  int n_nodes = convert_map.metis_to_cgns_for_nodes.size();
+  std::vector<idx_t> cell_parts;
+  cell_parts.resize(n_cells);
+  PartitionMesh(n_cells, n_nodes, n_parts, cell_csrm, cell_parts);
+  shuffler.SetNumParts(n_parts);
+  shuffler.SetCellParts(&cell_parts);
+  shuffler.SetMetisMesh(&cell_csrm);
+  shuffler.SetConvertMap(&convert_map);
+  SetCellPartData(convert_map, cell_parts, cgns_mesh.get());
+  shuffler.ShuffleMesh(cgns_mesh);
+  cgns_mesh->WriteToFile(new_file_name);
 }
 
 class Partition : public ::testing::Test {
   protected:
-   using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix;
+   using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<int>;
    CSRM cell_csrm;
 };
-
 TEST_F(Partition, GetNodePartsByConnectivity) {
   std::vector<int> cell_parts{2, 0, 0, 1};
   cell_csrm.pointer = {0, 4, 8, 11, 14};
