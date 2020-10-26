@@ -138,6 +138,15 @@ template <class Real>
 struct Solution {
   Solution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
       : name(sn), id(si), location(lc) {}
+  void Write(int file_id, int base_id, int zone_id) {
+    int sol_id;
+    cg_sol_write(file_id, base_id, zone_id, name.c_str(), location, &sol_id);
+    for (auto& [field_name, field] : fields) {
+      int field_id;
+      cg_field_write(file_id, base_id, zone_id, sol_id, CGNS_ENUMV(RealDouble), field_name.c_str(),
+        field.data(), &field_id);
+    }
+  }
   std::string name;
   int id;
   CGNS_ENUMT(GridLocation_t) location;
@@ -279,7 +288,8 @@ class Zone {
                   CGNS_ENUMV(Unstructured), &zone_id);
     coordinates_.Write(file_id, base_id, zone_id);
     for (auto& section : sections_) { section.Write(file_id, base_id, zone_id); }
-    // for (auto& solution : solutions_) { solution.Write(file_id, base_id, zone_id); }
+    for (auto& solution : solutions_) { solution.Write(file_id, base_id, zone_id); }
+  }
   }
  private: 
   int zone_id_;
