@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstdio>
-#include <filesystem>
 #include <map>
 #include <iostream>
 #include <string>
@@ -29,6 +28,8 @@ class ShufflerTest : public ::testing::Test {
   using ConvertMapType = mini::mesh::cgns::ConvertMap;
   using FieldType = mini::mesh::cgns::Field;
   std::string const test_data_dir_{TEST_DATA_DIR};
+  std::string const current_binary_dir_{
+      std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
   static void PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts, CSRM& cell_csrm,
                             std::vector<idx_t>& cell_parts);
   static void SetCellPartData(ConvertMapType& convert_map,
@@ -123,8 +124,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto new_file_name = test_data_dir_ + "/new_ugrid_2d.cgns";
-  if (std::filesystem::exists(new_file_name)) std::filesystem::remove(new_file_name);
+  auto new_file_name = current_binary_dir_ + "/new_ugrid_2d.cgns";
   auto cgns_mesh = std::make_unique<MeshType>();
   cgns_mesh->OpenFileWithGmshCells(old_file_name);
   // cgns_mesh->ReadConnectivityFromFile(new_file_name);
