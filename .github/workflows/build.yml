@@ -5,10 +5,10 @@ env:
   BUILD_TYPE: Release
 jobs:
   build:
-    runs-on: ${{ matrix.os }} # For each os, run this job on it.
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }} # For each os, run this job on it.
     steps:
     - name: Install Dependencies on Linux
       if: startsWith(runner.os, 'Linux')
@@ -31,7 +31,7 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DminiCFD_BUILD_DEMOS=OFF
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DminiCFD_BUILD_DEMOS=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     - name: Build
       working-directory: ${{ runner.workspace }}/build
       shell: bash
