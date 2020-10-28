@@ -74,14 +74,13 @@ TEST_F(Partitioner, PartMeshDual) {
   // idx_t options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   auto result = METIS_PartMeshDual(
-    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(), 
+    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(),
     cell_weights.data(),
     NULL/* idx_t t *vsize */,
     &n_common_nodes, &n_parts,
     NULL/* real t *tpwgts */,
     NULL/* options */,
-    &edge_cut, cell_parts.data(), node_parts.data()
-  );
+    &edge_cut, cell_parts.data(), node_parts.data());
   EXPECT_EQ(result, METIS_OK);
   // Print the mesh:
   /*
@@ -120,7 +119,8 @@ TEST_F(Partitioner, PartMeshDual) {
   fprintf(file, "POINTS %d float\n", n_nodes);
   for (int j = 0; j != n_nodes_y; ++j) {
     for (int i = 0; i != n_nodes_x; ++i) {
-      fprintf(file, "%f %f 0.0\n", (float) i, (float) j);
+      fprintf(file, "%f %f 0.0\n", static_cast<float>(i),
+                                   static_cast<float>(j));
     }
   }
   fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
@@ -138,18 +138,18 @@ TEST_F(Partitioner, PartMeshDual) {
   fprintf(file, "SCALARS CellPartID float 1\n");
   fprintf(file, "LOOKUP_TABLE cell_parts\n");
   for (auto x : cell_parts) {
-    fprintf(file, "%f\n", (float) x);
+    fprintf(file, "%f\n", static_cast<float>(x));
   }
   fprintf(file, "SCALARS CellWeight float 1\n");
   fprintf(file, "LOOKUP_TABLE cell_weights\n");
   for (auto x : cell_weights) {
-    fprintf(file, "%f\n", (float) x);
+    fprintf(file, "%f\n", static_cast<float>(x));
   }
   fprintf(file, "POINT_DATA %d\n", n_nodes);
   fprintf(file, "SCALARS NodePartID float 1\n");
   fprintf(file, "LOOKUP_TABLE node_parts\n");
   for (auto x : node_parts) {
-    fprintf(file, "%f\n", (float) x);
+    fprintf(file, "%f\n", static_cast<float>(x));
   }
   fclose(file);
 }
@@ -171,10 +171,9 @@ TEST_F(Partitioner, PartGraphKway) {
   idx_t n_common_nodes{2}, index_base{0};
   idx_t *range_of_each_cell, *neighbors_of_each_cell;
   auto result = METIS_MeshToDual(
-    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(), 
+    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(),
     &n_common_nodes, &index_base,
-    &range_of_each_cell, &neighbors_of_each_cell
-  );
+    &range_of_each_cell, &neighbors_of_each_cell);
   EXPECT_EQ(result, METIS_OK);
   // Partition the mesh:
   auto cell_weights = std::vector<idx_t>(n_cells, 1);
@@ -188,12 +187,11 @@ TEST_F(Partitioner, PartGraphKway) {
   // idx_t options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   result = METIS_PartGraphKway(
-    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell, 
+    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell,
     cell_weights.data()/* computational cost */,
     NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
     &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, cell_parts.data()
-  );
+    NULL/* options */, &edge_cut, cell_parts.data());
   EXPECT_EQ(result, METIS_OK);
   METIS_Free(range_of_each_cell);
   METIS_Free(neighbors_of_each_cell);
@@ -208,7 +206,8 @@ TEST_F(Partitioner, PartGraphKway) {
   fprintf(file, "POINTS %d float\n", n_nodes);
   for (int j = 0; j != n_nodes_y; ++j) {
     for (int i = 0; i != n_nodes_x; ++i) {
-      fprintf(file, "%f %f 0.0\n", (float) i, (float) j);
+      fprintf(file, "%f %f 0.0\n", static_cast<float>(i),
+                                   static_cast<float>(j));
     }
   }
   fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
@@ -226,12 +225,12 @@ TEST_F(Partitioner, PartGraphKway) {
   fprintf(file, "SCALARS CellPartID float 1\n");
   fprintf(file, "LOOKUP_TABLE cell_parts\n");
   for (auto x : cell_parts) {
-    fprintf(file, "%f\n", (float) x);
+    fprintf(file, "%f\n", static_cast<float>(x));
   }
   fprintf(file, "SCALARS CellWeight float 1\n");
   fprintf(file, "LOOKUP_TABLE cell_weights\n");
   for (auto x : cell_weights) {
-    fprintf(file, "%f\n", (float) x);
+    fprintf(file, "%f\n", static_cast<float>(x));
   }
   fclose(file);
 }

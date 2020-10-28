@@ -19,7 +19,7 @@
 
 namespace mini {
 namespace mesh {
-namespace metis{
+namespace metis {
 
 class ShufflerTest : public ::testing::Test {
  protected:
@@ -35,8 +35,7 @@ class ShufflerTest : public ::testing::Test {
       std::vector<idx_t>* cell_parts);
   static void SetCellPartData(
       const ConvertMapType& convert_map, const std::vector<idx_t>& cell_parts,
-      MeshType* cgns_mesh);
-};
+      MeshType* cgns_mesh);};
 void ShufflerTest::PartitionMesh(
     idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
     std::vector<idx_t>* cell_parts) {
@@ -47,17 +46,15 @@ void ShufflerTest::PartitionMesh(
     const_cast<idx_t*>(cell_csrm.pointer.data()),
     const_cast<idx_t*>(cell_csrm.index.data()),
     &n_common_nodes, &index_base,
-    &range_of_each_cell, &neighbors_of_each_cell
-  );
+    &range_of_each_cell, &neighbors_of_each_cell);
   EXPECT_EQ(result, METIS_OK);
   idx_t n_constraints{1}, edge_cut{0};
   result = METIS_PartGraphKway(
-    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell, 
+    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell,
     NULL/* computational cost */,
     NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
     &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, cell_parts->data()
-  );
+    NULL/* options */, &edge_cut, cell_parts->data());
   EXPECT_EQ(result, METIS_OK);
   METIS_Free(range_of_each_cell);
   METIS_Free(neighbors_of_each_cell);
@@ -89,7 +86,7 @@ void ShufflerTest::SetCellPartData(
       int range_min{section.GetOneBasedCellIdMin()-1};
       int range_max{section.GetOneBasedCellIdMax()-1};
       for (int cell_id = range_min; cell_id <= range_max; ++cell_id) {
-        field[cell_id] = (double) parts[cell_id-range_min];
+        field[cell_id] = static_cast<double>(parts[cell_id-range_min]);
       }
     }
   }
@@ -106,20 +103,22 @@ TEST_F(ShufflerTest, ShuffleByParts) {
     EXPECT_EQ(new_order[i], expected_new_order[i]);
   }
   // Shuffle data array by new order
-  std::vector<double> old_array{1.0, 0.0, 0.1, 2.0, 0.2, 1.1, 2.1, 1.2, 0.3, 2.2};
+  std::vector<double> old_array{1.0, 0.0, 0.1, 2.0, 0.2,
+                                1.1, 2.1, 1.2, 0.3, 2.2};
   ShuffleDataArray<double>(new_order, old_array.data());
-  std::vector<double> expected_new_array{0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2};
+  std::vector<double> expected_new_array{0.0, 0.1, 0.2, 0.3, 1.0,
+                                         1.1, 1.2, 2.0, 2.1, 2.2};
   for (int i = 0; i < n; ++i) {
     EXPECT_DOUBLE_EQ(old_array[i], expected_new_array[i]);
   }
   // Shuffle cell connectivity by new order
   n = 4;
   std::vector<int> new_cell_order{1, 2, 3, 0};
-  std::vector<int> connectivity = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4 ,5};
+  std::vector<int> connectivity = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
   int npe = 3;
   ShuffleConnectivity<int>(new_cell_order, npe, connectivity.data());
   std::vector<int> expected_new_connectivity{2, 3, 6,   6, 3, 5,   3, 4, 5,
-                                             1, 2, 6,};
+                                             1, 2, 6};
   for (int i = 0; i < connectivity.size(); ++i) {
     EXPECT_EQ(connectivity[i], expected_new_connectivity[i]);
   }
