@@ -91,7 +91,8 @@ std::unique_ptr<MetisMesh<T>> Converter<T>::ConvertToMetisMesh(
     cgns_to_metis_for_cells.emplace(zone_id, std::map<int, std::vector<int>>());
     auto n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
-      auto [iter, succ] = cgns_to_metis_for_cells[zone_id].emplace(section_id, std::vector<int>());
+      auto [iter, succ] = cgns_to_metis_for_cells[zone_id].emplace(
+          section_id, std::vector<int>());
       auto& metis_ids_in_section = iter->second;
       auto& section = zone.GetSection(section_id);
       if (!CheckTypeDim(section.GetType(), cell_dim)) continue;

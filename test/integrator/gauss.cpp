@@ -1,8 +1,9 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
-#include "mini/integrator/gauss.hpp"
-#include "mini/algebra/column.hpp"
 
 #include <cmath>
+
+#include "mini/integrator/gauss.hpp"
+#include "mini/algebra/column.hpp"
 
 #include "gtest/gtest.h"
 

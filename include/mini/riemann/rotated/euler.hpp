@@ -29,7 +29,9 @@ class Euler {
     normal_[0] = n_1;
     normal_[1] = n_2;
   }
-  FluxType GetFluxOnTimeAxis(ConservativeType const& left, ConservativeType const& right) {
+  FluxType GetFluxOnTimeAxis(
+      ConservativeType const& left,
+      ConservativeType const& right) {
     auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
     GlobalToNormal(&(left__primitive.momentum));

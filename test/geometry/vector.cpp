@@ -1,9 +1,9 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
+#include <vector>
+
 #include "mini/geometry/vector.hpp"
 #include "mini/geometry/point.hpp"
-
-#include <vector>
 
 #include "gtest/gtest.h"
 

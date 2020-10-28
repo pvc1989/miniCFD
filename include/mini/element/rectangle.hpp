@@ -16,7 +16,6 @@ template <class Real, int kDim>
 class Rectangle :
     virtual public Surface<Real, kDim>,
     public geometry::Rectangle<Real, kDim> {
-
  public:
   // Types:
   using IdType = typename Surface<Real, kDim>::IdType;

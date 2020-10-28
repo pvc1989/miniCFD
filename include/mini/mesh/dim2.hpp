@@ -138,6 +138,7 @@ class Cell : virtual public element::Surface<Real, 2> {
   const NodeType& GetNode(int i) const {
     return static_cast<const NodeType&>(this->GetPoint(i));
   }
+
  protected:
   std::forward_list<WallType*> walls_;
 };
@@ -223,7 +224,7 @@ class Mesh {
   }
 
   // Emplace primitive objects.
-  NodeType* EmplaceNode(NodeId i, Real x, Real y, Real z=0.0) {
+  NodeType* EmplaceNode(NodeId i, Real x, Real y, Real z = 0.0) {
     auto node_unique_ptr = std::make_unique<NodeType>(i, x, y);
     auto node_ptr = node_unique_ptr.get();
     id_to_node_.emplace(i, std::move(node_unique_ptr));
