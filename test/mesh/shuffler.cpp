@@ -30,19 +30,22 @@ class ShufflerTest : public ::testing::Test {
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
-  static void PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts, CSRM& cell_csrm,
-                            std::vector<idx_t>& cell_parts);
-  static void SetCellPartData(ConvertMapType& convert_map,
-                              const std::vector<idx_t>& cell_parts,
-                              MeshType* cgns_mesh);
+  static void PartitionMesh(
+      idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
+      std::vector<idx_t>* cell_parts);
+  static void SetCellPartData(
+      const ConvertMapType& convert_map, const std::vector<idx_t>& cell_parts,
+      MeshType* cgns_mesh);
 };
-void ShufflerTest::PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts,
-                                 CSRM& cell_csrm,
-                                 std::vector<idx_t>& cell_parts) {
+void ShufflerTest::PartitionMesh(
+    idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
+    std::vector<idx_t>* cell_parts) {
   idx_t n_common_nodes{2}, index_base{0};
   idx_t *range_of_each_cell, *neighbors_of_each_cell;
   auto result = METIS_MeshToDual(
-    &n_cells, &n_nodes, cell_csrm.pointer.data(), cell_csrm.index.data(), 
+    &n_cells, &n_nodes,
+    const_cast<idx_t*>(cell_csrm.pointer.data()),
+    const_cast<idx_t*>(cell_csrm.index.data()),
     &n_common_nodes, &index_base,
     &range_of_each_cell, &neighbors_of_each_cell
   );
@@ -53,17 +56,20 @@ void ShufflerTest::PartitionMesh(idx_t n_cells, idx_t n_nodes, idx_t n_parts,
     NULL/* computational cost */,
     NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
     &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, cell_parts.data()
+    NULL/* options */, &edge_cut, cell_parts->data()
   );
-  EXPECT_EQ(result, METIS_OK);                                 
+  EXPECT_EQ(result, METIS_OK);
+  METIS_Free(range_of_each_cell);
+  METIS_Free(neighbors_of_each_cell);
 }
-void ShufflerTest::SetCellPartData(ConvertMapType& convert_map,
-                                   const std::vector<idx_t>& cell_parts,
-                                   MeshType* cgns_mesh) {
-  auto& cgns_to_metis_for_cells = convert_map.cgns_to_metis_for_cells;
+void ShufflerTest::SetCellPartData(
+    const ConvertMapType& convert_map, const std::vector<idx_t>& cell_parts,
+    MeshType* cgns_mesh) {
+  auto& zone_to_sections = convert_map.cgns_to_metis_for_cells;
   auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
     auto& zone = base.GetZone(zone_id);
+    auto& section_to_cells = zone_to_sections.at(zone_id);
     int solution_id = zone.CountSolutions() + 1;
     char solution_name[33] = "CellData";
     zone.AddSolution(solution_id, solution_name, CGNS_ENUMV(CellCenter));
@@ -74,11 +80,11 @@ void ShufflerTest::SetCellPartData(ConvertMapType& convert_map,
     int n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       auto& section = zone.GetSection(section_id);
+      auto& cells_local_to_global = section_to_cells.at(section_id);
       int n_cells = section.CountCells();
       std::vector<int> parts(n_cells);
       for (int local_id = 0; local_id < n_cells; ++local_id) {
-        int global_id = cgns_to_metis_for_cells[zone_id][section_id][local_id];
-        parts[local_id] = cell_parts[global_id];
+        parts[local_id] = cell_parts[cells_local_to_global[local_id]];
       }
       int range_min{section.GetOneBasedCellIdMin()-1};
       int range_max{section.GetOneBasedCellIdMax()-1};
@@ -136,7 +142,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   int n_nodes = convert_map.metis_to_cgns_for_nodes.size();
   std::vector<idx_t> cell_parts;
   cell_parts.resize(n_cells);
-  PartitionMesh(n_cells, n_nodes, n_parts, cell_csrm, cell_parts);
+  PartitionMesh(n_cells, n_nodes, n_parts, cell_csrm, &cell_parts);
   shuffler.SetNumParts(n_parts);
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&cell_csrm);
