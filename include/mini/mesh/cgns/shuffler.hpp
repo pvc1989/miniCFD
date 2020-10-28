@@ -1,7 +1,7 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_METIS_SHUFFLER_HPP_
-#define MINI_MESH_METIS_SHUFFLER_HPP_
+#ifndef MINI_MESH_CGNS_SHUFFLER_HPP_
+#define MINI_MESH_CGNS_SHUFFLER_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -18,9 +18,10 @@ namespace metis {
 
 using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<idx_t>;
 template <typename T>
-void GetNodePartsByConnectivity(const CSRM& cell_csrm, const std::vector<T>& cell_parts,
-                                T n_parts, int n_nodes, std::vector<T>& node_parts) {
-  node_parts = std::vector<T>(n_nodes, n_parts);
+std::vector<T> GetNodePartsByConnectivity(
+    const CSRM& cell_csrm, const std::vector<T>& cell_parts,
+    T n_parts, int n_nodes) {
+  auto node_parts = std::vector<T>(n_nodes, n_parts);
   auto node_pointer = cell_csrm.index.data();
   int n_cells = cell_csrm.pointer.size() - 1;
   auto curr_range_pointer = cell_csrm.pointer.data();
@@ -30,9 +31,11 @@ void GetNodePartsByConnectivity(const CSRM& cell_csrm, const std::vector<T>& cel
     auto tail = *curr_range_pointer;
     for (int j = head; j < tail; ++j) {
       int node_index = *node_pointer++;
-      if (part_value < node_parts[node_index]) node_parts[node_index] = part_value;
+      if (part_value < node_parts[node_index])
+        node_parts[node_index] = part_value;
     }
   }
+  return node_parts;
 }
 
 template <typename T>
@@ -84,7 +87,7 @@ void ShuffleDataArray(const std::vector<int>& new_cell_order, T* cell_data) {
   auto cell_data_ptr = cell_data;
   for (int i = 0; i < n; ++i) {
     *cell_data_ptr++ = new_cell_data[i];
-  }  
+  }
 }
 
 template <typename T, class Real>
@@ -109,18 +112,20 @@ class Shuffler {
   void SetConvertMap(ConvertMapType* convert_map) {
     convert_map_ = convert_map;
   }
-  void ShuffleMesh(std::unique_ptr<MeshType>& mesh) {
-    auto& cgns_to_metis_for_cells = convert_map_->cgns_to_metis_for_cells;
+  void ShuffleMesh(MeshType* mesh) {
+    auto& zone_to_sections = convert_map_->cgns_to_metis_for_cells;
     auto& base = mesh->GetBase(1); int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       auto& zone = base.GetZone(zone_id);
+      auto& section_to_cells = zone_to_sections.at(zone_id);
       int n_sections = zone.CountSections();
       for (int section_id = 1; section_id <= n_sections; ++section_id) {
         auto& section = zone.GetSection(section_id);
+        auto& cells_local_to_global = section_to_cells.at(section_id);
         int n_cells = section.CountCells();
         std::vector<int> parts(n_cells);
         for (int local_id = 0; local_id < n_cells; ++local_id) {
-          int global_id = cgns_to_metis_for_cells[zone_id][section_id][local_id];
+          auto global_id = cells_local_to_global[local_id];
           parts[local_id] = (*cell_parts_)[global_id];
         }
         int range_min{section.GetOneBasedCellIdMin()-1};
@@ -142,6 +147,7 @@ class Shuffler {
       }
     }
   }
+
  private:
   int n_parts_;
   std::vector<T>* cell_parts_;
@@ -153,4 +159,4 @@ class Shuffler {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_METIS_SHUFFLER_HPP_
+#endif  // MINI_MESH_CGNS_SHUFFLER_HPP_

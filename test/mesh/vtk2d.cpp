@@ -89,7 +89,8 @@ TEST_F(WriterTest, TinyMesh) {
   }
 }
 TEST_F(WriterTest, MeshWithData) {
-  using NodeData = element::Data<double, 2/* dims */, 2/* scalars */, 2/* vectors */>;
+  using NodeData = element::Data<
+      double, 2/* dims */, 2/* scalars */, 2/* vectors */>;
   using EdgeData = Empty;
   using CellData = NodeData;
   using MeshType = Mesh<double, NodeData, EdgeData, CellData>;

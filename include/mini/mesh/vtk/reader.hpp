@@ -3,6 +3,13 @@
 #ifndef MINI_MESH_VTK_READER_HPP_
 #define MINI_MESH_VTK_READER_HPP_
 
+// C++ system headers:
+#include <array>
+#include <cassert>
+#include <string>
+#include <memory>
+#include <stdexcept>
+#include <utility>
 // For `.vtk` files:
 #include <vtkDataSet.h>
 #include <vtkDataSetReader.h>
@@ -26,13 +33,6 @@
 #include <vtkFloatArray.h>
 #include <vtkSmartPointer.h>
 #include <vtksys/SystemTools.hxx>
-
-#include <array>
-#include <cassert>
-#include <string>
-#include <memory>
-#include <stdexcept>
-#include <utility>
 
 namespace mini {
 namespace mesh {

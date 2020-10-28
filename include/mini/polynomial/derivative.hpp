@@ -27,7 +27,7 @@ struct Derivative {
     constexpr auto a_prev = (2.0 * kDegree - 1) / (kDegree - 1);
     constexpr auto a_prev_prev = kDegree / (kDegree - 1.0);
     Derivative<kDegree-1>::FillAllValues(x, result-1);
-    *result = *(result-1) * a_prev * x 
+    *result = *(result-1) * a_prev * x
             - *(result-2) * a_prev_prev;
   }
 };
@@ -67,4 +67,4 @@ struct Derivative<1> {
 }  // namespace polynomial
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_LEGENDRE_HPP_
+#endif  // MINI_POLYNOMIAL_DERIVATIVE_HPP_

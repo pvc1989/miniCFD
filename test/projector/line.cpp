@@ -1,11 +1,11 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
-#include "mini/projector/line.hpp"
-#include "mini/polynomial/legendre.hpp"
 
 #include <cmath>
 
-#include "gtest/gtest.h"
+#include "mini/projector/line.hpp"
+#include "mini/polynomial/legendre.hpp"
 
+#include "gtest/gtest.h"
 
 namespace mini {
 namespace projector {

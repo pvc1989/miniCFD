@@ -8,7 +8,6 @@
 #include "mini/algebra/column.hpp"
 #include "mini/polynomial/derivative.hpp"
 
-
 namespace mini {
 namespace polynomial {
 
@@ -92,5 +91,5 @@ TEST_F(DerivativeTest, GetAllValues) {
   }
 }
 
-}  // namespace basis
+}  // namespace polynomial
 }  // namespace mini

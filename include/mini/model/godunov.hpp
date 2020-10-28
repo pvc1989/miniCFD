@@ -129,7 +129,7 @@ class Godunov {
         auto& u_l = left_cell->data.state;
         wall->data.flux = riemann_.GetFluxOnTimeAxis(u_l, inlet_);
       } else {
-        auto& u_r = right_cell->data.state; 
+        auto& u_r = right_cell->data.state;
         wall->data.flux = riemann_.GetFluxOnTimeAxis(inlet_, u_r);
       }
       wall->data.flux *= wall->Measure();

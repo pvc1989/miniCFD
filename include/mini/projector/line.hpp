@@ -38,7 +38,7 @@ class Line {
     auto coefficients = GetCoefficients(function);
     return Polynomial(this, coefficients);
   }
- 
+
  private:
   double jacobian_;
   double x_center_;

@@ -100,6 +100,7 @@ class Cell : virtual public element::Line<Real, 1> {
     visitor(this->Tail());
     // for (auto& b : nodes_) { visitor(*b); }
   }
+
  protected:
   // std::forward_list<NodeType*> nodes_;
 };
@@ -118,6 +119,7 @@ class Mesh {
   using CellType = Cell<Real, NodeData, CellData>;
   using NodeType = typename CellType::NodeType;
   using WallType = NodeType;
+
  private:
   // Types:
   using NodeId = typename NodeType::IdType;
@@ -176,6 +178,7 @@ class Mesh {
     }
   }
   static constexpr int Dim() { return 1; }
+
  private:
   NodeType* EmplaceCell(NodeType* head, NodeType* tail) {
     return EmplaceCell(head->I(), tail->I());

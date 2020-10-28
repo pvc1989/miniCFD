@@ -102,7 +102,7 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   std::vector<int> new_order(n);
   ReorderByParts<int>(parts, new_order.data());
   std::vector<int> expected_new_order{1, 2, 4, 8, 0, 5, 7, 3, 6, 9};
-  for (int i = 0; i < n; ++ i) {
+  for (int i = 0; i < n; ++i) {
     EXPECT_EQ(new_order[i], expected_new_order[i]);
   }
   // Shuffle data array by new order
@@ -148,14 +148,14 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   shuffler.SetMetisMesh(&cell_csrm);
   shuffler.SetConvertMap(&convert_map);
   SetCellPartData(convert_map, cell_parts, cgns_mesh.get());
-  shuffler.ShuffleMesh(cgns_mesh);
+  shuffler.ShuffleMesh(cgns_mesh.get());
   cgns_mesh->WriteToFile(new_file_name);
 }
 
 class Partition : public ::testing::Test {
-  protected:
-   using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<int>;
-   CSRM cell_csrm;
+ protected:
+  using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<int>;
+  CSRM cell_csrm;
 };
 TEST_F(Partition, GetNodePartsByConnectivity) {
   std::vector<int> cell_parts{2, 0, 0, 1};
@@ -163,8 +163,8 @@ TEST_F(Partition, GetNodePartsByConnectivity) {
   cell_csrm.index = {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7};
   int n_nodes = 10;
   int n_parts = 3;
-  std::vector<int> node_parts;
-  GetNodePartsByConnectivity<int>(cell_csrm, cell_parts, n_parts, n_nodes, node_parts);
+  auto node_parts = GetNodePartsByConnectivity<int>(
+      cell_csrm, cell_parts, n_parts, n_nodes);
   std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
   for (int i = 0; i < n_nodes; ++i) {
     EXPECT_EQ(node_parts[i], expected_node_parts[i]);

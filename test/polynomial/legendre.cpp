@@ -70,5 +70,5 @@ TEST_F(TestLegendre, GetAllValues) {
   }
 }
 
-}  // namespace basis
+}  // namespace polynomial
 }  // namespace mini

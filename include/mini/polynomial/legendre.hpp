@@ -27,7 +27,7 @@ struct Legendre {
     constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
     constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
     Legendre<kDegree-1>::FillAllValues(x, result-1);
-    *result = *(result-1) * a_prev * x 
+    *result = *(result-1) * a_prev * x
             + *(result-2) * a_prev_prev;
   }
 };

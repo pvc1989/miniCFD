@@ -33,7 +33,8 @@ class ReaderTest : public ::testing::Test {
     std::string name; int id, first, last, n_boundary;
     CGNS_ENUMT(ElementType_t) type;
     std::vector<int> connectivity;
-    Section(char* sn, int si, int fi, int la, int nb, CGNS_ENUMT(ElementType_t) ty)
+    Section(char* sn, int si, int fi, int la, int nb,
+            CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
           connectivity((last-first+1) * CountNodesByType(ty)) {}
   };
@@ -42,7 +43,7 @@ class ReaderTest : public ::testing::Test {
     std::vector<double> x, y, z;
     std::map<int, Section> sections;
     std::vector<Solution> solutions;
-    ZoneInfo(char* zn, int zi, int* zone_size) 
+    ZoneInfo(char* zn, int zi, int* zone_size)
         : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
           x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {}
   };
@@ -66,8 +67,8 @@ TEST_F(ReaderTest, ReadBase) {
   cg_nbases(file_id, &n_bases);
   struct BaseInfo {
     std::string name; int id, cell_dim, phys_dim;
-    BaseInfo(char* bn, int bi, int cd, int pd) 
-      : name(bn), id(bi), cell_dim(cd), phys_dim(pd) {}
+    BaseInfo(char* bn, int bi, int cd, int pd)
+        : name(bn), id(bi), cell_dim(cd), phys_dim(pd) {}
   };
   auto base_info = std::vector<BaseInfo>();
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
@@ -260,7 +261,8 @@ TEST_F(ReaderTest, ReadSolution) {
     char sol_name[33];
     CGNS_ENUMT(GridLocation_t) location;
     cg_sol_info(file_id, base_id, zone_id, sol_id, sol_name, &location);
-    auto& cg_solution = cg_zone.solutions.emplace_back(sol_name, sol_id, location);
+    auto& cg_solution = cg_zone.solutions.emplace_back(
+        sol_name, sol_id, location);
     // read field
     int n_fields;
     cg_nfields(file_id, base_id, zone_id, sol_id, &n_fields);

@@ -18,7 +18,7 @@ class Point : public geometry::Point<Real, kDim> {
   using IdType = std::size_t;
   // Constructors:
   template<class... XYZ>
-  Point(IdType i, XYZ&&... xyz)
+  explicit Point(IdType i, XYZ&&... xyz)
       : i_(i), geometry::Point<Real, kDim>{std::forward<XYZ>(xyz)...} {}
   Point(IdType i, std::initializer_list<Real> xyz)
       : i_(i), geometry::Point<Real, kDim>(xyz) {}

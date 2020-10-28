@@ -10,7 +10,7 @@
 
 namespace mini {
 namespace riemann {
-namespace rotated{
+namespace rotated {
 
 class TestRotatedEulerTest : public ::testing::Test {
  protected:

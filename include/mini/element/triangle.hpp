@@ -17,7 +17,6 @@ template <class Real, int kDim>
 class Triangle :
     virtual public Surface<Real, kDim>,
     public geometry::Triangle<Real, kDim> {
-
  public:
   // Types:
   using IdType = typename Surface<Real, kDim>::IdType;
