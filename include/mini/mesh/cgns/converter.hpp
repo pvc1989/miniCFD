@@ -52,24 +52,24 @@ template <typename T>
 struct Converter {
   using CgneMesh = Tree<double>;
   Converter() = default;
-  std::unique_ptr<MetisMesh<T>> ConvertToMetisMesh(const CgneMesh* mesh);
+  MetisMesh<T> ConvertToMetisMesh(const CgneMesh& mesh);
   ConvertMap convert_map;
 };
 template <typename T>
-std::unique_ptr<MetisMesh<T>> Converter<T>::ConvertToMetisMesh(
-    const Converter<T>::CgneMesh* cgns_mesh) {
+MetisMesh<T> Converter<T>::ConvertToMetisMesh(
+    const Converter<T>::CgneMesh& cgns_mesh) {
   auto& metis_to_cgns_for_nodes = convert_map.metis_to_cgns_for_nodes;
   auto& cgns_to_metis_for_nodes = convert_map.cgns_to_metis_for_nodes;
   auto& metis_to_cgns_for_cells = convert_map.metis_to_cgns_for_cells;
   auto& cgns_to_metis_for_cells = convert_map.cgns_to_metis_for_cells;
-  assert(cgns_mesh->CountBases() == 1);
-  auto metis_mesh = std::make_unique<MetisMesh<T>>();
-  auto& base = cgns_mesh->GetBase(1);
+  assert(cgns_mesh.CountBases() == 1);
+  auto metis_mesh = MetisMesh<T>();
+  auto& base = cgns_mesh.GetBase(1);
   auto cell_dim = base.GetCellDim();
   auto n_zones = base.CountZones();
   int n_nodes_of_curr_base{0};
-  auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
-  auto& cell_ind = metis_mesh->csr_matrix_for_cells.index;
+  auto& cell_ptr = metis_mesh.csr_matrix_for_cells.pointer;
+  auto& cell_ind = metis_mesh.csr_matrix_for_cells.index;
   int pointer_value{0};
   cell_ptr.emplace_back(pointer_value);
   auto n_nodes_in_prev_zones{0};

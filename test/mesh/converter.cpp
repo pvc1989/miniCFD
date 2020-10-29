@@ -22,25 +22,21 @@ class ConverterTest : public ::testing::Test {
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ConverterTest, ConvertToMetisMesh) {
-  // auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  // // read by mini::mesh::cgns
-  // reader.ReadFromFile(file_name);
-  // auto cgns_mesh = reader.GetMesh();
   // convert cgns_mesh to metis_mesh
-  auto file_name = test_data_dir_ + "/new_ugrid_2d.cgns";
-  auto cgns_mesh = std::make_unique<MeshType>();
-  cgns_mesh->ReadConnectivityFromFile(file_name);
+  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+  auto cgns_mesh = MeshType();
+  cgns_mesh.ReadConnectivityFromFile(file_name);
   auto converter = Converter<int>();
-  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
-  auto& cell_ptr = metis_mesh->csr_matrix_for_cells.pointer;
-  auto& cell_ind = metis_mesh->csr_matrix_for_cells.index;
+  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh);
+  auto& cell_ptr = metis_mesh.csr_matrix_for_cells.pointer;
+  auto& cell_ind = metis_mesh.csr_matrix_for_cells.index;
   auto& metis_to_cgns_for_nodes = converter.convert_map.metis_to_cgns_for_nodes;
   auto& cgns_to_metis_for_nodes = converter.convert_map.cgns_to_metis_for_nodes;
   auto& metis_to_cgns_for_cells = converter.convert_map.metis_to_cgns_for_cells;
   auto& cgns_to_metis_for_cells = converter.convert_map.cgns_to_metis_for_cells;
   // test the converted metis_mesh
   int base_id{1};
-  auto& base = cgns_mesh->GetBase(base_id);
+  auto& base = cgns_mesh.GetBase(base_id);
   auto n_zones = base.CountZones();
   auto n_nodes_total{0};
   for (int zone_id = 1; zone_id <= n_zones; zone_id++) {
