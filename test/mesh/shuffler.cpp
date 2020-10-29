@@ -26,7 +26,7 @@ class ShufflerTest : public ::testing::Test {
   using MeshType = mini::mesh::cgns::Tree<double>;
   using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<idx_t>;
   using ConvertMapType = mini::mesh::cgns::ConvertMap;
-  using FieldType = mini::mesh::cgns::Field;
+  using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
