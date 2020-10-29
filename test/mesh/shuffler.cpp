@@ -133,8 +133,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto cgns_mesh = std::make_unique<MeshType>();
   cgns_mesh->OpenFileWithGmshCells(old_file_name);
   // cgns_mesh->ReadConnectivityFromFile(new_file_name);
-  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh.get());
-  auto& cell_csrm = metis_mesh->csr_matrix_for_cells;
+  auto metis_mesh = converter.ConvertToMetisMesh(*cgns_mesh);
+  auto& cell_csrm = metis_mesh.csr_matrix_for_cells;
   idx_t n_parts{8};
   auto& convert_map = converter.convert_map;
   int n_cells = convert_map.metis_to_cgns_for_cells.size();
