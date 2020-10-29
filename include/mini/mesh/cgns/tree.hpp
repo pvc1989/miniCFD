@@ -144,7 +144,9 @@ struct Section {
   CGNS_ENUMT(ElementType_t) type_;
 };
 
-using Field = std::vector<double>;
+template <class T>
+using Field = std::vector<T>;
+
 template <class Real>
 struct Solution {
   Solution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
@@ -161,7 +163,7 @@ struct Solution {
   std::string name;
   int id;
   CGNS_ENUMT(GridLocation_t) location;
-  std::map<std::string, Field> fields;
+  std::map<std::string, Field<Real>> fields;
 };
 
 template <class Real>
@@ -289,7 +291,7 @@ class Zone {
           last = cell_size_;
         }
         std::string name = std::string(field_name);
-        solution.fields.emplace(name, Field(last));
+        solution.fields.emplace(name, Field<Real>(last));
         cg_field_read(file_id, base_id, zone_id_, sol_id, field_name,
                       datatype, &first, &last, solution.fields[name].data());
       }

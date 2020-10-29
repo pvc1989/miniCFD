@@ -98,7 +98,7 @@ class Shuffler {
   using ConvertMapType = mini::mesh::cgns::ConvertMap;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
-  using FieldType = mini::mesh::cgns::Field;
+  using FieldType = mini::mesh::cgns::Field<Real>;
   Shuffler() = default;
   void SetNumParts(int n_parts) {
     n_parts_ = n_parts;
