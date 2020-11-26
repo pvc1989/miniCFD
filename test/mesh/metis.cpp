@@ -8,7 +8,7 @@
 
 #include "metis.h"
 #include "gtest/gtest.h"
-
+#include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
@@ -73,14 +73,16 @@ TEST_F(Partitioner, PartMeshDual) {
   idx_t n_parts{8}, n_common_nodes{2}, edge_cut{0};
   // idx_t options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  auto result = METIS_PartMeshDual(
-    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(),
-    cell_weights.data(),
-    NULL/* idx_t t *vsize */,
-    &n_common_nodes, &n_parts,
-    NULL/* real t *tpwgts */,
-    NULL/* options */,
-    &edge_cut, cell_parts.data(), node_parts.data());
+  auto null_vector_of_idx = std::vector<idx_t>();
+  auto null_vector_of_real = std::vector<real_t>();
+  auto result = PartMeshDual(
+      n_cells, n_nodes, cell_range, cell_nodes,
+      cell_weights/* computational cost */,
+      null_vector_of_idx/* communication size */,
+      n_common_nodes, n_parts,
+      null_vector_of_real/* weight of each part */,
+      null_vector_of_idx/* options */,
+      &edge_cut, &cell_parts, &node_parts);
   EXPECT_EQ(result, METIS_OK);
   // Print the mesh:
   /*
