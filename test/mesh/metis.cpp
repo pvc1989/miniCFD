@@ -54,6 +54,7 @@ TEST_F(Partitioner, PartMeshDual) {
     Partition a mesh into k parts based on a partitioning of its dual graph.
    */
   using Int = int;
+  using Real = float;
   // Build a simple mesh:
   Int n_cells_x{100}, n_cells_y{40};
   Int n_cells = n_cells_x * n_cells_y;
@@ -77,7 +78,7 @@ TEST_F(Partitioner, PartMeshDual) {
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   auto null_vector_of_idx = std::vector<Int>();
-  auto null_vector_of_real = std::vector<real_t>();
+  auto null_vector_of_real = std::vector<Real>();
   auto result = PartMeshDual(
       n_cells, n_nodes, cell_range, cell_nodes,
       cell_weights/* computational cost */,
@@ -163,6 +164,7 @@ TEST_F(Partitioner, PartGraphKway) {
     Partition a mesh's dual graph into k parts.
    */
   using Int = int;
+  using Real = float;
   // Build a simple mesh:
   Int n_cells_x{100}, n_cells_y{40};
   Int n_cells = n_cells_x * n_cells_y;

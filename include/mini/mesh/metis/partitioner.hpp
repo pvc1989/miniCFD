@@ -30,6 +30,8 @@ int PartMeshDual(
     std::vector<Int> *node_parts) {
   static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
   static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
+  static_assert(std::is_floating_point_v<Real>, "`Real` must be a floating-point type.");
+  static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
   assert(cell_parts->size() == n_cells);
   assert(node_parts->size() == n_nodes);
   return METIS_PartMeshDual(
