@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -189,11 +190,9 @@ TEST_F(Partitioner, PartGraphKway) {
   EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Build the dual graph:
   Int n_common_nodes{2}, index_base{0};
-  Int *range_of_each_cell, *neighbors_of_each_cell;
-  auto result = METIS_MeshToDual(
-    &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(),
-    &n_common_nodes, &index_base,
-    &range_of_each_cell, &neighbors_of_each_cell);
+  std::unique_ptr<Int[]> range_of_each_cell, neighbors_of_each_cell;
+  auto result = MeshToDual(n_cells, n_nodes, cell_range, cell_nodes,
+      n_common_nodes, index_base, &range_of_each_cell, &neighbors_of_each_cell);
   EXPECT_EQ(result, METIS_OK);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
@@ -207,14 +206,12 @@ TEST_F(Partitioner, PartGraphKway) {
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   result = METIS_PartGraphKway(
-    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell,
+    &n_cells, &n_constraints, range_of_each_cell.get(), neighbors_of_each_cell.get(),
     cell_weights.data()/* computational cost */,
     NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
     &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
     NULL/* options */, &edge_cut, cell_parts.data());
   EXPECT_EQ(result, METIS_OK);
-  METIS_Free(range_of_each_cell);
-  METIS_Free(neighbors_of_each_cell);
   // Write partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,

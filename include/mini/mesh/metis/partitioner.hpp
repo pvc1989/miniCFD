@@ -3,6 +3,7 @@
 #ifndef MINI_MESH_METIS_PARTITIONER_HPP_
 #define MINI_MESH_METIS_PARTITIONER_HPP_
 
+#include <memory>
 #include <type_traits>
 #include <vector>
 
@@ -46,6 +47,28 @@ int PartMeshDual(
       const_cast<Int*>(options.data()),
       objective_value, cell_parts->data(), node_parts->data()
   );
+}
+template <typename Int>
+int MeshToDual(
+    const Int &n_cells,
+    const Int &n_nodes,
+    const std::vector<Int> &range_of_each_cell,
+    const std::vector<Int> &nodes_in_each_cell,
+    const Int &n_common_nodes,
+    const Int &index_base,  /* 0 or 1 */
+    // output:
+    std::unique_ptr<Int[]> *range_of_each_dual_vertex,
+    std::unique_ptr<Int[]> *neighbors_of_each_dual_vertex) {
+  Int *range, *neighbors;
+  auto error_code = METIS_MeshToDual(
+      const_cast<Int*>(&n_cells), const_cast<Int*>(&n_nodes),
+      const_cast<Int*>(range_of_each_cell.data()),
+      const_cast<Int*>(nodes_in_each_cell.data()),
+      const_cast<Int*>(&n_common_nodes), const_cast<Int*>(&index_base),
+      &range, &neighbors);
+  range_of_each_dual_vertex->reset(range);
+  neighbors_of_each_dual_vertex->reset(neighbors);
+  return error_code;
 }
 
 }  // namespace metis
