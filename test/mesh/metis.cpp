@@ -18,21 +18,23 @@ namespace metis {
 class Partitioner : public ::testing::Test {
  protected:
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
-  static void BuildSimpleMesh(idx_t n_cells_x, idx_t n_cells_y,
-      std::vector<idx_t> *cell_nodes, std::vector<idx_t> *cell_range);
+  template <typename Int>
+  static void BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
+      std::vector<Int> *cell_nodes, std::vector<Int> *cell_range);
 };
-void Partitioner::BuildSimpleMesh(idx_t n_cells_x, idx_t n_cells_y,
-    std::vector<idx_t> *cell_nodes, std::vector<idx_t> *cell_range) {
-  idx_t n_cells = n_cells_x * n_cells_y;
-  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
-  idx_t n_nodes = n_nodes_x * n_nodes_y;
+template <typename Int>
+void Partitioner::BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
+    std::vector<Int> *cell_nodes, std::vector<Int> *cell_range) {
+  Int n_cells = n_cells_x * n_cells_y;
+  Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
+  Int n_nodes = n_nodes_x * n_nodes_y;
   cell_nodes->resize(n_cells * 4);  // indices of nodes in each cell
   cell_range->resize(n_cells + 1);  // use to slice cell_nodes
   auto curr_node = cell_nodes->begin();
   auto curr_cell = cell_range->begin();
   *curr_cell = 0;
-  for (int j = 0; j != n_cells_y; ++j) {
-    for (int i = 0; i != n_cells_x; ++i) {
+  for (Int j = 0; j != n_cells_y; ++j) {
+    for (Int i = 0; i != n_cells_x; ++i) {
       auto next = 4 + *curr_cell;
       *++curr_cell = next;
       auto k_node = i + j * n_nodes_x;  // node index starts from 0 in C code
@@ -51,29 +53,30 @@ TEST_F(Partitioner, PartMeshDual) {
   /*
     Partition a mesh into k parts based on a partitioning of its dual graph.
    */
+  using Int = int;
   // Build a simple mesh:
-  idx_t n_cells_x{100}, n_cells_y{40};
-  idx_t n_cells = n_cells_x * n_cells_y;
-  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
-  idx_t n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<idx_t> cell_nodes;  // indices of nodes in each cell
-  std::vector<idx_t> cell_range;  // use to slice cell_nodes
+  Int n_cells_x{100}, n_cells_y{40};
+  Int n_cells = n_cells_x * n_cells_y;
+  Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
+  Int n_nodes = n_nodes_x * n_nodes_y;
+  std::vector<Int> cell_nodes;  // indices of nodes in each cell
+  std::vector<Int> cell_range;  // use to slice cell_nodes
   BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
   EXPECT_EQ(cell_nodes.size(), n_cells * 4);
   EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Partition the mesh:
-  auto cell_weights = std::vector<idx_t>(n_cells, 1);
-  for (int j = 0; j != n_cells_y; ++j) {
-    for (int i = 0; i != n_cells_x/4; ++i) {
+  auto cell_weights = std::vector<Int>(n_cells, 1);
+  for (Int j = 0; j != n_cells_y; ++j) {
+    for (Int i = 0; i != n_cells_x/4; ++i) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto cell_parts = std::vector<idx_t>(n_cells);
-  auto node_parts = std::vector<idx_t>(n_nodes);
-  idx_t n_parts{8}, n_common_nodes{2}, edge_cut{0};
-  // idx_t options[METIS_NOPTIONS];
+  auto cell_parts = std::vector<Int>(n_cells);
+  auto node_parts = std::vector<Int>(n_nodes);
+  Int n_parts{8}, n_common_nodes{2}, edge_cut{0};
+  // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  auto null_vector_of_idx = std::vector<idx_t>();
+  auto null_vector_of_idx = std::vector<Int>();
   auto null_vector_of_real = std::vector<real_t>();
   auto result = PartMeshDual(
       n_cells, n_nodes, cell_range, cell_nodes,
@@ -88,8 +91,8 @@ TEST_F(Partitioner, PartMeshDual) {
   /*
   std::cout << n_cells << std::endl;
   curr_node = cell_nodes.begin();
-  for (int i = 0; i != n_cells; ++i) {
-    for (int j = 0; j != 4; ++j) {
+  for (Int i = 0; i != n_cells; ++i) {
+    for (Int j = 0; j != 4; ++j) {
       std::cout << 1 + *curr_node++ // node index starts from 1 in mesh file
                 << ' ';
     }
@@ -119,8 +122,8 @@ TEST_F(Partitioner, PartMeshDual) {
   // DataSet Structure
   fprintf(file, "DATASET UNSTRUCTURED_GRID\n");
   fprintf(file, "POINTS %d float\n", n_nodes);
-  for (int j = 0; j != n_nodes_y; ++j) {
-    for (int i = 0; i != n_nodes_x; ++i) {
+  for (Int j = 0; j != n_nodes_y; ++j) {
+    for (Int i = 0; i != n_nodes_x; ++i) {
       fprintf(file, "%f %f 0.0\n", static_cast<float>(i),
                                    static_cast<float>(j));
     }
@@ -133,7 +136,7 @@ TEST_F(Partitioner, PartMeshDual) {
     curr_node += 4;
   }
   fprintf(file, "CELL_TYPES %d\n", n_cells);
-  for (int i = 0; i != n_cells; ++i) {
+  for (Int i = 0; i != n_cells; ++i) {
     fprintf(file, "9\n");  // VTK_QUAD = 9
   }
   fprintf(file, "CELL_DATA %d\n", n_cells);
@@ -159,34 +162,35 @@ TEST_F(Partitioner, PartGraphKway) {
   /*
     Partition a mesh's dual graph into k parts.
    */
+  using Int = int;
   // Build a simple mesh:
-  idx_t n_cells_x{100}, n_cells_y{40};
-  idx_t n_cells = n_cells_x * n_cells_y;
-  idx_t n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
-  idx_t n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<idx_t> cell_nodes;  // indices of nodes in each cell
-  std::vector<idx_t> cell_range;  // use to slice cell_nodes
+  Int n_cells_x{100}, n_cells_y{40};
+  Int n_cells = n_cells_x * n_cells_y;
+  Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
+  Int n_nodes = n_nodes_x * n_nodes_y;
+  std::vector<Int> cell_nodes;  // indices of nodes in each cell
+  std::vector<Int> cell_range;  // use to slice cell_nodes
   BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
   EXPECT_EQ(cell_nodes.size(), n_cells * 4);
   EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Build the dual graph:
-  idx_t n_common_nodes{2}, index_base{0};
-  idx_t *range_of_each_cell, *neighbors_of_each_cell;
+  Int n_common_nodes{2}, index_base{0};
+  Int *range_of_each_cell, *neighbors_of_each_cell;
   auto result = METIS_MeshToDual(
     &n_cells, &n_nodes, cell_range.data(), cell_nodes.data(),
     &n_common_nodes, &index_base,
     &range_of_each_cell, &neighbors_of_each_cell);
   EXPECT_EQ(result, METIS_OK);
   // Partition the mesh:
-  auto cell_weights = std::vector<idx_t>(n_cells, 1);
-  for (int j = 0; j != n_cells_y; ++j) {
-    for (int i = 0; i != n_cells_x/4; ++i) {
+  auto cell_weights = std::vector<Int>(n_cells, 1);
+  for (Int j = 0; j != n_cells_y; ++j) {
+    for (Int i = 0; i != n_cells_x/4; ++i) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto cell_parts = std::vector<idx_t>(n_cells);
-  idx_t n_constraints{1}, n_parts{8}, edge_cut{0};
-  // idx_t options[METIS_NOPTIONS];
+  auto cell_parts = std::vector<Int>(n_cells);
+  Int n_constraints{1}, n_parts{8}, edge_cut{0};
+  // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
   result = METIS_PartGraphKway(
     &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell,
@@ -206,8 +210,8 @@ TEST_F(Partitioner, PartGraphKway) {
   // DataSet Structure
   fprintf(file, "DATASET UNSTRUCTURED_GRID\n");
   fprintf(file, "POINTS %d float\n", n_nodes);
-  for (int j = 0; j != n_nodes_y; ++j) {
-    for (int i = 0; i != n_nodes_x; ++i) {
+  for (Int j = 0; j != n_nodes_y; ++j) {
+    for (Int i = 0; i != n_nodes_x; ++i) {
       fprintf(file, "%f %f 0.0\n", static_cast<float>(i),
                                    static_cast<float>(j));
     }
@@ -220,7 +224,7 @@ TEST_F(Partitioner, PartGraphKway) {
     curr_node += 4;
   }
   fprintf(file, "CELL_TYPES %d\n", n_cells);
-  for (int i = 0; i != n_cells; ++i) {
+  for (Int i = 0; i != n_cells; ++i) {
     fprintf(file, "9\n");  // VTK_QUAD = 9
   }
   fprintf(file, "CELL_DATA %d\n", n_cells);
