@@ -7,7 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "metis.h"
 #include "gtest/gtest.h"
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
@@ -21,6 +20,8 @@ class Partitioner : public ::testing::Test {
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
   using Int = int;
   using Real = float;
+  std::vector<Int> null_vector_of_idx;
+  std::vector<Real> null_vector_of_real;
   static void BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
       std::vector<Int> *cell_nodes, std::vector<Int> *cell_range);
   static void WritePartitionedMesh(const char* name,
@@ -132,8 +133,6 @@ TEST_F(Partitioner, PartMeshDual) {
   Int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  auto null_vector_of_idx = std::vector<Int>();
-  auto null_vector_of_real = std::vector<Real>();
   auto result = PartMeshDual(
       n_cells, n_nodes, cell_range, cell_nodes,
       cell_weights/* computational cost */,
@@ -205,12 +204,14 @@ TEST_F(Partitioner, PartGraphKway) {
   Int n_constraints{1}, n_parts{8}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  result = METIS_PartGraphKway(
-    &n_cells, &n_constraints, range_of_each_cell.get(), neighbors_of_each_cell.get(),
-    cell_weights.data()/* computational cost */,
-    NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
-    &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, cell_parts.data());
+  result = PartGraphKway(
+      n_cells, n_constraints,
+      range_of_each_cell, neighbors_of_each_cell,
+      cell_weights, null_vector_of_idx/* communication size */,
+      null_vector_of_idx/* weight of each edge (in dual graph) */,
+      n_parts, null_vector_of_real/* weight of each part */,
+      null_vector_of_real/* unbalance tolerance */,
+      null_vector_of_idx/* options */, &edge_cut, &cell_parts);
   EXPECT_EQ(result, METIS_OK);
   // Write partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";

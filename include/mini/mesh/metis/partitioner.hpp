@@ -13,6 +13,41 @@ namespace mini {
 namespace mesh {
 namespace metis {
 
+template <typename Int, typename IntArray, typename Real>
+int PartGraphKway(
+    const Int &n_nodes,
+    const Int &n_constraints,
+    const IntArray &range_of_each_node,
+    const IntArray &neighbors_of_each_node,
+    const std::vector<Int> &cost_of_each_node,  /* computational cost */
+    const std::vector<Int> &size_of_each_node,  /* communication size */
+    const std::vector<Int> &cost_of_each_edge,  /* weight of each edge */
+    const Int &n_parts,
+    const std::vector<Real> &weight_of_each_part,  /* sum must be 1.0 */
+    const std::vector<Real> &unbalances,  /* unbalance tolerance */
+    const std::vector<Int> &options,
+    // output:
+    Int *objective_value,  /* edge cut or communication volume */
+    std::vector<Int> *node_parts) {
+  static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
+  static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
+  static_assert(std::is_floating_point_v<Real>, "`Real` must be a floating-point type.");
+  static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
+  assert(node_parts->size() == n_nodes);
+  return METIS_PartGraphKway(
+      const_cast<Int*>(&n_nodes), const_cast<Int*>(&n_constraints),
+      const_cast<Int*>(&range_of_each_node[0]),
+      const_cast<Int*>(&neighbors_of_each_node[0]),
+      const_cast<Int*>(cost_of_each_node.data()),
+      const_cast<Int*>(size_of_each_node.data()),
+      const_cast<Int*>(cost_of_each_edge.data()),
+      const_cast<Int*>(&n_parts),
+      const_cast<Real*>(weight_of_each_part.data()),
+      const_cast<Real*>(unbalances.data()),
+      const_cast<Int*>(options.data()),
+      objective_value, node_parts->data()
+  );
+}
 template <typename Int, typename Real>
 int PartMeshDual(
     const Int &n_cells,
