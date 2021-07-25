@@ -30,46 +30,27 @@ struct CellInfo {
   int section_id{0};
   int cell_id{0};
 };
-struct ConvertMap {
+
+template <typename CgnsMesh, typename MetisMesh>
+struct Converter {
+  Converter() = default;
+  MetisMesh ConvertToMetisMesh(const CgnsMesh& mesh);
   std::vector<NodeInfo> metis_to_cgns_for_nodes;
   std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
   std::vector<CellInfo> metis_to_cgns_for_cells;
   std::map<int, std::map<int, std::vector<int>>> cgns_to_metis_for_cells;
 };
-
-template <typename T>
-struct CompressedSparseRowMatrix {
-  std::vector<T> pointer;
-  std::vector<T> index;
-};
-
-template <typename T>
-struct MetisMesh {
-  CompressedSparseRowMatrix<T> csr_matrix_for_cells;
-};
-
-template <typename T>
-struct Converter {
-  using CgneMesh = Tree<double>;
-  Converter() = default;
-  MetisMesh<T> ConvertToMetisMesh(const CgneMesh& mesh);
-  ConvertMap convert_map;
-};
-template <typename T>
-MetisMesh<T> Converter<T>::ConvertToMetisMesh(
-    const Converter<T>::CgneMesh& cgns_mesh) {
-  auto& metis_to_cgns_for_nodes = convert_map.metis_to_cgns_for_nodes;
-  auto& cgns_to_metis_for_nodes = convert_map.cgns_to_metis_for_nodes;
-  auto& metis_to_cgns_for_cells = convert_map.metis_to_cgns_for_cells;
-  auto& cgns_to_metis_for_cells = convert_map.cgns_to_metis_for_cells;
+template <typename CgnsMesh, typename MetisMesh>
+MetisMesh Converter<CgnsMesh, MetisMesh>::ConvertToMetisMesh(
+    const CgnsMesh& cgns_mesh) {
   assert(cgns_mesh.CountBases() == 1);
-  auto metis_mesh = MetisMesh<T>();
+  auto metis_mesh = MetisMesh();
   auto& base = cgns_mesh.GetBase(1);
   auto cell_dim = base.GetCellDim();
   auto n_zones = base.CountZones();
   int n_nodes_of_curr_base{0};
-  auto& cell_ptr = metis_mesh.csr_matrix_for_cells.pointer;
-  auto& cell_ind = metis_mesh.csr_matrix_for_cells.index;
+  auto& cell_ptr = metis_mesh.cells.range;
+  auto& cell_idx = metis_mesh.cells.index;
   int pointer_value{0};
   cell_ptr.emplace_back(pointer_value);
   auto n_nodes_in_prev_zones{0};
@@ -109,11 +90,11 @@ MetisMesh<T> Converter<T>::ConvertToMetisMesh(
         cell_ptr.emplace_back(pointer_value+=n_nodes_per_cell);
       }
       auto connectivity_size = n_nodes_per_cell * n_cells_of_curr_sect;
-      cell_ind.reserve(cell_ind.size() + connectivity_size);
+      cell_idx.reserve(cell_idx.size() + connectivity_size);
       auto connectivity = section.GetConnectivity();
       for (int node_id = 0; node_id < connectivity_size; ++node_id) {
         auto node_id_global = n_nodes_in_prev_zones + connectivity[node_id] - 1;
-        cell_ind.emplace_back(node_id_global);
+        cell_idx.emplace_back(node_id_global);
       }
     }
     n_nodes_in_prev_zones += zone.CountNodes();

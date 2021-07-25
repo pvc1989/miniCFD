@@ -23,9 +23,10 @@ namespace metis {
 
 class ShufflerTest : public ::testing::Test {
  protected:
-  using MeshType = mini::mesh::cgns::Tree<double>;
-  using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<idx_t>;
-  using ConvertMapType = mini::mesh::cgns::ConvertMap;
+  using CgnsMesh = mini::mesh::cgns::Tree<double>;
+  using MetisMesh = metis::Mesh<int>;
+  using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<idx_t>;
+  using ConverterType = mini::mesh::cgns::Converter<CgnsMesh, MetisMesh>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
@@ -34,8 +35,8 @@ class ShufflerTest : public ::testing::Test {
       idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
       std::vector<idx_t>* cell_parts);
   static void SetCellPartData(
-      const ConvertMapType& convert_map, const std::vector<idx_t>& cell_parts,
-      MeshType* cgns_mesh);};
+      const ConverterType& converter, const std::vector<idx_t>& cell_parts,
+      CgnsMesh* cgns_mesh);};
 void ShufflerTest::PartitionMesh(
     idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
     std::vector<idx_t>* cell_parts) {
@@ -43,7 +44,7 @@ void ShufflerTest::PartitionMesh(
   idx_t *range_of_each_cell, *neighbors_of_each_cell;
   auto result = METIS_MeshToDual(
     &n_cells, &n_nodes,
-    const_cast<idx_t*>(cell_csrm.pointer.data()),
+    const_cast<idx_t*>(cell_csrm.range.data()),
     const_cast<idx_t*>(cell_csrm.index.data()),
     &n_common_nodes, &index_base,
     &range_of_each_cell, &neighbors_of_each_cell);
@@ -60,9 +61,9 @@ void ShufflerTest::PartitionMesh(
   METIS_Free(neighbors_of_each_cell);
 }
 void ShufflerTest::SetCellPartData(
-    const ConvertMapType& convert_map, const std::vector<idx_t>& cell_parts,
-    MeshType* cgns_mesh) {
-  auto& zone_to_sections = convert_map.cgns_to_metis_for_cells;
+    const ConverterType& converter, const std::vector<idx_t>& cell_parts,
+    CgnsMesh* cgns_mesh) {
+  auto& zone_to_sections = converter.cgns_to_metis_for_cells;
   auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
     auto& zone = base.GetZone(zone_id);
@@ -124,41 +125,40 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
-  mini::mesh::cgns::Converter<idx_t> converter;
+  ConverterType converter;
   using MeshDataType = double;
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto new_file_name = current_binary_dir_ + "/new_ugrid_2d.cgns";
-  auto cgns_mesh = std::make_unique<MeshType>();
+  auto cgns_mesh = std::make_unique<CgnsMesh>();
   cgns_mesh->OpenFileWithGmshCells(old_file_name);
   // cgns_mesh->ReadConnectivityFromFile(new_file_name);
   auto metis_mesh = converter.ConvertToMetisMesh(*cgns_mesh);
-  auto& cell_csrm = metis_mesh.csr_matrix_for_cells;
+  auto& cell_csrm = metis_mesh.cells;
   idx_t n_parts{8};
-  auto& convert_map = converter.convert_map;
-  int n_cells = convert_map.metis_to_cgns_for_cells.size();
-  int n_nodes = convert_map.metis_to_cgns_for_nodes.size();
+  int n_cells = converter.metis_to_cgns_for_cells.size();
+  int n_nodes = converter.metis_to_cgns_for_nodes.size();
   std::vector<idx_t> cell_parts;
   cell_parts.resize(n_cells);
   PartitionMesh(n_cells, n_nodes, n_parts, cell_csrm, &cell_parts);
   shuffler.SetNumParts(n_parts);
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&cell_csrm);
-  shuffler.SetConvertMap(&convert_map);
-  SetCellPartData(convert_map, cell_parts, cgns_mesh.get());
+  shuffler.SetConverter(&converter);
+  SetCellPartData(converter, cell_parts, cgns_mesh.get());
   shuffler.ShuffleMesh(cgns_mesh.get());
   cgns_mesh->WriteToFile(new_file_name);
 }
 
 class Partition : public ::testing::Test {
  protected:
-  using CSRM = mini::mesh::cgns::CompressedSparseRowMatrix<int>;
+  using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<int>;
   CSRM cell_csrm;
 };
 TEST_F(Partition, GetNodePartsByConnectivity) {
   std::vector<int> cell_parts{2, 0, 0, 1};
-  cell_csrm.pointer = {0, 4, 8, 11, 14};
+  cell_csrm.range = {0, 4, 8, 11, 14};
   cell_csrm.index = {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7};
   int n_nodes = 10;
   int n_parts = 3;
