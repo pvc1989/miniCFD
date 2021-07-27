@@ -1,4 +1,6 @@
-#include "line.h"
+#include <Eigen/Dense>
+
+#include "mini/integrator/line.hpp"
 
 template <typename Scalar = double, int Q1d = 4, int D = 2>
 class Quad {

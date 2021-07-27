@@ -1,4 +1,6 @@
-#include "quad.h"
+#include "mini/integrator/quad.hpp"
+
+#include "gtest/gtest.h"
 
 using Scalar = double;
 template <int D>
@@ -19,7 +21,9 @@ void test() {
   print(quad.integrate([](MatDx1){ return 2.0; }));
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
   test<2>();
   test<3>();
 }

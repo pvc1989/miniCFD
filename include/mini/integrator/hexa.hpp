@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <Eigen/Dense>
 
-#include "line.h"
+#include "mini/integrator/line.hpp"
 
 using std::cout;
 using std::endl;

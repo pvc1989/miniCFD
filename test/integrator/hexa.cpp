@@ -1,4 +1,6 @@
-#include "hexa.h"
+#include "mini/integrator/hexa.hpp"
+
+#include "gtest/gtest.h"
 
 using Scalar = double;
 using Mat1x8 = Eigen::Matrix<Scalar, 1, 8>;
@@ -14,7 +16,9 @@ Mat10x1 raw_basis(Scalar x, Scalar y, Scalar z) {
   return basis;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
   Mat1x8 x_global_i{-1, +1, +1, -1, -1, +1, +1, -1};
   Mat1x8 y_global_i{-1, -1, +1, +1, -1, -1, +1, +1};
   Mat1x8 z_global_i{-1, -1, -1, -1, +1, +1, +1, +1};

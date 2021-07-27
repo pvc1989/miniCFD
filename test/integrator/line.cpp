@@ -1,4 +1,6 @@
-#include "line.h"
+#include "mini/integrator/line.hpp"
+
+#include "gtest/gtest.h"
 
 using Scalar = double;
 using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
@@ -66,7 +68,9 @@ void test() {
   print(schmidt);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
   // test<1>();
   test<2>();
   // test<3>();
