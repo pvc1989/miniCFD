@@ -2,9 +2,10 @@
 #ifndef MINI_INTEGRATOR_HEXA_HPP_
 #define MINI_INTEGRATOR_HEXA_HPP_
 
+#include <Eigen/Dense>
+
 #include <iostream>
 #include <type_traits>
-#include <Eigen/Dense>
 
 #include "mini/integrator/line.hpp"
 
@@ -42,7 +43,8 @@ class Hexa {
     n_1x8 /= 8;
     return n_1x8.transpose();
   }
-  static Mat8x3 diff_shape_local_8x3(Scalar x_local, Scalar y_local, Scalar z_local) { 
+  static Mat8x3 diff_shape_local_8x3(
+      Scalar x_local, Scalar y_local, Scalar z_local) {
     Arr8x3 dn;
     Arr8x1 factor_x = x_local_i_.transpose() * x_local; factor_x += 1;
     Arr8x1 factor_y = y_local_i_.transpose() * y_local; factor_y += 1;
@@ -60,7 +62,8 @@ class Hexa {
     return jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
   template <typename Callable, typename MatJ>
-  static Mat3x1 root(Callable&& func, Mat3x1 x, MatJ&& matj, Scalar xtol = 1e-5) {
+  static Mat3x1 root(
+      Callable&& func, Mat3x1 x, MatJ&& matj, Scalar xtol = 1e-5) {
     Mat3x1 res;
     do {
       res = matj(x).partialPivLu().solve(func(x));
@@ -89,8 +92,12 @@ class Hexa {
     }
     return sum;
   }
+
  public:
-  Hexa(Mat1x8 const& x_global_i, Mat1x8 const& y_global_i, Mat1x8 const& z_global_i) {
+  Hexa(
+      Mat1x8 const& x_global_i,
+      Mat1x8 const& y_global_i,
+      Mat1x8 const& z_global_i) {
     xyz_global_3x8_.row(0) << x_global_i;
     xyz_global_3x8_.row(1) << y_global_i;
     xyz_global_3x8_.row(2) << z_global_i;
@@ -102,7 +109,8 @@ class Hexa {
   Mat3x1 local_to_global_3x1(Mat3x1 xyz_local) {
     return local_to_global_3x1(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
-  Mat3x1 global_to_local_3x1(Scalar x_global, Scalar y_global, Scalar z_global) {
+  Mat3x1 global_to_local_3x1(
+      Scalar x_global, Scalar y_global, Scalar z_global) {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Mat3x1 const& xyz_local) {
       auto res = local_to_global_3x1(xyz_local);
@@ -119,7 +127,8 @@ class Hexa {
   }
   template <typename Callable>
   auto integrate(Callable&& f_in_global) {
-    auto f_in_local = [this, &f_in_global](Scalar x_local, Scalar y_local, Scalar z_local) {
+    auto f_in_local = [this, &f_in_global](
+        Scalar x_local, Scalar y_local, Scalar z_local) {
       auto xyz_global = local_to_global_3x1(x_local, y_local, z_local);
       auto f_val = f_in_global(xyz_global[0], xyz_global[1], xyz_global[2]);
       auto mat_j = jacobian(x_local, y_local, z_local);
@@ -174,10 +183,15 @@ class Hexa {
   }
 };
 template <typename Scalar, int Q1d>
-typename Hexa<Scalar, Q1d>::Arr1x8 const Hexa<Scalar, Q1d>::x_local_i_ = {-1, +1, +1, -1, -1, +1, +1, -1};
+typename Hexa<Scalar, Q1d>::Arr1x8 const
+Hexa<Scalar, Q1d>::x_local_i_ = {-1, +1, +1, -1, -1, +1, +1, -1};
+
 template <typename Scalar, int Q1d>
-typename Hexa<Scalar, Q1d>::Arr1x8 const Hexa<Scalar, Q1d>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
+typename Hexa<Scalar, Q1d>::Arr1x8 const
+Hexa<Scalar, Q1d>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
+
 template <typename Scalar, int Q1d>
-typename Hexa<Scalar, Q1d>::Arr1x8 const Hexa<Scalar, Q1d>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
+typename Hexa<Scalar, Q1d>::Arr1x8 const
+Hexa<Scalar, Q1d>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
 
 #endif  // MINI_INTEGRATOR_HEXA_HPP_

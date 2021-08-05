@@ -1,3 +1,7 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+#ifndef MINI_INTEGRATOR_QUAD_HPP_
+#define MINI_INTEGRATOR_QUAD_HPP_
+
 #include <Eigen/Dense>
 
 #include "mini/integrator/line.hpp"
@@ -67,7 +71,7 @@ class Quad {
   }
 
  public:
-  Quad(MatDx4 xyz_global) {
+  explicit Quad(MatDx4 xyz_global) {
     xyz_global_Dx4_ = xyz_global;
     print(xyz_global_Dx4_);
   }
@@ -92,7 +96,11 @@ class Quad {
 };
 
 template <typename Scalar, int Q1d, int D>
-typename Quad<Scalar, Q1d, D>::Arr1x4 const Quad<Scalar, Q1d, D>::x_local_i_ = {-1, +1, +1, -1};
-template <typename Scalar, int Q1d, int D>
-typename Quad<Scalar, Q1d, D>::Arr1x4 const Quad<Scalar, Q1d, D>::y_local_i_ = {-1, -1, +1, +1};
+typename Quad<Scalar, Q1d, D>::Arr1x4 const
+Quad<Scalar, Q1d, D>::x_local_i_ = {-1, +1, +1, -1};
 
+template <typename Scalar, int Q1d, int D>
+typename Quad<Scalar, Q1d, D>::Arr1x4 const
+Quad<Scalar, Q1d, D>::y_local_i_ = {-1, -1, +1, +1};
+
+#endif  // MINI_INTEGRATOR_QUAD_HPP_

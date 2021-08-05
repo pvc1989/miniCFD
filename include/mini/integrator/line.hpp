@@ -1,7 +1,11 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+#ifndef MINI_INTEGRATOR_LINE_HPP_
+#define MINI_INTEGRATOR_LINE_HPP_
+
+#include <Eigen/Dense>
 
 #include <iostream>
 #include <type_traits>
-#include <Eigen/Dense>
 
 using std::cout;
 using std::endl;
@@ -37,7 +41,7 @@ std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::weights = {
   (Scalar) (18 - std::sqrt(30)) / 36.0
 };
 
-template <typename Scalar = double, int Q = 4, int D/* dim(space) */ = 1>
+template <typename Scalar = double, int Q = 4, /* dim(space) */int D = 1>
 class Line {
   using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;
   using MatDx1 = Eigen::Matrix<Scalar, D, 1>;
@@ -78,7 +82,7 @@ class Line {
 
 
  public:
-  Line(MatDx2 const& x_global_i) {
+  explicit Line(MatDx2 const& x_global_i) {
     xyz_global_Dx2_ = x_global_i;
   }
   MatDx1 local_to_global_Dx1(Scalar x_local) {
@@ -145,7 +149,11 @@ class Line {
 };
 
 template <typename Scalar, int Q, int D>
-typename Line<Scalar, Q, D>::Arr1x2 const Line<Scalar, Q, D>::x_local_i_ = {-1, +1};
-template <typename Scalar, int Q, int D>
-typename Line<Scalar, Q, D>::Mat2x1 const Line<Scalar, Q, D>::diff_shape_2x1_ = {-0.5, 0.5};
+typename Line<Scalar, Q, D>::Arr1x2 const
+Line<Scalar, Q, D>::x_local_i_ = {-1, +1};
 
+template <typename Scalar, int Q, int D>
+typename Line<Scalar, Q, D>::Mat2x1 const
+Line<Scalar, Q, D>::diff_shape_2x1_ = {-0.5, 0.5};
+
+#endif  // MINI_INTEGRATOR_LINE_HPP_

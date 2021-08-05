@@ -1,3 +1,5 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+
 #include "mini/integrator/quad.hpp"
 
 #include "gtest/gtest.h"

@@ -1,3 +1,5 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+
 #include "mini/integrator/line.hpp"
 
 #include "gtest/gtest.h"
@@ -25,7 +27,7 @@ template <>
 auto raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
   Scalar x = xyz[0], y = xyz[1];
   Eigen::Matrix<Scalar, n_func(2), 1> basis = {
-    1, 
+    1,
     x, y+1,
     x * x, x * y+x, y * y + 2 * y + 1
   };

@@ -1,3 +1,5 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+
 #include "mini/integrator/hexa.hpp"
 
 #include "gtest/gtest.h"
@@ -22,7 +24,8 @@ int main(int argc, char* argv[]) {
   Mat1x8 x_global_i{-1, +1, +1, -1, -1, +1, +1, -1};
   Mat1x8 y_global_i{-1, -1, +1, +1, -1, -1, +1, +1};
   Mat1x8 z_global_i{-1, -1, -1, -1, +1, +1, +1, +1};
-  auto hexa = Hexa<Scalar>(x_global_i.array()*2+1, y_global_i.array()*3+1, z_global_i.array()+1);
+  auto hexa = Hexa<Scalar>(
+      x_global_i.array()*2+1, y_global_i.array()*3+1, z_global_i.array()+1);
 
   print(hexa.local_to_global_3x1(1, 1, 1));
   print(hexa.local_to_global_3x1(1.5, 1.5, 1.5));
