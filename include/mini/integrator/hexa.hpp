@@ -1,3 +1,6 @@
+//  Copyright 2021 PEI Weicheng and JIANG Yuyan
+#ifndef MINI_INTEGRATOR_HEXA_HPP_
+#define MINI_INTEGRATOR_HEXA_HPP_
 
 #include <iostream>
 #include <type_traits>
@@ -176,3 +179,5 @@ template <typename Scalar, int Q1d>
 typename Hexa<Scalar, Q1d>::Arr1x8 const Hexa<Scalar, Q1d>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
 template <typename Scalar, int Q1d>
 typename Hexa<Scalar, Q1d>::Arr1x8 const Hexa<Scalar, Q1d>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
+
+#endif  // MINI_INTEGRATOR_HEXA_HPP_
