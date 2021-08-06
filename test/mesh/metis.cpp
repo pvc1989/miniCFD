@@ -55,7 +55,8 @@ void Partitioner::BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
   assert(curr_node == cell_nodes->end());
   assert(curr_cell == cell_range->end());
 }
-void Partitioner::WritePartitionedMesh(const char* name, Int n_cells_x, Int n_cells_y,
+void Partitioner::WritePartitionedMesh(
+    const char* name, Int n_cells_x, Int n_cells_y,
     const std::vector<Int> &cell_range, const std::vector<Int> &cell_nodes,
     const std::vector<Int> &cell_weights,
     const std::vector<Int> &cell_parts, const std::vector<Int> &node_parts) {
