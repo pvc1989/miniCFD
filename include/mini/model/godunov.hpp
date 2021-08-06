@@ -41,7 +41,7 @@ class Godunov {
   void SetBoundaryName(std::string const& name, Visitor&& visitor) {
     wall_manager_.SetBoundaryName(name, visitor);
   }
-  void SetInletBoundary(std::string const& name, State& inlet) {
+  void SetInletBoundary(std::string const& name, State const& inlet) {
     wall_manager_.SetInletBoundary(name);
     inlet_ = inlet;
   }
