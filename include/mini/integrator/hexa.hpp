@@ -4,13 +4,9 @@
 
 #include <Eigen/Dense>
 
-#include <iostream>
 #include <type_traits>
 
 #include "mini/integrator/line.hpp"
-
-using std::cout;
-using std::endl;
 
 template <typename Scalar = double, int Q1d = 4>
 class Hexa {
@@ -101,7 +97,6 @@ class Hexa {
     xyz_global_3x8_.row(0) << x_global_i;
     xyz_global_3x8_.row(1) << y_global_i;
     xyz_global_3x8_.row(2) << z_global_i;
-    cout << xyz_global_3x8_ << endl;
   }
   Mat3x1 local_to_global_3x1(Scalar x_local, Scalar y_local, Scalar z_local) {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);

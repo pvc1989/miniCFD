@@ -73,7 +73,6 @@ class Quad {
  public:
   explicit Quad(MatDx4 xyz_global) {
     xyz_global_Dx4_ = xyz_global;
-    print(xyz_global_Dx4_);
   }
   MatDx1 local_to_global_Dx1(Mat2x1 xy_local) {
     return xyz_global_Dx4_ * shape_4x1(xy_local);

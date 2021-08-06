@@ -1,5 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
+#include "mini/integrator/base.hpp"
 #include "mini/integrator/hexa.hpp"
 
 #include "gtest/gtest.h"

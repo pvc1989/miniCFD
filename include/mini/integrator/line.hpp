@@ -4,16 +4,7 @@
 
 #include <Eigen/Dense>
 
-#include <iostream>
 #include <type_traits>
-
-using std::cout;
-using std::endl;
-
-template <class Matrix>
-void print(Matrix const& m) {
-  cout << m << '\n' << endl;
-}
 
 template <typename Scalar = double, int Q = 4>
 struct GaussIntegrator {

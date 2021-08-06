@@ -1,10 +1,12 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
+#include "mini/integrator/base.hpp"
 #include "mini/integrator/quad.hpp"
 
 #include "gtest/gtest.h"
 
 using Scalar = double;
+
 template <int D>
 void test() {
   using MatDx4 = Eigen::Matrix<Scalar, D, 4>;
