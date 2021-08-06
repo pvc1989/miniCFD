@@ -5,18 +5,27 @@
 
 #include "gtest/gtest.h"
 
-using Scalar = double;
-using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
+namespace mini {
+namespace integrator {
 
-constexpr int n_func(int d) {
-  return d == 1 ? 3 : (d == 2 ? 6 : 10);
-}
+class TestLine : public ::testing::Test {
+  using Scalar = double;
+  using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
+  static constexpr double eps = 1.15e-16;
+  static constexpr int n_func(int d) {
+    return d == 1 ? 3 : (d == 2 ? 6 : 10);
+  }
 
-template <int D>
-auto raw_basis(Eigen::Matrix<Scalar, D, 1> xyz);
+ protected:
+  template <int D>
+  static auto raw_basis(Eigen::Matrix<Scalar, D, 1> xyz);
+
+  template <int D>
+  static void test();
+};
 
 template <>
-auto raw_basis(Eigen::Matrix<Scalar, 1, 1> xyz) {
+auto TestLine::raw_basis(Eigen::Matrix<Scalar, 1, 1> xyz) {
   Scalar x = xyz[0];
   Eigen::Matrix<Scalar, n_func(1), 1> basis = {
     1, x, x * x
@@ -25,7 +34,7 @@ auto raw_basis(Eigen::Matrix<Scalar, 1, 1> xyz) {
 }
 
 template <>
-auto raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
+auto TestLine::raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
   Scalar x = xyz[0], y = xyz[1];
   Eigen::Matrix<Scalar, n_func(2), 1> basis = {
     1,
@@ -36,7 +45,7 @@ auto raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
 }
 
 template <>
-auto raw_basis(Eigen::Matrix<Scalar, 3, 1> xyz) {
+auto TestLine::raw_basis(Eigen::Matrix<Scalar, 3, 1> xyz) {
   Scalar x = xyz[0], y = xyz[1], z = xyz[2];
   Eigen::Matrix<Scalar, n_func(3), 1> basis = {
     1,
@@ -48,7 +57,7 @@ auto raw_basis(Eigen::Matrix<Scalar, 3, 1> xyz) {
 }
 
 template <int D>
-void test() {
+void TestLine::test() {
   using MatDx2 = Eigen::Matrix<Scalar, D, 2>;
   using MatDx1 = Eigen::Matrix<Scalar, D, 1>;
   MatDx2 xyz_global_i;
@@ -71,10 +80,20 @@ void test() {
   print(schmidt);
 }
 
+TEST_F(TestLine, InOneDimensionalSpace) {
+  test<1>();
+}
+TEST_F(TestLine, InTwoDimensionalSpace) {
+  test<2>();
+}
+TEST_F(TestLine, InThreeDimensionalSpace) {
+  test<3>();
+}
+
+}  // namespace integrator
+}  // namespace mini
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
-  // test<1>();
-  test<2>();
-  // test<3>();
 }
