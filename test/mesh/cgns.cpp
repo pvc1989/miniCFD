@@ -17,9 +17,9 @@ namespace cgns {
 
 class ReaderTest : public ::testing::Test {
  protected:
-  using MeshType = Tree<double>;
+  using FileType = File<double>;
   using Coordinates = std::vector<std::vector<double>>;
-  Reader<MeshType> reader;
+  Reader<FileType> reader;
   std::string const test_data_dir_{TEST_DATA_DIR};
   double abs_error = 0.00001;
   using Field = std::vector<double>;
@@ -50,11 +50,11 @@ class ReaderTest : public ::testing::Test {
 };
 TEST_F(ReaderTest, ReadFromFile) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  EXPECT_TRUE(reader.ReadFromFile(file_name));
+  reader.ReadFromFile(file_name);
 }
 TEST_F(ReaderTest, GetMesh) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  EXPECT_TRUE(reader.ReadFromFile(file_name));
+  reader.ReadFromFile(file_name);
   auto mesh = reader.GetMesh();
   EXPECT_NE(mesh, nullptr);
 }
@@ -85,7 +85,7 @@ TEST_F(ReaderTest, ReadBase) {
   EXPECT_EQ(mesh->CountBases(), n_bases);
   for (auto& base : base_info) {
     auto& my_base = mesh->GetBase(base.id);
-    EXPECT_STREQ(my_base.GetName().c_str(), base.name.c_str());
+    EXPECT_STREQ(my_base.name().c_str(), base.name.c_str());
     EXPECT_EQ(my_base.GetCellDim(), base.cell_dim);
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
   }
@@ -241,7 +241,6 @@ TEST_F(ReaderTest, ReadZone) {
   }
   cg_close(file_id);
 }
-
 TEST_F(ReaderTest, ReadSolution) {
   auto file_name = test_data_dir_ + "/fixed_grid.cgns";
   // read by mini::mesh::cgns
@@ -271,7 +270,7 @@ TEST_F(ReaderTest, ReadSolution) {
       char field_name[33];
       cg_field_info(file_id, base_id, zone_id, sol_id, field_id, &datatype,
                     field_name);
-      int first{1}, last{1};
+      cgsize_t first{1}, last{1};
       if (location == CGNS_ENUMV(Vertex)) {
         last = cg_zone.vertex_size;
       } else if (location == CGNS_ENUMV(CellCenter)) {

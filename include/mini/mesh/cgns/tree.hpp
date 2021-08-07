@@ -113,10 +113,10 @@ struct Coordinates {
 template <class Real>
 struct Section {
  public:  // Constructors:
-  Section(int fid, int zid, int bid, int sid,
+  Section(int fid, int bid, int zid, int sid,
           char const* name, cgsize_t first, cgsize_t size,
           int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
-      : file_id_{fid}, zone_id_{zid}, base_id_{bid},
+      : file_id_{fid}, base_id_{bid}, zone_id_{zid},
         section_id_{sid}, name_{name}, first_{first}, size_{size},
         n_boundary_cells_{n_boundary_cells}, type_{type},
         node_id_list_(size * CountNodesByType(type)) {
@@ -195,7 +195,7 @@ using Field = std::vector<T>;
 
 template <class Real>
 struct Solution {
-  Solution(int fid, int bid, int zid, int sid, char* name,
+  Solution(int fid, int bid, int zid, int sid, char const* name,
            CGNS_ENUMT(GridLocation_t) location)
       : file_id_(fid), base_id_(bid), zone_id_(zid),
         sol_id_(sid), name_(name), location_(location) {
@@ -241,7 +241,7 @@ class Zone {
   using SectionType = Section<Real>;
   using SolutionType = Solution<Real>;
 
-  Zone(int fid, int bid, int zid, char* name,
+  Zone(int fid, int bid, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
       : file_id_(fid), base_id_(bid), zone_id_(zid),
         name_(name), cell_size_(n_cells),
@@ -347,7 +347,8 @@ class Zone {
       char sol_name[33];
       CGNS_ENUMT(GridLocation_t) location;
       cg_sol_info(file_id_, base_id_, zone_id_, sol_id, sol_name, &location);
-      auto& solution = solutions_.emplace_back(sol_name, sol_id, location);
+      auto& solution = solutions_.emplace_back(file_id_, base_id_, zone_id_,
+          sol_id, sol_name, location);
       int n_fields;
       cg_nfields(file_id_, base_id_, zone_id_, sol_id, &n_fields);
       for (int field_id = 1; field_id <= n_fields; ++field_id) {
@@ -355,7 +356,7 @@ class Zone {
         char field_name[33];
         cg_field_info(file_id_, base_id_, zone_id_, sol_id,
                       field_id, &datatype, field_name);
-        int first{1}, last{1};
+        cgsize_t first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
           last = CountNodes();
         } else if (location == CGNS_ENUMV(CellCenter)) {
@@ -385,11 +386,13 @@ class Zone {
       solution.Write();
     }
   }
-  void AddSolution(int sol_id, char* sol_name,
+  /*
+  void AddSolution(int sol_id, char const* sol_name,
                    CGNS_ENUMT(GridLocation_t) location) {
     solutions_.reserve(sol_id);
     solutions_.emplace_back(sol_name, sol_id, location);
   }
+   */
 
  private:
   std::string name_;
@@ -405,7 +408,7 @@ class Base {
  public:
   using ZoneType = Zone<Real>;
   Base() = default;
-  Base(int fid, int bid, char* name, int cell_dim, int phys_dim)
+  Base(int fid, int bid, char const* name, int cell_dim, int phys_dim)
       : file_id_(fid), base_id_(bid), name_(name),
         cell_dim_(cell_dim), phys_dim_(phys_dim) {
   }
@@ -439,7 +442,7 @@ class Base {
       cgsize_t zone_size[3][1];
       cg_zone_read(file_id_, base_id_, zone_id, zone_name, zone_size[0]);
       auto& zone = zones_.emplace_back(file_id_, base_id_, zone_id, zone_name,
-          /* n_cells */zone_size[1], /* n_nodes */zone_size[0]);
+          /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]);
       zone.ReadCoordinates();
       zone.ReadAllSections();
       zone.ReadSolutions();
