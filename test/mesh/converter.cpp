@@ -8,7 +8,7 @@
 
 #include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/reader.hpp"
-#include "mini/mesh/cgns/tree.hpp"
+#include "mini/mesh/cgns/types.hpp"
 #include "mini/mesh/metis/format.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 

@@ -13,7 +13,7 @@
 
 #include "cgnslib.h"
 
-#include "mini/mesh/cgns/tree.hpp"
+#include "mini/mesh/cgns/types.hpp"
 
 namespace mini {
 namespace mesh {

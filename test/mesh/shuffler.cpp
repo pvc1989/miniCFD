@@ -14,7 +14,7 @@
 #include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
-#include "mini/mesh/cgns/tree.hpp"
+#include "mini/mesh/cgns/types.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
