@@ -24,18 +24,28 @@ inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
 inline bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
   if (cell_dim == 2) {
     if (type == CGNS_ENUMV(TRI_3) || type == CGNS_ENUMV(QUAD_4) ||
-        type == CGNS_ENUMV( MIXED )) return true;
-  } else {
+        type == CGNS_ENUMV(MIXED))
+      return true;
+  } else if (cell_dim == 3) {
     if (type == CGNS_ENUMV(TETRA_4) || type == CGNS_ENUMV(HEXA_8) ||
-        type == CGNS_ENUMV( MIXED )) return true;
+        type == CGNS_ENUMV(MIXED))
+      return true;
   }
   return false;
 }
 
+/**
+ * This file defines wrappers of APIs and types in CGNS/MLL.
+ */
+
+/**
+ * Wrapper of the `GridCoordinates_t` type.
+ */
 template <class Real>
 struct Coordinates {
  public:  // Constructors:
-  explicit Coordinates(int size) : x(size), y(size), z(size) {}
+  explicit Coordinates(int size)
+      : x_(size), y_(size), z_(size), name_("GridCoordinates") {}
 
  public:  // Copy Control:
   Coordinates(Coordinates const &) = default;
@@ -46,10 +56,25 @@ struct Coordinates {
 
  public:  // Accessors:
   int CountNodes() const {
-    return x.size();
+    return x_.size();
+  }
+  std::string const& name() const {
+    return name_;
+  }
+  std::vector<Real> const& x() const {
+    return x_;
+  }
+  std::vector<Real> const& y() const {
+    return y_;
+  }
+  std::vector<Real> const& z() const {
+    return z_;
   }
 
  public:  // Mutators:
+  /**
+   * Read coordinates from a given `(file, base, zone)` tuple.
+   */
   void Read(int file_id, int base_id, int zone_id) {
     // All id's are 1-based when passing to CGNS/MLL.
     cgsize_t first = 1;
@@ -57,30 +82,35 @@ struct Coordinates {
     auto data_type = std::is_same_v<Real, double> ?
         CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
     cg_coord_read(file_id, base_id, zone_id, "CoordinateX",
-                  data_type, &first, &last, x.data());
+                  data_type, &first, &last, x_.data());
     cg_coord_read(file_id, base_id, zone_id, "CoordinateY",
-                  data_type, &first, &last, y.data());
+                  data_type, &first, &last, y_.data());
     cg_coord_read(file_id, base_id, zone_id, "CoordinateZ",
-                  data_type, &first, &last, z.data());
+                  data_type, &first, &last, z_.data());
   }
+  /**
+   * Write coordinates to a given `(file, base, zone)` tuple.
+   */
   void Write(const int& file_id, const int& base_id, const int& zone_id) {
     int coord_id;
     auto data_type = std::is_same_v<Real, double> ?
         CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
     cg_coord_write(file_id, base_id, zone_id,
-                   data_type, "CoordinateX", x.data(), &coord_id);
+                   data_type, "CoordinateX", x_.data(), &coord_id);
     cg_coord_write(file_id, base_id, zone_id,
-                   data_type, "CoordinateY", y.data(), &coord_id);
+                   data_type, "CoordinateY", y_.data(), &coord_id);
     cg_coord_write(file_id, base_id, zone_id,
-                   data_type, "CoordinateZ", z.data(), &coord_id);
+                   data_type, "CoordinateZ", z_.data(), &coord_id);
   }
 
- public:  // Data Members:
-  std::vector<Real> x;
-  std::vector<Real> y;
-  std::vector<Real> z;
+ private:  // Data Members:
+  std::string name_;
+  std::vector<Real> x_, y_, z_;
 };
 
+/**
+ * Wrapper of the `Elements_t` type.
+ */
 template <class Real>
 struct Section {
  public:  // Constructors:
@@ -98,42 +128,54 @@ struct Section {
   ~Section() noexcept = default;
 
  public:  // Accessors:
-  std::string const& GetName() const { return name_; }
-  int GetId() const { return id_; }
+  std::string const& name() const { return name_; }
+  int id() const { return id_; }
   cgsize_t GetOneBasedCellIdMin() const { return first_; }
   cgsize_t GetOneBasedCellIdMax() const { return first_ + size_ - 1; }
   cgsize_t CountCells() const { return size_; }
-  cgsize_t* GetConnectivity() { return connectivity_.data(); }
+  CGNS_ENUMT(ElementType_t) type() const {
+    return type_;
+  }
+  cgsize_t* GetConnectivity() {
+    return connectivity_.data();
+  }
+  const cgsize_t* GetConnectivity() const {
+    return connectivity_.data();
+  }
   cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) {
+    return connectivity_.data() + CountNodesByType(type_) * row;
+  }
+  const cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) const {
     return connectivity_.data() + CountNodesByType(type_) * row;
   }
   cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) {
     return GetConnectivityByNilBasedRow(cell_id - first_);
   }
-  const cgsize_t* GetConnectivity() const { return connectivity_.data(); }
   const cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) const {
     return GetConnectivityByNilBasedRow(cell_id - first_);
   }
-  const cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) const {
-    return connectivity_.data() + CountNodesByType(type_) * row;
-  }
-  CGNS_ENUMT(ElementType_t) GetType() const { return type_; }
 
  public:  // Mutators:
+  /**
+   * Read connectivity from a given `(file, base, zone)` tuple.
+   */
   void Read(int file_id, int base_id, int zone_id) {
-    auto section_id = GetId();
+    auto section_id = id();
     cg_elements_read(file_id, base_id, zone_id, section_id,
                      GetConnectivity(), NULL/* int* parent_data */);
   }
   void Read(int file_id, int base_id, int zone_id, int section_id) {
-    cg_elements_read(file_id, base_id, zone_id, section_id, GetConnectivity(),
-                          NULL/* int* parent_data */);
+    cg_elements_read(file_id, base_id, zone_id, section_id,
+                     GetConnectivity(), NULL/* int* parent_data */);
   }
+  /**
+   * Write connectivity into a given `(file, base, zone)` tuple.
+   */
   void Write(const int& file_id, const int& base_id, const int& zone_id) {
     int section_id;
     cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_,
-      GetOneBasedCellIdMin(), GetOneBasedCellIdMax(), 0, GetConnectivity(),
-      &section_id);
+        GetOneBasedCellIdMin(), GetOneBasedCellIdMax(), 0, GetConnectivity(),
+        &section_id);
   }
 
  private:  // Data Members:
@@ -183,7 +225,7 @@ class Zone {
     return name_;
   }
   int CountNodes() const {
-    return coordinates_.x.size();
+    return coordinates_.CountNodes();
   }
   int CountCells() const {
     return cell_size_;
@@ -286,7 +328,7 @@ class Zone {
                       field_name);
         int first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
-          last = coordinates_.x.size();
+          last = coordinates_.CountNodes();
         } else if (location == CGNS_ENUMV(CellCenter)) {
           last = cell_size_;
         }
@@ -299,7 +341,7 @@ class Zone {
   }
   void Write(const int& file_id, const int& base_id) {
     int zone_id;
-    auto node_size = static_cast<cgsize_t>(coordinates_.x.size());
+    auto node_size = static_cast<cgsize_t>(coordinates_.CountNodes());
     cgsize_t zone_size[3] = {node_size, cell_size_, 0};
     cg_zone_write(file_id, base_id, name_.c_str(), zone_size,
                   CGNS_ENUMV(Unstructured), &zone_id);
