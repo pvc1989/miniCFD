@@ -32,11 +32,11 @@ class ReaderTest : public ::testing::Test {
   struct Section {
     std::string name; int id, first, last, n_boundary;
     CGNS_ENUMT(ElementType_t) type;
-    std::vector<int> connectivity;
+    std::vector<int> node_id_list;
     Section(char* sn, int si, int fi, int la, int nb,
             CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          connectivity((last-first+1) * CountNodesByType(ty)) {}
+          node_id_list((last-first+1) * cgns::Section<double>::CountNodesByType(ty)) {}
   };
   struct ZoneInfo {
     std::string name; int id, vertex_size, cell_size;
@@ -141,58 +141,58 @@ TEST_F(ReaderTest, ReadSections) {
   auto mesh = reader.GetMesh();
   {
     auto& section = mesh->GetBase(1).GetZone(1).GetSection(6);
-    EXPECT_EQ(section.GetOneBasedCellIdMin(), 51);
-    EXPECT_EQ(section.GetOneBasedCellIdMax(), 723);
+    EXPECT_EQ(section.CellIdMin(), 51);
+    EXPECT_EQ(section.CellIdMax(), 723);
     EXPECT_EQ(section.name(), "3_S_5_10");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByOneBasedCellId(51);
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
+    array = section.GetNodeIdListByOneBasedCellId(51);
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 43);
     EXPECT_EQ(array[1], 155);
     EXPECT_EQ(array[2], 154);
-    array = section.GetConnectivityByOneBasedCellId(723);
+    array = section.GetNodeIdListByOneBasedCellId(723);
     auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 102);
     EXPECT_EQ(array[1], 196);
     EXPECT_EQ(array[2], 98);
   }
   {
     auto& section = mesh->GetBase(1).GetZone(2).GetSection(11);
-    EXPECT_EQ(section.GetOneBasedCellIdMin(), 97);
-    EXPECT_EQ(section.GetOneBasedCellIdMax(), 367);
+    EXPECT_EQ(section.CellIdMin(), 97);
+    EXPECT_EQ(section.CellIdMax(), 367);
     EXPECT_EQ(section.name(), "3_S_5_11");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByOneBasedCellId(97);
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
+    array = section.GetNodeIdListByOneBasedCellId(97);
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 347);
     EXPECT_EQ(array[1], 510);
     EXPECT_EQ(array[2], 349);
-    array = section.GetConnectivityByOneBasedCellId(367);
+    array = section.GetNodeIdListByOneBasedCellId(367);
     auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 367);
     EXPECT_EQ(array[1], 503);
     EXPECT_EQ(array[2], 492);
   }
   {
     auto& section = mesh->GetBase(1).GetZone(2).GetSection(12);
-    EXPECT_EQ(section.GetOneBasedCellIdMin(), 368);
-    EXPECT_EQ(section.GetOneBasedCellIdMax(), 767);
+    EXPECT_EQ(section.CellIdMin(), 368);
+    EXPECT_EQ(section.CellIdMax(), 767);
     EXPECT_EQ(section.name(), "4_S_9_12");
     EXPECT_EQ(section.type(), CGNS_ENUMV(QUAD_4));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetConnectivityByOneBasedCellId(368);
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
+    array = section.GetNodeIdListByOneBasedCellId(368);
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 4);
     EXPECT_EQ(array[1], 456);
     EXPECT_EQ(array[2], 416);
     EXPECT_EQ(array[3], 543);
-    array = section.GetConnectivityByOneBasedCellId(767);
+    array = section.GetNodeIdListByOneBasedCellId(767);
     auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(row));
+    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 467);
     EXPECT_EQ(array[1], 2);
     EXPECT_EQ(array[2], 469);

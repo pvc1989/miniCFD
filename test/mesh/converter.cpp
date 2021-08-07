@@ -56,13 +56,13 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
     auto n_nodes = cell_ptr[i_cell+1] - cell_ptr[i_cell];
     auto& zone = base.GetZone(cell_info.zone_id);
     auto& section = zone.GetSection(cell_info.section_id);
-    auto begin = section.GetOneBasedCellIdMin();
+    auto begin = section.CellIdMin();
     auto zone_id = cell_info.zone_id;
     auto sect_id = cell_info.section_id;
     auto cell_id = cell_info.cell_id;
     EXPECT_EQ(cgns_to_metis_for_cells[zone_id][sect_id][cell_id-begin],
               static_cast<int>(i_cell));
-    auto* nodes = section.GetConnectivityByOneBasedCellId(cell_info.cell_id);
+    auto* nodes = section.GetNodeIdListByOneBasedCellId(cell_info.cell_id);
     for (int i_node = 0; i_node != n_nodes; ++i_node) {
       // for each node in this cell
       auto node_id_global = cell_idx[cell_ptr[i_cell] + i_node];

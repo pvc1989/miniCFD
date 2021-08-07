@@ -1,5 +1,7 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
-
+// Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
+/**
+ * This file defines wrappers of APIs and types in CGNS/MLL.
+ */
 #ifndef MINI_MESH_CGNS_TREE_HPP_
 #define MINI_MESH_CGNS_TREE_HPP_
 
@@ -16,11 +18,9 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-inline int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
-  int npe;
-  cg_npe(type, &npe);
-  return npe;
-}
+/**
+ * Return true if the cell type is supported and consistent with the given dim.
+ */
 inline bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
   if (cell_dim == 2) {
     if (type == CGNS_ENUMV(TRI_3) || type == CGNS_ENUMV(QUAD_4) ||
@@ -33,10 +33,6 @@ inline bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
   }
   return false;
 }
-
-/**
- * This file defines wrappers of APIs and types in CGNS/MLL.
- */
 
 /**
  * Wrapper of the `GridCoordinates_t` type.
@@ -118,7 +114,7 @@ struct Section {
           int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
       : name_{name}, id_{id}, first_{first}, size_{size},
         n_boundary_cells_{n_boundary_cells}, type_{type},
-        connectivity_(size * CountNodesByType(type)) {}
+        node_id_list_(size * CountNodesByType(type)) {}
 
  public:  // Copy Control:
   Section(const Section&) = default;
@@ -130,56 +126,62 @@ struct Section {
  public:  // Accessors:
   std::string const& name() const { return name_; }
   int id() const { return id_; }
-  cgsize_t GetOneBasedCellIdMin() const { return first_; }
-  cgsize_t GetOneBasedCellIdMax() const { return first_ + size_ - 1; }
+  cgsize_t CellIdMin() const { return first_; }
+  cgsize_t CellIdMax() const { return first_ + size_ - 1; }
   cgsize_t CountCells() const { return size_; }
   CGNS_ENUMT(ElementType_t) type() const {
     return type_;
   }
-  cgsize_t* GetConnectivity() {
-    return connectivity_.data();
+  cgsize_t* GetNodeIdList() {
+    return node_id_list_.data();
   }
-  const cgsize_t* GetConnectivity() const {
-    return connectivity_.data();
+  const cgsize_t* GetNodeIdList() const {
+    return node_id_list_.data();
   }
-  cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) {
-    return connectivity_.data() + CountNodesByType(type_) * row;
+  cgsize_t* GetNodeIdListByNilBasedRow(cgsize_t row) {
+    return node_id_list_.data() + CountNodesByType(type_) * row;
   }
-  const cgsize_t* GetConnectivityByNilBasedRow(cgsize_t row) const {
-    return connectivity_.data() + CountNodesByType(type_) * row;
+  const cgsize_t* GetNodeIdListByNilBasedRow(cgsize_t row) const {
+    return node_id_list_.data() + CountNodesByType(type_) * row;
   }
-  cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) {
-    return GetConnectivityByNilBasedRow(cell_id - first_);
+  cgsize_t* GetNodeIdListByOneBasedCellId(cgsize_t cell_id) {
+    return GetNodeIdListByNilBasedRow(cell_id - first_);
   }
-  const cgsize_t* GetConnectivityByOneBasedCellId(cgsize_t cell_id) const {
-    return GetConnectivityByNilBasedRow(cell_id - first_);
+  const cgsize_t* GetNodeIdListByOneBasedCellId(cgsize_t cell_id) const {
+    return GetNodeIdListByNilBasedRow(cell_id - first_);
+  }
+  static int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
+    int npe;
+    cg_npe(type, &npe);
+    return npe;
   }
 
  public:  // Mutators:
   /**
-   * Read connectivity from a given `(file, base, zone)` tuple.
+   * Read node_id_list from a given `(file, base, zone)` tuple.
    */
   void Read(int file_id, int base_id, int zone_id) {
     auto section_id = id();
     cg_elements_read(file_id, base_id, zone_id, section_id,
-                     GetConnectivity(), NULL/* int* parent_data */);
+                     GetNodeIdList(), NULL/* int* parent_data */);
   }
   void Read(int file_id, int base_id, int zone_id, int section_id) {
     cg_elements_read(file_id, base_id, zone_id, section_id,
-                     GetConnectivity(), NULL/* int* parent_data */);
+                     GetNodeIdList(), NULL/* int* parent_data */);
   }
   /**
-   * Write connectivity into a given `(file, base, zone)` tuple.
+   * Write node_id_list into a given `(file, base, zone)` tuple.
    */
   void Write(const int& file_id, const int& base_id, const int& zone_id) {
     int section_id;
     cg_section_write(file_id, base_id, zone_id, name_.c_str(), type_,
-        GetOneBasedCellIdMin(), GetOneBasedCellIdMax(), 0, GetConnectivity(),
+        CellIdMin(), CellIdMax(), 0, GetNodeIdList(),
         &section_id);
   }
 
  private:  // Data Members:
-  std::vector<cgsize_t> connectivity_;
+  std::vector<cgsize_t> node_id_list_;
+  std::vector<cgsize_t> start_offset_;
   std::string name_;
   int id_, n_boundary_cells_;
   cgsize_t first_, size_;
@@ -300,9 +302,9 @@ class Zone {
                       &cell_type, &first, &last, &n_boundary_cells,
                       &parent_flag);
       if (!CheckTypeDim(cell_type, cell_dim)) continue;
-      int n_cells = last - first + 1; cgsize_t connectivity_size;
+      int n_cells = last - first + 1; cgsize_t node_id_list_size;
       cg_ElementDataSize(file_id, base_id, zone_id, section_id,
-                         &connectivity_size);
+                         &node_id_list_size);
       range_max = range_min + n_cells - 1;
       auto& section = sections_.emplace_back(section_name, new_section_id++,
         range_min, n_cells, n_boundary_cells, cell_type);

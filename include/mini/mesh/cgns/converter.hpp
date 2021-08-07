@@ -76,24 +76,24 @@ MetisMesh Converter<CgnsMesh, MetisMesh>::ConvertToMetisMesh(
           section_id, std::vector<int>());
       auto& metis_ids_in_section = iter->second;
       auto& section = zone.GetSection(section_id);
-      if (!CheckTypeDim(section.GetType(), cell_dim)) continue;
+      if (!CheckTypeDim(section.type(), cell_dim)) continue;
       auto n_cells_of_curr_sect = section.CountCells();
 
-      auto n_nodes_per_cell = CountNodesByType(section.GetType());
+      auto n_nodes_per_cell = section.CountNodesByType(section.type());
       metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
                                       n_cells_of_curr_sect);
       cell_ptr.reserve(cell_ptr.size() + n_cells_of_curr_sect);
-      for (int cell_id = section.GetOneBasedCellIdMin();
-           cell_id <= section.GetOneBasedCellIdMax(); ++cell_id) {
+      for (int cell_id = section.CellIdMin();
+           cell_id <= section.CellIdMax(); ++cell_id) {
         metis_ids_in_section.emplace_back(metis_to_cgns_for_cells.size());
         metis_to_cgns_for_cells.emplace_back(zone_id, section_id, cell_id);
         cell_ptr.emplace_back(pointer_value+=n_nodes_per_cell);
       }
-      auto connectivity_size = n_nodes_per_cell * n_cells_of_curr_sect;
-      cell_idx.reserve(cell_idx.size() + connectivity_size);
-      auto connectivity = section.GetConnectivity();
-      for (int node_id = 0; node_id < connectivity_size; ++node_id) {
-        auto node_id_global = n_nodes_in_prev_zones + connectivity[node_id] - 1;
+      auto node_id_list_size = n_nodes_per_cell * n_cells_of_curr_sect;
+      cell_idx.reserve(cell_idx.size() + node_id_list_size);
+      auto node_id_list = section.GetNodeIdList();
+      for (int node_id = 0; node_id < node_id_list_size; ++node_id) {
+        auto node_id_global = n_nodes_in_prev_zones + node_id_list[node_id] - 1;
         cell_idx.emplace_back(node_id_global);
       }
     }
