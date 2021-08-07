@@ -84,8 +84,8 @@ void ShufflerTest::SetCellPartData(
       for (int local_id = 0; local_id < n_cells; ++local_id) {
         parts[local_id] = cell_parts[cells_local_to_global[local_id]];
       }
-      int range_min{section.GetOneBasedCellIdMin()-1};
-      int range_max{section.GetOneBasedCellIdMax()-1};
+      int range_min{section.CellIdMin()-1};
+      int range_max{section.CellIdMax()-1};
       for (int cell_id = range_min; cell_id <= range_max; ++cell_id) {
         field[cell_id] = static_cast<double>(parts[cell_id-range_min]);
       }
@@ -112,16 +112,16 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   for (int i = 0; i < n; ++i) {
     EXPECT_DOUBLE_EQ(old_array[i], expected_new_array[i]);
   }
-  // Shuffle cell connectivity by new order
+  // Shuffle cell node_id_list by new order
   n = 4;
   std::vector<int> new_cell_order{1, 2, 3, 0};
-  std::vector<int> connectivity = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
+  std::vector<int> node_id_list = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
   int npe = 3;
-  ShuffleConnectivity<int>(new_cell_order, npe, connectivity.data());
-  std::vector<int> expected_new_connectivity{2, 3, 6,   6, 3, 5,   3, 4, 5,
+  ShuffleConnectivity<int>(new_cell_order, npe, node_id_list.data());
+  std::vector<int> expected_new_node_id_list{2, 3, 6,   6, 3, 5,   3, 4, 5,
                                              1, 2, 6};
-  for (int i = 0; i < connectivity.size(); ++i) {
-    EXPECT_EQ(connectivity[i], expected_new_connectivity[i]);
+  for (int i = 0; i < node_id_list.size(); ++i) {
+    EXPECT_EQ(node_id_list[i], expected_new_node_id_list[i]);
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {

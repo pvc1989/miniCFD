@@ -63,21 +63,21 @@ void ReorderByParts(const std::vector<T>& parts, int* new_order) {
 }
 template <typename T>
 void ShuffleConnectivity(const std::vector<int>& new_cell_order, int npe,
-                         T* connectivity) {
+                         T* node_id_list) {
   int n_cells = new_cell_order.size();
-  int connectivity_size = n_cells * npe;
-  std::vector<T> new_connectivity(connectivity_size);
-  auto new_ptr = new_connectivity.data();
+  int node_id_list_size = n_cells * npe;
+  std::vector<T> new_node_id_list(node_id_list_size);
+  auto new_ptr = new_node_id_list.data();
   for (int i = 0; i < n_cells; ++i) {
     int range_min = npe * new_cell_order[i];
-    auto old_ptr = connectivity + range_min;
+    auto old_ptr = node_id_list + range_min;
     for (int j = range_min; j < range_min + npe; ++j) {
       *new_ptr++ = *old_ptr++;
     }
   }
-  auto old_ptr = connectivity;
-  for (int i = 0; i < connectivity_size; ++i) {
-    *old_ptr++ = new_connectivity[i];
+  auto old_ptr = node_id_list;
+  for (int i = 0; i < node_id_list_size; ++i) {
+    *old_ptr++ = new_node_id_list[i];
   }
 }
 template <typename T>
@@ -132,13 +132,13 @@ class Shuffler {
           auto global_id = cells_local_to_global[local_id];
           parts[local_id] = (*cell_parts_)[global_id];
         }
-        int range_min{section.GetOneBasedCellIdMin()-1};
+        int range_min{section.CellIdMin()-1};
             /* Shuffle Connectivity */
         std::vector<int> new_order(n_cells);
         ReorderByParts<int>(parts, new_order.data());
-        int npe = mini::mesh::cgns::CountNodesByType(section.GetType());
-        cgsize_t* connectivity = section.GetConnectivity();
-        ShuffleConnectivity<cgsize_t>(new_order, npe, connectivity);
+        int npe = section.CountNodesByType(section.type());
+        cgsize_t* node_id_list = section.GetNodeIdList();
+        ShuffleConnectivity<cgsize_t>(new_order, npe, node_id_list);
             /* Shuffle CellData */
         int n_solutions = zone.CountSolutions();
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
