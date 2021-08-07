@@ -233,8 +233,8 @@ TEST_F(ReaderTest, ReadZone) {
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       auto& my_zone = my_base.GetZone(zone_id);
       auto& cg_zone = zone_info[index++];
-      EXPECT_STREQ(my_zone.GetName().c_str(), cg_zone.name.c_str());
-      EXPECT_EQ(my_zone.GetId(), cg_zone.id);
+      EXPECT_STREQ(my_zone.name().c_str(), cg_zone.name.c_str());
+      EXPECT_EQ(my_zone.id(), cg_zone.id);
       EXPECT_EQ(my_zone.CountNodes(), cg_zone.x.size());
       EXPECT_EQ(my_zone.CountCells(), cg_zone.cell_size);
     }
@@ -289,10 +289,10 @@ TEST_F(ReaderTest, ReadSolution) {
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
     auto& my_sol = my_zone.GetSolution(sol_id);
     auto& cg_sol = cg_zone.solutions.at(sol_id-1);
-    EXPECT_EQ(my_sol.id, cg_sol.id);
-    EXPECT_STREQ(my_sol.name.c_str(), cg_sol.name.c_str());
-    EXPECT_EQ(my_sol.fields.size(), cg_sol.fields.size());
-    for (auto& [name, field] : my_sol.fields) {
+    EXPECT_EQ(my_sol.id(), cg_sol.id);
+    EXPECT_STREQ(my_sol.name().c_str(), cg_sol.name.c_str());
+    EXPECT_EQ(my_sol.fields().size(), cg_sol.fields.size());
+    for (auto& [name, field] : my_sol.fields()) {
       EXPECT_EQ(field.size(), cg_sol.fields[name].size());
       for (int index = 0; index < field.size(); ++index) {
         EXPECT_DOUBLE_EQ(field.at(index), cg_sol.fields[name].at(index));
