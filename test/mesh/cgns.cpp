@@ -98,17 +98,17 @@ TEST_F(ReaderTest, ReadCoordinates) {
   {
     // check coordinates in zones[1]
     auto& coordinates = mesh->GetBase(1).GetZone(1).GetCoordinates();
-    auto& x = coordinates.x;
+    auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), -2.0);
     EXPECT_DOUBLE_EQ(x.at(1), -2.0);
     EXPECT_NEAR(x.at(371), -1.926790, abs_error);
     EXPECT_NEAR(x.at(372), -1.926790, abs_error);
-    auto& y = coordinates.y;
+    auto& y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), +1.0);
     EXPECT_DOUBLE_EQ(y.at(1), -1.0);
     EXPECT_NEAR(y.at(371), -0.926795, abs_error);
     EXPECT_NEAR(y.at(372), +0.926795, abs_error);
-    auto& z = coordinates.z;
+    auto& z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
     EXPECT_DOUBLE_EQ(z.at(371), 0.0);
@@ -117,17 +117,17 @@ TEST_F(ReaderTest, ReadCoordinates) {
   {
     // check coordinates in zones[2]
     auto& coordinates = mesh->GetBase(1).GetZone(2).GetCoordinates();
-    auto& x = coordinates.x;
+    auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), 2.0);
     EXPECT_DOUBLE_EQ(x.at(1), 0.0);
     EXPECT_NEAR(x.at(582), -0.072475, abs_error);
     EXPECT_NEAR(x.at(583), -0.163400, abs_error);
-    auto& y = coordinates.y;
+    auto& y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), -1.0);
     EXPECT_DOUBLE_EQ(y.at(1), +1.0);
     EXPECT_NEAR(y.at(582), +0.927525, abs_error);
     EXPECT_NEAR(y.at(583), -0.375511, abs_error);
-    auto& z = coordinates.z;
+    auto& z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
     EXPECT_DOUBLE_EQ(z.at(582), 0.0);
@@ -143,8 +143,8 @@ TEST_F(ReaderTest, ReadSections) {
     auto& section = mesh->GetBase(1).GetZone(1).GetSection(6);
     EXPECT_EQ(section.GetOneBasedCellIdMin(), 51);
     EXPECT_EQ(section.GetOneBasedCellIdMax(), 723);
-    EXPECT_EQ(section.GetName(), "3_S_5_10");
-    EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
+    EXPECT_EQ(section.name(), "3_S_5_10");
+    EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
     array = section.GetConnectivityByOneBasedCellId(51);
     EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
@@ -162,8 +162,8 @@ TEST_F(ReaderTest, ReadSections) {
     auto& section = mesh->GetBase(1).GetZone(2).GetSection(11);
     EXPECT_EQ(section.GetOneBasedCellIdMin(), 97);
     EXPECT_EQ(section.GetOneBasedCellIdMax(), 367);
-    EXPECT_EQ(section.GetName(), "3_S_5_11");
-    EXPECT_EQ(section.GetType(), CGNS_ENUMV(TRI_3));
+    EXPECT_EQ(section.name(), "3_S_5_11");
+    EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
     array = section.GetConnectivityByOneBasedCellId(97);
     EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
@@ -181,8 +181,8 @@ TEST_F(ReaderTest, ReadSections) {
     auto& section = mesh->GetBase(1).GetZone(2).GetSection(12);
     EXPECT_EQ(section.GetOneBasedCellIdMin(), 368);
     EXPECT_EQ(section.GetOneBasedCellIdMax(), 767);
-    EXPECT_EQ(section.GetName(), "4_S_9_12");
-    EXPECT_EQ(section.GetType(), CGNS_ENUMV(QUAD_4));
+    EXPECT_EQ(section.name(), "4_S_9_12");
+    EXPECT_EQ(section.type(), CGNS_ENUMV(QUAD_4));
     const cgsize_t* array;  // head of 1-based-node-id list
     array = section.GetConnectivityByOneBasedCellId(368);
     EXPECT_EQ(array, section.GetConnectivityByNilBasedRow(0));
