@@ -7,60 +7,64 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/cgns/tree.hpp"
+#include "mini/mesh/cgns/types.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace mesh {
 namespace cgns {
 
-class ReaderTest : public ::testing::Test {
+class TestTypes : public ::testing::Test {
  protected:
-  using MyFile = File<double>;
-  using Coordinates = std::vector<std::vector<double>>;
-  std::string const test_data_dir_{TEST_DATA_DIR};
-  double abs_error = 0.00001;
-  using Field = std::vector<double>;
-  struct Solution {
+  // common types
+  using myFile = File<double>;
+  using cgField = std::vector<double>;
+  struct cgSolution {
     std::string name; int id; CGNS_ENUMT(GridLocation_t) location;
-    std::map<std::string, Field> fields;
-    Solution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
-        : name(sn), id(si), location(lc) {}
+    std::map<std::string, cgField> fields;
+    cgSolution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
+        : name(sn), id(si), location(lc) {
+    }
   };
-  struct Section {
+  struct cgSection {
     std::string name; int id, first, last, n_boundary;
     CGNS_ENUMT(ElementType_t) type;
     std::vector<int> node_id_list;
-    Section(char* sn, int si, int fi, int la, int nb,
-            CGNS_ENUMT(ElementType_t) ty)
+    cgSection(char* sn, int si, int fi, int la, int nb,
+              CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          node_id_list((last-first+1) * cgns::Section<double>::CountNodesByType(ty)) {}
+          node_id_list((last-first+1) * Section<double>::CountNodesByType(ty)) {
+    }
   };
-  struct ZoneInfo {
+  struct cgZone {
     std::string name; int id, vertex_size, cell_size;
     std::vector<double> x, y, z;
-    std::map<int, Section> sections;
-    std::vector<Solution> solutions;
-    ZoneInfo(char* zn, int zi, int* zone_size)
+    std::map<int, cgSection> sections;
+    std::vector<cgSolution> solutions;
+    cgZone(char* zn, int zi, int* zone_size)
         : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
-          x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {}
+          x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {
+    }
   };
+  // common data
+  std::string const abs_path_{std::string(TEST_DATA_DIR) + "/ugrid_2d.cgns"};
+  double const eps_ = 0.00001;
 };
-TEST_F(ReaderTest, Constructors) {
+TEST_F(TestTypes, Constructors) {
+  auto files = std::vector<myFile>();
   // the absolute path version
-  MyFile(test_data_dir_ + "/ugrid_2d.cgns");
+  files.emplace_back(abs_path_);
   // the dir (with or without '/') + name version
-  MyFile(test_data_dir_ + "/", "ugrid_2d.cgns");
-  MyFile(test_data_dir_, "ugrid_2d.cgns");
+  files.emplace_back(std::string(TEST_DATA_DIR) + "/", "ugrid_2d.cgns");
+  files.emplace_back(TEST_DATA_DIR, "ugrid_2d.cgns");
 }
-TEST_F(ReaderTest, ReadBase) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+TEST_F(TestTypes, ReadBase) {
   // read by mini::mesh::cgns
-  auto file = MyFile(file_name);
+  auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int file_id{-1};
-  cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
   int n_bases{-1};
   cg_nbases(file_id, &n_bases);
   struct BaseInfo {
@@ -85,10 +89,9 @@ TEST_F(ReaderTest, ReadBase) {
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
   }
 }
-TEST_F(ReaderTest, ReadCoordinates) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+TEST_F(TestTypes, ReadCoordinates) {
   // read by mini::mesh::cgns
-  auto file = MyFile(file_name);
+  auto file = myFile(abs_path_);
   file.ReadBases();
   {
     // check coordinates in zones[1]
@@ -96,13 +99,13 @@ TEST_F(ReaderTest, ReadCoordinates) {
     auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), -2.0);
     EXPECT_DOUBLE_EQ(x.at(1), -2.0);
-    EXPECT_NEAR(x.at(371), -1.926790, abs_error);
-    EXPECT_NEAR(x.at(372), -1.926790, abs_error);
+    EXPECT_NEAR(x.at(371), -1.926790, eps_);
+    EXPECT_NEAR(x.at(372), -1.926790, eps_);
     auto& y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), +1.0);
     EXPECT_DOUBLE_EQ(y.at(1), -1.0);
-    EXPECT_NEAR(y.at(371), -0.926795, abs_error);
-    EXPECT_NEAR(y.at(372), +0.926795, abs_error);
+    EXPECT_NEAR(y.at(371), -0.926795, eps_);
+    EXPECT_NEAR(y.at(372), +0.926795, eps_);
     auto& z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
@@ -115,13 +118,13 @@ TEST_F(ReaderTest, ReadCoordinates) {
     auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), 2.0);
     EXPECT_DOUBLE_EQ(x.at(1), 0.0);
-    EXPECT_NEAR(x.at(582), -0.072475, abs_error);
-    EXPECT_NEAR(x.at(583), -0.163400, abs_error);
+    EXPECT_NEAR(x.at(582), -0.072475, eps_);
+    EXPECT_NEAR(x.at(583), -0.163400, eps_);
     auto& y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), -1.0);
     EXPECT_DOUBLE_EQ(y.at(1), +1.0);
-    EXPECT_NEAR(y.at(582), +0.927525, abs_error);
-    EXPECT_NEAR(y.at(583), -0.375511, abs_error);
+    EXPECT_NEAR(y.at(582), +0.927525, eps_);
+    EXPECT_NEAR(y.at(583), -0.375511, eps_);
     auto& z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
@@ -129,10 +132,9 @@ TEST_F(ReaderTest, ReadCoordinates) {
     EXPECT_DOUBLE_EQ(z.at(583), 0.0);
   }
 }
-TEST_F(ReaderTest, ReadSections) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+TEST_F(TestTypes, ReadSections) {
   // read by mini::mesh::cgns
-  auto file = MyFile(file_name);
+  auto file = myFile(abs_path_);
   file.ReadBases();
   {
     auto& section = file.GetBase(1).GetZone(1).GetSection(6);
@@ -194,15 +196,14 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(array[3], 142);
   }
 }
-TEST_F(ReaderTest, ReadZone) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+TEST_F(TestTypes, ReadZone) {
   // read by mini::mesh::cgns
-  auto file = MyFile(file_name);
+  auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int file_id{-1};
-  cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
-  auto zone_info = std::vector<ZoneInfo>();
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
+  auto zone_info = std::vector<cgZone>();
   int n_bases{-1};
   cg_nbases(file_id, &n_bases);
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
@@ -217,7 +218,7 @@ TEST_F(ReaderTest, ReadZone) {
   }
   cg_close(file_id);
   // compare result
-  cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
   EXPECT_EQ(file.CountBases(), n_bases);
   int index = 0;
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
@@ -236,19 +237,18 @@ TEST_F(ReaderTest, ReadZone) {
   }
   cg_close(file_id);
 }
-TEST_F(ReaderTest, ReadSolution) {
-  auto file_name = test_data_dir_ + "/fixed_grid.cgns";
+TEST_F(TestTypes, ReadSolution) {
   // read by mini::mesh::cgns
-  auto file = MyFile(file_name);
+  auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int file_id{-1};
-  cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
   int base_id{1}, zone_id{1}, n_sols{0};
   char zone_name[33];
   cgsize_t zone_size[3][1];
   cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
-  auto cg_zone = ZoneInfo(zone_name, zone_id, zone_size[0]);
+  auto cg_zone = cgZone(zone_name, zone_id, zone_size[0]);
   cg_nsols(file_id, base_id, zone_id, &n_sols);
   cg_zone.solutions.reserve(n_sols);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
@@ -272,7 +272,7 @@ TEST_F(ReaderTest, ReadSolution) {
         last = cg_zone.cell_size;
       }
       std::string name = std::string(field_name);
-      cg_solution.fields.emplace(name, Field(last));
+      cg_solution.fields.emplace(name, cgField(last));
       cg_field_read(file_id, base_id, zone_id, sol_id, field_name,
                     datatype, &first, &last, cg_solution.fields[name].data());
     }
