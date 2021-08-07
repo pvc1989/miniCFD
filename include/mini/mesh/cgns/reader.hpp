@@ -15,9 +15,9 @@ namespace cgns {
 template <class Mesh>
 class Reader {
  public:
-  bool ReadFromFile(const std::string& file_name) {
-    mesh_ = std::make_unique<Mesh>();
-    return mesh_->OpenFile(file_name);
+  void ReadFromFile(const std::string& file_name) {
+    mesh_ = std::make_unique<Mesh>(file_name);
+    mesh_->ReadBases();
   }
   std::unique_ptr<Mesh> GetMesh() {
     std::unique_ptr<Mesh> temp(mesh_.release());
