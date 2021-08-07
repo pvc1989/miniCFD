@@ -7,7 +7,6 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/tree.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
@@ -17,9 +16,8 @@ namespace cgns {
 
 class ReaderTest : public ::testing::Test {
  protected:
-  using FileType = File<double>;
+  using MyFile = File<double>;
   using Coordinates = std::vector<std::vector<double>>;
-  Reader<FileType> reader;
   std::string const test_data_dir_{TEST_DATA_DIR};
   double abs_error = 0.00001;
   using Field = std::vector<double>;
@@ -48,18 +46,18 @@ class ReaderTest : public ::testing::Test {
           x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {}
   };
 };
-TEST_F(ReaderTest, ReadFromFile) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  reader.ReadFromFile(file_name);
-}
-TEST_F(ReaderTest, GetMesh) {
-  auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
-  EXPECT_NE(mesh, nullptr);
+TEST_F(ReaderTest, Constructors) {
+  // the absolute path version
+  MyFile(test_data_dir_ + "/ugrid_2d.cgns");
+  // the dir (with or without '/') + name version
+  MyFile(test_data_dir_ + "/", "ugrid_2d.cgns");
+  MyFile(test_data_dir_, "ugrid_2d.cgns");
 }
 TEST_F(ReaderTest, ReadBase) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+  // read by mini::mesh::cgns
+  auto file = MyFile(file_name);
+  file.ReadBases();
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
@@ -78,13 +76,10 @@ TEST_F(ReaderTest, ReadBase) {
     base_info.emplace_back(base_name, base_id, cell_dim, phys_dim);
   }
   cg_close(file_id);
-  // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
   // compare result
-  EXPECT_EQ(mesh->CountBases(), n_bases);
+  EXPECT_EQ(file.CountBases(), n_bases);
   for (auto& base : base_info) {
-    auto& my_base = mesh->GetBase(base.id);
+    auto& my_base = file.GetBase(base.id);
     EXPECT_STREQ(my_base.name().c_str(), base.name.c_str());
     EXPECT_EQ(my_base.GetCellDim(), base.cell_dim);
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
@@ -93,11 +88,11 @@ TEST_F(ReaderTest, ReadBase) {
 TEST_F(ReaderTest, ReadCoordinates) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
+  auto file = MyFile(file_name);
+  file.ReadBases();
   {
     // check coordinates in zones[1]
-    auto& coordinates = mesh->GetBase(1).GetZone(1).GetCoordinates();
+    auto& coordinates = file.GetBase(1).GetZone(1).GetCoordinates();
     auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), -2.0);
     EXPECT_DOUBLE_EQ(x.at(1), -2.0);
@@ -116,7 +111,7 @@ TEST_F(ReaderTest, ReadCoordinates) {
   }
   {
     // check coordinates in zones[2]
-    auto& coordinates = mesh->GetBase(1).GetZone(2).GetCoordinates();
+    auto& coordinates = file.GetBase(1).GetZone(2).GetCoordinates();
     auto& x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), 2.0);
     EXPECT_DOUBLE_EQ(x.at(1), 0.0);
@@ -137,10 +132,10 @@ TEST_F(ReaderTest, ReadCoordinates) {
 TEST_F(ReaderTest, ReadSections) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
+  auto file = MyFile(file_name);
+  file.ReadBases();
   {
-    auto& section = mesh->GetBase(1).GetZone(1).GetSection(6);
+    auto& section = file.GetBase(1).GetZone(1).GetSection(6);
     EXPECT_EQ(section.CellIdMin(), 51);
     EXPECT_EQ(section.CellIdMax(), 723);
     EXPECT_EQ(section.name(), "3_S_5_10");
@@ -159,7 +154,7 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(array[2], 98);
   }
   {
-    auto& section = mesh->GetBase(1).GetZone(2).GetSection(11);
+    auto& section = file.GetBase(1).GetZone(2).GetSection(11);
     EXPECT_EQ(section.CellIdMin(), 97);
     EXPECT_EQ(section.CellIdMax(), 367);
     EXPECT_EQ(section.name(), "3_S_5_11");
@@ -178,7 +173,7 @@ TEST_F(ReaderTest, ReadSections) {
     EXPECT_EQ(array[2], 492);
   }
   {
-    auto& section = mesh->GetBase(1).GetZone(2).GetSection(12);
+    auto& section = file.GetBase(1).GetZone(2).GetSection(12);
     EXPECT_EQ(section.CellIdMin(), 368);
     EXPECT_EQ(section.CellIdMax(), 767);
     EXPECT_EQ(section.name(), "4_S_9_12");
@@ -201,6 +196,9 @@ TEST_F(ReaderTest, ReadSections) {
 }
 TEST_F(ReaderTest, ReadZone) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
+  // read by mini::mesh::cgns
+  auto file = MyFile(file_name);
+  file.ReadBases();
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
@@ -218,15 +216,12 @@ TEST_F(ReaderTest, ReadZone) {
     }
   }
   cg_close(file_id);
-  // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
   // compare result
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
-  EXPECT_EQ(mesh->CountBases(), n_bases);
+  EXPECT_EQ(file.CountBases(), n_bases);
   int index = 0;
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
-    auto& my_base = mesh->GetBase(base_id);
+    auto& my_base = file.GetBase(base_id);
     int n_zones{0};
     cg_nzones(file_id, base_id, &n_zones);
     EXPECT_EQ(my_base.CountZones(), n_zones);
@@ -244,8 +239,8 @@ TEST_F(ReaderTest, ReadZone) {
 TEST_F(ReaderTest, ReadSolution) {
   auto file_name = test_data_dir_ + "/fixed_grid.cgns";
   // read by mini::mesh::cgns
-  reader.ReadFromFile(file_name);
-  auto mesh = reader.GetMesh();
+  auto file = MyFile(file_name);
+  file.ReadBases();
   // read by cgnslib
   int file_id{-1};
   cg_open(file_name.c_str(), CG_MODE_READ, &file_id);
@@ -284,7 +279,7 @@ TEST_F(ReaderTest, ReadSolution) {
   }
   cg_close(file_id);
   // compara flow solutions
-  auto& my_zone = mesh->GetBase(base_id).GetZone(zone_id);
+  auto& my_zone = file.GetBase(base_id).GetZone(zone_id);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
     auto& my_sol = my_zone.GetSolution(sol_id);
     auto& cg_sol = cg_zone.solutions.at(sol_id-1);
