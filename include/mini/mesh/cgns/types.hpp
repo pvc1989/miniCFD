@@ -2,8 +2,8 @@
 /**
  * This file defines wrappers of APIs and types in CGNS/MLL.
  */
-#ifndef MINI_MESH_CGNS_TREE_HPP_
-#define MINI_MESH_CGNS_TREE_HPP_
+#ifndef MINI_MESH_CGNS_TYPES_HPP_
+#define MINI_MESH_CGNS_TYPES_HPP_
 
 #include <array>
 #include <map>
@@ -599,4 +599,4 @@ class File {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_TREE_HPP_
+#endif  // MINI_MESH_CGNS_TYPES_HPP_

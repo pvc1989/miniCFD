@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
 #include <cstdio>
 #include <string>
