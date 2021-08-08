@@ -76,7 +76,8 @@ MetisMesh Converter<CgnsMesh, MetisMesh>::ConvertToMetisMesh(
           section_id, std::vector<int>());
       auto& metis_ids_in_section = iter->second;
       auto& section = zone.GetSection(section_id);
-      if (!CheckTypeDim(section.type(), cell_dim)) continue;
+      if (!zone.CheckTypeDim(section.type(), cell_dim))
+        continue;
       auto n_cells_of_curr_sect = section.CountCells();
 
       auto n_nodes_per_cell = section.CountNodesByType(section.type());
