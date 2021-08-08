@@ -2,8 +2,8 @@
 /**
  * This file defines wrappers of APIs and types in CGNS/MLL.
  */
-#ifndef MINI_MESH_CGNS_TYPES_HPP_
-#define MINI_MESH_CGNS_TYPES_HPP_
+#ifndef MINI_MESH_CGNS_FORMAT_HPP_
+#define MINI_MESH_CGNS_FORMAT_HPP_
 
 #include <array>
 #include <map>
@@ -389,7 +389,8 @@ class Zone {
   void AddSolution(char const* sol_name,
                    CGNS_ENUMT(GridLocation_t) location) {
     int sol_id = solutions_.size();
-    solutions_.emplace_back(file_id_, base_id_, zone_id_, sol_id, sol_name, location);
+    solutions_.emplace_back(file_id_, base_id_, zone_id_,
+        sol_id, sol_name, location);
   }
 
  private:
@@ -597,4 +598,4 @@ class File {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_TYPES_HPP_
+#endif  // MINI_MESH_CGNS_FORMAT_HPP_
