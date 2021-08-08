@@ -7,7 +7,6 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/cgns/converter.hpp"
-#include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/types.hpp"
 #include "mini/mesh/metis/format.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
@@ -18,16 +17,16 @@ namespace cgns {
 
 class ConverterTest : public ::testing::Test {
  protected:
-  using CgnsMesh = cgns::Tree<double>;
+  using CgnsFile = cgns::File<double>;
   using MetisMesh = metis::Mesh<int>;
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ConverterTest, ConvertToMetisMesh) {
   // convert cgns_mesh to metis_mesh
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto cgns_mesh = CgnsMesh();
-  cgns_mesh.ReadConnectivityFromFile(file_name);
-  auto converter = Converter<CgnsMesh, MetisMesh>();
+  auto cgns_mesh = CgnsFile(file_name);
+  cgns_mesh.ReadBases();
+  auto converter = Converter<CgnsFile, MetisMesh>();
   auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh);
   auto& cell_ptr = metis_mesh.cells.range;
   auto& cell_idx = metis_mesh.cells.index;
@@ -67,7 +66,7 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
       // for each node in this cell
       auto node_id_global = cell_idx[cell_ptr[i_cell] + i_node];
       auto& node_info = metis_to_cgns_for_nodes[node_id_global];
-      EXPECT_EQ(node_info.zone_id, zone.GetId());
+      EXPECT_EQ(node_info.zone_id, zone.id());
       EXPECT_EQ(node_info.node_id, nodes[i_node]);
     }
   }

@@ -386,13 +386,11 @@ class Zone {
       solution.Write();
     }
   }
-  /*
-  void AddSolution(int sol_id, char const* sol_name,
+  void AddSolution(char const* sol_name,
                    CGNS_ENUMT(GridLocation_t) location) {
-    solutions_.reserve(sol_id);
-    solutions_.emplace_back(sol_name, sol_id, location);
+    int sol_id = solutions_.size();
+    solutions_.emplace_back(file_id_, base_id_, zone_id_, sol_id, sol_name, location);
   }
-   */
 
  private:
   std::string name_;

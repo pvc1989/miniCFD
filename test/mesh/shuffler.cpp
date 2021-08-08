@@ -12,7 +12,6 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/cgns/converter.hpp"
-#include "mini/mesh/cgns/reader.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
 #include "mini/mesh/cgns/types.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
@@ -23,10 +22,10 @@ namespace metis {
 
 class ShufflerTest : public ::testing::Test {
  protected:
-  using CgnsMesh = mini::mesh::cgns::Tree<double>;
+  using CgnsFile = mini::mesh::cgns::File<double>;
   using MetisMesh = metis::Mesh<int>;
   using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<idx_t>;
-  using ConverterType = mini::mesh::cgns::Converter<CgnsMesh, MetisMesh>;
+  using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
@@ -36,7 +35,7 @@ class ShufflerTest : public ::testing::Test {
       std::vector<idx_t>* cell_parts);
   static void SetCellPartData(
       const ConverterType& converter, const std::vector<idx_t>& cell_parts,
-      CgnsMesh* cgns_mesh);};
+      CgnsFile* cgns_mesh);};
 void ShufflerTest::PartitionMesh(
     idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
     std::vector<idx_t>* cell_parts) {
@@ -62,7 +61,7 @@ void ShufflerTest::PartitionMesh(
 }
 void ShufflerTest::SetCellPartData(
     const ConverterType& converter, const std::vector<idx_t>& cell_parts,
-    CgnsMesh* cgns_mesh) {
+    CgnsFile* cgns_mesh) {
   auto& zone_to_sections = converter.cgns_to_metis_for_cells;
   auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
@@ -70,11 +69,11 @@ void ShufflerTest::SetCellPartData(
     auto& section_to_cells = zone_to_sections.at(zone_id);
     int solution_id = zone.CountSolutions() + 1;
     char solution_name[33] = "CellData";
-    zone.AddSolution(solution_id, solution_name, CGNS_ENUMV(CellCenter));
+    zone.AddSolution(solution_name, CGNS_ENUMV(CellCenter));
     auto& solution = zone.GetSolution(solution_id);
     std::string field_name("CellPart");
-    solution.fields.emplace(field_name.c_str(), FieldType(zone.CountCells()));
-    auto& field = solution.fields.at(field_name);
+    solution.fields().emplace(field_name, FieldType(zone.CountCells()));
+    auto& field = solution.fields().at(field_name);
     int n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       auto& section = zone.GetSection(section_id);
@@ -124,17 +123,16 @@ TEST_F(ShufflerTest, ShuffleByParts) {
     EXPECT_EQ(node_id_list[i], expected_new_node_id_list[i]);
   }
 }
-TEST_F(ShufflerTest, PartitionCgnsMesh) {
+TEST_F(ShufflerTest, PartitionCgnsFile) {
   ConverterType converter;
   using MeshDataType = double;
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto new_file_name = current_binary_dir_ + "/new_ugrid_2d.cgns";
-  auto cgns_mesh = std::make_unique<CgnsMesh>();
-  cgns_mesh->OpenFileWithGmshCells(old_file_name);
-  // cgns_mesh->ReadConnectivityFromFile(new_file_name);
-  auto metis_mesh = converter.ConvertToMetisMesh(*cgns_mesh);
+  auto cgns_mesh = CgnsFile(old_file_name);
+  cgns_mesh.ReadBases();
+  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh);
   auto& cell_csrm = metis_mesh.cells;
   idx_t n_parts{8};
   int n_cells = converter.metis_to_cgns_for_cells.size();
@@ -146,9 +144,9 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&cell_csrm);
   shuffler.SetConverter(&converter);
-  SetCellPartData(converter, cell_parts, cgns_mesh.get());
-  shuffler.ShuffleMesh(cgns_mesh.get());
-  cgns_mesh->WriteToFile(new_file_name);
+  SetCellPartData(converter, cell_parts, &cgns_mesh);
+  shuffler.ShuffleMesh(&cgns_mesh);
+  cgns_mesh.Write(new_file_name);
 }
 
 class Partition : public ::testing::Test {

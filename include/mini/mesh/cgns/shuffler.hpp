@@ -96,10 +96,10 @@ void ShuffleDataArray(const std::vector<int>& new_cell_order, T* cell_data) {
 template <typename T, class Real>
 class Shuffler {
  public:
-  using CgnsMesh = mini::mesh::cgns::Tree<Real>;
+  using CgnsFile = mini::mesh::cgns::File<Real>;
   using MetisMesh = metis::Mesh<int>;
   using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<T>;
-  using ConverterType = mini::mesh::cgns::Converter<CgnsMesh, MetisMesh>;
+  using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
@@ -116,7 +116,7 @@ class Shuffler {
   void SetConverter(ConverterType* converter) {
     converter_ = converter;
   }
-  void ShuffleMesh(CgnsMesh* mesh) {
+  void ShuffleMesh(CgnsFile* mesh) {
     auto& zone_to_sections = converter_->cgns_to_metis_for_cells;
     auto& base = mesh->GetBase(1); int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
@@ -143,7 +143,7 @@ class Shuffler {
         int n_solutions = zone.CountSolutions();
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
           auto& solution = zone.GetSolution(solution_id);
-          for (auto& [name, field] : solution.fields) {
+          for (auto& [name, field] : solution.fields()) {
             auto field_ptr = field.data() + range_min;
             ShuffleDataArray<double>(new_order, field_ptr);
           }
