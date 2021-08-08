@@ -13,7 +13,7 @@
 
 #include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
-#include "mini/mesh/cgns/types.hpp"
+#include "mini/mesh/cgns/format.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {

@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/cgns/converter.hpp"
-#include "mini/mesh/cgns/types.hpp"
+#include "mini/mesh/cgns/format.hpp"
 #include "mini/mesh/metis/format.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 

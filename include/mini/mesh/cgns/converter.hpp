@@ -13,7 +13,7 @@
 
 #include "cgnslib.h"
 
-#include "mini/mesh/cgns/types.hpp"
+#include "mini/mesh/cgns/format.hpp"
 
 namespace mini {
 namespace mesh {
