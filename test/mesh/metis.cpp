@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
@@ -18,8 +19,8 @@ namespace metis {
 class Partitioner : public ::testing::Test {
  protected:
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
-  using Int = int;
-  using Real = float;
+  using Int = idx_t;
+  using Real = real_t;
   std::vector<Int> null_vector_of_idx;
   std::vector<Real> null_vector_of_real;
   static void BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
@@ -109,9 +110,6 @@ void Partitioner::WritePartitionedMesh(
   fclose(file);
 }
 TEST_F(Partitioner, PartMeshDual) {
-  /*
-    Partition a mesh into k parts based on a partitioning of its dual graph.
-   */
   // Build a simple mesh:
   Int n_cells_x{100}, n_cells_y{40};
   Int n_cells = n_cells_x * n_cells_y;
@@ -143,41 +141,12 @@ TEST_F(Partitioner, PartMeshDual) {
       null_vector_of_idx/* options */,
       &edge_cut, &cell_parts, &node_parts);
   EXPECT_EQ(result, METIS_OK);
-  // Print the mesh:
-  /*
-  std::cout << n_cells << std::endl;
-  curr_node = cell_nodes.begin();
-  for (Int i = 0; i != n_cells; ++i) {
-    for (Int j = 0; j != 4; ++j) {
-      std::cout << 1 + *curr_node++ // node index starts from 1 in mesh file
-                << ' ';
-    }
-    std::cout << std::endl;
-  }
-  EXPECT_EQ(curr_node, cell_nodes.end());
-   */
-  // Print the result:
-  /*
-  std::cout << "part id of each cell: ";
-  for (auto x : cell_parts) {
-    std::cout << x << ' ';
-  }
-  std::cout << std::endl;
-  std::cout << "part id of each node: ";
-  for (auto x : node_parts) {
-    std::cout << x << ' ';
-  }
-  std::cout << std::endl;
-   */
-  // Write partitioned mesh:
+  // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_mesh.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
       cell_range, cell_nodes, cell_weights, cell_parts, node_parts);
 }
 TEST_F(Partitioner, PartGraphKway) {
-  /*
-    Partition a mesh's dual graph into k parts.
-   */
   // Build a simple mesh:
   Int n_cells_x{100}, n_cells_y{40};
   Int n_cells = n_cells_x * n_cells_y;
@@ -190,7 +159,8 @@ TEST_F(Partitioner, PartGraphKway) {
   EXPECT_EQ(cell_range.size(), n_cells + 1);
   // Build the dual graph:
   Int n_common_nodes{2}, index_base{0};
-  std::unique_ptr<Int[]> range_of_each_cell, neighbors_of_each_cell;
+  std::unique_ptr<Int[], Deleter> range_of_each_cell(nullptr, deleter);
+  std::unique_ptr<Int[], Deleter> neighbors_of_each_cell(nullptr, deleter);
   auto result = MeshToDual(n_cells, n_nodes, cell_range, cell_nodes,
       n_common_nodes, index_base, &range_of_each_cell, &neighbors_of_each_cell);
   EXPECT_EQ(result, METIS_OK);
@@ -214,7 +184,7 @@ TEST_F(Partitioner, PartGraphKway) {
       null_vector_of_real/* unbalance tolerance */,
       null_vector_of_idx/* options */, &edge_cut, &cell_parts);
   EXPECT_EQ(result, METIS_OK);
-  // Write partitioned mesh:
+  // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
       cell_range, cell_nodes, cell_weights, cell_parts, {}/* node_parts */);

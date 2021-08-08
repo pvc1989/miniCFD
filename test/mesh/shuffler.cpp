@@ -23,8 +23,8 @@ namespace metis {
 class ShufflerTest : public ::testing::Test {
  protected:
   using CgnsFile = mini::mesh::cgns::File<double>;
-  using MetisMesh = metis::Mesh<int>;
-  using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<idx_t>;
+  using MetisMesh = metis::File<int>;
+  using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
   using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
@@ -151,7 +151,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
 
 class Partition : public ::testing::Test {
  protected:
-  using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<int>;
+  using CSRM = mini::mesh::metis::SparseMatrix<int>;
   CSRM cell_csrm;
 };
 TEST_F(Partition, GetNodePartsByConnectivity) {

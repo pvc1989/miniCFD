@@ -11,15 +11,15 @@ namespace mesh {
 namespace metis {
 
 template <typename Int>
-struct CompressedSparseRowMatrix {
+struct SparseMatrix {
   static_assert(std::is_integral_v<Int>, "Integral required.");
   std::vector<Int> range;
   std::vector<Int> index;
 };
 
 template <typename Int>
-struct Mesh {
-  CompressedSparseRowMatrix<Int> cells;
+struct File {
+  SparseMatrix<Int> cells;
 };
 
 }  // namespace metis
