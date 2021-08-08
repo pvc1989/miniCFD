@@ -19,7 +19,7 @@ namespace mini {
 namespace mesh {
 namespace metis {
 
-using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<idx_t>;
+using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
 template <typename T>
 std::vector<T> GetNodePartsByConnectivity(
     const CSRM& cell_csrm, const std::vector<T>& cell_parts,
@@ -97,8 +97,8 @@ template <typename T, class Real>
 class Shuffler {
  public:
   using CgnsFile = mini::mesh::cgns::File<Real>;
-  using MetisMesh = metis::Mesh<int>;
-  using CSRM = mini::mesh::metis::CompressedSparseRowMatrix<T>;
+  using MetisMesh = metis::File<int>;
+  using CSRM = mini::mesh::metis::SparseMatrix<T>;
   using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;

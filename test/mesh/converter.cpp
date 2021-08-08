@@ -18,7 +18,7 @@ namespace cgns {
 class ConverterTest : public ::testing::Test {
  protected:
   using CgnsFile = cgns::File<double>;
-  using MetisMesh = metis::Mesh<int>;
+  using MetisMesh = metis::File<int>;
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ConverterTest, ConvertToMetisMesh) {
