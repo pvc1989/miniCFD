@@ -1,7 +1,7 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_CGNS_CONVERTER_HPP_
-#define MINI_MESH_CGNS_CONVERTER_HPP_
+#ifndef MINI_MESH_FILTER_CGNS_TO_METIS_HPP_
+#define MINI_MESH_FILTER_CGNS_TO_METIS_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -19,8 +19,10 @@
 
 namespace mini {
 namespace mesh {
+namespace filter {
 
-static_assert(std::is_same_v<idx_t, cgsize_t>, "METIS's `idx_t` is different from CGNS's `cgsize_t`.");
+static_assert(std::is_same_v<idx_t, cgsize_t>,
+    "METIS's `idx_t` is different from CGNS's `cgsize_t`.");
 
 struct NodeInfo {
   NodeInfo(int zi, int ni) : zone_id(zi), node_id(ni) {}
@@ -34,18 +36,21 @@ struct CellInfo {
   int cell_id{0};
 };
 
-struct Converter {
-  using CgnsMesh = cgns::File<double>;
-  using MetisMesh = metis::Mesh<int>;
+template <class Real = double, class Int = int>
+struct CgnsToMetis {
+  using CgnsMesh = cgns::File<Real>;
+  using MetisMesh = metis::Mesh<Int>;
 
-  MetisMesh CgnsToMetis(const CgnsMesh& mesh);
+  MetisMesh Filter(const CgnsMesh& mesh);
 
   std::vector<NodeInfo> metis_to_cgns_for_nodes;
   std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
   std::vector<CellInfo> metis_to_cgns_for_cells;
   std::map<int, std::map<int, std::vector<int>>> cgns_to_metis_for_cells;
 };
-Converter::MetisMesh Converter::CgnsToMetis(const CgnsMesh& cgns_mesh) {
+template <class Real, class Int>
+typename CgnsToMetis<Real, Int>::MetisMesh
+CgnsToMetis<Real, Int>::Filter(const CgnsMesh& cgns_mesh) {
   assert(cgns_mesh.CountBases() == 1);
   auto& base = cgns_mesh.GetBase(1);
   auto cell_dim = base.GetCellDim();
@@ -105,7 +110,8 @@ Converter::MetisMesh Converter::CgnsToMetis(const CgnsMesh& cgns_mesh) {
   return MetisMesh(cell_ptr, cell_idx);
 }
 
+}  // namespace filter
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_CONVERTER_HPP_
+#endif  // MINI_MESH_FILTER_CGNS_TO_METIS_HPP_

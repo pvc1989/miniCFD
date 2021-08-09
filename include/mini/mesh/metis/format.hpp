@@ -121,12 +121,16 @@ using Deleter = decltype(deleter);
 template <typename Int>
 class SparseGraphWithDeleter {
   static_assert(std::is_integral_v<Int>, "Integral required.");
-  std::unique_ptr<Int[], Deleter> range_, index_/* , value_ */;
-  Int size_;
+  Int size_, *range_, *index_/* , *value_ */;
 
  public:
   SparseGraphWithDeleter(Int size, Int* range, Int* index)
-      : size_(size), range_(range, deleter), index_(index, deleter) {
+      : size_(size), range_(range), index_(index) {
+  }
+  ~SparseGraphWithDeleter() noexcept {
+    int errors = (METIS_Free(range_) != METIS_OK)
+               + (METIS_Free(index_) != METIS_OK);
+    assert(errors == 0);
   }
   const Int& range(Int i) const {
     return range_[i];
