@@ -431,7 +431,7 @@ class Zone {
     }
   }
   void AddSolution(char const* sol_name, CGNS_ENUMT(GridLocation_t) location) {
-    int sol_id = solutions_.size();
+    int sol_id = solutions_.size() + 1;
     solutions_.emplace_back(*this, sol_id, sol_name, location);
   }
 

@@ -27,6 +27,12 @@ class SparseMatrix {
   std::vector<Int> range_, index_/* , value_ */;
 
  public:
+  SparseMatrix() = default;
+  SparseMatrix(std::vector<Int> const& range, std::vector<Int> const& index)
+      : range_(range), index_(index) {
+  }
+
+ public:
   const Int& range(Int i) const {
     return range_[i];
   }
@@ -62,6 +68,13 @@ class Mesh : private SparseMatrix<Int> {
   static_assert(std::is_integral_v<Int>, "Integral required.");
   using Base = SparseMatrix<Int>;
   Int n_nodes_;
+
+ public:
+  Mesh() = default;
+  Mesh(std::vector<Int> const& range, std::vector<Int> const& index)
+      : Base(range, index) {
+    n_nodes_ = range.back();
+  }
 
  public:
   const Int& range(Int i) const {

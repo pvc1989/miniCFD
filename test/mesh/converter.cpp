@@ -6,30 +6,29 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/mesh/cgns/converter.hpp"
 #include "mini/mesh/metis/format.hpp"
+#include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace mesh {
-namespace cgns {
 
 class ConverterTest : public ::testing::Test {
  protected:
-  using CgnsFile = cgns::File<double>;
-  using MetisMesh = metis::File<int>;
   std::string const test_data_dir_{TEST_DATA_DIR};
+  std::string const output_dir_{std::string(PROJECT_BINARY_DIR) + "/test/mesh/"};
 };
-TEST_F(ConverterTest, ConvertToMetisMesh) {
+TEST_F(ConverterTest, CgnsToMetis) {
   // convert cgns_mesh to metis_mesh
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto cgns_mesh = CgnsFile(file_name);
+  auto cgns_mesh = Converter::CgnsMesh(file_name);
   cgns_mesh.ReadBases();
-  auto converter = Converter<CgnsFile, MetisMesh>();
-  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh);
-  auto& cell_ptr = metis_mesh.cells.range;
-  auto& cell_idx = metis_mesh.cells.index;
+  auto converter = Converter();
+  auto metis_mesh = converter.CgnsToMetis(cgns_mesh);
+  auto* cell_ptr = &(metis_mesh.range(0));
+  auto* cell_idx = &(metis_mesh.nodes(0));
   auto& metis_to_cgns_for_nodes = converter.metis_to_cgns_for_nodes;
   auto& cgns_to_metis_for_nodes = converter.cgns_to_metis_for_nodes;
   auto& metis_to_cgns_for_cells = converter.metis_to_cgns_for_cells;
@@ -47,8 +46,7 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
   }
   EXPECT_EQ(metis_to_cgns_for_nodes.size(), n_nodes_total);
   auto n_cells_total = metis_to_cgns_for_cells.size();
-  EXPECT_EQ(cell_ptr.size(), n_cells_total + 1);
-  EXPECT_EQ(cell_idx.size(), cell_ptr.back());
+  EXPECT_EQ(metis_mesh.CountCells(), n_cells_total);
   for (cgsize_t i_cell = 0; i_cell != n_cells_total; ++i_cell) {
     // for each cell in this base
     auto& cell_info = metis_to_cgns_for_cells[i_cell];
@@ -71,8 +69,46 @@ TEST_F(ConverterTest, ConvertToMetisMesh) {
     }
   }
 }
+TEST_F(ConverterTest, MetisToCgns) {
+  // convert cgns_mesh to metis_mesh
+  auto file_name = "ugrid_2d.cgns";
+  auto cgns_mesh = Converter::CgnsMesh(test_data_dir_, file_name);
+  cgns_mesh.ReadBases();
+  auto converter = Converter();
+  auto metis_mesh = converter.CgnsToMetis(cgns_mesh);
 
-}  // namespace cgns
+  std::vector<idx_t> null_vector_of_idx;
+  std::vector<real_t> null_vector_of_real;
+  int n_parts{8}, n_common_nodes{2}, edge_cut{0};
+  std::vector<int> cell_parts, node_parts;
+  metis::PartMesh(metis_mesh, null_vector_of_idx/* computational cost */,
+      null_vector_of_idx/* communication size */,
+      n_common_nodes, n_parts,
+      null_vector_of_real/* weight of each part */,
+      null_vector_of_idx/* options */,
+      &edge_cut, &cell_parts, &node_parts);
+  auto& metis_to_cgns_for_nodes = converter.metis_to_cgns_for_nodes;
+  auto n_nodes_total = metis_to_cgns_for_nodes.size();
+  auto& base = cgns_mesh.GetBase(1);
+  for (int zid = 1; zid <= base.CountZones(); ++zid) {
+    base.GetZone(zid).AddSolution("NodeData", CGNS_ENUMV(Vertex));
+    auto& solution = base.GetZone(zid).GetSolution(1);
+    auto& field = solution.fields()["NodePartition"];
+    field.resize(base.GetZone(zid).CountNodes());
+  }
+  for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
+    auto node_info = metis_to_cgns_for_nodes[i_node];
+    int part = node_parts[i_node];
+    int zid = node_info.zone_id;
+    int nid = node_info.node_id;
+    auto& field = base.GetZone(zid).GetSolution(1).fields()["NodePartition"];
+    field[nid-1] = (double) part;
+    // std::printf("%d\t%d\t%d\t%d\t%2.1f\n", i_node, zid, nid, part, field.at(nid-1));
+  }
+  // std::printf("node\tzid\tnid\tpart\tfield\n");
+  cgns_mesh.Write(output_dir_ + "partitioned_" + file_name);
+}
+
 }  // namespace mesh
 }  // namespace mini
 
