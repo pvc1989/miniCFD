@@ -9,15 +9,18 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "cgnslib.h"
 
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/mesh/metis/format.hpp"
 
 namespace mini {
 namespace mesh {
-namespace cgns {
+
+static_assert(std::is_same_v<idx_t, cgsize_t>, "METIS's `idx_t` is different from CGNS's `cgsize_t`.");
 
 struct NodeInfo {
   NodeInfo(int zi, int ni) : zone_id(zi), node_id(ni) {}
@@ -31,26 +34,25 @@ struct CellInfo {
   int cell_id{0};
 };
 
-template <typename CgnsMesh, typename MetisMesh>
 struct Converter {
-  Converter() = default;
-  MetisMesh ConvertToMetisMesh(const CgnsMesh& mesh);
+  using CgnsMesh = cgns::File<double>;
+  using MetisMesh = metis::Mesh<int>;
+
+  MetisMesh CgnsToMetis(const CgnsMesh& mesh);
+
   std::vector<NodeInfo> metis_to_cgns_for_nodes;
   std::map<int, std::vector<int>> cgns_to_metis_for_nodes;
   std::vector<CellInfo> metis_to_cgns_for_cells;
   std::map<int, std::map<int, std::vector<int>>> cgns_to_metis_for_cells;
 };
-template <typename CgnsMesh, typename MetisMesh>
-MetisMesh Converter<CgnsMesh, MetisMesh>::ConvertToMetisMesh(
-    const CgnsMesh& cgns_mesh) {
+Converter::MetisMesh Converter::CgnsToMetis(const CgnsMesh& cgns_mesh) {
   assert(cgns_mesh.CountBases() == 1);
-  auto metis_mesh = MetisMesh();
   auto& base = cgns_mesh.GetBase(1);
   auto cell_dim = base.GetCellDim();
   auto n_zones = base.CountZones();
   int n_nodes_of_curr_base{0};
-  auto& cell_ptr = metis_mesh.cells.range;
-  auto& cell_idx = metis_mesh.cells.index;
+  auto cell_ptr = std::vector<int>();
+  auto cell_idx = std::vector<int>();
   int pointer_value{0};
   cell_ptr.emplace_back(pointer_value);
   auto n_nodes_in_prev_zones{0};
@@ -100,10 +102,9 @@ MetisMesh Converter<CgnsMesh, MetisMesh>::ConvertToMetisMesh(
     }
     n_nodes_in_prev_zones += zone.CountNodes();
   }
-  return metis_mesh;
+  return MetisMesh(cell_ptr, cell_idx);
 }
 
-}  // namespace cgns
 }  // namespace mesh
 }  // namespace mini
 
