@@ -23,22 +23,21 @@ class Partitioner : public ::testing::Test {
   using Real = real_t;
   std::vector<Int> null_vector_of_idx;
   std::vector<Real> null_vector_of_real;
-  static void BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
-      std::vector<Int> *cell_nodes, std::vector<Int> *cell_range);
-  static void WritePartitionedMesh(const char* name,
-      Int n_cells_x, Int n_cells_y, const std::vector<Int> &cell_range,
-      const std::vector<Int> &cell_nodes, const std::vector<Int> &cell_weights,
+  static Mesh<Int> BuildSimpleMesh(Int n_cells_x, Int n_cells_y);
+  static void WritePartitionedMesh(
+      const char* name, Int n_cells_x, Int n_cells_y,
+      const Mesh<Int> &mesh, const std::vector<Int> &cell_weights,
       const std::vector<Int> &cell_parts, const std::vector<Int> &node_parts);
 };
-void Partitioner::BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
-    std::vector<Int> *cell_nodes, std::vector<Int> *cell_range) {
+Mesh<Partitioner::Int> Partitioner::BuildSimpleMesh(
+    Int n_cells_x, Int n_cells_y) {
+  Mesh<Int> mesh;
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
-  cell_nodes->resize(n_cells * 4);  // indices of nodes in each cell
-  cell_range->resize(n_cells + 1);  // use to slice cell_nodes
-  auto curr_node = cell_nodes->begin();
-  auto curr_cell = cell_range->begin();
+  mesh.resize(n_cells, n_cells * 4);
+  auto curr_node = mesh.nodes().begin();
+  auto curr_cell = mesh.range().begin();
   *curr_cell = 0;
   for (Int j = 0; j != n_cells_y; ++j) {
     for (Int i = 0; i != n_cells_x; ++i) {
@@ -53,13 +52,13 @@ void Partitioner::BuildSimpleMesh(Int n_cells_x, Int n_cells_y,
     }
   }
   ++curr_cell;
-  assert(curr_node == cell_nodes->end());
-  assert(curr_cell == cell_range->end());
+  EXPECT_EQ(curr_node, mesh.nodes().end());
+  EXPECT_EQ(curr_cell, mesh.range().end());
+  return mesh;
 }
 void Partitioner::WritePartitionedMesh(
     const char* name, Int n_cells_x, Int n_cells_y,
-    const std::vector<Int> &cell_range, const std::vector<Int> &cell_nodes,
-    const std::vector<Int> &cell_weights,
+    const Mesh<Int> &mesh, const std::vector<Int> &cell_weights,
     const std::vector<Int> &cell_parts, const std::vector<Int> &node_parts) {
   auto* file = fopen(name, "w");
   Int n_cells = n_cells_x * n_cells_y;
@@ -78,8 +77,8 @@ void Partitioner::WritePartitionedMesh(
     }
   }
   fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
-  auto curr_node = cell_nodes.begin();
-  while (curr_node != cell_nodes.end()) {
+  auto curr_node = mesh.nodes().begin();
+  while (curr_node != mesh.nodes().end()) {
     fprintf(file, "4 %d %d %d %d\n",
             curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
     curr_node += 4;
@@ -115,11 +114,9 @@ TEST_F(Partitioner, PartMeshDual) {
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<Int> cell_nodes;  // indices of nodes in each cell
-  std::vector<Int> cell_range;  // use to slice cell_nodes
-  BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
-  EXPECT_EQ(cell_nodes.size(), n_cells * 4);
-  EXPECT_EQ(cell_range.size(), n_cells + 1);
+  auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
+  EXPECT_EQ(mesh.range().size(), n_cells + 1);
+  EXPECT_EQ(mesh.nodes().size(), n_cells * 4);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
   for (Int j = 0; j != n_cells_y; ++j) {
@@ -132,19 +129,18 @@ TEST_F(Partitioner, PartMeshDual) {
   Int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  auto result = PartMeshDual(
-      n_cells, n_nodes, cell_range, cell_nodes,
+  PartMeshDual(
+      n_cells, n_nodes, mesh,
       cell_weights/* computational cost */,
       null_vector_of_idx/* communication size */,
       n_common_nodes, n_parts,
       null_vector_of_real/* weight of each part */,
       null_vector_of_idx/* options */,
       &edge_cut, &cell_parts, &node_parts);
-  EXPECT_EQ(result, METIS_OK);
   // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_mesh.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
-      cell_range, cell_nodes, cell_weights, cell_parts, node_parts);
+      mesh, cell_weights, cell_parts, node_parts);
 }
 TEST_F(Partitioner, PartGraphKway) {
   // Build a simple mesh:
@@ -152,18 +148,12 @@ TEST_F(Partitioner, PartGraphKway) {
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
-  std::vector<Int> cell_nodes;  // indices of nodes in each cell
-  std::vector<Int> cell_range;  // use to slice cell_nodes
-  BuildSimpleMesh(n_cells_x, n_cells_y, &cell_nodes, &cell_range);
-  EXPECT_EQ(cell_nodes.size(), n_cells * 4);
-  EXPECT_EQ(cell_range.size(), n_cells + 1);
+  auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
+  EXPECT_EQ(mesh.range().size(), n_cells + 1);
+  EXPECT_EQ(mesh.nodes().size(), n_cells * 4);
   // Build the dual graph:
   Int n_common_nodes{2}, index_base{0};
-  std::unique_ptr<Int[], Deleter> range_of_each_cell(nullptr, deleter);
-  std::unique_ptr<Int[], Deleter> neighbors_of_each_cell(nullptr, deleter);
-  auto result = MeshToDual(n_cells, n_nodes, cell_range, cell_nodes,
-      n_common_nodes, index_base, &range_of_each_cell, &neighbors_of_each_cell);
-  EXPECT_EQ(result, METIS_OK);
+  auto graph = MeshToDual(n_cells, n_nodes, mesh, n_common_nodes, index_base);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
   for (Int j = 0; j != n_cells_y; ++j) {
@@ -175,19 +165,17 @@ TEST_F(Partitioner, PartGraphKway) {
   Int n_constraints{1}, n_parts{8}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  result = PartGraphKway(
-      n_cells, n_constraints,
-      range_of_each_cell, neighbors_of_each_cell,
+  PartGraphKway(
+      n_cells, n_constraints, graph,
       cell_weights, null_vector_of_idx/* communication size */,
       null_vector_of_idx/* weight of each edge (in dual graph) */,
       n_parts, null_vector_of_real/* weight of each part */,
       null_vector_of_real/* unbalance tolerance */,
       null_vector_of_idx/* options */, &edge_cut, &cell_parts);
-  EXPECT_EQ(result, METIS_OK);
   // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
-      cell_range, cell_nodes, cell_weights, cell_parts, {}/* node_parts */);
+      mesh, cell_weights, cell_parts, {}/* node_parts */);
 }
 
 }  // namespace metis
