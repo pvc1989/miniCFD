@@ -14,6 +14,11 @@ namespace mini {
 namespace mesh {
 namespace metis {
 
+template <class Container>
+static inline bool valid(Container&& c, std::size_t size) {
+  return c.size() == 0 || c.size() == size;
+}
+
 /**
  * @brief A wrapper of `METIS_PartGraphKway()`, which partitions a graph into K parts.
  * 
@@ -21,7 +26,6 @@ namespace metis {
  * @tparam Graph sparse graph type
  * @tparam Real real number type
  * 
- * @param[in] n_vertices the number of vertices in the graph
  * @param[in] n_constraints the number of balancing constraints (>= 1)
  * @param[in] graph the graph to be partitioned
  * @param[in] cost_of_each_vertex the computational cost of each vertex
@@ -36,13 +40,12 @@ namespace metis {
  */
 template <typename Int, typename Graph, typename Real>
 void PartGraphKway(
-    const Int &n_vertices, const Int &n_constraints,
+    const Int &n_constraints,
     const Graph &graph,
     const std::vector<Int> &cost_of_each_vertex,
     const std::vector<Int> &size_of_each_vertex,
     const std::vector<Int> &cost_of_each_edge,
-    const Int &n_parts,
-    const std::vector<Real> &weight_of_each_part,
+    Int n_parts, const std::vector<Real> &weight_of_each_part,
     const std::vector<Real> &unbalances,
     const std::vector<Int> &options,
     /* input ↑, output ↓ */
@@ -52,11 +55,15 @@ void PartGraphKway(
   static_assert(std::is_floating_point_v<Real>,
       "`Real` must be a floating-point type.");
   static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
-  assert(vertex_parts->size() == n_vertices);
+  Int n_vertices = graph.CountVertices();
+  assert(valid(cost_of_each_vertex, n_vertices));
+  assert(valid(size_of_each_vertex, n_vertices));
+  assert(valid(weight_of_each_part, n_parts));
+  vertex_parts->resize(n_vertices);
   auto error_code = METIS_PartGraphKway(
       const_cast<Int*>(&n_vertices), const_cast<Int*>(&n_constraints),
-      const_cast<Int*>(&(graph.range()[0])),
-      const_cast<Int*>(&(graph.index()[0])),
+      const_cast<Int*>(&(graph.range(0))),
+      const_cast<Int*>(&(graph.index(0))),
       const_cast<Int*>(cost_of_each_vertex.data()),
       const_cast<Int*>(size_of_each_vertex.data()),
       const_cast<Int*>(cost_of_each_edge.data()),
@@ -73,8 +80,6 @@ void PartGraphKway(
  * @tparam Int index type
  * @tparam Real real number type
  * 
- * @param[in] n_cells the number of cells in the mesh
- * @param[in] n_nodes the number of nodes in the mesh
  * @param[in] mesh the mesh to be partitioned
  * @param[in] cost_of_each_cell the computational cost of each cell
  * @param[in] size_of_each_cell the communication size of each cell
@@ -103,9 +108,6 @@ void PartMesh(const Mesh<Int> &mesh,
   static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
   Int n_cells = mesh.CountCells();
   Int n_nodes = mesh.CountNodes();
-  auto valid = [](auto const& v, Int n){
-    return v.size() == 0 || v.size() == n;
-  };
   assert(valid(cost_of_each_cell, n_cells));
   assert(valid(size_of_each_cell, n_cells));
   assert(valid(weight_of_each_part, n_parts));
@@ -113,8 +115,8 @@ void PartMesh(const Mesh<Int> &mesh,
   node_parts->resize(n_nodes);
   auto error_code = METIS_PartMeshDual(
       &n_cells, &n_nodes,
-      const_cast<Int*>(&(mesh.range()[0])),
-      const_cast<Int*>(&(mesh.nodes()[0])),
+      const_cast<Int*>(&(mesh.range(0))),
+      const_cast<Int*>(&(mesh.nodes(0))),
       const_cast<Int*>(cost_of_each_cell.data()),
       const_cast<Int*>(size_of_each_cell.data()),
       const_cast<Int*>(&n_common_nodes),
@@ -135,19 +137,19 @@ void PartMesh(const Mesh<Int> &mesh,
  * @param[in] index_base the the base of indexing (0 or 1)
  */
 template <typename Int>
-GraphWithDeleter<Int> MeshToDual(
+SparseGraphWithDeleter<Int> MeshToDual(
     const Int &n_cells, const Int &n_nodes,
     const Mesh<Int> &mesh,
     const Int &n_common_nodes, const Int &index_base) {
   Int *range, *neighbors;
   auto error_code = METIS_MeshToDual(
       const_cast<Int*>(&n_cells), const_cast<Int*>(&n_nodes),
-      const_cast<Int*>(&(mesh.range()[0])),
-      const_cast<Int*>(&(mesh.nodes()[0])),
+      const_cast<Int*>(&(mesh.range(0))),
+      const_cast<Int*>(&(mesh.nodes(0))),
       const_cast<Int*>(&n_common_nodes), const_cast<Int*>(&index_base),
       &range, &neighbors);
   assert(error_code == METIS_OK);
-  return GraphWithDeleter<Int>(n_cells, range, neighbors);
+  return SparseGraphWithDeleter<Int>(n_cells, range, neighbors);
 }
 
 }  // namespace metis
