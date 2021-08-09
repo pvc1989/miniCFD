@@ -35,7 +35,7 @@ Mesh<Partitioner::Int> Partitioner::BuildSimpleMesh(
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
-  mesh.resize(n_cells, n_cells * 4);
+  mesh.resize(n_cells, n_nodes, n_cells * 4);
   auto curr_node = mesh.nodes().begin();
   auto curr_cell = mesh.range().begin();
   *curr_cell = 0;
@@ -108,14 +108,15 @@ void Partitioner::WritePartitionedMesh(
   }
   fclose(file);
 }
-TEST_F(Partitioner, PartMeshDual) {
+TEST_F(Partitioner, PartMesh) {
   // Build a simple mesh:
   Int n_cells_x{100}, n_cells_y{40};
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
   auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
-  EXPECT_EQ(mesh.range().size(), n_cells + 1);
+  EXPECT_EQ(mesh.CountCells(), n_cells);
+  EXPECT_EQ(mesh.CountNodes(), n_nodes);
   EXPECT_EQ(mesh.nodes().size(), n_cells * 4);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
@@ -124,13 +125,11 @@ TEST_F(Partitioner, PartMeshDual) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto cell_parts = std::vector<Int>(n_cells);
-  auto node_parts = std::vector<Int>(n_nodes);
   Int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  PartMeshDual(
-      n_cells, n_nodes, mesh,
+  std::vector<Int> cell_parts, node_parts;
+  PartMesh(mesh,
       cell_weights/* computational cost */,
       null_vector_of_idx/* communication size */,
       n_common_nodes, n_parts,
@@ -149,8 +148,6 @@ TEST_F(Partitioner, PartGraphKway) {
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
   auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
-  EXPECT_EQ(mesh.range().size(), n_cells + 1);
-  EXPECT_EQ(mesh.nodes().size(), n_cells * 4);
   // Build the dual graph:
   Int n_common_nodes{2}, index_base{0};
   auto graph = MeshToDual(n_cells, n_nodes, mesh, n_common_nodes, index_base);

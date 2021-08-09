@@ -68,7 +68,7 @@ void PartGraphKway(
   assert(error_code == METIS_OK);
 }
 /**
- * @brief A wrapper of `METIS_PartMeshDual()`, which partitions a mesh into k parts.
+ * @brief A wrapper of `METIS_PartMeshDual()`, which partitions a mesh into K parts.
  * 
  * @tparam Int index type
  * @tparam Real real number type
@@ -87,12 +87,10 @@ void PartGraphKway(
  * @param[out] node_parts the part id of each node
  */
 template <typename Int, typename Real>
-void PartMeshDual(
-    const Int &n_cells, const Int &n_nodes,
-    const Mesh<Int> &mesh,
+void PartMesh(const Mesh<Int> &mesh,
     const std::vector<Int> &cost_of_each_cell,
     const std::vector<Int> &size_of_each_cell,
-    const Int &n_common_nodes, const Int &n_parts,
+    Int n_common_nodes, Int n_parts,
     const std::vector<Real> &weight_of_each_part,
     const std::vector<Int> &options,
     /* input ↑, output ↓ */
@@ -103,17 +101,24 @@ void PartMeshDual(
   static_assert(std::is_floating_point_v<Real>,
       "`Real` must be a floating-point type.");
   static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
-  assert(cell_parts->size() == n_cells);
-  assert(node_parts->size() == n_nodes);
+  Int n_cells = mesh.CountCells();
+  Int n_nodes = mesh.CountNodes();
+  auto valid = [](auto const& v, Int n){
+    return v.size() == 0 || v.size() == n;
+  };
+  assert(valid(cost_of_each_cell, n_cells));
+  assert(valid(size_of_each_cell, n_cells));
+  assert(valid(weight_of_each_part, n_parts));
+  cell_parts->resize(n_cells);
+  node_parts->resize(n_nodes);
   auto error_code = METIS_PartMeshDual(
-      const_cast<Int*>(&n_cells), const_cast<Int*>(&n_nodes),
+      &n_cells, &n_nodes,
       const_cast<Int*>(&(mesh.range()[0])),
       const_cast<Int*>(&(mesh.nodes()[0])),
       const_cast<Int*>(cost_of_each_cell.data()),
       const_cast<Int*>(size_of_each_cell.data()),
       const_cast<Int*>(&n_common_nodes),
-      const_cast<Int*>(&n_parts),
-      const_cast<Real*>(weight_of_each_part.data()),
+      &n_parts, const_cast<Real*>(weight_of_each_part.data()),
       const_cast<Int*>(options.data()),
       objective_value, cell_parts->data(), node_parts->data());
   assert(error_code == METIS_OK);
