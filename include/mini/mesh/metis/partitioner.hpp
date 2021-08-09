@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
 #ifndef MINI_MESH_METIS_PARTITIONER_HPP_
 #define MINI_MESH_METIS_PARTITIONER_HPP_
@@ -20,19 +20,19 @@ namespace metis {
  * @tparam IntArray index array type
  * @tparam Real real number type
  * 
- * @param n_nodes the number of nodes in the graph
- * @param n_constraints the number of balancing constraints (>= 1)
- * @param range_of_each_node the range of indices of each node's list of neighbors
- * @param neighbors_of_each_node the list of neighbors of each node
- * @param cost_of_each_node the computational cost of each node
- * @param size_of_each_node the communication size of each node
- * @param cost_of_each_edge the weight of each edge
- * @param n_parts the number of parts to be partitioned
- * @param weight_of_each_part the weight of each part (sum must be 1.0)
- * @param unbalances the unbalance tolerance for each constraint
- * @param options the array of METIS options
- * @param objective_value the edge cut or the communication volume of the partitioning
- * @param node_parts the part id of each node
+ * @param[in] n_nodes the number of nodes in the graph
+ * @param[in] n_constraints the number of balancing constraints (>= 1)
+ * @param[in] range_of_each_node the range of indices of each node's list of neighbors
+ * @param[in] neighbors_of_each_node the list of neighbors of each node
+ * @param[in] cost_of_each_node the computational cost of each node
+ * @param[in] size_of_each_node the communication size of each node
+ * @param[in] cost_of_each_edge the weight of each edge
+ * @param[in] n_parts the number of parts to be partitioned
+ * @param[in] weight_of_each_part the weight of each part (sum must be 1.0)
+ * @param[in] unbalances the unbalance tolerance for each constraint
+ * @param[in] options the array of METIS options
+ * @param[out] objective_value the edge cut or the communication volume of the partitioning
+ * @param[out] node_parts the part id of each node
  */
 template <typename Int, typename IntArray, typename Real>
 int PartGraphKway(
@@ -47,7 +47,7 @@ int PartGraphKway(
     const std::vector<Real> &weight_of_each_part,
     const std::vector<Real> &unbalances,
     const std::vector<Int> &options,
-    // output:
+    /* input ↑, output ↓ */
     Int *objective_value,
     std::vector<Int> *node_parts) {
   static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
@@ -75,19 +75,19 @@ int PartGraphKway(
  * @tparam Int index type
  * @tparam Real real number type
  * 
- * @param n_cells the number of cells in the mesh
- * @param n_nodes the number of nodes in the mesh
- * @param range_of_each_cell the range of indices of each cell's node id list
- * @param nodes_of_each_cell the list of nodes of each cell
- * @param cost_of_each_cell the computational cost of each cell
- * @param size_of_each_cell the communication size of each cell
- * @param n_common_nodes the minimum number of nodes shared by two neighboring cells
- * @param n_parts the number of parts to be partitioned
- * @param weight_of_each_part the weight of each part (sum must be 1.0)
- * @param options the array of METIS options
- * @param objective_value the edge cut or the communication volume of the partitioning
- * @param cell_parts the part id of each cell
- * @param node_parts the part id of each node
+ * @param[in] n_cells the number of cells in the mesh
+ * @param[in] n_nodes the number of nodes in the mesh
+ * @param[in] range_of_each_cell the range of indices of each cell's node id list
+ * @param[in] nodes_of_each_cell the list of nodes of each cell
+ * @param[in] cost_of_each_cell the computational cost of each cell
+ * @param[in] size_of_each_cell the communication size of each cell
+ * @param[in] n_common_nodes the minimum number of nodes shared by two neighboring cells
+ * @param[in] n_parts the number of parts to be partitioned
+ * @param[in] weight_of_each_part the weight of each part (sum must be 1.0)
+ * @param[in] options the array of METIS options
+ * @param[out] objective_value the edge cut or the communication volume of the partitioning
+ * @param[out] cell_parts the part id of each cell
+ * @param[out] node_parts the part id of each node
  */
 template <typename Int, typename Real>
 int PartMeshDual(
@@ -99,7 +99,7 @@ int PartMeshDual(
     const Int &n_common_nodes, const Int &n_parts,
     const std::vector<Real> &weight_of_each_part,
     const std::vector<Int> &options,
-    // output:
+    /* input ↑, output ↓ */
     Int *objective_value,
     std::vector<Int> *cell_parts, std::vector<Int> *node_parts) {
   static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
@@ -132,14 +132,14 @@ using Deleter = decltype(deleter);
  * 
  * @tparam Int index type
  * 
- * @param n_cells the number of cells in the mesh
- * @param n_nodes the number of nodes in the mesh
- * @param range_of_each_cell the range of indices of each cell's node id list
- * @param nodes_of_each_cell the list of nodes of each cell
- * @param n_common_nodes the minimum number of nodes shared by two neighboring cells
- * @param index_base the the base of indexing (0 or 1)
- * @param range_of_each_dual_vertex the range of indices of each cell's list of neighbors
- * @param neighbors_of_each_dual_vertex the list of neighbors of each cell
+ * @param[in] n_cells the number of cells in the mesh
+ * @param[in] n_nodes the number of nodes in the mesh
+ * @param[in] range_of_each_cell the range of indices of each cell's node id list
+ * @param[in] nodes_of_each_cell the list of nodes of each cell
+ * @param[in] n_common_nodes the minimum number of nodes shared by two neighboring cells
+ * @param[in] index_base the the base of indexing (0 or 1)
+ * @param[out] range_of_each_dual_vertex the range of indices of each cell's list of neighbors
+ * @param[out] neighbors_of_each_dual_vertex the list of neighbors of each cell
  */
 template <typename Int>
 int MeshToDual(
@@ -147,7 +147,7 @@ int MeshToDual(
     const std::vector<Int> &range_of_each_cell,
     const std::vector<Int> &nodes_in_each_cell,
     const Int &n_common_nodes, const Int &index_base,
-    // output:
+    /* input ↑, output ↓ */
     std::unique_ptr<Int[], Deleter> *range_of_each_dual_vertex,
     std::unique_ptr<Int[], Deleter> *neighbors_of_each_dual_vertex) {
   Int *range, *neighbors;
