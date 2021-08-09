@@ -36,8 +36,8 @@ Mesh<Partitioner::Int> Partitioner::BuildSimpleMesh(
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
   mesh.resize(n_cells, n_nodes, n_cells * 4);
-  auto curr_node = mesh.nodes().begin();
-  auto curr_cell = mesh.range().begin();
+  Int* curr_node = &(mesh.nodes(0));
+  Int* curr_cell = &(mesh.range(0));
   *curr_cell = 0;
   for (Int j = 0; j != n_cells_y; ++j) {
     for (Int i = 0; i != n_cells_x; ++i) {
@@ -51,9 +51,6 @@ Mesh<Partitioner::Int> Partitioner::BuildSimpleMesh(
       *curr_node++ = k_node;
     }
   }
-  ++curr_cell;
-  EXPECT_EQ(curr_node, mesh.nodes().end());
-  EXPECT_EQ(curr_cell, mesh.range().end());
   return mesh;
 }
 void Partitioner::WritePartitionedMesh(
@@ -77,8 +74,8 @@ void Partitioner::WritePartitionedMesh(
     }
   }
   fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
-  auto curr_node = mesh.nodes().begin();
-  while (curr_node != mesh.nodes().end()) {
+  auto* curr_node = &(mesh.nodes(0));
+  for (int i = 0; i < mesh.CountNodes(); ++i) {
     fprintf(file, "4 %d %d %d %d\n",
             curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
     curr_node += 4;
@@ -117,7 +114,6 @@ TEST_F(Partitioner, PartMesh) {
   auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
   EXPECT_EQ(mesh.CountCells(), n_cells);
   EXPECT_EQ(mesh.CountNodes(), n_nodes);
-  EXPECT_EQ(mesh.nodes().size(), n_cells * 4);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
   for (Int j = 0; j != n_cells_y; ++j) {
@@ -158,12 +154,12 @@ TEST_F(Partitioner, PartGraphKway) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  auto cell_parts = std::vector<Int>(n_cells);
   Int n_constraints{1}, n_parts{8}, edge_cut{0};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
+  std::vector<Int> cell_parts;
   PartGraphKway(
-      n_cells, n_constraints, graph,
+      n_constraints, graph,
       cell_weights, null_vector_of_idx/* communication size */,
       null_vector_of_idx/* weight of each edge (in dual graph) */,
       n_parts, null_vector_of_real/* weight of each part */,

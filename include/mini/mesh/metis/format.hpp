@@ -27,11 +27,11 @@ class SparseMatrix {
   std::vector<Int> range_, index_/* , value_ */;
 
  public:
-  std::vector<Int> const& range() const {
-    return range_;
+  const Int& range(Int i) const {
+    return range_[i];
   }
-  std::vector<Int> const& index() const {
-    return index_;
+  const Int& index(Int i) const {
+    return index_[i];
   }
   Int CountVertices() const {
     return range_.size() - 1;
@@ -39,11 +39,11 @@ class SparseMatrix {
   Int CountEdges() const {
     return index_.size();
   }
-  std::vector<Int>& range() {
-    return range_;
+  Int& range(Int i) {
+    return range_[i];
   }
-  std::vector<Int>& index() {
-    return index_;
+  Int& index(Int i) {
+    return index_[i];
   }
   /**
    * @brief Resize the underling containers.
@@ -64,11 +64,11 @@ class Mesh : private SparseMatrix<Int> {
   Int n_nodes_;
 
  public:
-  std::vector<Int> const& range() const {
-    return this->Base::range();
+  const Int& range(Int i) const {
+    return this->Base::range(i);
   }
-  std::vector<Int> const& nodes() const {
-    return this->index();
+  const Int& nodes(Int i) const {
+    return this->index(i);
   }
   Int CountCells() const {
     return this->CountVertices();
@@ -76,11 +76,11 @@ class Mesh : private SparseMatrix<Int> {
   Int CountNodes() const {
     return n_nodes_;
   }
-  std::vector<Int>& range() {
-    return this->Base::range();
+  Int& range(Int i) {
+    return this->Base::range(i);
   }
-  std::vector<Int>& nodes() {
-    return this->index();
+  Int& nodes(Int i) {
+    return this->index(i);
   }
   /**
    * @brief Resize the underling containers.
@@ -106,44 +106,33 @@ auto deleter = [](void* p){ METIS_Free(p); };
 using Deleter = decltype(deleter);
 
 template <typename Int>
-class SparseMatrixWithDeleter {
+class SparseGraphWithDeleter {
   static_assert(std::is_integral_v<Int>, "Integral required.");
   std::unique_ptr<Int[], Deleter> range_, index_/* , value_ */;
   Int size_;
 
  public:
-  SparseMatrixWithDeleter(Int size, Int* range, Int* index)
+  SparseGraphWithDeleter(Int size, Int* range, Int* index)
       : size_(size), range_(range, deleter), index_(index, deleter) {
   }
-  Int size() const {
+  const Int& range(Int i) const {
+    return range_[i];
+  }
+  const Int& index(Int i) const {
+    return index_[i];
+  }
+  Int CountVertices() const {
     return size_;
   }
-  auto const& range() const {
-    return range_;
+  Int CountEdges() const {
+    return range_[size_];
   }
-  auto  const& index() const {
-    return index_;
+  Int& range(Int i) {
+    return range_[i];
   }
-  auto& range() {
-    return range_;
+  Int& index(Int i) {
+    return index_[i];
   }
-  auto& index() {
-    return index_;
-  }
-
-  void reset(Int *range, Int *neighbors) {
-    range_.reset(range);
-    index_.reset(neighbors);
-  }
-};
-
-template <typename Int>
-class GraphWithDeleter : public SparseMatrixWithDeleter<Int> {
- private:
-  using Base = SparseMatrixWithDeleter<Int>;
-
- public:
-  using Base::Base;
 };
 
 template <typename Int>
