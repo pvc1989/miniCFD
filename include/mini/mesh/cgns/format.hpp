@@ -159,6 +159,24 @@ class Section {
   int CountNodesByType() const {
     return CountNodesByType(type_);
   }
+  static int dim(CGNS_ENUMT(ElementType_t) type) {
+    int d;
+    switch (type) {
+    case CGNS_ENUMV(TRI_3):
+    case CGNS_ENUMV(QUAD_4):
+      d = 2; break;
+    case CGNS_ENUMV(TETRA_4):
+    case CGNS_ENUMV(HEXA_8):
+      d = 3; break;
+    default:
+      d = 0; break;
+      break;
+    }
+    return d;
+  }
+  int dim() const {
+    return dim(type_);
+  }
   const cgsize_t* GetNodeIdList() const {
     return node_id_list_.data();
   }
@@ -176,7 +194,7 @@ class Section {
     cg_section_write(file().id(), base().id(), zone_.id(), name_.c_str(), type_,
         CellIdMin(), CellIdMax(), 0, GetNodeIdList(),
         &section_id);
-    assert(section_id == section_id_);
+    assert(section_id <= section_id_);
   }
 
  public:  // Mutators:
@@ -268,7 +286,7 @@ class Zone {
  public:  // Constructors:
   Zone(Base<Real> const& base, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
-      : base_(base), zone_id_(zid), name_(name), cell_size_(n_cells),
+      : base_(base), zone_id_(zid), name_(name), n_cells_(n_cells),
         coordinates_(*this, n_nodes) {
   }
 
@@ -288,8 +306,25 @@ class Zone {
   int CountNodes() const {
     return coordinates_.CountNodes();
   }
+  /**
+   * @brief 
+   * 
+   * @return int 
+   */
+  int CountAllCells() const {
+    int total = 0;
+    for (auto& section : sections_) {
+      total += section.CountCells();
+    }
+    return total;
+  }
+  /**
+   * @brief 
+   * 
+   * @return int 
+   */
   int CountCells() const {
-    return cell_size_;
+    return n_cells_;
   }
   int CountCellsByType(CGNS_ENUMT(ElementType_t) type) const {
     int cell_size{0};
@@ -318,7 +353,7 @@ class Zone {
   void Write() const {
     int zone_id;
     auto node_size = static_cast<cgsize_t>(CountNodes());
-    cgsize_t zone_size[3] = {node_size, cell_size_, 0};
+    cgsize_t zone_size[3] = {CountNodes(), CountAllCells(), 0};
     cg_zone_write(file().id(), base().id(), name_.c_str(), zone_size,
                   CGNS_ENUMV(Unstructured), &zone_id);
     assert(zone_id == zone_id_);
@@ -444,7 +479,7 @@ class Zone {
   std::vector<Section<Real>> sections_;
   std::vector<Solution<Real>> solutions_;
   Base<Real> const& base_;
-  cgsize_t cell_size_;
+  cgsize_t n_cells_;
   int zone_id_;
 };
 
