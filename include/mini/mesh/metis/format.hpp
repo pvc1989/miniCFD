@@ -3,6 +3,7 @@
 #ifndef MINI_MESH_METIS_FORMAT_HPP_
 #define MINI_MESH_METIS_FORMAT_HPP_
 
+#include <algorithm>
 #include <type_traits>
 #include <vector>
 
@@ -63,6 +64,11 @@ class SparseMatrix {
   }
 };
 
+/**
+ * @brief The data structure for representing meshes.
+ * 
+ * @tparam Int the index type
+ */
 template <typename Int>
 class Mesh : private SparseMatrix<Int> {
   static_assert(std::is_integral_v<Int>, "Integral required.");
@@ -71,9 +77,9 @@ class Mesh : private SparseMatrix<Int> {
 
  public:
   Mesh() = default;
-  Mesh(std::vector<Int> const& range, std::vector<Int> const& index)
-      : Base(range, index) {
-    n_nodes_ = range.back();
+  Mesh(std::vector<Int> const& range, std::vector<Int> const& index, Int n)
+      : Base(range, index), n_nodes_(n) {
+    assert(n > *(std::max_element(index.begin(), index.end())));
   }
 
  public:
@@ -112,21 +118,31 @@ class Mesh : private SparseMatrix<Int> {
 };
 
 /**
- * @brief A wrapper of `METIS_Free()`.
+ * @brief The data structure for representing sparse graphs with deleter.
  * 
+ * @tparam Int the index type
  */
-auto deleter = [](void* p){ METIS_Free(p); };
-using Deleter = decltype(deleter);
-
 template <typename Int>
 class SparseGraphWithDeleter {
   static_assert(std::is_integral_v<Int>, "Integral required.");
   Int size_, *range_, *index_/* , *value_ */;
 
  public:
+  /**
+   * @brief Construct a new Sparse Graph With Deleter object.
+   * 
+   * @param size the number of vertices
+   * @param range the address of the explicitly allocated range array
+   * @param index the address of the explicitly allocated index array
+   */
   SparseGraphWithDeleter(Int size, Int* range, Int* index)
       : size_(size), range_(range), index_(index) {
   }
+  /**
+   * @brief Destroy the Sparse Graph With Deleter object
+   *
+   * Explicitly free the arrays, which are allocated by METIS. 
+   */
   ~SparseGraphWithDeleter() noexcept {
     int errors = (METIS_Free(range_) != METIS_OK)
                + (METIS_Free(index_) != METIS_OK);
@@ -150,11 +166,6 @@ class SparseGraphWithDeleter {
   Int& index(Int i) {
     return index_[i];
   }
-};
-
-template <typename Int>
-struct File {
-  SparseMatrix<Int> cells;
 };
 
 }  // namespace metis
