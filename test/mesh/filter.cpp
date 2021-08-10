@@ -89,22 +89,36 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
       null_vector_of_idx/* options */,
       &edge_cut, &cell_parts, &node_parts);
   // write the result of partitioning to cgns_mesh
-  auto& metis_to_cgns_for_nodes = filter.metis_to_cgns_for_nodes;
-  auto n_nodes_total = metis_to_cgns_for_nodes.size();
+  auto n_nodes_total = filter.metis_to_cgns_for_nodes.size();
+  auto n_cells_total = filter.metis_to_cgns_for_cells.size();
   auto& base = cgns_mesh.GetBase(1);
   for (int zid = 1; zid <= base.CountZones(); ++zid) {
     base.GetZone(zid).AddSolution("NodeData", CGNS_ENUMV(Vertex));
-    auto& solution = base.GetZone(zid).GetSolution(1);
-    auto& field = solution.fields()["NodePartition"];
-    field.resize(base.GetZone(zid).CountNodes());
+    base.GetZone(zid).AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    auto& solution1 = base.GetZone(zid).GetSolution(1);
+    auto& field1 = solution1.fields()["NodePartition"];
+    field1.resize(base.GetZone(zid).CountNodes());
+    auto& solution2 = base.GetZone(zid).GetSolution(2);
+    auto& field2 = solution2.fields()["CellPartition"];
+    field2.resize(base.GetZone(zid).CountAllCells());
+    std::printf("%d\n", field2.size());
   }
   for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
-    auto node_info = metis_to_cgns_for_nodes[i_node];
+    auto node_info = filter.metis_to_cgns_for_nodes[i_node];
     int part = node_parts[i_node];
     int zid = node_info.zone_id;
     int nid = node_info.node_id;
     auto& field = base.GetZone(zid).GetSolution(1).fields()["NodePartition"];
     field[nid-1] = part;
+  }
+  for (int i_cell = 0; i_cell < n_cells_total; ++i_cell) {
+    auto cell_info = filter.metis_to_cgns_for_cells[i_cell];
+    int part = cell_parts[i_cell];
+    int zid = cell_info.zone_id;
+    int cid = cell_info.cell_id;
+    auto& field = base.GetZone(zid).GetSolution(2).fields()["CellPartition"];
+    field.at(cid-1) = part;
+    // std::printf("%d\t%d\t%d\n", zid, cid, part);
   }
   cgns_mesh.Write(output_dir_ + "partitioned_" + file_name);
 }
