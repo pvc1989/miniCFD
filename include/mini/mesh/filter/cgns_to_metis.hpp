@@ -107,7 +107,7 @@ CgnsToMetis<Real, Int>::Filter(const CgnsMesh& cgns_mesh) {
     }
     n_nodes_in_prev_zones += zone.CountNodes();
   }
-  return MetisMesh(cell_ptr, cell_idx);
+  return MetisMesh(cell_ptr, cell_idx, metis_to_cgns_for_nodes.size());
 }
 
 }  // namespace filter
