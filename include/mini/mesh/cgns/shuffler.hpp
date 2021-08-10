@@ -136,7 +136,7 @@ class Shuffler {
             /* Shuffle Connectivity */
         std::vector<int> new_order(n_cells);
         ReorderByParts<int>(parts, new_order.data());
-        int npe = section.CountNodesByType(section.type());
+        int npe = section.CountNodesByType();
         cgsize_t* node_id_list = section.GetNodeIdList();
         ShuffleConnectivity<cgsize_t>(new_order, npe, node_id_list);
             /* Shuffle CellData */

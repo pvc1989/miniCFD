@@ -151,11 +151,19 @@ class Section {
   CGNS_ENUMT(ElementType_t) type() const {
     return type_;
   }
+  static int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
+    int npe;
+    cg_npe(type, &npe);
+    return npe;
+  }
+  int CountNodesByType() const {
+    return CountNodesByType(type_);
+  }
   const cgsize_t* GetNodeIdList() const {
     return node_id_list_.data();
   }
   const cgsize_t* GetNodeIdListByNilBasedRow(cgsize_t row) const {
-    return node_id_list_.data() + CountNodesByType(type_) * row;
+    return node_id_list_.data() + CountNodesByType() * row;
   }
   const cgsize_t* GetNodeIdListByOneBasedCellId(cgsize_t cell_id) const {
     return GetNodeIdListByNilBasedRow(cell_id - first_);
@@ -170,18 +178,13 @@ class Section {
         &section_id);
     assert(section_id == section_id_);
   }
-  static int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
-    int npe;
-    cg_npe(type, &npe);
-    return npe;
-  }
 
  public:  // Mutators:
   cgsize_t* GetNodeIdList() {
     return node_id_list_.data();
   }
   cgsize_t* GetNodeIdListByNilBasedRow(cgsize_t row) {
-    return node_id_list_.data() + CountNodesByType(type_) * row;
+    return node_id_list_.data() + CountNodesByType() * row;
   }
   cgsize_t* GetNodeIdListByOneBasedCellId(cgsize_t cell_id) {
     return GetNodeIdListByNilBasedRow(cell_id - first_);

@@ -88,7 +88,7 @@ CgnsToMetis<Real, Int>::Filter(const CgnsMesh& cgns_mesh) {
         continue;
       auto& metis_ids_in_section = cgns_to_metis_for_cells[zone_id][section_id];
       auto n_cells_in_curr_sect = section.CountCells();
-      auto n_nodes_per_cell = section.CountNodesByType(section.type());
+      auto n_nodes_per_cell = section.CountNodesByType();
       metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
                                       n_cells_in_curr_sect);
       cell_ptr.reserve(cell_ptr.size() + n_cells_in_curr_sect);
