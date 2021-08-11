@@ -5,9 +5,11 @@
 #ifndef MINI_MESH_CGNS_FORMAT_HPP_
 #define MINI_MESH_CGNS_FORMAT_HPP_
 
+#include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +33,7 @@ template <class Real> class Solution;
 template <class Real>
 class Coordinates {
  public:  // Constructors:
-  explicit Coordinates(Zone<Real> const& zone, int size)
+  explicit Coordinates(Zone<Real> const* zone, int size)
       : zone_(zone), x_(size), y_(size), z_(size), name_("GridCoordinates") {
   }
 
@@ -44,13 +46,13 @@ class Coordinates {
 
  public:  // Accessors:
   File<Real> const& file() const {
-    return zone_.file();
+    return zone_->file();
   }
   Base<Real> const& base() const {
-    return zone_.base();
+    return zone_->base();
   }
   Zone<Real> const& zone() const {
-    return zone_;
+    return *zone_;
   }
   int CountNodes() const {
     return x_.size();
@@ -92,18 +94,18 @@ class Coordinates {
     cgsize_t last = CountNodes();
     auto data_type = std::is_same_v<Real, double> ?
         CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
-    cg_coord_read(file().id(), base().id(), zone_.id(), "CoordinateX",
+    cg_coord_read(file().id(), base().id(), zone_->id(), "CoordinateX",
                   data_type, &first, &last, x_.data());
-    cg_coord_read(file().id(), base().id(), zone_.id(), "CoordinateY",
+    cg_coord_read(file().id(), base().id(), zone_->id(), "CoordinateY",
                   data_type, &first, &last, y_.data());
-    cg_coord_read(file().id(), base().id(), zone_.id(), "CoordinateZ",
+    cg_coord_read(file().id(), base().id(), zone_->id(), "CoordinateZ",
                   data_type, &first, &last, z_.data());
   }
 
  private:  // Data Members:
   std::string name_;
   std::vector<Real> x_, y_, z_;
-  Zone<Real> const& zone_;
+  Zone<Real> const* zone_{nullptr};
   int id_;
 };
 
@@ -112,8 +114,10 @@ class Coordinates {
  */
 template <class Real>
 class Section {
+  friend class Zone<Real>;
  public:  // Constructors:
-  Section(Zone<Real> const& zone, int sid,
+  Section() = default;
+  Section(Zone<Real> const* zone, int sid,
           char const* name, cgsize_t first, cgsize_t size,
           int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
       : zone_{zone},
@@ -123,21 +127,21 @@ class Section {
   }
 
  public:  // Copy Control:
-  Section(const Section&) = default;
-  Section& operator=(const Section&) = default;
+  Section(const Section&) = delete;
+  Section& operator=(const Section&) = delete;
   Section(Section&&) noexcept = default;
   Section& operator=(Section&&) noexcept = default;
   ~Section() noexcept = default;
 
  public:  // Accessors:
   File<Real> const& file() const {
-    return zone_.file();
+    return zone_->file();
   }
   Base<Real> const& base() const {
-    return zone_.base();
+    return zone_->base();
   }
   Zone<Real> const& zone() const {
-    return zone_;
+    return *zone_;
   }
   std::string const& name() const {
     return name_;
@@ -211,7 +215,7 @@ class Section {
    * Read node_id_list_ from a given `(file, base, zone)` tuple.
    */
   void Read() {
-    cg_elements_read(file().id(), base().id(), zone_.id(), section_id_,
+    cg_elements_read(file().id(), base().id(), zone_->id(), section_id_,
                      GetNodeIdList(), NULL/* int* parent_data */);
   }
 
@@ -219,7 +223,7 @@ class Section {
   std::vector<cgsize_t> node_id_list_;
   std::vector<cgsize_t> start_offset_;
   std::string name_;
-  Zone<Real> const& zone_;
+  Zone<Real> const* zone_{nullptr};
   cgsize_t first_, size_;
   int section_id_, n_boundary_cells_;
   CGNS_ENUMT(ElementType_t) type_;
@@ -231,20 +235,26 @@ using Field = std::vector<T>;
 template <class Real>
 class Solution {
  public:  // Constructors:
-  Solution(Zone<Real> const& zone, int sid, char const* name,
+  Solution(Zone<Real> const* zone, int sid, char const* name,
            CGNS_ENUMT(GridLocation_t) location)
       : zone_(zone), sol_id_(sid), name_(name), location_(location) {
   }
 
+  Solution(const Solution&) = delete;
+  Solution& operator=(const Solution&) = delete;
+  Solution(Solution&) noexcept = default;
+  Solution& operator=(Solution&&) noexcept = default;
+  ~Solution() noexcept = default;
+
  public:  // Accessors:
   File<Real> const& file() const {
-    return zone_.file();
+    return zone_->file();
   }
   Base<Real> const& base() const {
-    return zone_.base();
+    return zone_->base();
   }
   Zone<Real> const& zone() const {
-    return zone_;
+    return *zone_;
   }
   int id() const {
     return sol_id_;
@@ -257,12 +267,12 @@ class Solution {
   }
   void Write() const {
     int sol_id;
-    cg_sol_write(file().id(), base().id(), zone_.id(),
+    cg_sol_write(file().id(), base().id(), zone_->id(),
                  name_.c_str(), location_, &sol_id);
     assert(sol_id == sol_id_);
     for (auto& [field_name, field] : fields_) {
       int field_id;
-      cg_field_write(file().id(), base().id(), zone_.id(), sol_id,
+      cg_field_write(file().id(), base().id(), zone_->id(), sol_id,
                      CGNS_ENUMV(RealDouble),
                      field_name.c_str(), field.data(), &field_id);
     }
@@ -276,7 +286,7 @@ class Solution {
  private:
   std::map<std::string, Field<Real>> fields_;
   std::string name_;
-  Zone<Real> const& zone_;
+  Zone<Real> const* zone_{nullptr};
   CGNS_ENUMT(GridLocation_t) location_;
   int sol_id_;
 };
@@ -284,18 +294,33 @@ class Solution {
 template <class Real>
 class Zone {
  public:  // Constructors:
-  Zone(Base<Real> const& base, int zid, char const* name,
+  /**
+   * @brief Construct a new Zone object
+   * 
+   * @param base the reference to the parent
+   * @param zid the id of this zone
+   * @param name the name of this zone
+   * @param n_cells the number of highest-dim cells in this zone
+   * @param n_nodes the number of nodes in this zone
+   */
+  Zone(Base<Real> const* base, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
       : base_(base), zone_id_(zid), name_(name), n_cells_(n_cells),
         coordinates_(*this, n_nodes) {
   }
 
+  Zone(const Zone&) = delete;
+  Zone& operator=(const Zone&) = delete;
+  Zone(Zone&&) noexcept = default;
+  Zone& operator=(Zone&&) noexcept = default;
+  ~Zone() noexcept = default;
+
  public:  // Accessors:
   File<Real> const& file() const {
-    return base_.file();
+    return base_->file();
   }
   Base<Real> const& base() const {
-    return base_;
+    return *base_;
   }
   int id() const {
     return zone_id_;
@@ -314,7 +339,7 @@ class Zone {
   int CountAllCells() const {
     int total = 0;
     for (auto& section : sections_) {
-      total += section.CountCells();
+      total += section->CountCells();
     }
     return total;
   }
@@ -329,26 +354,26 @@ class Zone {
   int CountCellsByType(CGNS_ENUMT(ElementType_t) type) const {
     int cell_size{0};
     for (auto& section : sections_) {
-      if (section.type == type) {
-        cell_size += section.CountCells();
+      if (section->type_ == type) {
+        cell_size += section->CountCells();
       }
     }
     return cell_size;
   }
   int CountSections() const {
-    return sections_.size();
+    return sections_->size();
   }
   int CountSolutions() const {
-    return solutions_.size();
+    return solutions_->size();
   }
   const Coordinates<Real>& GetCoordinates() const {
     return coordinates_;
   }
   const Section<Real>& GetSection(int id) const {
-    return sections_.at(id-1);
+    return *(sections_->at(id-1));
   }
   const Solution<Real>& GetSolution(int id) const {
-    return solutions_.at(id-1);
+    return *(solutions_.at(id-1));
   }
   void Write() const {
     int zone_id;
@@ -359,10 +384,10 @@ class Zone {
     assert(zone_id == zone_id_);
     coordinates_.Write();
     for (auto& section : sections_) {
-      section.Write();
+      section->Write();
     }
     for (auto& solution : solutions_) {
-      solution.Write();
+      solution->Write();
     }
   }
   /**
@@ -386,10 +411,10 @@ class Zone {
     return coordinates_;
   }
   Section<Real>& GetSection(int id) {
-    return sections_.at(id-1);
+    return *(sections_.at(id-1));
   }
   Solution<Real>& GetSolution(int id) {
-    return solutions_.at(id-1);
+    return *(solutions_.at(id-1));
   }
   void ReadCoordinates() {
     coordinates_.Read();
@@ -406,52 +431,55 @@ class Zone {
       cg_section_read(file().id(), base().id(), zone_id_, section_id,
                       section_name, &cell_type, &first, &last,
                       &n_boundary_cells, &parent_flag);
-      auto& section = sections_.emplace_back(*this,
+      auto& section = sections_.emplace_back(this,
           section_id, section_name, first, /* size = */last - first + 1,
           n_boundary_cells, cell_type);
-      section.Read();
+      section->Read();
     }
+    SortSectionsByDim();
   }
+  /*
   void ReadSectionsWithDim(int cell_dim) {
     int n_sections;
-    cg_nsections(file().id(), base_.id(), zone_id_, &n_sections);
+    cg_nsections(file().id(), base_->id(), zone_id_, &n_sections);
     cgsize_t range_min{1};
     int new_section_id{1};
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       char section_name[33]; CGNS_ENUMT(ElementType_t) cell_type;
       cgsize_t first, last; int n_boundary_cells, parent_flag;
-      cg_section_read(file().id(), base_.id(), zone_id_,
+      cg_section_read(file().id(), base_->id(), zone_id_,
           section_id, section_name,
           &cell_type, &first, &last, &n_boundary_cells, &parent_flag);
       if (!CheckTypeDim(cell_type, cell_dim))
         continue;
       int n_cells = last - first + 1; cgsize_t node_id_list_size;
-      cg_ElementDataSize(file().id(), base_.id(), zone_id_, section_id,
+      cg_ElementDataSize(file().id(), base_->id(), zone_id_, section_id,
                          &node_id_list_size);
-      auto& section = sections_.emplace_back(*this,
+      auto& section = sections_.emplace_back(this,
           new_section_id++, section_name, range_min, n_cells,
           n_boundary_cells, cell_type);
       section.Read();
       range_min += n_cells;
     }
   }
+  */
   void ReadSolutions() {
     int n_solutions;
-    cg_nsols(file().id(), base_.id(), zone_id_, &n_solutions);
+    cg_nsols(file().id(), base_->id(), zone_id_, &n_solutions);
     solutions_.reserve(n_solutions);
     for (int sol_id = 1; sol_id <= n_solutions; ++sol_id) {
       char sol_name[33];
       CGNS_ENUMT(GridLocation_t) location;
-      cg_sol_info(file().id(), base_.id(), zone_id_,
+      cg_sol_info(file().id(), base_->id(), zone_id_,
           sol_id, sol_name, &location);
-      auto& solution = solutions_.emplace_back(*this,
+      auto& solution = solutions_.emplace_back(this,
           sol_id, sol_name, location);
       int n_fields;
-      cg_nfields(file().id(), base_.id(), zone_id_, sol_id, &n_fields);
+      cg_nfields(file().id(), base_->id(), zone_id_, sol_id, &n_fields);
       for (int field_id = 1; field_id <= n_fields; ++field_id) {
         CGNS_ENUMT(DataType_t) datatype;
         char field_name[33];
-        cg_field_info(file().id(), base_.id(), zone_id_, sol_id,
+        cg_field_info(file().id(), base_->id(), zone_id_, sol_id,
                       field_id, &datatype, field_name);
         int first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
@@ -462,40 +490,75 @@ class Zone {
           assert(false);
         }
         auto name = std::string(field_name);
-        solution.fields().emplace(name, Field<Real>(last));
-        cg_field_read(file().id(), base_.id(), zone_id_, sol_id, field_name,
-                      datatype, &first, &last, solution.fields()[name].data());
+        solution->fields().emplace(name, Field<Real>(last));
+        cg_field_read(file().id(), base_->id(), zone_id_, sol_id, field_name,
+                      datatype, &first, &last, solution->fields()[name].data());
       }
     }
   }
   void AddSolution(char const* sol_name, CGNS_ENUMT(GridLocation_t) location) {
     int sol_id = solutions_.size() + 1;
-    solutions_.emplace_back(*this, sol_id, sol_name, location);
+    solutions_.emplace_back(this, sol_id, sol_name, location);
   }
 
  private:
   std::string name_;
-  Coordinates<Real>coordinates_;
-  std::vector<Section<Real>> sections_;
-  std::vector<Solution<Real>> solutions_;
-  Base<Real> const& base_;
+  Coordinates<Real> coordinates_;
+  std::vector<std::unique_ptr<Section<Real>>> sections_;
+  std::vector<std::unique_ptr<Solution<Real>>> solutions_;
+  Base<Real> const* base_{nullptr};
   cgsize_t n_cells_;
   int zone_id_;
+
+  void SortSectionsByDim() {
+    int n = sections_.size();
+    auto dim_first = std::vector<std::pair<int, int>>();
+    for (auto &s : sections_) {
+      dim_first.emplace_back(s->dim(), s->CellIdMin());
+    }
+    auto order = std::vector<int>(n);
+    std::iota(order.begin(), order.end(), 0);
+    auto cmp = [&dim_first](int lid, int rid) {
+      return dim_first[lid].first > dim_first[rid].first ||
+          dim_first[lid].first == dim_first[rid].first &&
+          dim_first[lid].second < dim_first[rid].second;
+    };
+    sort(order.begin(), order.end(), cmp);
+    auto sorted_sections = std::vector<std::unique_ptr<Section<Real>>>(n);
+    for (int i = 0; i < n; ++i) {
+      std::swap(sorted_sections[order[i]], sections_[i]);
+    }
+    std::swap(sorted_sections, sections_);
+    int n_cells = 1;
+    for (int sect_id = 1; sect_id <= n; ++sect_id) {
+      auto& sect = *sections_[sect_id-1];
+      sect.section_id_ = sect_id;
+      sect.first_ = n_cells;
+      n_cells += sect.CountCells();
+    }
+    assert(n_cells - 1 == CountAllCells());
+  }
 };
 
 template <class Real>
 class Base {
  public:  // Constructors:
   Base() = default;
-  Base(File<Real> const& file, int bid, char const* name,
+  Base(File<Real> const* file, int bid, char const* name,
        int cell_dim, int phys_dim)
       : file_(file), base_id_(bid), name_(name),
         cell_dim_(cell_dim), phys_dim_(phys_dim) {
   }
 
+  Base(const Base&) = delete;
+  Base& operator=(const Base&) = delete;
+  Base(Base&) noexcept = default;
+  Base& operator=(Base&&) noexcept = default;
+  ~Base() noexcept = default;
+
  public:  // Accessors:
   File<Real> const& file() const {
-    return file_;
+    return *file_;
   }
   int id() const {
     return base_id_;
@@ -513,20 +576,20 @@ class Base {
     return zones_.size();
   }
   const Zone<Real>& GetZone(int id) const {
-    return zones_.at(id-1);
+    return *(zones_.at(id-1));
   }
   void Write() const {
     int base_id;
     cg_base_write(file_.id(), name_.c_str(), cell_dim_, phys_dim_, &base_id);
     assert(base_id == base_id_);
     for (auto& zone : zones_) {
-      zone.Write();
+      zone->Write();
     }
   }
 
  public:  // Mutators:
   Zone<Real>& GetZone(int id) {
-    return zones_.at(id-1);
+    return *(zones_.at(id-1));
   }
   void ReadZones() {
     int n_zones;
@@ -536,11 +599,11 @@ class Base {
       char zone_name[33];
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), base_id_, zone_id, zone_name, zone_size[0]);
-      auto& zone = zones_.emplace_back(*this, zone_id, zone_name,
+      auto& zone = zones_.emplace_back(this, zone_id, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]);
-      zone.ReadCoordinates();
-      zone.ReadAllSections();
-      zone.ReadSolutions();
+      zone->ReadCoordinates();
+      zone->ReadAllSections();
+      zone->ReadSolutions();
     }
   }
   void ReadNodeIdList(const int& file_id) {
@@ -551,16 +614,16 @@ class Base {
       char zone_name[33];
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), base_id_, zone_id, zone_name, zone_size[0]);
-      auto& zone = zones_.emplace_back(*this, zone_id, zone_name,
+      auto& zone = zones_.emplace_back(this, zone_id, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]);
-      zone.ReadSectionsWithDim(cell_dim_);
+      zone->ReadSectionsWithDim(cell_dim_);
     }
   }
 
  private:
-  std::vector<Zone<Real>> zones_;
+  std::vector<std::unique_ptr<Zone<Real>>> zones_;
   std::string name_;
-  File<Real> const& file_;
+  File<Real> const* file_{nullptr};
   int base_id_, cell_dim_, phys_dim_;
 };
 
@@ -577,6 +640,12 @@ class File {
     name_ += name;
   }
 
+  File(const File&) = delete;
+  File& operator=(const File&) = delete;
+  File(File&) noexcept = default;
+  File& operator=(File&&) noexcept = default;
+  ~File() noexcept = default;
+
  public:  // Accessors:
   int id() const {
     return file_id_;
@@ -588,12 +657,12 @@ class File {
     return bases_.size();
   }
   Base<Real> const& GetBase(int id) const {
-    return bases_.at(id-1);
+    return *(bases_.at(id-1));
   }
 
  public:  // Mutators:
   Base<Real>& GetBase(int id) {
-    return bases_.at(id-1);
+    return *(bases_.at(id-1));
   }
   void ReadBases() {
     if (cg_open(name_.c_str(), CG_MODE_READ, &file_id_)) {
@@ -607,9 +676,9 @@ class File {
       char base_name[33];
       int cell_dim{-1}, phys_dim{-1};
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
-      auto& base = bases_.emplace_back(*this,
+      auto& base = bases_.emplace_back(this,
           base_id, base_name, cell_dim, phys_dim);
-      base.ReadZones();
+      base->ReadZones();
     }
     cg_close(file_id_);
   }
@@ -625,9 +694,9 @@ class File {
       char base_name[33];
       int cell_dim, phys_dim;
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
-      auto& base = bases_.emplace_back(*this,
+      auto& base = bases_.emplace_back(this,
           base_id, base_name, cell_dim, phys_dim);
-      base.ReadNodeIdList(file_id_);
+      base->ReadNodeIdList(file_id_);
     }
     cg_close(file_id_);
   }
@@ -637,13 +706,13 @@ class File {
       cg_error_exit();
     }
     for (auto& base : bases_) {
-      base.Write();
+      base->Write();
     }
     cg_close(file_id_);
   }
 
  private:
-  std::vector<Base<Real>> bases_;
+  std::vector<std::unique_ptr<Base<Real>>> bases_;
   std::string name_;
   int file_id_;
 };
