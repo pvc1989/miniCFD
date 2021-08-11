@@ -13,21 +13,19 @@
 #include "cgnslib.h"
 
 #include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/cgns/converter.hpp"
+#include "mini/mesh/filter/cgns_to_metis.hpp"
 
 namespace mini {
 namespace mesh {
-namespace metis {
 
-using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
 template <typename T>
 std::vector<T> GetNodePartsByConnectivity(
-    const CSRM& cell_csrm, const std::vector<T>& cell_parts,
+    const metis::Mesh<int>& mesh, const std::vector<T>& cell_parts,
     T n_parts, int n_nodes) {
   auto node_parts = std::vector<T>(n_nodes, n_parts);
-  auto node_pointer = cell_csrm.index.data();
-  int n_cells = cell_csrm.range.size() - 1;
-  auto curr_range_pointer = cell_csrm.range.data();
+  auto node_pointer = &(mesh.index(0));
+  int n_cells = mesh.CountCells();
+  auto curr_range_pointer = &(mesh.nodes(0));
   for (int i = 0; i < n_cells; ++i) {
     auto part_value = cell_parts[i];
     auto head = *curr_range_pointer++;
@@ -97,9 +95,8 @@ template <typename T, class Real>
 class Shuffler {
  public:
   using CgnsFile = mini::mesh::cgns::File<Real>;
-  using MetisMesh = metis::File<int>;
-  using CSRM = mini::mesh::metis::SparseMatrix<T>;
-  using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
+  using MetisMesh = metis::Mesh<int>;
+  using FilterType = mini::mesh::filter::CgnsToMetis<double, int>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
@@ -110,14 +107,14 @@ class Shuffler {
   void SetCellParts(std::vector<T>* cell_parts) {
     cell_parts_ = cell_parts;
   }
-  void SetMetisMesh(CSRM* cell_csrm) {
-    cell_csrm_ = cell_csrm;
+  void SetMetisMesh(MetisMesh* mesh) {
+    mesh_ = mesh;
   }
-  void SetConverter(ConverterType* converter) {
-    converter_ = converter;
+  void SetFilter(FilterType* filter) {
+    filter_ = filter;
   }
   void ShuffleMesh(CgnsFile* mesh) {
-    auto& zone_to_sections = converter_->cgns_to_metis_for_cells;
+    auto& zone_to_sections = filter_->cgns_to_metis_for_cells;
     auto& base = mesh->GetBase(1); int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       auto& zone = base.GetZone(zone_id);
@@ -125,6 +122,8 @@ class Shuffler {
       int n_sections = zone.CountSections();
       for (int section_id = 1; section_id <= n_sections; ++section_id) {
         auto& section = zone.GetSection(section_id);
+        if (section.dim() != base.GetCellDim())
+          continue;
         auto& cells_local_to_global = section_to_cells.at(section_id);
         int n_cells = section.CountCells();
         std::vector<int> parts(n_cells);
@@ -155,11 +154,10 @@ class Shuffler {
  private:
   int n_parts_;
   std::vector<T>* cell_parts_;
-  CSRM* cell_csrm_;
-  ConverterType* converter_;
+  MetisMesh* mesh_;
+  FilterType* filter_;
 };
 
-}  // namespace metis
 }  // namespace mesh
 }  // namespace mini
 
