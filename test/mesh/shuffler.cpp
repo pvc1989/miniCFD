@@ -11,58 +11,34 @@
 #include "metis.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/cgns/converter.hpp"
+#include "mini/mesh/filter/cgns_to_metis.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/mesh/metis/format.hpp"
+#include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
 namespace mesh {
-namespace metis {
 
 class ShufflerTest : public ::testing::Test {
  protected:
   using CgnsFile = mini::mesh::cgns::File<double>;
-  using MetisMesh = metis::File<int>;
+  using MetisMesh = metis::Mesh<idx_t>;
   using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
-  using ConverterType = mini::mesh::cgns::Converter<CgnsFile, MetisMesh>;
+  using FilterType = mini::mesh::filter::CgnsToMetis<double, idx_t>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
-  static void PartitionMesh(
-      idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
-      std::vector<idx_t>* cell_parts);
   static void SetCellPartData(
-      const ConverterType& converter, const std::vector<idx_t>& cell_parts,
-      CgnsFile* cgns_mesh);};
-void ShufflerTest::PartitionMesh(
-    idx_t n_cells, idx_t n_nodes, idx_t n_parts, const CSRM& cell_csrm,
-    std::vector<idx_t>* cell_parts) {
-  idx_t n_common_nodes{2}, index_base{0};
-  idx_t *range_of_each_cell, *neighbors_of_each_cell;
-  auto result = METIS_MeshToDual(
-    &n_cells, &n_nodes,
-    const_cast<idx_t*>(cell_csrm.range.data()),
-    const_cast<idx_t*>(cell_csrm.index.data()),
-    &n_common_nodes, &index_base,
-    &range_of_each_cell, &neighbors_of_each_cell);
-  EXPECT_EQ(result, METIS_OK);
-  idx_t n_constraints{1}, edge_cut{0};
-  result = METIS_PartGraphKway(
-    &n_cells, &n_constraints, range_of_each_cell, neighbors_of_each_cell,
-    NULL/* computational cost */,
-    NULL/* communication size */, NULL/* weight of each edge (in dual graph) */,
-    &n_parts, NULL/* weight of each part */, NULL/* unbalance tolerance */,
-    NULL/* options */, &edge_cut, cell_parts->data());
-  EXPECT_EQ(result, METIS_OK);
-  METIS_Free(range_of_each_cell);
-  METIS_Free(neighbors_of_each_cell);
-}
+      const FilterType& filter, const std::vector<idx_t>& cell_parts,
+      CgnsFile* cgns_mesh);
+};
 void ShufflerTest::SetCellPartData(
-    const ConverterType& converter, const std::vector<idx_t>& cell_parts,
+    const FilterType& filter, const std::vector<idx_t>& cell_parts,
     CgnsFile* cgns_mesh) {
-  auto& zone_to_sections = converter.cgns_to_metis_for_cells;
+  auto& zone_to_sections = filter.cgns_to_metis_for_cells;
   auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
     auto& zone = base.GetZone(zone_id);
@@ -72,16 +48,18 @@ void ShufflerTest::SetCellPartData(
     zone.AddSolution(solution_name, CGNS_ENUMV(CellCenter));
     auto& solution = zone.GetSolution(solution_id);
     std::string field_name("CellPart");
-    solution.fields().emplace(field_name, FieldType(zone.CountCells()));
+    solution.fields().emplace(field_name, FieldType(zone.CountAllCells()));
     auto& field = solution.fields().at(field_name);
     int n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       auto& section = zone.GetSection(section_id);
+      if (section.dim() != base.GetCellDim())
+        continue;
       auto& cells_local_to_global = section_to_cells.at(section_id);
       int n_cells = section.CountCells();
       std::vector<int> parts(n_cells);
       for (int local_id = 0; local_id < n_cells; ++local_id) {
-        parts[local_id] = cell_parts[cells_local_to_global[local_id]];
+        parts.at(local_id) = cell_parts[cells_local_to_global.at(local_id)];
       }
       int range_min{section.CellIdMin()-1};
       int range_max{section.CellIdMax()-1};
@@ -124,7 +102,7 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsFile) {
-  ConverterType converter;
+  FilterType filter;
   using MeshDataType = double;
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
@@ -132,43 +110,51 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   auto new_file_name = current_binary_dir_ + "/new_ugrid_2d.cgns";
   auto cgns_mesh = CgnsFile(old_file_name);
   cgns_mesh.ReadBases();
-  auto metis_mesh = converter.ConvertToMetisMesh(cgns_mesh);
-  auto& cell_csrm = metis_mesh.cells;
-  idx_t n_parts{8};
-  int n_cells = converter.metis_to_cgns_for_cells.size();
-  int n_nodes = converter.metis_to_cgns_for_nodes.size();
-  std::vector<idx_t> cell_parts;
-  cell_parts.resize(n_cells);
-  PartitionMesh(n_cells, n_nodes, n_parts, cell_csrm, &cell_parts);
+  auto metis_mesh = filter.Filter(cgns_mesh);
+  int n_cells = metis_mesh.CountCells();
+  int n_nodes = metis_mesh.CountNodes();
+  int n_parts{8}, n_common_nodes{2}, edge_cut{0};
+  std::vector<idx_t> null_vector_of_idx;
+  std::vector<float> null_vector_of_real;
+  std::vector<idx_t> cell_parts, node_parts;
+  PartMesh(metis_mesh,
+      null_vector_of_idx/* computational cost */,
+      null_vector_of_idx/* communication size */,
+      n_common_nodes, n_parts,
+      null_vector_of_real/* weight of each part */,
+      null_vector_of_idx/* options */,
+      &edge_cut, &cell_parts, &node_parts);
   shuffler.SetNumParts(n_parts);
   shuffler.SetCellParts(&cell_parts);
-  shuffler.SetMetisMesh(&cell_csrm);
-  shuffler.SetConverter(&converter);
-  SetCellPartData(converter, cell_parts, &cgns_mesh);
+  shuffler.SetMetisMesh(&metis_mesh);
+  shuffler.SetFilter(&filter);
+  std::printf("%d %d \n", n_nodes, n_cells);
+  SetCellPartData(filter, cell_parts, &cgns_mesh);
+  std::printf("%d %d \n", n_nodes, n_cells);
   shuffler.ShuffleMesh(&cgns_mesh);
+  std::printf("%d %d \n", n_nodes, n_cells);
   cgns_mesh.Write(new_file_name);
 }
 
-class Partition : public ::testing::Test {
- protected:
-  using CSRM = mini::mesh::metis::SparseMatrix<int>;
-  CSRM cell_csrm;
-};
-TEST_F(Partition, GetNodePartsByConnectivity) {
-  std::vector<int> cell_parts{2, 0, 0, 1};
-  cell_csrm.range = {0, 4, 8, 11, 14};
-  cell_csrm.index = {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7};
-  int n_nodes = 10;
-  int n_parts = 3;
-  auto node_parts = GetNodePartsByConnectivity<int>(
-      cell_csrm, cell_parts, n_parts, n_nodes);
-  std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
-  for (int i = 0; i < n_nodes; ++i) {
-    EXPECT_EQ(node_parts[i], expected_node_parts[i]);
-  }
-}
+// class Partition : public ::testing::Test {
+//  protected:
+//   using CSRM = mini::mesh::metis::SparseMatrix<int>;
+//   CSRM cell_csrm;
+// };
+// TEST_F(Partition, GetNodePartsByConnectivity) {
+//   std::vector<int> cell_parts{2, 0, 0, 1};
+//   cell_csrm.range = {0, 4, 8, 11, 14};
+//   cell_csrm.index = {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7};
+//   int n_nodes = 10;
+//   int n_parts = 3;
+//   auto node_parts = GetNodePartsByConnectivity<int>(
+//       cell_csrm, cell_parts, n_parts, n_nodes);
+//   std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
+//   for (int i = 0; i < n_nodes; ++i) {
+//     EXPECT_EQ(node_parts[i], expected_node_parts[i]);
+//   }
+// }
 
-}  // namespace metis
 }  // namespace mesh
 }  // namespace mini
 
