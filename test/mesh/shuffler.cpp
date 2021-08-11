@@ -107,7 +107,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto new_file_name = current_binary_dir_ + "/new_ugrid_2d.cgns";
+  auto new_file_name = current_binary_dir_ + "/shuffled_ugrid_2d.cgns";
   auto cgns_mesh = CgnsFile(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = filter.Filter(cgns_mesh);

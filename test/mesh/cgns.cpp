@@ -137,18 +137,18 @@ TEST_F(TestTypes, ReadSections) {
   auto file = myFile(abs_path_);
   file.ReadBases();
   {
-    auto& section = file.GetBase(1).GetZone(1).GetSection(6);
-    EXPECT_EQ(section.CellIdMin(), 51);
-    EXPECT_EQ(section.CellIdMax(), 723);
+    auto& section = file.GetBase(1).GetZone(1).GetSection(1);
+    EXPECT_EQ(section.CellIdMin(), 1);
+    EXPECT_EQ(section.CellIdMax(), 673);
     EXPECT_EQ(section.name(), "3_S_5_10");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(51);
+    array = section.GetNodeIdListByOneBasedCellId(1);
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 43);
     EXPECT_EQ(array[1], 155);
     EXPECT_EQ(array[2], 154);
-    array = section.GetNodeIdListByOneBasedCellId(723);
+    array = section.GetNodeIdListByOneBasedCellId(673);
     auto row = section.CountCells() - 1;
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 102);
@@ -156,18 +156,18 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[2], 98);
   }
   {
-    auto& section = file.GetBase(1).GetZone(2).GetSection(11);
-    EXPECT_EQ(section.CellIdMin(), 97);
-    EXPECT_EQ(section.CellIdMax(), 367);
+    auto& section = file.GetBase(1).GetZone(2).GetSection(1);
+    EXPECT_EQ(section.CellIdMin(), 1);
+    EXPECT_EQ(section.CellIdMax(), 271);
     EXPECT_EQ(section.name(), "3_S_5_11");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(97);
+    array = section.GetNodeIdListByOneBasedCellId(1);
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 347);
     EXPECT_EQ(array[1], 510);
     EXPECT_EQ(array[2], 349);
-    array = section.GetNodeIdListByOneBasedCellId(367);
+    array = section.GetNodeIdListByOneBasedCellId(271);
     auto row = section.CountCells() - 1;
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 367);
@@ -175,19 +175,19 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[2], 492);
   }
   {
-    auto& section = file.GetBase(1).GetZone(2).GetSection(12);
-    EXPECT_EQ(section.CellIdMin(), 368);
-    EXPECT_EQ(section.CellIdMax(), 767);
+    auto& section = file.GetBase(1).GetZone(2).GetSection(2);
+    EXPECT_EQ(section.CellIdMin(), 272);
+    EXPECT_EQ(section.CellIdMax(), 671);
     EXPECT_EQ(section.name(), "4_S_9_12");
     EXPECT_EQ(section.type(), CGNS_ENUMV(QUAD_4));
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(368);
+    array = section.GetNodeIdListByOneBasedCellId(272);
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
     EXPECT_EQ(array[0], 4);
     EXPECT_EQ(array[1], 456);
     EXPECT_EQ(array[2], 416);
     EXPECT_EQ(array[3], 543);
-    array = section.GetNodeIdListByOneBasedCellId(767);
+    array = section.GetNodeIdListByOneBasedCellId(671);
     auto row = section.CountCells() - 1;
     EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
     EXPECT_EQ(array[0], 467);
