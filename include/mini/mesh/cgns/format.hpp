@@ -76,11 +76,11 @@ class Coordinates {
     int coord_id;
     auto data_type = std::is_same_v<Real, double> ?
         CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
-    cg_coord_write(file().id(), base().id(), zone_.id(),
+    cg_coord_write(file().id(), base().id(), zone_->id(),
                    data_type, "CoordinateX", x_.data(), &coord_id);
-    cg_coord_write(file().id(), base().id(), zone_.id(),
+    cg_coord_write(file().id(), base().id(), zone_->id(),
                    data_type, "CoordinateY", y_.data(), &coord_id);
-    cg_coord_write(file().id(), base().id(), zone_.id(),
+    cg_coord_write(file().id(), base().id(), zone_->id(),
                    data_type, "CoordinateZ", z_.data(), &coord_id);
   }
 
@@ -166,15 +166,19 @@ class Section {
   static int dim(CGNS_ENUMT(ElementType_t) type) {
     int d;
     switch (type) {
+    case CGNS_ENUMV(NODE):
+      d = 1; break;
+    case CGNS_ENUMV(BAR_2):
+      d = 1; break;
     case CGNS_ENUMV(TRI_3):
     case CGNS_ENUMV(QUAD_4):
       d = 2; break;
     case CGNS_ENUMV(TETRA_4):
+    case CGNS_ENUMV(PENTA_6):
     case CGNS_ENUMV(HEXA_8):
       d = 3; break;
     default:
-      d = 0; break;
-      break;
+      d = -1; break;
     }
     return d;
   }
@@ -195,7 +199,7 @@ class Section {
    */
   void Write() const {
     int section_id;
-    cg_section_write(file().id(), base().id(), zone_.id(), name_.c_str(), type_,
+    cg_section_write(file().id(), base().id(), zone_->id(), name_.c_str(), type_,
         CellIdMin(), CellIdMax(), 0, GetNodeIdList(),
         &section_id);
     assert(section_id <= section_id_);
@@ -240,9 +244,10 @@ class Solution {
       : zone_(zone), sol_id_(sid), name_(name), location_(location) {
   }
 
+ public:  // Copy Control:
   Solution(const Solution&) = delete;
   Solution& operator=(const Solution&) = delete;
-  Solution(Solution&) noexcept = default;
+  Solution(Solution&&) noexcept = default;
   Solution& operator=(Solution&&) noexcept = default;
   ~Solution() noexcept = default;
 
@@ -306,9 +311,10 @@ class Zone {
   Zone(Base<Real> const* base, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
       : base_(base), zone_id_(zid), name_(name), n_cells_(n_cells),
-        coordinates_(*this, n_nodes) {
+        coordinates_(this, n_nodes) {
   }
 
+ public:  // Copy Control:
   Zone(const Zone&) = delete;
   Zone& operator=(const Zone&) = delete;
   Zone(Zone&&) noexcept = default;
@@ -361,16 +367,16 @@ class Zone {
     return cell_size;
   }
   int CountSections() const {
-    return sections_->size();
+    return sections_.size();
   }
   int CountSolutions() const {
-    return solutions_->size();
+    return solutions_.size();
   }
   const Coordinates<Real>& GetCoordinates() const {
     return coordinates_;
   }
   const Section<Real>& GetSection(int id) const {
-    return *(sections_->at(id-1));
+    return *(sections_.at(id-1));
   }
   const Solution<Real>& GetSolution(int id) const {
     return *(solutions_.at(id-1));
@@ -431,38 +437,13 @@ class Zone {
       cg_section_read(file().id(), base().id(), zone_id_, section_id,
                       section_name, &cell_type, &first, &last,
                       &n_boundary_cells, &parent_flag);
-      auto& section = sections_.emplace_back(this,
-          section_id, section_name, first, /* size = */last - first + 1,
-          n_boundary_cells, cell_type);
+      auto& section = sections_.emplace_back(std::make_unique<Section<Real>>(
+          this, section_id, section_name, first, /* size = */last - first + 1,
+          n_boundary_cells, cell_type));
       section->Read();
     }
     SortSectionsByDim();
   }
-  /*
-  void ReadSectionsWithDim(int cell_dim) {
-    int n_sections;
-    cg_nsections(file().id(), base_->id(), zone_id_, &n_sections);
-    cgsize_t range_min{1};
-    int new_section_id{1};
-    for (int section_id = 1; section_id <= n_sections; ++section_id) {
-      char section_name[33]; CGNS_ENUMT(ElementType_t) cell_type;
-      cgsize_t first, last; int n_boundary_cells, parent_flag;
-      cg_section_read(file().id(), base_->id(), zone_id_,
-          section_id, section_name,
-          &cell_type, &first, &last, &n_boundary_cells, &parent_flag);
-      if (!CheckTypeDim(cell_type, cell_dim))
-        continue;
-      int n_cells = last - first + 1; cgsize_t node_id_list_size;
-      cg_ElementDataSize(file().id(), base_->id(), zone_id_, section_id,
-                         &node_id_list_size);
-      auto& section = sections_.emplace_back(this,
-          new_section_id++, section_name, range_min, n_cells,
-          n_boundary_cells, cell_type);
-      section.Read();
-      range_min += n_cells;
-    }
-  }
-  */
   void ReadSolutions() {
     int n_solutions;
     cg_nsols(file().id(), base_->id(), zone_id_, &n_solutions);
@@ -472,8 +453,8 @@ class Zone {
       CGNS_ENUMT(GridLocation_t) location;
       cg_sol_info(file().id(), base_->id(), zone_id_,
           sol_id, sol_name, &location);
-      auto& solution = solutions_.emplace_back(this,
-          sol_id, sol_name, location);
+      auto& solution = solutions_.emplace_back(std::make_unique<Solution<Real>>(
+          this, sol_id, sol_name, location));
       int n_fields;
       cg_nfields(file().id(), base_->id(), zone_id_, sol_id, &n_fields);
       for (int field_id = 1; field_id <= n_fields; ++field_id) {
@@ -498,7 +479,8 @@ class Zone {
   }
   void AddSolution(char const* sol_name, CGNS_ENUMT(GridLocation_t) location) {
     int sol_id = solutions_.size() + 1;
-    solutions_.emplace_back(this, sol_id, sol_name, location);
+    solutions_.emplace_back(std::make_unique<Solution<Real>>(
+        this, sol_id, sol_name, location));
   }
 
  private:
@@ -512,21 +494,21 @@ class Zone {
 
   void SortSectionsByDim() {
     int n = sections_.size();
-    auto dim_first = std::vector<std::pair<int, int>>();
-    for (auto &s : sections_) {
-      dim_first.emplace_back(s->dim(), s->CellIdMin());
+    auto dim_then_oldid = std::vector<std::pair<int, int>>();
+    for (auto &sect : sections_) {
+      dim_then_oldid.emplace_back(sect->dim(), sect->id());
     }
     auto order = std::vector<int>(n);
     std::iota(order.begin(), order.end(), 0);
-    auto cmp = [&dim_first](int lid, int rid) {
-      return dim_first[lid].first > dim_first[rid].first ||
-          dim_first[lid].first == dim_first[rid].first &&
-          dim_first[lid].second < dim_first[rid].second;
+    auto cmp = [&dim_then_oldid](int lid, int rid) {
+      return dim_then_oldid[lid].first > dim_then_oldid[rid].first ||
+          dim_then_oldid[lid].first == dim_then_oldid[rid].first &&
+          dim_then_oldid[lid].second < dim_then_oldid[rid].second;
     };
     sort(order.begin(), order.end(), cmp);
     auto sorted_sections = std::vector<std::unique_ptr<Section<Real>>>(n);
     for (int i = 0; i < n; ++i) {
-      std::swap(sorted_sections[order[i]], sections_[i]);
+      std::swap(sorted_sections[i], sections_[order[i]]);
     }
     std::swap(sorted_sections, sections_);
     int n_cells = 1;
@@ -543,16 +525,16 @@ class Zone {
 template <class Real>
 class Base {
  public:  // Constructors:
-  Base() = default;
   Base(File<Real> const* file, int bid, char const* name,
        int cell_dim, int phys_dim)
       : file_(file), base_id_(bid), name_(name),
         cell_dim_(cell_dim), phys_dim_(phys_dim) {
   }
 
+ public:  // Copy Control:
   Base(const Base&) = delete;
   Base& operator=(const Base&) = delete;
-  Base(Base&) noexcept = default;
+  Base(Base&&) noexcept = default;
   Base& operator=(Base&&) noexcept = default;
   ~Base() noexcept = default;
 
@@ -580,7 +562,7 @@ class Base {
   }
   void Write() const {
     int base_id;
-    cg_base_write(file_.id(), name_.c_str(), cell_dim_, phys_dim_, &base_id);
+    cg_base_write(file_->id(), name_.c_str(), cell_dim_, phys_dim_, &base_id);
     assert(base_id == base_id_);
     for (auto& zone : zones_) {
       zone->Write();
@@ -599,8 +581,9 @@ class Base {
       char zone_name[33];
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), base_id_, zone_id, zone_name, zone_size[0]);
-      auto& zone = zones_.emplace_back(this, zone_id, zone_name,
-          /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]);
+      auto& zone = zones_.emplace_back(std::make_unique<Zone<Real>>(
+          this, zone_id, zone_name,
+          /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadCoordinates();
       zone->ReadAllSections();
       zone->ReadSolutions();
@@ -614,8 +597,9 @@ class Base {
       char zone_name[33];
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), base_id_, zone_id, zone_name, zone_size[0]);
-      auto& zone = zones_.emplace_back(this, zone_id, zone_name,
-          /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]);
+      auto& zone = zones_.emplace_back(std::make_unique<Zone<Real>>(
+          this, zone_id, zone_name,
+          /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadSectionsWithDim(cell_dim_);
     }
   }
@@ -640,9 +624,10 @@ class File {
     name_ += name;
   }
 
+ public:  // Copy Control:
   File(const File&) = delete;
   File& operator=(const File&) = delete;
-  File(File&) noexcept = default;
+  File(File&&) noexcept = default;
   File& operator=(File&&) noexcept = default;
   ~File() noexcept = default;
 
@@ -676,8 +661,8 @@ class File {
       char base_name[33];
       int cell_dim{-1}, phys_dim{-1};
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
-      auto& base = bases_.emplace_back(this,
-          base_id, base_name, cell_dim, phys_dim);
+      auto& base = bases_.emplace_back(std::make_unique<Base<Real>>(
+          this, base_id, base_name, cell_dim, phys_dim));
       base->ReadZones();
     }
     cg_close(file_id_);
@@ -694,8 +679,8 @@ class File {
       char base_name[33];
       int cell_dim, phys_dim;
       cg_base_read(file_id_, base_id, base_name, &cell_dim, &phys_dim);
-      auto& base = bases_.emplace_back(this,
-          base_id, base_name, cell_dim, phys_dim);
+      auto& base = bases_.emplace_back(std::make_unique<Base<Real>>(
+          this, base_id, base_name, cell_dim, phys_dim));
       base->ReadNodeIdList(file_id_);
     }
     cg_close(file_id_);
