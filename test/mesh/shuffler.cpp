@@ -109,8 +109,6 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   auto cgns_mesh = CgnsFile(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = filter.Filter(cgns_mesh);
-  int n_cells = metis_mesh.CountCells();
-  int n_nodes = metis_mesh.CountNodes();
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   std::vector<idx_t> null_vector_of_idx;
   std::vector<float> null_vector_of_real;
@@ -126,32 +124,30 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&metis_mesh);
   shuffler.SetFilter(&filter);
-  std::printf("%d %d \n", n_nodes, n_cells);
   SetCellPartData(filter, cell_parts, &cgns_mesh);
-  std::printf("%d %d \n", n_nodes, n_cells);
   shuffler.ShuffleMesh(&cgns_mesh);
-  std::printf("%d %d \n", n_nodes, n_cells);
   cgns_mesh.Write(new_file_name);
 }
 
-// class Partition : public ::testing::Test {
-//  protected:
-//   using CSRM = mini::mesh::metis::SparseMatrix<int>;
-//   CSRM cell_csrm;
-// };
-// TEST_F(Partition, GetNodePartsByConnectivity) {
-//   std::vector<int> cell_parts{2, 0, 0, 1};
-//   cell_csrm.range = {0, 4, 8, 11, 14};
-//   cell_csrm.index = {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7};
-//   int n_nodes = 10;
-//   int n_parts = 3;
-//   auto node_parts = GetNodePartsByConnectivity<int>(
-//       cell_csrm, cell_parts, n_parts, n_nodes);
-//   std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
-//   for (int i = 0; i < n_nodes; ++i) {
-//     EXPECT_EQ(node_parts[i], expected_node_parts[i]);
-//   }
-// }
+class Partition : public ::testing::Test {
+ protected:
+  using MetisMesh = mini::mesh::metis::Mesh<int>;
+};
+TEST_F(Partition, GetNodePartsByConnectivity) {
+  std::vector<int> cell_parts{2, 0, 0, 1};
+  int n_nodes = 10;
+  auto mesh = MetisMesh(
+      {0, 4, 8, 11, 14},
+      {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7},
+      n_nodes);
+  int n_parts = 3;
+  auto node_parts = GetNodePartsByConnectivity<int>(
+      mesh, cell_parts, n_parts, n_nodes);
+  std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
+  for (int i = 0; i < n_nodes; ++i) {
+    EXPECT_EQ(node_parts[i], expected_node_parts[i]);
+  }
+}
 
 }  // namespace mesh
 }  // namespace mini

@@ -77,9 +77,10 @@ class Mesh : private SparseMatrix<Int> {
 
  public:
   Mesh() = default;
-  Mesh(std::vector<Int> const& range, std::vector<Int> const& index, Int n)
-      : Base(range, index), n_nodes_(n) {
-    assert(n > *(std::max_element(index.begin(), index.end())));
+  Mesh(std::vector<Int> const& range,
+       std::vector<Int> const& index, Int n_nodes)
+      : Base(range, index), n_nodes_(n_nodes) {
+    assert(n_nodes > *(std::max_element(index.begin(), index.end())));
   }
 
  public:
