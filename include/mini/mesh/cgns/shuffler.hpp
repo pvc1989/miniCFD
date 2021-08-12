@@ -114,7 +114,8 @@ class Shuffler {
   }
   void ShuffleMesh(CgnsFile* mesh) {
     auto& zone_to_sections = filter_->cgns_to_metis_for_cells;
-    auto& base = mesh->GetBase(1); int n_zones = base.CountZones();
+    auto& base = mesh->GetBase(1);
+    int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       auto& zone = base.GetZone(zone_id);
       auto& section_to_cells = zone_to_sections.at(zone_id);
@@ -127,9 +128,10 @@ class Shuffler {
         int n_cells = section.CountCells();
         std::vector<int> parts(n_cells);
         for (int local_id = 0; local_id < n_cells; ++local_id) {
-          auto global_id = cells_local_to_global[local_id];
-          parts[local_id] = (*cell_parts_)[global_id];
+          auto global_id = cells_local_to_global.at(local_id);
+          parts.at(local_id) = cell_parts_->at(global_id);
         }
+        auto range_min = section.CellIdMin() - 1;
         /* Shuffle Connectivity */
         std::vector<int> new_order(n_cells);
         ReorderByParts<int>(parts, new_order.data());
@@ -141,8 +143,8 @@ class Shuffler {
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
           auto& solution = zone.GetSolution(solution_id);
           for (int i = 1; i <= solution.CountFields(); ++i) {
-            auto& field = solution.GetField(i);
-            ShuffleDataArray<double>(new_order, field.data());
+            auto* field_ptr = solution.GetField(i).data() + range_min;
+            ShuffleDataArray<double>(new_order, field_ptr);
           }
         }
       }
