@@ -93,34 +93,36 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
   auto n_cells_total = filter.metis_to_cgns_for_cells.size();
   auto& base = cgns_mesh.GetBase(1);
   for (int zid = 1; zid <= base.CountZones(); ++zid) {
-    base.GetZone(zid).AddSolution("NodeData", CGNS_ENUMV(Vertex));
-    base.GetZone(zid).AddSolution("CellData", CGNS_ENUMV(CellCenter));
-    auto& solution1 = base.GetZone(zid).GetSolution(1);
-    auto& field1 = solution1.fields()["NodePartition"];
-    field1.resize(base.GetZone(zid).CountNodes());
-    auto& solution2 = base.GetZone(zid).GetSolution(2);
-    auto& field2 = solution2.fields()["CellPartition"];
-    field2.resize(base.GetZone(zid).CountAllCells());
-    std::printf("%d\n", field2.size());
+    auto& solution1 =  base.GetZone(zid).AddSolution("NodeData",
+        CGNS_ENUMV(Vertex));
+    auto& solution2 =  base.GetZone(zid).AddSolution("CellData",
+        CGNS_ENUMV(CellCenter));
+    auto& field1 = solution1.AddField("NodePartition");
+    auto& field2 = solution2.AddField("CellPartition");
+    // std::printf("%d\n", field2.size());
   }
   for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
     auto node_info = filter.metis_to_cgns_for_nodes[i_node];
     int part = node_parts[i_node];
     int zid = node_info.zone_id;
     int nid = node_info.node_id;
-    auto& field = base.GetZone(zid).GetSolution(1).fields()["NodePartition"];
-    field[nid-1] = part;
+    auto& field = base.GetZone(zid).GetSolution(1).GetField(1);
+    field.at(nid) = part;
   }
   for (int i_cell = 0; i_cell < n_cells_total; ++i_cell) {
     auto cell_info = filter.metis_to_cgns_for_cells[i_cell];
     int part = cell_parts[i_cell];
     int zid = cell_info.zone_id;
+    auto& zone = base.GetZone(zid);
+    int sid = cell_info.section_id;
+    if (zone.GetSection(sid).dim() != base.GetCellDim())
+      continue;
     int cid = cell_info.cell_id;
-    auto& field = base.GetZone(zid).GetSolution(2).fields()["CellPartition"];
-    field.at(cid-1) = part;
+    auto& field = zone.GetSolution(2).GetField(1);
+    field.at(cid) = part;
     // std::printf("%d\t%d\t%d\n", zid, cid, part);
   }
-  cgns_mesh.Write(output_dir_ + "partitioned_" + file_name);
+  cgns_mesh.Write(output_dir_ + "partitioned_" + file_name, 2);
 }
 
 }  // namespace filter

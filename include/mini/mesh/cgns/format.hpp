@@ -233,8 +233,47 @@ class Section {
   CGNS_ENUMT(ElementType_t) type_;
 };
 
-template <class T>
-using Field = std::vector<T>;
+template <class Real>
+class Field {
+ public:  // Constructor:
+  Field(Solution<Real> const* solution, int fid, char const* name, int size)
+      : solution_{solution}, field_id_{fid}, name_{name},  data_(size) {
+  }
+
+ public:  // Copy control:
+
+ public:  // Accessors:
+  Real const& at(int id) const {
+    return data_[id-1];
+  }
+  int size() const {
+    return data_.size();
+  }
+  std::string const& name() const {
+    return name_;
+  }
+  void Write() const {
+    int field_id;
+    cg_field_write(solution_->file().id(), solution_->base().id(),
+        solution_->zone().id(), solution_->id(), CGNS_ENUMV(RealDouble),
+        name_.c_str(), data_.data(), &field_id);
+    assert(field_id == field_id_);
+  }
+
+ public:  // Mutators:
+  Real& at(int id) {
+    return data_[id-1];
+  }
+  Real* data() {
+    return data_.data();
+  }
+
+ private:
+  std::vector<Real> data_;
+  std::string name_;
+  Solution<Real> const* solution_{nullptr};
+  int field_id_;
+};
 
 template <class Real>
 class Solution {
@@ -267,29 +306,36 @@ class Solution {
   std::string const& name() const {
     return name_;
   }
-  std::map<std::string, Field<Real>> const& fields() const {
-    return fields_;
+  Field<Real> const& GetField(int id) const {
+    return fields_[id-1];
+  }
+  int CountFields() const {
+    return fields_.size();
   }
   void Write() const {
     int sol_id;
     cg_sol_write(file().id(), base().id(), zone_->id(),
                  name_.c_str(), location_, &sol_id);
     assert(sol_id == sol_id_);
-    for (auto& [field_name, field] : fields_) {
-      int field_id;
-      cg_field_write(file().id(), base().id(), zone_->id(), sol_id,
-                     CGNS_ENUMV(RealDouble),
-                     field_name.c_str(), field.data(), &field_id);
+    for (auto& field : fields_) {
+      field.Write();
     }
   }
 
  public:  // Mutators:
-  std::map<std::string, Field<Real>>& fields() {
-    return fields_;
+  Field<Real>& GetField(int id) {
+    return fields_[id-1];
+  }
+  Field<Real>& AddField(char const* name) {
+    assert(location_ == CGNS_ENUMV(CellCenter)
+        || location_ == CGNS_ENUMV(Vertex));
+    int size = location_ == CGNS_ENUMV(CellCenter) ?
+        zone_->CountCells() : zone_->CountNodes();
+    return fields_.emplace_back(this, fields_.size()+1, name, size);
   }
 
  private:
-  std::map<std::string, Field<Real>> fields_;
+  std::vector<Field<Real>> fields_;
   std::string name_;
   Zone<Real> const* zone_{nullptr};
   CGNS_ENUMT(GridLocation_t) location_;
@@ -381,16 +427,17 @@ class Zone {
   const Solution<Real>& GetSolution(int id) const {
     return *(solutions_.at(id-1));
   }
-  void Write() const {
+  void Write(int min_dim = 0) const {
     int zone_id;
     auto node_size = static_cast<cgsize_t>(CountNodes());
-    cgsize_t zone_size[3] = {CountNodes(), CountAllCells(), 0};
+    cgsize_t zone_size[3] = {CountNodes(), CountCells(), 0};
     cg_zone_write(file().id(), base().id(), name_.c_str(), zone_size,
                   CGNS_ENUMV(Unstructured), &zone_id);
     assert(zone_id == zone_id_);
     coordinates_.Write();
     for (auto& section : sections_) {
-      section->Write();
+      if (section->dim() >= min_dim)
+        section->Write();
     }
     for (auto& solution : solutions_) {
       solution->Write();
@@ -470,17 +517,17 @@ class Zone {
         } else {
           assert(false);
         }
-        auto name = std::string(field_name);
-        solution->fields().emplace(name, Field<Real>(last));
+        auto& field = solution->AddField(field_name);
         cg_field_read(file().id(), base_->id(), zone_id_, sol_id, field_name,
-                      datatype, &first, &last, solution->fields()[name].data());
+                      datatype, &first, &last, &(field.at(1)));
       }
     }
   }
-  void AddSolution(char const* sol_name, CGNS_ENUMT(GridLocation_t) location) {
+  Solution<Real>& AddSolution(char const* sol_name,
+      CGNS_ENUMT(GridLocation_t) location) {
     int sol_id = solutions_.size() + 1;
-    solutions_.emplace_back(std::make_unique<Solution<Real>>(
-        this, sol_id, sol_name, location));
+    return *(solutions_.emplace_back(std::make_unique<Solution<Real>>(
+        this, sol_id, sol_name, location)));
   }
 
  private:
@@ -560,12 +607,12 @@ class Base {
   const Zone<Real>& GetZone(int id) const {
     return *(zones_.at(id-1));
   }
-  void Write() const {
+  void Write(int min_dim = 0) const {
     int base_id;
     cg_base_write(file_->id(), name_.c_str(), cell_dim_, phys_dim_, &base_id);
     assert(base_id == base_id_);
     for (auto& zone : zones_) {
-      zone->Write();
+      zone->Write(min_dim);
     }
   }
 
@@ -685,13 +732,13 @@ class File {
     }
     cg_close(file_id_);
   }
-  void Write(const std::string& file_name) {
+  void Write(const std::string& file_name, int min_dim = 0) {
     name_ = file_name;
     if (cg_open(file_name.c_str(), CG_MODE_WRITE, &file_id_)) {
       cg_error_exit();
     }
     for (auto& base : bases_) {
-      base->Write();
+      base->Write(min_dim);
     }
     cg_close(file_id_);
   }
