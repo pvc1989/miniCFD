@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <map>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -122,6 +123,66 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   SetCellPartData(filter, cell_parts, &cgns_mesh);
   shuffler.ShuffleMesh(&cgns_mesh);
   cgns_mesh.Write(new_file_name, 2);
+  //
+  auto& base = cgns_mesh.GetBase(1);
+  int n_zones = base.CountZones();
+  // part_to_nodes[part_id][zone_id] == pair<begin_id, end_id>;
+  // part_to_cells[part_id][zone_id][section_id] == pair<begin_id, end_id>;
+  auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
+  auto part_to_cells = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts);
+  for (int p = 0; p < n_parts; ++p) {
+    part_to_nodes[p].resize(n_zones+1);
+    part_to_cells[p].resize(n_zones+1);
+    for (int z = 1; z <= n_zones; ++z) {
+      part_to_cells[p][z].resize(base.GetZone(z).CountSections() + 1);
+    }
+  }
+  for (int zid = 1; zid <= n_zones; ++zid) {
+    auto& zone = base.GetZone(zid);
+    auto& node_parts = zone.GetSolution(1).GetField(1);
+    assert(node_parts.name() == "NodePart");
+    // slice node lists by part_id
+    int prev_nid = 1, prev_part = node_parts.at(prev_nid);
+    int n_nodes = zone.CountNodes();
+    for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
+      int curr_part = node_parts.at(curr_nid);
+      if (curr_part != prev_part) {
+        part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, curr_nid);
+        prev_nid = curr_nid;
+        prev_part = curr_part;
+      }
+    }
+    part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
+    // slice cell lists by part_id
+    int n_cells = zone.CountCells();
+    auto& sol = zone.GetSolution(2);
+    assert(sol.name() == "CellData");
+    auto& cell_parts = sol.GetField(1);
+    for (int sid = 1; sid <= zone.CountSections(); ++sid) {
+      auto& section = zone.GetSection(sid);
+      int cid_min = section.CellIdMin(), cid_max = section.CellIdMax();
+      int prev_cid = cid_min, prev_part = node_parts.at(prev_cid);
+      for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
+        int curr_part = cell_parts.at(curr_cid );
+        if (curr_part != prev_part) {
+          part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, curr_cid);
+          prev_cid = curr_cid;
+          prev_part = curr_part;
+        }
+      }
+      part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, cid_max+1);
+    }
+  }
+  // write to txts
+
+  for (int p = 0; p < n_parts; ++p) {
+    auto filename = current_binary_dir_ + "/parts/" + std::to_string(p) + ".txt";
+    auto ostrm = std::ofstream(filename/* , std::ios::binary */);
+    for (int z = 1; z <= n_zones; ++z) {
+      auto [head, tail] = part_to_nodes[p][z];
+      ostrm << z << ' ' << head << ' ' << tail << '\n';
+    }
+  }
 }
 
 class Partition : public ::testing::Test {
