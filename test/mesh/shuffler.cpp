@@ -43,11 +43,8 @@ void ShufflerTest::SetCellPartData(
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
     auto& zone = base.GetZone(zone_id);
     auto& section_to_cells = zone_to_sections.at(zone_id);
-    int solution_id = zone.CountSolutions() + 1;
-    char solution_name[33] = "CellData";
-    zone.AddSolution(solution_name, CGNS_ENUMV(CellCenter));
-    auto& solution = zone.GetSolution(solution_id);
-    auto& field = solution.AddField("CellPart");
+    auto& sol = zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    auto& field = sol.AddField("CellPart");
     int n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       auto& section = zone.GetSection(section_id);
@@ -55,14 +52,12 @@ void ShufflerTest::SetCellPartData(
         continue;
       auto& cells_local_to_global = section_to_cells.at(section_id);
       int n_cells = section.CountCells();
-      std::vector<int> parts(n_cells);
-      for (int local_id = 0; local_id < n_cells; ++local_id) {
-        parts.at(local_id) = cell_parts[cells_local_to_global.at(local_id)];
-      }
-      int range_min{section.CellIdMin()-1};
-      int range_max{section.CellIdMax()-1};
-      for (int cell_id = range_min; cell_id <= range_max; ++cell_id) {
-        field.at(cell_id) = static_cast<double>(parts[cell_id-range_min]);
+      int range_min{section.CellIdMin()};
+      int range_max{section.CellIdMax()};
+      EXPECT_EQ(n_cells - 1, range_max - range_min);
+      for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;) {
+        auto metis_cell_id = cells_local_to_global.at(cgns_cell_id - range_min);
+        field.at(cgns_cell_id++) = cell_parts[metis_cell_id];
       }
     }
   }
@@ -126,7 +121,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   shuffler.SetFilter(&filter);
   SetCellPartData(filter, cell_parts, &cgns_mesh);
   shuffler.ShuffleMesh(&cgns_mesh);
-  cgns_mesh.Write(new_file_name);
+  cgns_mesh.Write(new_file_name, 2);
 }
 
 class Partition : public ::testing::Test {
