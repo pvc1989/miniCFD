@@ -32,33 +32,46 @@ class ShufflerTest : public ::testing::Test {
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
-  static void SetCellPartData(
+  static void WriteParts(
       const FilterType& filter, const std::vector<idx_t>& cell_parts,
-      CgnsFile* cgns_mesh);
+      const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh);
 };
-void ShufflerTest::SetCellPartData(
+void ShufflerTest::WriteParts(
     const FilterType& filter, const std::vector<idx_t>& cell_parts,
-    CgnsFile* cgns_mesh) {
-  auto& zone_to_sections = filter.cgns_to_metis_for_cells;
-  auto& base = cgns_mesh->GetBase(1); int n_zones = base.CountZones();
+    const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh) {
+  auto& zone_to_sects = filter.cgns_to_metis_for_cells;
+  auto& zone_to_nodes = filter.cgns_to_metis_for_nodes;
+  auto& base = cgns_mesh->GetBase(1);
+  int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
     auto& zone = base.GetZone(zone_id);
-    auto& section_to_cells = zone_to_sections.at(zone_id);
-    auto& sol = zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
-    auto& field = sol.AddField("CellPart");
-    int n_sections = zone.CountSections();
-    for (int section_id = 1; section_id <= n_sections; ++section_id) {
-      auto& section = zone.GetSection(section_id);
-      if (section.dim() != base.GetCellDim())
+    // write data on nodes
+    auto& node_sol = zone.AddSolution("NodeData",
+        CGNS_ENUMV(Vertex));
+    auto& node_field = node_sol.AddField("NodePart");
+    auto n_nodes = zone.CountNodes();
+    for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
+      auto metis_nid = zone_to_nodes[zone_id][cgns_nid];
+      node_field.at(cgns_nid) = node_parts[metis_nid];
+    }
+    // write data on cells
+    auto& cell_sol =  zone.AddSolution("CellData",
+        CGNS_ENUMV(CellCenter));
+    auto& cell_field = cell_sol.AddField("CellPart");
+    auto& sect_to_cells = zone_to_sects.at(zone_id);
+    int n_sects = zone.CountSections();
+    for (int sect_id = 1; sect_id <= n_sects; ++sect_id) {
+      auto& sect = zone.GetSection(sect_id);
+      if (sect.dim() != base.GetCellDim())
         continue;
-      auto& cells_local_to_global = section_to_cells.at(section_id);
-      int n_cells = section.CountCells();
-      int range_min{section.CellIdMin()};
-      int range_max{section.CellIdMax()};
+      auto& cells_local_to_global = sect_to_cells.at(sect_id);
+      int n_cells = sect.CountCells();
+      int range_min{sect.CellIdMin()};
+      int range_max{sect.CellIdMax()};
       EXPECT_EQ(n_cells - 1, range_max - range_min);
       for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;) {
         auto metis_cell_id = cells_local_to_global.at(cgns_cell_id - range_min);
-        field.at(cgns_cell_id++) = cell_parts[metis_cell_id];
+        cell_field.at(cgns_cell_id++) = cell_parts[metis_cell_id];
       }
     }
   }
@@ -120,14 +133,16 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&metis_mesh);
   shuffler.SetFilter(&filter);
-  SetCellPartData(filter, cell_parts, &cgns_mesh);
+  WriteParts(filter, cell_parts, node_parts, &cgns_mesh);
   shuffler.ShuffleMesh(&cgns_mesh);
   cgns_mesh.Write(new_file_name, 2);
+  cgns_mesh = CgnsFile(new_file_name);
+  cgns_mesh.ReadBases();
   //
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
-  // part_to_nodes[part_id][zone_id] == pair<begin_id, end_id>;
-  // part_to_cells[part_id][zone_id][section_id] == pair<begin_id, end_id>;
+  // part_to_nodes[part_id][zone_id] == make_pair(begin_id, end_id);
+  // part_to_cells[part_id][zone_id][sect_id] == make_pair(begin_id, end_id);
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
   auto part_to_cells = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts);
   for (int p = 0; p < n_parts; ++p) {
@@ -142,6 +157,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
     auto& node_parts = zone.GetSolution(1).GetField(1);
     assert(node_parts.name() == "NodePart");
     // slice node lists by part_id
+    /*
     int prev_nid = 1, prev_part = node_parts.at(prev_nid);
     int n_nodes = zone.CountNodes();
     for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
@@ -153,17 +169,21 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
       }
     }
     part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
+    */
     // slice cell lists by part_id
     int n_cells = zone.CountCells();
     auto& sol = zone.GetSolution(2);
     assert(sol.name() == "CellData");
     auto& cell_parts = sol.GetField(1);
+    assert(cell_parts.name() == "CellPart");
     for (int sid = 1; sid <= zone.CountSections(); ++sid) {
-      auto& section = zone.GetSection(sid);
-      int cid_min = section.CellIdMin(), cid_max = section.CellIdMax();
-      int prev_cid = cid_min, prev_part = node_parts.at(prev_cid);
+      auto& sect = zone.GetSection(sid);
+      if (sect.dim() != base.GetCellDim())
+        continue;
+      int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
+      int prev_cid = cid_min, prev_part = cell_parts.at(prev_cid);
       for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
-        int curr_part = cell_parts.at(curr_cid );
+        int curr_part = cell_parts.at(curr_cid);
         if (curr_part != prev_part) {
           part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, curr_cid);
           prev_cid = curr_cid;
@@ -174,13 +194,19 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
     }
   }
   // write to txts
-
   for (int p = 0; p < n_parts; ++p) {
-    auto filename = current_binary_dir_ + "/parts/" + std::to_string(p) + ".txt";
+    auto filename = current_binary_dir_ + "/parts/part" + std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
     for (int z = 1; z <= n_zones; ++z) {
+      /*
       auto [head, tail] = part_to_nodes[p][z];
       ostrm << z << ' ' << head << ' ' << tail << '\n';
+       */
+      auto n_sects = part_to_cells[p][z].size() - 1;
+      for (int s = 1; s <= n_sects; ++s) {
+        auto [head, tail] = part_to_cells[p][z][s];
+        ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+      }
     }
   }
 }
