@@ -118,6 +118,9 @@ class Shuffler {
     int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
       auto& zone = base.GetZone(zone_id);
+      // shuffle nodes and data on nodes
+      
+      // shuffle cells and data on cells
       auto& section_to_cells = zone_to_sections.at(zone_id);
       int n_sections = zone.CountSections();
       for (int section_id = 1; section_id <= n_sections; ++section_id) {
@@ -144,7 +147,7 @@ class Shuffler {
           auto& solution = zone.GetSolution(solution_id);
           for (int i = 1; i <= solution.CountFields(); ++i) {
             auto* field_ptr = solution.GetField(i).data() + range_min;
-            ShuffleDataArray<double>(new_order, field_ptr);
+            ShuffleDataArray(new_order, field_ptr);
           }
         }
       }
