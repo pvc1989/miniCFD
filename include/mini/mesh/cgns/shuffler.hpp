@@ -142,9 +142,9 @@ class Shuffler {
         int n_solutions = zone.CountSolutions();
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
           auto& solution = zone.GetSolution(solution_id);
-          for (auto& [name, field] : solution.fields()) {
-            auto field_ptr = field.data() + range_min;
-            ShuffleDataArray<double>(new_order, field_ptr);
+          for (int i = 1; i <= solution.CountFields(); ++i) {
+            auto& field = solution.GetField(i);
+            ShuffleDataArray<double>(new_order, field.data());
           }
         }
       }

@@ -47,9 +47,7 @@ void ShufflerTest::SetCellPartData(
     char solution_name[33] = "CellData";
     zone.AddSolution(solution_name, CGNS_ENUMV(CellCenter));
     auto& solution = zone.GetSolution(solution_id);
-    std::string field_name("CellPart");
-    solution.fields().emplace(field_name, FieldType(zone.CountAllCells()));
-    auto& field = solution.fields().at(field_name);
+    auto& field = solution.AddField("CellPart");
     int n_sections = zone.CountSections();
     for (int section_id = 1; section_id <= n_sections; ++section_id) {
       auto& section = zone.GetSection(section_id);
@@ -64,7 +62,7 @@ void ShufflerTest::SetCellPartData(
       int range_min{section.CellIdMin()-1};
       int range_max{section.CellIdMax()-1};
       for (int cell_id = range_min; cell_id <= range_max; ++cell_id) {
-        field[cell_id] = static_cast<double>(parts[cell_id-range_min]);
+        field.at(cell_id) = static_cast<double>(parts[cell_id-range_min]);
       }
     }
   }

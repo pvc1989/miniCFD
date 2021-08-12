@@ -285,9 +285,10 @@ TEST_F(TestTypes, ReadSolution) {
     auto& cg_sol = cg_zone.solutions.at(sol_id-1);
     EXPECT_EQ(my_sol.id(), cg_sol.id);
     EXPECT_STREQ(my_sol.name().c_str(), cg_sol.name.c_str());
-    EXPECT_EQ(my_sol.fields().size(), cg_sol.fields.size());
-    for (auto& [name, field] : my_sol.fields()) {
-      EXPECT_EQ(field.size(), cg_sol.fields[name].size());
+    EXPECT_EQ(my_sol.CountFields(), cg_sol.fields.size());
+    for (int i = 0; i < my_sol.CountFields(); ++i) {
+      auto& field = my_sol.GetField(i);
+      auto name = field.name();
       for (int index = 0; index < field.size(); ++index) {
         EXPECT_DOUBLE_EQ(field.at(index), cg_sol.fields[name].at(index));
       }
