@@ -213,7 +213,7 @@ TEST_F(TestTypes, ReadZone) {
       char zone_name[33];
       cgsize_t zone_size[3][1];
       cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
-      auto& cg_zone = zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
+      zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
     }
   }
   cg_close(file_id);

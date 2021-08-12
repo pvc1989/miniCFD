@@ -97,9 +97,10 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
         CGNS_ENUMV(Vertex));
     auto& solution2 =  base.GetZone(zid).AddSolution("CellData",
         CGNS_ENUMV(CellCenter));
-    auto& field1 = solution1.AddField("NodePartition");
-    auto& field2 = solution2.AddField("CellPartition");
-    // std::printf("%d\n", field2.size());
+    auto& field1 = solution1.AddField("NodePart");
+    auto& field2 = solution2.AddField("CellPart");
+    EXPECT_STREQ(field1.name().c_str(), "NodePart");
+    EXPECT_STREQ(field2.name().c_str(), "CellPart");
   }
   for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
     auto node_info = filter.metis_to_cgns_for_nodes[i_node];

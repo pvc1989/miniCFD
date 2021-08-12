@@ -23,9 +23,9 @@ std::vector<T> GetNodePartsByConnectivity(
     const metis::Mesh<int>& mesh, const std::vector<T>& cell_parts,
     T n_parts, int n_nodes) {
   auto node_parts = std::vector<T>(n_nodes, n_parts);
-  auto node_pointer = &(mesh.index(0));
+  auto node_pointer = &(mesh.nodes(0));
   int n_cells = mesh.CountCells();
-  auto curr_range_pointer = &(mesh.nodes(0));
+  auto curr_range_pointer = &(mesh.range(0));
   for (int i = 0; i < n_cells; ++i) {
     auto part_value = cell_parts[i];
     auto head = *curr_range_pointer++;
@@ -52,7 +52,6 @@ void ReorderByParts(const std::vector<T>& parts, int* new_order) {
       collector[part].insert(local_id);
     }
   }
-  int index = 0;
   for (auto& part : collector) {
     for (auto& local_id : part.second) {
       *new_order++ = local_id;
@@ -131,14 +130,13 @@ class Shuffler {
           auto global_id = cells_local_to_global[local_id];
           parts[local_id] = (*cell_parts_)[global_id];
         }
-        int range_min{section.CellIdMin()-1};
-            /* Shuffle Connectivity */
+        /* Shuffle Connectivity */
         std::vector<int> new_order(n_cells);
         ReorderByParts<int>(parts, new_order.data());
         int npe = section.CountNodesByType();
         cgsize_t* node_id_list = section.GetNodeIdList();
         ShuffleConnectivity<cgsize_t>(new_order, npe, node_id_list);
-            /* Shuffle CellData */
+        /* Shuffle CellData */
         int n_solutions = zone.CountSolutions();
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
           auto& solution = zone.GetSolution(solution_id);

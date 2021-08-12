@@ -429,7 +429,6 @@ class Zone {
   }
   void Write(int min_dim = 0) const {
     int zone_id;
-    auto node_size = static_cast<cgsize_t>(CountNodes());
     cgsize_t zone_size[3] = {CountNodes(), CountCells(), 0};
     cg_zone_write(file().id(), base().id(), name_.c_str(), zone_size,
                   CGNS_ENUMV(Unstructured), &zone_id);
@@ -547,12 +546,11 @@ class Zone {
     }
     auto order = std::vector<int>(n);
     std::iota(order.begin(), order.end(), 0);
-    auto cmp = [&dim_then_oldid](int lid, int rid) {
-      return dim_then_oldid[lid].first > dim_then_oldid[rid].first ||
+    sort(order.begin(), order.end(), [&dim_then_oldid](int lid, int rid) {
+      return dim_then_oldid[lid].first > dim_then_oldid[rid].first || (
           dim_then_oldid[lid].first == dim_then_oldid[rid].first &&
-          dim_then_oldid[lid].second < dim_then_oldid[rid].second;
-    };
-    sort(order.begin(), order.end(), cmp);
+          dim_then_oldid[lid].second < dim_then_oldid[rid].second);
+    });
     auto sorted_sections = std::vector<std::unique_ptr<Section<Real>>>(n);
     for (int i = 0; i < n; ++i) {
       std::swap(sorted_sections[i], sections_[order[i]]);
