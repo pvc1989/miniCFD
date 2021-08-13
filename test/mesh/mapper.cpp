@@ -7,33 +7,33 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/metis/partitioner.hpp"
-#include "mini/mesh/filter/cgns_to_metis.hpp"
+#include "mini/mesh/mapper/cgns_to_metis.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace mesh {
-namespace filter {
+namespace mapper {
 
-class MeshFilterTest : public ::testing::Test {
+class MeshMapperTest : public ::testing::Test {
  protected:
-  using Filter = CgnsToMetis<double, int>;
+  using Mapper = CgnsToMetis<double, int>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
 };
-TEST_F(MeshFilterTest, CgnsToMetis) {
+TEST_F(MeshMapperTest, CgnsToMetis) {
   // convert cgns_mesh to metis_mesh
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto cgns_mesh = Filter::CgnsMesh(file_name);
+  auto cgns_mesh = Mapper::CgnsMesh(file_name);
   cgns_mesh.ReadBases();
-  auto filter = CgnsToMetis();
-  auto metis_mesh = filter.Filter(cgns_mesh);
+  auto mapper = CgnsToMetis();
+  auto metis_mesh = mapper.Map(cgns_mesh);
   auto* cell_ptr = &(metis_mesh.range(0));
   auto* cell_idx = &(metis_mesh.nodes(0));
-  auto& metis_to_cgns_for_nodes = filter.metis_to_cgns_for_nodes;
-  auto& cgns_to_metis_for_nodes = filter.cgns_to_metis_for_nodes;
-  auto& metis_to_cgns_for_cells = filter.metis_to_cgns_for_cells;
-  auto& cgns_to_metis_for_cells = filter.cgns_to_metis_for_cells;
+  auto& metis_to_cgns_for_nodes = mapper.metis_to_cgns_for_nodes;
+  auto& cgns_to_metis_for_nodes = mapper.cgns_to_metis_for_nodes;
+  auto& metis_to_cgns_for_cells = mapper.metis_to_cgns_for_cells;
+  auto& cgns_to_metis_for_cells = mapper.cgns_to_metis_for_cells;
   // test the converted metis_mesh
   auto& base = cgns_mesh.GetBase(1);
   auto n_nodes_total{0};
@@ -70,13 +70,13 @@ TEST_F(MeshFilterTest, CgnsToMetis) {
     }
   }
 }
-TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
+TEST_F(MeshMapperTest, WriteMetisResultToCgns) {
   // convert cgns_mesh to metis_mesh
   auto file_name = "ugrid_2d.cgns";
-  auto cgns_mesh = Filter::CgnsMesh(test_data_dir_, file_name);
+  auto cgns_mesh = Mapper::CgnsMesh(test_data_dir_, file_name);
   cgns_mesh.ReadBases();
-  auto filter = Filter();
-  auto metis_mesh = filter.Filter(cgns_mesh);
+  auto mapper = Mapper();
+  auto metis_mesh = mapper.Map(cgns_mesh);
 
   std::vector<idx_t> null_vector_of_idx;
   std::vector<real_t> null_vector_of_real;
@@ -89,8 +89,8 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
       null_vector_of_idx/* options */,
       &edge_cut, &cell_parts, &node_parts);
   // write the result of partitioning to cgns_mesh
-  auto n_nodes_total = filter.metis_to_cgns_for_nodes.size();
-  auto n_cells_total = filter.metis_to_cgns_for_cells.size();
+  auto n_nodes_total = mapper.metis_to_cgns_for_nodes.size();
+  auto n_cells_total = mapper.metis_to_cgns_for_cells.size();
   auto& base = cgns_mesh.GetBase(1);
   for (int zid = 1; zid <= base.CountZones(); ++zid) {
     auto& solution1 =  base.GetZone(zid).AddSolution("NodeData",
@@ -103,7 +103,7 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
     EXPECT_STREQ(field2.name().c_str(), "CellPart");
   }
   for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
-    auto node_info = filter.metis_to_cgns_for_nodes[i_node];
+    auto node_info = mapper.metis_to_cgns_for_nodes[i_node];
     int part = node_parts[i_node];
     int zid = node_info.zone_id;
     int nid = node_info.node_id;
@@ -111,7 +111,7 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
     field.at(nid) = part;
   }
   for (int i_cell = 0; i_cell < n_cells_total; ++i_cell) {
-    auto cell_info = filter.metis_to_cgns_for_cells[i_cell];
+    auto cell_info = mapper.metis_to_cgns_for_cells[i_cell];
     int part = cell_parts[i_cell];
     int zid = cell_info.zone_id;
     auto& zone = base.GetZone(zid);
@@ -126,7 +126,7 @@ TEST_F(MeshFilterTest, WriteMetisResultToCgns) {
   cgns_mesh.Write(output_dir_ + "partitioned_" + file_name, 2);
 }
 
-}  // namespace filter
+}  // namespace mapper
 }  // namespace mesh
 }  // namespace mini
 

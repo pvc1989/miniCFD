@@ -12,7 +12,7 @@
 #include "metis.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/filter/cgns_to_metis.hpp"
+#include "mini/mesh/mapper/cgns_to_metis.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/mesh/metis/format.hpp"
@@ -27,20 +27,20 @@ class ShufflerTest : public ::testing::Test {
   using CgnsFile = mini::mesh::cgns::File<double>;
   using MetisMesh = metis::Mesh<idx_t>;
   using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
-  using FilterType = mini::mesh::filter::CgnsToMetis<double, idx_t>;
+  using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const current_binary_dir_{
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
   static void WriteParts(
-      const FilterType& filter, const std::vector<idx_t>& cell_parts,
+      const MapperType& mapper, const std::vector<idx_t>& cell_parts,
       const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh);
 };
 void ShufflerTest::WriteParts(
-    const FilterType& filter, const std::vector<idx_t>& cell_parts,
+    const MapperType& mapper, const std::vector<idx_t>& cell_parts,
     const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh) {
-  auto& zone_to_sects = filter.cgns_to_metis_for_cells;
-  auto& zone_to_nodes = filter.cgns_to_metis_for_nodes;
+  auto& zone_to_sects = mapper.cgns_to_metis_for_cells;
+  auto& zone_to_nodes = mapper.cgns_to_metis_for_nodes;
   auto& base = cgns_mesh->GetBase(1);
   int n_zones = base.CountZones();
   for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
@@ -109,15 +109,15 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsFile) {
-  FilterType filter;
+  MapperType mapper;
   using MeshDataType = double;
   using MetisId = idx_t;
   Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto new_file_name = current_binary_dir_ + "/shuffled_ugrid_2d.cgns";
+  auto new_file_name = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
   auto cgns_mesh = CgnsFile(old_file_name);
   cgns_mesh.ReadBases();
-  auto metis_mesh = filter.Filter(cgns_mesh);
+  auto metis_mesh = mapper.Map(cgns_mesh);
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   std::vector<idx_t> null_vector_of_idx;
   std::vector<float> null_vector_of_real;
@@ -132,8 +132,8 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   shuffler.SetNumParts(n_parts);
   shuffler.SetCellParts(&cell_parts);
   shuffler.SetMetisMesh(&metis_mesh);
-  shuffler.SetFilter(&filter);
-  WriteParts(filter, cell_parts, node_parts, &cgns_mesh);
+  shuffler.SetMapper(&mapper);
+  WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
   shuffler.ShuffleMesh(&cgns_mesh);
   cgns_mesh.Write(new_file_name, 2);
   cgns_mesh = CgnsFile(new_file_name);
@@ -195,7 +195,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   }
   // write to txts
   for (int p = 0; p < n_parts; ++p) {
-    auto filename = current_binary_dir_ + "/parts/part" + std::to_string(p) + ".txt";
+    auto filename = current_binary_dir_ + "/ugrid_2d_part_" + std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
     for (int z = 1; z <= n_zones; ++z) {
       /*

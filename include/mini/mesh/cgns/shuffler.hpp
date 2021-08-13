@@ -13,7 +13,7 @@
 #include "cgnslib.h"
 
 #include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/filter/cgns_to_metis.hpp"
+#include "mini/mesh/mapper/cgns_to_metis.hpp"
 
 namespace mini {
 namespace mesh {
@@ -95,7 +95,7 @@ class Shuffler {
  public:
   using CgnsFile = mini::mesh::cgns::File<Real>;
   using MetisMesh = metis::Mesh<int>;
-  using FilterType = mini::mesh::filter::CgnsToMetis<double, int>;
+  using MapperType = mini::mesh::mapper::CgnsToMetis<double, int>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
@@ -109,11 +109,11 @@ class Shuffler {
   void SetMetisMesh(MetisMesh* mesh) {
     mesh_ = mesh;
   }
-  void SetFilter(FilterType* filter) {
-    filter_ = filter;
+  void SetMapper(MapperType* mapper) {
+    mapper_ = mapper;
   }
   void ShuffleMesh(CgnsFile* mesh) {
-    auto& zone_to_sections = filter_->cgns_to_metis_for_cells;
+    auto& zone_to_sections = mapper_->cgns_to_metis_for_cells;
     auto& base = mesh->GetBase(1);
     int n_zones = base.CountZones();
     for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
@@ -158,7 +158,7 @@ class Shuffler {
   int n_parts_;
   std::vector<T>* cell_parts_;
   MetisMesh* mesh_;
-  FilterType* filter_;
+  MapperType* mapper_;
 };
 
 }  // namespace mesh
