@@ -85,6 +85,15 @@ class Coordinates {
   }
 
  public:  // Mutators:
+  std::vector<Real>& x() {
+    return x_;
+  }
+  std::vector<Real>& y() {
+    return y_;
+  }
+  std::vector<Real>& z() {
+    return z_;
+  }
   /**
    * Read coordinates from a given `(file, base, zone)` tuple.
    */
@@ -202,7 +211,7 @@ class Section {
     cg_section_write(file().id(), base().id(), zone_->id(), name_.c_str(), type_,
         CellIdMin(), CellIdMax(), 0, GetNodeIdList(),
         &section_id);
-    assert(section_id <= section_id_);
+    assert(section_id == section_id_);
   }
 
  public:  // Mutators:
@@ -306,6 +315,12 @@ class Solution {
   std::string const& name() const {
     return name_;
   }
+  bool OnNodes() const {
+    return location_ == CGNS_ENUMV(Vertex);
+  }
+  bool OnCells() const {
+    return location_ == CGNS_ENUMV(CellCenter);
+  }
   Field<Real> const& GetField(int id) const {
     return fields_[id-1];
   }
@@ -327,10 +342,8 @@ class Solution {
     return fields_[id-1];
   }
   Field<Real>& AddField(char const* name) {
-    assert(location_ == CGNS_ENUMV(CellCenter)
-        || location_ == CGNS_ENUMV(Vertex));
-    int size = location_ == CGNS_ENUMV(CellCenter) ?
-        zone_->CountCells() : zone_->CountNodes();
+    assert(OnNodes() || OnCells());
+    int size = OnCells() ? zone_->CountCells() : zone_->CountNodes();
     return fields_.emplace_back(this, fields_.size()+1, name, size);
   }
 
