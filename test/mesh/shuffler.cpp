@@ -70,19 +70,18 @@ void ShufflerTest::WriteParts(
       int range_max{sect.CellIdMax()};
       EXPECT_EQ(n_cells - 1, range_max - range_min);
       for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;) {
-        auto metis_cell_id = cells_local_to_global.at(cgns_cell_id - range_min);
+        auto metis_cell_id = cells_local_to_global.at(cgns_cell_id);
         cell_field.at(cgns_cell_id++) = cell_parts[metis_cell_id];
       }
     }
   }
 }
-TEST_F(ShufflerTest, ShuffleByParts) {
+TEST_F(ShufflerTest, GetNewOrderToShuffleData) {
   // Reorder the indices by parts
   int n = 10;
   std::vector<int> old_index{2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
   std::vector<int>     parts{1, 0, 0, 2, 0, 1, 2, 1,  0,  2};
-  std::vector<int> new_order(n);
-  ReorderByParts<int>(parts, new_order.data());
+  auto new_order = GetNewOrder(parts.data(), parts.size());
   std::vector<int> expected_new_order{1, 2, 4, 8, 0, 5, 7, 3, 6, 9};
   for (int i = 0; i < n; ++i) {
     EXPECT_EQ(new_order[i], expected_new_order[i]);
@@ -90,20 +89,24 @@ TEST_F(ShufflerTest, ShuffleByParts) {
   // Shuffle data array by new order
   std::vector<double> old_array{1.0, 0.0, 0.1, 2.0, 0.2,
                                 1.1, 2.1, 1.2, 0.3, 2.2};
-  ShuffleDataArray<double>(new_order, old_array.data());
+  ShuffleData(new_order, old_array.data());
   std::vector<double> expected_new_array{0.0, 0.1, 0.2, 0.3, 1.0,
                                          1.1, 1.2, 2.0, 2.1, 2.2};
   for (int i = 0; i < n; ++i) {
     EXPECT_DOUBLE_EQ(old_array[i], expected_new_array[i]);
   }
+}
+TEST_F(ShufflerTest, ShuffleConnectivity) {
   // Shuffle cell node_id_list by new order
-  n = 4;
-  std::vector<int> new_cell_order{1, 2, 3, 0};
-  std::vector<int> node_id_list = {1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
+  std::vector<int> new_to_old_for_nodes{5, 4, 3, 2, 1, 0};
+  std::vector<int> new_to_old_for_cells{1, 2, 3, 0};
+  std::vector<int> node_id_list = {
+      1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
   int npe = 3;
-  ShuffleConnectivity<int>(new_cell_order, npe, node_id_list.data());
-  std::vector<int> expected_new_node_id_list{2, 3, 6,   6, 3, 5,   3, 4, 5,
-                                             1, 2, 6};
+  ShuffleConnectivity(
+      new_to_old_for_nodes, new_to_old_for_cells, npe, node_id_list.data());
+  std::vector<int> expected_new_node_id_list{
+      5, 4, 1,   1, 4, 2,   4, 3, 2,   6, 5, 1};
   for (int i = 0; i < node_id_list.size(); ++i) {
     EXPECT_EQ(node_id_list[i], expected_new_node_id_list[i]);
   }
@@ -112,15 +115,15 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   MapperType mapper;
   using MeshDataType = double;
   using MetisId = idx_t;
-  Shuffler<MetisId, MeshDataType> shuffler;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto new_file_name = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
   auto cgns_mesh = CgnsFile(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
+  EXPECT_TRUE(mapper.IsValid());
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   std::vector<idx_t> null_vector_of_idx;
-  std::vector<float> null_vector_of_real;
+  std::vector<real_t> null_vector_of_real;
   std::vector<idx_t> cell_parts, node_parts;
   PartMesh(metis_mesh,
       null_vector_of_idx/* computational cost */,
@@ -129,12 +132,11 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
       null_vector_of_real/* weight of each part */,
       null_vector_of_idx/* options */,
       &edge_cut, &cell_parts, &node_parts);
-  shuffler.SetNumParts(n_parts);
-  shuffler.SetCellParts(&cell_parts);
-  shuffler.SetMetisMesh(&metis_mesh);
-  shuffler.SetMapper(&mapper);
+  auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
+      node_parts);
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
-  shuffler.ShuffleMesh(&cgns_mesh);
+  shuffler.Shuffle(&cgns_mesh, &mapper);
+  EXPECT_TRUE(mapper.IsValid());
   cgns_mesh.Write(new_file_name, 2);
   cgns_mesh = CgnsFile(new_file_name);
   cgns_mesh.ReadBases();
@@ -157,7 +159,6 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
     auto& node_parts = zone.GetSolution(1).GetField(1);
     assert(node_parts.name() == "NodePart");
     // slice node lists by part_id
-    /*
     int prev_nid = 1, prev_part = node_parts.at(prev_nid);
     int n_nodes = zone.CountNodes();
     for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
@@ -169,7 +170,6 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
       }
     }
     part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
-    */
     // slice cell lists by part_id
     int n_cells = zone.CountCells();
     auto& sol = zone.GetSolution(2);
@@ -198,14 +198,14 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
     auto filename = current_binary_dir_ + "/ugrid_2d_part_" + std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
     for (int z = 1; z <= n_zones; ++z) {
-      /*
       auto [head, tail] = part_to_nodes[p][z];
-      ostrm << z << ' ' << head << ' ' << tail << '\n';
-       */
+      if (head)
+        ostrm << z << ' ' << head << ' ' << tail << '\n';
       auto n_sects = part_to_cells[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
         auto [head, tail] = part_to_cells[p][z][s];
-        ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+        if (head)
+          ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
       }
     }
   }
