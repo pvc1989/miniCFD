@@ -26,11 +26,13 @@ static_assert(std::is_same_v<idx_t, cgsize_t>,
 
 template <class Int = int>
 struct NodeInfo {
+  NodeInfo() = default;
   NodeInfo(Int zi, Int ni) : zone_id(zi), node_id(ni) {}
   Int zone_id{0}, node_id{0};
 };
 template <class Int = int>
 struct CellInfo {
+  CellInfo() = default;
   CellInfo(Int zi, Int si, Int ci) : zone_id(zi), section_id(si), cell_id(ci) {}
   Int zone_id{0}, section_id{0}, cell_id{0};
 };
@@ -87,6 +89,7 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
       if (!zone.CheckTypeDim(section.type(), cell_dim))
         continue;
       auto& metis_ids_in_section = cgns_to_metis_for_cells[zone_id][section_id];
+      // metis_ids_in_section.emplace_back(-1);  // cells[0] is invalid
       auto n_cells_in_curr_sect = section.CountCells();
       auto n_nodes_per_cell = section.CountNodesByType();
       metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
