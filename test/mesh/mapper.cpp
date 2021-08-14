@@ -59,7 +59,7 @@ TEST_F(MeshMapperTest, CgnsToMetis) {
     auto zone_id = cell_info.zone_id;
     auto sect_id = cell_info.section_id;
     auto cell_id = cell_info.cell_id;
-    EXPECT_EQ(cgns_to_metis_for_cells[zone_id][sect_id][cell_id-begin],
+    EXPECT_EQ(cgns_to_metis_for_cells[zone_id][sect_id][cell_id],
               static_cast<int>(metis_cell_id));
     auto* nodes = section.GetNodeIdListByOneBasedCellId(cell_info.cell_id);
     for (int i_node = 0; i_node != n_nodes; ++i_node) {

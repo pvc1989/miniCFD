@@ -42,7 +42,39 @@ struct CgnsToMetis {
   using CgnsMesh = cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;
 
+  class ShiftedVector : public std::vector<Int> {
+   private:
+    using Base = std::vector<Int>;
+    using size_type = typename Base::size_type;
+    size_type shift_{0};
+  
+   public:
+    ShiftedVector() = default;
+    ShiftedVector(size_type size, size_type shift)
+        : Base(size), shift_(shift) {
+    }
+    ShiftedVector(ShiftedVector const&) = default;
+    ShiftedVector(ShiftedVector&&) noexcept = default;
+    ShiftedVector& operator=(ShiftedVector const&) = default;
+    ShiftedVector& operator=(ShiftedVector &&) noexcept = default;
+    ~ShiftedVector() noexcept = default;
+
+    const Int& operator[](size_type i) const {
+      return this->Base::operator[](i - shift_);
+    }
+    const Int& at(size_type i) const {
+      return this->Base::at(i - shift_);
+    }
+    Int& operator[](size_type i) {
+      return this->Base::operator[](i - shift_);
+    }
+    Int& at(size_type i) {
+      return this->Base::at(i - shift_);
+    }
+  };
+
   MetisMesh Map(const CgnsMesh& mesh);
+  bool IsValid() const;
 
   std::vector<NodeInfo<Int>> metis_to_cgns_for_nodes;
   std::vector<CellInfo<Int>> metis_to_cgns_for_cells;
@@ -50,8 +82,8 @@ struct CgnsToMetis {
   //     cgns_to_metis_for_nodes[zone_id][node_id];
   std::vector<std::vector<Int>>              cgns_to_metis_for_nodes;
   // metis_cell_id =
-  //     cgns_to_metis_for_cells[zone_id][sect_id][cell_id - cell_id_min];
-  std::vector<std::vector<std::vector<Int>>> cgns_to_metis_for_cells;
+  //     cgns_to_metis_for_cells[zone_id][sect_id][cell_id];
+  std::vector<std::vector<ShiftedVector>> cgns_to_metis_for_cells;
 };
 template <class Real, class Int>
 typename CgnsToMetis<Real, Int>::MetisMesh
@@ -88,8 +120,8 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
       auto& section = zone.GetSection(section_id);
       if (!zone.CheckTypeDim(section.type(), cell_dim))
         continue;
-      auto& metis_ids_in_section = cgns_to_metis_for_cells[zone_id][section_id];
-      // metis_ids_in_section.emplace_back(-1);  // cells[0] is invalid
+      auto& metis_cell_ids = cgns_to_metis_for_cells[zone_id][section_id];
+      metis_cell_ids = ShiftedVector(section.CountCells(), section.CellIdMin());
       auto n_cells_in_curr_sect = section.CountCells();
       auto n_nodes_per_cell = section.CountNodesByType();
       metis_to_cgns_for_cells.reserve(metis_to_cgns_for_cells.size() +
@@ -97,7 +129,9 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
       cell_ptr.reserve(cell_ptr.size() + n_cells_in_curr_sect);
       for (Int cell_id = section.CellIdMin();
            cell_id <= section.CellIdMax(); ++cell_id) {
-        metis_ids_in_section.emplace_back(metis_to_cgns_for_cells.size());
+        
+        std::printf("cell_id = %d, n_cells_in_curr_sect = %d\n", cell_id, n_cells_in_curr_sect);
+        metis_cell_ids.at(cell_id) = metis_to_cgns_for_cells.size();
         metis_to_cgns_for_cells.emplace_back(zone_id, section_id, cell_id);
         cell_ptr.emplace_back(pointer_value += n_nodes_per_cell);
       }
@@ -113,6 +147,26 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
   }
   assert(metis_to_cgns_for_nodes.size() == n_nodes_in_curr_base);
   return MetisMesh(cell_ptr, cell_idx, n_nodes_in_curr_base);
+}
+template <class Real, class Int>
+bool CgnsToMetis<Real, Int>::IsValid() const {
+  Int metis_n_nodes = metis_to_cgns_for_nodes.size();
+  for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
+    auto info = metis_to_cgns_for_nodes.at(metis_i_node);
+    auto& nodes = cgns_to_metis_for_nodes.at(info.zone_id);
+    if (nodes.at(info.node_id) != metis_i_node) {
+      return false;
+    }
+  }
+  Int metis_n_cells = metis_to_cgns_for_cells.size();
+  for (Int metis_i_cell = 0; metis_i_cell < metis_n_cells; ++metis_i_cell) {
+    auto info = metis_to_cgns_for_cells.at(metis_i_cell);
+    auto& cells = cgns_to_metis_for_cells.at(info.zone_id).at(info.section_id);
+    if (cells.at(info.cell_id) != metis_i_cell) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace mapper
