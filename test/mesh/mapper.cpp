@@ -36,22 +36,23 @@ TEST_F(MeshMapperTest, CgnsToMetis) {
   auto& cgns_to_metis_for_cells = mapper.cgns_to_metis_for_cells;
   // test the converted metis_mesh
   auto& base = cgns_mesh.GetBase(1);
-  auto n_nodes_total{0};
+  auto metis_node_id{0};
   for (int zone_id = 1; zone_id <= base.CountZones(); zone_id++) {
     // for each zone in this base
     auto& zone = base.GetZone(zone_id);
     for (int node_id = 1; node_id <= zone.CountNodes(); ++node_id) {
       // for each node in this zone
-      EXPECT_EQ(metis_to_cgns_for_nodes[n_nodes_total++].node_id, node_id);
+      EXPECT_EQ(metis_to_cgns_for_nodes[metis_node_id].node_id, node_id);
+      EXPECT_EQ(cgns_to_metis_for_nodes[zone_id][node_id], metis_node_id++);
     }
   }
-  EXPECT_EQ(metis_to_cgns_for_nodes.size(), n_nodes_total);
+  EXPECT_EQ(metis_to_cgns_for_nodes.size(), metis_node_id);
   auto n_cells_total = metis_to_cgns_for_cells.size();
   EXPECT_EQ(metis_mesh.CountCells(), n_cells_total);
-  for (cgsize_t i_cell = 0; i_cell != n_cells_total; ++i_cell) {
+  for (int metis_cell_id = 0; metis_cell_id != n_cells_total; ++metis_cell_id) {
     // for each cell in this base
-    auto& cell_info = metis_to_cgns_for_cells[i_cell];
-    auto n_nodes = cell_ptr[i_cell+1] - cell_ptr[i_cell];
+    auto& cell_info = metis_to_cgns_for_cells[metis_cell_id];
+    auto n_nodes = cell_ptr[metis_cell_id+1] - cell_ptr[metis_cell_id];
     auto& zone = base.GetZone(cell_info.zone_id);
     auto& section = zone.GetSection(cell_info.section_id);
     auto begin = section.CellIdMin();
@@ -59,12 +60,12 @@ TEST_F(MeshMapperTest, CgnsToMetis) {
     auto sect_id = cell_info.section_id;
     auto cell_id = cell_info.cell_id;
     EXPECT_EQ(cgns_to_metis_for_cells[zone_id][sect_id][cell_id-begin],
-              static_cast<int>(i_cell));
+              static_cast<int>(metis_cell_id));
     auto* nodes = section.GetNodeIdListByOneBasedCellId(cell_info.cell_id);
     for (int i_node = 0; i_node != n_nodes; ++i_node) {
       // for each node in this cell
-      auto node_id_global = cell_idx[cell_ptr[i_cell] + i_node];
-      auto& node_info = metis_to_cgns_for_nodes[node_id_global];
+      metis_node_id = cell_idx[cell_ptr[metis_cell_id] + i_node];
+      auto& node_info = metis_to_cgns_for_nodes[metis_node_id];
       EXPECT_EQ(node_info.zone_id, zone.id());
       EXPECT_EQ(node_info.node_id, nodes[i_node]);
     }
@@ -102,17 +103,17 @@ TEST_F(MeshMapperTest, WriteMetisResultToCgns) {
     EXPECT_STREQ(field1.name().c_str(), "NodePart");
     EXPECT_STREQ(field2.name().c_str(), "CellPart");
   }
-  for (int i_node = 0; i_node < n_nodes_total; ++i_node) {
-    auto node_info = mapper.metis_to_cgns_for_nodes[i_node];
-    int part = node_parts[i_node];
+  for (int metis_node_id = 0; metis_node_id < n_nodes_total; ++metis_node_id) {
+    auto node_info = mapper.metis_to_cgns_for_nodes[metis_node_id];
+    int part = node_parts[metis_node_id];
     int zid = node_info.zone_id;
     int nid = node_info.node_id;
     auto& field = base.GetZone(zid).GetSolution(1).GetField(1);
     field.at(nid) = part;
   }
-  for (int i_cell = 0; i_cell < n_cells_total; ++i_cell) {
-    auto cell_info = mapper.metis_to_cgns_for_cells[i_cell];
-    int part = cell_parts[i_cell];
+  for (int metis_cell_id = 0; metis_cell_id < n_cells_total; ++metis_cell_id) {
+    auto cell_info = mapper.metis_to_cgns_for_cells[metis_cell_id];
+    int part = cell_parts[metis_cell_id];
     int zid = cell_info.zone_id;
     auto& zone = base.GetZone(zid);
     int sid = cell_info.section_id;
