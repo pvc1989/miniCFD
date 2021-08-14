@@ -208,9 +208,9 @@ class Section {
    */
   void Write() const {
     int section_id;
-    cg_section_write(file().id(), base().id(), zone_->id(), name_.c_str(), type_,
-        CellIdMin(), CellIdMax(), 0, GetNodeIdList(),
-        &section_id);
+    cg_section_write(file().id(), base().id(), zone_->id(),
+        name_.c_str(), type_, CellIdMin(), CellIdMax(), 0,
+        GetNodeIdList(), &section_id);
     assert(section_id == section_id_);
   }
 
@@ -250,6 +250,11 @@ class Field {
   }
 
  public:  // Copy control:
+  Field(const Field&) = default;
+  Field& operator=(const Field&) = default;
+  Field(Field&&) noexcept = default;
+  Field& operator=(Field&&) noexcept = default;
+  ~Field() noexcept = default;
 
  public:  // Accessors:
   Real const& at(int id) const {

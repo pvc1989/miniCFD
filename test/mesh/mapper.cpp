@@ -21,7 +21,7 @@ class MeshMapperTest : public ::testing::Test {
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
 };
-TEST_F(MeshMapperTest, CgnsToMetis) {
+TEST_F(MeshMapperTest, MapCgnsToMetis) {
   // convert cgns_mesh to metis_mesh
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(file_name);
@@ -71,14 +71,14 @@ TEST_F(MeshMapperTest, CgnsToMetis) {
     }
   }
 }
-TEST_F(MeshMapperTest, WriteMetisResultToCgns) {
+TEST_F(MeshMapperTest, WriteMetisToCgns) {
   // convert cgns_mesh to metis_mesh
   auto file_name = "ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(test_data_dir_, file_name);
   cgns_mesh.ReadBases();
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
-
+  EXPECT_TRUE(mapper.IsValid());
   std::vector<idx_t> null_vector_of_idx;
   std::vector<real_t> null_vector_of_real;
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
@@ -122,7 +122,6 @@ TEST_F(MeshMapperTest, WriteMetisResultToCgns) {
     int cid = cell_info.cell_id;
     auto& field = zone.GetSolution(2).GetField(1);
     field.at(cid) = part;
-    // std::printf("%d\t%d\t%d\n", zid, cid, part);
   }
   cgns_mesh.Write(output_dir_ + "partitioned_" + file_name, 2);
 }

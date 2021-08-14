@@ -143,10 +143,11 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   //
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
-  // part_to_nodes[part_id][zone_id] == make_pair(begin_id, end_id);
-  // part_to_cells[part_id][zone_id][sect_id] == make_pair(begin_id, end_id);
+  // auto [begin_nid, end_nid] = part_to_nodes[part_id][zone_id];
+  // auto [begin_cid, end_cid] = part_to_cells[part_id][zone_id][sect_id];
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
-  auto part_to_cells = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts);
+  auto part_to_cells = std::vector<std::vector<std::vector<
+      std::pair<int, int>>>>(n_parts);
   for (int p = 0; p < n_parts; ++p) {
     part_to_nodes[p].resize(n_zones+1);
     part_to_cells[p].resize(n_zones+1);
@@ -185,7 +186,8 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
       for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
         int curr_part = cell_parts.at(curr_cid);
         if (curr_part != prev_part) {
-          part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, curr_cid);
+          part_to_cells[prev_part][zid][sid]
+              = std::make_pair(prev_cid, curr_cid);
           prev_cid = curr_cid;
           prev_part = curr_part;
         }
@@ -195,7 +197,8 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   }
   // write to txts
   for (int p = 0; p < n_parts; ++p) {
-    auto filename = current_binary_dir_ + "/ugrid_2d_part_" + std::to_string(p) + ".txt";
+    auto filename = current_binary_dir_ + "/ugrid_2d_part_";
+    filename += std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];
