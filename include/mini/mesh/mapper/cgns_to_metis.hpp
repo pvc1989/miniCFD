@@ -129,8 +129,6 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
       cell_ptr.reserve(cell_ptr.size() + n_cells_in_curr_sect);
       for (Int cell_id = section.CellIdMin();
            cell_id <= section.CellIdMax(); ++cell_id) {
-        
-        std::printf("cell_id = %d, n_cells_in_curr_sect = %d\n", cell_id, n_cells_in_curr_sect);
         metis_cell_ids.at(cell_id) = metis_to_cgns_for_cells.size();
         metis_to_cgns_for_cells.emplace_back(zone_id, section_id, cell_id);
         cell_ptr.emplace_back(pointer_value += n_nodes_per_cell);

@@ -56,7 +56,6 @@ std::vector<int> GetNewOrder(const T* parts, int n) {
     return parts[lid] < parts[rid] || (parts[lid] == parts[rid] && lid < rid);
   };
   std::sort(new_order.begin(), new_order.end(), cmp);
-  // std::printf("GetNewOrder(%p, %d) ends.\n", parts, n);
   return new_order;
 }
 template <typename T>
@@ -65,11 +64,9 @@ void ShuffleData(const std::vector<int>& new_order, T* old_data) {
   std::vector<T> new_data(n);
   for (int i = 0; i < n; ++i)
     new_data[i] = old_data[new_order[i]];
-  // std::memcpy(old_data, new_data.data(), n * sizeof(T));
-  for (int i = 0; i < n; ++i)
-    old_data[i] = new_data[i];
-  // std::printf("shuffle %d T's in [%p, %p)\n", n, old_data, old_data + n);
-  // std::printf("ShuffleData(%p, %p) ends.\n", &new_order, old_data);
+  std::memcpy(old_data, new_data.data(), n * sizeof(T));
+  // for (int i = 0; i < n; ++i)
+  //   old_data[i] = new_data[i];
 }
 template <typename T>
 void ShuffleConnectivity(const std::vector<int>& new_to_old_for_nodes,
@@ -82,10 +79,6 @@ void ShuffleConnectivity(const std::vector<int>& new_to_old_for_nodes,
   for (int i = 0; i < n_nodes; ++i) {
     old_to_new_for_nodes.at(new_to_old_for_nodes.at(i)) = i;
   }
-  for (int i = 0; i < 6; ++i) {
-    // std::printf("new_pos = %d, old_pos = %d, old_pos = %d, new_pos = %d\n", i, new_to_old_for_nodes[i], i, old_to_new_for_nodes[i]);
-  }
-  std::printf("\n");
   std::vector<T> old_cid_new_nid(node_id_list_size);
   for (int i = 0; i < node_id_list_size; ++i) {
     auto old_nid = old_cid_old_nid[i];
@@ -100,7 +93,6 @@ void ShuffleConnectivity(const std::vector<int>& new_to_old_for_nodes,
       *new_cid_new_nid++ = *old_ptr++;
     }
   }
-  // std::printf("ShuffleConnectivity(%p) ends.\n", node_id_list);
 }
 
 template <typename T, class Real>
@@ -126,7 +118,6 @@ class Shuffler {
     auto& base = mesh->GetBase(1);
     int n_zones = base.CountZones();
     for (int zid = 1; zid <= n_zones; ++zid) {
-      // std::printf("zid = %d\n", zid);
       auto& zone = base.GetZone(zid);
       // shuffle nodes and data on nodes
       auto metis_nid_offset = c_to_m_nodes[zid][1];
@@ -147,10 +138,8 @@ class Shuffler {
         auto& solution = zone.GetSolution(solution_id);
         if (!solution.OnNodes())
           continue;
-        // std::printf("sol.id = %d, sol.name = %s\n", solution_id, solution.name().c_str());
         for (int i = 1; i <= solution.CountFields(); ++i) {
           auto& field = solution.GetField(i);
-          // std::printf("field.id = %d, field.name = %s, field.size = %d (%d, %d)\n", i, field.name().c_str(), field.size(), zone.CountNodes(), new_to_old_for_nodes.size());
           ShuffleData(new_to_old_for_nodes, field.data());
         }
       }
@@ -162,7 +151,6 @@ class Shuffler {
           continue;
         int n_cells = section.CountCells();
         auto range_min = section.CellIdMin();
-        std::printf("range_min = %d\n", range_min);
         auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
         /* Shuffle Connectivity */
         auto new_to_old_for_cells = GetNewOrder(
@@ -171,12 +159,9 @@ class Shuffler {
         for (int i = 0; i < old_to_new_for_cells.size(); ++i) {
           old_to_new_for_cells.at(new_to_old_for_cells.at(i)) = i;
         }
-        // std::printf("m_to_c_cells[%d]\n", metis_cid_offset);
         ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
-        // std::printf("c_to_m_cells[%d][%d].data()\n", zid, sid);
         ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
         int npe = section.CountNodesByType();
-        // std::printf("npe = %d\n", npe);
         auto* node_id_list = section.GetNodeIdList();
         ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells, npe, node_id_list);
         /* Shuffle Data on Cells */
@@ -185,12 +170,9 @@ class Shuffler {
           auto& solution = zone.GetSolution(solution_id);
           if (!solution.OnCells())
             continue;
-          // std::printf("sol.id = %d, sol.name = %s\n", solution_id, solution.name().c_str());
           for (int i = 1; i <= solution.CountFields(); ++i) {
             auto& field = solution.GetField(i);
-            // std::printf("field.id = %d, field.name = %s, field.size = %d (%d, %d)\n", i, field.name().c_str(), field.size(), zone.CountCells(), section.CountCells());
             auto* field_ptr = &(field.at(range_min));
-            // std::printf("sect.CountCells() = %d, range_min = %d\n", section.CountCells(), range_min);
             ShuffleData(new_to_old_for_cells, field_ptr);
           }
         }
