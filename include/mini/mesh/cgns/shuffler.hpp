@@ -3,6 +3,7 @@
 #ifndef MINI_MESH_CGNS_SHUFFLER_HPP_
 #define MINI_MESH_CGNS_SHUFFLER_HPP_
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <cstring>
@@ -163,7 +164,8 @@ class Shuffler {
         ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
         int npe = section.CountNodesByType();
         auto* node_id_list = section.GetNodeIdList();
-        ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells, npe, node_id_list);
+        ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells,
+            npe, node_id_list);
         /* Shuffle Data on Cells */
         int n_solutions = zone.CountSolutions();
         for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {

@@ -47,7 +47,7 @@ struct CgnsToMetis {
     using Base = std::vector<Int>;
     using size_type = typename Base::size_type;
     size_type shift_{0};
-  
+
    public:
     ShiftedVector() = default;
     ShiftedVector(size_type size, size_type shift)
