@@ -5,11 +5,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdio>
 #include <cstring>
-#include <map>
-#include <memory>
-#include <set>
+#include <utility>
 #include <vector>
 
 #include "cgnslib.h"
@@ -47,39 +44,53 @@ std::vector<T> GetNodePartsByConnectivity(
  * @tparam T 
  * @param parts 
  * @param n 
- * @return std::vector<int> that maps `new_pos` to `old_pos`.
+ * @return a pair of std::vector<int>
  */
 template <typename T = int>
-std::vector<int> GetNewOrder(const T* parts, int n) {
-  auto new_order = std::vector<int>(n);
-  std::iota(new_order.begin(), new_order.end(), 0);
+std::pair<std::vector<int>, std::vector<int>>
+GetNewOrder(const T* parts, int n) {
+  auto new_to_old = std::vector<int>(n);
+  auto old_to_new = std::vector<int>(n);
+  std::iota(new_to_old.begin(), new_to_old.end(), 0);
   auto cmp = [parts](int lid, int rid) {
     return parts[lid] < parts[rid] || (parts[lid] == parts[rid] && lid < rid);
   };
-  std::sort(new_order.begin(), new_order.end(), cmp);
-  return new_order;
+  std::sort(new_to_old.begin(), new_to_old.end(), cmp);
+  for (int i = 0; i < n; ++i)
+    old_to_new[new_to_old[i]] = i;
+  return {new_to_old, old_to_new};
 }
+/**
+ * @brief 
+ * 
+ * @tparam T 
+ * @param new_to_old 
+ * @param old_data 
+ */
 template <typename T>
-void ShuffleData(const std::vector<int>& new_order, T* old_data) {
-  int n = new_order.size();
+void ShuffleData(const std::vector<int>& new_to_old, T* old_data) {
+  int n = new_to_old.size();
   std::vector<T> new_data(n);
   for (int i = 0; i < n; ++i)
-    new_data[i] = old_data[new_order[i]];
+    new_data[i] = old_data[new_to_old[i]];
   std::memcpy(old_data, new_data.data(), n * sizeof(T));
-  // for (int i = 0; i < n; ++i)
-  //   old_data[i] = new_data[i];
 }
+/**
+ * @brief 
+ * 
+ * @tparam T 
+ * @param old_to_new_for_nodes 
+ * @param new_to_old_for_cells 
+ * @param npe 
+ * @param old_cid_old_nid 
+ */
 template <typename T>
-void ShuffleConnectivity(const std::vector<int>& new_to_old_for_nodes,
+void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
                          const std::vector<int>& new_to_old_for_cells,
                          int npe, T* old_cid_old_nid) {
   int n_cells = new_to_old_for_cells.size();
-  int n_nodes = new_to_old_for_nodes.size();
+  int n_nodes = old_to_new_for_nodes.size();
   int node_id_list_size = n_cells * npe;
-  auto old_to_new_for_nodes = new_to_old_for_nodes;
-  for (int i = 0; i < n_nodes; ++i) {
-    old_to_new_for_nodes.at(new_to_old_for_nodes.at(i)) = i;
-  }
   std::vector<T> old_cid_new_nid(node_id_list_size);
   for (int i = 0; i < node_id_list_size; ++i) {
     auto old_nid = old_cid_old_nid[i];
@@ -96,6 +107,12 @@ void ShuffleConnectivity(const std::vector<int>& new_to_old_for_nodes,
   }
 }
 
+/**
+ * @brief 
+ * 
+ * @tparam T 
+ * @tparam Real 
+ */
 template <typename T, class Real>
 class Shuffler {
  public:
@@ -122,12 +139,8 @@ class Shuffler {
       auto& zone = base.GetZone(zid);
       // shuffle nodes and data on nodes
       auto metis_nid_offset = c_to_m_nodes[zid][1];
-      auto new_to_old_for_nodes = GetNewOrder(
+      auto [new_to_old_for_nodes, old_to_new_for_nodes] = GetNewOrder(
           &(node_parts_[metis_nid_offset]), zone.CountNodes());
-      auto old_to_new_for_nodes = new_to_old_for_nodes;
-      for (int i = 0; i < old_to_new_for_nodes.size(); ++i) {
-        old_to_new_for_nodes.at(new_to_old_for_nodes.at(i)) = i;
-      }
       auto& coord = zone.GetCoordinates();
       ShuffleData(new_to_old_for_nodes, coord.x().data());
       ShuffleData(new_to_old_for_nodes, coord.y().data());
@@ -154,12 +167,8 @@ class Shuffler {
         auto range_min = section.CellIdMin();
         auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
         /* Shuffle Connectivity */
-        auto new_to_old_for_cells = GetNewOrder(
+        auto [new_to_old_for_cells, old_to_new_for_cells] = GetNewOrder(
             &(cell_parts_[metis_cid_offset]), n_cells);
-        auto old_to_new_for_cells = new_to_old_for_cells;
-        for (int i = 0; i < old_to_new_for_cells.size(); ++i) {
-          old_to_new_for_cells.at(new_to_old_for_cells.at(i)) = i;
-        }
         ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
         ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
         int npe = section.CountNodesByType();
