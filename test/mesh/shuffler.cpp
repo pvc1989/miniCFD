@@ -44,16 +44,23 @@ void ShufflerTest::WriteParts(
     // write data on nodes
     auto& node_sol = zone.AddSolution("NodeData",
         CGNS_ENUMV(Vertex));
-    auto& node_field = node_sol.AddField("NodePart");
+    node_sol.AddField("NodePart");
+    node_sol.AddField("MetisNodeId");
+    auto& node_field = node_sol.GetField(1);
+    auto& metis_nids = node_sol.GetField(2);
     auto n_nodes = zone.CountNodes();
     for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
       auto metis_nid = zone_to_nodes[zone_id][cgns_nid];
       node_field.at(cgns_nid) = node_parts[metis_nid];
+      metis_nids.at(cgns_nid) = metis_nid;
     }
     // write data on cells
     auto& cell_sol =  zone.AddSolution("CellData",
         CGNS_ENUMV(CellCenter));
-    auto& cell_field = cell_sol.AddField("CellPart");
+    cell_sol.AddField("CellPart");
+    cell_sol.AddField("MetisCellId");
+    auto& cell_field = cell_sol.GetField(1);
+    auto& metis_cids = cell_sol.GetField(2);
     auto& sect_to_cells = zone_to_sects.at(zone_id);
     int n_sects = zone.CountSections();
     for (int sect_id = 1; sect_id <= n_sects; ++sect_id) {
@@ -65,9 +72,11 @@ void ShufflerTest::WriteParts(
       int range_min{sect.CellIdMin()};
       int range_max{sect.CellIdMax()};
       EXPECT_EQ(n_cells - 1, range_max - range_min);
-      for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;) {
+      for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;
+           ++cgns_cell_id) {
         auto metis_cell_id = cells_local_to_global.at(cgns_cell_id);
-        cell_field.at(cgns_cell_id++) = cell_parts[metis_cell_id];
+        cell_field.at(cgns_cell_id) = cell_parts[metis_cell_id];
+        metis_cids.at(cgns_cell_id) = metis_cell_id;
       }
     }
   }
@@ -140,9 +149,12 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   //     &edge_cut, &cell_parts, &node_parts);
   auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
       node_parts);
+  std::printf("WriteParts:\n");
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
+  std::printf("Shuffle:\n");
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
+  std::printf("Write:\n");
   cgns_mesh.Write(new_file_name, 2);
 
   // Write Partition txts.
