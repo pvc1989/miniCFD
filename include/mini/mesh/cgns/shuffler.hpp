@@ -29,6 +29,9 @@ std::vector<T> GetNodePartsByConnectivity(
     auto tail = *curr_range_pointer;
     for (int j = head; j < tail; ++j) {
       int node_index = *node_pointer++;
+      /* If more than one parts share a common node, then the
+      node belongs to the minimum part.
+      */
       if (part_value < node_parts[node_index])
         node_parts[node_index] = part_value;
     }
