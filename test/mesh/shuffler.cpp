@@ -120,23 +120,36 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   std::vector<idx_t> null_vector_of_idx;
   std::vector<real_t> null_vector_of_real;
-  std::vector<idx_t> cell_parts, node_parts;
-  PartMesh(metis_mesh,
-      null_vector_of_idx/* computational cost */,
+  auto graph = metis::MeshToDual(
+      metis_mesh.CountCells(), metis_mesh.CountNodes(),
+      metis_mesh, n_common_nodes, 0);
+  std::vector<idx_t> cell_parts;
+  metis::PartGraphKway(1, graph,
+      null_vector_of_idx/* weight of each cell */,
       null_vector_of_idx/* communication size */,
-      n_common_nodes, n_parts,
-      null_vector_of_real/* weight of each part */,
-      null_vector_of_idx/* options */,
-      &edge_cut, &cell_parts, &node_parts);
+      null_vector_of_idx/* weight of each edge (in dual graph) */,
+      n_parts, null_vector_of_real/* weight of each part */,
+      null_vector_of_real/* unbalance tolerance */,
+      null_vector_of_idx/* options */, &edge_cut, &cell_parts);
+  std::vector<idx_t> node_parts = GetNodePartsByConnectivity(
+      metis_mesh, cell_parts, n_parts, metis_mesh.CountNodes());
+  // PartMesh(metis_mesh,
+  //     null_vector_of_idx/* computational cost */,
+  //     null_vector_of_idx/* communication size */,
+  //     n_common_nodes, n_parts,
+  //     null_vector_of_real/* weight of each part */,
+  //     null_vector_of_idx/* options */,
+  //     &edge_cut, &cell_parts, &node_parts);
   auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
       node_parts);
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
   cgns_mesh.Write(new_file_name, 2);
+
+  // Write Partition txts.
   cgns_mesh = CgnsMesh(new_file_name);
   cgns_mesh.ReadBases();
-  //
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
   // auto [begin_nid, end_nid] = part_to_nodes[part_id][zone_id];
