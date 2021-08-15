@@ -164,13 +164,13 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   }
   for (int zid = 1; zid <= n_zones; ++zid) {
     auto& zone = base.GetZone(zid);
-    auto& node_parts = zone.GetSolution(1).GetField(1);
-    assert(node_parts.name() == "NodePart");
+    auto& node_field = zone.GetSolution(1).GetField(1);
+    assert(node_field.name() == "NodePart");
     // slice node lists by part_id
-    int prev_nid = 1, prev_part = node_parts.at(prev_nid);
+    int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
     for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
-      int curr_part = node_parts.at(curr_nid);
+      int curr_part = node_field.at(curr_nid);
       if (curr_part != prev_part) {
         part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, curr_nid);
         prev_nid = curr_nid;
@@ -182,16 +182,16 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     int n_cells = zone.CountCells();
     auto& sol = zone.GetSolution(2);
     assert(sol.name() == "CellData");
-    auto& cell_parts = sol.GetField(1);
-    assert(cell_parts.name() == "CellPart");
+    auto& cell_field = sol.GetField(1);
+    assert(cell_field.name() == "CellPart");
     for (int sid = 1; sid <= zone.CountSections(); ++sid) {
       auto& sect = zone.GetSection(sid);
       if (sect.dim() != base.GetCellDim())
         continue;
       int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
-      int prev_cid = cid_min, prev_part = cell_parts.at(prev_cid);
+      int prev_cid = cid_min, prev_part = cell_field.at(prev_cid);
       for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
-        int curr_part = cell_parts.at(curr_cid);
+        int curr_part = cell_field.at(curr_cid);
         if (curr_part != prev_part) {
           part_to_cells[prev_part][zid][sid]
               = std::make_pair(prev_cid, curr_cid);
@@ -202,22 +202,75 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, cid_max+1);
     }
   }
+  // store cell adjacency for each part
+  // inner_adjs[part_id] = vector of [smaller_cid, bigger_cid]
+  auto inner_adjs = std::vector<std::vector<std::pair<int, int>>>(n_parts);
+  auto part_interpart_adjs = std::vector<std::map<int, std::vector<
+      std::pair<int, int>>>>(n_parts);
+  auto part_adj_nodes = std::vector<std::map<int, std::set<int>>>(n_parts);
+  for (int i = 0; i < metis_mesh.CountCells(); ++i) {
+    auto part_i = cell_parts[i];
+    for (int r = graph.range(i); r < graph.range(i+1); ++r) {
+      int j = graph.index(r);
+      auto part_j = cell_parts[j];
+      if (part_i == part_j) {
+        if (i < j)
+          inner_adjs[part_i].emplace_back(i, j);
+      } else {
+        part_interpart_adjs[part_i][part_j].emplace_back(i, j);
+        int range_b = metis_mesh.range(i), range_e = metis_mesh.range(i+1);
+        for (int range_id = range_b; range_id < range_e; ++range_id) {
+          auto node_id = metis_mesh.nodes(range_id);
+          auto node_part = node_parts[node_id];
+          if (node_part != part_i)
+            part_adj_nodes[part_i][node_part].emplace(node_id);
+        }
+      }
+    }
+  }
   // write to txts
   for (int p = 0; p < n_parts; ++p) {
     auto filename = current_binary_dir_ + "/ugrid_2d_part_";
     filename += std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
+    // node ranges
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];
-      if (head)
+      if (head) {
         ostrm << z << ' ' << head << ' ' << tail << '\n';
+      }
+    }
+    ostrm << '\n';
+    // cell ranges
+    for (int z = 1; z <= n_zones; ++z) {
       auto n_sects = part_to_cells[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
         auto [head, tail] = part_to_cells[p][z][s];
-        if (head)
+        if (head) {
           ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+        }
       }
     }
+    ostrm << '\n';
+    // inner adjacency
+    for (auto [i, j] : inner_adjs[p]) {
+      ostrm << i << ' ' << j << '\n';
+    }
+    ostrm << '\n';
+    // interpart adjacency
+    for (auto& [part_id, pairs] : part_interpart_adjs[p]) {
+      for (auto [i, j] : pairs) {
+        ostrm << part_id << ' ' << i << ' ' << j << '\n';
+      }
+    }
+    ostrm << '\n';
+    // adjacent nodes
+    for (auto& [part_id, nodes] : part_adj_nodes[p]) {
+      for (auto i : nodes) {
+        ostrm << part_id << ' ' << i << '\n';
+      }
+    }
+    ostrm << '\n';
   }
 }
 
