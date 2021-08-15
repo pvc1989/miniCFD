@@ -170,6 +170,20 @@ TEST_F(Partitioner, PartGraphKway) {
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
       mesh, cell_weights, cell_parts, {}/* node_parts */);
 }
+TEST_F(Partitioner, GetNodeParts) {
+  std::vector<int> cell_parts{2, 0, 0, 1};
+  int n_nodes = 10;
+  auto mesh = Mesh<int>(
+      {0, 4, 8, 11, 14},
+      {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7},
+      n_nodes);
+  int n_parts = 3;
+  auto node_parts = GetNodeParts(mesh, cell_parts, n_parts);
+  std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
+  for (int i = 0; i < n_nodes; ++i) {
+    EXPECT_EQ(node_parts[i], expected_node_parts[i]);
+  }
+}
 
 }  // namespace metis
 }  // namespace mesh

@@ -149,6 +149,38 @@ SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
   assert(error_code == METIS_OK);
   return SparseGraphWithDeleter<Int>(n_cells, range, neighbors);
 }
+/**
+ * @brief Get the partition of nodes from the partition of cells.
+ * 
+ * @tparam Int 
+ * @param mesh 
+ * @param cell_parts 
+ * @param n_parts 
+ * @return std::vector<Int> 
+ */
+template <typename Int>
+std::vector<Int> GetNodeParts(
+    const metis::Mesh<Int>& mesh, const std::vector<Int>& cell_parts,
+    Int n_parts) {
+  Int n_nodes = mesh.CountNodes();
+  Int n_cells = mesh.CountCells();
+  auto node_parts = std::vector<Int>(n_nodes, n_parts);
+  auto node_pointer = &(mesh.nodes(0));
+  auto curr_range_pointer = &(mesh.range(0));
+  for (Int i = 0; i < n_cells; ++i) {
+    auto part_value = cell_parts[i];
+    auto head = *curr_range_pointer++;
+    auto tail = *curr_range_pointer;
+    for (Int j = head; j < tail; ++j) {
+      Int node_index = *node_pointer++;
+      /* If more than one parts share a common node, then the
+      node belongs to the min-id part. */
+      if (part_value < node_parts[node_index])
+        node_parts[node_index] = part_value;
+    }
+  }
+  return node_parts;
+}
 
 }  // namespace metis
 }  // namespace mesh

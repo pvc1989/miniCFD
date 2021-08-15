@@ -15,30 +15,6 @@
 namespace mini {
 namespace mesh {
 
-template <typename T>
-std::vector<T> GetNodePartsByConnectivity(
-    const metis::Mesh<int>& mesh, const std::vector<T>& cell_parts,
-    T n_parts, int n_nodes) {
-  auto node_parts = std::vector<T>(n_nodes, n_parts);
-  auto node_pointer = &(mesh.nodes(0));
-  int n_cells = mesh.CountCells();
-  auto curr_range_pointer = &(mesh.range(0));
-  for (int i = 0; i < n_cells; ++i) {
-    auto part_value = cell_parts[i];
-    auto head = *curr_range_pointer++;
-    auto tail = *curr_range_pointer;
-    for (int j = head; j < tail; ++j) {
-      int node_index = *node_pointer++;
-      /* If more than one parts share a common node, then the
-      node belongs to the minimum part.
-      */
-      if (part_value < node_parts[node_index])
-        node_parts[node_index] = part_value;
-    }
-  }
-  return node_parts;
-}
-
 /**
  * @brief Get the New Order object
  * 
