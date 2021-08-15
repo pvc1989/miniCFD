@@ -159,7 +159,7 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
       ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
       auto npe = section.CountNodesByType();
       auto* node_id_list = section.GetNodeIdList();
-      ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells,
+      ShuffleConnectivity(old_to_new_for_nodes, new_to_old_for_cells,
           npe, node_id_list);
       /* Shuffle Data on Cells */
       auto n_solutions = zone.CountSolutions();
