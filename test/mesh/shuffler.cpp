@@ -7,8 +7,6 @@
 #include <string>
 #include <vector>
 
-#include "cgnslib.h"
-#include "metis.h"
 #include "gtest/gtest.h"
 
 #include "mini/mesh/mapper/cgns_to_metis.hpp"
@@ -23,9 +21,8 @@ namespace mesh {
 
 class ShufflerTest : public ::testing::Test {
  protected:
-  using CgnsFile = mini::mesh::cgns::File<double>;
+  using CgnsMesh = mini::mesh::cgns::File<double>;
   using MetisMesh = metis::Mesh<idx_t>;
-  using CSRM = mini::mesh::metis::SparseMatrix<idx_t>;
   using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
@@ -33,11 +30,11 @@ class ShufflerTest : public ::testing::Test {
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
   static void WriteParts(
       const MapperType& mapper, const std::vector<idx_t>& cell_parts,
-      const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh);
+      const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh);
 };
 void ShufflerTest::WriteParts(
     const MapperType& mapper, const std::vector<idx_t>& cell_parts,
-    const std::vector<idx_t>& node_parts, CgnsFile* cgns_mesh) {
+    const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh) {
   auto& zone_to_sects = mapper.cgns_to_metis_for_cells;
   auto& zone_to_nodes = mapper.cgns_to_metis_for_nodes;
   auto& base = cgns_mesh->GetBase(1);
@@ -110,13 +107,13 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
     EXPECT_EQ(node_id_list[i], expected_new_node_id_list[i]);
   }
 }
-TEST_F(ShufflerTest, PartitionCgnsFile) {
+TEST_F(ShufflerTest, PartitionCgnsMesh) {
   MapperType mapper;
   using MeshDataType = double;
   using MetisId = idx_t;
   auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto new_file_name = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
-  auto cgns_mesh = CgnsFile(old_file_name);
+  auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
@@ -137,7 +134,7 @@ TEST_F(ShufflerTest, PartitionCgnsFile) {
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
   cgns_mesh.Write(new_file_name, 2);
-  cgns_mesh = CgnsFile(new_file_name);
+  cgns_mesh = CgnsMesh(new_file_name);
   cgns_mesh.ReadBases();
   //
   auto& base = cgns_mesh.GetBase(1);
