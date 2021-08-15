@@ -120,9 +120,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
   std::vector<idx_t> null_vector_of_idx;
   std::vector<real_t> null_vector_of_real;
-  auto graph = metis::MeshToDual(
-      metis_mesh.CountCells(), metis_mesh.CountNodes(),
-      metis_mesh, n_common_nodes, 0);
+  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes, 0);
   std::vector<idx_t> cell_parts;
   metis::PartGraphKway(1, graph,
       null_vector_of_idx/* weight of each cell */,

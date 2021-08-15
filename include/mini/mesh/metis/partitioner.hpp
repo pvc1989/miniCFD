@@ -130,23 +130,21 @@ void PartMesh(const Mesh<Int> &mesh,
  * 
  * @tparam Int index type
  * 
- * @param[in] n_cells the number of cells in the mesh
- * @param[in] n_nodes the number of nodes in the mesh
  * @param[in] mesh the mesh to be converted
  * @param[in] n_common_nodes the minimum number of nodes shared by two neighboring cells
  * @param[in] index_base the the base of indexing (0 or 1)
  */
 template <typename Int>
-SparseGraphWithDeleter<Int> MeshToDual(
-    const Int &n_cells, const Int &n_nodes,
-    const Mesh<Int> &mesh,
-    const Int &n_common_nodes, const Int &index_base) {
+SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
+    Int n_common_nodes, Int index_base = 0) {
+  Int n_cells = mesh.CountCells();
+  Int n_nodes = mesh.CountNodes();
   Int *range, *neighbors;
   auto error_code = METIS_MeshToDual(
-      const_cast<Int*>(&n_cells), const_cast<Int*>(&n_nodes),
+      &n_cells, &n_nodes,
       const_cast<Int*>(&(mesh.range(0))),
       const_cast<Int*>(&(mesh.nodes(0))),
-      const_cast<Int*>(&n_common_nodes), const_cast<Int*>(&index_base),
+      &n_common_nodes, &index_base,
       &range, &neighbors);
   assert(error_code == METIS_OK);
   return SparseGraphWithDeleter<Int>(n_cells, range, neighbors);
