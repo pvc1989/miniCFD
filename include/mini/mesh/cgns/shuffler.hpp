@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "cgnslib.h"
-
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/mapper/cgns_to_metis.hpp"
 
@@ -110,92 +108,95 @@ void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
 /**
  * @brief 
  * 
- * @tparam T 
+ * @tparam Int
  * @tparam Real 
  */
-template <typename T, class Real>
+template <typename Int, class Real>
 class Shuffler {
  public:
-  using CgnsFile = mini::mesh::cgns::File<Real>;
-  using MetisMesh = metis::Mesh<int>;
-  using MapperType = mini::mesh::mapper::CgnsToMetis<double, int>;
+  using CgnsMesh = mini::mesh::cgns::File<Real>;
+  using MetisMesh = metis::Mesh<Int>;
+  using MapperType = mini::mesh::mapper::CgnsToMetis<Real, Int>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
 
-  Shuffler(int n_parts, std::vector<T> const& cell_parts,
-           std::vector<T> const& node_parts)
+  Shuffler(Int n_parts, std::vector<Int> const& cell_parts,
+           std::vector<Int> const& node_parts)
       : n_parts_{n_parts}, cell_parts_{cell_parts}, node_parts_{node_parts} {
   }
 
-  void Shuffle(CgnsFile* mesh, MapperType* mapper) {
-    auto& m_to_c_nodes = mapper->metis_to_cgns_for_nodes;
-    auto& m_to_c_cells = mapper->metis_to_cgns_for_cells;
-    auto& c_to_m_nodes = mapper->cgns_to_metis_for_nodes;
-    auto& c_to_m_cells = mapper->cgns_to_metis_for_cells;
-    auto& base = mesh->GetBase(1);
-    int n_zones = base.CountZones();
-    for (int zid = 1; zid <= n_zones; ++zid) {
-      auto& zone = base.GetZone(zid);
-      // shuffle nodes and data on nodes
-      auto metis_nid_offset = c_to_m_nodes[zid][1];
-      auto [new_to_old_for_nodes, old_to_new_for_nodes] = GetNewOrder(
-          &(node_parts_[metis_nid_offset]), zone.CountNodes());
-      auto& coord = zone.GetCoordinates();
-      ShuffleData(new_to_old_for_nodes, coord.x().data());
-      ShuffleData(new_to_old_for_nodes, coord.y().data());
-      ShuffleData(new_to_old_for_nodes, coord.z().data());
-      ShuffleData(new_to_old_for_nodes, &(c_to_m_nodes[zid][1]));
-      ShuffleData(old_to_new_for_nodes, &(m_to_c_nodes[metis_nid_offset]));
-      int n_solutions = zone.CountSolutions();
-      for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
-        auto& solution = zone.GetSolution(solution_id);
-        if (!solution.OnNodes())
-          continue;
-        for (int i = 1; i <= solution.CountFields(); ++i) {
-          auto& field = solution.GetField(i);
-          ShuffleData(new_to_old_for_nodes, field.data());
-        }
+  void Shuffle(CgnsMesh* mesh, MapperType* mapper);
+
+ private:
+  std::vector<Int> const& cell_parts_;
+  std::vector<Int> const& node_parts_;
+  Int n_parts_;
+};
+
+template <typename Int, class Real>
+void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
+  auto& m_to_c_nodes = mapper->metis_to_cgns_for_nodes;
+  auto& m_to_c_cells = mapper->metis_to_cgns_for_cells;
+  auto& c_to_m_nodes = mapper->cgns_to_metis_for_nodes;
+  auto& c_to_m_cells = mapper->cgns_to_metis_for_cells;
+  auto& base = mesh->GetBase(1);
+  auto n_zones = base.CountZones();
+  for (int zid = 1; zid <= n_zones; ++zid) {
+    auto& zone = base.GetZone(zid);
+    // shuffle nodes and data on nodes
+    auto metis_nid_offset = c_to_m_nodes[zid][1];
+    auto [new_to_old_for_nodes, old_to_new_for_nodes] = GetNewOrder(
+        &(node_parts_[metis_nid_offset]), zone.CountNodes());
+    auto& coord = zone.GetCoordinates();
+    ShuffleData(new_to_old_for_nodes, coord.x().data());
+    ShuffleData(new_to_old_for_nodes, coord.y().data());
+    ShuffleData(new_to_old_for_nodes, coord.z().data());
+    ShuffleData(new_to_old_for_nodes, &(c_to_m_nodes[zid][1]));
+    ShuffleData(old_to_new_for_nodes, &(m_to_c_nodes[metis_nid_offset]));
+    auto n_solutions = zone.CountSolutions();
+    for (auto solution_id = 1; solution_id <= n_solutions; solution_id++) {
+      auto& solution = zone.GetSolution(solution_id);
+      if (!solution.OnNodes())
+        continue;
+      for (auto i = 1; i <= solution.CountFields(); ++i) {
+        auto& field = solution.GetField(i);
+        ShuffleData(new_to_old_for_nodes, field.data());
       }
-      // shuffle cells and data on cells
-      int n_sections = zone.CountSections();
-      for (int sid = 1; sid <= n_sections; ++sid) {
-        auto& section = zone.GetSection(sid);
-        if (section.dim() != base.GetCellDim())
+    }
+    // shuffle cells and data on cells
+    auto n_sections = zone.CountSections();
+    for (auto sid = 1; sid <= n_sections; ++sid) {
+      auto& section = zone.GetSection(sid);
+      if (section.dim() != base.GetCellDim())
+        continue;
+      auto n_cells = section.CountCells();
+      auto range_min = section.CellIdMin();
+      auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
+      /* Shuffle Connectivity */
+      auto [new_to_old_for_cells, old_to_new_for_cells] = GetNewOrder(
+          &(cell_parts_[metis_cid_offset]), n_cells);
+      ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
+      ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
+      auto npe = section.CountNodesByType();
+      auto* node_id_list = section.GetNodeIdList();
+      ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells,
+          npe, node_id_list);
+      /* Shuffle Data on Cells */
+      auto n_solutions = zone.CountSolutions();
+      for (auto solution_id = 1; solution_id <= n_solutions; solution_id++) {
+        auto& solution = zone.GetSolution(solution_id);
+        if (!solution.OnCells())
           continue;
-        int n_cells = section.CountCells();
-        auto range_min = section.CellIdMin();
-        auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
-        /* Shuffle Connectivity */
-        auto [new_to_old_for_cells, old_to_new_for_cells] = GetNewOrder(
-            &(cell_parts_[metis_cid_offset]), n_cells);
-        ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
-        ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
-        int npe = section.CountNodesByType();
-        auto* node_id_list = section.GetNodeIdList();
-        ShuffleConnectivity(new_to_old_for_nodes, new_to_old_for_cells,
-            npe, node_id_list);
-        /* Shuffle Data on Cells */
-        int n_solutions = zone.CountSolutions();
-        for (int solution_id = 1; solution_id <= n_solutions; solution_id++) {
-          auto& solution = zone.GetSolution(solution_id);
-          if (!solution.OnCells())
-            continue;
-          for (int i = 1; i <= solution.CountFields(); ++i) {
-            auto& field = solution.GetField(i);
-            auto* field_ptr = &(field.at(range_min));
-            ShuffleData(new_to_old_for_cells, field_ptr);
-          }
+        for (auto i = 1; i <= solution.CountFields(); ++i) {
+          auto& field = solution.GetField(i);
+          auto* field_ptr = &(field.at(range_min));
+          ShuffleData(new_to_old_for_cells, field_ptr);
         }
       }
     }
   }
-
- private:
-  std::vector<T> const& cell_parts_;
-  std::vector<T> const& node_parts_;
-  int n_parts_;
-};
+}
 
 }  // namespace mesh
 }  // namespace mini
