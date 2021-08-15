@@ -129,8 +129,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       n_parts, null_vector_of_real/* weight of each part */,
       null_vector_of_real/* unbalance tolerance */,
       null_vector_of_idx/* options */, &edge_cut, &cell_parts);
-  std::vector<idx_t> node_parts = GetNodePartsByConnectivity(
-      metis_mesh, cell_parts, n_parts, metis_mesh.CountNodes());
+  std::vector<idx_t> node_parts = metis::GetNodeParts(
+      metis_mesh, cell_parts, n_parts);
   // PartMesh(metis_mesh,
   //     null_vector_of_idx/* computational cost */,
   //     null_vector_of_idx/* communication size */,
@@ -218,26 +218,6 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
           ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
       }
     }
-  }
-}
-
-class Partition : public ::testing::Test {
- protected:
-  using MetisMesh = mini::mesh::metis::Mesh<int>;
-};
-TEST_F(Partition, GetNodePartsByConnectivity) {
-  std::vector<int> cell_parts{2, 0, 0, 1};
-  int n_nodes = 10;
-  auto mesh = MetisMesh(
-      {0, 4, 8, 11, 14},
-      {0, 2, 3, 1,   2, 4, 5, 3,   6, 8, 7,   8, 9, 7},
-      n_nodes);
-  int n_parts = 3;
-  auto node_parts = GetNodePartsByConnectivity<int>(
-      mesh, cell_parts, n_parts, n_nodes);
-  std::vector<int> expected_node_parts{2, 2, 0, 0, 0, 0, 0, 0, 0, 1};
-  for (int i = 0; i < n_nodes; ++i) {
-    EXPECT_EQ(node_parts[i], expected_node_parts[i]);
   }
 }
 
