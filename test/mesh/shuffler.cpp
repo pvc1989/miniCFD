@@ -149,12 +149,9 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   //     &edge_cut, &cell_parts, &node_parts);
   auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
       node_parts);
-  std::printf("WriteParts:\n");
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
-  std::printf("Shuffle:\n");
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
-  std::printf("Write:\n");
   cgns_mesh.Write(new_file_name, 2);
 
   // Write Partition txts.
@@ -282,7 +279,6 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
         ostrm << part_id << ' ' << i << '\n';
       }
     }
-    ostrm << '\n';
   }
 }
 
