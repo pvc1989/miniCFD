@@ -79,16 +79,9 @@ TEST_F(MeshMapperTest, WriteMetisToCgns) {
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  std::vector<idx_t> null_vector_of_idx;
-  std::vector<real_t> null_vector_of_real;
   int n_parts{8}, n_common_nodes{2}, edge_cut{0};
-  std::vector<int> cell_parts, node_parts;
-  metis::PartMesh(metis_mesh, null_vector_of_idx/* computational cost */,
-      null_vector_of_idx/* communication size */,
-      n_common_nodes, n_parts,
-      null_vector_of_real/* weight of each part */,
-      null_vector_of_idx/* options */,
-      &edge_cut, &cell_parts, &node_parts);
+  auto [cell_parts, node_parts] = metis::PartMesh(
+      metis_mesh, n_parts, n_common_nodes);
   // write the result of partitioning to cgns_mesh
   auto n_nodes_total = mapper.metis_to_cgns_for_nodes.size();
   auto n_cells_total = mapper.metis_to_cgns_for_cells.size();

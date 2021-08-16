@@ -6,6 +6,7 @@
 #include <memory>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 #include "metis.h"
 #include "mini/mesh/metis/format.hpp"
@@ -26,53 +27,49 @@ static inline bool valid(Container&& c, std::size_t size) {
  * @tparam Graph sparse graph type
  * @tparam Real real number type
  * 
- * @param[in] n_constraints the number of balancing constraints (>= 1)
  * @param[in] graph the graph to be partitioned
+ * @param[in] n_parts the number of parts to be partitioned
+ * @param[in] n_constraints the number of balancing constraints (>= 1)
  * @param[in] cost_of_each_vertex the computational cost of each vertex
  * @param[in] size_of_each_vertex the communication size of each vertex
  * @param[in] cost_of_each_edge the weight of each edge
- * @param[in] n_parts the number of parts to be partitioned
  * @param[in] weight_of_each_part the weight of each part (sum must be 1.0)
  * @param[in] unbalances the unbalance tolerance for each constraint
  * @param[in] options the array of METIS options
- * @param[out] objective_value the edge cut or the communication volume of the partitioning
- * @param[out] vertex_parts the part id of each vertex
+ * @return the part id of each vertex
  */
-template <typename Int, typename Graph, typename Real>
-void PartGraphKway(
-    const Int &n_constraints,
-    const Graph &graph,
-    const std::vector<Int> &cost_of_each_vertex,
-    const std::vector<Int> &size_of_each_vertex,
-    const std::vector<Int> &cost_of_each_edge,
-    Int n_parts, const std::vector<Real> &weight_of_each_part,
-    const std::vector<Real> &unbalances,
-    const std::vector<Int> &options,
-    /* input ↑, output ↓ */
-    Int *objective_value, std::vector<Int> *vertex_parts) {
-  static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
+template <typename Graph, typename Int>
+std::vector<Int> PartGraph(
+    const Graph &graph, Int n_parts, Int n_constraints = 1,
+    const std::vector<Int> &cost_of_each_vertex = {},
+    const std::vector<Int> &size_of_each_vertex = {},
+    const std::vector<Int> &cost_of_each_edge = {},
+    const std::vector<real_t> &weight_of_each_part = {},
+    const std::vector<real_t> &unbalances = {},
+    const std::vector<Int> &options = {}) {
   static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
-  static_assert(std::is_floating_point_v<Real>,
-      "`Real` must be a floating-point type.");
-  static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
   Int n_vertices = graph.CountVertices();
+  auto vertex_parts = std::vector<Int>(n_vertices);
   assert(valid(cost_of_each_vertex, n_vertices));
   assert(valid(size_of_each_vertex, n_vertices));
+  assert(valid(cost_of_each_edge, graph.CountEdges()));
   assert(valid(weight_of_each_part, n_parts));
-  vertex_parts->resize(n_vertices);
+  assert(valid(unbalances, n_parts));
+  Int objective_value;
   auto error_code = METIS_PartGraphKway(
-      const_cast<Int*>(&n_vertices), const_cast<Int*>(&n_constraints),
+      &n_vertices, &n_constraints,
       const_cast<Int*>(&(graph.range(0))),
       const_cast<Int*>(&(graph.index(0))),
       const_cast<Int*>(cost_of_each_vertex.data()),
       const_cast<Int*>(size_of_each_vertex.data()),
       const_cast<Int*>(cost_of_each_edge.data()),
       const_cast<Int*>(&n_parts),
-      const_cast<Real*>(weight_of_each_part.data()),
-      const_cast<Real*>(unbalances.data()),
+      const_cast<real_t*>(weight_of_each_part.data()),
+      const_cast<real_t*>(unbalances.data()),
       const_cast<Int*>(options.data()),
-      objective_value, vertex_parts->data());
+      &objective_value, vertex_parts.data());
   assert(error_code == METIS_OK);
+  return vertex_parts;
 }
 /**
  * @brief A wrapper of `METIS_PartMeshDual()`, which partitions a mesh into K parts.
@@ -91,39 +88,33 @@ void PartGraphKway(
  * @param[out] cell_parts the part id of each cell
  * @param[out] node_parts the part id of each node
  */
-template <typename Int, typename Real>
-void PartMesh(const Mesh<Int> &mesh,
-    const std::vector<Int> &cost_of_each_cell,
-    const std::vector<Int> &size_of_each_cell,
-    Int n_common_nodes, Int n_parts,
-    const std::vector<Real> &weight_of_each_part,
-    const std::vector<Int> &options,
-    /* input ↑, output ↓ */
-    Int *objective_value,
-    std::vector<Int> *cell_parts, std::vector<Int> *node_parts) {
-  static_assert(std::is_integral_v<Int>, "`Int` must be an integral type.");
+template <typename Int>
+std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
+    const Mesh<Int> &mesh, Int n_parts, Int n_common_nodes = 2,
+    const std::vector<Int> &cost_of_each_cell = {},
+    const std::vector<Int> &size_of_each_cell = {},
+    const std::vector<real_t> &weight_of_each_part = {},
+    const std::vector<Int> &options = {}) {
   static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
-  static_assert(std::is_floating_point_v<Real>,
-      "`Real` must be a floating-point type.");
-  static_assert(std::is_same_v<Real, real_t>, "`Real` must be `real_t`.");
   Int n_cells = mesh.CountCells();
   Int n_nodes = mesh.CountNodes();
   assert(valid(cost_of_each_cell, n_cells));
   assert(valid(size_of_each_cell, n_cells));
   assert(valid(weight_of_each_part, n_parts));
-  cell_parts->resize(n_cells);
-  node_parts->resize(n_nodes);
+  std::vector<Int> cell_parts(n_cells), node_parts(n_nodes);
+  Int objective_value;
   auto error_code = METIS_PartMeshDual(
       &n_cells, &n_nodes,
       const_cast<Int*>(&(mesh.range(0))),
       const_cast<Int*>(&(mesh.nodes(0))),
       const_cast<Int*>(cost_of_each_cell.data()),
       const_cast<Int*>(size_of_each_cell.data()),
-      const_cast<Int*>(&n_common_nodes),
-      &n_parts, const_cast<Real*>(weight_of_each_part.data()),
+      &n_common_nodes, &n_parts,
+      const_cast<real_t*>(weight_of_each_part.data()),
       const_cast<Int*>(options.data()),
-      objective_value, cell_parts->data(), node_parts->data());
+      &objective_value, cell_parts.data(), node_parts.data());
   assert(error_code == METIS_OK);
+  return {cell_parts, node_parts};
 }
 /**
  * @brief A wrapper of `METIS_MeshToDual()`, which converts a mesh to its dual graph.

@@ -126,27 +126,11 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  int n_parts{8}, n_common_nodes{2}, edge_cut{0};
-  std::vector<idx_t> null_vector_of_idx;
-  std::vector<real_t> null_vector_of_real;
+  int n_parts{8}, n_common_nodes{2};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes, 0);
-  std::vector<idx_t> cell_parts;
-  metis::PartGraphKway(1, graph,
-      null_vector_of_idx/* weight of each cell */,
-      null_vector_of_idx/* communication size */,
-      null_vector_of_idx/* weight of each edge (in dual graph) */,
-      n_parts, null_vector_of_real/* weight of each part */,
-      null_vector_of_real/* unbalance tolerance */,
-      null_vector_of_idx/* options */, &edge_cut, &cell_parts);
+  auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);
-  // PartMesh(metis_mesh,
-  //     null_vector_of_idx/* computational cost */,
-  //     null_vector_of_idx/* communication size */,
-  //     n_common_nodes, n_parts,
-  //     null_vector_of_real/* weight of each part */,
-  //     null_vector_of_idx/* options */,
-  //     &edge_cut, &cell_parts, &node_parts);
   auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
       node_parts);
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);

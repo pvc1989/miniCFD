@@ -21,8 +21,6 @@ class Partitioner : public ::testing::Test {
   std::string const project_binary_dir_{PROJECT_BINARY_DIR};
   using Int = idx_t;
   using Real = real_t;
-  std::vector<Int> null_vector_of_idx;
-  std::vector<Real> null_vector_of_real;
   static Mesh<Int> BuildSimpleMesh(Int n_cells_x, Int n_cells_y);
   static void WritePartitionedMesh(
       const char* name, Int n_cells_x, Int n_cells_y,
@@ -121,17 +119,11 @@ TEST_F(Partitioner, PartMesh) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  Int n_parts{8}, n_common_nodes{2}, edge_cut{0};
+  Int n_parts{8}, n_common_nodes{2};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  std::vector<Int> cell_parts, node_parts;
-  PartMesh(mesh,
-      cell_weights/* computational cost */,
-      null_vector_of_idx/* communication size */,
-      n_common_nodes, n_parts,
-      null_vector_of_real/* weight of each part */,
-      null_vector_of_idx/* options */,
-      &edge_cut, &cell_parts, &node_parts);
+  auto [cell_parts, node_parts] = PartMesh(
+      mesh, n_parts, n_common_nodes, cell_weights);
   // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_mesh.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
@@ -154,17 +146,11 @@ TEST_F(Partitioner, PartGraphKway) {
       cell_weights[i + j * n_cells_x] = 4;
     }
   }
-  Int n_constraints{1}, n_parts{8}, edge_cut{0};
+  Int n_constraints{1}, n_parts{8};
   // Int options[METIS_NOPTIONS];
   // options[METIS_OPTION_NUMBERING] = 0;
-  std::vector<Int> cell_parts;
-  PartGraphKway(
-      n_constraints, graph,
-      cell_weights, null_vector_of_idx/* communication size */,
-      null_vector_of_idx/* weight of each edge (in dual graph) */,
-      n_parts, null_vector_of_real/* weight of each part */,
-      null_vector_of_real/* unbalance tolerance */,
-      null_vector_of_idx/* options */, &edge_cut, &cell_parts);
+  auto cell_parts = PartGraph(
+      graph, n_parts, n_constraints, cell_weights);
   // Write the partitioned mesh:
   auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
   WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
