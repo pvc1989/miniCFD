@@ -16,13 +16,28 @@ void print(Object&& obj) {
   std::cout << obj << '\n' << std::endl;
 }
 
+template <class Scalar>
+inline void SetZero(Scalar* s) {
+  static_assert(std::is_scalar_v<Scalar>);
+  *s = 0;
+}
+
+template <class Scalar, int M, int N>
+inline void SetZero(Eigen::Matrix<Scalar, M, N>* m) {
+  m->setZero();
+}
+
 template <typename Callable, typename Element>
 auto Quadrature(Callable&& f_in_local, Element&& element) {
   using E = std::remove_reference_t<Element>;
   using LocalCoord = typename E::LocalCoord;
-  decltype(f_in_local(LocalCoord())) sum; sum *= 0;
+  decltype(f_in_local(LocalCoord())) sum{};
+  SetZero(&sum);
+  print(sum);
   for (int i = 0; i < E::CountQuadPoints(); ++i) {
     auto f_val = f_in_local(E::GetCoord(i));
+    print(i);
+    print(sum);
     f_val *= E::GetWeight(i);
     sum += f_val;
   }
@@ -85,7 +100,7 @@ class Basis<Scalar, 2, 2> {
     return coef_ * col;
   }
   void Transform(MatNxN const& a) {
-    coef_ = a;
+    coef_ = a * coef_;
   }
 
  private:
