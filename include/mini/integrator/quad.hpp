@@ -6,7 +6,18 @@
 
 #include "mini/integrator/line.hpp"
 
-template <typename Scalar = double, int Q1d = 4, int D = 2>
+namespace mini {
+namespace integrator {
+
+/**
+ * @brief 
+ * 
+ * @tparam Scalar 
+ * @tparam Qx 
+ * @tparam Qy 
+ * @tparam D the dim of the physical space
+ */
+template <typename Scalar = double, int Qx = 4, int Qy = 4, int D = 2>
 class Quad {
   using Arr1x4 = Eigen::Array<Scalar, 1, 4>;
   using Arr4x1 = Eigen::Array<Scalar, 4, 1>;
@@ -19,13 +30,46 @@ class Quad {
   using Mat4x2 = Eigen::Matrix<Scalar, 4, 2>;
   using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;
 
-  using Integrator = GaussIntegrator<Scalar, Q1d>;
+  using GaussX = GaussIntegrator<Scalar, Qx>;
+  using GaussY = GaussIntegrator<Scalar, Qy>;
 
  public:
+  using Real = Scalar;
+  using LocalCoord = Eigen::Matrix<Scalar, 2, 1>;
+  using GlobalCoord = Eigen::Matrix<Scalar, D, 1>;
   static const Arr1x4 x_local_i_;
   static const Arr1x4 y_local_i_;
   MatDx4 xyz_global_Dx4_;
+  static const std::array<LocalCoord, Qx * Qy> points_;
+  static const std::array<Scalar, Qx * Qy> weights_;
 
+  static constexpr int CountQuadPoints() {
+    return Qx * Qy;
+  }
+  static constexpr auto BuildPoints() {
+    std::array<LocalCoord, Qx * Qy> points;
+    int k = 0;
+    for (int i = 0; i < Qx; ++i) {
+      for (int j = 0; j < Qy; ++j) {
+        points[k][0] = GaussX::points[i];
+        points[k][1] = GaussY::points[j];
+        k++;
+      }
+    }
+    return points;
+  }
+  static constexpr auto BuildWeights() {
+    std::array<Scalar, Qx * Qy> weights;
+    int k = 0;
+    for (int i = 0; i < Qx; ++i) {
+      for (int j = 0; j < Qy; ++j) {
+        weights[k++] = GaussX::weights[i] * GaussY::weights[j];
+      }
+    }
+    return weights;
+  }
+
+ private:
   static Mat4x1 shape_4x1(Mat2x1 xy_local) {
     Arr1x4 n_1x4;
     n_1x4  = (1 + x_local_i_ * xy_local[0]);
@@ -49,57 +93,56 @@ class Quad {
     dn /= 4.0;
     return dn;
   }
-  MatDx2 jacobian(Scalar x_local, Scalar y_local) {
+  MatDx2 jacobian(Scalar x_local, Scalar y_local) const {
     return xyz_global_Dx4_ * diff_shape_local_4x2(x_local, y_local);
   }
-  template <typename Callable>
-  auto gauss_quadrature(Callable&& f_in_local) {
-    auto sum = f_in_local(0, 0);
-    sum *= 0;
-    for (int i = 0; i < Q1d; ++i) {
-      Scalar x_weight = Integrator::weights[i];
-      Scalar x_local = Integrator::points[i];
-      for (int j = 0; j < Q1d; ++j) {
-        Scalar y_weight = Integrator::weights[j];
-        Scalar y_local = Integrator::points[j];
-        auto f_val = f_in_local(x_local, y_local);
-        f_val *= x_weight * y_weight;
-        sum += f_val;
-      }
-    }
-    return sum;
-  }
 
+ public:
+  static constexpr int CellDim() {
+    return 2;
+  }
+  static constexpr int PhysDim() {
+    return D;
+  }
+  static LocalCoord const& GetCoord(int i) {
+    return points_[i];
+  }
+  static Scalar const& GetWeight(int i) {
+    return weights_[i];
+  }
+ 
  public:
   explicit Quad(MatDx4 xyz_global) {
     xyz_global_Dx4_ = xyz_global;
   }
-  MatDx1 local_to_global_Dx1(Mat2x1 xy_local) {
+  MatDx1 local_to_global_Dx1(Mat2x1 xy_local) const {
     return xyz_global_Dx4_ * shape_4x1(xy_local);
   }
-  MatDx1 local_to_global_Dx1(Scalar x, Scalar y) {
+  MatDx1 local_to_global_Dx1(Scalar x, Scalar y) const {
     return xyz_global_Dx4_ * shape_4x1(x, y);
   }
-  template <typename Callable>
-  auto integrate(Callable&& f_in_global) {
-    auto f_in_local = [this, &f_in_global](Scalar x_local, Scalar y_local) {
-      auto xyz_global = local_to_global_Dx1(x_local, y_local);
-      auto f_val = f_in_global(xyz_global);
-      auto mat_j = jacobian(x_local, y_local);
-      auto det_j = (mat_j.transpose() * mat_j).determinant();
-      f_val *= std::sqrt(det_j);
-      return f_val;
-    };
-    return gauss_quadrature(f_in_local);
+  MatDx2 jacobian(const LocalCoord& xy_local) const {
+    return jacobian(xy_local[0], xy_local[1]);
   }
 };
 
-template <typename Scalar, int Q1d, int D>
-typename Quad<Scalar, Q1d, D>::Arr1x4 const
-Quad<Scalar, Q1d, D>::x_local_i_ = {-1, +1, +1, -1};
+template <typename Scalar, int Qx, int Qy, int D>
+typename Quad<Scalar, Qx, Qy, D>::Arr1x4 const
+Quad<Scalar, Qx, Qy, D>::x_local_i_ = {-1, +1, +1, -1};
 
-template <typename Scalar, int Q1d, int D>
-typename Quad<Scalar, Q1d, D>::Arr1x4 const
-Quad<Scalar, Q1d, D>::y_local_i_ = {-1, -1, +1, +1};
+template <typename Scalar, int Qx, int Qy, int D>
+typename Quad<Scalar, Qx, Qy, D>::Arr1x4 const
+Quad<Scalar, Qx, Qy, D>::y_local_i_ = {-1, -1, +1, +1};
+
+template <typename Scalar, int Qx, int Qy, int D>
+const std::array<typename Quad<Scalar, Qx, Qy, D>::LocalCoord, Qx * Qy>
+Quad<Scalar, Qx, Qy, D>::points_ = Quad<Scalar, Qx, Qy, D>::BuildPoints();
+
+template <typename Scalar, int Qx, int Qy, int D>
+const std::array<Scalar, Qx * Qy>
+Quad<Scalar, Qx, Qy, D>::weights_ = Quad<Scalar, Qx, Qy, D>::BuildWeights();
+
+}  // namespace integrator
+}  // namespace mini
 
 #endif  // MINI_INTEGRATOR_QUAD_HPP_
