@@ -19,6 +19,8 @@ Mat10x1 raw_basis(Scalar x, Scalar y, Scalar z) {
   return basis;
 }
 
+using mini::integrator::print;
+
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
