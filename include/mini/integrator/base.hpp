@@ -3,7 +3,9 @@
 #define MINI_INTEGRATOR_BASE_HPP_
 
 #include <iostream>
-#include <Eigen/Dense>
+
+namespace mini {
+namespace integrator {
 
 template <class Object>
 void print(Object&& obj) {
@@ -11,15 +13,12 @@ void print(Object&& obj) {
 }
 
 template <typename Callable, typename Element>
-auto Quadrature(Callable&& f_in_local) {
-  constexpr auto kCellDim = Element::GetCellDim();
-  using Param = Eigen::Array<Scalar, kCellDim, 1>;
-  decltype(f_in_local(Param())) sum; sum *= 0;
-  for (int i = 0; i < Element::points.size(); ++i) {
-    auto weight = Element::weights[i];
-    auto xyz_local = Element::points[i];
-    auto f_val = f_in_local(xyz_local);
-    f_val *= weight;
+auto Quadrature(Callable&& f_in_local, Element&& element) {
+  using LocalCoord = typename Element::LocalCoord;
+  decltype(f_in_local(LocalCoord())) sum; sum *= 0;
+  for (int i = 0; i < Element::CountQuadPoints(); ++i) {
+    auto f_val = f_in_local(Element::GetCoord(i));
+    f_val *= Element::GetWeight(i);
     sum += f_val;
   }
   return sum;
@@ -27,36 +26,34 @@ auto Quadrature(Callable&& f_in_local) {
 
 template <typename Callable, typename Element>
 auto Integrate(Callable&& f_in_global, Element&& element) {
-  auto f_in_local = [&element, &f_in_global](xyz_local) {
-    auto xyz_global = element.local_to_global_Dx1(xyz_local);
-    auto f_val = f_in_global(xyz_global);
+  using LocalCoord = typename Element::LocalCoord;
+  auto f_in_local = [&element, &f_in_global](const LocalCoord& xyz_local) {
+    auto f_val = f_in_global( element.local_to_global_Dx1(xyz_local);
     auto mat_j = element.jacobian(xyz_local);
-    auto det_j = Element::CellDim() < Element::GetPhysDim()
+    auto det_j = Element::CellDim() < Element::PhysDim()
         ? (mat_j.transpose() * mat_j).determinant()
         : mat_j.determinant();
     f_val *= std::sqrt(det_j);
     return f_val;
   };
-  return Quadrature<Element>(f_in_local);
+  return Quadrature(f_in_local, element);
 }
+
 template <typename Callable, typename Element>
-Scalar Innerprod(Callable&& f, Callable&& g, Element&& element) {
-  return Integrate([&f, &g](Scalar x, Scalar y, Scalar z){
-    return f(x, y, z) * g(x, y, z);
+auto Innerprod(Callable&& f, Callable&& g, Element&& element) {
+  using GlobalCoord = typename Element::GlobalCoord;
+  constexpr auto kPhysDim = Element::PhysDim();
+  return Integrate([&f, &g](const GlobalCoord& xyz_global){
+    return f(xyz_global) * g(xyz_global);
   }, element);
 }
+
 template <typename Callable, typename Element>
-Scalar Norm(Callable&& f, Element&& element) {
+auto Norm(Callable&& f, Element&& element) {
   return std::sqrt(Innerprod(f, f, element));
 }
 
-class Face {
-  MatDx2 jacobian(Scalar x_local, Scalar y_local) {
-    return xyz_global_Dx4_ * diff_shape_local_4x2(x_local, y_local);
-  }
-};
-class Cell {
-
-};
+}  // namespace integrator
+}  // namespace mini
 
 #endif  // MINI_INTEGRATOR_BASE_HPP_
