@@ -73,7 +73,8 @@ TEST_F(TestQuad4x4, In3dSpace) {
 }
 TEST_F(TestQuad4x4, Basis) {
   Mat2x1 origin = {0, 0}, left = {-1, 2}, right = {1, 3};
-  auto b = B();
+  B b; double residual;
+  b = B();
   EXPECT_EQ(b(origin), Y(1, 0, 0, 0, 0, 0));
   EXPECT_EQ(b(left), Y(1, -1, 2, 1, -2, 4));
   EXPECT_EQ(b(right), Y(1, 1, 3, 1, 3, 9));
@@ -82,16 +83,23 @@ TEST_F(TestQuad4x4, Basis) {
   xyz_global_i.row(1) << -1, -1, 1, 1;
   auto quad = Quad4x4_2d(xyz_global_i);
   Orthonormalize(&b, quad);
-  auto gram = [&b](const Mat2x1& xy) {
+  residual = (Integrate([&b](const Mat2x1& xy) {
     auto col = b(xy);
     A prod = col * col.transpose();
     return prod;
-  };
-  print(Integrate(gram, quad));
+  }, quad) - A::Ones()).cwiseAbs().maxCoeff();
+  EXPECT_EQ(residual, 0);
   b = B(left);
   EXPECT_EQ(b(origin), Y(1, 1, -2, 1, -2, 4));
   EXPECT_EQ(b(left), Y(1, 0, 0, 0, 0, 0));
   EXPECT_EQ(b(right), Y(1, 2, 1, 4, 2, 1));
+  b.Orthonormalize(quad);
+  residual = (Integrate([&b](const Mat2x1& xy) {
+    auto col = b(xy);
+    A prod = col * col.transpose();
+    return prod;
+  }, quad) - A::Ones()).cwiseAbs().maxCoeff();
+  EXPECT_EQ(residual, 0);
 }
 
 }  // namespace integrator

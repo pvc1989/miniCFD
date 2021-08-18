@@ -33,11 +33,8 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
   using LocalCoord = typename E::LocalCoord;
   decltype(f_in_local(LocalCoord())) sum{};
   SetZero(&sum);
-  print(sum);
   for (int i = 0; i < E::CountQuadPoints(); ++i) {
     auto f_val = f_in_local(E::GetCoord(i));
-    print(i);
-    print(sum);
     f_val *= E::GetWeight(i);
     sum += f_val;
   }
@@ -74,6 +71,9 @@ auto Norm(Callable&& f, Element&& element) {
   return std::sqrt(Innerprod(f, f, element));
 }
 
+template <class Basis, class Element>
+void Orthonormalize(Basis* raw_basis, const Element& elem);
+
 template <typename Scalar, int kDim, int kOrder>
 class Basis;
 
@@ -101,6 +101,10 @@ class Basis<Scalar, 2, 2> {
   }
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
+  }
+  template <class Element>
+  void Orthonormalize(const Element& elem) {
+    integrator::Orthonormalize(this, elem);
   }
 
  private:
