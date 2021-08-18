@@ -79,7 +79,6 @@ class Basis;
 
 template <typename Scalar>
 class Basis<Scalar, 2, 2> {
-
  public:
   static constexpr int N = 6;
   using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;

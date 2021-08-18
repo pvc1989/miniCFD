@@ -87,19 +87,23 @@ TEST_F(TestQuad4x4, Basis) {
     auto col = b(xy);
     A prod = col * col.transpose();
     return prod;
-  }, quad) - A::Ones()).cwiseAbs().maxCoeff();
-  EXPECT_EQ(residual, 0);
+  }, quad) - A::Identity()).cwiseAbs().maxCoeff();
+  EXPECT_NEAR(residual, 0.0, 1e-15);
   b = B(left);
   EXPECT_EQ(b(origin), Y(1, 1, -2, 1, -2, 4));
   EXPECT_EQ(b(left), Y(1, 0, 0, 0, 0, 0));
   EXPECT_EQ(b(right), Y(1, 2, 1, 4, 2, 1));
+  auto x = left[0], y = left[1];
+  xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
+  xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
+  quad = Quad4x4_2d(xyz_global_i);
   b.Orthonormalize(quad);
   residual = (Integrate([&b](const Mat2x1& xy) {
     auto col = b(xy);
     A prod = col * col.transpose();
     return prod;
-  }, quad) - A::Ones()).cwiseAbs().maxCoeff();
-  EXPECT_EQ(residual, 0);
+  }, quad) - A::Identity()).cwiseAbs().maxCoeff();
+  EXPECT_NEAR(residual, 0.0, 1e-15);
 }
 
 }  // namespace integrator
