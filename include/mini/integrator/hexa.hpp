@@ -40,6 +40,7 @@ class Hexa {
   using Real = Scalar;
   using LocalCoord = Eigen::Matrix<Scalar, 3, 1>;
   using GlobalCoord = Eigen::Matrix<Scalar, 3, 1>;
+
  private:
   static const Arr1x8 x_local_i_;
   static const Arr1x8 y_local_i_;
@@ -137,8 +138,9 @@ class Hexa {
   static Scalar const& GetWeight(int i) {
     return weights_[i];
   }
-public:
-  Hexa(Mat3x8 const& xyz_global) {
+
+ public:
+  explicit Hexa(Mat3x8 const& xyz_global) {
     xyz_global_3x8_ = xyz_global;
   }
   GlobalCoord local_to_global_Dx1(

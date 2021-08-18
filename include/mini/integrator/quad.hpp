@@ -110,7 +110,7 @@ class Quad {
   static Scalar const& GetWeight(int i) {
     return weights_[i];
   }
- 
+
  public:
   explicit Quad(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;

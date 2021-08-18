@@ -81,7 +81,7 @@ TEST_F(TestHexa4x4x4, Basis) {
   b = B(left);
   EXPECT_EQ(b(origin), Y(1, 1, -2, -3, 1, -2, -3, 4, 6, 9));
   EXPECT_EQ(b(left), Y(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-  EXPECT_EQ(b(right), Y(1, 2, 1, -1, 4, 2, -2, 1, -1, 1)); 
+  EXPECT_EQ(b(right), Y(1, 2, 1, -1, 4, 2, -2, 1, -1, 1));
   auto x = left[0], y = left[1], z = left[2];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1, x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1, y-1, y-1, y+1, y+1;
