@@ -21,6 +21,11 @@ class TestHexa4x4x4 : public ::testing::Test {
   using B = Basis<double, 3, 2>;
   using Y = typename B::MatNx1;
   using A = typename B::MatNxN;
+  using Pscalar = ProjFunc<double, 3, 2, 1>;
+  using Mat1x10 = Eigen::Matrix<double, 1, 10>;
+  using Pvector = ProjFunc<double, 3, 2, 11>;
+  using Mat11x1 = Eigen::Matrix<double, 11, 1>;
+  using Mat11x10 = Eigen::Matrix<double, 11, 10>;
 };
 TEST_F(TestHexa4x4x4, StaticMethods) {
   static_assert(Hexa4x4x4::CountQuadPoints() == 64);
@@ -89,6 +94,35 @@ TEST_F(TestHexa4x4x4, Basis) {
     return prod;
   }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
+}
+TEST_F(TestHexa4x4x4, ProjFunc) {
+  Mat3x8 xyz_global_i;
+  xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
+  xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
+  xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
+  auto hexa = Hexa4x4x4(xyz_global_i);
+  B b;
+  Orthonormalize(&b, hexa);
+  auto fscalar = [](Mat3x1 const& xyz){
+    return xyz[0] * xyz[1] + xyz[2];
+  };
+  auto scalar = Pscalar(fscalar, b, hexa);
+  double residual = (scalar.GetCoef() - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0))
+      .cwiseAbs().maxCoeff();
+  EXPECT_NEAR(residual, 0.0, 1e-15);
+  auto fvector = [](Mat3x1 const& xyz) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    Mat11x1 func(0, 1,
+                x, y, z,
+                x * x, x * y, x * z, y * y, y * z, z * z);
+    return func;
+  };
+  auto vec = Pvector(fvector, b, hexa);
+  Mat11x10 exact_vector;
+  exact_vector.row(0).setZero();
+  exact_vector.bottomRows(10).setIdentity();
+  auto abs_diff = (vec.GetCoef() - exact_vector).cwiseAbs();
+  EXPECT_NEAR(abs_diff.maxCoeff(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {

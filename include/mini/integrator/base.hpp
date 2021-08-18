@@ -81,10 +81,10 @@ template <typename Scalar>
 class Basis<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;
-  using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;
+  using Coord = Eigen::Matrix<Scalar, 2, 1>;
   using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
   using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  explicit Basis(Mat2x1 const& c = {0, 0})
+  explicit Basis(Coord const& c = {0, 0})
       : center_(c) {
   }
   Basis(const Basis&) = default;
@@ -93,10 +93,16 @@ class Basis<Scalar, 2, 2> {
   Basis& operator=(Basis&&) noexcept = default;
   ~Basis() noexcept = default;
 
-  MatNx1 operator()(Mat2x1 const& xy) const {
+  MatNx1 operator()(Coord const& xy) const {
     auto x = xy[0] - center_[0], y = xy[1] - center_[1];
     MatNx1 col = { 1, x, y, x * x, x * y, y * y };
     return coef_ * col;
+  }
+  Coord const& GetCenter() const {
+    return center_;
+  }
+  MatNxN const& GetCoef() const {
+    return coef_;
   }
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
@@ -107,7 +113,7 @@ class Basis<Scalar, 2, 2> {
   }
 
  private:
-  Mat2x1 center_;
+  Coord center_;
   MatNxN coef_ = MatNxN::Identity();
 };
 
@@ -115,10 +121,10 @@ template <typename Scalar>
 class Basis<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;
-  using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
+  using Coord = Eigen::Matrix<Scalar, 3, 1>;
   using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
   using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  explicit Basis(Mat3x1 const& c = {0, 0, 0})
+  explicit Basis(Coord const& c = {0, 0, 0})
       : center_(c) {
   }
   Basis(const Basis&) = default;
@@ -127,11 +133,17 @@ class Basis<Scalar, 3, 2> {
   Basis& operator=(Basis&&) noexcept = default;
   ~Basis() noexcept = default;
 
-  MatNx1 operator()(Mat3x1 const& xyz) const {
+  MatNx1 operator()(Coord const& xyz) const {
     auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
          z = xyz[2] - center_[2];
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return coef_ * col;
+  }
+  Coord const& GetCenter() const {
+    return center_;
+  }
+  MatNxN const& GetCoef() const {
+    return coef_;
   }
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
@@ -142,7 +154,7 @@ class Basis<Scalar, 3, 2> {
   }
 
  private:
-  Mat3x1 center_;
+  Coord center_;
   MatNxN coef_ = MatNxN::Identity();
 };
 
@@ -181,6 +193,108 @@ void Orthonormalize(Basis* raw_basis, const Element& elem) {
   }
   raw_basis->Transform(S);
 }
+
+/**
+ * @brief 
+ * 
+ * @tparam Scalar 
+ * @tparam kDim 
+ * @tparam kOrder
+ * @tparam kFunc the number of function components
+ */
+template <typename Scalar, int kDim, int kOrder, int kFunc>
+class ProjFunc;
+
+template <typename Scalar, int kFunc>
+class ProjFunc<Scalar, 2, 2, kFunc> {
+ public:
+  using BasisType = Basis<Scalar, 2, 2>;
+  using CoordType = typename BasisType::Coord;
+  static constexpr int K = kFunc;
+  static constexpr int N = BasisType::N;
+  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
+  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  using MatKxN = Eigen::Matrix<Scalar, K, N>;
+  using MatKx1 = Eigen::Matrix<Scalar, K, 1>;
+
+  template <typename Callable, typename Element>
+  ProjFunc(Callable&& func, BasisType const& basis, Element const& elem)
+      : center_(basis.GetCenter()) {
+    using Ret = decltype(func(center_));
+    static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
+    coef_ = Integrate([&](CoordType const& xyz) {
+      auto b_row = basis(xyz).transpose();
+      auto f_col = func(xyz);
+      MatKxN prod = f_col * b_row;
+      return prod;
+    }, elem);
+    coef_ = coef_ * basis.GetCoef();
+  }
+  ProjFunc(const ProjFunc&) = default;
+  ProjFunc(ProjFunc&&) noexcept = default;
+  ProjFunc& operator=(const ProjFunc&) = default;
+  ProjFunc& operator=(ProjFunc&&) noexcept = default;
+  ~ProjFunc() noexcept = default;
+
+  MatNx1 operator()(CoordType const& xy) const {
+    auto x = xy[0] - center_[0], y = xy[1] - center_[1];
+    MatNx1 col = { 1, x, y, x * x, x * y, y * y };
+    return coef_ * col;
+  }
+  MatKxN GetCoef() const {
+    return coef_;
+  }
+
+ private:
+  CoordType center_;
+  MatKxN coef_;
+};
+
+template <typename Scalar, int kFunc>
+class ProjFunc<Scalar, 3, 2, kFunc> {
+ public:
+  using BasisType = Basis<Scalar, 3, 2>;
+  using CoordType = typename BasisType::Coord;
+  static constexpr int K = kFunc;
+  static constexpr int N = BasisType::N;
+  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
+  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  using MatKxN = Eigen::Matrix<Scalar, K, N>;
+  using MatKx1 = Eigen::Matrix<Scalar, K, 1>;
+
+  template <typename Callable, typename Element>
+  ProjFunc(Callable&& func, BasisType const& basis, Element const& elem)
+      : center_(basis.GetCenter()) {
+    using Ret = decltype(func(center_));
+    static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
+    coef_ = Integrate([&](CoordType const& xyz) {
+      auto b_row = basis(xyz).transpose();
+      auto f_col = func(xyz);
+      MatKxN prod = f_col * b_row;
+      return prod;
+    }, elem);
+    coef_ = coef_ * basis.GetCoef();
+  }
+  ProjFunc(const ProjFunc&) = default;
+  ProjFunc(ProjFunc&&) noexcept = default;
+  ProjFunc& operator=(const ProjFunc&) = default;
+  ProjFunc& operator=(ProjFunc&&) noexcept = default;
+  ~ProjFunc() noexcept = default;
+
+  MatNx1 operator()(CoordType const& xyz) const {
+    auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
+         z = xyz[2] - center_[2];
+    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return coef_ * col;
+  }
+  MatKxN GetCoef() const {
+    return coef_;
+  }
+
+ private:
+  CoordType center_;
+  MatKxN coef_;
+};
 
 }  // namespace integrator
 }  // namespace mini

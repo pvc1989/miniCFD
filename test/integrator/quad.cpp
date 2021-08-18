@@ -23,6 +23,11 @@ class TestQuad4x4 : public ::testing::Test {
   using B = Basis<double, 2, 2>;
   using Y = typename B::MatNx1;
   using A = typename B::MatNxN;
+  using Pscalar = ProjFunc<double, 2, 2, 1>;
+  using Mat1x6 = Eigen::Matrix<double, 1, 6>;
+  using Pvector = ProjFunc<double, 2, 2, 7>;
+  using Mat7x1 = Eigen::Matrix<double, 7, 1>;
+  using Mat7x6 = Eigen::Matrix<double, 7, 6>;
 };
 TEST_F(TestQuad4x4, StaticMethods) {
   static_assert(Quad4x4_2d::CountQuadPoints() == 16);
@@ -98,12 +103,42 @@ TEST_F(TestQuad4x4, Basis) {
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
   quad = Quad4x4_2d(xyz_global_i);
   b.Orthonormalize(quad);
-  residual = (Integrate([&b](const Mat2x1& xy) {
+  residual = (Integrate([&b](Mat2x1 const& xy) {
     auto col = b(xy);
     A prod = col * col.transpose();
     return prod;
   }, quad) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
+}
+TEST_F(TestQuad4x4, ProjFunc) {
+  Mat2x4 xyz_global_i;
+  xyz_global_i.row(0) << -1, 1, 1, -1;
+  xyz_global_i.row(1) << -1, -1, 1, 1;
+  auto quad = Quad4x4_2d(xyz_global_i);
+  B b;
+  Orthonormalize(&b, quad);
+  auto fscalar = [](Mat2x1 const& xy){
+    return xy[0] * xy[1];
+  };
+  auto scalar = Pscalar(fscalar, b, quad);
+  double residual = (scalar.GetCoef() - Mat1x6(0, 0, 0, 0, 1, 0))
+      .cwiseAbs().maxCoeff();
+  EXPECT_NEAR(residual, 0.0, 1e-15);
+  auto fvector = [](Mat2x1 const& xy) {
+    auto x = xy[0], y = xy[1];
+    Mat7x1 func(0, 1,
+                x, y,
+                x * x, x * y, y * y);
+    return func;
+  };
+  auto vec = Pvector(fvector, b, quad);
+  Mat7x6 exact_vector{
+      {0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
+      {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
+      {0, 0, 0, 0, 0, 1}
+  };
+  auto abs_diff = (vec.GetCoef() - exact_vector).cwiseAbs();
+  EXPECT_NEAR(abs_diff.maxCoeff(), 0.0, 1e-15);
 }
 
 }  // namespace integrator
