@@ -111,6 +111,41 @@ class Basis<Scalar, 2, 2> {
   MatNxN coef_ = MatNxN::Identity();
 };
 
+template <typename Scalar>
+class Basis<Scalar, 3, 2> {
+ public:
+  static constexpr int N = 10;
+  using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
+  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
+  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  explicit Basis(Mat3x1 const& c = {0, 0, 0})
+      : center_(c) {
+  }
+  Basis(const Basis&) = default;
+  Basis(Basis&&) noexcept = default;
+  Basis& operator=(const Basis&) = default;
+  Basis& operator=(Basis&&) noexcept = default;
+  ~Basis() noexcept = default;
+
+  MatNx1 operator()(Mat3x1 const& xyz) const {
+    auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
+         z = xyz[2] - center_[2];
+    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return coef_ * col;
+  }
+  void Transform(MatNxN const& a) {
+    coef_ = a * coef_;
+  }
+  template <class Element>
+  void Orthonormalize(const Element& elem) {
+    integrator::Orthonormalize(this, elem);
+  }
+
+ private:
+  Mat3x1 center_;
+  MatNxN coef_ = MatNxN::Identity();
+};
+
 template <class Basis, class Element>
 void Orthonormalize(Basis* raw_basis, const Element& elem) {
   constexpr int N = Basis::N;

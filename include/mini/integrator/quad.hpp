@@ -112,7 +112,7 @@ class Quad {
   }
  
  public:
-  explicit Quad(MatDx4 xyz_global) {
+  explicit Quad(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;
   }
   MatDx1 local_to_global_Dx1(Mat2x1 xy_local) const {
@@ -135,11 +135,11 @@ typename Quad<Scalar, Qx, Qy, D>::Arr1x4 const
 Quad<Scalar, Qx, Qy, D>::y_local_i_ = {-1, -1, +1, +1};
 
 template <typename Scalar, int Qx, int Qy, int D>
-const std::array<typename Quad<Scalar, Qx, Qy, D>::LocalCoord, Qx * Qy>
+std::array<typename Quad<Scalar, Qx, Qy, D>::LocalCoord, Qx * Qy> const
 Quad<Scalar, Qx, Qy, D>::points_ = Quad<Scalar, Qx, Qy, D>::BuildPoints();
 
 template <typename Scalar, int Qx, int Qy, int D>
-const std::array<Scalar, Qx * Qy>
+std::array<Scalar, Qx * Qy> const
 Quad<Scalar, Qx, Qy, D>::weights_ = Quad<Scalar, Qx, Qy, D>::BuildWeights();
 
 }  // namespace integrator

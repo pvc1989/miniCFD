@@ -43,11 +43,11 @@ TEST_F(TestQuad4x4, In2dSpace) {
   EXPECT_EQ(quad.local_to_global_Dx1(0, 0), Mat2x1(0, 0));
   EXPECT_EQ(quad.local_to_global_Dx1(1, 1), Mat2x1(1, 1));
   EXPECT_EQ(quad.local_to_global_Dx1(-1, -1), Mat2x1(-1, -1));
-  EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1){ return 2.0; }, quad), 8.0);
-  EXPECT_DOUBLE_EQ(Integrate([](Mat2x1){ return 2.0; }, quad), 8.0);
-  auto f = [](Mat2x1 xy){ return xy[0]; };
-  auto g = [](Mat2x1 xy){ return xy[1]; };
-  auto h = [](Mat2x1 xy){ return xy[0] * xy[1]; };
+  EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
+  EXPECT_DOUBLE_EQ(Integrate([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
+  auto f = [](Mat2x1 const& xy){ return xy[0]; };
+  auto g = [](Mat2x1 const& xy){ return xy[1]; };
+  auto h = [](Mat2x1 const& xy){ return xy[0] * xy[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, quad), Integrate(h, quad));
   EXPECT_DOUBLE_EQ(Norm(f, quad), sqrt(Innerprod(f, f, quad)));
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
