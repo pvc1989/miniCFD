@@ -13,7 +13,8 @@ namespace integrator {
 
 class TestGauss : public ::testing::Test {
  protected:
-  double MonomialIntegral(int p) {
+  static constexpr double eps = 1.15e-16;
+  static double MonomialIntegral(int p) {
     // \int_{-1}^{+1} x^{p} dx
     return p % 2 ? 0.0 : 2.0 / (p + 1);
   }
@@ -21,8 +22,8 @@ class TestGauss : public ::testing::Test {
   void TestScalarFunction() {
     for (int p = 0; p != 2 * kPoints; ++p) {
       auto integrand = [&](double x) { return std::pow(x, p); };
-      EXPECT_DOUBLE_EQ(Gauss<kPoints>::Integrate(integrand),
-                       MonomialIntegral(p));
+      EXPECT_NEAR(Gauss<kPoints>::Integrate(integrand),
+                  MonomialIntegral(p), eps);
     }
   }
   template <int kPoints>
@@ -36,7 +37,7 @@ class TestGauss : public ::testing::Test {
     };
     auto result = Gauss<kPoints>::Integrate(integrand);
     for (int p = 0; p != 2 * kPoints; ++p) {
-      EXPECT_DOUBLE_EQ(result[p], MonomialIntegral(p));
+      EXPECT_NEAR(result[p], MonomialIntegral(p), eps);
     }
   }
 };
@@ -63,3 +64,8 @@ TEST_F(TestGauss, FivePoint) {
 
 }  // namespace integrator
 }  // namespace mini
+
+int main(int argc, char* argv[]) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

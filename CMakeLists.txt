@@ -83,6 +83,8 @@ endif (${PROJECT_NAME}_ENABLE_VTK)
 add_subdirectory(ThirdParty/METIS)
 set(METIS_INC "${METIS_BINARY_DIR}/include")
 
+set(EIGEN_INC "${PROJECT_SOURCE_DIR}/ThirdParty/eigen")
+
 # Additional headers that depends on ${PROJECT_SOURCE_DIR}
 include_directories("${PROJECT_SOURCE_DIR}/include")
 # Additional headers that depends on ${PROJECT_BINARY_DIR}

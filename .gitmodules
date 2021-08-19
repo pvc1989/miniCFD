@@ -1,6 +1,6 @@
 [submodule "ThirdParty/CGNS"]
 	path = ThirdParty/CGNS
-	url = https://github.com/CGNS/CGNS.git
+	url = https://github.com/pvcStillinGradSchool/CGNS.git
 	branch = develop
 [submodule "ThirdParty/GoogleTest"]
 	path = ThirdParty/GoogleTest
@@ -8,5 +8,9 @@
 	branch = master
 [submodule "ThirdParty/METIS"]
 	path = ThirdParty/METIS
-	url = https://github.com/pvcStillInGradSchool/METIS
+	url = https://github.com/pvcStillinGradSchool/METIS.git
 	branch = tip
+[submodule "ThirdParty/eigen"]
+	path = ThirdParty/eigen
+	url = https://gitlab.com/pvcStillinGradSchool/eigen.git
+  branch = master
