@@ -92,18 +92,18 @@ class Parser{
       std::sscanf(line, "%d %d %d", &zid, &head, &tail);
       nodes[zid] = NodeGroup<Int, Real>(head, tail - head);
       cgsize_t range_min = head, range_max = tail - 1;
-      cgp_coord_read_data(fid, 1, zid, 1, &range_min, &range_max,
-          nodes[zid].x_.data());
-      cgp_coord_read_data(fid, 1, zid, 2, &range_min, &range_max,
-          nodes[zid].y_.data());
-      cgp_coord_read_data(fid, 1, zid, 3, &range_min, &range_max,
-          nodes[zid].z_.data());
-      cgp_field_read_data(fid, 1, zid, 1, 2, &range_min, &range_max,
-          nodes[zid].metis_id_.data());
+      auto& x = nodes[zid].x_;
+      cgp_coord_read_data(fid, 1, zid, 1, &range_min, &range_max, x.data());
+      auto& y = nodes[zid].y_;
+      cgp_coord_read_data(fid, 1, zid, 2, &range_min, &range_max, y.data());
+      auto& z = nodes[zid].z_;
+      cgp_coord_read_data(fid, 1, zid, 3, &range_min, &range_max, z.data());
+      auto& metis_id = nodes[zid].metis_id_;
+      cgp_field_read_data(fid, 1, zid, 1, 2, &range_min, &range_max, metis_id.data());
       for (int nid = head; nid < tail; ++nid) {
-        auto mid = nodes[zid].metis_id_[nid];
+        auto mid = metis_id[nid];
         m_to_c_for_nodes[mid] = NodeInfo<Int>(zid, nid);
-        std::cout << mid << ": " << zid << " " << nid << std::endl;
+        std::cout << mid << ": " << zid << " " << nid << " " << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
       }
       cgp_close(fid);
     }
