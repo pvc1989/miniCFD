@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -55,53 +56,52 @@ void Partitioner::WritePartitionedMesh(
     const char* name, Int n_cells_x, Int n_cells_y,
     const Mesh<Int> &mesh, const std::vector<Int> &cell_weights,
     const std::vector<Int> &cell_parts, const std::vector<Int> &node_parts) {
-  auto* file = fopen(name, "w");
+  auto ostrm = std::ofstream(name);
   Int n_cells = n_cells_x * n_cells_y;
   Int n_nodes_x{n_cells_x + 1}, n_nodes_y{n_cells_y + 1};
   Int n_nodes = n_nodes_x * n_nodes_y;
-  fprintf(file, "# vtk DataFile Version 2.0\n");  // Version and Identifier
-  fprintf(file, "An unstructed mesh partitioned by METIS.\n");  // Header
-  fprintf(file, "ASCII\n");  // File Format
+  ostrm << "# vtk DataFile Version 2.0\n";  // Version and Identifier
+  ostrm << "An unstructed mesh partitioned by METIS.\n";  // Header
+  ostrm << "ASCII\n";  // File Format
   // DataSet Structure
-  fprintf(file, "DATASET UNSTRUCTURED_GRID\n");
-  fprintf(file, "POINTS %d float\n", n_nodes);
+  ostrm << "DATASET UNSTRUCTURED_GRID\n";
+  ostrm << "POINTS " << n_nodes << " float\n";
   for (Int j = 0; j != n_nodes_y; ++j) {
     for (Int i = 0; i != n_nodes_x; ++i) {
-      fprintf(file, "%f %f 0.0\n", static_cast<float>(i),
-                                   static_cast<float>(j));
+      ostrm << static_cast<float>(i) << " "
+            << static_cast<float>(j) << " 0.0\n";
     }
   }
-  fprintf(file, "CELLS %d %d\n", n_cells, n_cells * 5);
+  ostrm << "CELLS " << n_cells << " " << n_cells * 5 << "\n";
   auto* curr_node = &(mesh.nodes(0));
   for (int i = 0; i < mesh.CountNodes(); ++i) {
-    fprintf(file, "4 %d %d %d %d\n",
-            curr_node[0], curr_node[1], curr_node[2], curr_node[3]);
+    ostrm << "4 " << curr_node[0] << " " << curr_node[1] << " "
+                  << curr_node[2] << " " << curr_node[3] << "\n";
     curr_node += 4;
   }
-  fprintf(file, "CELL_TYPES %d\n", n_cells);
+  ostrm << "CELL_TYPES " << n_cells << "\n";
   for (Int i = 0; i != n_cells; ++i) {
-    fprintf(file, "9\n");  // VTK_QUAD = 9
+    ostrm << "9\n";  // VTK_QUAD = 9
   }
-  fprintf(file, "CELL_DATA %d\n", n_cells);
-  fprintf(file, "SCALARS CellPartID float 1\n");
-  fprintf(file, "LOOKUP_TABLE cell_parts\n");
+  ostrm << "CELL_DATA " << n_cells << "\n";
+  ostrm << "SCALARS CellPartID float 1\n";
+  ostrm << "LOOKUP_TABLE cell_parts\n";
   for (auto x : cell_parts) {
-    fprintf(file, "%f\n", static_cast<float>(x));
+    ostrm << static_cast<float>(x) << "\n";
   }
-  fprintf(file, "SCALARS CellWeight float 1\n");
-  fprintf(file, "LOOKUP_TABLE cell_weights\n");
+  ostrm << "SCALARS CellWeight float 1\n";
+  ostrm << "LOOKUP_TABLE cell_weights\n";
   for (auto x : cell_weights) {
-    fprintf(file, "%f\n", static_cast<float>(x));
+    ostrm << static_cast<float>(x) << "\n";
   }
   if (node_parts.size()) {
-    fprintf(file, "POINT_DATA %d\n", n_nodes);
-    fprintf(file, "SCALARS NodePartID float 1\n");
-    fprintf(file, "LOOKUP_TABLE node_parts\n");
+    ostrm << "POINT_DATA " << n_nodes << "\n";
+    ostrm << "SCALARS NodePartID float 1\n";
+    ostrm << "LOOKUP_TABLE node_parts\n";
     for (auto x : node_parts) {
-      fprintf(file, "%f\n", static_cast<float>(x));
+      ostrm << static_cast<float>(x) << "\n";
     }
   }
-  fclose(file);
 }
 TEST_F(Partitioner, PartMesh) {
   // Build a simple mesh:

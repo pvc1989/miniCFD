@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "-Wno-format")
-set(CMAKE_CXX_FLAGS "-Wno-format")
 
 # GoogleTest related settings
 option(${PROJECT_NAME}_SUBMODULE_GOOGLETEST "Add GoogleTest as a git submodule." "ON")
@@ -92,7 +91,6 @@ if (${PROJECT_NAME}_ENABLE_VTK)
   endif ()
 endif (${PROJECT_NAME}_ENABLE_VTK)
 
-set(METIS_IDX64 ON CACHE BOOL "Let `idx_t` be 64-bit long." FORCE)
 add_subdirectory(ThirdParty/METIS)
 set(METIS_INC "${METIS_BINARY_DIR}/include")
 
