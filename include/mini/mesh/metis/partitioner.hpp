@@ -47,7 +47,7 @@ std::vector<Int> PartGraph(
     const std::vector<real_t> &weight_of_each_part = {},
     const std::vector<real_t> &unbalances = {},
     const std::vector<Int> &options = {}) {
-  static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
+  static_assert(sizeof(Int) == sizeof(idx_t), "`Int` and `idx_t` must have the same size.");
   Int n_vertices = graph.CountVertices();
   auto vertex_parts = std::vector<Int>(n_vertices);
   assert(valid(cost_of_each_vertex, n_vertices));
@@ -95,7 +95,8 @@ std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
     const std::vector<Int> &size_of_each_cell = {},
     const std::vector<real_t> &weight_of_each_part = {},
     const std::vector<Int> &options = {}) {
-  static_assert(std::is_same_v<Int, idx_t>, "`Int` must be `idx_t`.");
+  static_assert(sizeof(Int) == sizeof(idx_t),
+      "`Int` and `idx_t` must have the same size.");
   Int n_cells = mesh.CountCells();
   Int n_nodes = mesh.CountNodes();
   assert(valid(cost_of_each_cell, n_cells));

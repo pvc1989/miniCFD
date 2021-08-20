@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_FLAGS "-Wno-format")
+set(CMAKE_CXX_FLAGS "-Wno-format")
 
 # GoogleTest related settings
 option(${PROJECT_NAME}_SUBMODULE_GOOGLETEST "Add GoogleTest as a git submodule." "ON")
@@ -40,9 +42,19 @@ endif (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
 
 option(${PROJECT_NAME}_ENABLE_MPI "Enable MPI-based parallel computating." "ON")
 if (${PROJECT_NAME}_ENABLE_MPI)
-  find_path(MPI_INC NAMES "mpi.h")
-  find_library(MPI_LIB NAMES mpi)
+  find_package(MPI REQUIRED)
+  if (MPI_CXX_FOUND)
+    message("MPI_CXX_INCLUDE_PATH = ${MPI_CXX_INCLUDE_PATH}")
+    message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
+    message("MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}")
+  else (MPI_CXX_FOUND)
+    message(SEND_ERROR "This project depends on MPI.")
+  endif (MPI_CXX_FOUND)
 endif (${PROJECT_NAME}_ENABLE_MPI)
+
+option(${PROJECT_NAME}_64BIT_INDEX "Enable 64-bit indexing." "ON")
+set(CGNS_ENABLE_64BIT ${${PROJECT_NAME}_64BIT_INDEX} CACHE BOOL "Let `cgsize_t` in CGNS be 64-bit." FORCE)
+set(METIS_IDX64 ${${PROJECT_NAME}_64BIT_INDEX} CACHE BOOL "Let `idx_t` in METIS be 64-bit." FORCE)
 
 option(${PROJECT_NAME}_SUBMODULE_CGNS "Add CGNS as a git submodule." "ON")
 if (${PROJECT_NAME}_SUBMODULE_CGNS)

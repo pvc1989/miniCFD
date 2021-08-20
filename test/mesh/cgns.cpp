@@ -41,7 +41,7 @@ class TestTypes : public ::testing::Test {
     std::vector<double> x, y, z;
     std::map<int, cgSection> sections;
     std::vector<cgSolution> solutions;
-    cgZone(char* zn, int zi, int* zone_size)
+    cgZone(char* zn, int zi, cgsize_t* zone_size)
         : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
           x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {
     }

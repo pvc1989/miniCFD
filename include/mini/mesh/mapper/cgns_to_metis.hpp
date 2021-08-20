@@ -21,10 +21,10 @@ namespace mini {
 namespace mesh {
 namespace mapper {
 
-static_assert(std::is_same_v<idx_t, cgsize_t>,
-    "METIS's `idx_t` is different from CGNS's `cgsize_t`.");
+static_assert(sizeof(idx_t) == sizeof(cgsize_t),
+    "METIS's `idx_t` and CGNS's `cgsize_t` must have the same size.");
 
-template <class Int = int>
+template <class Int = cgsize_t>
 struct NodeInfo {
   NodeInfo() = default;
   NodeInfo(Int zi, Int ni) : zone_id(zi), node_id(ni) {}
@@ -37,7 +37,7 @@ struct CellInfo {
   Int zone_id{0}, section_id{0}, cell_id{0};
 };
 
-template <class Real = double, class Int = int>
+template <class Real = double, class Int = cgsize_t>
 struct CgnsToMetis {
   using CgnsMesh = cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;

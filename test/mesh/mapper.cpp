@@ -16,7 +16,7 @@ namespace mapper {
 
 class MeshMapperTest : public ::testing::Test {
  protected:
-  using Mapper = CgnsToMetis<double, int>;
+  using Mapper = CgnsToMetis<double, idx_t>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
@@ -79,7 +79,7 @@ TEST_F(MeshMapperTest, WriteMetisToCgns) {
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  int n_parts{8}, n_common_nodes{2}, edge_cut{0};
+  idx_t n_parts{8}, n_common_nodes{2}, edge_cut{0};
   auto [cell_parts, node_parts] = metis::PartMesh(
       metis_mesh, n_parts, n_common_nodes);
   // write the result of partitioning to cgns_mesh

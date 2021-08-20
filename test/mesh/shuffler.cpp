@@ -62,15 +62,15 @@ void ShufflerTest::WriteParts(
     auto& cell_field = cell_sol.GetField(1);
     auto& metis_cids = cell_sol.GetField(2);
     auto& sect_to_cells = zone_to_sects.at(zone_id);
-    int n_sects = zone.CountSections();
+    auto n_sects = zone.CountSections();
     for (int sect_id = 1; sect_id <= n_sects; ++sect_id) {
       auto& sect = zone.GetSection(sect_id);
       if (sect.dim() != base.GetCellDim())
         continue;
       auto& cells_local_to_global = sect_to_cells.at(sect_id);
-      int n_cells = sect.CountCells();
-      int range_min{sect.CellIdMin()};
-      int range_max{sect.CellIdMax()};
+      auto n_cells = sect.CountCells();
+      auto range_min{sect.CellIdMin()};
+      auto range_max{sect.CellIdMax()};
       EXPECT_EQ(n_cells - 1, range_max - range_min);
       for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;
            ++cgns_cell_id) {
@@ -126,8 +126,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  int n_parts{8}, n_common_nodes{2};
-  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes, 0);
+  MetisId n_parts{8}, n_common_nodes{2};
+  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);

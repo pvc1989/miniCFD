@@ -526,7 +526,7 @@ class Zone {
         char field_name[33];
         cg_field_info(file().id(), base_->id(), zone_id_, sol_id,
                       field_id, &datatype, field_name);
-        int first{1}, last{1};
+        cgsize_t first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
           last = CountNodes();
         } else if (location == CGNS_ENUMV(CellCenter)) {
