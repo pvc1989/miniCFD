@@ -6,7 +6,7 @@
 #include <iostream>
 #include <type_traits>
 
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 
 namespace mini {
 namespace integrator {

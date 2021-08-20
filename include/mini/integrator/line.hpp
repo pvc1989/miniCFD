@@ -2,35 +2,41 @@
 #ifndef MINI_INTEGRATOR_LINE_HPP_
 #define MINI_INTEGRATOR_LINE_HPP_
 
-#include <Eigen/Dense>
-
+#include <cmath>
 #include <type_traits>
 
+#include "Eigen/Dense"
+
 template <typename Scalar = double, int Q = 4>
-struct GaussIntegrator {
-  static const std::array<Scalar, Q> points;
-  static const std::array<Scalar, Q> weights;
-};
+struct GaussIntegrator;
 
 template <typename Scalar>
 struct GaussIntegrator<Scalar, 4> {
   static const std::array<Scalar, 4> points;
   static const std::array<Scalar, 4> weights;
+  static std::array<Scalar, 4> BuildPoints() {
+    return {
+        -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
+        +std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
+        -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
+        +std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
+    };
+  }
+  static std::array<Scalar, 4> BuildWeights() {
+    return {
+        (18 + std::sqrt(30)) / 36,
+        (18 + std::sqrt(30)) / 36,
+        (18 - std::sqrt(30)) / 36,
+        (18 - std::sqrt(30)) / 36,
+    };
+  }
 };
 template <typename Scalar>
-std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::points = {
-  (Scalar) -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
-  (Scalar) +std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
-  (Scalar) -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
-  (Scalar) +std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
-};
+std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::points =
+    GaussIntegrator<Scalar, 4>::BuildPoints();
 template <typename Scalar>
-std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::weights = {
-  (Scalar) (18 + std::sqrt(30)) / 36.0,
-  (Scalar) (18 + std::sqrt(30)) / 36.0,
-  (Scalar) (18 - std::sqrt(30)) / 36.0,
-  (Scalar) (18 - std::sqrt(30)) / 36.0
-};
+std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::weights =
+    GaussIntegrator<Scalar, 4>::BuildWeights();
 
 template <typename Scalar = double, int Q = 4, /* dim(space) */int D = 1>
 class Line {
