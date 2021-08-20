@@ -27,6 +27,38 @@ template <class Real> class Coordinates;
 template <class Real> class Section;
 template <class Real> class Solution;
 
+template <typename Int = int>
+class ShiftedVector : public std::vector<Int> {
+  private:
+  using Base = std::vector<Int>;
+  using size_type = typename Base::size_type;
+  size_type shift_{0};
+
+  public:
+  ShiftedVector() = default;
+  ShiftedVector(size_type size, size_type shift)
+      : Base(size), shift_(shift) {
+  }
+  ShiftedVector(ShiftedVector const&) = default;
+  ShiftedVector(ShiftedVector&&) noexcept = default;
+  ShiftedVector& operator=(ShiftedVector const&) = default;
+  ShiftedVector& operator=(ShiftedVector &&) noexcept = default;
+  ~ShiftedVector() noexcept = default;
+
+  const Int& operator[](size_type i) const {
+    return this->Base::operator[](i - shift_);
+  }
+  const Int& at(size_type i) const {
+    return this->Base::at(i - shift_);
+  }
+  Int& operator[](size_type i) {
+    return this->Base::operator[](i - shift_);
+  }
+  Int& at(size_type i) {
+    return this->Base::at(i - shift_);
+  }
+};
+
 /**
  * Wrapper of the `GridCoordinates_t` type.
  */

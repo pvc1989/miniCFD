@@ -43,7 +43,7 @@ set_target_properties(test_mesh_shuffler PROPERTIES OUTPUT_NAME shuffler)
 add_test(NAME TestMeshShuffler COMMAND shuffler)
 
 add_executable(test_mesh_parser parser.cpp)
-target_include_directories(test_mesh_parser PRIVATE ${CGNS_INC})
+target_include_directories(test_mesh_parser PRIVATE ${CGNS_INC} ${MPI_CXX_HEADER_DIR})
 target_link_libraries(test_mesh_parser cgns_shared metis)
 set_target_properties(test_mesh_parser PROPERTIES OUTPUT_NAME parser)
 add_test(NAME TestMeshParser COMMAND parser)

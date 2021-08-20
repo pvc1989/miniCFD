@@ -234,6 +234,13 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       }
     }
     ostrm << '\n';
+    // adjacent nodes
+    for (auto& [part_id, nodes] : part_adj_nodes[p]) {
+      for (auto i : nodes) {
+        ostrm << part_id << ' ' << i << '\n';
+      }
+    }
+    ostrm << '\n';
     // cell ranges
     for (int z = 1; z <= n_zones; ++z) {
       auto n_sects = part_to_cells[p][z].size() - 1;
@@ -254,13 +261,6 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     for (auto& [part_id, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
         ostrm << part_id << ' ' << i << ' ' << j << '\n';
-      }
-    }
-    ostrm << '\n';
-    // adjacent nodes
-    for (auto& [part_id, nodes] : part_adj_nodes[p]) {
-      for (auto i : nodes) {
-        ostrm << part_id << ' ' << i << '\n';
       }
     }
   }

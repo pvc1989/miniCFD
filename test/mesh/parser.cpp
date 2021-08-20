@@ -16,10 +16,10 @@ class TestParser : public ::testing::Test {
 };
 
 TEST_F(TestParser, Print) {
-  std::string cgns_file = "";
+  auto cgns_file = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
   auto prefix = current_binary_dir_ + "/ugrid_2d_part_";
   int pid = 0;
-  auto parser = Parser(cgns_file, prefix, pid);
+  auto parser = Parser<cgsize_t, double>(cgns_file, prefix, pid);
 }
 
 }  // namespace cgns
@@ -27,6 +27,14 @@ TEST_F(TestParser, Print) {
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
+  MPI_Init(&argc, &argv);
+  int comm_size, comm_rank;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  cgp_mpi_comm(MPI_COMM_WORLD);
+
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
+   
+  MPI_Finalize();
 }
