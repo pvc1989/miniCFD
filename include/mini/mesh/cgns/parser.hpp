@@ -86,7 +86,7 @@ class Parser{
 
  public:
   Parser(std::string const& cgns_file, std::string const& prefix, int pid) {
-    rank = pid;
+    rank_ = pid;
     int fid;
     if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid)) {
       cgp_error_exit();
@@ -98,16 +98,16 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int zid, head, tail;
       std::sscanf(line, "%d %d %d", &zid, &head, &tail);
-      local_nodes[zid] = NodeGroup<Int, Real>(head, tail - head);
+      local_nodes_[zid] = NodeGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
-      auto& x = local_nodes[zid].x_;
+      auto& x = local_nodes_[zid].x_;
       cgp_coord_read_data(fid, 1, zid, 1, range_min, range_max, x.data());
-      auto& y = local_nodes[zid].y_;
+      auto& y = local_nodes_[zid].y_;
       cgp_coord_read_data(fid, 1, zid, 2, range_min, range_max, y.data());
-      auto& z = local_nodes[zid].z_;
+      auto& z = local_nodes_[zid].z_;
       cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data());
-      auto& metis_id = local_nodes[zid].metis_id_;
+      auto& metis_id = local_nodes_[zid].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
@@ -116,7 +116,7 @@ class Parser{
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data());
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
-        m_to_c_for_nodes[mid] = NodeInfo<Int>(zid, nid);
+        nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
       }
     }
     cgp_close(fid);
@@ -131,10 +131,9 @@ class Parser{
     std::vector<std::vector<Real>> send_bufs;
     for (auto& [target, nodes] : send_nodes) {
       auto& buf = send_bufs.emplace_back();
-      for (auto m_nid : nodes) {
-        int zid = m_to_c_for_nodes[m_nid].zone_id;
-        int nid = m_to_c_for_nodes[m_nid].node_id;
-        auto const& coord = GetCoord(zid, nid);
+      for (auto metis_id : nodes) {
+        auto& info = nodes_m_to_c_[metis_id];
+        auto const& coord = GetCoord(info.zone_id, info.node_id);
         buf.emplace_back(coord[0]);
         buf.emplace_back(coord[1]);
         buf.emplace_back(coord[2]);
@@ -158,7 +157,7 @@ class Parser{
       int count = 3 * nodes.size();
       auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
       MPI_Datatype datatype = MPI_DOUBLE;
-      int tag = rank;
+      int tag = rank_;
       auto& req = requests.emplace_back();
       MPI_Irecv(buf.data(), count, datatype, source, tag, MPI_COMM_WORLD, &req);
     }
@@ -168,10 +167,9 @@ class Parser{
     int i_source = 0;
     for (auto& [source, nodes] : recv_nodes) {
       double* xyz = recv_bufs[i_source++].data();
-      for (auto m_nid : nodes) {
-        int zid = m_to_c_for_nodes[m_nid].zone_id;
-        int nid = m_to_c_for_nodes[m_nid].node_id;
-        adj_nodes[zid][nid] = { xyz[0], xyz[1] , xyz[2] };
+      for (auto metis_id : nodes) {
+        auto& info = nodes_m_to_c_[metis_id];
+        adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
       }
     }
@@ -179,41 +177,41 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int zid, s, head, tail;
       std::sscanf(line, "%d %d %d %d", &zid, &s, &head, &tail);
-      cells[zid][s] = {head, tail};
+      local_cells_[zid][s] = {head, tail};
     }
     // inner adjacency
     while (istrm.getline(line, 30) && line[0]) {
       int i, j;
       std::sscanf(line, "%d %d", &i, &j);
-      inner_adjs.emplace_back(i, j);
+      inner_adjs_.emplace_back(i, j);
     }
     // interpart adjacency
     while (istrm.getline(line, 30) && line[0]) {
       int p, i, j;
       std::sscanf(line, "%d %d %d", &p, &i, &j);
-      part_interpart_adjs[p].emplace_back(i, j);
+      part_to_adjs_[p].emplace_back(i, j);
     }
   }
 
  private:
   using Mat3x1 = Eigen::Matrix<Real, 3, 1>;
-  std::map<Int, NodeGroup<Int, Real>> local_nodes;
-  std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes;
-  std::unordered_map<Int, NodeInfo<Int>> m_to_c_for_nodes;
-  std::map<Int, std::map<Int, std::pair<Int, Int>>> cells;
-  std::vector<std::pair<Int, Int>> inner_adjs;
-  std::map<Int, std::vector<std::pair<Int, Int>>> part_interpart_adjs;
-  int rank;
+  std::map<Int, NodeGroup<Int, Real>> local_nodes_;
+  std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes_;
+  std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
+  std::map<Int, std::map<Int, std::pair<Int, Int>>> local_cells_;
+  std::vector<std::pair<Int, Int>> inner_adjs_;
+  std::map<Int, std::vector<std::pair<Int, Int>>> part_to_adjs_;
+  int rank_;
 
   Mat3x1 GetCoord(int zid, int nid) const {
     Mat3x1 coord;
-    auto iter_zone = local_nodes.find(zid);
-    if (iter_zone != local_nodes.end() && iter_zone->second.has(nid)) {
+    auto iter_zone = local_nodes_.find(zid);
+    if (iter_zone != local_nodes_.end() && iter_zone->second.has(nid)) {
       coord[0] = iter_zone->second.x_[nid];
       coord[1] = iter_zone->second.y_[nid];
       coord[2] = iter_zone->second.z_[nid];
     } else {
-      coord = adj_nodes.at(zid).at(nid);
+      coord = adj_nodes_.at(zid).at(nid);
     }
     return coord;
   }
