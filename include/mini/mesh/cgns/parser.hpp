@@ -5,6 +5,7 @@
 #ifndef MINI_MESH_CGNS_PARSER_HPP_
 #define MINI_MESH_CGNS_PARSER_HPP_
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -16,6 +17,7 @@
 #include <unordered_map>
 
 #include "pcgnslib.h"
+#include "Eigen/Dense"
 
 #include "mini/mesh/cgns/format.hpp"
 
@@ -61,6 +63,10 @@ struct NodeGroup {
   Int size() const {
     return size_;
   }
+  
+  bool has(int nid) const {
+    return head_ <= nid && nid < size_ + head_;
+  }
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -80,6 +86,7 @@ class Parser{
 
  public:
   Parser(std::string const& cgns_file, std::string const& prefix, int pid) {
+    rank = pid;
     int fid;
     if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid)) {
       cgp_error_exit();
@@ -91,16 +98,16 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int zid, head, tail;
       std::sscanf(line, "%d %d %d", &zid, &head, &tail);
-      nodes[zid] = NodeGroup<Int, Real>(head, tail - head);
+      local_nodes[zid] = NodeGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
-      auto& x = nodes[zid].x_;
+      auto& x = local_nodes[zid].x_;
       cgp_coord_read_data(fid, 1, zid, 1, range_min, range_max, x.data());
-      auto& y = nodes[zid].y_;
+      auto& y = local_nodes[zid].y_;
       cgp_coord_read_data(fid, 1, zid, 2, range_min, range_max, y.data());
-      auto& z = nodes[zid].z_;
+      auto& z = local_nodes[zid].z_;
       cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data());
-      auto& metis_id = nodes[zid].metis_id_;
+      auto& metis_id = local_nodes[zid].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
@@ -110,16 +117,73 @@ class Parser{
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
         m_to_c_for_nodes[mid] = NodeInfo<Int>(zid, nid);
-        std::cout << mid << ": " << zid << " " << nid << " "
-                  << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
+        // std::cout << mid << ": " << zid << " " << nid << " "
+        //           << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
       }
-      cgp_close(fid);
     }
-    // adjacent nodes
+    cgp_close(fid);
+    std::map<Int, std::vector<Int>> send_nodes, recv_nodes;
+    // send nodes info
     while (istrm.getline(line, 30) && line[0]) {
       int p, node;
       std::sscanf(line, "%d %d", &p, &node);
-      part_adj_nodes[p].emplace(node);
+        // std::cout << line << std::endl;
+      send_nodes[p].emplace_back(node);
+    }
+    std::vector<MPI_Request> requests;
+    std::vector<std::vector<Real>> send_bufs;
+    for (auto& [dest, nodes] : send_nodes) {
+      if (dest > 3)
+        continue;
+      auto& buf = send_bufs.emplace_back();
+      for (auto m_nid : nodes) {
+        int zid = m_to_c_for_nodes[m_nid].zone_id;
+        int nid = m_to_c_for_nodes[m_nid].node_id;
+        auto const& coord = GetCoord(zid, nid);
+        // std::cout << coord << std::endl;
+        buf.emplace_back(coord[0]);
+        buf.emplace_back(coord[1]);
+        buf.emplace_back(coord[2]);
+      }
+      std::is_sorted(nodes.begin(), nodes.end());
+      int count = 3 * nodes.size();
+      MPI_Datatype datatype = MPI_DOUBLE;
+      int tag = dest;
+      auto& req = requests.emplace_back();
+      MPI_Isend(buf.data(), count, datatype, dest, tag, MPI_COMM_WORLD, &req);
+    }
+    // recv nodes info
+    while (istrm.getline(line, 30) && line[0]) {
+      int p, node;
+      std::sscanf(line, "%d %d", &p, &node);
+      recv_nodes[p].emplace_back(node);
+    }
+    std::vector<std::vector<Real>> recv_bufs;
+    for (auto& [source, nodes] : recv_nodes) {
+      if (source > 3)
+        continue;
+      std::is_sorted(nodes.begin(), nodes.end());
+      int count = 3 * nodes.size();
+      auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
+      MPI_Datatype datatype = MPI_DOUBLE;
+      int tag = rank;
+      auto& req = requests.emplace_back();
+      MPI_Irecv(buf.data(), count, datatype, source, tag, MPI_COMM_WORLD, &req);
+    }
+    std::vector<MPI_Status> statuses(requests.size());
+    MPI_Waitall(requests.size(), requests.data(), statuses.data());
+    int bufs_id = 0;
+    for (auto& [source, nodes] : recv_nodes) {
+      int buf_id = 0;
+      for (auto m_nid : nodes) {
+        int zid = m_to_c_for_nodes[m_nid].zone_id;
+        int nid = m_to_c_for_nodes[m_nid].node_id;
+        adj_nodes[zid][nid] = {recv_bufs[bufs_id][buf_id],
+                               recv_bufs[bufs_id][buf_id+1],
+                               recv_bufs[bufs_id][buf_id+2]};
+        buf_id += 3;
+      }
+      ++bufs_id;
     }
     // cell ranges
     while (istrm.getline(line, 30) && line[0]) {
@@ -142,12 +206,27 @@ class Parser{
   }
 
  private:
-  std::map<Int, NodeGroup<Int, Real>> nodes;
+  using Mat3x1 = Eigen::Matrix<Real, 3, 1>;
+  std::map<Int, NodeGroup<Int, Real>> local_nodes;
+  std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes;
   std::unordered_map<Int, NodeInfo<Int>> m_to_c_for_nodes;
-  std::map<Int, std::set<Int>> part_adj_nodes;
   std::map<Int, std::map<Int, std::pair<Int, Int>>> cells;
   std::vector<std::pair<Int, Int>> inner_adjs;
   std::map<Int, std::vector<std::pair<Int, Int>>> part_interpart_adjs;
+  int rank;
+
+  Mat3x1 GetCoord(int zid, int nid) const {
+    Mat3x1 coord;
+    auto iter_zone = local_nodes.find(zid);
+    if (iter_zone != local_nodes.end() && iter_zone->second.has(nid)) {
+      coord[0] = iter_zone->second.x_[nid];
+      coord[1] = iter_zone->second.y_[nid];
+      coord[2] = iter_zone->second.z_[nid];
+    } else {
+      coord = adj_nodes.at(zid).at(nid);
+    }
+    return coord;
+  }
 };
 
 }  // namespace cgns
