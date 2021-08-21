@@ -102,8 +102,8 @@ class Parser{
       cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data());
       auto& metis_id = nodes[zid].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
-      cgsize_t mem_range_min[] = { range_min[0] };
-      cgsize_t mem_range_max[] = { range_max[0] };
+      cgsize_t mem_range_min[] = { 1 };
+      cgsize_t mem_range_max[] = { mem_dimensions[0] };
       cgp_field_general_read_data(fid, 1, zid, 1, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data());
