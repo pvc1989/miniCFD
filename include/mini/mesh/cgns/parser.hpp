@@ -6,14 +6,15 @@
 #define MINI_MESH_CGNS_PARSER_HPP_
 
 #include <algorithm>
-#include <iostream>
+#include <cassert>
 #include <fstream>
-#include <string>
-#include <utility>
-#include <vector>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 #include <unordered_map>
 
 #include "pcgnslib.h"
@@ -63,7 +64,6 @@ struct NodeGroup {
   Int size() const {
     return size_;
   }
-  
   bool has(int nid) const {
     return head_ <= nid && nid < size_ + head_;
   }
@@ -117,8 +117,6 @@ class Parser{
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
         m_to_c_for_nodes[mid] = NodeInfo<Int>(zid, nid);
-        // std::cout << mid << ": " << zid << " " << nid << " "
-        //           << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
       }
     }
     cgp_close(fid);
@@ -127,30 +125,26 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int p, node;
       std::sscanf(line, "%d %d", &p, &node);
-        // std::cout << line << std::endl;
       send_nodes[p].emplace_back(node);
     }
     std::vector<MPI_Request> requests;
     std::vector<std::vector<Real>> send_bufs;
-    for (auto& [dest, nodes] : send_nodes) {
-      if (dest > 3)
-        continue;
+    for (auto& [target, nodes] : send_nodes) {
       auto& buf = send_bufs.emplace_back();
       for (auto m_nid : nodes) {
         int zid = m_to_c_for_nodes[m_nid].zone_id;
         int nid = m_to_c_for_nodes[m_nid].node_id;
         auto const& coord = GetCoord(zid, nid);
-        // std::cout << coord << std::endl;
         buf.emplace_back(coord[0]);
         buf.emplace_back(coord[1]);
         buf.emplace_back(coord[2]);
       }
-      std::is_sorted(nodes.begin(), nodes.end());
+      assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
       MPI_Datatype datatype = MPI_DOUBLE;
-      int tag = dest;
+      int tag = target;
       auto& req = requests.emplace_back();
-      MPI_Isend(buf.data(), count, datatype, dest, tag, MPI_COMM_WORLD, &req);
+      MPI_Isend(buf.data(), count, datatype, target, tag, MPI_COMM_WORLD, &req);
     }
     // recv nodes info
     while (istrm.getline(line, 30) && line[0]) {
@@ -160,9 +154,7 @@ class Parser{
     }
     std::vector<std::vector<Real>> recv_bufs;
     for (auto& [source, nodes] : recv_nodes) {
-      if (source > 3)
-        continue;
-      std::is_sorted(nodes.begin(), nodes.end());
+      assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
       auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
       MPI_Datatype datatype = MPI_DOUBLE;
@@ -172,18 +164,16 @@ class Parser{
     }
     std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
-    int bufs_id = 0;
+    // copy node coordinates from buffer to member
+    int i_source = 0;
     for (auto& [source, nodes] : recv_nodes) {
-      int buf_id = 0;
+      double* xyz = recv_bufs[i_source++].data();
       for (auto m_nid : nodes) {
         int zid = m_to_c_for_nodes[m_nid].zone_id;
         int nid = m_to_c_for_nodes[m_nid].node_id;
-        adj_nodes[zid][nid] = {recv_bufs[bufs_id][buf_id],
-                               recv_bufs[bufs_id][buf_id+1],
-                               recv_bufs[bufs_id][buf_id+2]};
-        buf_id += 3;
+        adj_nodes[zid][nid] = { xyz[0], xyz[1] , xyz[2] };
+        xyz += 3;
       }
-      ++bufs_id;
     }
     // cell ranges
     while (istrm.getline(line, 30) && line[0]) {
