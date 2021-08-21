@@ -47,7 +47,8 @@ std::vector<Int> PartGraph(
     const std::vector<real_t> &weight_of_each_part = {},
     const std::vector<real_t> &unbalances = {},
     const std::vector<Int> &options = {}) {
-  static_assert(sizeof(Int) == sizeof(idx_t), "`Int` and `idx_t` must have the same size.");
+  static_assert(sizeof(Int) == sizeof(idx_t),
+      "`Int` and `idx_t` must have the same size.");
   Int n_vertices = graph.CountVertices();
   auto vertex_parts = std::vector<Int>(n_vertices);
   assert(valid(cost_of_each_vertex, n_vertices));

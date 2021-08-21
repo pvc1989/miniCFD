@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -29,12 +30,12 @@ template <class Real> class Solution;
 
 template <typename Int = int>
 class ShiftedVector : public std::vector<Int> {
-  private:
+ private:
   using Base = std::vector<Int>;
   using size_type = typename Base::size_type;
   size_type shift_{0};
 
-  public:
+ public:
   ShiftedVector() = default;
   ShiftedVector(size_type size, size_type shift)
       : Base(size), shift_(shift) {

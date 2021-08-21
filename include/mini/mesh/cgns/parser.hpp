@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 #include <map>
+#include <memory>
 #include <set>
 #include <unordered_map>
 
@@ -109,7 +110,8 @@ class Parser{
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
         m_to_c_for_nodes[mid] = NodeInfo<Int>(zid, nid);
-        std::cout << mid << ": " << zid << " " << nid << " " << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
+        std::cout << mid << ": " << zid << " " << nid << " "
+                  << x[nid] << " " << y[nid] << " " << z[nid] << std::endl;
       }
       cgp_close(fid);
     }
@@ -146,7 +148,6 @@ class Parser{
   std::map<Int, std::map<Int, std::pair<Int, Int>>> cells;
   std::vector<std::pair<Int, Int>> inner_adjs;
   std::map<Int, std::vector<std::pair<Int, Int>>> part_interpart_adjs;
-  
 };
 
 }  // namespace cgns
