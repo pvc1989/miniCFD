@@ -1,4 +1,5 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
+#include <cstdlib>
 
 #include "mini/mesh/cgns/parser.hpp"
 
@@ -30,6 +31,9 @@ TEST_F(TestParser, Print) {
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
+
+  // std::system("./shuffler");
+
   MPI_Init(NULL, NULL);
   int comm_size, comm_rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -38,10 +42,10 @@ int main(int argc, char* argv[]) {
 
   auto current_binary_dir =
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh");
-  auto cgns_file = current_binary_dir + "/ugrid_2d_shuffled.cgns";
-  auto prefix = current_binary_dir + "/ugrid_2d_part_";
+  auto cgns_file = current_binary_dir + "/hexa_new.cgns";
+  auto prefix = current_binary_dir + "/hexa_part_";
   auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
       cgns_file, prefix, comm_rank);
-
+      
   MPI_Finalize();
 }

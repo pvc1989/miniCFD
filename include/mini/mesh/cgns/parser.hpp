@@ -47,6 +47,11 @@ template <class Int = int>
 struct CellInfo {
   CellInfo() = default;
   CellInfo(Int zi, Int si, Int ci) : zone_id(zi), section_id(si), cell_id(ci) {}
+  CellInfo(CellInfo const&) = default;
+  CellInfo& operator=(CellInfo const&) = default;
+  CellInfo(CellInfo&&) noexcept = default;
+  CellInfo& operator=(CellInfo&&) noexcept = default;
+  ~CellInfo() noexcept = default;
   Int zone_id{0}, section_id{0}, cell_id{0};
 };
 
@@ -99,8 +104,29 @@ class Hexa : public Cell<Int, Real>, public integrator::Hexa<Real, 4, 4, 4> {
 
 template <typename Int = cgsize_t, typename Real = double>
 class CellGroup {
-  Int head_, tail_;
-  std::vector<std::unique_ptr<Cell<Int, Real>>> data_;
+  Int head_, size_;
+  ShiftedVector<std::unique_ptr<Cell<Int, Real>>> data_;
+
+ public:
+  CellGroup(int head, int size)
+      : head_(head), size_(size), data_(size, head) {
+  }
+  CellGroup() = default;
+  CellGroup(CellGroup const&) = default;
+  CellGroup(CellGroup&&) noexcept = default;
+  CellGroup& operator=(CellGroup const&) = default;
+  CellGroup& operator=(CellGroup &&) noexcept = default;
+  ~CellGroup() noexcept = default;
+
+  Int size() const {
+    return size_;
+  }
+  bool has(int cid) const {
+    return head_ <= cid && cid < size_ + head_;
+  }
+  auto& operator[](Int cell_id) {
+    return data_[cell_id];
+  }
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -142,7 +168,6 @@ class Parser{
         nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
       }
     }
-    cgp_close(fid);
     std::map<Int, std::vector<Int>> send_nodes, recv_nodes;
     // send nodes info
     while (istrm.getline(line, 30) && line[0]) {
@@ -195,18 +220,73 @@ class Parser{
         auto& info = nodes_m_to_c_[metis_id];
         adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
-        if (rank_ == 3) {
-          int zid = info.zone_id, nid = info.node_id;
-          std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
-          print(adj_nodes_[zid][nid].transpose());
-        }
+        // if (rank_ == 3) {
+        //   int zid = info.zone_id, nid = info.node_id;
+        //   std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
+        //   print(adj_nodes_[zid][nid].transpose());
+        // }
       }
     }
     // cell ranges
     while (istrm.getline(line, 30) && line[0]) {
-      int zid, s, head, tail;
-      std::sscanf(line, "%d %d %d %d", &zid, &s, &head, &tail);
-      local_cells_[zid][s] = {head, tail};
+      int zid, sid, head, tail;
+      std::sscanf(line, "%d %d %d %d", &zid, &sid, &head, &tail);
+      std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
+            zid, sid, head, tail);
+      local_cells_[zid][sid] = CellGroup<Int, Real>(head, tail - head);
+      cgsize_t range_min[] = { head };
+      cgsize_t range_max[] = { tail - 1 };
+      cgsize_t mem_dimensions[] = { tail - head };
+      cgsize_t mem_range_min[] = { 1 };
+      cgsize_t mem_range_max[] = { mem_dimensions[0] };
+      ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
+      char sol_name[33], field_name[33];
+      GridLocation_t loc;
+      if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc))
+        cgp_error_exit();
+      DataType_t dt;
+      if (cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
+        cgp_error_exit();
+      std::cout << sol_name << ' ' << field_name << ' ' << mem_range_min[0] << ' ' << mem_range_max[0] << ' ' << mem_dimensions[0] << ' ' << metis_ids.size() << std::endl;
+      cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
+          sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
+          1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data());
+      for (int cid = head; cid < tail; ++cid) {
+        auto mid = metis_ids[cid];
+        cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
+      }
+      char name[33];
+      ElementType_t type;
+      cgsize_t u, v;
+      int x, y;
+      std::vector<Int> nodes(8 * mem_dimensions[0]);
+      if (cg_section_read(fid, 1, zid, sid, name, &type, &u, &v, &x, &y))
+        cgp_error_exit();
+      switch (type) {
+      case CGNS_ENUMV(HEXA_8):
+        nodes.resize(8 * mem_dimensions[0]);
+        break;
+      default:
+        assert(false);
+      }
+      if (cgp_elements_read_data(fid, 1, zid, sid, range_min[0], range_max[0],
+          nodes.data()))
+        cgp_error_exit();
+      for (int cid = head; cid < tail; ++cid) {
+        int i = (cid - head) * 8;
+        if (rank_ == 3)
+          std::printf("i = %4d, ", i);
+        local_cells_[zid][sid][cid].reset(new Hexa<Int, Real>(
+            GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
+            GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
+            GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
+            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])
+        ));
+        local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
+        if (rank_ == 3)
+          std::printf("zid = %4d, sid = %4d, cid = %4d, mid = %4d\n",
+              (int)zid, (int)sid, (int)cid, (int)metis_ids[cid]);
+      }
     }
     // inner adjacency
     while (istrm.getline(line, 30) && line[0]) {
@@ -220,6 +300,7 @@ class Parser{
       std::sscanf(line, "%d %d %d", &p, &i, &j);
       part_to_adjs_[p].emplace_back(i, j);
     }
+    cgp_close(fid);
   }
 
  private:
@@ -227,7 +308,8 @@ class Parser{
   std::map<Int, NodeGroup<Int, Real>> local_nodes_;
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes_;
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
-  std::map<Int, std::map<Int, std::pair<Int, Int>>> local_cells_;
+  std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
+  std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
   std::map<Int, std::vector<std::pair<Int, Int>>> part_to_adjs_;
   int rank_;
