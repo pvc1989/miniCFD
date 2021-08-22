@@ -26,6 +26,11 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
+template <class Object>
+void print(Object&& obj) {
+  std::cout << obj << '\n' << std::endl;
+}
+
 template <class Int = cgsize_t>
 struct NodeInfo {
   NodeInfo() = default;
@@ -147,9 +152,10 @@ class Parser{
     }
     // recv nodes info
     while (istrm.getline(line, 30) && line[0]) {
-      int p, node;
-      std::sscanf(line, "%d %d", &p, &node);
-      recv_nodes[p].emplace_back(node);
+      int p, mid, zid, nid;
+      std::sscanf(line, "%d %d %d %d", &p, &mid, &zid, &nid);
+      recv_nodes[p].emplace_back(mid);
+      nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
     }
     std::vector<std::vector<Real>> recv_bufs;
     for (auto& [source, nodes] : recv_nodes) {
@@ -171,6 +177,11 @@ class Parser{
         auto& info = nodes_m_to_c_[metis_id];
         adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
+        if (rank_ == 3) {
+          int zid = info.zone_id, nid = info.node_id;
+          std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
+          print(adj_nodes_[zid][nid].transpose());
+        }
       }
     }
     // cell ranges

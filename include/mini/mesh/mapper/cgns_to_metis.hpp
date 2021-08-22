@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -45,6 +46,16 @@ struct CgnsToMetis {
 
   MetisMesh Map(const CgnsMesh& mesh);
   bool IsValid() const;
+
+  void Write(std::string name) const {
+    auto ostrm = std::ofstream(name);
+    Int metis_n_nodes = metis_to_cgns_for_nodes.size();
+    for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
+      auto info = metis_to_cgns_for_nodes.at(metis_i_node);
+      int zid = info.zone_id, nid = info.node_id;
+      ostrm << metis_i_node << ' ' << zid << ' ' << nid << '\n';
+    }
+  }
 
   std::vector<NodeInfo<Int>> metis_to_cgns_for_nodes;
   std::vector<CellInfo<Int>> metis_to_cgns_for_cells;

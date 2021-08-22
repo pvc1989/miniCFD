@@ -246,8 +246,10 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     ostrm << '\n';
     // adjacent nodes
     for (auto& [part_id, nodes] : part_adj_nodes[p]) {
-      for (auto i : nodes) {
-        ostrm << part_id << ' ' << i << '\n';
+      for (auto mid : nodes) {
+        auto& info = mapper.metis_to_cgns_for_nodes[mid];
+        int zid = info.zone_id, nid = info.node_id;
+        ostrm << part_id << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
       }
     }
     ostrm << '\n';
