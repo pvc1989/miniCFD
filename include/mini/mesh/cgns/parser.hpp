@@ -21,6 +21,7 @@
 #include "Eigen/Dense"
 
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/integrator/hexa.hpp"
 
 namespace mini {
 namespace mesh {
@@ -74,15 +75,32 @@ struct NodeGroup {
   }
 };
 
+template <typename Int, typename Real>
+struct Cell;
+
 template <typename Int = cgsize_t, typename Real = double>
-struct CellBase {
+struct Face {
+  using CellPtr = Cell<Int, Real>*;
+  CellPtr holder, sharer;
+};
+
+template <typename Int = cgsize_t, typename Real = double>
+struct Cell {
   Int metis_id;
+};
+
+template <typename Int = cgsize_t, typename Real = double>
+class Hexa : public Cell<Int, Real>, public integrator::Hexa<Real, 4, 4, 4> {
+  using Integrator = integrator::Hexa<Real, 4, 4, 4>;
+
+ public:
+  using Integrator::Integrator;
 };
 
 template <typename Int = cgsize_t, typename Real = double>
 class CellGroup {
   Int head_, tail_;
-  std::vector<std::unique_ptr<CellBase<Int, Real>>> data_;
+  std::vector<std::unique_ptr<Cell<Int, Real>>> data_;
 };
 
 template <typename Int = cgsize_t, typename Real = double>
