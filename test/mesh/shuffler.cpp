@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -120,8 +121,13 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   MapperType mapper;
   using MeshDataType = double;
   using MetisId = idx_t;
-  auto old_file_name = test_data_dir_ + "/ugrid_2d.cgns";
-  auto new_file_name = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
+  auto old_file_name = current_binary_dir_ + "/hexa_old.cgns";
+  auto new_file_name = current_binary_dir_ + "/hexa_new.cgns";
+  auto gmsh_cmd = std::string("gmsh ");
+  gmsh_cmd += test_data_dir_;
+  gmsh_cmd += "/double_mach_hexa.geo -save -o ";
+  gmsh_cmd += old_file_name;
+  std::system(gmsh_cmd.c_str());
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
@@ -226,7 +232,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   }
   // write to txts
   for (int p = 0; p < n_parts; ++p) {
-    auto filename = current_binary_dir_ + "/ugrid_2d_part_";
+    auto filename = current_binary_dir_ + "/hexa_part_";
     filename += std::to_string(p) + ".txt";
     auto ostrm = std::ofstream(filename/* , std::ios::binary */);
     // node ranges
