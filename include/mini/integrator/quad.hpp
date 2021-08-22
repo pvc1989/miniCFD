@@ -115,6 +115,17 @@ class Quad {
   explicit Quad(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;
   }
+  Quad(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2,MatDx1 const& p3) {
+    xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
+    xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
+  }
+  Quad(std::initializer_list<MatDx1> il) {
+    assert(il.size() == 4);
+    auto p = il.begin();
+    for (int i = 0; i < 4; ++i) {
+      xyz_global_Dx4_[i] = p[i];
+    }
+  }
   MatDx1 local_to_global_Dx1(Mat2x1 xy_local) const {
     return xyz_global_Dx4_ * shape_4x1(xy_local);
   }

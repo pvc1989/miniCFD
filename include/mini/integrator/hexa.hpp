@@ -143,6 +143,20 @@ class Hexa {
   explicit Hexa(Mat3x8 const& xyz_global) {
     xyz_global_3x8_ = xyz_global;
   }
+  Hexa(Mat3x1 const& p0, Mat3x1 const& p1, Mat3x1 const& p2, Mat3x1 const& p3,
+       Mat3x1 const& p4, Mat3x1 const& p5, Mat3x1 const& p6, Mat3x1 const& p7) {
+    xyz_global_3x8_.col(0) = p0; xyz_global_3x8_.col(1) = p1;
+    xyz_global_3x8_.col(2) = p2; xyz_global_3x8_.col(3) = p3;
+    xyz_global_3x8_.col(4) = p4; xyz_global_3x8_.col(5) = p5;
+    xyz_global_3x8_.col(6) = p6; xyz_global_3x8_.col(7) = p7;
+  }
+  Hexa(std::initializer_list<Mat3x1> il) {
+    assert(il.size() == 8);
+    auto p = il.begin();
+    for (int i = 0; i < 8; ++i) {
+      xyz_global_3x8_[i] = p[i];
+    }
+  }
   GlobalCoord local_to_global_Dx1(
       Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
