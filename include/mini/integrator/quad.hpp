@@ -2,7 +2,7 @@
 #ifndef MINI_INTEGRATOR_QUAD_HPP_
 #define MINI_INTEGRATOR_QUAD_HPP_
 
-#include <Eigen/Dense>
+#include "Eigen/Dense"
 
 #include "mini/integrator/line.hpp"
 

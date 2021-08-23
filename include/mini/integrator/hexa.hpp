@@ -2,11 +2,12 @@
 #ifndef MINI_INTEGRATOR_HEXA_HPP_
 #define MINI_INTEGRATOR_HEXA_HPP_
 
-#include <Eigen/Dense>
-
 #include <type_traits>
 
+#include "Eigen/Dense"
+
 #include "mini/integrator/line.hpp"
+
 namespace mini {
 namespace integrator {
 /**
