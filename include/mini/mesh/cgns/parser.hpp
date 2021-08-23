@@ -137,9 +137,8 @@ class Parser{
   Parser(std::string const& cgns_file, std::string const& prefix, int pid) {
     rank_ = pid;
     int fid;
-    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid)) {
+    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid))
       cgp_error_exit();
-    }
     auto filename = prefix + std::to_string(pid) + ".txt";
     std::ifstream istrm(filename);
     char line[kLineWidth];
@@ -151,18 +150,20 @@ class Parser{
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       auto& x = local_nodes_[zid].x_;
-      cgp_coord_read_data(fid, 1, zid, 1, range_min, range_max, x.data());
       auto& y = local_nodes_[zid].y_;
-      cgp_coord_read_data(fid, 1, zid, 2, range_min, range_max, y.data());
       auto& z = local_nodes_[zid].z_;
-      cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data());
+      if (cgp_coord_read_data(fid, 1, zid, 1, range_min, range_max, x.data()) ||
+          cgp_coord_read_data(fid, 1, zid, 2, range_min, range_max, y.data()) ||
+          cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data()))
+        cgp_error_exit();
       auto& metis_id = local_nodes_[zid].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
-      cgp_field_general_read_data(fid, 1, zid, 1, 2, range_min, range_max,
+      if (cgp_field_general_read_data(fid, 1, zid, 1, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
-          1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data());
+          1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
+        cgp_error_exit();
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
         nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
@@ -212,6 +213,7 @@ class Parser{
     }
     std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
+    requests.clear();
     // copy node coordinates from buffer to member
     int i_source = 0;
     for (auto& [source, nodes] : recv_nodes) {
@@ -220,7 +222,7 @@ class Parser{
         auto& info = nodes_m_to_c_[metis_id];
         adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
-        // if (rank_ == 3) {
+        // if (rank_ == 2) {
         //   int zid = info.zone_id, nid = info.node_id;
         //   std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
         //   print(adj_nodes_[zid][nid].transpose());
@@ -228,11 +230,13 @@ class Parser{
       }
     }
     // cell ranges
+    std::map<Int, std::map<Int, ShiftedVector<Int>>> z_s_c_index;
+    std::map<Int, std::map<Int, std::vector<Int>>> z_s_nodes;
     while (istrm.getline(line, 30) && line[0]) {
       int zid, sid, head, tail;
       std::sscanf(line, "%d %d %d %d", &zid, &sid, &head, &tail);
-      std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
-            zid, sid, head, tail);
+      // std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
+      //       zid, sid, head, tail);
       local_cells_[zid][sid] = CellGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
@@ -242,29 +246,38 @@ class Parser{
       ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
       char sol_name[33], field_name[33];
       GridLocation_t loc;
-      if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc))
-        cgp_error_exit();
       DataType_t dt;
-      if (cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
+      if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc) ||
+          cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
         cgp_error_exit();
       std::cout << sol_name << ' ' << field_name << ' ' << mem_range_min[0] << ' ' << mem_range_max[0] << ' ' << mem_dimensions[0] << ' ' << metis_ids.size() << std::endl;
-      cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
+      if (cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
-          1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data());
+          1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
+        cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         auto mid = metis_ids[cid];
         cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
+        if (rank_ == 2)
+          std::printf("mid = %ld, zid = %ld, sid = %ld, cid = %ld\n", mid,
+              cells_m_to_c_[mid].zone_id, cells_m_to_c_[mid].section_id,
+              cells_m_to_c_[mid].cell_id);
       }
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
       int x, y;
-      std::vector<Int> nodes(8 * mem_dimensions[0]);
+      z_s_c_index[zid][sid] = ShiftedVector<Int>(mem_dimensions[0], head);
+      auto& index = z_s_c_index[zid][sid];
+      auto& nodes = z_s_nodes[zid][sid];
       if (cg_section_read(fid, 1, zid, sid, name, &type, &u, &v, &x, &y))
         cgp_error_exit();
       switch (type) {
       case CGNS_ENUMV(HEXA_8):
         nodes.resize(8 * mem_dimensions[0]);
+        for (int i = 0; i < index.size(); ++i) {
+          index[i] = 8 * i;
+        }
         break;
       default:
         assert(false);
@@ -274,8 +287,8 @@ class Parser{
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         int i = (cid - head) * 8;
-        if (rank_ == 3)
-          std::printf("i = %4d, ", i);
+        // if (rank_ == 2)
+        //   std::printf("i = %4d, ", i);
         local_cells_[zid][sid][cid].reset(new Hexa<Int, Real>(
             GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
             GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
@@ -283,9 +296,9 @@ class Parser{
             GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])
         ));
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
-        if (rank_ == 3)
-          std::printf("zid = %4d, sid = %4d, cid = %4d, mid = %4d\n",
-              (int)zid, (int)sid, (int)cid, (int)metis_ids[cid]);
+        // if (rank_ == 2)
+        //   std::printf("zid = %4d, sid = %4d, cid = %4d, mid = %4d\n",
+        //       (int)zid, (int)sid, (int)cid, (int)metis_ids[cid]);
       }
     }
     // inner adjacency
@@ -295,12 +308,43 @@ class Parser{
       inner_adjs_.emplace_back(i, j);
     }
     // interpart adjacency
+    std::map<Int, std::map<Int, Int>> send_infos; // pid_to_mid_to_cnt
+    std::map<Int, std::map<Int, Int>> recv_infos;
+    std::vector<std::pair<Int, Int>> interpart_adjs;
     while (istrm.getline(line, 30) && line[0]) {
-      int p, i, j;
-      std::sscanf(line, "%d %d %d", &p, &i, &j);
-      part_to_adjs_[p].emplace_back(i, j);
+      int p, i, j, cnt_i, cnt_j;
+      std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
+      send_infos[p][i] = cnt_i;
+      recv_infos[p][j] = cnt_j;
+      interpart_adjs.emplace_back(i, j);
     }
-    cgp_close(fid);
+    // send cell Info
+    std::vector<std::vector<Real>> send_cells;
+    for (auto& [target, cell_infos] : send_infos) {
+      auto& send_buf = send_cells.emplace_back();
+      for (auto& [mid, cnt] : cell_infos) {
+        auto& info = cells_m_to_c_[mid];
+        if (rank_ == 1)
+          std::printf("info at %p\n", &info);
+        Int zid = cells_m_to_c_[mid].zone_id,
+            sid = cells_m_to_c_[mid].section_id,
+            cid = cells_m_to_c_[mid].cell_id;
+        auto id = z_s_c_index[zid][sid][cid];
+        auto nodes = z_s_nodes[zid][sid];
+        send_buf.emplace_back(zid);
+        for (int i = 0; i < cnt; ++i) {
+          send_buf.emplace_back(nodes[id+i]);
+        }
+      }
+      int count = send_buf.size();
+      MPI_Datatype datatype = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
+      int tag = target;
+      auto& req = requests.emplace_back();
+      MPI_Isend(send_buf.data(), count, datatype, target, tag, MPI_COMM_WORLD,
+          &req);
+    }
+    if (cgp_close(fid))
+      cgp_error_exit();
   }
 
  private:
@@ -310,8 +354,9 @@ class Parser{
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
   std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
+  // metis_id to Cell
+  std::unordered_map<Int, std::unique_ptr<Cell<Int, Real>>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
-  std::map<Int, std::vector<std::pair<Int, Int>>> part_to_adjs_;
   int rank_;
 
   Mat3x1 GetCoord(int zid, int nid) const {

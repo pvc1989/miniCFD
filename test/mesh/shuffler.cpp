@@ -132,7 +132,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  MetisId n_parts{4}, n_common_nodes{2};
+  MetisId n_parts{4}, n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
@@ -278,7 +278,14 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     // interpart adjacency
     for (auto& [part_id, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
-        ostrm << part_id << ' ' << i << ' ' << j << '\n';
+        auto& info_i = mapper.metis_to_cgns_for_cells[i];
+        auto& info_j = mapper.metis_to_cgns_for_cells[j];
+        int cnt_i = base.GetZone(info_i.zone_id).GetSection(info_i.section_id).
+            CountNodesByType();
+        int cnt_j = base.GetZone(info_j.zone_id).GetSection(info_j.section_id).
+            CountNodesByType();
+        ostrm << part_id << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' << 
+            cnt_j << '\n';
       }
     }
   }
