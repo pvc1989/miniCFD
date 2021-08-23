@@ -16,17 +16,40 @@ void print(Object&& obj) {
   std::cout << obj << '\n' << std::endl;
 }
 
+/**
+ * @brief Set the value of a scalar to be 0.
+ * 
+ * @tparam Scalar the type of the scalar
+ * @param s the address of the scalar
+ */
 template <class Scalar>
 inline void SetZero(Scalar* s) {
   static_assert(std::is_scalar_v<Scalar>);
   *s = 0;
 }
 
+/**
+ * @brief Set all coefficients of a matrix to be 0.
+ * 
+ * @tparam Scalar the type of the matrix's coefficient
+ * @tparam M the number of rows of the matrix
+ * @tparam N the number of columns of the matrix
+ * @param m the address of the matrix
+ */
 template <class Scalar, int M, int N>
 inline void SetZero(Eigen::Matrix<Scalar, M, N>* m) {
   m->setZero();
 }
 
+/**
+ * @brief Perform Gaussian quadrature of a callable object on an integratable element in the parametric space.
+ * 
+ * @tparam Callable the type of the integrand
+ * @tparam Element the type of the integrator
+ * @param f_in_local the integrand using local coordinates as arguments
+ * @param element the integrator
+ * @return auto the value of the integral
+ */
 template <typename Callable, typename Element>
 auto Quadrature(Callable&& f_in_local, Element&& element) {
   using E = std::remove_reference_t<Element>;
@@ -41,6 +64,15 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
   return sum;
 }
 
+/**
+ * @brief Perform Gaussian quadrature of a callable object on an integratable element in the physical space.
+ * 
+ * @tparam Callable the type of the integrand
+ * @tparam Element the type of the integrator
+ * @param f_in_global the integrand using global coordinates as arguments
+ * @param element the integrator
+ * @return auto the value of the integral
+ */
 template <typename Callable, typename Element>
 auto Integrate(Callable&& f_in_global, Element&& element) {
   using E = std::remove_reference_t<Element>;
@@ -57,6 +89,17 @@ auto Integrate(Callable&& f_in_global, Element&& element) {
   return Quadrature(f_in_local, element);
 }
 
+/**
+ * @brief Calculate the inner-product of two functions on an integratable element.
+ * 
+ * @tparam Func1 the type of the first function
+ * @tparam Func2 the type of the second function
+ * @tparam Element the type of the integrator
+ * @param f1 the first function
+ * @param f2 the second function
+ * @param element the integrator
+ * @return auto the value of the innerproduct
+ */
 template <typename Func1, typename Func2, typename Element>
 auto Innerprod(Func1&& f1, Func2&& f2, Element&& element) {
   using E = std::remove_reference_t<Element>;
@@ -66,98 +109,28 @@ auto Innerprod(Func1&& f1, Func2&& f2, Element&& element) {
   }, element);
 }
 
+/**
+ * @brief Calculate the 2-norm of a function on an integratable element.
+ * 
+ * @tparam Callable type of the function
+ * @tparam Element the type of the integrator
+ * @param f the function
+ * @param element the integrator
+ * @return auto the value of the norm
+ */
 template <typename Callable, typename Element>
 auto Norm(Callable&& f, Element&& element) {
   return std::sqrt(Innerprod(f, f, element));
 }
 
-template <class Basis, class Element>
-void Orthonormalize(Basis* raw_basis, const Element& elem);
-
-template <typename Scalar, int kDim, int kOrder>
-class Basis;
-
-template <typename Scalar>
-class Basis<Scalar, 2, 2> {
- public:
-  static constexpr int N = 6;
-  using Coord = Eigen::Matrix<Scalar, 2, 1>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  explicit Basis(Coord const& c = {0, 0})
-      : center_(c) {
-  }
-  Basis(const Basis&) = default;
-  Basis(Basis&&) noexcept = default;
-  Basis& operator=(const Basis&) = default;
-  Basis& operator=(Basis&&) noexcept = default;
-  ~Basis() noexcept = default;
-
-  MatNx1 operator()(Coord const& xy) const {
-    auto x = xy[0] - center_[0], y = xy[1] - center_[1];
-    MatNx1 col = { 1, x, y, x * x, x * y, y * y };
-    return coef_ * col;
-  }
-  Coord const& GetCenter() const {
-    return center_;
-  }
-  MatNxN const& GetCoef() const {
-    return coef_;
-  }
-  void Transform(MatNxN const& a) {
-    coef_ = a * coef_;
-  }
-  template <class Element>
-  void Orthonormalize(const Element& elem) {
-    integrator::Orthonormalize(this, elem);
-  }
-
- private:
-  Coord center_;
-  MatNxN coef_ = MatNxN::Identity();
-};
-
-template <typename Scalar>
-class Basis<Scalar, 3, 2> {
- public:
-  static constexpr int N = 10;
-  using Coord = Eigen::Matrix<Scalar, 3, 1>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  explicit Basis(Coord const& c = {0, 0, 0})
-      : center_(c) {
-  }
-  Basis(const Basis&) = default;
-  Basis(Basis&&) noexcept = default;
-  Basis& operator=(const Basis&) = default;
-  Basis& operator=(Basis&&) noexcept = default;
-  ~Basis() noexcept = default;
-
-  MatNx1 operator()(Coord const& xyz) const {
-    auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
-         z = xyz[2] - center_[2];
-    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
-    return coef_ * col;
-  }
-  Coord const& GetCenter() const {
-    return center_;
-  }
-  MatNxN const& GetCoef() const {
-    return coef_;
-  }
-  void Transform(MatNxN const& a) {
-    coef_ = a * coef_;
-  }
-  template <class Element>
-  void Orthonormalize(const Element& elem) {
-    integrator::Orthonormalize(this, elem);
-  }
-
- private:
-  Coord center_;
-  MatNxN coef_ = MatNxN::Identity();
-};
-
+/**
+ * @brief Change a group of linearly independent functions into an orthonormal basis.
+ * 
+ * @tparam Basis the type of the basis
+ * @tparam Element the type of the integrator
+ * @param raw_basis the raw basis whose components are linearly independent from each other
+ * @param elem the integrator
+ */
 template <class Basis, class Element>
 void Orthonormalize(Basis* raw_basis, const Element& elem) {
   constexpr int N = Basis::N;
@@ -195,11 +168,114 @@ void Orthonormalize(Basis* raw_basis, const Element& elem) {
 }
 
 /**
- * @brief 
+ * @brief A class template to mimic vector-valued functions.
  * 
- * @tparam Scalar 
- * @tparam kDim 
- * @tparam kOrder
+ * @tparam Scalar the type of scalar components
+ * @tparam kDim the dimension of the underlying space
+ * @tparam kOrder the degree of completeness
+ */
+template <typename Scalar, int kDim, int kOrder>
+class Basis;
+
+/**
+ * @brief A class template to mimic vector-valued functions in 2d spaces with 2nd order degree of completeness.
+ * 
+ * @tparam Scalar the type of scalar components
+ */
+template <typename Scalar>
+class Basis<Scalar, 2, 2> {
+ public:
+  static constexpr int N = 6;  // the number of components
+  using Coord = Eigen::Matrix<Scalar, 2, 1>;
+  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
+  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  explicit Basis(Coord const& c = {0, 0})
+      : center_(c) {
+  }
+  Basis(const Basis&) = default;
+  Basis(Basis&&) noexcept = default;
+  Basis& operator=(const Basis&) = default;
+  Basis& operator=(Basis&&) noexcept = default;
+  ~Basis() noexcept = default;
+
+  MatNx1 operator()(Coord const& xy) const {
+    auto x = xy[0] - center_[0], y = xy[1] - center_[1];
+    MatNx1 col = { 1, x, y, x * x, x * y, y * y };
+    return coef_ * col;
+  }
+  Coord const& GetCenter() const {
+    return center_;
+  }
+  MatNxN const& GetCoef() const {
+    return coef_;
+  }
+  void Transform(MatNxN const& a) {
+    coef_ = a * coef_;
+  }
+  template <class Element>
+  void Orthonormalize(const Element& elem) {
+    static_assert(Element::PhysDim() == 2);
+    integrator::Orthonormalize(this, elem);
+  }
+
+ private:
+  Coord center_;
+  MatNxN coef_ = MatNxN::Identity();
+};
+
+/**
+ * @brief A class template to mimic vector-valued functions in 3d spaces with 2nd order degree of completeness.
+ * 
+ * @tparam Scalar the type of scalar components
+ */
+template <typename Scalar>
+class Basis<Scalar, 3, 2> {
+ public:
+  static constexpr int N = 10;  // the number of components
+  using Coord = Eigen::Matrix<Scalar, 3, 1>;
+  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
+  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  explicit Basis(Coord const& c = {0, 0, 0})
+      : center_(c) {
+  }
+  Basis(const Basis&) = default;
+  Basis(Basis&&) noexcept = default;
+  Basis& operator=(const Basis&) = default;
+  Basis& operator=(Basis&&) noexcept = default;
+  ~Basis() noexcept = default;
+
+  MatNx1 operator()(Coord const& xyz) const {
+    auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
+         z = xyz[2] - center_[2];
+    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return coef_ * col;
+  }
+  Coord const& GetCenter() const {
+    return center_;
+  }
+  MatNxN const& GetCoef() const {
+    return coef_;
+  }
+  void Transform(MatNxN const& a) {
+    coef_ = a * coef_;
+  }
+  template <class Element>
+  void Orthonormalize(const Element& elem) {
+    static_assert(Element::PhysDim() == 3);
+    integrator::Orthonormalize(this, elem);
+  }
+
+ private:
+  Coord center_;
+  MatNxN coef_ = MatNxN::Identity();
+};
+
+/**
+ * @brief A class template to represent a vector-valued function projected onto an orthonormal basis.
+ * 
+ * @tparam Scalar the type of scalar components
+ * @tparam kDim the dimension of the underlying space
+ * @tparam kOrder the degree of completeness
  * @tparam kFunc the number of function components
  */
 template <typename Scalar, int kDim, int kOrder, int kFunc>
