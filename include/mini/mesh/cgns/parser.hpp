@@ -276,7 +276,7 @@ class Parser{
       case CGNS_ENUMV(HEXA_8):
         nodes.resize(8 * mem_dimensions[0]);
         for (int i = 0; i < index.size(); ++i) {
-          index[i] = 8 * i;
+          index.at(head + i) = 8 * i;
         }
         break;
       default:
