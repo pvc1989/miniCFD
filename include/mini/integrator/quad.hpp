@@ -115,7 +115,7 @@ class Quad {
   explicit Quad(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;
   }
-  Quad(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2,MatDx1 const& p3) {
+  Quad(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2, MatDx1 const& p3) {
     xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
     xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
   }

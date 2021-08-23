@@ -250,7 +250,7 @@ class Parser{
       if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc) ||
           cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
         cgp_error_exit();
-      std::cout << sol_name << ' ' << field_name << ' ' << mem_range_min[0] << ' ' << mem_range_max[0] << ' ' << mem_dimensions[0] << ' ' << metis_ids.size() << std::endl;
+      std::cout << sol_name << ' ' << field_name << std::endl;
       if (cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
@@ -293,8 +293,7 @@ class Parser{
             GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
             GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
             GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
-            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])
-        ));
+            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])));
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
         // if (rank_ == 2)
         //   std::printf("zid = %4d, sid = %4d, cid = %4d, mid = %4d\n",
@@ -308,7 +307,7 @@ class Parser{
       inner_adjs_.emplace_back(i, j);
     }
     // interpart adjacency
-    std::map<Int, std::map<Int, Int>> send_infos; // pid_to_mid_to_cnt
+    std::map<Int, std::map<Int, Int>> send_infos;  // pid_to_mid_to_cnt
     std::map<Int, std::map<Int, Int>> recv_infos;
     std::vector<std::pair<Int, Int>> interpart_adjs;
     while (istrm.getline(line, 30) && line[0]) {
@@ -354,8 +353,8 @@ class Parser{
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
   std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
-  // metis_id to Cell
-  std::unordered_map<Int, std::unique_ptr<Cell<Int, Real>>> ghost_cells_;
+  std::unordered_map<Int, std::unique_ptr<Cell<Int, Real>>>
+      ghost_cells_;  /* metis_cell_id -> cell_ptr */
   std::vector<std::pair<Int, Int>> inner_adjs_;
   int rank_;
 

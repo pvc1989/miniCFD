@@ -284,7 +284,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
             CountNodesByType();
         int cnt_j = base.GetZone(info_j.zone_id).GetSection(info_j.section_id).
             CountNodesByType();
-        ostrm << part_id << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' << 
+        ostrm << part_id << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
             cnt_j << '\n';
       }
     }

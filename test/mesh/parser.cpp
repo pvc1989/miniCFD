@@ -1,9 +1,10 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 #include <cstdlib>
 
-#include "mini/mesh/cgns/parser.hpp"
-
 #include "gtest/gtest.h"
+#include "mpi.h"
+
+#include "mini/mesh/cgns/parser.hpp"
 #include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
@@ -31,7 +32,6 @@ TEST_F(TestParser, Print) {
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
-
   // std::system("./shuffler");
 
   MPI_Init(NULL, NULL);
@@ -46,6 +46,6 @@ int main(int argc, char* argv[]) {
   auto prefix = current_binary_dir + "/hexa_part_";
   auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
       cgns_file, prefix, comm_rank);
-      
+
   MPI_Finalize();
 }
