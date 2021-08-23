@@ -1,6 +1,6 @@
 [submodule "ThirdParty/CGNS"]
 	path = ThirdParty/CGNS
-	url = https://github.com/pvcStillinGradSchool/CGNS.git
+	url = https://github.com/CGNS/CGNS.git
 	branch = develop
 [submodule "ThirdParty/GoogleTest"]
 	path = ThirdParty/GoogleTest
