@@ -132,7 +132,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  MetisId n_parts{4}, n_common_nodes{3};
+  MetisId n_parts{2}, n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(

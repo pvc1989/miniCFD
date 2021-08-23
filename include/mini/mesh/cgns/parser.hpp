@@ -222,11 +222,11 @@ class Parser{
         auto& info = nodes_m_to_c_[metis_id];
         adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
-        // if (rank_ == 2) {
-        //   int zid = info.zone_id, nid = info.node_id;
-        //   std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
-        //   print(adj_nodes_[zid][nid].transpose());
-        // }
+        if (rank_ == 1) {
+          int zid = info.zone_id, nid = info.node_id;
+          std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
+          print(adj_nodes_[zid][nid].transpose());
+        }
       }
     }
     // cell ranges
@@ -235,8 +235,9 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int zid, sid, head, tail;
       std::sscanf(line, "%d %d %d %d", &zid, &sid, &head, &tail);
-      // std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
-      //       zid, sid, head, tail);
+      if (rank_ == 1)
+        std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
+            zid, sid, head, tail);
       local_cells_[zid][sid] = CellGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
@@ -250,7 +251,8 @@ class Parser{
       if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc) ||
           cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
         cgp_error_exit();
-      std::cout << sol_name << ' ' << field_name << std::endl;
+      if (rank_ == 1)
+        std::cout << sol_name << ' ' << field_name << std::endl;
       if (cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
@@ -258,7 +260,7 @@ class Parser{
       for (int cid = head; cid < tail; ++cid) {
         auto mid = metis_ids[cid];
         cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
-        if (rank_ == 2)
+        if (rank_ == 1)
           std::printf("mid = %ld, zid = %ld, sid = %ld, cid = %ld\n", mid,
               cells_m_to_c_[mid].zone_id, cells_m_to_c_[mid].section_id,
               cells_m_to_c_[mid].cell_id);
@@ -287,17 +289,15 @@ class Parser{
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         int i = (cid - head) * 8;
-        // if (rank_ == 2)
-        //   std::printf("i = %4d, ", i);
         local_cells_[zid][sid][cid].reset(new Hexa<Int, Real>(
             GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
             GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
             GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
             GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])));
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
-        // if (rank_ == 2)
-        //   std::printf("zid = %4d, sid = %4d, cid = %4d, mid = %4d\n",
-        //       (int)zid, (int)sid, (int)cid, (int)metis_ids[cid]);
+        if (rank_ == 1)
+          std::printf("i = %4d, zid = %d, sid = %d, cid = %4d, mid = %4d\n",
+              i, (int)zid, (int)sid, cid, (int)metis_ids[cid]);
       }
     }
     // inner adjacency
