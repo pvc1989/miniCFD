@@ -189,6 +189,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
     }, elem);
     coef_ = coef_ * basis.GetCoef();
   }
+  ProjFunc() = default;
   ProjFunc(const ProjFunc&) = default;
   ProjFunc(ProjFunc&&) noexcept = default;
   ProjFunc& operator=(const ProjFunc&) = default;
@@ -201,7 +202,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return coef_ * col;
   }
-  MatKxN GetCoef() const {
+  const MatKxN& GetCoef() const {
     return coef_;
   }
 

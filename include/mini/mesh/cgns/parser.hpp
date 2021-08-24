@@ -94,7 +94,7 @@ struct Cell {
   using ProjFunc = integrator::ProjFunc<Real, 3/* kDim */, 2/* kOrder */, 1/* kFunc */>;
   static constexpr int K = ProjFunc::K/* number of functions */;
   static constexpr int N = ProjFunc::N/* size of the basis */;
-  // ProjFunc func;
+  ProjFunc func;
   Int metis_id;
 
   Cell() = default;
@@ -118,14 +118,14 @@ class CellGroup {
   using CellType = Cell<Int, Real>;
   static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
-  ShiftedVector<std::unique_ptr<CellType>> data_;
+  ShiftedVector<std::unique_ptr<CellType>> cells_;
   ShiftedVector<ShiftedVector<Real>> fields_/* [i_field][i_cell] */;
 
  public:
   CellGroup(int head, int size)
-      : head_(head), size_(size), data_(size, head), fields_(kFields, 1) {
+      : head_(head), size_(size), cells_(size, head), fields_(kFields, 1) {
     for (int i = 1; i <= kFields; ++i) {
-      fields_[i] = ShiftedVector<Real>(size, 1);
+      fields_[i] = ShiftedVector<Real>(size, head);
     }
   }
   CellGroup() = default;
@@ -145,15 +145,18 @@ class CellGroup {
     return head_ <= cid && cid < size_ + head_;
   }
   auto& operator[](Int cell_id) {
-    return data_[cell_id];
+    return cells_[cell_id];
   }
-
+  const auto& GetField(Int i_field) const {
+    return fields_[i_field];
+  }
   void GatherFields() {
     for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
-      auto& cell_ptr = data_[i_cell];
-      auto& coef = cell_ptr->func.GetCoef();
+      const auto& cell_ptr = cells_.at(i_cell);
+      const auto& coef = cell_ptr->func.GetCoef();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
-        fields_[i_field][i_cell] = coef[i_field];
+        // fields_.at(i_field).at(i_cell) = coef[i_field-1];
+        fields_.at(i_field).at(i_cell) += 2;
       }
     }
   }
@@ -396,10 +399,6 @@ class Parser{
     for (auto& [source, cell_infos] : recv_infos) {
       auto& buf = recv_cells.at(buf_id++);
       int id = 0;
-      if (rank_ == -1) {
-        for (auto i : buf)
-          std::cout << i << std::endl;
-      }
       for (auto& [mid, cnt] : cell_infos) {
         int zid = buf[id++];
         ghost_cells_[mid].reset(new Hexa<Int, Real>(
@@ -412,27 +411,31 @@ class Parser{
     }
     if (cgp_close(fid))
       cgp_error_exit();
+    WriteSolutions();
   }
 
-  void Write() const {
+  void WriteSolutions() {
     int n_zones = local_nodes_.size();
     for (int zid = 1; zid <= n_zones; ++zid) {
-      int n_sects = local_nodes_[zid].size();
+      int n_sects = local_cells_[zid].size();
       for (int sid = 1; sid <= n_sects; ++sid) {
         local_cells_[zid][sid].GatherFields();
       }
     }
     int fid;
-    if (cgp_open(cgns_file_.c_str(), CG_MODE_WRITE, &fid))
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &fid))
       cgp_error_exit();
     for (int zid = 1; zid <= n_zones; ++zid) {
       auto& zone = local_cells_[zid];
+      int n_solns;
+      if (cg_nsols(fid, 1, zid, &n_solns))
+        cgp_error_exit();
       int i_sol;
       if (cg_sol_write(fid, 1, zid, "Solution0", CellCenter, &i_sol))
         cgp_error_exit();
       int n_fields = 4;
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
-        int n_sects = local_nodes_[zid].size();
+        int n_sects = local_cells_[zid].size();
         for (int sid = 1; sid <= n_sects; ++sid) {
           auto& section = zone[sid];
           auto name = "Field" + std::to_string(i_field);
@@ -444,12 +447,13 @@ class Parser{
           cgsize_t first[] = { section.head() };
           cgsize_t last[] = { section.head() + section.size() - 1 };
           if (cgp_field_write_data(fid, 1, zid, i_sol, i_field, first, last,
-              section.fields_[i_field].data()))
+              section.GetField(i_field).data()))
             cgp_error_exit();
         }
       }
-      
     }
+    if (cgp_close(fid))
+      cgp_error_exit();
   }
 
  private:
@@ -474,7 +478,7 @@ class Parser{
       coord[2] = iter_zone->second.z_[nid];
     } else {
       if (rank_ == -1) {
-        std::cout << zid << ' ' << nid << std::endl;
+        std::cout << "zid = " << zid << ", nid = " << nid << std::endl;
       }
       coord = adj_nodes_.at(zid).at(nid);
     }

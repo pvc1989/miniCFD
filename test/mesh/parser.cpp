@@ -21,10 +21,6 @@ class TestParser : public ::testing::Test {
 int TestParser::rank;
 
 TEST_F(TestParser, Print) {
-  auto cgns_file = current_binary_dir_ + "/ugrid_2d_shuffled.cgns";
-  auto prefix = current_binary_dir_ + "/ugrid_2d_part_";
-  std::cout << "my_rank = " << rank << std::endl;
-  auto parser = Parser<cgsize_t, double>(cgns_file, prefix, rank);
 }
 
 }  // namespace cgns
@@ -32,7 +28,7 @@ TEST_F(TestParser, Print) {
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
-  // std::system("./shuffler");
+  std::system("./shuffler");
 
   MPI_Init(NULL, NULL);
   int comm_size, comm_rank;
