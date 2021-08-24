@@ -91,11 +91,15 @@ struct Face {
 
 template <typename Int = cgsize_t, typename Real = double>
 struct Cell {
+  using ProjFunc = integrator::ProjFunc<Real, 3/* kDim */, 2/* kOrder */, 1/* kFunc */>;
+  static constexpr int K = ProjFunc::K/* number of functions */;
+  static constexpr int N = ProjFunc::N/* size of the basis */;
+  // ProjFunc func;
   Int metis_id;
 };
 
 template <typename Int = cgsize_t, typename Real = double>
-class Hexa : public Cell<Int, Real>, public integrator::Hexa<Real, 4, 4, 4> {
+class Hexa : public integrator::Hexa<Real, 4, 4, 4>, public Cell<Int, Real> {
   using Integrator = integrator::Hexa<Real, 4, 4, 4>;
 
  public:
@@ -104,12 +108,18 @@ class Hexa : public Cell<Int, Real>, public integrator::Hexa<Real, 4, 4, 4> {
 
 template <typename Int = cgsize_t, typename Real = double>
 class CellGroup {
+  using CellType = Cell<Int, Real>;
+  static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
-  ShiftedVector<std::unique_ptr<Cell<Int, Real>>> data_;
+  ShiftedVector<std::unique_ptr<CellType>> data_;
+  ShiftedVector<ShiftedVector<Real>> fields_/* [i_field][i_cell] */;
 
  public:
   CellGroup(int head, int size)
-      : head_(head), size_(size), data_(size, head) {
+      : head_(head), size_(size), data_(size, head), fields_(kFields, 1) {
+    for (int i = 1; i <= kFields; ++i) {
+      fields_[i] = ShiftedVector<Real>(size, 1);
+    }
   }
   CellGroup() = default;
   CellGroup(CellGroup const&) = default;
@@ -118,6 +128,9 @@ class CellGroup {
   CellGroup& operator=(CellGroup &&) noexcept = default;
   ~CellGroup() noexcept = default;
 
+  Int head() const {
+    return head_;
+  }
   Int size() const {
     return size_;
   }
@@ -127,6 +140,16 @@ class CellGroup {
   auto& operator[](Int cell_id) {
     return data_[cell_id];
   }
+
+  void GatherFields() {
+    for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
+      auto& cell_ptr = data_[i_cell];
+      auto& coef = cell_ptr->func.GetCoef();
+      for (int i_field = 1; i_field <= kFields; ++i_field) {
+        fields_[i_field][i_cell] = coef[i_field];
+      }
+    }
+  }
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -134,7 +157,8 @@ class Parser{
   static constexpr int kLineWidth = 30;
 
  public:
-  Parser(std::string const& cgns_file, std::string const& prefix, int pid) {
+  Parser(std::string const& cgns_file, std::string const& prefix, int pid)
+      : cgns_file_(cgns_file) {
     rank_ = pid;
     int fid;
     if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid))
@@ -383,6 +407,44 @@ class Parser{
       cgp_error_exit();
   }
 
+  void Write() const {
+    int n_zones = local_nodes_.size();
+    for (int zid = 1; zid <= n_zones; ++zid) {
+      int n_sects = local_nodes_[zid].size();
+      for (int sid = 1; sid <= n_sects; ++sid) {
+        local_cells_[zid][sid].GatherFields();
+      }
+    }
+    int fid;
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_WRITE, &fid))
+      cgp_error_exit();
+    for (int zid = 1; zid <= n_zones; ++zid) {
+      auto& zone = local_cells_[zid];
+      int i_sol;
+      if (cg_sol_write(fid, 1, zid, "Solution0", CellCenter, &i_sol))
+        cgp_error_exit();
+      int n_fields = 4;
+      for (int i_field = 1; i_field <= n_fields; ++i_field) {
+        int n_sects = local_nodes_[zid].size();
+        for (int sid = 1; sid <= n_sects; ++sid) {
+          auto& section = zone[sid];
+          auto name = "Field" + std::to_string(i_field);
+          int field_id;
+          if (cgp_field_write(fid, 1, zid, i_sol, RealDouble, name.c_str(),
+              &field_id))
+            cgp_error_exit();
+          assert(field_id == i_field);
+          cgsize_t first[] = { section.head() };
+          cgsize_t last[] = { section.head() + section.size() - 1 };
+          if (cgp_field_write_data(fid, 1, zid, i_sol, i_field, first, last,
+              section.fields_[i_field].data()))
+            cgp_error_exit();
+        }
+      }
+      
+    }
+  }
+
  private:
   using Mat3x1 = Eigen::Matrix<Real, 3, 1>;
   std::map<Int, NodeGroup<Int, Real>> local_nodes_;
@@ -394,6 +456,7 @@ class Parser{
       ghost_cells_;  /* metis_cell_id -> cell_ptr */
   std::vector<std::pair<Int, Int>> inner_adjs_;
   int rank_;
+  const std::string cgns_file_;
 
   Mat3x1 GetCoord(int zid, int nid) const {
     Mat3x1 coord;
