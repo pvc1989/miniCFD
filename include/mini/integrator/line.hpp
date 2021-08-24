@@ -15,9 +15,10 @@ struct GaussIntegrator;
 
 template <typename Scalar>
 struct GaussIntegrator<Scalar, 4> {
-  static const std::array<Scalar, 4> points;
-  static const std::array<Scalar, 4> weights;
-  static std::array<Scalar, 4> BuildPoints() {
+  using Mat1x4 = Eigen::Matrix<Scalar, 1, 4>;
+  static const Mat1x4 points;
+  static const Mat1x4 weights;
+  static Mat1x4 BuildPoints() {
     return {
         -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
         +std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
@@ -25,7 +26,7 @@ struct GaussIntegrator<Scalar, 4> {
         +std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
     };
   }
-  static std::array<Scalar, 4> BuildWeights() {
+  static Mat1x4 BuildWeights() {
     return {
         (18 + std::sqrt(30)) / 36,
         (18 + std::sqrt(30)) / 36,
@@ -35,10 +36,12 @@ struct GaussIntegrator<Scalar, 4> {
   }
 };
 template <typename Scalar>
-std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::points =
+typename GaussIntegrator<Scalar, 4>::Mat1x4 const
+GaussIntegrator<Scalar, 4>::points =
     GaussIntegrator<Scalar, 4>::BuildPoints();
 template <typename Scalar>
-std::array<Scalar, 4> const GaussIntegrator<Scalar, 4>::weights =
+typename GaussIntegrator<Scalar, 4>::Mat1x4 const
+GaussIntegrator<Scalar, 4>::weights =
     GaussIntegrator<Scalar, 4>::BuildWeights();
 
 template <typename Scalar = double, int Q = 4, /* dim(space) */int D = 1>
@@ -79,7 +82,6 @@ class Line {
     }
     return sum;
   }
-
 
  public:
   explicit Line(MatDx2 const& x_global_i) {

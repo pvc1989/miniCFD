@@ -137,8 +137,8 @@ TEST_F(TestQuad4x4, ProjFunc) {
       {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
       {0, 0, 0, 0, 0, 1}
   };
-  auto abs_diff = (vec.GetCoef() - exact_vector).cwiseAbs();
-  EXPECT_NEAR(abs_diff.maxCoeff(), 0.0, 1e-15);
+  Mat7x6 abs_diff = vec.GetCoef() - exact_vector;
+  EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-15);
 }
 
 }  // namespace integrator

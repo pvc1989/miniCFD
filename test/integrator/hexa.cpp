@@ -121,8 +121,8 @@ TEST_F(TestHexa4x4x4, ProjFunc) {
   Mat11x10 exact_vector;
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();
-  auto abs_diff = (vec.GetCoef() - exact_vector).cwiseAbs();
-  EXPECT_NEAR(abs_diff.maxCoeff(), 0.0, 1e-14);
+  Mat11x10 abs_diff = vec.GetCoef() - exact_vector;
+  EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {

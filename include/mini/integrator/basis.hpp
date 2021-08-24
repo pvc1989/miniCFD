@@ -124,6 +124,7 @@ class ProjFunc<Scalar, 2, 2, kFunc> {
   using CoordType = typename BasisType::Coord;
   static constexpr int K = kFunc;
   static constexpr int N = BasisType::N;
+  using Mat1xN = Eigen::Matrix<Scalar, 1, N>;
   using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
   using MatNxN = Eigen::Matrix<Scalar, N, N>;
   using MatKxN = Eigen::Matrix<Scalar, K, N>;
@@ -135,8 +136,8 @@ class ProjFunc<Scalar, 2, 2, kFunc> {
     using Ret = decltype(func(center_));
     static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
     coef_ = Integrate([&](CoordType const& xyz) {
-      auto b_row = basis(xyz).transpose();
       auto f_col = func(xyz);
+      Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
       return prod;
     }, elem);
@@ -169,6 +170,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   using CoordType = typename BasisType::Coord;
   static constexpr int K = kFunc;
   static constexpr int N = BasisType::N;
+  using Mat1xN = Eigen::Matrix<Scalar, 1, N>;
   using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
   using MatNxN = Eigen::Matrix<Scalar, N, N>;
   using MatKxN = Eigen::Matrix<Scalar, K, N>;
@@ -180,8 +182,8 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
     using Ret = decltype(func(center_));
     static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
     coef_ = Integrate([&](CoordType const& xyz) {
-      auto b_row = basis(xyz).transpose();
       auto f_col = func(xyz);
+      Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
       return prod;
     }, elem);
