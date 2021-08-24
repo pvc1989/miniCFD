@@ -158,6 +158,12 @@ class Hexa {
       xyz_global_3x8_[i] = p[i];
     }
   }
+  Hexa(const Hexa&) = default;
+  Hexa& operator=(const Hexa&) = default;
+  Hexa(Hexa&&) noexcept = default;
+  Hexa& operator=(Hexa&&) noexcept = default;
+  virtual ~Hexa() noexcept = default;
+
   GlobalCoord local_to_global_Dx1(
       Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);

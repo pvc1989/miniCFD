@@ -96,6 +96,13 @@ struct Cell {
   static constexpr int N = ProjFunc::N/* size of the basis */;
   // ProjFunc func;
   Int metis_id;
+
+  Cell() = default;
+  Cell(const Cell&) = default;
+  Cell& operator=(const Cell&) = default;
+  Cell(Cell&&) noexcept = default;
+  Cell& operator=(Cell&&) noexcept = default;
+  virtual ~Cell() noexcept = default;
 };
 
 template <typename Int = cgsize_t, typename Real = double>
