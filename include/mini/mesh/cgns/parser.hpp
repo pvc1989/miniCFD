@@ -222,7 +222,7 @@ class Parser{
         auto& info = nodes_m_to_c_[metis_id];
         adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
-        if (rank_ == 1) {
+        if (rank_ == -1) {
           int zid = info.zone_id, nid = info.node_id;
           std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
           print(adj_nodes_[zid][nid].transpose());
@@ -235,7 +235,7 @@ class Parser{
     while (istrm.getline(line, 30) && line[0]) {
       int zid, sid, head, tail;
       std::sscanf(line, "%d %d %d %d", &zid, &sid, &head, &tail);
-      if (rank_ == 1)
+      if (rank_ == -1)
         std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
             zid, sid, head, tail);
       local_cells_[zid][sid] = CellGroup<Int, Real>(head, tail - head);
@@ -251,7 +251,7 @@ class Parser{
       if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc) ||
           cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
         cgp_error_exit();
-      if (rank_ == 1)
+      if (rank_ == -1)
         std::cout << sol_name << ' ' << field_name << std::endl;
       if (cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
           sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
@@ -260,7 +260,7 @@ class Parser{
       for (int cid = head; cid < tail; ++cid) {
         auto mid = metis_ids[cid];
         cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
-        if (rank_ == 1)
+        if (rank_ == -1)
           std::printf("mid = %ld, zid = %ld, sid = %ld, cid = %ld\n", mid,
               cells_m_to_c_[mid].zone_id, cells_m_to_c_[mid].section_id,
               cells_m_to_c_[mid].cell_id);
@@ -295,7 +295,7 @@ class Parser{
             GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
             GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])));
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
-        if (rank_ == 1)
+        if (rank_ == -1)
           std::printf("i = %4d, zid = %d, sid = %d, cid = %4d, mid = %4d\n",
               i, (int)zid, (int)sid, cid, (int)metis_ids[cid]);
       }
@@ -317,13 +317,13 @@ class Parser{
       recv_infos[p][j] = cnt_j;
       interpart_adjs.emplace_back(i, j);
     }
-    // send cell Info
+    // send cell info
     std::vector<std::vector<Real>> send_cells;
     for (auto& [target, cell_infos] : send_infos) {
       auto& send_buf = send_cells.emplace_back();
       for (auto& [mid, cnt] : cell_infos) {
         auto& info = cells_m_to_c_[mid];
-        if (rank_ == 1)
+        if (rank_ == -1)
           std::printf("info at %p\n", &info);
         Int zid = cells_m_to_c_[mid].zone_id,
             sid = cells_m_to_c_[mid].section_id,
@@ -341,6 +341,43 @@ class Parser{
       auto& req = requests.emplace_back();
       MPI_Isend(send_buf.data(), count, datatype, target, tag, MPI_COMM_WORLD,
           &req);
+    }
+    // recv cell info
+    std::vector<std::vector<Real>> recv_cells;
+    for (auto& [source, cell_infos] : recv_infos) {
+      auto& buf = recv_cells.emplace_back();
+      int count = 0;
+      for (auto& [mid, cnt] : cell_infos) {
+        ++count;
+        count += cnt;
+      }
+      MPI_Datatype datatype = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
+      int tag = rank_;
+      buf.resize(count);
+      auto& req = requests.emplace_back();
+      MPI_Irecv(buf.data(), count, datatype, source, tag, MPI_COMM_WORLD, &req);
+    }
+    statuses = std::vector<MPI_Status>(requests.size());
+    MPI_Waitall(requests.size(), requests.data(), statuses.data());
+    requests.clear();
+    // build ghost cells
+    int buf_id = 0;
+    for (auto& [source, cell_infos] : recv_infos) {
+      auto& buf = recv_cells.at(buf_id++);
+      int id = 0;
+      if (rank_ == -1) {
+        for (auto i : buf)
+          std::cout << i << std::endl;
+      }
+      for (auto& [mid, cnt] : cell_infos) {
+        int zid = buf[id++];
+        ghost_cells_[mid].reset(new Hexa<Int, Real>(
+          GetCoord(zid, buf.at(id+0)), GetCoord(zid, buf[id+1]),
+          GetCoord(zid, buf[id+2]), GetCoord(zid, buf[id+3]),
+          GetCoord(zid, buf[id+4]), GetCoord(zid, buf[id+5]),
+          GetCoord(zid, buf[id+6]), GetCoord(zid, buf.at(id+7))));
+        id += cnt;
+      }
     }
     if (cgp_close(fid))
       cgp_error_exit();
@@ -366,6 +403,9 @@ class Parser{
       coord[1] = iter_zone->second.y_[nid];
       coord[2] = iter_zone->second.z_[nid];
     } else {
+      if (rank_ == -1) {
+        std::cout << zid << ' ' << nid << std::endl;
+      }
       coord = adj_nodes_.at(zid).at(nid);
     }
     return coord;

@@ -132,7 +132,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  MetisId n_parts{2}, n_common_nodes{3};
+  MetisId n_parts{4}, n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
@@ -210,6 +210,15 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto sendp_recvp_nodes = std::vector<std::map<int, std::set<int>>>(n_parts);
   for (int i = 0; i < metis_mesh.CountCells(); ++i) {
     auto part_i = cell_parts[i];
+    int range_b = metis_mesh.range(i), range_e = metis_mesh.range(i+1);
+    for (int range_id = range_b; range_id < range_e; ++range_id) {
+      auto node_id = metis_mesh.nodes(range_id);
+      auto node_part = node_parts[node_id];
+      if (node_part != part_i) {
+        part_adj_nodes[part_i][node_part].emplace(node_id);
+        sendp_recvp_nodes[node_part][part_i].emplace(node_id);
+      }
+    }
     for (int r = graph.range(i); r < graph.range(i+1); ++r) {
       int j = graph.index(r);
       auto part_j = cell_parts[j];
@@ -218,7 +227,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
           inner_adjs[part_i].emplace_back(i, j);
       } else {
         part_interpart_adjs[part_i][part_j].emplace_back(i, j);
-        int range_b = metis_mesh.range(i), range_e = metis_mesh.range(i+1);
+        int range_b = metis_mesh.range(j), range_e = metis_mesh.range(j+1);
         for (int range_id = range_b; range_id < range_e; ++range_id) {
           auto node_id = metis_mesh.nodes(range_id);
           auto node_part = node_parts[node_id];
