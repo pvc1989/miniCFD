@@ -67,9 +67,9 @@ void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
                          int npe, T* old_cid_old_nid) {
   int n_cells = new_to_old_for_cells.size();
   int n_nodes = old_to_new_for_nodes.size();
-  int node_id_list_size = n_cells * npe;
-  std::vector<T> old_cid_new_nid(node_id_list_size);
-  for (int i = 0; i < node_id_list_size; ++i) {
+  int i_node_list_size = n_cells * npe;
+  std::vector<T> old_cid_new_nid(i_node_list_size);
+  for (int i = 0; i < i_node_list_size; ++i) {
     auto old_nid = old_cid_old_nid[i];
     auto new_nid = old_to_new_for_nodes.at(old_nid - 1) + 1;
     old_cid_new_nid[i] = new_nid;
@@ -134,8 +134,8 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
     ShuffleData(new_to_old_for_nodes, &(c_to_m_nodes[zid][1]));
     ShuffleData(old_to_new_for_nodes, &(m_to_c_nodes[metis_nid_offset]));
     auto n_solutions = zone.CountSolutions();
-    for (auto solution_id = 1; solution_id <= n_solutions; solution_id++) {
-      auto& solution = zone.GetSolution(solution_id);
+    for (auto i_soln = 1; i_soln <= n_solutions; i_soln++) {
+      auto& solution = zone.GetSolution(i_soln);
       if (!solution.OnNodes())
         continue;
       for (auto i = 1; i <= solution.CountFields(); ++i) {
@@ -158,13 +158,13 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
       ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
       ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
       auto npe = section.CountNodesByType();
-      auto* node_id_list = section.GetNodeIdList();
+      auto* i_node_list = section.GetNodeIdList();
       ShuffleConnectivity(old_to_new_for_nodes, new_to_old_for_cells,
-          npe, node_id_list);
+          npe, i_node_list);
       /* Shuffle Data on Cells */
       auto n_solutions = zone.CountSolutions();
-      for (auto solution_id = 1; solution_id <= n_solutions; solution_id++) {
-        auto& solution = zone.GetSolution(solution_id);
+      for (auto i_soln = 1; i_soln <= n_solutions; i_soln++) {
+        auto& solution = zone.GetSolution(i_soln);
         if (!solution.OnCells())
           continue;
         for (auto i = 1; i <= solution.CountFields(); ++i) {

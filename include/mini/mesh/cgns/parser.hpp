@@ -35,24 +35,24 @@ void print(Object&& obj) {
 template <class Int = cgsize_t>
 struct NodeInfo {
   NodeInfo() = default;
-  NodeInfo(Int zi, Int ni) : zone_id(zi), node_id(ni) {}
+  NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
   NodeInfo(NodeInfo const&) = default;
   NodeInfo& operator=(NodeInfo const&) = default;
   NodeInfo(NodeInfo&&) noexcept = default;
   NodeInfo& operator=(NodeInfo&&) noexcept = default;
   ~NodeInfo() noexcept = default;
-  Int zone_id{0}, node_id{0};
+  Int i_zone{0}, i_node{0};
 };
 template <class Int = int>
 struct CellInfo {
   CellInfo() = default;
-  CellInfo(Int zi, Int si, Int ci) : zone_id(zi), section_id(si), cell_id(ci) {}
+  CellInfo(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
   CellInfo(CellInfo const&) = default;
   CellInfo& operator=(CellInfo const&) = default;
   CellInfo(CellInfo&&) noexcept = default;
   CellInfo& operator=(CellInfo&&) noexcept = default;
   ~CellInfo() noexcept = default;
-  Int zone_id{0}, section_id{0}, cell_id{0};
+  Int i_zone{0}, i_sect{0}, i_cell{0};
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -161,8 +161,8 @@ class CellGroup {
   bool has(int cid) const {
     return head_ <= cid && cid < size_ + head_;
   }
-  auto& operator[](Int cell_id) {
-    return cells_[cell_id];
+  auto& operator[](Int i_cell) {
+    return cells_[i_cell];
   }
   const auto& GetField(Int i_field) const {
     return fields_[i_field];
@@ -232,7 +232,7 @@ class Parser{
       auto& buf = send_bufs.emplace_back();
       for (auto metis_id : nodes) {
         auto& info = nodes_m_to_c_[metis_id];
-        auto const& coord = GetCoord(info.zone_id, info.node_id);
+        auto const& coord = GetCoord(info.i_zone, info.i_node);
         buf.emplace_back(coord[0]);
         buf.emplace_back(coord[1]);
         buf.emplace_back(coord[2]);
@@ -270,10 +270,10 @@ class Parser{
       double* xyz = recv_bufs[i_source++].data();
       for (auto metis_id : nodes) {
         auto& info = nodes_m_to_c_[metis_id];
-        adj_nodes_[info.zone_id][info.node_id] = { xyz[0], xyz[1] , xyz[2] };
+        adj_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
         if (rank_ == -1) {
-          int zid = info.zone_id, nid = info.node_id;
+          int zid = info.i_zone, nid = info.i_node;
           std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
           print(adj_nodes_[zid][nid].transpose());
         }
@@ -312,8 +312,8 @@ class Parser{
         cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
         if (rank_ == -1)
           std::printf("mid = %ld, zid = %ld, sid = %ld, cid = %ld\n", mid,
-              cells_m_to_c_[mid].zone_id, cells_m_to_c_[mid].section_id,
-              cells_m_to_c_[mid].cell_id);
+              cells_m_to_c_[mid].i_zone, cells_m_to_c_[mid].i_sect,
+              cells_m_to_c_[mid].i_cell);
       }
       char name[33];
       ElementType_t type;
@@ -387,9 +387,9 @@ class Parser{
         auto& info = cells_m_to_c_[mid];
         if (rank_ == -1)
           std::printf("info at %p\n", &info);
-        Int zid = cells_m_to_c_[mid].zone_id,
-            sid = cells_m_to_c_[mid].section_id,
-            cid = cells_m_to_c_[mid].cell_id;
+        Int zid = cells_m_to_c_[mid].i_zone,
+            sid = cells_m_to_c_[mid].i_sect,
+            cid = cells_m_to_c_[mid].i_cell;
         auto id = z_s_c_index[zid][sid][cid];
         auto nodes = z_s_nodes[zid][sid];
         send_buf.emplace_back(zid);
@@ -492,7 +492,7 @@ class Parser{
   std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
   std::unordered_map<Int, std::unique_ptr<Cell<Int, Real>>>
-      ghost_cells_;  /* metis_cell_id -> cell_ptr */
+      ghost_cells_;  /* metis_i_cell -> cell_ptr */
   std::vector<std::pair<Int, Int>> inner_adjs_;
   int rank_;
   const std::string cgns_file_;

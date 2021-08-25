@@ -29,11 +29,11 @@ class TestTypes : public ::testing::Test {
   struct cgSection {
     std::string name; int id, first, last, n_boundary;
     CGNS_ENUMT(ElementType_t) type;
-    std::vector<int> node_id_list;
+    std::vector<int> i_node_list;
     cgSection(char* sn, int si, int fi, int la, int nb,
               CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          node_id_list((last-first+1) * Section<double>::CountNodesByType(ty)) {
+          i_node_list((last-first+1) * Section<double>::CountNodesByType(ty)) {
     }
   };
   struct cgZone {
@@ -63,10 +63,10 @@ TEST_F(TestTypes, ReadBase) {
   auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
-  int file_id{-1};
-  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
+  int i_file{-1};
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &i_file);
   int n_bases{-1};
-  cg_nbases(file_id, &n_bases);
+  cg_nbases(i_file, &n_bases);
   struct BaseInfo {
     std::string name; int id, cell_dim, phys_dim;
     BaseInfo(char* bn, int bi, int cd, int pd)
@@ -76,10 +76,10 @@ TEST_F(TestTypes, ReadBase) {
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
     char base_name[33];
     int cell_dim{-1}, phys_dim{-1};
-    cg_base_read(file_id, base_id, base_name, &cell_dim, &phys_dim);
+    cg_base_read(i_file, base_id, base_name, &cell_dim, &phys_dim);
     base_info.emplace_back(base_name, base_id, cell_dim, phys_dim);
   }
-  cg_close(file_id);
+  cg_close(i_file);
   // compare result
   EXPECT_EQ(file.CountBases(), n_bases);
   for (auto& base : base_info) {
@@ -201,33 +201,33 @@ TEST_F(TestTypes, ReadZone) {
   auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
-  int file_id{-1};
-  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
+  int i_file{-1};
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &i_file);
   auto zone_info = std::vector<cgZone>();
   int n_bases{-1};
-  cg_nbases(file_id, &n_bases);
+  cg_nbases(i_file, &n_bases);
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
     int n_zones{-1};
-    cg_nzones(file_id, base_id, &n_zones);
-    for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
+    cg_nzones(i_file, base_id, &n_zones);
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
       char zone_name[33];
       cgsize_t zone_size[3][1];
-      cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
-      zone_info.emplace_back(zone_name, zone_id, zone_size[0]);
+      cg_zone_read(i_file, base_id, i_zone, zone_name, zone_size[0]);
+      zone_info.emplace_back(zone_name, i_zone, zone_size[0]);
     }
   }
-  cg_close(file_id);
+  cg_close(i_file);
   // compare result
-  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &i_file);
   EXPECT_EQ(file.CountBases(), n_bases);
   int index = 0;
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
     auto& my_base = file.GetBase(base_id);
     int n_zones{0};
-    cg_nzones(file_id, base_id, &n_zones);
+    cg_nzones(i_file, base_id, &n_zones);
     EXPECT_EQ(my_base.CountZones(), n_zones);
-    for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
-      auto& my_zone = my_base.GetZone(zone_id);
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      auto& my_zone = my_base.GetZone(i_zone);
       auto& cg_zone = zone_info[index++];
       EXPECT_STREQ(my_zone.name().c_str(), cg_zone.name.c_str());
       EXPECT_EQ(my_zone.id(), cg_zone.id);
@@ -235,35 +235,35 @@ TEST_F(TestTypes, ReadZone) {
       EXPECT_EQ(my_zone.CountCells(), cg_zone.cell_size);
     }
   }
-  cg_close(file_id);
+  cg_close(i_file);
 }
 TEST_F(TestTypes, ReadSolution) {
   // read by mini::mesh::cgns
   auto file = myFile(abs_path_);
   file.ReadBases();
   // read by cgnslib
-  int file_id{-1};
-  cg_open(abs_path_.c_str(), CG_MODE_READ, &file_id);
-  int base_id{1}, zone_id{1}, n_sols{0};
+  int i_file{-1};
+  cg_open(abs_path_.c_str(), CG_MODE_READ, &i_file);
+  int base_id{1}, i_zone{1}, n_sols{0};
   char zone_name[33];
   cgsize_t zone_size[3][1];
-  cg_zone_read(file_id, base_id, zone_id, zone_name, zone_size[0]);
-  auto cg_zone = cgZone(zone_name, zone_id, zone_size[0]);
-  cg_nsols(file_id, base_id, zone_id, &n_sols);
+  cg_zone_read(i_file, base_id, i_zone, zone_name, zone_size[0]);
+  auto cg_zone = cgZone(zone_name, i_zone, zone_size[0]);
+  cg_nsols(i_file, base_id, i_zone, &n_sols);
   cg_zone.solutions.reserve(n_sols);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
     char sol_name[33];
     CGNS_ENUMT(GridLocation_t) location;
-    cg_sol_info(file_id, base_id, zone_id, sol_id, sol_name, &location);
+    cg_sol_info(i_file, base_id, i_zone, sol_id, sol_name, &location);
     auto& cg_solution = cg_zone.solutions.emplace_back(
         sol_name, sol_id, location);
     // read field
     int n_fields;
-    cg_nfields(file_id, base_id, zone_id, sol_id, &n_fields);
+    cg_nfields(i_file, base_id, i_zone, sol_id, &n_fields);
     for (int field_id = 1; field_id <= n_fields; ++field_id) {
       CGNS_ENUMT(DataType_t) datatype;
       char field_name[33];
-      cg_field_info(file_id, base_id, zone_id, sol_id, field_id, &datatype,
+      cg_field_info(i_file, base_id, i_zone, sol_id, field_id, &datatype,
                     field_name);
       cgsize_t first{1}, last{1};
       if (location == CGNS_ENUMV(Vertex)) {
@@ -273,13 +273,13 @@ TEST_F(TestTypes, ReadSolution) {
       }
       std::string name = std::string(field_name);
       cg_solution.fields.emplace(name, cgField(last));
-      cg_field_read(file_id, base_id, zone_id, sol_id, field_name,
+      cg_field_read(i_file, base_id, i_zone, sol_id, field_name,
                     datatype, &first, &last, cg_solution.fields[name].data());
     }
   }
-  cg_close(file_id);
+  cg_close(i_file);
   // compara flow solutions
-  auto& my_zone = file.GetBase(base_id).GetZone(zone_id);
+  auto& my_zone = file.GetBase(base_id).GetZone(i_zone);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
     auto& my_sol = my_zone.GetSolution(sol_id);
     auto& cg_sol = cg_zone.solutions.at(sol_id-1);

@@ -40,8 +40,8 @@ void ShufflerTest::WriteParts(
   auto& zone_to_nodes = mapper.cgns_to_metis_for_nodes;
   auto& base = cgns_mesh->GetBase(1);
   int n_zones = base.CountZones();
-  for (int zone_id = 1; zone_id <= n_zones; ++zone_id) {
-    auto& zone = base.GetZone(zone_id);
+  for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+    auto& zone = base.GetZone(i_zone);
     // write data on nodes
     auto& node_sol = zone.AddSolution("NodeData",
         CGNS_ENUMV(Vertex));
@@ -51,7 +51,7 @@ void ShufflerTest::WriteParts(
     auto& metis_nids = node_sol.GetField(2);
     auto n_nodes = zone.CountNodes();
     for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
-      auto metis_nid = zone_to_nodes[zone_id][cgns_nid];
+      auto metis_nid = zone_to_nodes[i_zone][cgns_nid];
       node_field.at(cgns_nid) = node_parts[metis_nid];
       metis_nids.at(cgns_nid) = metis_nid;
     }
@@ -62,22 +62,22 @@ void ShufflerTest::WriteParts(
     cell_sol.AddField("MetisCellId");
     auto& cell_field = cell_sol.GetField(1);
     auto& metis_cids = cell_sol.GetField(2);
-    auto& sect_to_cells = zone_to_sects.at(zone_id);
+    auto& sect_to_cells = zone_to_sects.at(i_zone);
     auto n_sects = zone.CountSections();
-    for (int sect_id = 1; sect_id <= n_sects; ++sect_id) {
-      auto& sect = zone.GetSection(sect_id);
+    for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+      auto& sect = zone.GetSection(i_sect);
       if (sect.dim() != base.GetCellDim())
         continue;
-      auto& cells_local_to_global = sect_to_cells.at(sect_id);
+      auto& cells_local_to_global = sect_to_cells.at(i_sect);
       auto n_cells = sect.CountCells();
       auto range_min{sect.CellIdMin()};
       auto range_max{sect.CellIdMax()};
       EXPECT_EQ(n_cells - 1, range_max - range_min);
-      for (int cgns_cell_id = range_min; cgns_cell_id <= range_max;
-           ++cgns_cell_id) {
-        auto metis_cell_id = cells_local_to_global.at(cgns_cell_id);
-        cell_field.at(cgns_cell_id) = cell_parts[metis_cell_id];
-        metis_cids.at(cgns_cell_id) = metis_cell_id;
+      for (int cgns_i_cell = range_min; cgns_i_cell <= range_max;
+           ++cgns_i_cell) {
+        auto metis_i_cell = cells_local_to_global.at(cgns_i_cell);
+        cell_field.at(cgns_i_cell) = cell_parts[metis_i_cell];
+        metis_cids.at(cgns_i_cell) = metis_i_cell;
       }
     }
   }
@@ -103,18 +103,18 @@ TEST_F(ShufflerTest, GetNewOrderToShuffleData) {
   }
 }
 TEST_F(ShufflerTest, ShuffleConnectivity) {
-  // Shuffle cell node_id_list by new order
+  // Shuffle cell i_node_list by new order
   std::vector<int> new_to_old_for_nodes{5, 4, 3, 2, 1, 0};
   std::vector<int> new_to_old_for_cells{1, 2, 3, 0};
-  std::vector<int> node_id_list = {
+  std::vector<int> i_node_list = {
       1, 2, 6,   2, 3, 6,   6, 3, 5,   3, 4, 5};
   int npe = 3;
   ShuffleConnectivity(
-      new_to_old_for_nodes, new_to_old_for_cells, npe, node_id_list.data());
-  std::vector<int> expected_new_node_id_list{
+      new_to_old_for_nodes, new_to_old_for_cells, npe, i_node_list.data());
+  std::vector<int> expected_new_i_node_list{
       5, 4, 1,   1, 4, 2,   4, 3, 2,   6, 5, 1};
-  for (int i = 0; i < node_id_list.size(); ++i) {
-    EXPECT_EQ(node_id_list[i], expected_new_node_id_list[i]);
+  for (int i = 0; i < i_node_list.size(); ++i) {
+    EXPECT_EQ(i_node_list[i], expected_new_i_node_list[i]);
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
@@ -149,8 +149,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
-  // auto [begin_nid, end_nid] = part_to_nodes[part_id][zone_id];
-  // auto [begin_cid, end_cid] = part_to_cells[part_id][zone_id][sect_id];
+  // auto [begin_nid, end_nid] = part_to_nodes[i_part][i_zone];
+  // auto [begin_cid, end_cid] = part_to_cells[i_part][i_zone][i_sect];
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
   auto part_to_cells = std::vector<std::vector<std::vector<
       std::pair<int, int>>>>(n_parts);
@@ -165,7 +165,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     auto& zone = base.GetZone(zid);
     auto& node_field = zone.GetSolution(1).GetField(1);
     assert(node_field.name() == "NodePart");
-    // slice node lists by part_id
+    // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
     for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
@@ -177,7 +177,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       }
     }
     part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
-    // slice cell lists by part_id
+    // slice cell lists by i_part
     int n_cells = zone.CountCells();
     auto& sol = zone.GetSolution(2);
     assert(sol.name() == "CellData");
@@ -202,7 +202,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     }
   }
   // store cell adjacency for each part
-  // inner_adjs[part_id] = vector of [smaller_cid, bigger_cid]
+  // inner_adjs[i_part] = vector of [smaller_cid, bigger_cid]
   auto inner_adjs = std::vector<std::vector<std::pair<int, int>>>(n_parts);
   auto part_interpart_adjs = std::vector<std::map<int, std::vector<
       std::pair<int, int>>>>(n_parts);
@@ -211,12 +211,12 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   for (int i = 0; i < metis_mesh.CountCells(); ++i) {
     auto part_i = cell_parts[i];
     int range_b = metis_mesh.range(i), range_e = metis_mesh.range(i+1);
-    for (int range_id = range_b; range_id < range_e; ++range_id) {
-      auto node_id = metis_mesh.nodes(range_id);
-      auto node_part = node_parts[node_id];
+    for (int i_range = range_b; i_range < range_e; ++i_range) {
+      auto i_node = metis_mesh.nodes(i_range);
+      auto node_part = node_parts[i_node];
       if (node_part != part_i) {
-        part_adj_nodes[part_i][node_part].emplace(node_id);
-        sendp_recvp_nodes[node_part][part_i].emplace(node_id);
+        part_adj_nodes[part_i][node_part].emplace(i_node);
+        sendp_recvp_nodes[node_part][part_i].emplace(i_node);
       }
     }
     for (int r = graph.range(i); r < graph.range(i+1); ++r) {
@@ -228,12 +228,12 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       } else {
         part_interpart_adjs[part_i][part_j].emplace_back(i, j);
         int range_b = metis_mesh.range(j), range_e = metis_mesh.range(j+1);
-        for (int range_id = range_b; range_id < range_e; ++range_id) {
-          auto node_id = metis_mesh.nodes(range_id);
-          auto node_part = node_parts[node_id];
+        for (int i_range = range_b; i_range < range_e; ++i_range) {
+          auto i_node = metis_mesh.nodes(i_range);
+          auto node_part = node_parts[i_node];
           if (node_part != part_i) {
-            part_adj_nodes[part_i][node_part].emplace(node_id);
-            sendp_recvp_nodes[node_part][part_i].emplace(node_id);
+            part_adj_nodes[part_i][node_part].emplace(i_node);
+            sendp_recvp_nodes[node_part][part_i].emplace(i_node);
           }
         }
       }
@@ -260,11 +260,11 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     }
     ostrm << '\n';
     // adjacent nodes
-    for (auto& [part_id, nodes] : part_adj_nodes[p]) {
+    for (auto& [i_part, nodes] : part_adj_nodes[p]) {
       for (auto mid : nodes) {
         auto& info = mapper.metis_to_cgns_for_nodes[mid];
-        int zid = info.zone_id, nid = info.node_id;
-        ostrm << part_id << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
+        int zid = info.i_zone, nid = info.i_node;
+        ostrm << i_part << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
       }
     }
     ostrm << '\n';
@@ -285,15 +285,15 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     }
     ostrm << '\n';
     // interpart adjacency
-    for (auto& [part_id, pairs] : part_interpart_adjs[p]) {
+    for (auto& [i_part, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
         auto& info_i = mapper.metis_to_cgns_for_cells[i];
         auto& info_j = mapper.metis_to_cgns_for_cells[j];
-        int cnt_i = base.GetZone(info_i.zone_id).GetSection(info_i.section_id).
+        int cnt_i = base.GetZone(info_i.i_zone).GetSection(info_i.i_sect).
             CountNodesByType();
-        int cnt_j = base.GetZone(info_j.zone_id).GetSection(info_j.section_id).
+        int cnt_j = base.GetZone(info_j.i_zone).GetSection(info_j.i_sect).
             CountNodesByType();
-        ostrm << part_id << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
+        ostrm << i_part << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
             cnt_j << '\n';
       }
     }
