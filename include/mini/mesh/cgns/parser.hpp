@@ -91,7 +91,7 @@ struct Face {
 
 template <typename Int = cgsize_t, typename Real = double>
 struct Cell {
-  using ProjFunc = integrator::ProjFunc<Real, 3/* kDim */, 2/* kOrder */, 1/* kFunc */>;
+  using ProjFunc = integrator::ProjFunc<Real, 3/* kDim */, 2/* kOrder */, 2/* kFunc */>;
   static constexpr int K = ProjFunc::K/* number of functions */;
   static constexpr int N = ProjFunc::N/* size of the basis */;
   ProjFunc func;
@@ -155,8 +155,7 @@ class CellGroup {
       const auto& cell_ptr = cells_.at(i_cell);
       const auto& coef = cell_ptr->func.GetCoef();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
-        // fields_.at(i_field).at(i_cell) = coef[i_field-1];
-        fields_.at(i_field).at(i_cell) += 2;
+        fields_.at(i_field).at(i_cell) = coef.reshaped()[i_field-1];
       }
     }
   }
@@ -323,11 +322,22 @@ class Parser{
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         int i = (cid - head) * 8;
-        local_cells_[zid][sid][cid].reset(new Hexa<Int, Real>(
+        auto hexa_ptr = std::make_unique<Hexa<Int, Real>>(
             GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
             GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
             GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
-            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7])));
+            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7]));
+        auto center = hexa_ptr->GetCenter();
+        auto basis = integrator::Basis<Real, 3, 2>(center);
+        basis.Orthonormalize(*hexa_ptr);
+        hexa_ptr->func.Reset([](auto const& xyz){
+          auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
+          Eigen::Matrix<Real, 2, 1> col;
+          col[0] = r;
+          col[1] = 1 - r + (r >= 1);
+          return col;
+        }, basis, *hexa_ptr);
+        local_cells_[zid][sid][cid] = std::move(hexa_ptr);
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
         if (rank_ == -1)
           std::printf("i = %4d, zid = %d, sid = %d, cid = %4d, mid = %4d\n",

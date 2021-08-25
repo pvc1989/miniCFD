@@ -28,14 +28,16 @@ TEST_F(TestParser, Print) {
 }  // namespace mini
 
 int main(int argc, char* argv[]) {
-  std::system("./shuffler");
-
   MPI_Init(NULL, NULL);
   int comm_size, comm_rank;
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
+  if (comm_rank == 0)
+    std::system("./shuffler");
+
+  std::cout << "TestProjection" << std::endl;
   auto current_binary_dir =
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh");
   auto cgns_file = current_binary_dir + "/hexa_new.cgns";

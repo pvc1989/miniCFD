@@ -177,17 +177,8 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   using MatKx1 = Eigen::Matrix<Scalar, K, 1>;
 
   template <typename Callable, typename Element>
-  ProjFunc(Callable&& func, BasisType const& basis, Element const& elem)
-      : center_(basis.GetCenter()) {
-    using Ret = decltype(func(center_));
-    static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
-    coef_ = Integrate([&](CoordType const& xyz) {
-      auto f_col = func(xyz);
-      Mat1xN b_row = basis(xyz).transpose();
-      MatKxN prod = f_col * b_row;
-      return prod;
-    }, elem);
-    coef_ = coef_ * basis.GetCoef();
+  ProjFunc(Callable&& func, BasisType const& basis, Element const& elem) {
+    Reset(func, basis, elem);
   }
   ProjFunc() = default;
   ProjFunc(const ProjFunc&) = default;
@@ -204,6 +195,20 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   }
   const MatKxN& GetCoef() const {
     return coef_;
+  }
+
+  template <typename Callable, typename Element>
+  void Reset(Callable&& func, BasisType const& basis, Element const& elem) {
+    center_ = basis.GetCenter();
+    using Ret = decltype(func(center_));
+    static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
+    coef_ = Integrate([&](CoordType const& xyz) {
+      auto f_col = func(xyz);
+      Mat1xN b_row = basis(xyz).transpose();
+      MatKxN prod = f_col * b_row;
+      return prod;
+    }, elem);
+    coef_ = coef_ * basis.GetCoef();
   }
 
  private:

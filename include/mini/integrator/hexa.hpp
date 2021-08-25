@@ -84,7 +84,7 @@ class Hexa {
   }
 
  private:
-  static Mat8x1 shape_8x1(Mat3x1 xyz_local) {
+  static Mat8x1 shape_8x1(Mat3x1 const& xyz_local) {
     Arr1x8 n_1x8;
     n_1x8  = (1 + x_local_i_ * xyz_local[0]);
     n_1x8 *= (1 + y_local_i_ * xyz_local[1]);
@@ -164,6 +164,13 @@ class Hexa {
   Hexa& operator=(Hexa&&) noexcept = default;
   virtual ~Hexa() noexcept = default;
 
+  Mat3x1 GetCenter() const {
+    Mat3x1 c = xyz_global_3x8_.col(0);
+    for (int i = 1; i < 8; ++i)
+      c += xyz_global_3x8_.col(i);
+    c /= 8;
+    return c;
+  }
   GlobalCoord local_to_global_Dx1(
       Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
@@ -187,7 +194,7 @@ class Hexa {
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  GlobalCoord global_to_local_3x1(LocalCoord xyz_global) const {
+  GlobalCoord global_to_local_3x1(LocalCoord const& xyz_global) const {
     return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
