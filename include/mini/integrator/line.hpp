@@ -7,7 +7,7 @@
 
 #include "Eigen/Dense"
 
-#include "mini/integrator/base.hpp"
+#include "mini/integrator/function.hpp"
 #include "mini/integrator/basis.hpp"
 
 template <typename Scalar = double, int Q = 4>

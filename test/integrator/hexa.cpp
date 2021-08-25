@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "mini/integrator/base.hpp"
+#include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
 
 #include "gtest/gtest.h"

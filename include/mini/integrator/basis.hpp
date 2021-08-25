@@ -8,7 +8,7 @@
 
 #include "Eigen/Dense"
 
-#include "mini/integrator/base.hpp"
+#include "mini/integrator/function.hpp"
 
 namespace mini {
 namespace integrator {
