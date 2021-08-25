@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_BASE_HPP_
-#define MINI_INTEGRATOR_BASE_HPP_
+#ifndef MINI_INTEGRATOR_FUNCTION_HPP_
+#define MINI_INTEGRATOR_FUNCTION_HPP_
 
 #include <cmath>
 #include <iostream>
@@ -170,4 +170,4 @@ void Orthonormalize(Basis* raw_basis, const Element& elem) {
 }  // namespace integrator
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_BASE_HPP_
+#endif  // MINI_INTEGRATOR_FUNCTION_HPP_

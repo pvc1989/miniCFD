@@ -356,9 +356,10 @@ class Parser{
         });
         local_cells_[zid][sid][cid] = std::move(hexa_ptr);
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
-        if (rank_ == -1)
-          std::printf("i = %4d, zid = %d, sid = %d, cid = %4d, mid = %4d\n",
-              i, (int)zid, (int)sid, cid, (int)metis_ids[cid]);
+        if (rank_ == -1) {
+          std::cout << "i = " << i << ", zid = " << zid << ", sid = " << sid
+              << ", cid = " << cid << ", mid = " << metis_ids[cid] << '\n';
+        }
       }
     }
     // inner adjacency
