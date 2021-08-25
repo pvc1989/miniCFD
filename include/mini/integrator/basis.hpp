@@ -95,6 +95,9 @@ class Basis<Scalar, 3, 2> {
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
   }
+  void Shift(Coord const& new_center) {
+    center_ = new_center;
+  }
   template <class Element>
   void Orthonormalize(const Element& elem) {
     static_assert(Element::PhysDim() == 3);

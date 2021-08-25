@@ -91,10 +91,16 @@ struct Face {
 
 template <typename Int = cgsize_t, typename Real = double>
 struct Cell {
-  using ProjFunc = integrator::ProjFunc<Real, 3/* kDim */, 2/* kOrder */, 2/* kFunc */>;
+  static constexpr int kDim = 3;
+  static constexpr int kOrder = 2;
+  static constexpr int kFunc = 2;
+  using ProjFunc = integrator::ProjFunc<Real, kDim, kOrder, kFunc>;
+  using Basis = integrator::Basis<Real, kDim, kOrder>;
   static constexpr int K = ProjFunc::K/* number of functions */;
   static constexpr int N = ProjFunc::N/* size of the basis */;
-  ProjFunc func;
+
+  ProjFunc func_;
+  Basis basis_;
   Int metis_id;
 
   Cell() = default;
@@ -108,9 +114,20 @@ struct Cell {
 template <typename Int = cgsize_t, typename Real = double>
 class Hexa : public integrator::Hexa<Real, 4, 4, 4>, public Cell<Int, Real> {
   using Integrator = integrator::Hexa<Real, 4, 4, 4>;
+  using Coord = typename Cell<Int, Real>::Basis::Coord;
 
  public:
-  using Integrator::Integrator;
+  Hexa(Coord const& p0, Coord const& p1, Coord const& p2, Coord const& p3,
+       Coord const& p4, Coord const& p5, Coord const& p6, Coord const& p7)
+      : Integrator(p0, p1, p2, p3, p4, p5, p6, p7) {
+    this->basis_.Shift(this->GetCenter());
+    this->basis_.Orthonormalize(*this);
+  }
+
+  template <class Callable>
+  void Reset(Callable&& new_func) {
+    this->func_.Reset(new_func, this->basis_, *this);
+  }
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -153,7 +170,7 @@ class CellGroup {
   void GatherFields() {
     for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
       const auto& cell_ptr = cells_.at(i_cell);
-      const auto& coef = cell_ptr->func.GetCoef();
+      const auto& coef = cell_ptr->func_.GetCoef();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         fields_.at(i_field).at(i_cell) = coef.reshaped()[i_field-1];
       }
@@ -330,13 +347,13 @@ class Parser{
         auto center = hexa_ptr->GetCenter();
         auto basis = integrator::Basis<Real, 3, 2>(center);
         basis.Orthonormalize(*hexa_ptr);
-        hexa_ptr->func.Reset([](auto const& xyz){
+        hexa_ptr->Reset([](auto const& xyz){
           auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
           Eigen::Matrix<Real, 2, 1> col;
           col[0] = r;
           col[1] = 1 - r + (r >= 1);
           return col;
-        }, basis, *hexa_ptr);
+        });
         local_cells_[zid][sid][cid] = std::move(hexa_ptr);
         local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
         if (rank_ == -1)
