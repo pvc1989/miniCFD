@@ -6,7 +6,7 @@
 #include <iostream>
 #include <type_traits>
 
-#include "Eigen/Dense"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace integrator {
@@ -37,7 +37,7 @@ inline void SetZero(Scalar* s) {
  * @param m the address of the matrix
  */
 template <class Scalar, int M, int N>
-inline void SetZero(Eigen::Matrix<Scalar, M, N>* m) {
+inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
   m->setZero();
 }
 

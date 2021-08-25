@@ -2,7 +2,7 @@
 #ifndef MINI_INTEGRATOR_QUAD_HPP_
 #define MINI_INTEGRATOR_QUAD_HPP_
 
-#include "Eigen/Dense"
+#include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/line.hpp"
 
@@ -19,24 +19,24 @@ namespace integrator {
  */
 template <typename Scalar = double, int Qx = 4, int Qy = 4, int D = 2>
 class Quad {
-  using Arr1x4 = Eigen::Array<Scalar, 1, 4>;
-  using Arr4x1 = Eigen::Array<Scalar, 4, 1>;
-  using Arr4x2 = Eigen::Array<Scalar, 4, 2>;
+  using Arr1x4 = algebra::Array<Scalar, 1, 4>;
+  using Arr4x1 = algebra::Array<Scalar, 4, 1>;
+  using Arr4x2 = algebra::Array<Scalar, 4, 2>;
 
-  using MatDx4 = Eigen::Matrix<Scalar, D, 4>;
-  using MatDx2 = Eigen::Matrix<Scalar, D, 2>;
-  using MatDx1 = Eigen::Matrix<Scalar, D, 1>;
-  using Mat4x1 = Eigen::Matrix<Scalar, 4, 1>;
-  using Mat4x2 = Eigen::Matrix<Scalar, 4, 2>;
-  using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;
+  using MatDx4 = algebra::Matrix<Scalar, D, 4>;
+  using MatDx2 = algebra::Matrix<Scalar, D, 2>;
+  using MatDx1 = algebra::Matrix<Scalar, D, 1>;
+  using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
+  using Mat4x2 = algebra::Matrix<Scalar, 4, 2>;
+  using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
 
   using GaussX = GaussIntegrator<Scalar, Qx>;
   using GaussY = GaussIntegrator<Scalar, Qy>;
 
  public:
   using Real = Scalar;
-  using LocalCoord = Eigen::Matrix<Scalar, 2, 1>;
-  using GlobalCoord = Eigen::Matrix<Scalar, D, 1>;
+  using LocalCoord = algebra::Matrix<Scalar, 2, 1>;
+  using GlobalCoord = algebra::Matrix<Scalar, D, 1>;
   static const Arr1x4 x_local_i_;
   static const Arr1x4 y_local_i_;
   MatDx4 xyz_global_Dx4_;

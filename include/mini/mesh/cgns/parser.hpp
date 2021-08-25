@@ -18,7 +18,7 @@
 #include <unordered_map>
 
 #include "pcgnslib.h"
-#include "Eigen/Dense"
+#include "mini/algebra/eigen.hpp"
 
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/integrator/hexa.hpp"
@@ -349,7 +349,7 @@ class Parser{
         basis.Orthonormalize(*hexa_ptr);
         hexa_ptr->Reset([](auto const& xyz){
           auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
-          Eigen::Matrix<Real, 2, 1> col;
+          algebra::Matrix<Real, 2, 1> col;
           col[0] = r;
           col[1] = 1 - r + (r >= 1);
           return col;
@@ -485,7 +485,7 @@ class Parser{
   }
 
  private:
-  using Mat3x1 = Eigen::Matrix<Real, 3, 1>;
+  using Mat3x1 = algebra::Matrix<Real, 3, 1>;
   std::map<Int, NodeGroup<Int, Real>> local_nodes_;
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes_;
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;

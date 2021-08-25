@@ -15,17 +15,17 @@ namespace integrator {
 class TestHexa4x4x4 : public ::testing::Test {
  protected:
   using Hexa4x4x4 = Hexa<double, 4, 4, 4>;
-  using Mat1x8 = Eigen::Matrix<double, 1, 8>;
-  using Mat3x8 = Eigen::Matrix<double, 3, 8>;
-  using Mat3x1 = Eigen::Matrix<double, 3, 1>;
+  using Mat1x8 = algebra::Matrix<double, 1, 8>;
+  using Mat3x8 = algebra::Matrix<double, 3, 8>;
+  using Mat3x1 = algebra::Matrix<double, 3, 1>;
   using B = Basis<double, 3, 2>;
   using Y = typename B::MatNx1;
   using A = typename B::MatNxN;
   using Pscalar = ProjFunc<double, 3, 2, 1>;
-  using Mat1x10 = Eigen::Matrix<double, 1, 10>;
+  using Mat1x10 = algebra::Matrix<double, 1, 10>;
   using Pvector = ProjFunc<double, 3, 2, 11>;
-  using Mat11x1 = Eigen::Matrix<double, 11, 1>;
-  using Mat11x10 = Eigen::Matrix<double, 11, 10>;
+  using Mat11x1 = algebra::Matrix<double, 11, 1>;
+  using Mat11x10 = algebra::Matrix<double, 11, 10>;
 };
 TEST_F(TestHexa4x4x4, StaticMethods) {
   static_assert(Hexa4x4x4::CountQuadPoints() == 64);

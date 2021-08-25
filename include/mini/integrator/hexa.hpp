@@ -4,7 +4,7 @@
 
 #include <type_traits>
 
-#include "Eigen/Dense"
+#include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/line.hpp"
 
@@ -20,18 +20,18 @@ namespace integrator {
  */
 template <typename Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexa {
-  using Mat3x3 = Eigen::Matrix<Scalar, 3, 3>;
-  using Mat1x8 = Eigen::Matrix<Scalar, 1, 8>;
-  using Mat8x1 = Eigen::Matrix<Scalar, 8, 1>;
-  using Mat3x8 = Eigen::Matrix<Scalar, 3, 8>;
-  using Mat8x3 = Eigen::Matrix<Scalar, 8, 3>;
-  using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
-  using Mat10x1 = Eigen::Matrix<Scalar, 10, 1>;
+  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
+  using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;
+  using Mat8x1 = algebra::Matrix<Scalar, 8, 1>;
+  using Mat3x8 = algebra::Matrix<Scalar, 3, 8>;
+  using Mat8x3 = algebra::Matrix<Scalar, 8, 3>;
+  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
+  using Mat10x1 = algebra::Matrix<Scalar, 10, 1>;
 
-  using Arr1x8 = Eigen::Array<Scalar, 1, 8>;
-  using Arr8x1 = Eigen::Array<Scalar, 8, 1>;
-  using Arr3x8 = Eigen::Array<Scalar, 3, 8>;
-  using Arr8x3 = Eigen::Array<Scalar, 8, 3>;
+  using Arr1x8 = algebra::Array<Scalar, 1, 8>;
+  using Arr8x1 = algebra::Array<Scalar, 8, 1>;
+  using Arr3x8 = algebra::Array<Scalar, 3, 8>;
+  using Arr8x3 = algebra::Array<Scalar, 8, 3>;
 
   using GaussX = GaussIntegrator<Scalar, Qx>;
   using GaussY = GaussIntegrator<Scalar, Qy>;
@@ -39,8 +39,8 @@ class Hexa {
 
  public:
   using Real = Scalar;
-  using LocalCoord = Eigen::Matrix<Scalar, 3, 1>;
-  using GlobalCoord = Eigen::Matrix<Scalar, 3, 1>;
+  using LocalCoord = algebra::Matrix<Scalar, 3, 1>;
+  using GlobalCoord = algebra::Matrix<Scalar, 3, 1>;
 
  private:
   static const Arr1x8 x_local_i_;

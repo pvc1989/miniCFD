@@ -16,18 +16,18 @@ class TestQuad4x4 : public ::testing::Test {
  protected:
   using Quad4x4_2d = Quad<double, 4, 4, 2>;
   using Quad4x4_3d = Quad<double, 4, 4, 3>;
-  using Mat2x4 = Eigen::Matrix<double, 2, 4>;
-  using Mat2x1 = Eigen::Matrix<double, 2, 1>;
-  using Mat3x4 = Eigen::Matrix<double, 3, 4>;
-  using Mat3x1 = Eigen::Matrix<double, 3, 1>;
+  using Mat2x4 = algebra::Matrix<double, 2, 4>;
+  using Mat2x1 = algebra::Matrix<double, 2, 1>;
+  using Mat3x4 = algebra::Matrix<double, 3, 4>;
+  using Mat3x1 = algebra::Matrix<double, 3, 1>;
   using B = Basis<double, 2, 2>;
   using Y = typename B::MatNx1;
   using A = typename B::MatNxN;
   using Pscalar = ProjFunc<double, 2, 2, 1>;
-  using Mat1x6 = Eigen::Matrix<double, 1, 6>;
+  using Mat1x6 = algebra::Matrix<double, 1, 6>;
   using Pvector = ProjFunc<double, 2, 2, 7>;
-  using Mat7x1 = Eigen::Matrix<double, 7, 1>;
-  using Mat7x6 = Eigen::Matrix<double, 7, 6>;
+  using Mat7x1 = algebra::Matrix<double, 7, 1>;
+  using Mat7x6 = algebra::Matrix<double, 7, 6>;
 };
 TEST_F(TestQuad4x4, StaticMethods) {
   static_assert(Quad4x4_2d::CountQuadPoints() == 16);

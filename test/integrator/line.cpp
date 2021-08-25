@@ -10,7 +10,7 @@ namespace integrator {
 
 class TestLine : public ::testing::Test {
   using Scalar = double;
-  using Mat3x1 = Eigen::Matrix<Scalar, 3, 1>;
+  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
   static constexpr double eps = 1.15e-16;
   static constexpr int n_func(int d) {
     return d == 1 ? 3 : (d == 2 ? 6 : 10);
@@ -18,25 +18,25 @@ class TestLine : public ::testing::Test {
 
  protected:
   template <int D>
-  static auto raw_basis(Eigen::Matrix<Scalar, D, 1> xyz);
+  static auto raw_basis(algebra::Matrix<Scalar, D, 1> xyz);
 
   template <int D>
   static void test();
 };
 
 template <>
-auto TestLine::raw_basis(Eigen::Matrix<Scalar, 1, 1> xyz) {
+auto TestLine::raw_basis(algebra::Matrix<Scalar, 1, 1> xyz) {
   Scalar x = xyz[0];
-  Eigen::Matrix<Scalar, n_func(1), 1> basis = {
+  algebra::Matrix<Scalar, n_func(1), 1> basis = {
     1, x, x * x
   };
   return basis;
 }
 
 template <>
-auto TestLine::raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
+auto TestLine::raw_basis(algebra::Matrix<Scalar, 2, 1> xyz) {
   Scalar x = xyz[0], y = xyz[1];
-  Eigen::Matrix<Scalar, n_func(2), 1> basis = {
+  algebra::Matrix<Scalar, n_func(2), 1> basis = {
     1,
     x, y+1,
     x * x, x * y+x, y * y + 2 * y + 1
@@ -45,9 +45,9 @@ auto TestLine::raw_basis(Eigen::Matrix<Scalar, 2, 1> xyz) {
 }
 
 template <>
-auto TestLine::raw_basis(Eigen::Matrix<Scalar, 3, 1> xyz) {
+auto TestLine::raw_basis(algebra::Matrix<Scalar, 3, 1> xyz) {
   Scalar x = xyz[0], y = xyz[1], z = xyz[2];
-  Eigen::Matrix<Scalar, n_func(3), 1> basis = {
+  algebra::Matrix<Scalar, n_func(3), 1> basis = {
     1,
     x, y, z,
     x * x, x * y, x * z,
@@ -58,8 +58,8 @@ auto TestLine::raw_basis(Eigen::Matrix<Scalar, 3, 1> xyz) {
 
 template <int D>
 void TestLine::test() {
-  using MatDx2 = Eigen::Matrix<Scalar, D, 2>;
-  using MatDx1 = Eigen::Matrix<Scalar, D, 1>;
+  using MatDx2 = algebra::Matrix<Scalar, D, 2>;
+  using MatDx1 = algebra::Matrix<Scalar, D, 1>;
   MatDx2 xyz_global_i;
   for (int d = 0; d < D; ++d)
     xyz_global_i.row(d) << -2, 1;

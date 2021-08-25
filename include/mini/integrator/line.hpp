@@ -5,17 +5,19 @@
 #include <cmath>
 #include <type_traits>
 
-#include "Eigen/Dense"
-
+#include "mini/algebra/eigen.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/basis.hpp"
+
+namespace mini {
+namespace integrator {
 
 template <typename Scalar = double, int Q = 4>
 struct GaussIntegrator;
 
 template <typename Scalar>
 struct GaussIntegrator<Scalar, 4> {
-  using Mat1x4 = Eigen::Matrix<Scalar, 1, 4>;
+  using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
   static const Mat1x4 points;
   static const Mat1x4 weights;
   static Mat1x4 BuildPoints() {
@@ -46,10 +48,10 @@ GaussIntegrator<Scalar, 4>::weights =
 
 template <typename Scalar = double, int Q = 4, /* dim(space) */int D = 1>
 class Line {
-  using Mat2x1 = Eigen::Matrix<Scalar, 2, 1>;
-  using MatDx1 = Eigen::Matrix<Scalar, D, 1>;
-  using MatDx2 = Eigen::Matrix<Scalar, D, 2>;
-  using Arr1x2 = Eigen::Array<Scalar, 1, 2>;
+  using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
+  using MatDx1 = algebra::Matrix<Scalar, D, 1>;
+  using MatDx2 = algebra::Matrix<Scalar, D, 2>;
+  using Arr1x2 = algebra::Array<Scalar, 1, 2>;
   using Integrator = GaussIntegrator<Scalar, Q>;
 
  public:
@@ -117,7 +119,7 @@ class Line {
   }
   template <int N, typename Callable>
   auto orthonormalize(Callable&& raw_basis) {
-    using MatNxN = Eigen::Matrix<Scalar, N, N>;
+    using MatNxN = algebra::Matrix<Scalar, N, N>;
     MatNxN S;
     S.setIdentity();
     auto A = integrate([this, &raw_basis](MatDx1 xyz){
@@ -157,5 +159,8 @@ Line<Scalar, Q, D>::x_local_i_ = {-1, +1};
 template <typename Scalar, int Q, int D>
 typename Line<Scalar, Q, D>::Mat2x1 const
 Line<Scalar, Q, D>::diff_shape_2x1_ = {-0.5, 0.5};
+
+}  // namespace integrator
+}  // namespace mini
 
 #endif  // MINI_INTEGRATOR_LINE_HPP_

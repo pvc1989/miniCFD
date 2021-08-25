@@ -6,7 +6,7 @@
 #include <iostream>
 #include <type_traits>
 
-#include "Eigen/Dense"
+#include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/function.hpp"
 
@@ -27,9 +27,9 @@ template <typename Scalar>
 class Basis<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;  // the number of components
-  using Coord = Eigen::Matrix<Scalar, 2, 1>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  using Coord = algebra::Matrix<Scalar, 2, 1>;
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNxN = algebra::Matrix<Scalar, N, N>;
   explicit Basis(Coord const& c = {0, 0})
       : center_(c) {
   }
@@ -68,9 +68,9 @@ template <typename Scalar>
 class Basis<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
-  using Coord = Eigen::Matrix<Scalar, 3, 1>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
+  using Coord = algebra::Matrix<Scalar, 3, 1>;
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNxN = algebra::Matrix<Scalar, N, N>;
   explicit Basis(Coord const& c = {0, 0, 0})
       : center_(c) {
   }
@@ -127,11 +127,11 @@ class ProjFunc<Scalar, 2, 2, kFunc> {
   using CoordType = typename BasisType::Coord;
   static constexpr int K = kFunc;
   static constexpr int N = BasisType::N;
-  using Mat1xN = Eigen::Matrix<Scalar, 1, N>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  using MatKxN = Eigen::Matrix<Scalar, K, N>;
-  using MatKx1 = Eigen::Matrix<Scalar, K, 1>;
+  using Mat1xN = algebra::Matrix<Scalar, 1, N>;
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNxN = algebra::Matrix<Scalar, N, N>;
+  using MatKxN = algebra::Matrix<Scalar, K, N>;
+  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
 
   template <typename Callable, typename Element>
   ProjFunc(Callable&& func, BasisType const& basis, Element const& elem)
@@ -173,11 +173,11 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   using CoordType = typename BasisType::Coord;
   static constexpr int K = kFunc;
   static constexpr int N = BasisType::N;
-  using Mat1xN = Eigen::Matrix<Scalar, 1, N>;
-  using MatNx1 = Eigen::Matrix<Scalar, N, 1>;
-  using MatNxN = Eigen::Matrix<Scalar, N, N>;
-  using MatKxN = Eigen::Matrix<Scalar, K, N>;
-  using MatKx1 = Eigen::Matrix<Scalar, K, 1>;
+  using Mat1xN = algebra::Matrix<Scalar, 1, N>;
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNxN = algebra::Matrix<Scalar, N, N>;
+  using MatKxN = algebra::Matrix<Scalar, K, N>;
+  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
 
   template <typename Callable, typename Element>
   ProjFunc(Callable&& func, BasisType const& basis, Element const& elem) {
