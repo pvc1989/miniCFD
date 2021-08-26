@@ -96,37 +96,30 @@ struct Cell {
   static constexpr int kFunc = 2;
   using ProjFunc = integrator::ProjFunc<Real, kDim, kOrder, kFunc>;
   using Basis = integrator::Basis<Real, kDim, kOrder>;
+  using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   static constexpr int K = ProjFunc::K/* number of functions */;
   static constexpr int N = ProjFunc::N/* size of the basis */;
 
   ProjFunc func_;
   Basis basis_;
+  GaussPtr gauss_;
   Int metis_id;
 
+  Cell(GaussPtr&& gauss, Int mid)
+      : gauss_(std::move(gauss)), metis_id(mid) {
+    basis_.Shift(gauss_->GetCenter());
+    basis_.Orthonormalize(*gauss_);
+  }
   Cell() = default;
-  Cell(const Cell&) = default;
-  Cell& operator=(const Cell&) = default;
+  Cell(const Cell&) = delete;
+  Cell& operator=(const Cell&) = delete;
   Cell(Cell&&) noexcept = default;
   Cell& operator=(Cell&&) noexcept = default;
   virtual ~Cell() noexcept = default;
-};
-
-template <typename Int = cgsize_t, typename Real = double>
-class Hexa : public integrator::Hexa<Real, 4, 4, 4>, public Cell<Int, Real> {
-  using Integrator = integrator::Hexa<Real, 4, 4, 4>;
-  using Coord = typename Cell<Int, Real>::Basis::Coord;
-
- public:
-  Hexa(Coord const& p0, Coord const& p1, Coord const& p2, Coord const& p3,
-       Coord const& p4, Coord const& p5, Coord const& p6, Coord const& p7)
-      : Integrator(p0, p1, p2, p3, p4, p5, p6, p7) {
-    this->basis_.Shift(this->GetCenter());
-    this->basis_.Orthonormalize(*this);
-  }
 
   template <class Callable>
-  void Reset(Callable&& new_func) {
-    this->func_.Reset(new_func, this->basis_, *this);
+  void Project(Callable&& new_func) {
+    func_.Reset(new_func, basis_, *gauss_);
   }
 };
 
@@ -135,7 +128,7 @@ class CellGroup {
   using CellType = Cell<Int, Real>;
   static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
-  ShiftedVector<std::unique_ptr<CellType>> cells_;
+  ShiftedVector<CellType> cells_;
   ShiftedVector<ShiftedVector<Real>> fields_/* [i_field][i_cell] */;
 
  public:
@@ -146,9 +139,9 @@ class CellGroup {
     }
   }
   CellGroup() = default;
-  CellGroup(CellGroup const&) = default;
+  CellGroup(CellGroup const&) = delete;
   CellGroup(CellGroup&&) noexcept = default;
-  CellGroup& operator=(CellGroup const&) = default;
+  CellGroup& operator=(CellGroup const&) = delete;
   CellGroup& operator=(CellGroup &&) noexcept = default;
   ~CellGroup() noexcept = default;
 
@@ -169,8 +162,8 @@ class CellGroup {
   }
   void GatherFields() {
     for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
-      const auto& cell_ptr = cells_.at(i_cell);
-      const auto& coef = cell_ptr->func_.GetCoef();
+      const auto& cell = cells_.at(i_cell);
+      const auto& coef = cell.func_.GetCoef();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         fields_.at(i_field).at(i_cell) = coef.reshaped()[i_field-1];
       }
@@ -339,25 +332,15 @@ class Parser{
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         int i = (cid - head) * 8;
-        auto hexa_ptr = std::make_unique<Hexa<Int, Real>>(
+        auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
             GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
             GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
             GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
             GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7]));
-        auto center = hexa_ptr->GetCenter();
-        auto basis = integrator::Basis<Real, 3, 2>(center);
-        basis.Orthonormalize(*hexa_ptr);
-        hexa_ptr->Reset([](auto const& xyz){
-          auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
-          algebra::Matrix<Real, 2, 1> col;
-          col[0] = r;
-          col[1] = 1 - r + (r >= 1);
-          return col;
-        });
-        local_cells_[zid][sid][cid] = std::move(hexa_ptr);
-        local_cells_[zid][sid][cid]->metis_id = metis_ids.at(cid);
+        auto cell = Cell<Int, Real>(std::move(hexa_ptr), metis_ids[cid]);
+        local_cells_[zid][sid][cid] = std::move(cell);
         if (rank_ == -1) {
-          std::cout << "i = " << i << ", zid = " << zid << ", sid = " << sid
+          std::cout << "zid = " << zid << ", sid = " << sid
               << ", cid = " << cid << ", mid = " << metis_ids[cid] << '\n';
         }
       }
@@ -429,19 +412,29 @@ class Parser{
       int id = 0;
       for (auto& [mid, cnt] : cell_infos) {
         int zid = buf[id++];
-        ghost_cells_[mid].reset(new Hexa<Int, Real>(
-          GetCoord(zid, buf.at(id+0)), GetCoord(zid, buf[id+1]),
+        auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
+          GetCoord(zid, buf[id+0]), GetCoord(zid, buf[id+1]),
           GetCoord(zid, buf[id+2]), GetCoord(zid, buf[id+3]),
           GetCoord(zid, buf[id+4]), GetCoord(zid, buf[id+5]),
-          GetCoord(zid, buf[id+6]), GetCoord(zid, buf.at(id+7))));
+          GetCoord(zid, buf[id+6]), GetCoord(zid, buf[id+7]));
+        ghost_cells_[mid] = Cell<Int, Real>(std::move(hexa_ptr), mid);
         id += cnt;
       }
     }
     if (cgp_close(fid))
       cgp_error_exit();
-    WriteSolutions();
   }
-
+  template <class Callable>
+  void Project(Callable&& new_func) {
+    for (auto& [i_zone, sects] : local_cells_) {
+      for (auto& [i_sect, cells] : sects) {
+        auto tail = cells.head() + cells.size();
+        for (Int i_cell = cells.head(); i_cell < tail; ++i_cell) {
+          cells[i_cell].Project(new_func);
+        }
+      }
+    }
+  }
   void WriteSolutions() {
     int n_zones = local_nodes_.size();
     for (int zid = 1; zid <= n_zones; ++zid) {
@@ -491,8 +484,7 @@ class Parser{
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
   std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
-  std::unordered_map<Int, std::unique_ptr<Cell<Int, Real>>>
-      ghost_cells_;  /* metis_i_cell -> cell_ptr */
+  std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
   int rank_;
   const std::string cgns_file_;

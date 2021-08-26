@@ -1,4 +1,5 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
+#include <cmath>
 #include <cstdlib>
 
 #include "gtest/gtest.h"
@@ -36,14 +37,23 @@ int main(int argc, char* argv[]) {
 
   if (comm_rank == 0)
     std::system("./shuffler");
+  MPI_Barrier(MPI_COMM_WORLD);
 
-  std::cout << "TestProjection" << std::endl;
+  std::printf("TestProjection on %d/%d\n", comm_rank, comm_size);
   auto current_binary_dir =
       std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh");
   auto cgns_file = current_binary_dir + "/hexa_new.cgns";
   auto prefix = current_binary_dir + "/hexa_part_";
   auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
       cgns_file, prefix, comm_rank);
+  parser.Project([](auto const& xyz){
+    auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
+    mini::algebra::Matrix<double, 2, 1> col;
+    col[0] = r;
+    col[1] = 1 - r + (r >= 1);
+    return col;
+  });
+  parser.WriteSolutions();
 
   MPI_Finalize();
 }

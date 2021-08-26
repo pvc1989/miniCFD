@@ -9,6 +9,7 @@
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/function.hpp"
+#include "mini/integrator/cell.hpp"
 
 namespace mini {
 namespace integrator {
@@ -98,9 +99,8 @@ class Basis<Scalar, 3, 2> {
   void Shift(Coord const& new_center) {
     center_ = new_center;
   }
-  template <class Element>
-  void Orthonormalize(const Element& elem) {
-    static_assert(Element::PhysDim() == 3);
+  void Orthonormalize(const Cell<Scalar>& elem) {
+    assert(elem.PhysDim() == 3);
     integrator::Orthonormalize(this, elem);
   }
 

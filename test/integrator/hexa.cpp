@@ -27,16 +27,21 @@ class TestHexa4x4x4 : public ::testing::Test {
   using Mat11x1 = algebra::Matrix<double, 11, 1>;
   using Mat11x10 = algebra::Matrix<double, 11, 10>;
 };
-TEST_F(TestHexa4x4x4, StaticMethods) {
-  static_assert(Hexa4x4x4::CountQuadPoints() == 64);
-  static_assert(Hexa4x4x4::CellDim() == 3);
-  static_assert(Hexa4x4x4::PhysDim() == 3);
-  auto p0 = Hexa4x4x4::GetCoord(0);
+TEST_F(TestHexa4x4x4, VirtualMethods) {
+  Mat3x8 xyz_global_i;
+  xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
+  xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
+  xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
+  auto hexa = Hexa4x4x4(xyz_global_i);
+  static_assert(hexa.CellDim() == 3);
+  static_assert(hexa.PhysDim() == 3);
+  EXPECT_EQ(hexa.CountQuadPoints(), 64);
+  auto p0 = hexa.GetCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[2], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   auto w1d = (18 + std::sqrt(30)) / 36.0;
-  EXPECT_EQ(Hexa4x4x4::GetWeight(0), w1d * w1d * w1d);
+  EXPECT_EQ(hexa.GetWeight(0), w1d * w1d * w1d);
 }
 TEST_F(TestHexa4x4x4, CommonMethods) {
   Mat3x8 xyz_global_i;

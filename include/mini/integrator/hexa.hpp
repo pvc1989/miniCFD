@@ -7,6 +7,7 @@
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/line.hpp"
+#include "mini/integrator/cell.hpp"
 
 namespace mini {
 namespace integrator {
@@ -19,7 +20,7 @@ namespace integrator {
  * @tparam Qz 
  */
 template <typename Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
-class Hexa {
+class Hexa : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;
   using Mat8x1 = algebra::Matrix<Scalar, 8, 1>;
@@ -37,10 +38,12 @@ class Hexa {
   using GaussY = GaussIntegrator<Scalar, Qy>;
   using GaussZ = GaussIntegrator<Scalar, Qz>;
 
+  using Base = Cell<Scalar>;
+
  public:
-  using Real = Scalar;
-  using LocalCoord = algebra::Matrix<Scalar, 3, 1>;
-  using GlobalCoord = algebra::Matrix<Scalar, 3, 1>;
+  using typename Base::Real;
+  using typename Base::LocalCoord;
+  using typename Base::GlobalCoord;
 
  private:
   static const Arr1x8 x_local_i_;
@@ -51,7 +54,7 @@ class Hexa {
   static const std::array<Scalar, Qx * Qy * Qz> weights_;
 
  public:
-  static constexpr int CountQuadPoints() {
+  int CountQuadPoints() const override {
     return Qx * Qy * Qz;
   }
   static constexpr auto BuildPoints() {
@@ -127,16 +130,10 @@ class Hexa {
   }
 
  public:
-  static constexpr int CellDim() {
-    return 3;
-  }
-  static constexpr int PhysDim() {
-    return 3;
-  }
-  static LocalCoord const& GetCoord(int i) {
+  LocalCoord const& GetCoord(int i) const override {
     return points_[i];
   }
-  static Scalar const& GetWeight(int i) {
+  Scalar const& GetWeight(int i) const override {
     return weights_[i];
   }
 
@@ -164,7 +161,7 @@ class Hexa {
   Hexa& operator=(Hexa&&) noexcept = default;
   virtual ~Hexa() noexcept = default;
 
-  Mat3x1 GetCenter() const {
+  Mat3x1 GetCenter() const override {
     Mat3x1 c = xyz_global_3x8_.col(0);
     for (int i = 1; i < 8; ++i)
       c += xyz_global_3x8_.col(i);
@@ -175,10 +172,10 @@ class Hexa {
       Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
   }
-  GlobalCoord local_to_global_Dx1(LocalCoord const& xyz_local) const {
+  GlobalCoord local_to_global_Dx1(LocalCoord const& xyz_local) const override {
     return xyz_global_3x8_ * shape_8x1(xyz_local);
   }
-  Mat3x3 jacobian(const LocalCoord& xyz_local) const {
+  Mat3x3 jacobian(const LocalCoord& xyz_local) const override {
     return jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
   GlobalCoord global_to_local_3x1(
