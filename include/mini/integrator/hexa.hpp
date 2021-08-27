@@ -2,6 +2,8 @@
 #ifndef MINI_INTEGRATOR_HEXA_HPP_
 #define MINI_INTEGRATOR_HEXA_HPP_
 
+#include <algorithm>
+#include <cstring>
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
@@ -46,12 +48,13 @@ class Hexa : public Cell<Scalar> {
   using typename Base::GlobalCoord;
 
  private:
+  static const std::array<LocalCoord, Qx * Qy * Qz> points_;
+  static const std::array<Scalar, Qx * Qy * Qz> weights_;
+  static const std::array<std::array<int, 4>, 6> faces_;
   static const Arr1x8 x_local_i_;
   static const Arr1x8 y_local_i_;
   static const Arr1x8 z_local_i_;
   Mat3x8 xyz_global_3x8_;
-  static const std::array<LocalCoord, Qx * Qy * Qz> points_;
-  static const std::array<Scalar, Qx * Qy * Qz> weights_;
 
  public:
   int CountQuadPoints() const override {
@@ -84,6 +87,28 @@ class Hexa : public Cell<Scalar> {
       }
     }
     return weights;
+  }
+  static constexpr auto BuildFaces() {
+    std::array<std::array<int, 4>, 6> faces{
+      0, 3, 2, 1/*  6 */, 0, 1, 5, 4/* 10 */, 1, 2, 6, 5/* 14 */,
+      2, 3, 7, 6/* 18 */, 0, 4, 7, 3/* 14 */, 4, 5, 6, 7/* 22 */
+    };
+    return faces;
+  }
+  template <typename T, typename U>
+  static void SortNodesOnFace(int n, const T *hexa_nodes, U *old_quad) {
+    for (int i = 0; i < 8; ++i) {
+      auto& face = faces_[i];
+      U new_quad[4] = {
+          hexa_nodes[face[0]], hexa_nodes[face[1]],
+          hexa_nodes[face[2]], hexa_nodes[face[3]],
+      };
+      if (std::is_permutation(new_quad, new_quad + 4, old_quad)) {
+        std::memcpy(old_quad, new_quad, sizeof(U) * 4);
+        return;
+      }
+    }
+    assert(false);
   }
 
  private:
@@ -214,6 +239,10 @@ Hexa<Scalar, Qx, Qy, Qz>::points_ = Hexa<Scalar, Qx, Qy, Qz>::BuildPoints();
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<Scalar, Qx * Qy * Qz> const
 Hexa<Scalar, Qx, Qy, Qz>::weights_ = Hexa<Scalar, Qx, Qy, Qz>::BuildWeights();
+
+template <typename Scalar, int Qx, int Qy, int Qz>
+std::array<std::array<int, 4>, 6> const
+Hexa<Scalar, Qx, Qy, Qz>::faces_ = Hexa<Scalar, Qx, Qy, Qz>::BuildFaces();
 
 }  // namespace integrator
 }  // namespace mini

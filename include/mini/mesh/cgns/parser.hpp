@@ -21,6 +21,7 @@
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/integrator/quad.hpp"
 #include "mini/integrator/hexa.hpp"
 
 namespace mini {
@@ -85,8 +86,19 @@ struct Cell;
 
 template <typename Int = cgsize_t, typename Real = double>
 struct Face {
+  using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real>*;
-  CellPtr holder, sharer;
+  GaussPtr gauss_;
+  CellPtr holder_, sharer_;
+
+  Face(GaussPtr&& gauss, CellPtr holder, CellPtr sharer)
+      : gauss_(std::move(gauss)), holder_(holder), sharer_(sharer) {
+  }
+  Face(const Face&) = delete;
+  Face& operator=(const Face&) = delete;
+  Face(Face&&) noexcept = default;
+  Face& operator=(Face&&) noexcept = default;
+  ~Face() noexcept = default;
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -115,7 +127,7 @@ struct Cell {
   Cell& operator=(const Cell&) = delete;
   Cell(Cell&&) noexcept = default;
   Cell& operator=(Cell&&) noexcept = default;
-  virtual ~Cell() noexcept = default;
+  ~Cell() noexcept = default;
 
   template <class Callable>
   void Project(Callable&& new_func) {
@@ -174,6 +186,7 @@ class CellGroup {
 template <typename Int = cgsize_t, typename Real = double>
 class Parser{
   static constexpr int kLineWidth = 30;
+  static constexpr int kDim = 3;
 
  public:
   Parser(std::string const& cgns_file, std::string const& prefix, int pid)
@@ -421,6 +434,48 @@ class Parser{
         id += cnt;
       }
     }
+    // build inner faces
+    for (auto [m_holder, m_sharer] : inner_adjs_) {
+      auto& holder_info = cells_m_to_c_[m_holder];
+      auto& sharer_info = cells_m_to_c_[m_sharer];
+      auto i_zone = holder_info.i_zone;
+      assert(i_zone == sharer_info.i_zone);
+      // find the common nodes of the holder and the sharer
+      auto m_count = std::unordered_map<Int, Int>();
+      auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
+      auto& sharer_nodes = z_s_nodes[i_zone][sharer_info.i_sect];
+      auto holder_head =
+          z_s_c_index[i_zone][holder_info.i_sect][holder_info.i_cell];
+      auto sharer_head =
+          z_s_c_index[i_zone][sharer_info.i_sect][sharer_info.i_cell];
+      for (int i = 0; i < 8; ++i) {
+        ++m_count[holder_nodes[holder_head + i]];
+        ++m_count[sharer_nodes[sharer_head + i]];
+      }
+      auto common_nodes = std::vector<Int>();
+      common_nodes.reserve(4);
+      for (auto [i_cell, cnt] : m_count)
+        if (cnt == 2)
+          common_nodes.emplace_back(i_cell);
+      assert(common_nodes.size() == 4);
+      // let the normal vector point from holder to sharer
+      // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
+      auto& zone = local_cells_[i_zone];
+      auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
+      auto& sharer = zone[sharer_info.i_sect][sharer_info.i_cell];
+      integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
+          4, &holder_nodes[holder_head], common_nodes.data());
+      if (rank_ == -1)
+        std::cout << "Quad{ " << common_nodes[0] << ", " << common_nodes[1]
+            << ", " << common_nodes[2] << ", " << common_nodes[3] << " }\n";
+      // build the quad integrator
+      auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
+          GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
+          GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
+      inner_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+    }
+    std::cout << inner_faces_.size() << " internal faces in rank "
+        << rank_ << std::endl;
     if (cgp_close(fid))
       cgp_error_exit();
   }
@@ -486,8 +541,9 @@ class Parser{
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
   std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
-  int rank_;
+  std::vector<Face<Int, Real>> inner_faces_;
   const std::string cgns_file_;
+  int rank_;
 
   Mat3x1 GetCoord(int zid, int nid) const {
     Mat3x1 coord;
