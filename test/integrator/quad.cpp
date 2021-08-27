@@ -14,8 +14,8 @@ namespace integrator {
 
 class TestQuad4x4 : public ::testing::Test {
  protected:
-  using Quad4x4_2d = Quad<double, 4, 4, 2>;
-  using Quad4x4_3d = Quad<double, 4, 4, 3>;
+  using Quad2D4x4 = Quad<double, 2, 4, 4>;
+  using Quad3D4x4 = Quad<double, 3, 4, 4>;
   using Mat2x4 = algebra::Matrix<double, 2, 4>;
   using Mat2x1 = algebra::Matrix<double, 2, 1>;
   using Mat3x4 = algebra::Matrix<double, 3, 4>;
@@ -29,22 +29,25 @@ class TestQuad4x4 : public ::testing::Test {
   using Mat7x1 = algebra::Matrix<double, 7, 1>;
   using Mat7x6 = algebra::Matrix<double, 7, 6>;
 };
-TEST_F(TestQuad4x4, StaticMethods) {
-  static_assert(Quad4x4_2d::CountQuadPoints() == 16);
-  static_assert(Quad4x4_2d::CellDim() == 2);
-  static_assert(Quad4x4_2d::PhysDim() == 2);
-  auto p0 = Quad4x4_2d::GetCoord(0);
-  EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
-  EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
-  auto w1d = (18 + std::sqrt(30)) / 36.0;
-  EXPECT_EQ(Quad4x4_2d::GetWeight(0), w1d * w1d);
-}
-TEST_F(TestQuad4x4, In2dSpace) {
-  static_assert(Quad4x4_2d::PhysDim() == 2);
+TEST_F(TestQuad4x4, VirtualMethods) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad4x4_2d(xyz_global_i);
+  auto quad = Quad2D4x4(xyz_global_i);
+  EXPECT_EQ(quad.CountQuadPoints(), 16);
+  auto p0 = quad.GetCoord(0);
+  EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
+  EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
+  auto w1d = (18 + std::sqrt(30)) / 36.0;
+  EXPECT_EQ(quad.GetWeight(0), w1d * w1d);
+}
+TEST_F(TestQuad4x4, In2dSpace) {
+  Mat2x4 xyz_global_i;
+  xyz_global_i.row(0) << -1, 1, 1, -1;
+  xyz_global_i.row(1) << -1, -1, 1, 1;
+  auto quad = Quad2D4x4(xyz_global_i);
+  static_assert(quad.CellDim() == 2);
+  static_assert(quad.PhysDim() == 2);
   EXPECT_EQ(quad.local_to_global_Dx1(0, 0), Mat2x1(0, 0));
   EXPECT_EQ(quad.local_to_global_Dx1(1, 1), Mat2x1(1, 1));
   EXPECT_EQ(quad.local_to_global_Dx1(-1, -1), Mat2x1(-1, -1));
@@ -58,12 +61,13 @@ TEST_F(TestQuad4x4, In2dSpace) {
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
 }
 TEST_F(TestQuad4x4, In3dSpace) {
-  static_assert(Quad4x4_3d::PhysDim() == 3);
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
   xyz_global_i.row(2) << -1, -1, 1, 1;
-  auto quad = Quad4x4_3d(xyz_global_i);
+  auto quad = Quad3D4x4(xyz_global_i);
+  static_assert(quad.CellDim() == 2);
+  static_assert(quad.PhysDim() == 3);
   EXPECT_EQ(quad.local_to_global_Dx1(0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(quad.local_to_global_Dx1(1, 1), Mat3x1(1, 1, 1));
   EXPECT_EQ(quad.local_to_global_Dx1(-1, -1), Mat3x1(-1, -1, -1));
@@ -86,7 +90,7 @@ TEST_F(TestQuad4x4, Basis) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad4x4_2d(xyz_global_i);
+  auto quad = Quad2D4x4(xyz_global_i);
   Orthonormalize(&b, quad);
   residual = (Integrate([&b](const Mat2x1& xy) {
     auto col = b(xy);
@@ -101,7 +105,7 @@ TEST_F(TestQuad4x4, Basis) {
   auto x = left[0], y = left[1];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
-  quad = Quad4x4_2d(xyz_global_i);
+  quad = Quad2D4x4(xyz_global_i);
   b.Orthonormalize(quad);
   residual = (Integrate([&b](Mat2x1 const& xy) {
     auto col = b(xy);
@@ -114,7 +118,7 @@ TEST_F(TestQuad4x4, ProjFunc) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad4x4_2d(xyz_global_i);
+  auto quad = Quad2D4x4(xyz_global_i);
   B b;
   Orthonormalize(&b, quad);
   auto fscalar = [](Mat2x1 const& xy){

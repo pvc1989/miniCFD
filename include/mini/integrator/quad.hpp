@@ -5,6 +5,7 @@
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/line.hpp"
+#include "mini/integrator/face.hpp"
 
 namespace mini {
 namespace integrator {
@@ -13,12 +14,12 @@ namespace integrator {
  * @brief 
  * 
  * @tparam Scalar 
+ * @tparam D the dim of the physical space
  * @tparam Qx 
  * @tparam Qy 
- * @tparam D the dim of the physical space
  */
-template <typename Scalar = double, int Qx = 4, int Qy = 4, int D = 2>
-class Quad {
+template <typename Scalar = double, int D = 2, int Qx = 4, int Qy = 4>
+class Quad : public Face<Scalar, D> {
   using Arr1x4 = algebra::Array<Scalar, 1, 4>;
   using Arr4x1 = algebra::Array<Scalar, 4, 1>;
   using Arr4x2 = algebra::Array<Scalar, 4, 2>;
@@ -43,7 +44,7 @@ class Quad {
   static const std::array<LocalCoord, Qx * Qy> points_;
   static const std::array<Scalar, Qx * Qy> weights_;
 
-  static constexpr int CountQuadPoints() {
+  int CountQuadPoints() const override {
     return Qx * Qy;
   }
   static constexpr auto BuildPoints() {
@@ -98,17 +99,18 @@ class Quad {
   }
 
  public:
-  static constexpr int CellDim() {
-    return 2;
-  }
-  static constexpr int PhysDim() {
-    return D;
-  }
-  static LocalCoord const& GetCoord(int i) {
+  LocalCoord const& GetCoord(int i) const override {
     return points_[i];
   }
-  static Scalar const& GetWeight(int i) {
+  Scalar const& GetWeight(int i) const override {
     return weights_[i];
+  }
+  MatDx1 GetCenter() const override {
+    MatDx1 c = xyz_global_Dx4_.col(0);
+    for (int i = 1; i < 4; ++i)
+      c += xyz_global_Dx4_.col(i);
+    c /= 4;
+    return c;
   }
 
  public:
@@ -126,32 +128,32 @@ class Quad {
       xyz_global_Dx4_[i] = p[i];
     }
   }
-  MatDx1 local_to_global_Dx1(Mat2x1 xy_local) const {
+  MatDx1 local_to_global_Dx1(const Mat2x1& xy_local) const override {
     return xyz_global_Dx4_ * shape_4x1(xy_local);
   }
   MatDx1 local_to_global_Dx1(Scalar x, Scalar y) const {
     return xyz_global_Dx4_ * shape_4x1(x, y);
   }
-  MatDx2 jacobian(const LocalCoord& xy_local) const {
+  MatDx2 jacobian(const LocalCoord& xy_local) const override {
     return jacobian(xy_local[0], xy_local[1]);
   }
 };
 
-template <typename Scalar, int Qx, int Qy, int D>
-typename Quad<Scalar, Qx, Qy, D>::Arr1x4 const
-Quad<Scalar, Qx, Qy, D>::x_local_i_ = {-1, +1, +1, -1};
+template <typename Scalar, int D, int Qx, int Qy>
+typename Quad<Scalar, D, Qx, Qy>::Arr1x4 const
+Quad<Scalar, D, Qx, Qy>::x_local_i_ = {-1, +1, +1, -1};
 
-template <typename Scalar, int Qx, int Qy, int D>
-typename Quad<Scalar, Qx, Qy, D>::Arr1x4 const
-Quad<Scalar, Qx, Qy, D>::y_local_i_ = {-1, -1, +1, +1};
+template <typename Scalar, int D, int Qx, int Qy>
+typename Quad<Scalar, D, Qx, Qy>::Arr1x4 const
+Quad<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
-template <typename Scalar, int Qx, int Qy, int D>
-std::array<typename Quad<Scalar, Qx, Qy, D>::LocalCoord, Qx * Qy> const
-Quad<Scalar, Qx, Qy, D>::points_ = Quad<Scalar, Qx, Qy, D>::BuildPoints();
+template <typename Scalar, int D, int Qx, int Qy>
+std::array<typename Quad<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
+Quad<Scalar, D, Qx, Qy>::points_ = Quad<Scalar, D, Qx, Qy>::BuildPoints();
 
-template <typename Scalar, int Qx, int Qy, int D>
+template <typename Scalar, int D, int Qx, int Qy>
 std::array<Scalar, Qx * Qy> const
-Quad<Scalar, Qx, Qy, D>::weights_ = Quad<Scalar, Qx, Qy, D>::BuildWeights();
+Quad<Scalar, D, Qx, Qy>::weights_ = Quad<Scalar, D, Qx, Qy>::BuildWeights();
 
 }  // namespace integrator
 }  // namespace mini

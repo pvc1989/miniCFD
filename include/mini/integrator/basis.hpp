@@ -9,6 +9,7 @@
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/function.hpp"
+#include "mini/integrator/face.hpp"
 #include "mini/integrator/cell.hpp"
 
 namespace mini {
@@ -54,9 +55,8 @@ class Basis<Scalar, 2, 2> {
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
   }
-  template <class Element>
-  void Orthonormalize(const Element& elem) {
-    static_assert(Element::PhysDim() == 2);
+  void Orthonormalize(const Face<Scalar, 2>& elem) {
+    assert(elem.PhysDim() == 2);
     integrator::Orthonormalize(this, elem);
   }
 
