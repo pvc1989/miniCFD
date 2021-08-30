@@ -81,13 +81,13 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, typename Real>
+template <typename Int, typename Real, int kFunc>
 struct Cell;
 
-template <typename Int = cgsize_t, typename Real = double>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
-  using CellPtr = Cell<Int, Real>*;
+  using CellPtr = Cell<Int, Real, kFunc>*;
   GaussPtr gauss_;
   CellPtr holder_, sharer_;
 
@@ -101,11 +101,10 @@ struct Face {
   ~Face() noexcept = default;
 };
 
-template <typename Int = cgsize_t, typename Real = double>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Cell {
   static constexpr int kDim = 3;
   static constexpr int kOrder = 2;
-  static constexpr int kFunc = 2;
   using ProjFunc = integrator::ProjFunc<Real, kDim, kOrder, kFunc>;
   using Basis = integrator::Basis<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
@@ -376,7 +375,7 @@ class Parser{
       interpart_adjs.emplace_back(i, j);
     }
     // send cell info
-    std::vector<std::vector<Real>> send_cells;
+    std::vector<std::vector<Int>> send_cells;
     for (auto& [target, cell_infos] : send_infos) {
       auto& send_buf = send_cells.emplace_back();
       for (auto& [mid, cnt] : cell_infos) {
@@ -401,7 +400,8 @@ class Parser{
           &req);
     }
     // recv cell info
-    std::vector<std::vector<Real>> recv_cells;
+    std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
+    std::vector<std::vector<Int>> recv_cells;
     for (auto& [source, cell_infos] : recv_infos) {
       auto& buf = recv_cells.emplace_back();
       int count = 0;
@@ -421,9 +421,11 @@ class Parser{
     // build ghost cells
     int buf_id = 0;
     for (auto& [source, cell_infos] : recv_infos) {
-      auto& buf = recv_cells.at(buf_id++);
+      auto& buf = recv_cells.at(buf_id);
       int id = 0;
       for (auto& [mid, cnt] : cell_infos) {
+        m_to_recv_cells[mid].first = buf_id;
+        m_to_recv_cells[mid].second = id+1;
         int zid = buf[id++];
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
           GetCoord(zid, buf[id+0]), GetCoord(zid, buf[id+1]),
@@ -433,13 +435,13 @@ class Parser{
         ghost_cells_[mid] = Cell<Int, Real>(std::move(hexa_ptr), mid);
         id += cnt;
       }
+      ++buf_id;
     }
     // build inner faces
     for (auto [m_holder, m_sharer] : inner_adjs_) {
       auto& holder_info = cells_m_to_c_[m_holder];
       auto& sharer_info = cells_m_to_c_[m_sharer];
       auto i_zone = holder_info.i_zone;
-      assert(i_zone == sharer_info.i_zone);
       // find the common nodes of the holder and the sharer
       auto m_count = std::unordered_map<Int, Int>();
       auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
@@ -475,6 +477,50 @@ class Parser{
       inner_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
     }
     std::cout << inner_faces_.size() << " internal faces in rank "
+        << rank_ << std::endl;
+    // build interpart faces
+    for (auto [m_holder, m_sharer] : interpart_adjs) {
+      auto& holder_info = cells_m_to_c_[m_holder];
+      auto& sharer_info = m_to_recv_cells[m_sharer];
+      auto i_zone = holder_info.i_zone;
+      // find the common nodes of the holder and the sharer
+      auto m_count = std::unordered_map<Int, Int>();
+      auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
+      auto& sharer_nodes = recv_cells[sharer_info.first];
+      auto holder_head =
+          z_s_c_index[i_zone][holder_info.i_sect][holder_info.i_cell];
+      auto sharer_head = sharer_info.second;
+      for (int i = 0; i < 8; ++i) {
+        ++m_count[holder_nodes[holder_head + i]];
+        ++m_count[sharer_nodes[sharer_head + i]];
+      }
+      auto common_nodes = std::vector<Int>();
+      common_nodes.reserve(4);
+      for (auto [i_cell, cnt] : m_count) {
+        if (cnt == 2)
+          common_nodes.emplace_back(i_cell);
+      }
+      assert(common_nodes.size() == 4);
+      // let the normal vector point from holder to sharer
+      // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
+      auto& zone = local_cells_[i_zone];
+      auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
+      auto& sharer = ghost_cells_[m_sharer];
+      integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
+          4, &holder_nodes[holder_head], common_nodes.data());
+      if (rank_ == -1)
+        std::cout << "Quad{ " << common_nodes[0] << ", " << common_nodes[1]
+            << ", " << common_nodes[2] << ", " << common_nodes[3] << " }\n";
+      // build the quad integrator
+      auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
+          GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
+          GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
+      if (m_holder < m_sharer)
+        interpart_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+      else
+        interpart_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
+    }
+    std::cout << inner_faces_.size() << " interpart faces in rank "
         << rank_ << std::endl;
     if (cgp_close(fid))
       cgp_error_exit();
@@ -541,7 +587,7 @@ class Parser{
   std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
   std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
-  std::vector<Face<Int, Real>> inner_faces_;
+  std::vector<Face<Int, Real>> inner_faces_, interpart_faces_;
   const std::string cgns_file_;
   int rank_;
 
