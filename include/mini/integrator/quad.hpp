@@ -31,8 +31,8 @@ class Quad : public Face<Scalar, D> {
   using Mat4x2 = algebra::Matrix<Scalar, 4, 2>;
   using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
 
-  using GaussX = GaussIntegrator<Scalar, Qx>;
-  using GaussY = GaussIntegrator<Scalar, Qy>;
+  using GaussX = GaussLegendre<Scalar, Qx>;
+  using GaussY = GaussLegendre<Scalar, Qy>;
 
  public:
   using Real = Scalar;

@@ -36,9 +36,9 @@ class Hexa : public Cell<Scalar> {
   using Arr3x8 = algebra::Array<Scalar, 3, 8>;
   using Arr8x3 = algebra::Array<Scalar, 8, 3>;
 
-  using GaussX = GaussIntegrator<Scalar, Qx>;
-  using GaussY = GaussIntegrator<Scalar, Qy>;
-  using GaussZ = GaussIntegrator<Scalar, Qz>;
+  using GaussX = GaussLegendre<Scalar, Qx>;
+  using GaussY = GaussLegendre<Scalar, Qy>;
+  using GaussZ = GaussLegendre<Scalar, Qz>;
 
   using Base = Cell<Scalar>;
 
