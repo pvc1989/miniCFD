@@ -90,25 +90,45 @@ class Hexa : public Cell<Scalar> {
   }
   static constexpr auto BuildFaces() {
     std::array<std::array<int, 4>, 6> faces{
-      0, 3, 2, 1/*  6 */, 0, 1, 5, 4/* 10 */, 1, 2, 6, 5/* 14 */,
-      2, 3, 7, 6/* 18 */, 0, 4, 7, 3/* 14 */, 4, 5, 6, 7/* 22 */
+      0, 3, 2, 1/*  3 */, 0, 1, 5, 4/* 5 */, 1, 2, 6, 5/* 8 */,
+      2, 3, 7, 6/* 11 */, 0, 4, 7, 3/* 7 */, 4, 5, 6, 7/* 15 */
     };
     return faces;
   }
   template <typename T, typename U>
-  static void SortNodesOnFace(int n, const T *hexa_nodes, U *old_quad) {
-    for (int i = 0; i < 8; ++i) {
-      auto& face = faces_[i];
-      U new_quad[4] = {
-          hexa_nodes[face[0]], hexa_nodes[face[1]],
-          hexa_nodes[face[2]], hexa_nodes[face[3]],
-      };
-      if (std::is_permutation(new_quad, new_quad + 4, old_quad)) {
-        std::memcpy(old_quad, new_quad, sizeof(U) * 4);
-        return;
+  static void SortNodesOnFace(int n, const T *hexa_nodes, U *quad) {
+    int cnt = 0, nid = 0, sum = 0;
+    while (cnt < 3) {
+      auto curr_node = hexa_nodes[nid];
+      for (int i = 0; i < 4; ++i) {
+        if (quad[i] == curr_node) {
+          sum += nid;
+          ++cnt;
+          break;
+        }
       }
+      ++nid;
     }
-    assert(false);
+    int i_face;
+    switch (sum) {
+    case 3:
+      i_face = 0; break;
+    case 5:
+      i_face = 1; break;
+    case 7:
+      i_face = 4; break;
+    case 8:
+      i_face = 2; break;
+    case 11:
+      i_face = 3; break;
+    case 15:
+      i_face = 5; break;
+    default:
+      assert(false);
+    }
+    for (int i = 0; i < 4; ++i) {
+      quad[i] = hexa_nodes[faces_[i_face][i]];
+    }
   }
 
  private:
