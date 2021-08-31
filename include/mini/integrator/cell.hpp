@@ -17,8 +17,8 @@ class Cell {
   using LocalCoord = Mat3x1;
   using GlobalCoord = Mat3x1;
 
-  virtual GlobalCoord local_to_global_Dx1(const LocalCoord&) const = 0;
-  virtual Mat3x3 jacobian(const LocalCoord&) const = 0;
+  virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
+  virtual Mat3x3 Jacobian(const LocalCoord&) const = 0;
   virtual int CountQuadPoints() const = 0;
   virtual const LocalCoord& GetCoord(int i) const = 0;
   virtual const Real&  GetWeight(int i) const = 0;

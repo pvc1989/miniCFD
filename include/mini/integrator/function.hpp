@@ -76,8 +76,8 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
 template <typename Callable, typename Element>
 auto Integrate(Callable&& f_in_global, Element&& element) {
   auto f_in_local = [&element, &f_in_global](const auto& xyz_local) {
-    auto f_val = f_in_global(element.local_to_global_Dx1(xyz_local));
-    auto mat_j = element.jacobian(xyz_local);
+    auto f_val = f_in_global(element.LocalToGlobal(xyz_local));
+    auto mat_j = element.Jacobian(xyz_local);
     auto det_j = element.CellDim() < element.PhysDim()
         ? (mat_j.transpose() * mat_j).determinant()
         : mat_j.determinant();

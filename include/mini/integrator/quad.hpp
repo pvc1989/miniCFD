@@ -94,7 +94,7 @@ class Quad : public Face<Scalar, D> {
     dn /= 4.0;
     return dn;
   }
-  MatDx2 jacobian(Scalar x_local, Scalar y_local) const {
+  MatDx2 Jacobian(Scalar x_local, Scalar y_local) const {
     return xyz_global_Dx4_ * diff_shape_local_4x2(x_local, y_local);
   }
 
@@ -128,14 +128,14 @@ class Quad : public Face<Scalar, D> {
       xyz_global_Dx4_[i] = p[i];
     }
   }
-  MatDx1 local_to_global_Dx1(const Mat2x1& xy_local) const override {
+  MatDx1 LocalToGlobal(const Mat2x1& xy_local) const override {
     return xyz_global_Dx4_ * shape_4x1(xy_local);
   }
-  MatDx1 local_to_global_Dx1(Scalar x, Scalar y) const {
+  MatDx1 LocalToGlobal(Scalar x, Scalar y) const {
     return xyz_global_Dx4_ * shape_4x1(x, y);
   }
-  MatDx2 jacobian(const LocalCoord& xy_local) const override {
-    return jacobian(xy_local[0], xy_local[1]);
+  MatDx2 Jacobian(const LocalCoord& xy_local) const override {
+    return Jacobian(xy_local[0], xy_local[1]);
   }
 };
 

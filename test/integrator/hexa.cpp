@@ -49,9 +49,9 @@ TEST_F(TestHexa4x4x4, CommonMethods) {
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
-  EXPECT_EQ(hexa.local_to_global_Dx1(1, 1, 1), Mat3x1(1, 1, 1));
-  EXPECT_EQ(hexa.local_to_global_Dx1(1.5, 1.5, 1.5), Mat3x1(1.5, 1.5, 1.5));
-  EXPECT_EQ(hexa.local_to_global_Dx1(3, 4, 5), Mat3x1(3, 4, 5));
+  EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Mat3x1(1, 1, 1));
+  EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Mat3x1(1.5, 1.5, 1.5));
+  EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Mat3x1(3, 4, 5));
   EXPECT_EQ(hexa.global_to_local_3x1(3, 4, 2), Mat3x1(3, 4, 2));
   EXPECT_EQ(hexa.global_to_local_3x1(4, 5.5, 2.5), Mat3x1(4, 5.5, 2.5));
   EXPECT_EQ(hexa.global_to_local_3x1(7, 13, 6), Mat3x1(7, 13, 6));

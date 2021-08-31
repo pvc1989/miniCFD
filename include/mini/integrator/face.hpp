@@ -19,8 +19,8 @@ class Face {
   using LocalCoord = Mat2x1;
   using GlobalCoord = MatDx1;
 
-  virtual GlobalCoord local_to_global_Dx1(const LocalCoord&) const = 0;
-  virtual MatDx2 jacobian(const LocalCoord&) const = 0;
+  virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
+  virtual MatDx2 Jacobian(const LocalCoord&) const = 0;
   virtual int CountQuadPoints() const = 0;
   virtual const LocalCoord& GetCoord(int i) const = 0;
   virtual const Real&  GetWeight(int i) const = 0;

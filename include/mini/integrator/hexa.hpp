@@ -160,7 +160,7 @@ class Hexa : public Cell<Scalar> {
     dn /= 8.0;
     return dn;
   }
-  Mat3x3 jacobian(Scalar x_local, Scalar y_local, Scalar z_local) const {
+  Mat3x3 Jacobian(Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * diff_shape_local_8x3(x_local, y_local, z_local);
   }
   template <typename Callable, typename MatJ>
@@ -213,25 +213,25 @@ class Hexa : public Cell<Scalar> {
     c /= 8;
     return c;
   }
-  GlobalCoord local_to_global_Dx1(
+  GlobalCoord LocalToGlobal(
       Scalar x_local, Scalar y_local, Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
   }
-  GlobalCoord local_to_global_Dx1(LocalCoord const& xyz_local) const override {
+  GlobalCoord LocalToGlobal(LocalCoord const& xyz_local) const override {
     return xyz_global_3x8_ * shape_8x1(xyz_local);
   }
-  Mat3x3 jacobian(const LocalCoord& xyz_local) const override {
-    return jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
+  Mat3x3 Jacobian(const LocalCoord& xyz_local) const override {
+    return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
   GlobalCoord global_to_local_3x1(
       Scalar x_global, Scalar y_global, Scalar z_global) const {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Mat3x1 const& xyz_local) {
-      auto res = local_to_global_Dx1(xyz_local);
+      auto res = LocalToGlobal(xyz_local);
       return res -= xyz_global;
     };
     auto jac = [this](LocalCoord const& xyz_local) {
-      return jacobian(xyz_local);
+      return Jacobian(xyz_local);
     };
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);

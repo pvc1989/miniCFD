@@ -48,9 +48,9 @@ TEST_F(TestQuad4x4, In2dSpace) {
   auto quad = Quad2D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 2);
-  EXPECT_EQ(quad.local_to_global_Dx1(0, 0), Mat2x1(0, 0));
-  EXPECT_EQ(quad.local_to_global_Dx1(1, 1), Mat2x1(1, 1));
-  EXPECT_EQ(quad.local_to_global_Dx1(-1, -1), Mat2x1(-1, -1));
+  EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat2x1(0, 0));
+  EXPECT_EQ(quad.LocalToGlobal(1, 1), Mat2x1(1, 1));
+  EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat2x1(-1, -1));
   EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
   EXPECT_DOUBLE_EQ(Integrate([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
   auto f = [](Mat2x1 const& xy){ return xy[0]; };
@@ -68,9 +68,9 @@ TEST_F(TestQuad4x4, In3dSpace) {
   auto quad = Quad3D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 3);
-  EXPECT_EQ(quad.local_to_global_Dx1(0, 0), Mat3x1(0, 0, 0));
-  EXPECT_EQ(quad.local_to_global_Dx1(1, 1), Mat3x1(1, 1, 1));
-  EXPECT_EQ(quad.local_to_global_Dx1(-1, -1), Mat3x1(-1, -1, -1));
+  EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat3x1(0, 0, 0));
+  EXPECT_EQ(quad.LocalToGlobal(1, 1), Mat3x1(1, 1, 1));
+  EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat3x1(-1, -1, -1));
   EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1){ return 2.0; }, quad), 8.0);
   EXPECT_DOUBLE_EQ(Integrate([](Mat3x1){ return 2.0; }, quad), sqrt(2) * 8.0);
   auto f = [](Mat3x1 xyz){ return xyz[0]; };

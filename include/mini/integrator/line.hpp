@@ -164,7 +164,7 @@ class Line {
   static Mat2x1 diff_shape_local_2x1(Scalar x_local) {
     return diff_shape_2x1_;
   }
-  MatDx1 jacobian(Scalar x_local) {
+  MatDx1 Jacobian(Scalar x_local) {
     return xyz_global_Dx2_ * diff_shape_local_2x1(x_local);
   }
   template <typename Callable>
@@ -185,7 +185,7 @@ class Line {
   explicit Line(MatDx2 const& x_global_i) {
     xyz_global_Dx2_ = x_global_i;
   }
-  MatDx1 local_to_global_Dx1(Scalar x_local) {
+  MatDx1 LocalToGlobal(Scalar x_local) {
     return xyz_global_Dx2_ * shape_2x1(x_local);
   }
   Scalar global_to_local_Dx1(MatDx1 xyz_global) {
@@ -194,9 +194,9 @@ class Line {
   template <typename Callable>
   auto integrate(Callable&& f_in_global) {
     auto f_in_local = [this, &f_in_global](Scalar x_local) {
-      auto xyz_global = local_to_global_Dx1(x_local);
+      auto xyz_global = LocalToGlobal(x_local);
       auto f_val = f_in_global(xyz_global);
-      auto mat_j = jacobian(x_local);
+      auto mat_j = Jacobian(x_local);
       auto det_j = mat_j.norm();
       f_val *= det_j;
       return f_val;

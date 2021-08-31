@@ -65,9 +65,9 @@ void TestLine::test() {
     xyz_global_i.row(d) << -2, 1;
   auto line = Line<Scalar, 4, D>(xyz_global_i);
   print(line.xyz_global_Dx2_);
-  print(line.local_to_global_Dx1(-1));
-  print(line.local_to_global_Dx1(0));
-  print(line.local_to_global_Dx1(1));
+  print(line.LocalToGlobal(-1));
+  print(line.LocalToGlobal(0));
+  print(line.LocalToGlobal(1));
 
   // print(line.global_to_local_Dx1(-2));
   // print(line.global_to_local_Dx1(-0.5));
