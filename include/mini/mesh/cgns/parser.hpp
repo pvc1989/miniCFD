@@ -183,45 +183,55 @@ class CellGroup {
 };
 
 template <typename Int = cgsize_t, typename Real = double>
-class Parser{
+class Parser {
   static constexpr int kLineWidth = 30;
   static constexpr int kDim = 3;
+  static constexpr int i_base = 1;
+  static constexpr auto kIntType
+      = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
+  static constexpr auto kRealType
+      = sizeof(Real) == 8 ? CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
+  static const MPI_Datatype kMpiIntType;
+  static const MPI_Datatype kMpiRealType;
 
  public:
   Parser(std::string const& cgns_file, std::string const& prefix, int pid)
       : cgns_file_(cgns_file) {
     rank_ = pid;
-    int fid;
-    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &fid))
+    int i_file;
+    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &i_file))
       cgp_error_exit();
     auto filename = prefix + std::to_string(pid) + ".txt";
     std::ifstream istrm(filename);
     char line[kLineWidth];
     // node ranges
     while (istrm.getline(line, 30) && line[0]) {
-      int zid, head, tail;
-      std::sscanf(line, "%d %d %d", &zid, &head, &tail);
-      local_nodes_[zid] = NodeGroup<Int, Real>(head, tail - head);
+      int i_zone, head, tail;
+      std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
+      local_nodes_[i_zone] = NodeGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
-      auto& x = local_nodes_[zid].x_;
-      auto& y = local_nodes_[zid].y_;
-      auto& z = local_nodes_[zid].z_;
-      if (cgp_coord_read_data(fid, 1, zid, 1, range_min, range_max, x.data()) ||
-          cgp_coord_read_data(fid, 1, zid, 2, range_min, range_max, y.data()) ||
-          cgp_coord_read_data(fid, 1, zid, 3, range_min, range_max, z.data()))
+      auto& x = local_nodes_[i_zone].x_;
+      auto& y = local_nodes_[i_zone].y_;
+      auto& z = local_nodes_[i_zone].z_;
+      if (cgp_coord_read_data(i_file, i_base, i_zone, 1,
+          range_min, range_max, x.data()) ||
+          cgp_coord_read_data(i_file, i_base, i_zone, 2,
+          range_min, range_max, y.data()) ||
+          cgp_coord_read_data(i_file, i_base, i_zone, 3,
+          range_min, range_max, z.data()))
         cgp_error_exit();
-      auto& metis_id = local_nodes_[zid].metis_id_;
+      auto& metis_id = local_nodes_[i_zone].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
-      if (cgp_field_general_read_data(fid, 1, zid, 1, 2, range_min, range_max,
-          sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
+      if (cgp_field_general_read_data(i_file, i_base, i_zone, 1, 2,
+          range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
         cgp_error_exit();
       for (int nid = head; nid < tail; ++nid) {
         auto mid = metis_id[nid];
-        nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
+        nodes_m_to_c_[mid] = NodeInfo<Int>(i_zone, nid);
       }
     }
     std::map<Int, std::vector<Int>> send_nodes, recv_nodes;
@@ -244,27 +254,27 @@ class Parser{
       }
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
-      MPI_Datatype datatype = MPI_DOUBLE;
       int tag = target;
       auto& req = requests.emplace_back();
-      MPI_Isend(buf.data(), count, datatype, target, tag, MPI_COMM_WORLD, &req);
+      MPI_Isend(buf.data(), count, kMpiRealType, target, tag, MPI_COMM_WORLD,
+          &req);
     }
     // recv nodes info
     while (istrm.getline(line, 30) && line[0]) {
-      int p, mid, zid, nid;
-      std::sscanf(line, "%d %d %d %d", &p, &mid, &zid, &nid);
+      int p, mid, i_zone, nid;
+      std::sscanf(line, "%d %d %d %d", &p, &mid, &i_zone, &nid);
       recv_nodes[p].emplace_back(mid);
-      nodes_m_to_c_[mid] = NodeInfo<Int>(zid, nid);
+      nodes_m_to_c_[mid] = NodeInfo<Int>(i_zone, nid);
     }
     std::vector<std::vector<Real>> recv_bufs;
     for (auto& [source, nodes] : recv_nodes) {
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
       auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
-      MPI_Datatype datatype = MPI_DOUBLE;
       int tag = rank_;
       auto& req = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, datatype, source, tag, MPI_COMM_WORLD, &req);
+      MPI_Irecv(buf.data(), count, kMpiRealType, source, tag, MPI_COMM_WORLD,
+          &req);
     }
     std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
@@ -278,9 +288,9 @@ class Parser{
         adj_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
         if (rank_ == -1) {
-          int zid = info.i_zone, nid = info.i_node;
-          std::cout << metis_id << ' ' << zid << ' ' << nid << ' ';
-          print(adj_nodes_[zid][nid].transpose());
+          int i_zone = info.i_zone, nid = info.i_node;
+          std::cout << metis_id << ' ' << i_zone << ' ' << nid << ' ';
+          print(adj_nodes_[i_zone][nid].transpose());
         }
       }
     }
@@ -288,12 +298,12 @@ class Parser{
     std::map<Int, std::map<Int, ShiftedVector<Int>>> z_s_c_index;
     std::map<Int, std::map<Int, std::vector<Int>>> z_s_nodes;
     while (istrm.getline(line, 30) && line[0]) {
-      int zid, sid, head, tail;
-      std::sscanf(line, "%d %d %d %d", &zid, &sid, &head, &tail);
+      int i_zone, i_sect, head, tail;
+      std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
       if (rank_ == -1)
-        std::printf("zid = %4d, sid = %4d, head = %4d, tail = %4d\n",
-            zid, sid, head, tail);
-      local_cells_[zid][sid] = CellGroup<Int, Real>(head, tail - head);
+        std::printf("i_zone = %4d, i_sect = %4d, head = %4d, tail = %4d\n",
+            i_zone, i_sect, head, tail);
+      local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
@@ -303,20 +313,20 @@ class Parser{
       char sol_name[33], field_name[33];
       GridLocation_t loc;
       DataType_t dt;
-      if (cg_sol_info(fid, 1, zid, 2, sol_name, &loc) ||
-          cg_field_info(fid, 1, zid, 2, 2, &dt, field_name))
+      if (cg_sol_info(i_file, i_base, i_zone, 2, sol_name, &loc) ||
+          cg_field_info(i_file, i_base, i_zone, 2, 2, &dt, field_name))
         cgp_error_exit();
       if (rank_ == -1)
         std::cout << sol_name << ' ' << field_name << std::endl;
-      if (cgp_field_general_read_data(fid, 1, zid, 2, 2, range_min, range_max,
-          sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer),
+      if (cgp_field_general_read_data(i_file, i_base, i_zone, 2, 2,
+          range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         auto mid = metis_ids[cid];
-        cells_m_to_c_[mid] = CellInfo<Int>(zid, sid, cid);
+        cells_m_to_c_[mid] = CellInfo<Int>(i_zone, i_sect, cid);
         if (rank_ == -1)
-          std::printf("mid = %ld, zid = %ld, sid = %ld, cid = %ld\n", mid,
+          std::printf("mid = %ld, i_zone = %ld, i_sect = %ld, cid = %ld\n", mid,
               cells_m_to_c_[mid].i_zone, cells_m_to_c_[mid].i_sect,
               cells_m_to_c_[mid].i_cell);
       }
@@ -324,10 +334,11 @@ class Parser{
       ElementType_t type;
       cgsize_t u, v;
       int x, y;
-      z_s_c_index[zid][sid] = ShiftedVector<Int>(mem_dimensions[0], head);
-      auto& index = z_s_c_index[zid][sid];
-      auto& nodes = z_s_nodes[zid][sid];
-      if (cg_section_read(fid, 1, zid, sid, name, &type, &u, &v, &x, &y))
+      z_s_c_index[i_zone][i_sect] = ShiftedVector<Int>(mem_dimensions[0], head);
+      auto& index = z_s_c_index[i_zone][i_sect];
+      auto& nodes = z_s_nodes[i_zone][i_sect];
+      if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
+          &u, &v, &x, &y))
         cgp_error_exit();
       switch (type) {
       case CGNS_ENUMV(HEXA_8):
@@ -339,20 +350,20 @@ class Parser{
       default:
         assert(false);
       }
-      if (cgp_elements_read_data(fid, 1, zid, sid, range_min[0], range_max[0],
-          nodes.data()))
+      if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
+          range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
       for (int cid = head; cid < tail; ++cid) {
         int i = (cid - head) * 8;
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-            GetCoord(zid, nodes[i+0]), GetCoord(zid, nodes[i+1]),
-            GetCoord(zid, nodes[i+2]), GetCoord(zid, nodes[i+3]),
-            GetCoord(zid, nodes[i+4]), GetCoord(zid, nodes[i+5]),
-            GetCoord(zid, nodes[i+6]), GetCoord(zid, nodes[i+7]));
+            GetCoord(i_zone, nodes[i+0]), GetCoord(i_zone, nodes[i+1]),
+            GetCoord(i_zone, nodes[i+2]), GetCoord(i_zone, nodes[i+3]),
+            GetCoord(i_zone, nodes[i+4]), GetCoord(i_zone, nodes[i+5]),
+            GetCoord(i_zone, nodes[i+6]), GetCoord(i_zone, nodes[i+7]));
         auto cell = Cell<Int, Real>(std::move(hexa_ptr), metis_ids[cid]);
-        local_cells_[zid][sid][cid] = std::move(cell);
+        local_cells_[i_zone][i_sect][cid] = std::move(cell);
         if (rank_ == -1) {
-          std::cout << "zid = " << zid << ", sid = " << sid
+          std::cout << "i_zone = " << i_zone << ", i_sect = " << i_sect
               << ", cid = " << cid << ", mid = " << metis_ids[cid] << '\n';
         }
       }
@@ -382,22 +393,21 @@ class Parser{
         auto& info = cells_m_to_c_[mid];
         if (rank_ == -1)
           std::printf("info at %p\n", &info);
-        Int zid = cells_m_to_c_[mid].i_zone,
-            sid = cells_m_to_c_[mid].i_sect,
+        Int i_zone = cells_m_to_c_[mid].i_zone,
+            i_sect = cells_m_to_c_[mid].i_sect,
             cid = cells_m_to_c_[mid].i_cell;
-        auto id = z_s_c_index[zid][sid][cid];
-        auto nodes = z_s_nodes[zid][sid];
-        send_buf.emplace_back(zid);
+        auto id = z_s_c_index[i_zone][i_sect][cid];
+        auto nodes = z_s_nodes[i_zone][i_sect];
+        send_buf.emplace_back(i_zone);
         for (int i = 0; i < cnt; ++i) {
           send_buf.emplace_back(nodes[id+i]);
         }
       }
       int count = send_buf.size();
-      MPI_Datatype datatype = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
       int tag = target;
       auto& req = requests.emplace_back();
-      MPI_Isend(send_buf.data(), count, datatype, target, tag, MPI_COMM_WORLD,
-          &req);
+      MPI_Isend(send_buf.data(), count, kMpiIntType, target, tag,
+          MPI_COMM_WORLD, &req);
     }
     // recv cell info
     std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
@@ -409,11 +419,11 @@ class Parser{
         ++count;
         count += cnt;
       }
-      MPI_Datatype datatype = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
       int tag = rank_;
       buf.resize(count);
       auto& req = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, datatype, source, tag, MPI_COMM_WORLD, &req);
+      MPI_Irecv(buf.data(), count, kMpiIntType, source, tag, MPI_COMM_WORLD,
+          &req);
     }
     statuses = std::vector<MPI_Status>(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
@@ -426,12 +436,12 @@ class Parser{
       for (auto& [mid, cnt] : cell_infos) {
         m_to_recv_cells[mid].first = buf_id;
         m_to_recv_cells[mid].second = id+1;
-        int zid = buf[id++];
+        int i_zone = buf[id++];
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-          GetCoord(zid, buf[id+0]), GetCoord(zid, buf[id+1]),
-          GetCoord(zid, buf[id+2]), GetCoord(zid, buf[id+3]),
-          GetCoord(zid, buf[id+4]), GetCoord(zid, buf[id+5]),
-          GetCoord(zid, buf[id+6]), GetCoord(zid, buf[id+7]));
+          GetCoord(i_zone, buf[id+0]), GetCoord(i_zone, buf[id+1]),
+          GetCoord(i_zone, buf[id+2]), GetCoord(i_zone, buf[id+3]),
+          GetCoord(i_zone, buf[id+4]), GetCoord(i_zone, buf[id+5]),
+          GetCoord(i_zone, buf[id+6]), GetCoord(i_zone, buf[id+7]));
         ghost_cells_[mid] = Cell<Int, Real>(std::move(hexa_ptr), mid);
         id += cnt;
       }
@@ -522,7 +532,7 @@ class Parser{
     }
     std::cout << inner_faces_.size() << " interpart faces in rank "
         << rank_ << std::endl;
-    if (cgp_close(fid))
+    if (cgp_close(i_file))
       cgp_error_exit();
   }
   template <class Callable>
@@ -538,43 +548,44 @@ class Parser{
   }
   void WriteSolutions() {
     int n_zones = local_nodes_.size();
-    for (int zid = 1; zid <= n_zones; ++zid) {
-      int n_sects = local_cells_[zid].size();
-      for (int sid = 1; sid <= n_sects; ++sid) {
-        local_cells_[zid][sid].GatherFields();
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      int n_sects = local_cells_[i_zone].size();
+      for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+        local_cells_[i_zone][i_sect].GatherFields();
       }
     }
-    int fid;
-    if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &fid))
+    int i_file;
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &i_file))
       cgp_error_exit();
-    for (int zid = 1; zid <= n_zones; ++zid) {
-      auto& zone = local_cells_[zid];
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      auto& zone = local_cells_[i_zone];
       int n_solns;
-      if (cg_nsols(fid, 1, zid, &n_solns))
+      if (cg_nsols(i_file, i_base, i_zone, &n_solns))
         cgp_error_exit();
-      int i_sol;
-      if (cg_sol_write(fid, 1, zid, "Solution0", CellCenter, &i_sol))
+      int i_soln;
+      if (cg_sol_write(i_file, i_base, i_zone, "Solution0", CellCenter,
+          &i_soln))
         cgp_error_exit();
       int n_fields = 4;
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
-        int n_sects = local_cells_[zid].size();
-        for (int sid = 1; sid <= n_sects; ++sid) {
-          auto& section = zone[sid];
+        int n_sects = local_cells_[i_zone].size();
+        for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+          auto& section = zone[i_sect];
           auto name = "Field" + std::to_string(i_field);
           int field_id;
-          if (cgp_field_write(fid, 1, zid, i_sol, RealDouble, name.c_str(),
-              &field_id))
+          if (cgp_field_write(i_file, i_base, i_zone, i_soln, kRealType,
+              name.c_str(),  &field_id))
             cgp_error_exit();
           assert(field_id == i_field);
           cgsize_t first[] = { section.head() };
           cgsize_t last[] = { section.head() + section.size() - 1 };
-          if (cgp_field_write_data(fid, 1, zid, i_sol, i_field, first, last,
-              section.GetField(i_field).data()))
+          if (cgp_field_write_data(i_file, i_base, i_zone, i_soln, i_field,
+              first, last, section.GetField(i_field).data()))
             cgp_error_exit();
         }
       }
     }
-    if (cgp_close(fid))
+    if (cgp_close(i_file))
       cgp_error_exit();
   }
 
@@ -591,22 +602,28 @@ class Parser{
   const std::string cgns_file_;
   int rank_;
 
-  Mat3x1 GetCoord(int zid, int nid) const {
+  Mat3x1 GetCoord(int i_zone, int nid) const {
     Mat3x1 coord;
-    auto iter_zone = local_nodes_.find(zid);
+    auto iter_zone = local_nodes_.find(i_zone);
     if (iter_zone != local_nodes_.end() && iter_zone->second.has(nid)) {
       coord[0] = iter_zone->second.x_[nid];
       coord[1] = iter_zone->second.y_[nid];
       coord[2] = iter_zone->second.z_[nid];
     } else {
       if (rank_ == -1) {
-        std::cout << "zid = " << zid << ", nid = " << nid << std::endl;
+        std::cout << "i_zone = " << i_zone << ", nid = " << nid << std::endl;
       }
-      coord = adj_nodes_.at(zid).at(nid);
+      coord = adj_nodes_.at(i_zone).at(nid);
     }
     return coord;
   }
 };
+template <typename Int, typename Real>
+MPI_Datatype const Parser<Int, Real>::kMpiIntType
+    = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
+template <typename Int, typename Real>
+MPI_Datatype const Parser<Int, Real>::kMpiRealType
+    = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns
 }  // namespace mesh
