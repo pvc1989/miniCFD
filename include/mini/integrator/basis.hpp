@@ -152,7 +152,7 @@ class ProjFunc<Scalar, 2, 2, kFunc> {
   ProjFunc& operator=(ProjFunc&&) noexcept = default;
   ~ProjFunc() noexcept = default;
 
-  MatNx1 operator()(CoordType const& xy) const {
+  MatKx1 operator()(CoordType const& xy) const {
     auto x = xy[0] - center_[0], y = xy[1] - center_[1];
     MatNx1 col = { 1, x, y, x * x, x * y, y * y };
     return coef_ * col;
@@ -190,7 +190,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   ProjFunc& operator=(ProjFunc&&) noexcept = default;
   ~ProjFunc() noexcept = default;
 
-  MatNx1 operator()(CoordType const& xyz) const {
+  MatKx1 operator()(CoordType const& xyz) const {
     auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
          z = xyz[2] - center_[2];
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
