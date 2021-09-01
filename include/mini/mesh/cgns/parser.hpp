@@ -116,6 +116,8 @@ struct Cell {
   GaussPtr gauss_;
   Int metis_id;
 
+  using Value = decltype(func_(gauss_->GetCenter()));
+
   Cell(GaussPtr&& gauss, Int mid)
       : gauss_(std::move(gauss)), metis_id(mid) {
     basis_.Shift(gauss_->GetCenter());
@@ -164,6 +166,9 @@ class CellGroup {
   }
   bool has(int cid) const {
     return head_ <= cid && cid < size_ + head_;
+  }
+  const auto& operator[](Int i_cell) const {
+    return cells_[i_cell];
   }
   auto& operator[](Int i_cell) {
     return cells_[i_cell];
@@ -588,14 +593,64 @@ class Parser {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
+  void WriteSolutionsAtQuadPoints() const {
+    std::string filename = "hexa_part_";
+    filename += std::to_string(rank_) + ".vtk";
+    auto ostrm = std::ofstream(filename);
+    ostrm << "# vtk DataFile Version 2.0\n";
+    ostrm << "Field values on quadrature points.\n";
+    ostrm << "ASCII\n";
+    ostrm << "DATASET UNSTRUCTURED_GRID\n";
+    int n_points = 0;
+    auto coords = std::vector<Mat3x1>();
+    auto fields = std::vector<typename Cell<Int, Real>::Value>();
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        int i_cell = sect.head();
+        int i_cell_tail = sect.head() + sect.size();
+        while (i_cell < i_cell_tail) {
+          auto& cell_ptr = sect[i_cell].gauss_;
+          for (int q = 0; q < cell_ptr->CountQuadPoints(); ++q) {
+            // TODO: auto coord = cell_ptr->GetGlobalCoord(q);
+            coords.emplace_back(cell_ptr->LocalToGlobal(cell_ptr->GetCoord(q)));
+            fields.emplace_back(sect[i_cell].func_(coords.back()));
+          }
+          ++i_cell;
+        }
+      }
+    }
+    ostrm << "POINTS " << coords.size() << " double\n";
+    for (auto& xyz : coords) {
+      ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
+    }
+    ostrm << "CELLS " << coords.size() << ' ' << coords.size() * 2 << '\n';
+    for (int i = 0; i < coords.size(); ++i) {
+      ostrm << "1 " << i << '\n';
+    }
+    ostrm << "CELL_TYPES " << coords.size() << '\n';
+    for (int i = 0; i < coords.size(); ++i) {
+      ostrm << "1\n";
+    }
+    ostrm << "POINT_DATA " << coords.size() << "\n";
+    int K = fields[0].size();
+    for (int k = 0; k < K; ++k) {
+      ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
+      ostrm << "LOOKUP_TABLE field\n";
+      for (auto& f : fields) {
+        ostrm << f[k] << '\n';
+      }
+    }
+  }
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
-  std::map<Int, NodeGroup<Int, Real>> local_nodes_;
+  std::map<Int, NodeGroup<Int, Real>>
+      local_nodes_/* [i_zone][i_sect] */;
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes_;
   std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
   std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
-  std::map<Int, std::map<Int, CellGroup<Int, Real>>> local_cells_;
+  std::map<Int, std::map<Int, CellGroup<Int, Real>>>
+      local_cells_/* [i_zone][i_sect][i_cell] */;
   std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
   std::vector<Face<Int, Real>> inner_faces_, interpart_faces_;
