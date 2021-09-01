@@ -36,12 +36,12 @@ TEST_F(TestHexa4x4x4, VirtualMethods) {
   static_assert(hexa.CellDim() == 3);
   static_assert(hexa.PhysDim() == 3);
   EXPECT_EQ(hexa.CountQuadPoints(), 64);
-  auto p0 = hexa.GetCoord(0);
+  auto p0 = hexa.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[2], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   auto w1d = (18 + std::sqrt(30)) / 36.0;
-  EXPECT_EQ(hexa.GetWeight(0), w1d * w1d * w1d);
+  EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
 TEST_F(TestHexa4x4x4, CommonMethods) {
   Mat3x8 xyz_global_i;

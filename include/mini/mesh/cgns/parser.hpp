@@ -611,8 +611,7 @@ class Parser {
         while (i_cell < i_cell_tail) {
           auto& cell_ptr = sect[i_cell].gauss_;
           for (int q = 0; q < cell_ptr->CountQuadPoints(); ++q) {
-            // TODO: auto coord = cell_ptr->GetGlobalCoord(q);
-            coords.emplace_back(cell_ptr->LocalToGlobal(cell_ptr->GetCoord(q)));
+            coords.emplace_back(cell_ptr->GetGlobalCoord(q));
             fields.emplace_back(sect[i_cell].func_(coords.back()));
           }
           ++i_cell;

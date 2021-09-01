@@ -2,6 +2,8 @@
 #ifndef MINI_INTEGRATOR_QUAD_HPP_
 #define MINI_INTEGRATOR_QUAD_HPP_
 
+#include <cmath>
+
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/integrator/line.hpp"
@@ -40,14 +42,29 @@ class Quad : public Face<Scalar, D> {
   using GlobalCoord = algebra::Matrix<Scalar, D, 1>;
   static const Arr1x4 x_local_i_;
   static const Arr1x4 y_local_i_;
+  static const std::array<Scalar, Qx * Qy> local_weights_;
+  static const std::array<LocalCoord, Qx * Qy> local_coords_;
   MatDx4 xyz_global_Dx4_;
-  static const std::array<LocalCoord, Qx * Qy> points_;
-  static const std::array<Scalar, Qx * Qy> weights_;
+  std::array<Scalar, Qx * Qy> global_weights_;
+  std::array<GlobalCoord, Qx * Qy> global_coords_;
 
   int CountQuadPoints() const override {
     return Qx * Qy;
   }
-  static constexpr auto BuildPoints() {
+
+ private:
+  void BuildQuadPoints() {
+    int n = CountQuadPoints();
+    for (int i = 0; i < n; ++i) {
+      auto mat_j = Jacobian(GetLocalCoord(i));
+      auto det_j = this->CellDim() < this->PhysDim()
+          ? (mat_j.transpose() * mat_j).determinant()
+          : mat_j.determinant();
+      global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+    }
+  }
+  static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, Qx * Qy> points;
     int k = 0;
     for (int i = 0; i < Qx; ++i) {
@@ -59,7 +76,7 @@ class Quad : public Face<Scalar, D> {
     }
     return points;
   }
-  static constexpr auto BuildWeights() {
+  static constexpr auto BuildLocalWeights() {
     std::array<Scalar, Qx * Qy> weights;
     int k = 0;
     for (int i = 0; i < Qx; ++i) {
@@ -69,8 +86,6 @@ class Quad : public Face<Scalar, D> {
     }
     return weights;
   }
-
- private:
   static Mat4x1 shape_4x1(Mat2x1 xy_local) {
     Arr1x4 n_1x4;
     n_1x4  = (1 + x_local_i_ * xy_local[0]);
@@ -99,11 +114,17 @@ class Quad : public Face<Scalar, D> {
   }
 
  public:
-  LocalCoord const& GetCoord(int i) const override {
-    return points_[i];
+  GlobalCoord const& GetGlobalCoord(int i) const override {
+    return global_coords_[i];
   }
-  Scalar const& GetWeight(int i) const override {
-    return weights_[i];
+  Scalar const& GetGlobalWeight(int i) const override {
+    return global_weights_[i];
+  }
+  LocalCoord const& GetLocalCoord(int i) const override {
+    return local_coords_[i];
+  }
+  Scalar const& GetLocalWeight(int i) const override {
+    return local_weights_[i];
   }
   MatDx1 GetCenter() const override {
     MatDx1 c = xyz_global_Dx4_.col(0);
@@ -116,10 +137,12 @@ class Quad : public Face<Scalar, D> {
  public:
   explicit Quad(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;
+    BuildQuadPoints();
   }
   Quad(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2, MatDx1 const& p3) {
     xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
     xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
+    BuildQuadPoints();
   }
   Quad(std::initializer_list<MatDx1> il) {
     assert(il.size() == 4);
@@ -127,6 +150,7 @@ class Quad : public Face<Scalar, D> {
     for (int i = 0; i < 4; ++i) {
       xyz_global_Dx4_[i] = p[i];
     }
+    BuildQuadPoints();
   }
   MatDx1 LocalToGlobal(const Mat2x1& xy_local) const override {
     return xyz_global_Dx4_ * shape_4x1(xy_local);
@@ -149,11 +173,11 @@ Quad<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
 template <typename Scalar, int D, int Qx, int Qy>
 std::array<typename Quad<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::points_ = Quad<Scalar, D, Qx, Qy>::BuildPoints();
+Quad<Scalar, D, Qx, Qy>::local_coords_ = Quad<Scalar, D, Qx, Qy>::BuildLocalCoords();
 
 template <typename Scalar, int D, int Qx, int Qy>
 std::array<Scalar, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::weights_ = Quad<Scalar, D, Qx, Qy>::BuildWeights();
+Quad<Scalar, D, Qx, Qy>::local_weights_ = Quad<Scalar, D, Qx, Qy>::BuildLocalWeights();
 
 }  // namespace integrator
 }  // namespace mini

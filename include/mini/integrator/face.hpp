@@ -22,8 +22,10 @@ class Face {
   virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
   virtual MatDx2 Jacobian(const LocalCoord&) const = 0;
   virtual int CountQuadPoints() const = 0;
-  virtual const LocalCoord& GetCoord(int i) const = 0;
-  virtual const Real&  GetWeight(int i) const = 0;
+  virtual const LocalCoord& GetLocalCoord(int i) const = 0;
+  virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
+  virtual const Real& GetLocalWeight(int i) const = 0;
+  virtual const Real& GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord GetCenter() const = 0;
 
   static constexpr int CellDim() {

@@ -35,11 +35,11 @@ TEST_F(TestQuad4x4, VirtualMethods) {
   xyz_global_i.row(1) << -1, -1, 1, 1;
   auto quad = Quad2D4x4(xyz_global_i);
   EXPECT_EQ(quad.CountQuadPoints(), 16);
-  auto p0 = quad.GetCoord(0);
+  auto p0 = quad.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   auto w1d = (18 + std::sqrt(30)) / 36.0;
-  EXPECT_EQ(quad.GetWeight(0), w1d * w1d);
+  EXPECT_EQ(quad.GetLocalWeight(0), w1d * w1d);
 }
 TEST_F(TestQuad4x4, In2dSpace) {
   Mat2x4 xyz_global_i;

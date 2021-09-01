@@ -3,6 +3,7 @@
 #define MINI_INTEGRATOR_HEXA_HPP_
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <type_traits>
 
@@ -48,45 +49,19 @@ class Hexa : public Cell<Scalar> {
   using typename Base::GlobalCoord;
 
  private:
-  static const std::array<LocalCoord, Qx * Qy * Qz> points_;
-  static const std::array<Scalar, Qx * Qy * Qz> weights_;
+  static const std::array<LocalCoord, Qx * Qy * Qz> local_coords_;
+  static const std::array<Scalar, Qx * Qy * Qz> local_weights_;
   static const std::array<std::array<int, 4>, 6> faces_;
   static const Arr1x8 x_local_i_;
   static const Arr1x8 y_local_i_;
   static const Arr1x8 z_local_i_;
   Mat3x8 xyz_global_3x8_;
+  std::array<GlobalCoord, Qx * Qy * Qz> global_coords_;
+  std::array<Scalar, Qx * Qy * Qz> global_weights_;
 
  public:
   int CountQuadPoints() const override {
     return Qx * Qy * Qz;
-  }
-  static constexpr auto BuildPoints() {
-    std::array<LocalCoord, Qx * Qy * Qz> points;
-    int n = 0;
-    for (int i = 0; i < Qx; ++i) {
-      for (int j = 0; j < Qy; ++j) {
-        for (int k = 0; k < Qz; ++k) {
-          points[n][0] = GaussX::points[i];
-          points[n][1] = GaussY::points[j];
-          points[n][2] = GaussZ::points[k];
-          n++;
-        }
-      }
-    }
-    return points;
-  }
-  static constexpr auto BuildWeights() {
-    std::array<Scalar, Qx * Qy * Qz> weights;
-    int n = 0;
-    for (int i = 0; i < Qx; ++i) {
-      for (int j = 0; j < Qy; ++j) {
-        for (int k = 0; k < Qz; ++k) {
-          weights[n++] = GaussX::weights[i] * GaussY::weights[j]
-              * GaussZ::weights[k];
-        }
-      }
-    }
-    return weights;
   }
   static constexpr auto BuildFaces() {
     std::array<std::array<int, 4>, 6> faces{
@@ -132,6 +107,42 @@ class Hexa : public Cell<Scalar> {
   }
 
  private:
+  void BuildQuadPoints() {
+    int n = CountQuadPoints();
+    for (int i = 0; i < n; ++i) {
+      auto det_j = Jacobian(GetLocalCoord(i)).determinant();
+      global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+    }
+  }
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, Qx * Qy * Qz> points;
+    int n = 0;
+    for (int i = 0; i < Qx; ++i) {
+      for (int j = 0; j < Qy; ++j) {
+        for (int k = 0; k < Qz; ++k) {
+          points[n][0] = GaussX::points[i];
+          points[n][1] = GaussY::points[j];
+          points[n][2] = GaussZ::points[k];
+          n++;
+        }
+      }
+    }
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, Qx * Qy * Qz> weights;
+    int n = 0;
+    for (int i = 0; i < Qx; ++i) {
+      for (int j = 0; j < Qy; ++j) {
+        for (int k = 0; k < Qz; ++k) {
+          weights[n++] = GaussX::weights[i] * GaussY::weights[j]
+              * GaussZ::weights[k];
+        }
+      }
+    }
+    return weights;
+  }
   static Mat8x1 shape_8x1(Mat3x1 const& xyz_local) {
     Arr1x8 n_1x8;
     n_1x8  = (1 + x_local_i_ * xyz_local[0]);
@@ -175,16 +186,23 @@ class Hexa : public Cell<Scalar> {
   }
 
  public:
-  LocalCoord const& GetCoord(int i) const override {
-    return points_[i];
+  GlobalCoord const& GetGlobalCoord(int i) const override {
+    return global_coords_[i];
   }
-  Scalar const& GetWeight(int i) const override {
-    return weights_[i];
+  Scalar const& GetGlobalWeight(int i) const override {
+    return global_weights_[i];
+  }
+  LocalCoord const& GetLocalCoord(int i) const override {
+    return local_coords_[i];
+  }
+  Scalar const& GetLocalWeight(int i) const override {
+    return local_weights_[i];
   }
 
  public:
   explicit Hexa(Mat3x8 const& xyz_global) {
     xyz_global_3x8_ = xyz_global;
+    BuildQuadPoints();
   }
   Hexa(Mat3x1 const& p0, Mat3x1 const& p1, Mat3x1 const& p2, Mat3x1 const& p3,
        Mat3x1 const& p4, Mat3x1 const& p5, Mat3x1 const& p6, Mat3x1 const& p7) {
@@ -192,6 +210,7 @@ class Hexa : public Cell<Scalar> {
     xyz_global_3x8_.col(2) = p2; xyz_global_3x8_.col(3) = p3;
     xyz_global_3x8_.col(4) = p4; xyz_global_3x8_.col(5) = p5;
     xyz_global_3x8_.col(6) = p6; xyz_global_3x8_.col(7) = p7;
+    BuildQuadPoints();
   }
   Hexa(std::initializer_list<Mat3x1> il) {
     assert(il.size() == 8);
@@ -199,6 +218,7 @@ class Hexa : public Cell<Scalar> {
     for (int i = 0; i < 8; ++i) {
       xyz_global_3x8_[i] = p[i];
     }
+    BuildQuadPoints();
   }
   Hexa(const Hexa&) = default;
   Hexa& operator=(const Hexa&) = default;
@@ -254,11 +274,11 @@ Hexa<Scalar, Qx, Qy, Qz>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<typename Hexa<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::points_ = Hexa<Scalar, Qx, Qy, Qz>::BuildPoints();
+Hexa<Scalar, Qx, Qy, Qz>::local_coords_ = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<Scalar, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::weights_ = Hexa<Scalar, Qx, Qy, Qz>::BuildWeights();
+Hexa<Scalar, Qx, Qy, Qz>::local_weights_ = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<std::array<int, 4>, 6> const

@@ -57,8 +57,8 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
   decltype(f_in_local(LocalCoord())) sum{};
   SetZero(&sum);
   for (int i = 0; i < element.CountQuadPoints(); ++i) {
-    auto f_val = f_in_local(element.GetCoord(i));
-    f_val *= element.GetWeight(i);
+    auto f_val = f_in_local(element.GetLocalCoord(i));
+    f_val *= element.GetLocalWeight(i);
     sum += f_val;
   }
   return sum;
@@ -75,16 +75,16 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
  */
 template <typename Callable, typename Element>
 auto Integrate(Callable&& f_in_global, Element&& element) {
-  auto f_in_local = [&element, &f_in_global](const auto& xyz_local) {
-    auto f_val = f_in_global(element.LocalToGlobal(xyz_local));
-    auto mat_j = element.Jacobian(xyz_local);
-    auto det_j = element.CellDim() < element.PhysDim()
-        ? (mat_j.transpose() * mat_j).determinant()
-        : mat_j.determinant();
-    f_val *= std::sqrt(det_j);
-    return f_val;
-  };
-  return Quadrature(f_in_local, element);
+  using E = std::remove_reference_t<Element>;
+  using GlobalCoord = typename E::GlobalCoord;
+  decltype(f_in_global(GlobalCoord())) sum{};
+  SetZero(&sum);
+  for (int i = 0; i < element.CountQuadPoints(); ++i) {
+    auto f_val = f_in_global(element.GetGlobalCoord(i));
+    f_val *= element.GetGlobalWeight(i);
+    sum += f_val;
+  }
+  return sum;
 }
 
 /**
