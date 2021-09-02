@@ -5,13 +5,11 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
-#include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
 namespace mesh {
@@ -19,7 +17,6 @@ namespace metis {
 
 class Partitioner : public ::testing::Test {
  protected:
-  std::string const project_binary_dir_{PROJECT_BINARY_DIR};
   using Int = idx_t;
   using Real = real_t;
   static Mesh<Int> BuildSimpleMesh(Int n_cells_x, Int n_cells_y);
@@ -125,8 +122,7 @@ TEST_F(Partitioner, PartMesh) {
   auto [cell_parts, node_parts] = PartMesh(
       mesh, n_parts, n_common_nodes, cell_weights);
   // Write the partitioned mesh:
-  auto output = project_binary_dir_ + "/test/mesh/partitioned_mesh.vtk";
-  WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
+  WritePartitionedMesh("partitioned_mesh.vtk", n_cells_x, n_cells_y,
       mesh, cell_weights, cell_parts, node_parts);
 }
 TEST_F(Partitioner, PartGraphKway) {
@@ -152,8 +148,7 @@ TEST_F(Partitioner, PartGraphKway) {
   auto cell_parts = PartGraph(
       graph, n_parts, n_constraints, cell_weights);
   // Write the partitioned mesh:
-  auto output = project_binary_dir_ + "/test/mesh/partitioned_dual_graph.vtk";
-  WritePartitionedMesh(output.c_str(), n_cells_x, n_cells_y,
+  WritePartitionedMesh("partitioned_dual_graph.vtk", n_cells_x, n_cells_y,
       mesh, cell_weights, cell_parts, {}/* node_parts */);
 }
 TEST_F(Partitioner, GetNodeParts) {

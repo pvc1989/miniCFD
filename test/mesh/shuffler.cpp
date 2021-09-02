@@ -15,7 +15,7 @@
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
-#include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
+#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
 namespace mesh {
@@ -27,8 +27,6 @@ class ShufflerTest : public ::testing::Test {
   using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
-  std::string const current_binary_dir_{
-      std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
   static void WriteParts(
       const MapperType& mapper, const std::vector<idx_t>& cell_parts,
       const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh);
@@ -121,8 +119,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   MapperType mapper;
   using MeshDataType = double;
   using MetisId = idx_t;
-  auto old_file_name = current_binary_dir_ + "/hexa_old.cgns";
-  auto new_file_name = current_binary_dir_ + "/hexa_new.cgns";
+  auto old_file_name = "hexa_old.cgns";
+  auto new_file_name = "hexa_new.cgns";
   auto gmsh_cmd = std::string("gmsh ");
   gmsh_cmd += test_data_dir_;
   gmsh_cmd += "/double_mach_hexa.geo -save -o ";
@@ -241,9 +239,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   }
   // write to txts
   for (int p = 0; p < n_parts; ++p) {
-    auto filename = current_binary_dir_ + "/hexa_part_";
-    filename += std::to_string(p) + ".txt";
-    auto ostrm = std::ofstream(filename/* , std::ios::binary */);
+    auto ostrm = std::ofstream("hexa_part_" + std::to_string(p) + ".txt"
+        /* , std::ios::binary */);
     // node ranges
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];

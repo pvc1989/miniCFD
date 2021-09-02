@@ -1,21 +1,18 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 
 #include "gtest/gtest.h"
 #include "mpi.h"
 
 #include "mini/mesh/cgns/parser.hpp"
-#include "mini/data/path.hpp"  // defines PROJECT_BINARY_DIR
 
 namespace mini {
 namespace mesh {
 namespace cgns {
 
 class TestParser : public ::testing::Test {
- protected:
-  std::string const current_binary_dir_{
-      std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh")};
  public:
   static int rank;
 };
@@ -45,12 +42,8 @@ int main(int argc, char* argv[]) {
 
   std::printf("Run Parser() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto current_binary_dir =
-      std::string(PROJECT_BINARY_DIR) + std::string("/test/mesh");
-  auto cgns_file = current_binary_dir + "/hexa_new.cgns";
-  auto prefix = current_binary_dir + "/hexa_part_";
   auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
-      cgns_file, prefix, comm_rank);
+      "hexa_new.cgns", "hexa_part_", comm_rank);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   parser.Project([](auto const& xyz){
