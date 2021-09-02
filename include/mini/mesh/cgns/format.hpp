@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -327,7 +328,7 @@ class Solution {
  public:  // Constructors:
   Solution(Zone<Real> const* zone, int sid, char const* name,
            CGNS_ENUMT(GridLocation_t) location)
-      : zone_(zone), soli_coord_(sid), name_(name), location_(location) {
+      : zone_(zone), i_soln_(sid), name_(name), location_(location) {
   }
 
  public:  // Copy Control:
@@ -348,7 +349,7 @@ class Solution {
     return *zone_;
   }
   int id() const {
-    return soli_coord_;
+    return i_soln_;
   }
   std::string const& name() const {
     return name_;
@@ -359,25 +360,32 @@ class Solution {
   bool OnCells() const {
     return location_ == CGNS_ENUMV(CellCenter);
   }
-  Field<Real> const& GetField(int id) const {
-    return fields_[id-1];
+  Field<Real> const& GetField(int i_field) const {
+    return fields_[i_field-1];
+  }
+  Field<Real> const& GetField(const std::string &name) const {
+    for (auto& field : fields_)
+      if (field.name() == name)
+        return field;
+    throw std::invalid_argument("There is no field named \"" + name + "\".");
+    return fields_.back();
   }
   int CountFields() const {
     return fields_.size();
   }
   void Write() const {
-    int soli_coord;
+    int i_soln;
     cg_sol_write(file().id(), base().id(), zone_->id(),
-                 name_.c_str(), location_, &soli_coord);
-    assert(soli_coord == soli_coord_);
+                 name_.c_str(), location_, &i_soln);
+    assert(i_soln == i_soln_);
     for (auto& field : fields_) {
       field.Write();
     }
   }
 
  public:  // Mutators:
-  Field<Real>& GetField(int id) {
-    return fields_[id-1];
+  Field<Real>& GetField(int i_field) {
+    return fields_[i_field-1];
   }
   Field<Real>& AddField(char const* name) {
     assert(OnNodes() || OnCells());
@@ -390,7 +398,7 @@ class Solution {
   std::string name_;
   Zone<Real> const* zone_{nullptr};
   CGNS_ENUMT(GridLocation_t) location_;
-  int soli_coord_;
+  int i_soln_;
 };
 
 template <class Real>
@@ -472,11 +480,18 @@ class Zone {
   const Coordinates<Real>& GetCoordinates() const {
     return coordinates_;
   }
-  const Section<Real>& GetSection(int id) const {
-    return *(sections_.at(id-1));
+  const Section<Real>& GetSection(int i_sect) const {
+    return *(sections_.at(i_sect-1));
   }
-  const Solution<Real>& GetSolution(int id) const {
-    return *(solutions_.at(id-1));
+  const Solution<Real>& GetSolution(int i_soln) const {
+    return *(solutions_.at(i_soln-1));
+  }
+  const Solution<Real>& GetSolution(const std::string &name) const {
+    for (auto& soln : solutions_)
+      if (soln->name() == name)
+        return *soln;
+    throw std::invalid_argument("There is no solution named \"" + name + "\".");
+    return *(solutions_.back());
   }
   void Write(int min_dim = 0) const {
     int i_zone;
@@ -545,19 +560,19 @@ class Zone {
     int n_solutions;
     cg_nsols(file().id(), base_->id(), i_zone_, &n_solutions);
     solutions_.reserve(n_solutions);
-    for (int soli_coord = 1; soli_coord <= n_solutions; ++soli_coord) {
+    for (int i_soln = 1; i_soln <= n_solutions; ++i_soln) {
       char sol_name[33];
       CGNS_ENUMT(GridLocation_t) location;
       cg_sol_info(file().id(), base_->id(), i_zone_,
-          soli_coord, sol_name, &location);
+          i_soln, sol_name, &location);
       auto& solution = solutions_.emplace_back(std::make_unique<Solution<Real>>(
-          this, soli_coord, sol_name, location));
+          this, i_soln, sol_name, location));
       int n_fields;
-      cg_nfields(file().id(), base_->id(), i_zone_, soli_coord, &n_fields);
+      cg_nfields(file().id(), base_->id(), i_zone_, i_soln, &n_fields);
       for (int fieldi_coord = 1; fieldi_coord <= n_fields; ++fieldi_coord) {
         CGNS_ENUMT(DataType_t) datatype;
         char field_name[33];
-        cg_field_info(file().id(), base_->id(), i_zone_, soli_coord,
+        cg_field_info(file().id(), base_->id(), i_zone_, i_soln,
                       fieldi_coord, &datatype, field_name);
         cgsize_t first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
@@ -568,16 +583,16 @@ class Zone {
           assert(false);
         }
         auto& field = solution->AddField(field_name);
-        cg_field_read(file().id(), base_->id(), i_zone_, soli_coord, field_name,
+        cg_field_read(file().id(), base_->id(), i_zone_, i_soln, field_name,
                       datatype, &first, &last, &(field.at(1)));
       }
     }
   }
   Solution<Real>& AddSolution(char const* sol_name,
       CGNS_ENUMT(GridLocation_t) location) {
-    int soli_coord = solutions_.size() + 1;
+    int i_soln = solutions_.size() + 1;
     return *(solutions_.emplace_back(std::make_unique<Solution<Real>>(
-        this, soli_coord, sol_name, location)));
+        this, i_soln, sol_name, location)));
   }
 
  private:

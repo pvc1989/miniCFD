@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -80,7 +82,7 @@ void ShufflerTest::WriteParts(
     }
   }
 }
-TEST_F(ShufflerTest, GetNewOrderToShuffleData) {
+TEST_F(ShufflerTest, GetNewOrder) {
   // Reorder the indices by parts
   int n = 10;
   std::vector<int> old_index{2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
@@ -117,10 +119,7 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
   MapperType mapper;
-  using MeshDataType = double;
-  using MetisId = idx_t;
   auto old_file_name = "hexa_old.cgns";
-  auto new_file_name = "hexa_new.cgns";
   auto gmsh_cmd = std::string("gmsh ");
   gmsh_cmd += test_data_dir_;
   gmsh_cmd += "/double_mach_hexa.geo -save -o ";
@@ -130,28 +129,29 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  MetisId n_parts{4}, n_common_nodes{3};
+  idx_t n_parts{4}, n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);
-  auto shuffler = Shuffler<MetisId, MeshDataType>(n_parts, cell_parts,
+  auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts,
       node_parts);
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
+  auto new_file_name = "hexa_new.cgns";
   cgns_mesh.Write(new_file_name, 2);
-
-  // Write Partition txts.
+  /* Reload the partitioned and shuffled mesh: */
   cgns_mesh = CgnsMesh(new_file_name);
   cgns_mesh.ReadBases();
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
-  // auto [begin_nid, end_nid] = part_to_nodes[i_part][i_zone];
-  // auto [begin_cid, end_cid] = part_to_cells[i_part][i_zone][i_sect];
+  /* Prepare info of each part: */
+  // auto [i_node_min, i_node_max] = part_to_nodes[i_part][i_zone];
+  // auto [i_cell_min, i_cell_max] = part_to_cells[i_part][i_zone][i_sect];
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
-  auto part_to_cells = std::vector<std::vector<std::vector<
-      std::pair<int, int>>>>(n_parts);
+  auto part_to_cells
+      = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts);
   for (int p = 0; p < n_parts; ++p) {
     part_to_nodes[p].resize(n_zones+1);
     part_to_cells[p].resize(n_zones+1);
@@ -159,10 +159,10 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       part_to_cells[p][z].resize(base.GetZone(z).CountSections() + 1);
     }
   }
+  /* Get index range of each zone's nodes and cells: */
   for (int zid = 1; zid <= n_zones; ++zid) {
     auto& zone = base.GetZone(zid);
-    auto& node_field = zone.GetSolution(1).GetField(1);
-    assert(node_field.name() == "NodePart");
+    auto& node_field = zone.GetSolution("NodeData").GetField("NodePart");
     // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
@@ -177,10 +177,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
     // slice cell lists by i_part
     int n_cells = zone.CountCells();
-    auto& sol = zone.GetSolution(2);
-    assert(sol.name() == "CellData");
-    auto& cell_field = sol.GetField(1);
-    assert(cell_field.name() == "CellPart");
+    auto& cell_field = zone.GetSolution("CellData").GetField("CellPart");
     for (int sid = 1; sid <= zone.CountSections(); ++sid) {
       auto& sect = zone.GetSection(sid);
       if (sect.dim() != base.GetCellDim())
@@ -199,11 +196,11 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, cid_max+1);
     }
   }
-  // store cell adjacency for each part
-  // inner_adjs[i_part] = vector of [smaller_cid, bigger_cid]
+  /* Store cell adjacency for each part: */
+  // inner_adjs[i_part] = std::vector of [i_cell_small, i_cell_large]
   auto inner_adjs = std::vector<std::vector<std::pair<int, int>>>(n_parts);
-  auto part_interpart_adjs = std::vector<std::map<int, std::vector<
-      std::pair<int, int>>>>(n_parts);
+  auto part_interpart_adjs
+      = std::vector<std::map<int, std::vector<std::pair<int, int>>>>(n_parts);
   auto part_adj_nodes = std::vector<std::map<int, std::set<int>>>(n_parts);
   auto sendp_recvp_nodes = std::vector<std::map<int, std::set<int>>>(n_parts);
   for (int i = 0; i < metis_mesh.CountCells(); ++i) {
@@ -237,7 +234,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       }
     }
   }
-  // write to txts
+  /* Write to part info to txts: */
   for (int p = 0; p < n_parts; ++p) {
     auto ostrm = std::ofstream("hexa_part_" + std::to_string(p) + ".txt"
         /* , std::ios::binary */);
