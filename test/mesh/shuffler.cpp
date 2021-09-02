@@ -43,12 +43,9 @@ void ShufflerTest::WriteParts(
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
     auto& zone = base.GetZone(i_zone);
     // write data on nodes
-    auto& node_sol = zone.AddSolution("NodeData",
-        CGNS_ENUMV(Vertex));
-    node_sol.AddField("NodePart");
-    node_sol.AddField("MetisNodeId");
-    auto& node_field = node_sol.GetField(1);
-    auto& metis_nids = node_sol.GetField(2);
+    auto& node_sol = zone.AddSolution("NodeData", CGNS_ENUMV(Vertex));
+    auto& node_field = node_sol.AddField("NodePart");
+    auto& metis_nids = node_sol.AddField("MetisNodeId");
     auto n_nodes = zone.CountNodes();
     for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
       auto metis_nid = zone_to_nodes[i_zone][cgns_nid];
@@ -56,12 +53,9 @@ void ShufflerTest::WriteParts(
       metis_nids.at(cgns_nid) = metis_nid;
     }
     // write data on cells
-    auto& cell_sol =  zone.AddSolution("CellData",
-        CGNS_ENUMV(CellCenter));
-    cell_sol.AddField("CellPart");
-    cell_sol.AddField("MetisCellId");
-    auto& cell_field = cell_sol.GetField(1);
-    auto& metis_cids = cell_sol.GetField(2);
+    auto& cell_sol =  zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    auto& cell_field = cell_sol.AddField("CellPart");
+    auto& metis_cids = cell_sol.AddField("MetisCellId");
     auto& sect_to_cells = zone_to_sects.at(i_zone);
     auto n_sects = zone.CountSections();
     for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {

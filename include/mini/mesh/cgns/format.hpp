@@ -361,14 +361,14 @@ class Solution {
     return location_ == CGNS_ENUMV(CellCenter);
   }
   Field<Real> const& GetField(int i_field) const {
-    return fields_[i_field-1];
+    return *(fields_.at(i_field-1));
   }
   Field<Real> const& GetField(const std::string &name) const {
     for (auto& field : fields_)
-      if (field.name() == name)
-        return field;
+      if (field->name() == name)
+        return *field;
     throw std::invalid_argument("There is no field named \"" + name + "\".");
-    return fields_.back();
+    return *(fields_.back());
   }
   int CountFields() const {
     return fields_.size();
@@ -379,22 +379,24 @@ class Solution {
                  name_.c_str(), location_, &i_soln);
     assert(i_soln == i_soln_);
     for (auto& field : fields_) {
-      field.Write();
+      field->Write();
     }
   }
 
  public:  // Mutators:
   Field<Real>& GetField(int i_field) {
-    return fields_[i_field-1];
+    return *(fields_.at(i_field-1));
   }
   Field<Real>& AddField(char const* name) {
     assert(OnNodes() || OnCells());
     int size = OnCells() ? zone_->CountCells() : zone_->CountNodes();
-    return fields_.emplace_back(this, fields_.size()+1, name, size);
+    fields_.emplace_back(std::make_unique<Field<Real>>(
+        this, fields_.size()+1, name, size));
+    return *(fields_.back());
   }
 
  private:
-  std::vector<Field<Real>> fields_;
+  std::vector<std::unique_ptr<Field<Real>>> fields_;
   std::string name_;
   Zone<Real> const* zone_{nullptr};
   CGNS_ENUMT(GridLocation_t) location_;

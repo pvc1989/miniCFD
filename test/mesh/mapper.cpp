@@ -87,14 +87,15 @@ TEST_F(MeshMapperTest, WriteMetisToCgns) {
   auto n_cells_total = mapper.metis_to_cgns_for_cells.size();
   auto& base = cgns_mesh.GetBase(1);
   for (int zid = 1; zid <= base.CountZones(); ++zid) {
-    auto& solution1 =  base.GetZone(zid).AddSolution("NodeData",
-        CGNS_ENUMV(Vertex));
-    auto& solution2 =  base.GetZone(zid).AddSolution("CellData",
-        CGNS_ENUMV(CellCenter));
+    auto& zone = base.GetZone(zid);
+    auto& solution1 = zone.AddSolution("NodeData", CGNS_ENUMV(Vertex));
+    auto& solution2 = zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    EXPECT_EQ(solution1.name(), "NodeData");
+    EXPECT_EQ(solution2.name(), "CellData");
     auto& field1 = solution1.AddField("NodePart");
     auto& field2 = solution2.AddField("CellPart");
-    EXPECT_STREQ(field1.name().c_str(), "NodePart");
-    EXPECT_STREQ(field2.name().c_str(), "CellPart");
+    EXPECT_EQ(field1.name(), "NodePart");
+    EXPECT_EQ(field2.name(), "CellPart");
   }
   for (int metis_i_node = 0; metis_i_node < n_nodes_total; ++metis_i_node) {
     auto node_info = mapper.metis_to_cgns_for_nodes[metis_i_node];
