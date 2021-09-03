@@ -113,12 +113,16 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
   MapperType mapper;
-  auto old_file_name = "hexa_old.cgns";
-  auto gmsh_cmd = std::string("gmsh ");
-  gmsh_cmd += test_data_dir_;
-  gmsh_cmd += "/double_mach_hexa.geo -save -o ";
-  gmsh_cmd += old_file_name;
-  std::system(gmsh_cmd.c_str());
+  auto case_name = std::string("double_mach_hexa");
+  char cmd[1024];
+  std::sprintf(cmd, "mkdir -p %s/whole %s/parts",
+      case_name.c_str(), case_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  auto old_file_name = case_name + "/whole/original.cgns";
+  auto new_file_name = case_name + "/whole/shuffled.cgns";
+  std::sprintf(cmd, "gmsh %s/%s.geo -save -o %s",
+      test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
   auto metis_mesh = mapper.Map(cgns_mesh);
@@ -133,7 +137,6 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
-  auto new_file_name = "hexa_new.cgns";
   cgns_mesh.Write(new_file_name, 2);
   /* Reload the partitioned and shuffled mesh: */
   cgns_mesh = CgnsMesh(new_file_name);
@@ -230,8 +233,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   }
   /* Write to part info to txts: */
   for (int p = 0; p < n_parts; ++p) {
-    auto ostrm = std::ofstream("hexa_part_" + std::to_string(p) + ".txt"
-        /* , std::ios::binary */);
+    auto ostrm = std::ofstream(
+        case_name + "/parts/" + std::to_string(p) + ".txt"/*, std::ios::binary*/);
     // node ranges
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];

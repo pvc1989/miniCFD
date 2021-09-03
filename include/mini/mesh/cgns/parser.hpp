@@ -200,14 +200,14 @@ class Parser {
   static const MPI_Datatype kMpiRealType;
 
  public:
-  Parser(std::string const& cgns_file, std::string const& prefix, int pid)
-      : cgns_file_(cgns_file) {
-    rank_ = pid;
+  Parser(std::string const& directory, int rank)
+      : directory_(directory), cgns_file_(directory + "/whole/shuffled.cgns"),
+        part_path_(directory + "/parts/"), rank_(rank) {
     int i_file;
-    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &i_file))
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
       cgp_error_exit();
-    auto filename = prefix + std::to_string(pid) + ".txt";
-    std::ifstream istrm(filename);
+    auto txt_file = part_path_ + std::to_string(rank) + ".txt";
+    auto istrm = std::ifstream(txt_file);
     char line[kLineWidth];
     // node ranges
     while (istrm.getline(line, 30) && line[0]) {
@@ -594,9 +594,8 @@ class Parser {
       cgp_error_exit();
   }
   void WriteSolutionsAtQuadPoints() const {
-    std::string filename = "hexa_part_";
-    filename += std::to_string(rank_) + ".vtk";
-    auto ostrm = std::ofstream(filename);
+    auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
+    auto ostrm = std::ofstream(vtk_file);
     ostrm << "# vtk DataFile Version 2.0\n";
     ostrm << "Field values on quadrature points.\n";
     ostrm << "ASCII\n";
@@ -653,7 +652,7 @@ class Parser {
   std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
   std::vector<std::pair<Int, Int>> inner_adjs_;
   std::vector<Face<Int, Real>> inner_faces_, interpart_faces_;
-  const std::string cgns_file_;
+  const std::string directory_, cgns_file_, part_path_;
   int rank_;
 
   Mat3x1 GetCoord(int i_zone, int nid) const {

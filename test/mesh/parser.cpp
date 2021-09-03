@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   std::printf("Run Parser() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
-      "hexa_new.cgns", "hexa_part_", comm_rank);
+      "double_mach_hexa", comm_rank);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   parser.Project([](auto const& xyz){
