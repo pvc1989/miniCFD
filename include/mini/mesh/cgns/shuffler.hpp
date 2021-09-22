@@ -66,9 +66,8 @@ void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
                          const std::vector<int>& new_to_old_for_cells,
                          int npe, T* old_cid_old_nid) {
   int n_cells = new_to_old_for_cells.size();
-  int n_nodes = old_to_new_for_nodes.size();
   int i_node_list_size = n_cells * npe;
-  std::vector<T> old_cid_new_nid(i_node_list_size);
+  auto old_cid_new_nid = std::vector<T>(i_node_list_size);
   for (int i = 0; i < i_node_list_size; ++i) {
     auto old_nid = old_cid_old_nid[i];
     auto new_nid = old_to_new_for_nodes.at(old_nid - 1) + 1;
@@ -147,18 +146,23 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
     auto n_sections = zone.CountSections();
     for (auto sid = 1; sid <= n_sections; ++sid) {
       auto& section = zone.GetSection(sid);
-      if (section.dim() != base.GetCellDim())
-        continue;
       auto n_cells = section.CountCells();
       auto range_min = section.CellIdMin();
-      auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
       /* Shuffle Connectivity */
+      auto npe = section.CountNodesByType();
+      auto* i_node_list = section.GetNodeIdList();
+      if (section.dim() != base.GetCellDim()) {
+        auto new_to_old_for_cells = std::vector<int>(n_cells);
+        std::iota(new_to_old_for_cells.begin(), new_to_old_for_cells.end(), 0);
+        ShuffleConnectivity(old_to_new_for_nodes, new_to_old_for_cells,
+            npe, i_node_list);
+        continue;
+      }
+      auto metis_cid_offset = c_to_m_cells[zid][sid].at(range_min);
       auto [new_to_old_for_cells, old_to_new_for_cells] = GetNewOrder(
           &(cell_parts_[metis_cid_offset]), n_cells);
       ShuffleData(old_to_new_for_cells, &(m_to_c_cells[metis_cid_offset]));
       ShuffleData(new_to_old_for_cells, c_to_m_cells[zid][sid].data());
-      auto npe = section.CountNodesByType();
-      auto* i_node_list = section.GetNodeIdList();
       ShuffleConnectivity(old_to_new_for_nodes, new_to_old_for_cells,
           npe, i_node_list);
       /* Shuffle Data on Cells */
