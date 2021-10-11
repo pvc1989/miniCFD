@@ -204,6 +204,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
     auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
          z = xyz[2] - center_[2];
     MatKxN res;
+    SetZero(&res);
     // pdv_x
     res.col(1) += coef_.col(1);
     res.col(1) += coef_.col(4) * (2 * x);
