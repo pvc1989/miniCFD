@@ -257,6 +257,7 @@ class ProjFunc<Scalar, 3, 2, kFunc> {
   template <typename Callable, typename Element>
   void Reset(Callable&& func, BasisType const& basis, Element const& elem) {
     center_ = basis.GetCenter();
+    assert(center_ == elem.GetCenter());
     using Ret = decltype(func(center_));
     static_assert(std::is_same_v<Ret, MatKx1> || std::is_scalar_v<Ret>);
     coef_ = Integrate([&](CoordType const& xyz) {
