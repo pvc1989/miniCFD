@@ -29,53 +29,7 @@ class ShufflerTest : public ::testing::Test {
   using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
   using FieldType = mini::mesh::cgns::Field<double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
-  static void WriteParts(
-      const MapperType& mapper, const std::vector<idx_t>& cell_parts,
-      const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh);
 };
-void ShufflerTest::WriteParts(
-    const MapperType& mapper, const std::vector<idx_t>& cell_parts,
-    const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh) {
-  auto& zone_to_sects = mapper.cgns_to_metis_for_cells;
-  auto& zone_to_nodes = mapper.cgns_to_metis_for_nodes;
-  auto& base = cgns_mesh->GetBase(1);
-  int n_zones = base.CountZones();
-  for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-    auto& zone = base.GetZone(i_zone);
-    // write data on nodes
-    auto& node_sol = zone.AddSolution("NodeData", CGNS_ENUMV(Vertex));
-    auto& node_field = node_sol.AddField("NodePart");
-    auto& metis_nids = node_sol.AddField("MetisNodeId");
-    auto n_nodes = zone.CountNodes();
-    for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
-      auto metis_nid = zone_to_nodes[i_zone][cgns_nid];
-      node_field.at(cgns_nid) = node_parts[metis_nid];
-      metis_nids.at(cgns_nid) = metis_nid;
-    }
-    // write data on cells
-    auto& cell_sol =  zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
-    auto& cell_field = cell_sol.AddField("CellPart");
-    auto& metis_cids = cell_sol.AddField("MetisCellId");
-    auto& sect_to_cells = zone_to_sects.at(i_zone);
-    auto n_sects = zone.CountSections();
-    for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
-      auto& sect = zone.GetSection(i_sect);
-      if (sect.dim() != base.GetCellDim())
-        continue;
-      auto& cells_local_to_global = sect_to_cells.at(i_sect);
-      auto n_cells = sect.CountCells();
-      auto range_min{sect.CellIdMin()};
-      auto range_max{sect.CellIdMax()};
-      EXPECT_EQ(n_cells - 1, range_max - range_min);
-      for (int cgns_i_cell = range_min; cgns_i_cell <= range_max;
-           ++cgns_i_cell) {
-        auto metis_i_cell = cells_local_to_global.at(cgns_i_cell);
-        cell_field.at(cgns_i_cell) = cell_parts[metis_i_cell];
-        metis_cids.at(cgns_i_cell) = metis_i_cell;
-      }
-    }
-  }
-}
 TEST_F(ShufflerTest, GetNewOrder) {
   // Reorder the indices by parts
   int n = 10;
@@ -87,11 +41,11 @@ TEST_F(ShufflerTest, GetNewOrder) {
     EXPECT_EQ(new_to_old[i], expected_new_to_old[i]);
   }
   // Shuffle data array by new order
-  std::vector<double> old_array{1.0, 0.0, 0.1, 2.0, 0.2,
-                                1.1, 2.1, 1.2, 0.3, 2.2};
+  std::vector<double> old_array{
+      1.0, 0.0, 0.1, 2.0, 0.2, 1.1, 2.1, 1.2, 0.3, 2.2};
   ShuffleData(new_to_old, old_array.data());
-  std::vector<double> expected_new_array{0.0, 0.1, 0.2, 0.3, 1.0,
-                                         1.1, 1.2, 2.0, 2.1, 2.2};
+  std::vector<double> expected_new_array{
+      0.0, 0.1, 0.2, 0.3, 1.0, 1.1, 1.2, 2.0, 2.1, 2.2};
   for (int i = 0; i < n; ++i) {
     EXPECT_DOUBLE_EQ(old_array[i], expected_new_array[i]);
   }
@@ -112,7 +66,6 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
-  MapperType mapper;
   auto case_name = std::string("double_mach_hexa");
   char cmd[1024];
   std::sprintf(cmd, "mkdir -p %s/whole %s/parts",
@@ -125,6 +78,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
+  auto mapper = MapperType();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
   idx_t n_parts{4}, n_common_nodes{3};
@@ -132,9 +86,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);
-  auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts,
-      node_parts);
-  WriteParts(mapper, cell_parts, node_parts, &cgns_mesh);
+  auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts);
+  mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
   shuffler.Shuffle(&cgns_mesh, &mapper);
   EXPECT_TRUE(mapper.IsValid());
   cgns_mesh.Write(new_file_name, 2);
@@ -231,10 +184,10 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       }
     }
   }
-  /* Write to part info to txts: */
+  /* Write part info to txts: */
   for (int p = 0; p < n_parts; ++p) {
-    auto ostrm = std::ofstream(
-        case_name + "/parts/" + std::to_string(p) + ".txt"/*, std::ios::binary*/);
+    auto ostrm = std::ofstream(case_name + "/parts/" + std::to_string(p)
+        + ".txt"/*, std::ios::binary */);
     // node ranges
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];
