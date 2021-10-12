@@ -46,8 +46,10 @@ struct CgnsToMetis {
 
   MetisMesh Map(const CgnsMesh& mesh);
   bool IsValid() const;
-
-  void Write(std::string name) const {
+  void WriteParts(
+      const std::vector<idx_t>& cell_parts,
+      const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh) const;
+  void WriteToFile(const std::string &name) const {
     auto ostrm = std::ofstream(name);
     Int metis_n_nodes = metis_to_cgns_for_nodes.size();
     for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
@@ -61,11 +63,12 @@ struct CgnsToMetis {
   std::vector<CellInfo<Int>> metis_to_cgns_for_cells;
   // metis_i_node =
   //     cgns_to_metis_for_nodes[i_zone][i_node];
-  std::vector<std::vector<Int>>              cgns_to_metis_for_nodes;
+  std::vector<std::vector<Int>>           cgns_to_metis_for_nodes;
   // metis_i_cell =
   //     cgns_to_metis_for_cells[i_zone][i_sect][i_cell];
   std::vector<std::vector<ShiftedVector>> cgns_to_metis_for_cells;
 };
+
 template <class Real, class Int>
 typename CgnsToMetis<Real, Int>::MetisMesh
 CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
@@ -127,6 +130,7 @@ CgnsToMetis<Real, Int>::Map(const CgnsMesh& cgns_mesh) {
   assert(metis_to_cgns_for_nodes.size() == n_nodes_in_curr_base);
   return MetisMesh(cell_ptr, i_cellx, n_nodes_in_curr_base);
 }
+
 template <class Real, class Int>
 bool CgnsToMetis<Real, Int>::IsValid() const {
   Int metis_n_nodes = metis_to_cgns_for_nodes.size();
@@ -146,6 +150,51 @@ bool CgnsToMetis<Real, Int>::IsValid() const {
     }
   }
   return true;
+}
+
+template <class Real, class Int>
+void CgnsToMetis<Real, Int>::WriteParts(
+    const std::vector<idx_t>& cell_parts,
+    const std::vector<idx_t>& node_parts, CgnsMesh* cgns_mesh) const {
+  auto& zone_to_sects = cgns_to_metis_for_cells;
+  auto& zone_to_nodes = cgns_to_metis_for_nodes;
+  auto& base = cgns_mesh->GetBase(1);
+  int n_zones = base.CountZones();
+  for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+    auto& zone = base.GetZone(i_zone);
+    // write data on nodes
+    auto& node_sol = zone.AddSolution("NodeData", CGNS_ENUMV(Vertex));
+    auto& node_field = node_sol.AddField("NodePart");
+    auto& metis_nids = node_sol.AddField("MetisNodeId");
+    auto n_nodes = zone.CountNodes();
+    for (int cgns_nid = 1; cgns_nid <= n_nodes; ++cgns_nid) {
+      auto metis_nid = zone_to_nodes[i_zone][cgns_nid];
+      node_field.at(cgns_nid) = node_parts[metis_nid];
+      metis_nids.at(cgns_nid) = metis_nid;
+    }
+    // write data on cells
+    auto& cell_sol =  zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    auto& cell_field = cell_sol.AddField("CellPart");
+    auto& metis_cids = cell_sol.AddField("MetisCellId");
+    auto& sect_to_cells = zone_to_sects.at(i_zone);
+    auto n_sects = zone.CountSections();
+    for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+      auto& sect = zone.GetSection(i_sect);
+      if (sect.dim() != base.GetCellDim())
+        continue;
+      auto& cells_local_to_global = sect_to_cells.at(i_sect);
+      auto n_cells = sect.CountCells();
+      auto range_min{sect.CellIdMin()};
+      auto range_max{sect.CellIdMax()};
+      EXPECT_EQ(n_cells - 1, range_max - range_min);
+      for (int cgns_i_cell = range_min; cgns_i_cell <= range_max;
+           ++cgns_i_cell) {
+        auto metis_i_cell = cells_local_to_global.at(cgns_i_cell);
+        cell_field.at(cgns_i_cell) = cell_parts[metis_i_cell];
+        metis_cids.at(cgns_i_cell) = metis_i_cell;
+      }
+    }
+  }
 }
 
 }  // namespace mapper
