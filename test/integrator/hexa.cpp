@@ -76,7 +76,7 @@ TEST_F(TestHexa4x4x4, Basis) {
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
-  Orthonormalize(&b, hexa);
+  OrthoNormalize(&b, hexa);
   residual = (Integrate([&b](const Mat3x1& xyz) {
     auto col = b(xyz);
     A prod = col * col.transpose();
@@ -92,7 +92,7 @@ TEST_F(TestHexa4x4x4, Basis) {
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1, y-1, y-1, y+1, y+1;
   xyz_global_i.row(2) << z-1, z-1, z-1, z-1, z+1, z+1, z+1, z+1;
   hexa = Hexa4x4x4(xyz_global_i);
-  b.Orthonormalize(hexa);
+  b.OrthoNormalize(hexa);
   residual = (Integrate([&b](const Mat3x1& xyz) {
     auto col = b(xyz);
     A prod = col * col.transpose();
@@ -107,7 +107,7 @@ TEST_F(TestHexa4x4x4, ProjFunc) {
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
   B b;
-  Orthonormalize(&b, hexa);
+  OrthoNormalize(&b, hexa);
   auto fscalar = [](Mat3x1 const& xyz){
     return xyz[0] * xyz[1] + xyz[2];
   };

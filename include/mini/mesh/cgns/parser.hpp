@@ -121,7 +121,7 @@ struct Cell {
   Cell(GaussPtr&& gauss, Int mid)
       : gauss_(std::move(gauss)), metis_id(mid) {
     basis_.Shift(gauss_->GetCenter());
-    basis_.Orthonormalize(*gauss_);
+    basis_.OrthoNormalize(*gauss_);
   }
   Cell() = default;
   Cell(const Cell&) = delete;

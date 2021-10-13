@@ -68,7 +68,7 @@ TEST_F(TestProjFunc, Derivative) {
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
   auto basis = BasisType();
-  Orthonormalize(&basis, hexa);
+  OrthoNormalize(&basis, hexa);
   auto fvector = [](Mat3x1 const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatNx1 func(1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z);
