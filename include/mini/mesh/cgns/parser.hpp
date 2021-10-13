@@ -134,9 +134,9 @@ struct Cell {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 class CellGroup {
-  using CellType = Cell<Int, Real>;
+  using CellType = Cell<Int, Real, kFunc>;
   static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
   ShiftedVector<CellType> cells_;
@@ -185,10 +185,11 @@ class CellGroup {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 class Parser {
   static constexpr int kLineWidth = 30;
   static constexpr int kDim = 3;
+  static constexpr int kFields = kFunc * Cell<Int, Real, kFunc>::N;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
@@ -569,7 +570,7 @@ class Parser {
       if (cg_sol_write(i_file, i_base, i_zone, "Solution0", CellCenter,
           &i_soln))
         cgp_error_exit();
-      int n_fields = 4;
+      int n_fields = kFields;
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
         int n_sects = local_cells_[i_zone].size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
@@ -642,15 +643,23 @@ class Parser {
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
   std::map<Int, NodeGroup<Int, Real>>
       local_nodes_/* [i_zone][i_sect] */;
-  std::unordered_map<Int, std::unordered_map<Int, Mat3x1>> adj_nodes_;
-  std::unordered_map<Int, NodeInfo<Int>> nodes_m_to_c_;
-  std::unordered_map<Int, CellInfo<Int>> cells_m_to_c_;
+  std::unordered_map<Int, std::unordered_map<Int, Mat3x1>>
+      adj_nodes_;
+  std::unordered_map<Int, NodeInfo<Int>>
+      nodes_m_to_c_;
+  std::unordered_map<Int, CellInfo<Int>>
+      cells_m_to_c_;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>>
       local_cells_/* [i_zone][i_sect][i_cell] */;
-  std::unordered_map<Int, Cell<Int, Real>> ghost_cells_;
-  std::vector<std::pair<Int, Int>> inner_adjs_;
-  std::vector<Face<Int, Real>> inner_faces_, interpart_faces_;
-  const std::string directory_, cgns_file_, part_path_;
+  std::unordered_map<Int, Cell<Int, Real>>
+      ghost_cells_;
+  std::vector<std::pair<Int, Int>>
+      inner_adjs_;
+  std::vector<Face<Int, Real>>
+      inner_faces_, interpart_faces_;
+  const std::string directory_;
+  const std::string cgns_file_;
+  const std::string part_path_;
   int rank_;
 
   Mat3x1 GetCoord(int i_zone, int nid) const {
@@ -669,11 +678,11 @@ class Parser {
     return coord;
   }
 };
-template <typename Int, typename Real>
-MPI_Datatype const Parser<Int, Real>::kMpiIntType
+template <typename Int, typename Real, int kFunc>
+MPI_Datatype const Parser<Int, Real, kFunc>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, typename Real>
-MPI_Datatype const Parser<Int, Real>::kMpiRealType
+template <typename Int, typename Real, int kFunc>
+MPI_Datatype const Parser<Int, Real, kFunc>::kMpiRealType
     = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns

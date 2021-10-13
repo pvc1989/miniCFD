@@ -67,7 +67,7 @@ class ShiftedVector : public std::vector<Int> {
 template <class Real>
 class Coordinates {
  public:  // Constructors:
-  explicit Coordinates(Zone<Real> const* zone, int size)
+  Coordinates(Zone<Real> const* zone, int size)
       : zone_(zone), x_(size), y_(size), z_(size), name_("GridCoordinates") {
   }
 
@@ -158,6 +158,7 @@ class Coordinates {
 template <class Real>
 class Section {
   friend class Zone<Real>;
+
  public:  // Constructors:
   Section() = default;
   Section(Zone<Real> const* zone, int sid,
@@ -280,7 +281,7 @@ template <class Real>
 class Field {
  public:  // Constructor:
   Field(Solution<Real> const* solution, int fid, char const* name, int size)
-      : solution_{solution}, fieldi_coord_{fid}, name_{name},  data_(size) {
+      : solution_{solution}, i_field_{fid}, name_{name},  data_(size) {
   }
 
  public:  // Copy control:
@@ -301,11 +302,11 @@ class Field {
     return name_;
   }
   void Write() const {
-    int fieldi_coord;
+    int i_field;
     cg_field_write(solution_->file().id(), solution_->base().id(),
         solution_->zone().id(), solution_->id(), CGNS_ENUMV(RealDouble),
-        name_.c_str(), data_.data(), &fieldi_coord);
-    assert(fieldi_coord == fieldi_coord_);
+        name_.c_str(), data_.data(), &i_field);
+    assert(i_field == i_field_);
   }
 
  public:  // Mutators:
@@ -320,7 +321,7 @@ class Field {
   std::vector<Real> data_;
   std::string name_;
   Solution<Real> const* solution_{nullptr};
-  int fieldi_coord_;
+  int i_field_;
 };
 
 template <class Real>
@@ -571,11 +572,11 @@ class Zone {
           this, i_soln, sol_name, location));
       int n_fields;
       cg_nfields(file().id(), base_->id(), i_zone_, i_soln, &n_fields);
-      for (int fieldi_coord = 1; fieldi_coord <= n_fields; ++fieldi_coord) {
+      for (int i_field = 1; i_field <= n_fields; ++i_field) {
         CGNS_ENUMT(DataType_t) datatype;
         char field_name[33];
         cg_field_info(file().id(), base_->id(), i_zone_, i_soln,
-                      fieldi_coord, &datatype, field_name);
+                      i_field, &datatype, field_name);
         cgsize_t first{1}, last{1};
         if (location == CGNS_ENUMV(Vertex)) {
           last = CountNodes();
