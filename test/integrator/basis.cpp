@@ -115,20 +115,19 @@ TEST_F(TestProjFunc, Reconstruction) {
   auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
   int n_cells = metis_mesh.CountCells();
   auto cell_adjs = std::vector<std::vector<int>>(n_cells);
-  for (int i = 0; i < n_cells; ++i) {
-    for (int r = graph.range(i); r < graph.range(i+1); ++r) {
-      int j = graph.index(r);
-      cell_adjs[i].emplace_back(j);
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    for (int r = graph.range(i_cell); r < graph.range(i_cell+1); ++r) {
+      int j_cell = graph.index(r);
+      cell_adjs[i_cell].emplace_back(j_cell);
     }
   }
-  for (int i = 0; i < n_cells; ++i) {
-    std::cout << i << "'s neighbors : ";
-    for (auto j : cell_adjs[i]) {
-      std::cout << j << " ";
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    std::cout << i_cell << "'s neighbors : ";
+    for (auto j_cell : cell_adjs[i_cell]) {
+      std::cout << j_cell << " ";
     }
     std::cout << std::endl;
   }
-  double eps = 1e-6;
   using CellType = mesh::cgns::Cell<int, double, 1>;
   auto cells = std::vector<CellType>(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -141,35 +140,35 @@ TEST_F(TestProjFunc, Reconstruction) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     return (x-1.5)*(x-1.5) + (y-1.5)*(y-1.5) + 10*(x < y ? 2. : 0.);
   };
-  for (int i = 0; i < n_cells; ++i) {
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     Mat3x8 coords;
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = sect.GetNodeIdListByOneBasedCellId(i+1);
-    for (int j = 0; j < 8; ++j) {
-      auto nid = array[j];
-      coords(0, j) = x[nid-1];
-      coords(1, j) = y[nid-1];
-      coords(2, j) = z[nid-1];
+    array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
+    for (int i = 0; i < 8; ++i) {
+      auto i_node = array[i];
+      coords(0, i) = x[i_node - 1];
+      coords(1, i) = y[i_node - 1];
+      coords(2, i) = z[i_node - 1];
     }
     auto hexa_ptr = std::make_unique<integrator::Hexa<double, 4, 4, 4>>(coords);
-    cells[i] = CellType(std::move(hexa_ptr), i);
-    cells[i].Project(func);
+    cells[i_cell] = CellType(std::move(hexa_ptr), i_cell);
+    cells[i_cell].Project(func);
   }
   auto adj_proj_funcs = std::vector<std::vector<typename CellType::ProjFunc>>(n_cells);
   auto smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
-  for (int i = 0; i < n_cells; ++i) {
-    auto& cell_i = cells[i];
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    auto& cell_i = cells[i_cell];
     auto& elem = *(cell_i.gauss_);
-    smoothness[i].emplace_back(cell_i.func_.GetSmoothness(elem));
+    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness(elem));
 
-    std::cout << i << " : " << smoothness[i].back()[0] << " : ";
-    for (auto j : cell_adjs[i]) {
+    std::cout << i_cell << " : " << smoothness[i_cell].back()[0] << " : ";
+    for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Mat3x1 const &xyz) {
-        return cells[j].func_(xyz);
+        return cells[j_cell].func_(xyz);
       };
-      adj_proj_funcs[i].emplace_back(adj_func, cell_i.basis_, elem);
-      smoothness[i].emplace_back(adj_proj_funcs[i].back().GetSmoothness(elem));
-      std::cout << smoothness[i].back()[0] << ' ';
+      adj_proj_funcs[i_cell].emplace_back(adj_func, cell_i.basis_, elem);
+      smoothness[i_cell].emplace_back(adj_proj_funcs[i_cell].back().GetSmoothness(elem));
+      std::cout << smoothness[i_cell].back()[0] << ' ';
     }
     std::cout << std::endl;
   }
