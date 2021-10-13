@@ -7,11 +7,8 @@
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
-
 #include "mini/integrator/basis.hpp"
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/face.hpp"
-#include "mini/integrator/cell.hpp"
 
 namespace mini {
 namespace integrator {
@@ -24,6 +21,54 @@ namespace integrator {
  * @tparam kOrder the degree of completeness
  * @tparam kFunc the number of function components
  */
+template <typename Scalar, int kDim, int kOrder, int kFunc>
+class Projection {
+ private:
+  using Basis = OrthoNormalBasis<Scalar, kDim, kOrder>;
+
+ public:
+  static constexpr int N = Basis::N; 
+  static constexpr int K = kFunc;
+  using Coord = typename Basis::Coord;
+  using MatNx1 = typename Basis::MatNx1;
+  using MatNxN = typename Basis::MatNxN;
+  using Mat1xN = algebra::Matrix<Scalar, 1, N>;
+  using MatKxN = algebra::Matrix<Scalar, K, N>;
+  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+
+ public:
+  template <typename Callable>
+  Projection(Callable&& func, const Basis& basis)
+      : basis_ptr_(&basis) {
+    using Return = decltype(func(basis.GetCenter()));
+    static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
+    coef_ = Integrate([&](Coord const& xyz) {
+      auto f_col = func(xyz);
+      Mat1xN b_row = basis(xyz).transpose();
+      MatKxN prod = f_col * b_row;
+      return prod;
+    }, basis.GetGauss());
+    coef_ = coef_ * basis.GetCoef();
+  }
+  Projection(const Projection&) = default;
+  Projection(Projection&&) noexcept = default;
+  Projection& operator=(const Projection&) = default;
+  Projection& operator=(Projection&&) noexcept = default;
+  ~Projection() noexcept = default;
+
+  MatKx1 operator()(Coord const& xyz) const {
+    MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(xyz);
+    return coef_ * col;
+  }
+  MatKxN GetCoef() const {
+    return coef_;
+  }
+
+ private:
+  MatKxN coef_;
+  const Basis* basis_ptr_;
+};
+
 template <typename Scalar, int kDim, int kOrder, int kFunc>
 class ProjFunc;
 

@@ -220,6 +220,17 @@ class Hexa : public Cell<Scalar> {
     }
     BuildQuadPoints();
   }
+  Hexa() {
+    xyz_global_3x8_.col(0) << -1, -1, -1;
+    xyz_global_3x8_.col(1) << +1, -1, -1;
+    xyz_global_3x8_.col(2) << +1, +1, -1;
+    xyz_global_3x8_.col(3) << -1, +1, -1;
+    xyz_global_3x8_.col(4) << -1, -1, +1;
+    xyz_global_3x8_.col(5) << +1, -1, +1;
+    xyz_global_3x8_.col(6) << +1, +1, +1;
+    xyz_global_3x8_.col(7) << -1, +1, +1;
+    BuildQuadPoints();
+  }
   Hexa(const Hexa&) = default;
   Hexa& operator=(const Hexa&) = default;
   Hexa(Hexa&&) noexcept = default;

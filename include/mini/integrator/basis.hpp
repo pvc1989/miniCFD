@@ -138,7 +138,7 @@ class OrthoNormalBasis : protected Basis<Scalar, kDim, kOrder> {
   }
   MatNx1 operator()(const Coord& global) const {
     auto local = global;
-    global -= GetCenter();
+    local -= GetCenter();
     MatNx1 col = RB::CallAt(local);
     return GetCoef() * col;
   }

@@ -16,8 +16,10 @@
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/cgns/parser.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
-#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
+#include <cmath>
+
+#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 #include "mini/integrator/projection.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
@@ -26,6 +28,28 @@
 
 namespace mini {
 namespace integrator {
+
+class TestProjection : public ::testing::Test {
+ protected:
+  using Basis = mini::integrator::OrthoNormalBasis<double, 3, 2>;
+  using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Coord = typename Gauss::GlobalCoord;
+  Gauss gauss_;
+  std::string const test_data_dir_{TEST_DATA_DIR};
+};
+TEST_F(TestProjection, ScalarFunction) {
+  auto func = [](Coord const &point){
+    auto x = point[0], y = point[1], z = point[2];
+    return x * x + y * y + z * z;
+  };
+  using ProjFunc = mini::integrator::Projection<double, 3, 2, 1>;
+  auto basis = Basis(gauss_);
+  auto proj_func = ProjFunc(func, basis);
+  static_assert(ProjFunc::K == 1);
+  static_assert(ProjFunc::N == 10);
+  EXPECT_NEAR(proj_func({0, 0, 0})[0], 0.0, 1e-15);
+  EXPECT_DOUBLE_EQ(proj_func({0.3, 0.4, 0.5})[0], 0.5);
+}
 
 class TestProjFunc : public ::testing::Test {
  protected:
@@ -40,6 +64,7 @@ class TestProjFunc : public ::testing::Test {
   using MatKxN = algebra::Matrix<double, K, N>;
   static MatKxN GetMpdv(double x, double y, double z) {
     MatKxN mat_pdv;
+    mat_pdv.setZero();
     for (int i = 1; i < N; ++i)
       mat_pdv(i, i) = 1;
     mat_pdv(4, 1) = 2 * x;
