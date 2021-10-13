@@ -15,6 +15,37 @@
 namespace mini {
 namespace integrator {
 
+template <typename Scalar, int kDim, int kOrder>
+class RawBasis;
+
+template <typename Scalar>
+class RawBasis<Scalar, 2, 2> {
+ public:
+  static constexpr int N = 6;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Coord = algebra::Matrix<Scalar, 2, 1>;
+
+  static MatNx1 CallAt(const Coord &xy) {
+    auto x = xy[0], y = xy[1];
+    MatNx1 col = { 1, x, y, x * x, x * y, y * y };
+    return col;
+  }
+};
+
+template <typename Scalar>
+class RawBasis<Scalar, 3, 2> {
+ public:
+  static constexpr int N = 10;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Coord = algebra::Matrix<Scalar, 3, 1>;
+
+  static MatNx1 CallAt(const Coord &xyz) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return col;
+  }
+};
+
 /**
  * @brief A basis of the linear space formed by polynomials less than or equal to a given degree.
  * 
