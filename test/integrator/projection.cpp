@@ -18,7 +18,7 @@
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
-#include "mini/integrator/basis.hpp"
+#include "mini/integrator/projection.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
 
