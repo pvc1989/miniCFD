@@ -85,17 +85,16 @@ TEST_F(TestProjFunc, Derivative) {
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
   auto s_actual = pf_vec.GetSmoothness(hexa);
   std::cout << "s_actual =\n" << s_actual << std::endl;
-  double eps = 1e-12;
-  EXPECT_NEAR(s_actual(0), 0.0, eps);
-  EXPECT_NEAR(s_actual(1), 8.0, eps);
-  EXPECT_NEAR(s_actual(2), 8.0, eps);
-  EXPECT_NEAR(s_actual(3), 8.0, eps);
-  EXPECT_NEAR(s_actual(4), 80.0/3, eps);
-  EXPECT_NEAR(s_actual(5), 64.0/3, eps);
-  EXPECT_NEAR(s_actual(6), 64.0/3, eps);
-  EXPECT_NEAR(s_actual(7), 80.0/3, eps);
-  EXPECT_NEAR(s_actual(8), 64.0/3, eps);
-  EXPECT_NEAR(s_actual(9), 80.0/3, eps);
+  EXPECT_NEAR(s_actual(0), 0.0, 1e-14);
+  EXPECT_NEAR(s_actual(1), 8.0, 1e-13);
+  EXPECT_NEAR(s_actual(2), 8.0, 1e-14);
+  EXPECT_NEAR(s_actual(3), 8.0, 1e-14);
+  EXPECT_NEAR(s_actual(4), 80.0/3, 1e-13);
+  EXPECT_NEAR(s_actual(5), 64.0/3, 1e-13);
+  EXPECT_NEAR(s_actual(6), 64.0/3, 1e-13);
+  EXPECT_NEAR(s_actual(7), 80.0/3, 1e-13);
+  EXPECT_NEAR(s_actual(8), 64.0/3, 1e-13);
+  EXPECT_NEAR(s_actual(9), 80.0/3, 1e-12);
 }
 TEST_F(TestProjFunc, Reconstruction) {
   auto case_name = std::string("simple_cube");
