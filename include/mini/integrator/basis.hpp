@@ -54,19 +54,22 @@ class RawBasis<Scalar, 3, 2> {
  * @tparam kOrder the degree of completeness
  */
 template <typename Scalar, int kDim, int kOrder>
-class Basis;
+class Basis : protected RawBasis<Scalar, kDim, kOrder> {
+  using Raw = RawBasis<Scalar, kDim, kOrder>;
 
-template <typename Scalar>
-class Basis<Scalar, 2, 2> {
  public:
-  static constexpr int N = 6;  // the number of components
-  using Coord = algebra::Matrix<Scalar, 2, 1>;
-  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Raw::N;
+  using typename Raw::Coord;
+  using typename Raw::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
+  using Gauss = std::conditional_t<kDim == 2, Face<Scalar, 2>, Cell<Scalar>>;
 
  public:
-  explicit Basis(Coord const& c = {0, 0})
-      : center_(c) {
+  explicit Basis(Coord const& center)
+      : center_(center) {
+  }
+  Basis() {
+    SetZero(&center_);
   }
   Basis(const Basis&) = default;
   Basis(Basis&&) noexcept = default;
@@ -74,9 +77,8 @@ class Basis<Scalar, 2, 2> {
   Basis& operator=(Basis&&) noexcept = default;
   ~Basis() noexcept = default;
 
-  MatNx1 operator()(Coord const& xy) const {
-    auto x = xy[0] - center_[0], y = xy[1] - center_[1];
-    MatNx1 col = { 1, x, y, x * x, x * y, y * y };
+  MatNx1 operator()(Coord const& point) const {
+    MatNx1 col = Raw::CallAt(point - center_);
     return coef_ * col;
   }
   Coord const& GetCenter() const {
@@ -88,55 +90,12 @@ class Basis<Scalar, 2, 2> {
   void Transform(MatNxN const& a) {
     coef_ = a * coef_;
   }
-  void Orthonormalize(const Face<Scalar, 2>& elem) {
-    assert(elem.PhysDim() == 2);
-    integrator::Orthonormalize(this, elem);
-  }
-
- private:
-  Coord center_;
-  MatNxN coef_ = MatNxN::Identity();
-};
-
-template <typename Scalar>
-class Basis<Scalar, 3, 2> {
- public:
-  static constexpr int N = 10;  // the number of components
-  using Coord = algebra::Matrix<Scalar, 3, 1>;
-  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
-  using MatNxN = algebra::Matrix<Scalar, N, N>;
-
- public:
-  explicit Basis(Coord const& c = {0, 0, 0})
-      : center_(c) {
-  }
-  Basis(const Basis&) = default;
-  Basis(Basis&&) noexcept = default;
-  Basis& operator=(const Basis&) = default;
-  Basis& operator=(Basis&&) noexcept = default;
-  ~Basis() noexcept = default;
-
-  MatNx1 operator()(Coord const& xyz) const {
-    auto x = xyz[0] - center_[0], y = xyz[1] - center_[1],
-         z = xyz[2] - center_[2];
-    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
-    return coef_ * col;
-  }
-  Coord const& GetCenter() const {
-    return center_;
-  }
-  MatNxN const& GetCoef() const {
-    return coef_;
-  }
-  void Transform(MatNxN const& a) {
-    coef_ = a * coef_;
-  }
-  void Shift(Coord const& new_center) {
+  void Shift(const Coord& new_center) {
     center_ = new_center;
   }
-  void Orthonormalize(const Cell<Scalar>& elem) {
-    assert(elem.PhysDim() == 3);
-    integrator::Orthonormalize(this, elem);
+  void Orthonormalize(const Gauss& gauss) {
+    assert(gauss.PhysDim() == kDim);
+    integrator::Orthonormalize(this, gauss);
   }
 
  private:
