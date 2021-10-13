@@ -130,7 +130,7 @@ auto Norm(Callable&& f, Element&& element) {
  * @param elem the integrator
  */
 template <class Basis, class Element>
-void Orthonormalize(Basis* raw_basis, const Element& elem) {
+void OrthoNormalize(Basis* raw_basis, const Element& elem) {
   constexpr int N = Basis::N;
   using MatNxN = typename Basis::MatNxN;
   using MatDx1 = typename Element::GlobalCoord;

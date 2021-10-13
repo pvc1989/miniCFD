@@ -93,9 +93,9 @@ class Basis : protected RawBasis<Scalar, kDim, kOrder> {
   void Shift(const Coord& new_center) {
     center_ = new_center;
   }
-  void Orthonormalize(const Gauss& gauss) {
+  void OrthoNormalize(const Gauss& gauss) {
     assert(gauss.PhysDim() == kDim);
-    integrator::Orthonormalize(this, gauss);
+    integrator::OrthoNormalize(this, gauss);
   }
 
  private:
@@ -104,7 +104,7 @@ class Basis : protected RawBasis<Scalar, kDim, kOrder> {
 };
 
 template <typename Scalar, int kDim, int kOrder>
-class OrthonormalBasis : protected Basis<Scalar, kDim, kOrder> {
+class OrthoNormalBasis : protected Basis<Scalar, kDim, kOrder> {
   using RB = RawBasis<Scalar, kDim, kOrder>;
   using GB = Basis<Scalar, kDim, kOrder>;
 
@@ -116,16 +116,16 @@ class OrthonormalBasis : protected Basis<Scalar, kDim, kOrder> {
   using typename GB::MatNxN;
 
  public:
-  explicit OrthonormalBasis(const Gauss& gauss)
+  explicit OrthoNormalBasis(const Gauss& gauss)
       : gauss_ptr_(&gauss), basis_(gauss.GetCenter()) {
     assert(gauss.PhysDim() == kDim);
-    Orthonormalize(&basis_, gauss);
+    OrthoNormalize(&basis_, gauss);
   }
-  OrthonormalBasis(const OrthonormalBasis&) = default;
-  OrthonormalBasis(OrthonormalBasis&&) noexcept = default;
-  OrthonormalBasis& operator=(const OrthonormalBasis&) = default;
-  OrthonormalBasis& operator=(OrthonormalBasis&&) noexcept = default;
-  ~OrthonormalBasis() noexcept = default;
+  OrthoNormalBasis(const OrthoNormalBasis&) = default;
+  OrthoNormalBasis(OrthoNormalBasis&&) noexcept = default;
+  OrthoNormalBasis& operator=(const OrthoNormalBasis&) = default;
+  OrthoNormalBasis& operator=(OrthoNormalBasis&&) noexcept = default;
+  ~OrthoNormalBasis() noexcept = default;
 
   Coord const& GetCenter() const {
     return basis_.GetCenter();

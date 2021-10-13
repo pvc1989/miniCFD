@@ -91,7 +91,7 @@ TEST_F(TestQuad4x4, Basis) {
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
   auto quad = Quad2D4x4(xyz_global_i);
-  Orthonormalize(&b, quad);
+  OrthoNormalize(&b, quad);
   residual = (Integrate([&b](const Mat2x1& xy) {
     auto col = b(xy);
     A prod = col * col.transpose();
@@ -106,7 +106,7 @@ TEST_F(TestQuad4x4, Basis) {
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
   quad = Quad2D4x4(xyz_global_i);
-  b.Orthonormalize(quad);
+  b.OrthoNormalize(quad);
   residual = (Integrate([&b](Mat2x1 const& xy) {
     auto col = b(xy);
     A prod = col * col.transpose();
@@ -120,7 +120,7 @@ TEST_F(TestQuad4x4, ProjFunc) {
   xyz_global_i.row(1) << -1, -1, 1, 1;
   auto quad = Quad2D4x4(xyz_global_i);
   B b;
-  Orthonormalize(&b, quad);
+  OrthoNormalize(&b, quad);
   auto fscalar = [](Mat2x1 const& xy){
     return xy[0] * xy[1];
   };
