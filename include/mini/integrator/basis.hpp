@@ -104,21 +104,22 @@ class Basis : protected RawBasis<Scalar, kDim, kOrder> {
 };
 
 template <typename Scalar, int kDim, int kOrder>
-class OrthonormalBasis {
-  const Cell<Scalar>* elem_ptr_{nullptr};
-  Basis<Scalar, kDim, kOrder> basis_;
+class OrthonormalBasis : protected Basis<Scalar, kDim, kOrder> {
+  using RB = RawBasis<Scalar, kDim, kOrder>;
+  using GB = Basis<Scalar, kDim, kOrder>;
 
  public:
-  using Basis<Scalar, kDim, kOrder>::N;  // the number of components
-  using typename Basis<Scalar, kDim, kOrder>::Coord;
-  using typename Basis<Scalar, kDim, kOrder>::MatNx1;
-  using typename Basis<Scalar, kDim, kOrder>::MatNxN;
+  using GB::N;  // the number of components
+  using typename GB::Coord;
+  using typename GB::Gauss;
+  using typename GB::MatNx1;
+  using typename GB::MatNxN;
 
  public:
-  explicit OrthonormalBasis(const Cell<Scalar>& elem)
-      : elem_ptr_(&elem), basis_(elem.GetCenter()) {
-    assert(elem.PhysDim() == kDim);
-    Orthonormalize(basis_, elem);
+  explicit OrthonormalBasis(const Gauss& gauss)
+      : gauss_ptr_(&gauss), basis_(gauss.GetCenter()) {
+    assert(gauss.PhysDim() == kDim);
+    Orthonormalize(&basis_, gauss);
   }
   OrthonormalBasis(const OrthonormalBasis&) = default;
   OrthonormalBasis(OrthonormalBasis&&) noexcept = default;
@@ -132,12 +133,19 @@ class OrthonormalBasis {
   MatNxN const& GetCoef() const {
     return basis_.GetCoef();
   }
-  MatNx1 operator()(const Coord& xyz) const {
-    auto& center = GetCenter();
-    auto x{xyz[0] - center[0]}, y{xyz[1] - center[1]}, z{xyz[2] - center[2]};
-    MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+  Gauss const& GetGauss() const {
+    return *gauss_ptr_;
+  }
+  MatNx1 operator()(const Coord& global) const {
+    auto local = global;
+    global -= GetCenter();
+    MatNx1 col = RB::CallAt(local);
     return GetCoef() * col;
   }
+
+ private:
+  Gauss const* gauss_ptr_;
+  Basis<Scalar, kDim, kOrder> basis_;
 };
 
 }  // namespace integrator
