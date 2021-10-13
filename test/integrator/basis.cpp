@@ -1,6 +1,11 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
+#include <iostream>
+
 #include "mini/integrator/basis.hpp"
+#include "mini/integrator/function.hpp"
+#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/quad.hpp"
 
 #include "gtest/gtest.h"
 
@@ -110,6 +115,28 @@ TEST_F(TestBasis, In3dSpace) {
   EXPECT_EQ(res[7], y * y);
   EXPECT_EQ(res[8], y * z);
   EXPECT_EQ(res[9], z * z);
+}
+
+class TestOrthonormalBasis : public ::testing::Test {
+};
+TEST_F(TestOrthonormalBasis, In2dSpace) {
+  using Gauss = mini::integrator::Quad<double, 2, 4, 4>;
+  using Coord = Gauss::GlobalCoord;
+  Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
+  auto gauss = Gauss(p0, p1, p2, p3);
+  using Basis = mini::integrator::OrthonormalBasis<double, 2, 2>;
+  auto basis = Basis(gauss);
+  std::cout << basis.GetCoef() << std::endl;
+}
+TEST_F(TestOrthonormalBasis, In3dSpace) {
+  using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Coord = Gauss::GlobalCoord;
+  Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
+        p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};
+  auto gauss = Gauss(p0, p1, p2, p3, p4, p5, p6, p7);
+  using Basis = mini::integrator::OrthonormalBasis<double, 3, 2>;
+  auto basis = Basis(gauss);
+  std::cout << basis.GetCoef() << std::endl;
 }
 
 int main(int argc, char* argv[]) {
