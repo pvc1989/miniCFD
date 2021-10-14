@@ -60,8 +60,24 @@ class Projection {
     MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(xyz);
     return coef_ * col;
   }
-  MatKxN GetCoef() const {
+  const MatKxN& GetCoef() const {
     return coef_;
+  }
+  MatKxN GetPdvValue(Coord const& global) const {
+    MatKxN res; res.setZero();
+    auto local = global; local -= basis_ptr_->GetCenter();
+    return RawBasis<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoef());
+  }
+  MatKx1 GetSmoothness() const {
+    auto mat_pdv_prod = [&](Coord const& xyz) {
+      auto mat_pdv = GetPdvValue(xyz);
+      mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
+      return mat_pdv;
+    };
+    auto integral = Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
+    auto volume = Integrate(
+        [](const Coord &){ return 1.0; }, basis_ptr_->GetGauss());
+    return RawBasis<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
   }
 
  private:

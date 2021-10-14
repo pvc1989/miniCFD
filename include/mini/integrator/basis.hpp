@@ -39,10 +39,59 @@ class RawBasis<Scalar, 3, 2> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
+  // TODO: CallAt -> GetValue
   static MatNx1 CallAt(const Coord &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return col;
+  }
+  template <typename MatKxN>
+  static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coef) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    MatKxN res; res.setZero();
+    // pdv_x
+    res.col(1) += coef.col(1);
+    res.col(1) += coef.col(4) * (2 * x);
+    res.col(1) += coef.col(5) * y;
+    res.col(1) += coef.col(6) * z;
+    // pdv_y
+    res.col(2) += coef.col(2);
+    res.col(2) += coef.col(5) * x;
+    res.col(2) += coef.col(7) * (2 * y);
+    res.col(2) += coef.col(8) * z;
+    // pdv_z
+    res.col(3) += coef.col(3);
+    res.col(3) += coef.col(6) * x;
+    res.col(3) += coef.col(8) * y;
+    res.col(3) += coef.col(9) * (2 * z);
+    // pdv_xx
+    res.col(4) += coef.col(4);
+    // pdv_xy
+    res.col(5) += coef.col(5);
+    // pdv_xz
+    res.col(6) += coef.col(6);
+    // pdv_yy
+    res.col(7) += coef.col(7);
+    // pdv_yz
+    res.col(8) += coef.col(8);
+    // pdv_zz
+    res.col(9) += coef.col(9);
+    return res;
+  }
+  template <int K>
+  static auto GetSmoothness(const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+    using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+    MatKx1 smoothness = integral.col(1);
+    smoothness += integral.col(2);
+    smoothness += integral.col(3);
+    auto w2 = volume / 4;  // weight of 2nd-order partial derivatives
+    smoothness += integral.col(4) * w2;
+    smoothness += integral.col(5) * w2;
+    smoothness += integral.col(6) * w2;
+    smoothness += integral.col(7) * w2;
+    smoothness += integral.col(8) * w2;
+    smoothness += integral.col(9) * w2;
+    return smoothness;
   }
 };
 
