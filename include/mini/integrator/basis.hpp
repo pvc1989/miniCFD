@@ -103,13 +103,13 @@ class RawBasis<Scalar, 3, 2> {
  * @tparam kOrder the degree of completeness
  */
 template <typename Scalar, int kDim, int kOrder>
-class Basis : protected RawBasis<Scalar, kDim, kOrder> {
+class Basis {
   using Raw = RawBasis<Scalar, kDim, kOrder>;
 
  public:
-  using Raw::N;
-  using typename Raw::Coord;
-  using typename Raw::MatNx1;
+  static constexpr int N = Raw::N;
+  using Coord = typename Raw::Coord;
+  using MatNx1 = typename Raw::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
   using Gauss = std::conditional_t<kDim == 2, Face<Scalar, 2>, Cell<Scalar>>;
 
@@ -153,16 +153,16 @@ class Basis : protected RawBasis<Scalar, kDim, kOrder> {
 };
 
 template <typename Scalar, int kDim, int kOrder>
-class OrthoNormalBasis : protected Basis<Scalar, kDim, kOrder> {
+class OrthoNormalBasis {
   using RB = RawBasis<Scalar, kDim, kOrder>;
   using GB = Basis<Scalar, kDim, kOrder>;
 
  public:
-  using GB::N;  // the number of components
-  using typename GB::Coord;
-  using typename GB::Gauss;
-  using typename GB::MatNx1;
-  using typename GB::MatNxN;
+  static constexpr int N = GB::N;
+  using Coord = typename GB::Coord;
+  using Gauss = typename GB::Gauss;
+  using MatNx1 = typename GB::MatNx1;
+  using MatNxN = typename GB::MatNxN;
 
  public:
   explicit OrthoNormalBasis(const Gauss& gauss)
