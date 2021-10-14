@@ -50,6 +50,7 @@ class Projection {
     }, basis.GetGauss());
     coef_ = coef_ * basis.GetCoef();
   }
+  Projection() = default;
   Projection(const Projection&) = default;
   Projection(Projection&&) noexcept = default;
   Projection& operator=(const Projection&) = default;
@@ -78,6 +79,20 @@ class Projection {
     auto volume = Integrate(
         [](const Coord &){ return 1.0; }, basis_ptr_->GetGauss());
     return RawBasis<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
+  }
+  template <typename Callable>
+  void Project(Callable&& func, const Basis& basis) {
+    basis_ptr_ = &basis;
+    auto& center = basis_ptr_->GetCenter();
+    using Return = decltype(func(center));
+    static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
+    coef_ = Integrate([&](Coord const& xyz) {
+      auto f_col = func(xyz);
+      Mat1xN b_row = (*basis_ptr_)(xyz).transpose();
+      MatKxN prod = f_col * b_row;
+      return prod;
+    }, basis_ptr_->GetGauss());
+    coef_ = coef_ * basis_ptr_->GetCoef();
   }
 
  private:

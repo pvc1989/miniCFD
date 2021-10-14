@@ -105,25 +105,22 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Cell {
   static constexpr int kDim = 3;
   static constexpr int kOrder = 2;
-  using ProjFunc = integrator::ProjFunc<Real, kDim, kOrder, kFunc>;
-  using Basis = integrator::Basis<Real, kDim, kOrder>;
+  using Projection = integrator::Projection<Real, kDim, kOrder, kFunc>;
+  using Basis = integrator::OrthoNormalBasis<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
-  static constexpr int K = ProjFunc::K/* number of functions */;
-  static constexpr int N = ProjFunc::N/* size of the basis */;
+  static constexpr int K = Projection::K/* number of functions */;
+  static constexpr int N = Projection::N/* size of the basis */;
 
-  ProjFunc func_;
   Basis basis_;
   GaussPtr gauss_;
+  Projection func_;
   Int metis_id;
 
   using Value = decltype(func_(gauss_->GetCenter()));
 
   Cell(GaussPtr&& gauss, Int mid)
-      : gauss_(std::move(gauss)), metis_id(mid) {
-    basis_.Shift(gauss_->GetCenter());
-    basis_.OrthoNormalize(*gauss_);
+      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(mid) {      
   }
-  Cell() = default;
   Cell(const Cell&) = delete;
   Cell& operator=(const Cell&) = delete;
   Cell(Cell&&) noexcept = default;
@@ -132,7 +129,7 @@ struct Cell {
 
   template <class Callable>
   void Project(Callable&& new_func) {
-    func_.Reset(new_func, basis_, *gauss_);
+    func_.Project(new_func, basis_);
   }
 };
 

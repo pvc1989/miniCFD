@@ -44,11 +44,11 @@ TEST_F(TestProjection, ScalarFunction) {
   };
   using ProjFunc = mini::integrator::Projection<double, 3, 2, 1>;
   auto basis = Basis(gauss_);
-  auto proj_func = ProjFunc(func, basis);
+  auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 1);
   static_assert(ProjFunc::N == 10);
-  EXPECT_NEAR(proj_func({0, 0, 0})[0], 0.0, 1e-15);
-  EXPECT_DOUBLE_EQ(proj_func({0.3, 0.4, 0.5})[0], 0.5);
+  EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-15);
+  EXPECT_DOUBLE_EQ(projection({0.3, 0.4, 0.5})[0], 0.5);
 }
 TEST_F(TestProjection, VectorFunction) {
   using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
@@ -59,10 +59,10 @@ TEST_F(TestProjection, VectorFunction) {
     return res;
   };
   auto basis = Basis(gauss_);
-  auto proj_func = ProjFunc(func, basis);
+  auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
-  auto v_actual = proj_func({0.3, 0.4, 0.5});
+  auto v_actual = projection({0.3, 0.4, 0.5});
   auto v_expect = RawBasis<double, 3, 2>::CallAt({0.3, 0.4, 0.5});
   MatKx1 res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
@@ -84,16 +84,16 @@ TEST_F(TestProjection, PartialDerivatives) {
     return RawBasis::CallAt(point);
   };
   auto basis = Basis(gauss_);
-  auto proj_func = ProjFunc(func, basis);
+  auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto point = Coord{ 0.3, 0.4, 0.5 };
-  auto pdv_actual = proj_func.GetPdvValue(point);
+  auto pdv_actual = projection.GetPdvValue(point);
   auto coef = ProjFunc::MatKxN(); coef.setIdentity();
   auto pdv_expect = RawBasis::GetPdvValue(point, coef);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
-  auto s_actual = proj_func.GetSmoothness();
+  auto s_actual = projection.GetSmoothness();
   std::cout << "s_actual =\n" << s_actual << std::endl;
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
   EXPECT_NEAR(s_actual[1], 8.0, 1e-13);
@@ -157,7 +157,8 @@ TEST_F(TestProjFunc, Reconstruction) {
     std::cout << std::endl;
   }
   using CellType = mesh::cgns::Cell<int, double, 1>;
-  auto cells = std::vector<CellType>(n_cells);
+  auto cells = std::vector<CellType>();
+  cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
   auto& coordinates = zone.GetCoordinates();
   auto& x = coordinates.x();
@@ -179,23 +180,22 @@ TEST_F(TestProjFunc, Reconstruction) {
       coords(2, i) = z[i_node - 1];
     }
     auto hexa_ptr = std::make_unique<integrator::Hexa<double, 4, 4, 4>>(coords);
-    cells[i_cell] = CellType(std::move(hexa_ptr), i_cell);
+    cells.emplace_back(std::move(hexa_ptr), i_cell);
+    assert(&(cells[i_cell]) == &(cells.back()));
     cells[i_cell].Project(func);
   }
-  auto adj_proj_funcs = std::vector<std::vector<typename CellType::ProjFunc>>(n_cells);
+  auto adj_projections = std::vector<std::vector<typename CellType::Projection>>(n_cells);
   auto smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
-    auto& elem = *(cell_i.gauss_);
-    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness(elem));
-
+    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
     std::cout << i_cell << " : " << smoothness[i_cell].back()[0] << " : ";
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Mat3x1 const &xyz) {
         return cells[j_cell].func_(xyz);
       };
-      adj_proj_funcs[i_cell].emplace_back(adj_func, cell_i.basis_, elem);
-      smoothness[i_cell].emplace_back(adj_proj_funcs[i_cell].back().GetSmoothness(elem));
+      adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
+      smoothness[i_cell].emplace_back(adj_projections[i_cell].back().GetSmoothness());
       std::cout << smoothness[i_cell].back()[0] << ' ';
     }
     std::cout << std::endl;
