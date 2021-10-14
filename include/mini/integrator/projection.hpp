@@ -94,6 +94,15 @@ class Projection {
     }, basis_ptr_->GetGauss());
     coef_ = coef_ * basis_ptr_->GetCoef();
   }
+  Projection& Scale(const Scalar& ratio) {
+    coef_ *= ratio;
+    return *this;
+  }
+  Projection& operator+=(const Projection& that) {
+    assert(this->basis_ptr_ == that.basis_ptr_);
+    coef_ += that.coef_;
+    return *this;
+  }
 
  private:
   MatKxN coef_;
