@@ -50,6 +50,32 @@ TEST_F(TestProjection, ScalarFunction) {
   EXPECT_NEAR(proj_func({0, 0, 0})[0], 0.0, 1e-15);
   EXPECT_DOUBLE_EQ(proj_func({0.3, 0.4, 0.5})[0], 0.5);
 }
+TEST_F(TestProjection, VectorFunction) {
+  using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
+  using MatKx1 = typename ProjFunc::MatKx1;
+  auto func = [](Coord const &point){
+    auto x = point[0], y = point[1], z = point[2];
+    MatKx1 res = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return res;
+  };
+  auto basis = Basis(gauss_);
+  auto proj_func = ProjFunc(func, basis);
+  static_assert(ProjFunc::K == 10);
+  static_assert(ProjFunc::N == 10);
+  auto v_actual = proj_func({0.3, 0.4, 0.5});
+  auto v_expect = RawBasis<double, 3, 2>::CallAt({0.3, 0.4, 0.5});
+  MatKx1 res = v_actual - v_expect;
+  EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
+  EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
+  EXPECT_NEAR(v_actual[2], v_expect[2], 1e-15);
+  EXPECT_DOUBLE_EQ(v_actual[3], v_expect[3]);
+  EXPECT_NEAR(v_actual[4], v_expect[4], 1e-16);
+  EXPECT_NEAR(v_actual[5], v_expect[5], 1e-16);
+  EXPECT_DOUBLE_EQ(v_actual[6], v_expect[6]);
+  EXPECT_NEAR(v_actual[7], v_expect[7], 1e-15);
+  EXPECT_NEAR(v_actual[8], v_expect[8], 1e-16);
+  EXPECT_NEAR(v_actual[9], v_expect[9], 1e-15);
+}
 
 class TestProjFunc : public ::testing::Test {
  protected:
