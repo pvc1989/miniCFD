@@ -638,6 +638,117 @@ class Parser {
       }
     }
   }
+  void WriteSolutionsOnEachCell() const {
+    auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
+    auto ostrm = std::ofstream(vtk_file);
+    ostrm << "# vtk DataFile Version 2.0\n";
+    ostrm << "Field values on each cell.\n";
+    ostrm << "ASCII\n";
+    ostrm << "DATASET UNSTRUCTURED_GRID\n";
+    int n_points = 0;
+    auto coords = std::vector<Mat3x1>();
+    auto cells = std::vector<Int>();
+    auto fields = std::vector<typename Cell<Int, Real>::Value>();
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        int i_cell = sect.head();
+        int i_cell_tail = sect.head() + sect.size();
+        while (i_cell < i_cell_tail) {
+          cells.emplace_back(20);
+          auto& gauss = sect[i_cell].gauss_;
+          auto& func = sect[i_cell].func_;
+          // nodes at corners
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, -1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, -1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, +1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, +1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, -1, +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, -1, +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, +1, +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, +1, +1}));
+          fields.emplace_back(func(coords.back()));
+          // nodes on edges
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({0., -1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, 0., -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({0., +1, -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, 0., -1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({0., -1, +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, 0., +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({0., +1, +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, 0., +1}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, -1, 0.}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, -1, 0.}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({+1, +1, 0.}));
+          fields.emplace_back(func(coords.back()));
+          cells.emplace_back(coords.size());
+          coords.emplace_back(gauss->LocalToGlobal({-1, +1, 0.}));
+          fields.emplace_back(func(coords.back()));
+          ++i_cell;
+        }
+      }
+    }
+    ostrm << "POINTS " << coords.size() << " double\n";
+    for (auto& xyz : coords) {
+      ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
+    }
+    auto n_cells = cells.size() / 21;
+    ostrm << "CELLS " << n_cells << ' ' << cells.size() << '\n';
+    for (auto c : cells) {
+      ostrm << c << ' ';
+    }
+    ostrm << '\n';
+    ostrm << "CELL_TYPES " << n_cells << '\n';
+    for (int i = 0; i < n_cells; ++i) {
+      ostrm << "25 ";
+    }
+    ostrm << '\n';
+    ostrm << "POINT_DATA " << coords.size() << "\n";
+    int K = fields[0].size();
+    for (int k = 0; k < K; ++k) {
+      ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
+      ostrm << "LOOKUP_TABLE field\n";
+      for (auto& f : fields) {
+        ostrm << f[k] << '\n';
+      }
+      ostrm << '\n';
+    }
+  }
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
