@@ -200,6 +200,28 @@ TEST_F(TestProjFunc, Reconstruction) {
     }
     std::cout << std::endl;
   }
+  const double eps = 1e-6, w0 = 0.001;
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    int adj_cnt = cell_adjs[i_cell].size();
+    auto weights = std::vector<double>(adj_cnt + 1, w0);
+    weights[0] = 1 - w0 * adj_cnt;
+    for (int i = 0; i <= adj_cnt; ++i) {
+      auto temp = eps + smoothness[i_cell][i][0];
+      weights[i] /= temp * temp;
+    }
+    auto sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+    sum = 1.0 / sum;
+    for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
+      weights[j_cell] *= sum;
+    }
+    auto& projection_i = cells[i_cell].func_;
+    projection_i.Scale(weights[0]);
+    for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
+      projection_i += adj_projections[i_cell][j_cell].Scale(weights[j_cell+1]);
+    }
+    std::cout << i_cell << " : " << smoothness[i_cell][0][0] << " " << 
+        projection_i.GetSmoothness() << std::endl;
+  }
 }
 
 int main(int argc, char* argv[]) {
