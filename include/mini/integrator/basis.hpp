@@ -170,6 +170,7 @@ class OrthoNormalBasis {
     assert(gauss.PhysDim() == kDim);
     OrthoNormalize(&basis_, gauss);
   }
+  OrthoNormalBasis() = default;
   OrthoNormalBasis(const OrthoNormalBasis&) = default;
   OrthoNormalBasis(OrthoNormalBasis&&) noexcept = default;
   OrthoNormalBasis& operator=(const OrthoNormalBasis&) = default;

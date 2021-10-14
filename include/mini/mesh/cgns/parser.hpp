@@ -121,6 +121,7 @@ struct Cell {
   Cell(GaussPtr&& gauss, Int mid)
       : basis_(*gauss), gauss_(std::move(gauss)), metis_id(mid) {      
   }
+  Cell() = default;
   Cell(const Cell&) = delete;
   Cell& operator=(const Cell&) = delete;
   Cell(Cell&&) noexcept = default;
