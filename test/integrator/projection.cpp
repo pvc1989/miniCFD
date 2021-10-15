@@ -196,9 +196,9 @@ TEST_F(TestProjection, Reconstruction) {
       projection_i += adj_projections[i_cell][j_cell].Scale(weights[j_cell+1]);
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
-        i_cell, projection_i.GetSmoothness()[0], smoothness[i_cell][0][0]);
+        projection_i.GetSmoothness()[0], i_cell, smoothness[i_cell][0][0]);
     for (int j = 0; j < adj_cnt; ++j)
-      std::printf(" %8.2f (%2d <- %2d)", smoothness[i_cell][j + 1][0],
+      std::printf(" %8.2f (%2d <- %-2d)", smoothness[i_cell][j + 1][0],
           i_cell, cell_adjs[i_cell][j]);
     std::printf(" }\n");
   }
