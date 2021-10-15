@@ -131,13 +131,6 @@ TEST_F(TestProjection, Reconstruction) {
       cell_adjs[i_cell].emplace_back(j_cell);
     }
   }
-  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-    std::cout << i_cell << "'s neighbors : ";
-    for (auto j_cell : cell_adjs[i_cell]) {
-      std::cout << j_cell << " ";
-    }
-    std::cout << std::endl;
-  }
   using Cell = mini::mesh::cgns::Cell<int, double, 1>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
@@ -175,16 +168,13 @@ TEST_F(TestProjection, Reconstruction) {
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
     smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
-    std::cout << i_cell << " : " << smoothness[i_cell].back()[0] << " : ";
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Mat3x1 const &xyz) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
       smoothness[i_cell].emplace_back(adj_projections[i_cell].back().GetSmoothness());
-      std::cout << smoothness[i_cell].back()[0] << ' ';
     }
-    std::cout << std::endl;
   }
   const double eps = 1e-6, w0 = 0.001;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
@@ -205,8 +195,12 @@ TEST_F(TestProjection, Reconstruction) {
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
       projection_i += adj_projections[i_cell][j_cell].Scale(weights[j_cell+1]);
     }
-    std::cout << i_cell << " : " << smoothness[i_cell][0][0] << " " << 
-        projection_i.GetSmoothness() << std::endl;
+    std::printf("%8.2f (%2d) <- {%8.2f",
+        i_cell, projection_i.GetSmoothness()[0], smoothness[i_cell][0][0]);
+    for (int j = 0; j < adj_cnt; ++j)
+      std::printf(" %8.2f (%2d <- %2d)", smoothness[i_cell][j + 1][0],
+          i_cell, cell_adjs[i_cell][j]);
+    std::printf(" }\n");
   }
 }
 
