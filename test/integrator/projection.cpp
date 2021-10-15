@@ -26,11 +26,9 @@
 
 #include "gtest/gtest.h"
 
-namespace mini {
-namespace integrator {
-
 class TestProjection : public ::testing::Test {
  protected:
+  using RawBasis = mini::integrator::RawBasis<double, 3, 2>;
   using Basis = mini::integrator::OrthoNormalBasis<double, 3, 2>;
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
@@ -63,7 +61,7 @@ TEST_F(TestProjection, VectorFunction) {
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
-  auto v_expect = RawBasis<double, 3, 2>::CallAt({0.3, 0.4, 0.5});
+  auto v_expect = RawBasis::CallAt({0.3, 0.4, 0.5});
   MatKx1 res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
@@ -106,25 +104,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   EXPECT_NEAR(s_actual[8], 64.0/3, 1e-13);
   EXPECT_NEAR(s_actual[9], 80.0/3, 1e-12);
 }
-
-class TestProjFunc : public ::testing::Test {
- protected:
-  using Hexa4x4x4 = Hexa<double, 4, 4, 4>;
-  using Mat1x1 = algebra::Matrix<double, 1, 1>;
-  using Mat3x1 = algebra::Matrix<double, 3, 1>;
-  using Mat3x8 = algebra::Matrix<double, 3, 8>;
-  using BasisType = Basis<double, 3, 2>;
-  static constexpr int N = BasisType::N;
-  using MatNx1 = algebra::Matrix<double, N, 1>;
-  static constexpr int K = 10;
-  using MatKxN = algebra::Matrix<double, K, N>;
-  using CgnsMesh = mini::mesh::cgns::File<double>;
-  using MetisMesh = mini::mesh::metis::Mesh<idx_t>;
-  using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
-  using FieldType = mini::mesh::cgns::Field<double>;
-  std::string const test_data_dir_{TEST_DATA_DIR};
-};
-TEST_F(TestProjFunc, Reconstruction) {
+TEST_F(TestProjection, Reconstruction) {
   auto case_name = std::string("simple_cube");
   char cmd[1024];
   std::sprintf(cmd, "mkdir -p %s/whole %s/parts",
@@ -134,9 +114,11 @@ TEST_F(TestProjFunc, Reconstruction) {
   std::sprintf(cmd, "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  using CgnsMesh = mini::mesh::cgns::File<double>;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
-  auto mapper = MapperType();
+  using Mapper = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
+  auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
   idx_t n_common_nodes{3};
@@ -156,8 +138,8 @@ TEST_F(TestProjFunc, Reconstruction) {
     }
     std::cout << std::endl;
   }
-  using CellType = mesh::cgns::Cell<int, double, 1>;
-  auto cells = std::vector<CellType>();
+  using Cell = mini::mesh::cgns::Cell<int, double, 1>;
+  auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
   auto& coordinates = zone.GetCoordinates();
@@ -165,10 +147,11 @@ TEST_F(TestProjFunc, Reconstruction) {
   auto& y = coordinates.y();
   auto& z = coordinates.z();
   auto& sect = zone.GetSection(1);
-  auto func = [](Mat3x1 const &xyz) {
+  auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     return (x-1.5)*(x-1.5) + (y-1.5)*(y-1.5) + 10*(x < y ? 2. : 0.);
   };
+  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     Mat3x8 coords;
     const cgsize_t* array;  // head of 1-based-node-id list
@@ -179,12 +162,15 @@ TEST_F(TestProjFunc, Reconstruction) {
       coords(1, i) = y[i_node - 1];
       coords(2, i) = z[i_node - 1];
     }
-    auto hexa_ptr = std::make_unique<integrator::Hexa<double, 4, 4, 4>>(coords);
+    auto hexa_ptr = std::make_unique<Gauss>(coords);
     cells.emplace_back(std::move(hexa_ptr), i_cell);
     assert(&(cells[i_cell]) == &(cells.back()));
     cells[i_cell].Project(func);
   }
-  auto adj_projections = std::vector<std::vector<typename CellType::Projection>>(n_cells);
+  using Projection = typename Cell::Projection;
+  auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
+  using Mat1x1 = mini::algebra::Matrix<double, 1, 1>;
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
   auto smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
@@ -228,6 +214,3 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
-}  // namespace integrator
-}  // namespace mini
