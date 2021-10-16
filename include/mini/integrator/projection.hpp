@@ -27,7 +27,7 @@ class Projection {
   using Basis = OrthoNormalBasis<Scalar, kDim, kOrder>;
 
  public:
-  static constexpr int N = Basis::N; 
+  static constexpr int N = Basis::N;
   static constexpr int K = kFunc;
   using Coord = typename Basis::Coord;
   using MatNx1 = typename Basis::MatNx1;

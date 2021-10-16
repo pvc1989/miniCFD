@@ -285,15 +285,18 @@ Hexa<Scalar, Qx, Qy, Qz>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<typename Hexa<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::local_coords_ = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
+Hexa<Scalar, Qx, Qy, Qz>::local_coords_
+    = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<Scalar, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::local_weights_ = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
+Hexa<Scalar, Qx, Qy, Qz>::local_weights_
+    = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<std::array<int, 4>, 6> const
-Hexa<Scalar, Qx, Qy, Qz>::faces_ = Hexa<Scalar, Qx, Qy, Qz>::BuildFaces();
+Hexa<Scalar, Qx, Qy, Qz>::faces_
+    = Hexa<Scalar, Qx, Qy, Qz>::BuildFaces();
 
 }  // namespace integrator
 }  // namespace mini

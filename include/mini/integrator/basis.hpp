@@ -39,7 +39,7 @@ class RawBasis<Scalar, 3, 2> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
-  // TODO: CallAt -> GetValue
+  // TODO(PVC): CallAt -> GetValue
   static MatNx1 CallAt(const Coord &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
@@ -79,7 +79,8 @@ class RawBasis<Scalar, 3, 2> {
     return res;
   }
   template <int K>
-  static auto GetSmoothness(const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+  static auto GetSmoothness(
+      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     MatKx1 smoothness = integral.col(1);
     smoothness += integral.col(2);
