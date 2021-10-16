@@ -18,12 +18,12 @@ class TestHexa4x4x4 : public ::testing::Test {
   using Mat1x8 = algebra::Matrix<double, 1, 8>;
   using Mat3x8 = algebra::Matrix<double, 3, 8>;
   using Mat3x1 = algebra::Matrix<double, 3, 1>;
-  using B = Basis<double, 3, 2>;
-  using Y = typename B::MatNx1;
-  using A = typename B::MatNxN;
-  using Pscalar = ProjFunc<double, 3, 2, 1>;
+  using Basis = OrthoNormalBasis<double, 3, 2>;
+  using Y = typename Basis::MatNx1;
+  using A = typename Basis::MatNxN;
+  using ScalarPF = Projection<double, 3, 2, 1>;
   using Mat1x10 = algebra::Matrix<double, 1, 10>;
-  using Pvector = ProjFunc<double, 3, 2, 11>;
+  using VectorPF = Projection<double, 3, 2, 11>;
   using Mat11x1 = algebra::Matrix<double, 11, 1>;
   using Mat11x10 = algebra::Matrix<double, 11, 10>;
 };
@@ -64,76 +64,72 @@ TEST_F(TestHexa4x4x4, CommonMethods) {
   EXPECT_DOUBLE_EQ(Norm(f, hexa), sqrt(Innerprod(f, f, hexa)));
   EXPECT_DOUBLE_EQ(Norm(g, hexa), sqrt(Innerprod(g, g, hexa)));
 }
-TEST_F(TestHexa4x4x4, Basis) {
-  Mat3x1 origin = {0, 0, 0}, left = {-1, 2, 3}, right = {1, 3, 2};
-  B b; double residual;
-  b = B();
-  EXPECT_EQ(b(origin), Y(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-  EXPECT_EQ(b(left), Y(1, -1, 2, 3, 1, -2, -3, 4, 6, 9));
-  EXPECT_EQ(b(right), Y(1, 1, 3, 2, 1, 3, 2, 9, 6, 4));
+TEST_F(TestHexa4x4x4, OrthoNormalBasis) {
+  // build a hexa-integrator
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
-  OrthoNormalize(&b, hexa);
-  residual = (Integrate([&b](const Mat3x1& xyz) {
-    auto col = b(xyz);
+  // build an orthonormal basis on it
+  auto basis = Basis(hexa);
+  // check orthonormality
+  double residual = (Integrate([&basis](const Mat3x1& xyz) {
+    auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
   }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
-  b = B(left);
-  EXPECT_EQ(b(origin), Y(1, 1, -2, -3, 1, -2, -3, 4, 6, 9));
-  EXPECT_EQ(b(left), Y(1, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-  EXPECT_EQ(b(right), Y(1, 2, 1, -1, 4, 2, -2, 1, -1, 1));
+  // build another hexa-integrator
+  Mat3x1 left = {-1, 2, 3};
   auto x = left[0], y = left[1], z = left[2];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1, x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1, y-1, y-1, y+1, y+1;
   xyz_global_i.row(2) << z-1, z-1, z-1, z-1, z+1, z+1, z+1, z+1;
   hexa = Hexa4x4x4(xyz_global_i);
-  b.OrthoNormalize(hexa);
-  residual = (Integrate([&b](const Mat3x1& xyz) {
-    auto col = b(xyz);
+  // build another orthonormal basis on it
+  basis = Basis(hexa);
+  // check orthonormality
+  residual = (Integrate([&basis](const Mat3x1& xyz) {
+    auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
   }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
-TEST_F(TestHexa4x4x4, ProjFunc) {
+TEST_F(TestHexa4x4x4, Projection) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   auto hexa = Hexa4x4x4(xyz_global_i);
-  B b;
-  OrthoNormalize(&b, hexa);
-  auto fscalar = [](Mat3x1 const& xyz){
+  auto basis = Basis(hexa);
+  auto scalar_f = [](Mat3x1 const& xyz){
     return xyz[0] * xyz[1] + xyz[2];
   };
-  auto scalar = Pscalar(fscalar, b, hexa);
-  double residual = (scalar.GetCoef() - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0))
-      .cwiseAbs().maxCoeff();
+  auto scalar_pf = ScalarPF(scalar_f, basis);
+  double residual = (scalar_pf.GetCoef()
+      - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0)).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
-  auto fvector = [](Mat3x1 const& xyz) {
+  auto vector_f = [](Mat3x1 const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     Mat11x1 func(0, 1,
                 x, y, z,
                 x * x, x * y, x * z, y * y, y * z, z * z);
     return func;
   };
-  auto vec = Pvector(fvector, b, hexa);
+  auto vector_pf = VectorPF(vector_f, basis);
   Mat11x10 exact_vector;
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();
-  Mat11x10 abs_diff = vec.GetCoef() - exact_vector;
+  Mat11x10 abs_diff = vector_pf.GetCoef() - exact_vector;
   EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
+
+}  // namespace integrator
+}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
-
-}  // namespace integrator
-}  // namespace mini

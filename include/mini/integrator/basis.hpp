@@ -142,10 +142,6 @@ class Basis {
   void Shift(const Coord& new_center) {
     center_ = new_center;
   }
-  void OrthoNormalize(const Gauss& gauss) {
-    assert(gauss.PhysDim() == kDim);
-    integrator::OrthoNormalize(this, gauss);
-  }
 
  private:
   Coord center_;

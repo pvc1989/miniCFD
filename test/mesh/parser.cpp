@@ -25,6 +25,7 @@ TEST_F(TestParser, Print) {
 }  // namespace mesh
 }  // namespace mini
 
+// mpirun -n 4 ./parser
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
   int comm_size, comm_rank;
