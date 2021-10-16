@@ -16,9 +16,6 @@
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/cgns/parser.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
-
-#include <cmath>
-
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 #include "mini/integrator/projection.hpp"
 #include "mini/integrator/function.hpp"
@@ -106,12 +103,13 @@ TEST_F(TestProjection, PartialDerivatives) {
 }
 TEST_F(TestProjection, Reconstruction) {
   auto case_name = std::string("simple_cube");
-  char cmd[1024];
-  std::sprintf(cmd, "mkdir -p %s/whole %s/parts",
+  constexpr int kCommandLength = 1024;
+  char cmd[kCommandLength];
+  std::snprintf(cmd, kCommandLength, "mkdir -p %s/whole %s/parts",
       case_name.c_str(), case_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/whole/original.cgns";
-  std::sprintf(cmd, "gmsh %s/%s.geo -save -o %s",
+  std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   using CgnsMesh = mini::mesh::cgns::File<double>;
@@ -173,7 +171,8 @@ TEST_F(TestProjection, Reconstruction) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      smoothness[i_cell].emplace_back(adj_projections[i_cell].back().GetSmoothness());
+      auto s = adj_projections[i_cell].back().GetSmoothness();
+      smoothness[i_cell].emplace_back(s);
     }
   }
   const double eps = 1e-6, w0 = 0.001;

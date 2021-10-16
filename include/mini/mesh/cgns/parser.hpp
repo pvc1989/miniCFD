@@ -119,7 +119,7 @@ struct Cell {
   using Value = decltype(func_(gauss_->GetCenter()));
 
   Cell(GaussPtr&& gauss, Int mid)
-      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(mid) {      
+      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(mid) {
   }
   Cell() = default;
   Cell(const Cell&) = delete;

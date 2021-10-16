@@ -173,11 +173,13 @@ Quad<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
 template <typename Scalar, int D, int Qx, int Qy>
 std::array<typename Quad<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::local_coords_ = Quad<Scalar, D, Qx, Qy>::BuildLocalCoords();
+Quad<Scalar, D, Qx, Qy>::local_coords_
+    = Quad<Scalar, D, Qx, Qy>::BuildLocalCoords();
 
 template <typename Scalar, int D, int Qx, int Qy>
 std::array<Scalar, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::local_weights_ = Quad<Scalar, D, Qx, Qy>::BuildLocalWeights();
+Quad<Scalar, D, Qx, Qy>::local_weights_
+    = Quad<Scalar, D, Qx, Qy>::BuildLocalWeights();
 
 }  // namespace integrator
 }  // namespace mini
