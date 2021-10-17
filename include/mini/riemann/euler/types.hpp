@@ -18,19 +18,28 @@ class Tuple {
   using Scalar = double;
   using Vector = algebra::Column<Scalar, kDim>;
   // Data:
-  Scalar mass{0};
+  Scalar mass{0}, energy{0};
   Vector momentum{0};
-  Scalar energy{0};
   // Constructors:
   Tuple() = default;
   Tuple(Scalar const& rho,
         Scalar const& u,
         Scalar const& p)
-      : mass{rho}, energy{p}, momentum{u} {}
+      : mass{rho}, energy{p}, momentum{u} {
+    static_assert(kDim >= 1);
+  }
   Tuple(Scalar const& rho,
         Scalar const& u, Scalar const& v,
         Scalar const& p)
-      : mass{rho}, energy{p}, momentum{u, v} {}
+      : mass{rho}, energy{p}, momentum{u, v} {
+    static_assert(kDim >= 2);
+  }
+  Tuple(Scalar const& rho,
+        Scalar const& u, Scalar const& v, Scalar const& w,
+        Scalar const& p)
+      : mass{rho}, energy{p}, momentum{u, v, w} {
+    static_assert(kDim == 3);
+  }
   // Arithmetic Operators:
   Tuple& operator+=(Tuple const& that) {
     this->mass += that.mass;
@@ -62,6 +71,7 @@ class Tuple {
            (this->momentum == that.momentum);
   }
 };
+
 template <int kDim>
 class Flux : public Tuple<kDim> {
   // Types:
@@ -69,6 +79,7 @@ class Flux : public Tuple<kDim> {
   // Constructors:
   using Base::Base;
 };
+
 template <int kDim>
 class Primitive : public Tuple<kDim> {
  public:
@@ -87,13 +98,22 @@ class Primitive : public Tuple<kDim> {
   Pressure const& p() const { return this->energy; }
   Speed const& u() const { return this->momentum[0]; }
   Speed const& v() const { return this->momentum[1]; }
+  Speed const& w() const {
+    static_assert(kDim == 3);
+    return this->momentum[2];
+  }
   Density& rho() { return this->mass; }
   Pressure& p() { return this->energy; }
   Speed& u() { return this->momentum[0]; }
   Speed& v() { return this->momentum[1]; }
+  Speed& w() {
+    static_assert(kDim == 3);
+    return this->momentum[2];
+  }
 };
+
 template <int kDim>
-struct Conservative : Tuple<kDim>{
+struct Conservative : public Tuple<kDim>{
   // Types:
   using Base = Tuple<kDim>;
   using Scalar = typename Base::Scalar;
@@ -103,8 +123,10 @@ struct Conservative : Tuple<kDim>{
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
-  explicit Conservative(Base const& tuple) : Base(tuple) {}
+  explicit Conservative(Base const& tuple) : Base(tuple) {
+  }
 };
+
 template <int kInteger = 1, int kDecimal = 4>
 class IdealGas {
  private:
