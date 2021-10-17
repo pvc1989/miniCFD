@@ -202,6 +202,120 @@ TEST_F(TestProjection, Reconstruction) {
     std::printf(" }\n");
   }
 }
+TEST_F(TestProjection, EulerSystem) {
+  auto case_name = std::string("simple_cube");
+  constexpr int kCommandLength = 1024;
+  char cmd[kCommandLength];
+  std::snprintf(cmd, kCommandLength, "mkdir -p %s/whole %s/parts",
+      case_name.c_str(), case_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  auto old_file_name = case_name + "/whole/original.cgns";
+  std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
+      test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  using CgnsMesh = mini::mesh::cgns::File<double>;
+  auto cgns_mesh = CgnsMesh(old_file_name);
+  cgns_mesh.ReadBases();
+  using Mapper = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
+  auto mapper = Mapper();
+  auto metis_mesh = mapper.Map(cgns_mesh);
+  EXPECT_TRUE(mapper.IsValid());
+  idx_t n_common_nodes{3};
+  auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
+  int n_cells = metis_mesh.CountCells();
+  auto cell_adjs = std::vector<std::vector<int>>(n_cells);
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    for (int r = graph.range(i_cell); r < graph.range(i_cell+1); ++r) {
+      int j_cell = graph.index(r);
+      cell_adjs[i_cell].emplace_back(j_cell);
+    }
+  }
+  using Cell = mini::mesh::cgns::Cell<int, double, 5>;
+  auto cells = std::vector<Cell>();
+  cells.reserve(n_cells);
+  auto& zone = cgns_mesh.GetBase(1).GetZone(1);
+  auto& coordinates = zone.GetCoordinates();
+  auto& x = coordinates.x();
+  auto& y = coordinates.y();
+  auto& z = coordinates.z();
+  auto& sect = zone.GetSection(1);
+  using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
+  auto func = [](Coord const &xyz) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    Mat5x1 res;
+    res[0] = x + 10 * (x < y ? 1 : 0.125);
+    res[1] = y + 10 * (x < y ? -2 : 2);
+    res[2] = z + 10 * (x < y ? -2 : 2);
+    res[3] = x * x + 10 * (x < y ? -2 : 2);
+    res[4] = 10 * (x < y ? 1 : 0.1);
+    return res;
+  };
+  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    Mat3x8 coords;
+    const cgsize_t* array;  // head of 1-based-node-id list
+    array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
+    for (int i = 0; i < 8; ++i) {
+      auto i_node = array[i];
+      coords(0, i) = x[i_node - 1];
+      coords(1, i) = y[i_node - 1];
+      coords(2, i) = z[i_node - 1];
+    }
+    auto hexa_ptr = std::make_unique<Gauss>(coords);
+    cells.emplace_back(std::move(hexa_ptr), i_cell);
+    assert(&(cells[i_cell]) == &(cells.back()));
+    cells[i_cell].Project(func);
+  }
+  using Projection = typename Cell::Projection;
+  auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+  auto smoothness = std::vector<std::vector<Mat5x1>>(n_cells);
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    auto& cell_i = cells[i_cell];
+    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
+    for (auto j_cell : cell_adjs[i_cell]) {
+      auto adj_func = [&](Mat3x1 const &xyz) {
+        return cells[j_cell].func_(xyz);
+      };
+      adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
+      auto s = adj_projections[i_cell].back().GetSmoothness();
+      smoothness[i_cell].emplace_back(s);
+    }
+  }
+  const double eps = 1e-6, w0 = 0.001;
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    int adj_cnt = cell_adjs[i_cell].size();
+    auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
+    weights[0] *= -adj_cnt;
+    weights[0].array() += 1;
+    for (int i = 0; i <= adj_cnt; ++i) {
+      Mat5x1 temp = smoothness[i_cell][i];
+      temp.array() += eps;
+      weights[i].array() /= temp.array() * temp.array();
+    }
+    Mat5x1 sum; sum.setZero();
+    sum = std::accumulate(weights.begin(), weights.end(), sum);
+    sum.array() = 1.0 / sum.array();
+    for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
+      weights[j_cell].array() *= sum.array();
+    }
+    auto& projection_i = cells[i_cell].func_;
+    projection_i *= weights[0];
+    for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
+      adj_projections[i_cell][j_cell] *= weights[j_cell+1];
+      projection_i += adj_projections[i_cell][j_cell];
+    }
+    for (int k = 0; k < 5; ++k) {
+      std::printf("%8.2f (%2d[%d]) <- {%8.2f",
+          projection_i.GetSmoothness()[k], i_cell, k, smoothness[i_cell][0][k]);
+      for (int j = 0; j < adj_cnt; ++j)
+        std::printf(" %8.2f (%2d <- %-2d)", smoothness[i_cell][j + 1][k],
+            i_cell, cell_adjs[i_cell][j]);
+      std::printf(" }\n");
+    }
+    std::printf("\n");
+  }
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
