@@ -98,6 +98,12 @@ class Projection {
     coef_ *= ratio;
     return *this;
   }
+  Projection& operator*=(const MatKx1& ratio) {
+    for (int i = 0; i < K; ++i) {
+      coef_.row(i) *= ratio[i];
+    }
+    return *this;
+  }
   Projection& operator+=(const Projection& that) {
     assert(this->basis_ptr_ == that.basis_ptr_);
     coef_ += that.coef_;
