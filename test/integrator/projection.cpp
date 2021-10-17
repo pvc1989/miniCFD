@@ -44,6 +44,11 @@ TEST_F(TestProjection, ScalarFunction) {
   static_assert(ProjFunc::N == 10);
   EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-15);
   EXPECT_DOUBLE_EQ(projection({0.3, 0.4, 0.5})[0], 0.5);
+  auto integral_f = mini::integrator::Integrate(func, gauss_);
+  auto integral_1 = mini::integrator::Integrate([](auto const &){
+    return 1.0;
+  }, gauss_);
+  EXPECT_NEAR(projection.GetAverage()[0], integral_f / integral_1, 1e-14);
 }
 TEST_F(TestProjection, VectorFunction) {
   using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
@@ -70,6 +75,12 @@ TEST_F(TestProjection, VectorFunction) {
   EXPECT_NEAR(v_actual[7], v_expect[7], 1e-15);
   EXPECT_NEAR(v_actual[8], v_expect[8], 1e-16);
   EXPECT_NEAR(v_actual[9], v_expect[9], 1e-15);
+  auto integral_f = mini::integrator::Integrate(func, gauss_);
+  auto integral_1 = mini::integrator::Integrate([](auto const &){
+    return 1.0;
+  }, gauss_);
+  res = projection.GetAverage() - integral_f / integral_1;
+  EXPECT_NEAR(res.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
