@@ -48,9 +48,13 @@ class Projection {
       MatKxN prod = f_col * b_row;
       return prod;
     }, basis.GetGauss());
+    average_ = coef_.col(0);
+    average_ *= basis_ptr_->GetCoef()(0, 0);
     coef_ = coef_ * basis.GetCoef();
   }
-  Projection() = default;
+  Projection()
+      : coef_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(nullptr) {
+  }
   Projection(const Projection&) = default;
   Projection(Projection&&) noexcept = default;
   Projection& operator=(const Projection&) = default;
@@ -69,6 +73,9 @@ class Projection {
     auto local = global; local -= basis_ptr_->GetCenter();
     return RawBasis<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoef());
   }
+  MatKx1 const& GetAverage() const {
+    return average_;
+  }
   MatKx1 GetSmoothness() const {
     auto mat_pdv_prod = [&](Coord const& xyz) {
       auto mat_pdv = GetPdvValue(xyz);
@@ -82,17 +89,7 @@ class Projection {
   }
   template <typename Callable>
   void Project(Callable&& func, const Basis& basis) {
-    basis_ptr_ = &basis;
-    auto& center = basis_ptr_->GetCenter();
-    using Return = decltype(func(center));
-    static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
-    coef_ = Integrate([&](Coord const& xyz) {
-      auto f_col = func(xyz);
-      Mat1xN b_row = (*basis_ptr_)(xyz).transpose();
-      MatKxN prod = f_col * b_row;
-      return prod;
-    }, basis_ptr_->GetGauss());
-    coef_ = coef_ * basis_ptr_->GetCoef();
+    *this = Projection(std::forward<Callable>(func), basis);
   }
   Projection& Scale(const Scalar& ratio) {
     coef_ *= ratio;
@@ -112,6 +109,7 @@ class Projection {
 
  private:
   MatKxN coef_;
+  MatKx1 average_;
   const Basis* basis_ptr_;
 };
 
