@@ -91,19 +91,27 @@ class Projection {
   void Project(Callable&& func, const Basis& basis) {
     *this = Projection(std::forward<Callable>(func), basis);
   }
-  Projection& Scale(const Scalar& ratio) {
+  Projection& operator*=(const Scalar& ratio) {
     coef_ *= ratio;
+    average_ *= ratio;
     return *this;
   }
   Projection& operator*=(const MatKx1& ratio) {
     for (int i = 0; i < K; ++i) {
       coef_.row(i) *= ratio[i];
+      average_[i] *= ratio[i];
     }
+    return *this;
+  }
+  Projection& operator+=(const MatKx1& offset) {
+    coef_.col(0) += offset;
+    average_ += offset;
     return *this;
   }
   Projection& operator+=(const Projection& that) {
     assert(this->basis_ptr_ == that.basis_ptr_);
     coef_ += that.coef_;
+    average_ += that.average_;
     return *this;
   }
 

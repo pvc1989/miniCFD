@@ -112,8 +112,9 @@ TEST_F(TestProjection, PartialDerivatives) {
   EXPECT_NEAR(s_actual[8], 64.0/3, 1e-13);
   EXPECT_NEAR(s_actual[9], 80.0/3, 1e-12);
 }
-TEST_F(TestProjection, Reconstruction) {
+TEST_F(TestProjection, ReconstructScalar) {
   auto case_name = std::string("simple_cube");
+  // build mesh files
   constexpr int kCommandLength = 1024;
   char cmd[kCommandLength];
   std::snprintf(cmd, kCommandLength, "mkdir -p %s/whole %s/parts",
@@ -130,6 +131,7 @@ TEST_F(TestProjection, Reconstruction) {
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
+  // get adjacency between cells
   idx_t n_common_nodes{3};
   auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
   int n_cells = metis_mesh.CountCells();
@@ -140,6 +142,7 @@ TEST_F(TestProjection, Reconstruction) {
       cell_adjs[i_cell].emplace_back(j_cell);
     }
   }
+  // build cells and project the function on them
   using Cell = mini::mesh::cgns::Cell<int, double, 1>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
@@ -182,8 +185,12 @@ TEST_F(TestProjection, Reconstruction) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      auto s = adj_projections[i_cell].back().GetSmoothness();
-      smoothness[i_cell].emplace_back(s);
+      auto& adj_projection = adj_projections[i_cell].back();
+      Mat1x1 diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      adj_projection += diff;
+      diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+      smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
   }
   const double eps = 1e-6, w0 = 0.001;
@@ -201,9 +208,9 @@ TEST_F(TestProjection, Reconstruction) {
       weights[j_cell] *= sum;
     }
     auto& projection_i = cells[i_cell].func_;
-    projection_i.Scale(weights[0]);
+    projection_i *= weights[0];
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
-      projection_i += adj_projections[i_cell][j_cell].Scale(weights[j_cell+1]);
+      projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell+1];
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
         projection_i.GetSmoothness()[0], i_cell, smoothness[i_cell][0][0]);
@@ -213,8 +220,9 @@ TEST_F(TestProjection, Reconstruction) {
     std::printf(" }\n");
   }
 }
-TEST_F(TestProjection, EulerSystem) {
+TEST_F(TestProjection, ReconstructVector) {
   auto case_name = std::string("simple_cube");
+  // build mesh files
   constexpr int kCommandLength = 1024;
   char cmd[kCommandLength];
   std::snprintf(cmd, kCommandLength, "mkdir -p %s/whole %s/parts",
@@ -231,6 +239,7 @@ TEST_F(TestProjection, EulerSystem) {
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
+  // get adjacency between cells
   idx_t n_common_nodes{3};
   auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
   int n_cells = metis_mesh.CountCells();
@@ -241,6 +250,7 @@ TEST_F(TestProjection, EulerSystem) {
       cell_adjs[i_cell].emplace_back(j_cell);
     }
   }
+  // build cells and project the function on them
   using Cell = mini::mesh::cgns::Cell<int, double, 5>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
@@ -250,6 +260,7 @@ TEST_F(TestProjection, EulerSystem) {
   auto& y = coordinates.y();
   auto& z = coordinates.z();
   auto& sect = zone.GetSection(1);
+  // project function
   using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
   auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
@@ -289,8 +300,11 @@ TEST_F(TestProjection, EulerSystem) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      auto s = adj_projections[i_cell].back().GetSmoothness();
-      smoothness[i_cell].emplace_back(s);
+      auto& adj_projection = adj_projections[i_cell].back();
+      adj_projection += cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      auto diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+      smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
   }
   const double eps = 1e-6, w0 = 0.001;
