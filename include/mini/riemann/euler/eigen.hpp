@@ -20,6 +20,7 @@ class EigenMatrices {
 
   Mat5x5 L, R;
 
+  EigenMatrices() = default;
   EigenMatrices(Primitive<3>& primitive, // orthonormal vectors:
       const Mat3x1& nu, const Mat3x1& sigma, const Mat3x1& pi) {
     constexpr int x = 0, y = 1, z = 2;
