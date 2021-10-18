@@ -20,6 +20,7 @@
 #include "mini/integrator/projection.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
+#include "mini/riemann/euler/eigen.hpp"
 
 #include "gtest/gtest.h"
 
@@ -175,13 +176,12 @@ TEST_F(TestProjection, ReconstructScalar) {
   using Projection = typename Cell::Projection;
   auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
   using Mat1x1 = mini::algebra::Matrix<double, 1, 1>;
-  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  auto smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
+  auto adj_smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
-    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
+    adj_smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
-      auto adj_func = [&](Mat3x1 const &xyz) {
+      auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
@@ -190,7 +190,7 @@ TEST_F(TestProjection, ReconstructScalar) {
       adj_projection += diff;
       diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
       EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
-      smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
+      adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
   }
   const double eps = 1e-6, w0 = 0.001;
@@ -199,7 +199,7 @@ TEST_F(TestProjection, ReconstructScalar) {
     auto weights = std::vector<double>(adj_cnt + 1, w0);
     weights[0] = 1 - w0 * adj_cnt;
     for (int i = 0; i <= adj_cnt; ++i) {
-      auto temp = eps + smoothness[i_cell][i][0];
+      auto temp = eps + adj_smoothness[i_cell][i][0];
       weights[i] /= temp * temp;
     }
     auto sum = std::accumulate(weights.begin(), weights.end(), 0.0);
@@ -213,9 +213,9 @@ TEST_F(TestProjection, ReconstructScalar) {
       projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell+1];
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
-        projection_i.GetSmoothness()[0], i_cell, smoothness[i_cell][0][0]);
+        projection_i.GetSmoothness()[0], i_cell, adj_smoothness[i_cell][0][0]);
     for (int j = 0; j < adj_cnt; ++j)
-      std::printf(" %8.2f (%2d <- %-2d)", smoothness[i_cell][j + 1][0],
+      std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j + 1][0],
           i_cell, cell_adjs[i_cell][j]);
     std::printf(" }\n");
   }
@@ -260,18 +260,19 @@ TEST_F(TestProjection, ReconstructVector) {
   auto& y = coordinates.y();
   auto& z = coordinates.z();
   auto& sect = zone.GetSection(1);
-  // project function
+  // define the function
   using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
   auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     Mat5x1 res;
-    res[0] = x + 10 * (x < y ? 1 : 0.125);
-    res[1] = y + 10 * (x < y ? -2 : 2);
-    res[2] = z + 10 * (x < y ? -2 : 2);
-    res[3] = x * x + 10 * (x < y ? -2 : 2);
-    res[4] = 10 * (x < y ? 1 : 0.1);
+    res[0] = x * x + 10 * (x < y ? +1 : 0.125);
+    res[1] =          2 * (x < y ? -2 : 2);
+    res[2] =          2 * (x < y ? -2 : 2);
+    res[3] =          2 * (x < y ? -2 : 2);
+    res[4] = y * y + 90 * (x < y ? +1 : 0.5);
     return res;
   };
+  auto volumes = std::vector<double>(n_cells);
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     Mat3x8 coords;
@@ -287,16 +288,59 @@ TEST_F(TestProjection, ReconstructVector) {
     cells.emplace_back(std::move(hexa_ptr), i_cell);
     assert(&(cells[i_cell]) == &(cells.back()));
     cells[i_cell].Project(func);
+    volumes[i_cell] = cells[i_cell].basis_.Measure();;
   }
+  // project onto adjacent cells
   using Projection = typename Cell::Projection;
   auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
-  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  auto smoothness = std::vector<std::vector<Mat5x1>>(n_cells);
+  auto adj_smoothness = std::vector<std::vector<Mat5x1>>(n_cells);
+  auto GetNu = [](Cell const &cell_i, Cell const &cell_j) {
+    Coord nu = cell_i.basis_.GetCenter() - cell_j.basis_.GetCenter();
+    nu /= std::hypot(nu[0], nu[1], nu[2]);
+    return nu;
+  };
+  auto GetSigmaPi = [](Coord const &nu, Coord *sigma, Coord *pi){
+    int id = 0;
+    for (int i = 1; i < 3; ++i) {
+      if (std::abs(nu[i]) < std::abs(nu[id])) {
+        id = i;
+      }
+    }
+    auto a = nu[0], b = nu[1], c = nu[2];
+    switch (id) {
+    case 0:
+      *sigma << 0.0, -c, b;
+      *pi << (b * b + c * c), -(a * b), -(a * c);
+      break;
+    case 1:
+      *sigma << c, 0.0, -a;
+      *pi << -(a * b), (a * a + c * c), -(b * c);
+      break;
+    case 2:
+      *sigma << -b, a, 0.0;
+      *pi << -(a * c), -(b * c), (a * a + b * b);
+      break;
+    default:
+      break;
+    }
+    *sigma /= std::hypot((*sigma)[0], (*sigma)[1], (*sigma)[2]);
+    *pi /= std::hypot((*pi)[0], (*pi)[1], (*pi)[2]);
+  };
+  using IdealGas = mini::riemann::euler::IdealGas<1, 4>;
+  using Matrices = mini::riemann::euler::EigenMatrices<double, IdealGas>;
+  struct Rotation {
+    Coord nu, sigma, pi;
+    Matrices eigen;
+    std::vector<Projection> projections;
+    std::vector<Mat5x1> smoothness; 
+  };
+  auto rotations = std::vector<std::vector<Rotation>>(n_cells);
+  auto weno_projections = std::vector<Projection>(n_cells);
+  const double eps = 1e-6, w0 = 0.01;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
-    smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
-      auto adj_func = [&](Mat3x1 const &xyz) {
+      auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].func_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
@@ -304,40 +348,105 @@ TEST_F(TestProjection, ReconstructVector) {
       adj_projection += cell_i.func_.GetAverage() - adj_projection.GetAverage();
       auto diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
       EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
-      smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
+      adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
-  }
-  const double eps = 1e-6, w0 = 0.001;
+    adj_smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
+    int adj_cnt = cell_adjs[i_cell].size();
+    double total_volume = 0.0;
+    weno_projections[i_cell] = Projection(cell_i.basis_);
+    for (auto j_cell : cell_adjs[i_cell]) {
+      rotations[i_cell].emplace_back();
+      auto& curr = rotations[i_cell].back();
+      curr.nu = GetNu(cells[i_cell], cells[j_cell]);
+      GetSigmaPi(curr.nu, &(curr.sigma), &(curr.pi));
+      // assert(nu.cross(sigma) == pi);
+      auto u_conservative = cell_i.func_.GetAverage();
+      auto rho = u_conservative[0];
+      auto u = u_conservative[1] / rho;
+      auto v = u_conservative[2] / rho;
+      auto w = u_conservative[3] / rho;
+      auto ek = (u * u + v * v + w * w) / 2;
+      auto p = (u_conservative[4] - rho * ek) * 0.4;
+      assert(rho > 0 && p > 0);
+      auto u_primitive = mini::riemann::euler::Primitive<3>{rho, u, v, w, p};
+      curr.eigen = Matrices(u_primitive, curr.nu, curr.sigma, curr.pi);
+      for (auto& adj_projection : adj_projections[i_cell]) {
+        curr.projections.emplace_back(adj_projection);
+      }
+      curr.projections.emplace_back(cell_i.func_);
+      auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
+      weights.back() *= -adj_cnt;
+      weights.back().array() += 1.0;
+      Mat5x1 s_after;
+      for (int i = 0; i <= adj_cnt; ++i) {
+        auto& projection = curr.projections[i];
+        projection.LeftMultiply(curr.eigen.L);
+        if (i == adj_cnt)
+          s_after = projection.GetSmoothness();
+        auto& temp = curr.smoothness.emplace_back(projection.GetSmoothness());
+        temp.array() += eps;
+        weights[i].array() /= temp.array() * temp.array();
+      }
+      Mat5x1 sum; sum.setZero();
+      sum = std::accumulate(weights.begin(), weights.end(), sum);
+      assert(weights.size() == adj_cnt + 1);
+      for (auto& weight : weights) {
+        weight.array() /= sum.array();
+      }
+      curr.projections.back() *= weights.back();
+      for (int i = 0; i < adj_cnt; ++i) {
+        curr.projections[i] *= weights[i];
+        curr.projections.back() += curr.projections[i];
+      }
+      auto s_before = curr.projections.back().GetSmoothness();
+      // std::cout << "L * R =\n" << curr.eigen.L * curr.eigen.R << std::endl;
+      curr.projections.back().LeftMultiply(curr.eigen.R);
+      for (int i = 0; i < adj_cnt; ++i)
+        curr.projections[i].LeftMultiply(curr.eigen.R);
+      auto s = curr.projections.back().GetSmoothness();
+      curr.projections.back() *= volumes[j_cell];
+      weno_projections[i_cell] += curr.projections.back();
+      total_volume += volumes[j_cell];
+    }  // for each j_cell
+    weno_projections[i_cell] /= total_volume;
+  }  // for each i_cell
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     int adj_cnt = cell_adjs[i_cell].size();
     auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
-    weights[0] *= -adj_cnt;
-    weights[0].array() += 1;
+    weights.back() *= -adj_cnt;
+    weights.back().array() += 1;
     for (int i = 0; i <= adj_cnt; ++i) {
-      Mat5x1 temp = smoothness[i_cell][i];
+      Mat5x1 temp = adj_smoothness[i_cell][i];
       temp.array() += eps;
       weights[i].array() /= temp.array() * temp.array();
     }
     Mat5x1 sum; sum.setZero();
     sum = std::accumulate(weights.begin(), weights.end(), sum);
-    sum.array() = 1.0 / sum.array();
     for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
-      weights[j_cell].array() *= sum.array();
+      weights[j_cell].array() /= sum.array();
     }
     auto& projection_i = cells[i_cell].func_;
-    projection_i *= weights[0];
+    projection_i *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
-      adj_projections[i_cell][j_cell] *= weights[j_cell+1];
+      adj_projections[i_cell][j_cell] *= weights[j_cell];
       projection_i += adj_projections[i_cell][j_cell];
     }
+    // print smoothness
+    auto weno_smoothness = weno_projections[i_cell].GetSmoothness();
+    auto lazy_smoothness = projection_i.GetSmoothness();
     for (int k = 0; k < 5; ++k) {
-      std::printf("%8.2f (%2d[%d]) <- {%8.2f",
-          projection_i.GetSmoothness()[k], i_cell, k, smoothness[i_cell][0][k]);
+      // for each component
+      std::printf("%8.2f, %8.2f (%2d[%d]) <- {%8.2f",
+          weno_smoothness[k], lazy_smoothness[k],
+          i_cell, k, adj_smoothness[i_cell].back()[k]);
       for (int j = 0; j < adj_cnt; ++j)
-        std::printf(" %8.2f (%2d <- %-2d)", smoothness[i_cell][j + 1][k],
+        std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j][k],
             i_cell, cell_adjs[i_cell][j]);
       std::printf(" }\n");
     }
+    std::cout << "\naverage difference =" << std::endl;
+    std::cout << cells[i_cell].func_.GetAverage().transpose() -
+                 weno_projections[i_cell].GetAverage().transpose() << std::endl;
     std::printf("\n");
   }
 }

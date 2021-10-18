@@ -35,6 +35,7 @@ class Projection {
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using MatKxN = algebra::Matrix<Scalar, K, N>;
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+  using MatKxK = algebra::Matrix<Scalar, K, K>;
 
  public:
   template <typename Callable>
@@ -51,6 +52,9 @@ class Projection {
     average_ = coeff_.col(0);
     average_ *= basis_ptr_->GetCoeff()(0, 0);
     coeff_ = coeff_ * basis.GetCoeff();
+  }
+  explicit Projection(const Basis& basis)
+      : coeff_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(&basis) {
   }
   Projection()
       : coeff_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(nullptr) {
@@ -90,9 +94,19 @@ class Projection {
   void Project(Callable&& func, const Basis& basis) {
     *this = Projection(std::forward<Callable>(func), basis);
   }
+  Projection& LeftMultiply(const MatKxK& left) {
+    coeff_ = left * coeff_;
+    average_ = left * average_;
+    return *this;
+  }
   Projection& operator*=(const Scalar& ratio) {
     coeff_ *= ratio;
     average_ *= ratio;
+    return *this;
+  }
+  Projection& operator/=(const Scalar& ratio) {
+    coeff_ /= ratio;
+    average_ /= ratio;
     return *this;
   }
   Projection& operator*=(const MatKx1& ratio) {
