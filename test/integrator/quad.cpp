@@ -114,7 +114,7 @@ TEST_F(TestQuad4x4, Projection) {
   };
   using ScalarPF = Projection<double, 2, 2, 1>;
   auto scalar_pf = ScalarPF(scalar_f, basis);
-  double residual = (scalar_pf.GetCoef()
+  double residual = (scalar_pf.GetCoeff()
       - Mat1x6(0, 0, 0, 0, 1, 0)).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
   auto vector_f = [](Mat2x1 const& xy) {
@@ -129,7 +129,7 @@ TEST_F(TestQuad4x4, Projection) {
       {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
       {0, 0, 0, 0, 0, 1}
   };
-  Mat7x6 abs_diff = vector_pf.GetCoef() - exact_vector;
+  Mat7x6 abs_diff = vector_pf.GetCoeff() - exact_vector;
   EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-15);
 }
 

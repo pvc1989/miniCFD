@@ -42,18 +42,18 @@ class Projection {
       : basis_ptr_(&basis) {
     using Return = decltype(func(basis.GetCenter()));
     static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
-    coef_ = Integrate([&](Coord const& xyz) {
+    coeff_ = Integrate([&](Coord const& xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
       return prod;
     }, basis.GetGauss());
-    average_ = coef_.col(0);
-    average_ *= basis_ptr_->GetCoef()(0, 0);
-    coef_ = coef_ * basis.GetCoef();
+    average_ = coeff_.col(0);
+    average_ *= basis_ptr_->GetCoeff()(0, 0);
+    coeff_ = coeff_ * basis.GetCoeff();
   }
   Projection()
-      : coef_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(nullptr) {
+      : coeff_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(nullptr) {
   }
   Projection(const Projection&) = default;
   Projection(Projection&&) noexcept = default;
@@ -63,15 +63,15 @@ class Projection {
 
   MatKx1 operator()(Coord const& xyz) const {
     MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(xyz);
-    return coef_ * col;
+    return coeff_ * col;
   }
-  const MatKxN& GetCoef() const {
-    return coef_;
+  const MatKxN& GetCoeff() const {
+    return coeff_;
   }
   MatKxN GetPdvValue(Coord const& global) const {
     MatKxN res; res.setZero();
     auto local = global; local -= basis_ptr_->GetCenter();
-    return RawBasis<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoef());
+    return RawBasis<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoeff());
   }
   MatKx1 const& GetAverage() const {
     return average_;
@@ -91,31 +91,31 @@ class Projection {
     *this = Projection(std::forward<Callable>(func), basis);
   }
   Projection& operator*=(const Scalar& ratio) {
-    coef_ *= ratio;
+    coeff_ *= ratio;
     average_ *= ratio;
     return *this;
   }
   Projection& operator*=(const MatKx1& ratio) {
     for (int i = 0; i < K; ++i) {
-      coef_.row(i) *= ratio[i];
+      coeff_.row(i) *= ratio[i];
       average_[i] *= ratio[i];
     }
     return *this;
   }
   Projection& operator+=(const MatKx1& offset) {
-    coef_.col(0) += offset;
+    coeff_.col(0) += offset;
     average_ += offset;
     return *this;
   }
   Projection& operator+=(const Projection& that) {
     assert(this->basis_ptr_ == that.basis_ptr_);
-    coef_ += that.coef_;
+    coeff_ += that.coeff_;
     average_ += that.average_;
     return *this;
   }
 
  private:
-  MatKxN coef_;
+  MatKxN coeff_;
   MatKx1 average_;
   const Basis* basis_ptr_;
 };

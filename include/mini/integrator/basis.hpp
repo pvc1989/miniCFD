@@ -46,36 +46,36 @@ class RawBasis<Scalar, 3, 2> {
     return col;
   }
   template <typename MatKxN>
-  static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coef) {
+  static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coeff) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatKxN res; res.setZero();
     // pdv_x
-    res.col(1) += coef.col(1);
-    res.col(1) += coef.col(4) * (2 * x);
-    res.col(1) += coef.col(5) * y;
-    res.col(1) += coef.col(6) * z;
+    res.col(1) += coeff.col(1);
+    res.col(1) += coeff.col(4) * (2 * x);
+    res.col(1) += coeff.col(5) * y;
+    res.col(1) += coeff.col(6) * z;
     // pdv_y
-    res.col(2) += coef.col(2);
-    res.col(2) += coef.col(5) * x;
-    res.col(2) += coef.col(7) * (2 * y);
-    res.col(2) += coef.col(8) * z;
+    res.col(2) += coeff.col(2);
+    res.col(2) += coeff.col(5) * x;
+    res.col(2) += coeff.col(7) * (2 * y);
+    res.col(2) += coeff.col(8) * z;
     // pdv_z
-    res.col(3) += coef.col(3);
-    res.col(3) += coef.col(6) * x;
-    res.col(3) += coef.col(8) * y;
-    res.col(3) += coef.col(9) * (2 * z);
+    res.col(3) += coeff.col(3);
+    res.col(3) += coeff.col(6) * x;
+    res.col(3) += coeff.col(8) * y;
+    res.col(3) += coeff.col(9) * (2 * z);
     // pdv_xx
-    res.col(4) += coef.col(4);
+    res.col(4) += coeff.col(4);
     // pdv_xy
-    res.col(5) += coef.col(5);
+    res.col(5) += coeff.col(5);
     // pdv_xz
-    res.col(6) += coef.col(6);
+    res.col(6) += coeff.col(6);
     // pdv_yy
-    res.col(7) += coef.col(7);
+    res.col(7) += coeff.col(7);
     // pdv_yz
-    res.col(8) += coef.col(8);
+    res.col(8) += coeff.col(8);
     // pdv_zz
-    res.col(9) += coef.col(9);
+    res.col(9) += coeff.col(9);
     return res;
   }
   template <int K>
@@ -129,16 +129,16 @@ class Basis {
 
   MatNx1 operator()(Coord const& point) const {
     MatNx1 col = Raw::CallAt(point - center_);
-    return coef_ * col;
+    return coeff_ * col;
   }
   Coord const& GetCenter() const {
     return center_;
   }
-  MatNxN const& GetCoef() const {
-    return coef_;
+  MatNxN const& GetCoeff() const {
+    return coeff_;
   }
   void Transform(MatNxN const& a) {
-    coef_ = a * coef_;
+    coeff_ = a * coeff_;
   }
   void Shift(const Coord& new_center) {
     center_ = new_center;
@@ -146,7 +146,7 @@ class Basis {
 
  private:
   Coord center_;
-  MatNxN coef_ = MatNxN::Identity();
+  MatNxN coeff_ = MatNxN::Identity();
 };
 
 template <typename Scalar, int kDim, int kOrder>
@@ -177,8 +177,8 @@ class OrthoNormalBasis {
   Coord const& GetCenter() const {
     return basis_.GetCenter();
   }
-  MatNxN const& GetCoef() const {
-    return basis_.GetCoef();
+  MatNxN const& GetCoeff() const {
+    return basis_.GetCoeff();
   }
   Gauss const& GetGauss() const {
     return *gauss_ptr_;
@@ -187,10 +187,10 @@ class OrthoNormalBasis {
     auto local = global;
     local -= GetCenter();
     MatNx1 col = RB::CallAt(local);
-    return GetCoef() * col;
+    return GetCoeff() * col;
   }
   Scalar Measure() const {
-    auto v = basis_.GetCoef()(0, 0);
+    auto v = basis_.GetCoeff()(0, 0);
     return 1 / (v * v);
   }
 
