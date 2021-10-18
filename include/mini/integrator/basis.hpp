@@ -189,6 +189,10 @@ class OrthoNormalBasis {
     MatNx1 col = RB::CallAt(local);
     return GetCoef() * col;
   }
+  Scalar Measure() const {
+    auto v = basis_.GetCoef()(0, 0);
+    return 1 / (v * v);
+  }
 
  private:
   Gauss const* gauss_ptr_;

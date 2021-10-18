@@ -127,6 +127,9 @@ TEST_F(TestOrthoNormalBasis, In2dSpace) {
   using Basis = mini::integrator::OrthoNormalBasis<double, 2, 2>;
   auto basis = Basis(gauss);
   std::cout << basis.GetCoef() << std::endl;
+  auto area = mini::integrator::Integrate(
+        [](const Coord &){ return 1.0; }, basis.GetGauss());
+  EXPECT_DOUBLE_EQ(basis.Measure(), area);
 }
 TEST_F(TestOrthoNormalBasis, In3dSpace) {
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
@@ -137,6 +140,9 @@ TEST_F(TestOrthoNormalBasis, In3dSpace) {
   using Basis = mini::integrator::OrthoNormalBasis<double, 3, 2>;
   auto basis = Basis(gauss);
   std::cout << basis.GetCoef() << std::endl;
+  auto volume = mini::integrator::Integrate(
+        [](const Coord &){ return 1.0; }, basis.GetGauss());
+  EXPECT_DOUBLE_EQ(basis.Measure(), volume);
 }
 
 int main(int argc, char* argv[]) {

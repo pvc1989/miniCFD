@@ -83,8 +83,7 @@ class Projection {
       return mat_pdv;
     };
     auto integral = Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
-    auto volume = Integrate(
-        [](const Coord &){ return 1.0; }, basis_ptr_->GetGauss());
+    auto volume = basis_ptr_->Measure();
     return RawBasis<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
   }
   template <typename Callable>
