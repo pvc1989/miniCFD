@@ -177,9 +177,9 @@ class CellGroup {
   void GatherFields() {
     for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
       const auto& cell = cells_.at(i_cell);
-      const auto& coef = cell.func_.GetCoef();
+      const auto& coeff = cell.func_.GetCoeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
-        fields_.at(i_field).at(i_cell) = coef.reshaped()[i_field-1];
+        fields_.at(i_field).at(i_cell) = coeff.reshaped()[i_field-1];
       }
     }
   }

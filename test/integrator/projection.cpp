@@ -95,8 +95,8 @@ TEST_F(TestProjection, PartialDerivatives) {
   static_assert(ProjFunc::N == 10);
   auto point = Coord{ 0.3, 0.4, 0.5 };
   auto pdv_actual = projection.GetPdvValue(point);
-  auto coef = ProjFunc::MatKxN(); coef.setIdentity();
-  auto pdv_expect = RawBasis::GetPdvValue(point, coef);
+  auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
+  auto pdv_expect = RawBasis::GetPdvValue(point, coeff);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
   auto s_actual = projection.GetSmoothness();
