@@ -163,10 +163,10 @@ TEST_F(TestProjection, ReconstructScalar) {
     const cgsize_t* array;  // head of 1-based-node-id list
     array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
     for (int i = 0; i < 8; ++i) {
-      auto i_node = array[i];
-      coords(0, i) = x[i_node - 1];
-      coords(1, i) = y[i_node - 1];
-      coords(2, i) = z[i_node - 1];
+      auto i_node = array[i] - 1;
+      coords(0, i) = x[i_node];
+      coords(1, i) = y[i_node];
+      coords(2, i) = z[i_node];
     }
     auto hexa_ptr = std::make_unique<Gauss>(coords);
     cells.emplace_back(std::move(hexa_ptr), i_cell);
@@ -197,26 +197,26 @@ TEST_F(TestProjection, ReconstructScalar) {
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     int adj_cnt = cell_adjs[i_cell].size();
     auto weights = std::vector<double>(adj_cnt + 1, w0);
-    weights[0] = 1 - w0 * adj_cnt;
+    weights.back() = 1 - w0 * adj_cnt;
     for (int i = 0; i <= adj_cnt; ++i) {
       auto temp = eps + adj_smoothness[i_cell][i][0];
       weights[i] /= temp * temp;
     }
     auto sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-    sum = 1.0 / sum;
     for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
-      weights[j_cell] *= sum;
+      weights[j_cell] /= sum;
     }
     auto& projection_i = cells[i_cell].func_;
-    projection_i *= weights[0];
+    projection_i *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
-      projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell+1];
+      projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell];
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
-        projection_i.GetSmoothness()[0], i_cell, adj_smoothness[i_cell][0][0]);
-    for (int j = 0; j < adj_cnt; ++j)
-      std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j + 1][0],
-          i_cell, cell_adjs[i_cell][j]);
+        projection_i.GetSmoothness()[0], i_cell,
+        adj_smoothness[i_cell].back()[0]);
+    for (int j_cell = 0; j_cell < adj_cnt; ++j_cell)
+      std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j_cell][0],
+          i_cell, cell_adjs[i_cell][j_cell]);
     std::printf(" }\n");
   }
 }
@@ -279,10 +279,10 @@ TEST_F(TestProjection, ReconstructVector) {
     const cgsize_t* array;  // head of 1-based-node-id list
     array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
     for (int i = 0; i < 8; ++i) {
-      auto i_node = array[i];
-      coords(0, i) = x[i_node - 1];
-      coords(1, i) = y[i_node - 1];
-      coords(2, i) = z[i_node - 1];
+      auto i_node = array[i] - 1;
+      coords(0, i) = x[i_node];
+      coords(1, i) = y[i_node];
+      coords(2, i) = z[i_node];
     }
     auto hexa_ptr = std::make_unique<Gauss>(coords);
     cells.emplace_back(std::move(hexa_ptr), i_cell);
