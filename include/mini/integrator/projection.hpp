@@ -65,8 +65,9 @@ class Projection {
   Projection& operator=(Projection&&) noexcept = default;
   ~Projection() noexcept = default;
 
-  MatKx1 operator()(Coord const& xyz) const {
-    MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(xyz);
+  MatKx1 operator()(Coord const& global) const {
+    auto local = global; local -= basis_ptr_->GetCenter();
+    MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(local);
     return coeff_ * col;
   }
   const MatKxN& GetCoeff() const {
