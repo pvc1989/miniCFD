@@ -306,6 +306,41 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
     return state;
   }
 };
+template <class GasModel>
+class Exact<GasModel, 3> : public Implementor<GasModel, 3> {
+  using Base = Implementor<GasModel, 3>;
+
+ public:
+  // Types:
+  using Gas = GasModel;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using FluxType = typename Base::FluxType;
+  using ConservativeType = typename Base::ConservativeType;
+  using PrimitiveType = typename Base::PrimitiveType;
+  using State = PrimitiveType;
+  // Get F from U
+  static FluxType GetFlux(State const& state) {
+    auto rho_u = state.rho() * state.u();
+    auto rho_v = state.rho() * state.v();
+    auto rho_w = state.rho() * state.w();
+    auto rho_u_u = rho_u * state.u();
+    return {rho_u, rho_u_u + state.p(), rho_v * state.u(), rho_w * state.u(),
+            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
+            + 0.5 * (rho_u_u + rho_v * state.v() + rho_w * state.w()))};
+  }
+  // Get F on t-Axis
+  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
+    return GetFlux(GetStateOnTimeAxis(left, right));
+  }
+  // Get U on t-Axis
+  State GetStateOnTimeAxis(State const& left, State const& right) {
+    auto state = Base::GetStateOnTimeAxis(left, right);
+    state.v() = this->star_u > 0 ? left.v() : right.v();
+    state.w() = this->star_u > 0 ? left.w() : right.w();
+    return state;
+  }
+};
 
 }  // namespace euler
 }  // namespace riemann
