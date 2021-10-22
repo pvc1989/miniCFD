@@ -12,17 +12,17 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-class TestRotatedEulerTest : public ::testing::Test {
+class TestRotatedEuler : public ::testing::Test {
  protected:
   using Gas = euler::IdealGas<1, 4>;
+};
+TEST_F(TestRotatedEuler, Test2dConverter) {
   using UnrotatedSolver = euler::Exact<Gas, 2>;
   using Solver = Euler<UnrotatedSolver>;
   using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
   using State = Solver::State;
   Solver solver;
-};
-TEST_F(TestRotatedEulerTest, TestVectorConverter) {
   Vector n{+0.6, 0.8}, t{-0.8, 0.6}, v{3.0, 4.0}, v_copy{3.0, 4.0};
   solver.Rotate(n);
   solver.GlobalToNormal(&v);
@@ -31,6 +31,25 @@ TEST_F(TestRotatedEulerTest, TestVectorConverter) {
   solver.NormalToGlobal(&v);
   EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);
+}
+TEST_F(TestRotatedEuler, Test3dConverter) {
+  using UnrotatedSolver = euler::Exact<Gas, 3>;
+  using Solver = Euler<UnrotatedSolver, 3>;
+  using Scalar = Solver::Scalar;
+  using Vector = Solver::Vector;
+  using State = Solver::State;
+  Solver solver;
+  Vector nu{+0.6, 0.8, 0.0}, sigma{-0.8, 0.6, 0.0}, pi{0.0, 0.0, 1.0};
+  Vector v{3.0, 4.0, 5.0}, v_copy{3.0, 4.0, 5.0};
+  solver.Rotate(nu, sigma, pi);
+  solver.GlobalToNormal(&v);
+  EXPECT_EQ(v[0], v_copy.Dot(nu));
+  EXPECT_EQ(v[1], v_copy.Dot(sigma));
+  EXPECT_EQ(v[2], v_copy.Dot(pi));
+  solver.NormalToGlobal(&v);
+  EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
+  EXPECT_DOUBLE_EQ(v[1], v_copy[1]);
+  EXPECT_DOUBLE_EQ(v[2], v_copy[2]);
 }
 
 }  // namespace rotated
