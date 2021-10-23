@@ -95,9 +95,9 @@ class Euler {
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
-  using ConservativeType = typename Base::ConservativeType;
-  using PrimitiveType = typename Base::PrimitiveType;
-  using State = ConservativeType;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Conservative;
 
   void Rotate(const Vector& normal) {
     static_assert(kDim == 2);
@@ -116,8 +116,8 @@ class Euler {
     cartesian_.Rotate(nu, sigma, pi);
   }
   Flux GetFluxOnTimeAxis(
-      ConservativeType const& left,
-      ConservativeType const& right) {
+      Conservative const& left,
+      Conservative const& right) {
     auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
     GlobalToNormal(&(left__primitive.momentum));
@@ -127,14 +127,14 @@ class Euler {
     cartesian_.NormalToGlobal(&(flux.momentum));
     return flux;
   }
-  Flux GetFluxOnSolidWall(ConservativeType const& conservative) {
+  Flux GetFluxOnSolidWall(Conservative const& conservative) {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     auto flux = Flux();
     flux.momentum[0] = primitive.p();
     cartesian_.NormalToGlobal(&(flux.momentum));
     return flux;
   }
-  Flux GetFluxOnFreeWall(ConservativeType const& conservative) {
+  Flux GetFluxOnFreeWall(Conservative const& conservative) {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     cartesian_.GlobalToNormal(&(primitive.momentum));
     auto flux = unrotated_euler_.GetFlux(primitive);

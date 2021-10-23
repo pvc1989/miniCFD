@@ -82,7 +82,7 @@ class FluxTuple : public Tuple<kDim> {
 };
 
 template <int kDim>
-class Primitive : public Tuple<kDim> {
+class PrimitiveTuple : public Tuple<kDim> {
  public:
   // Types:
   using Base = Tuple<kDim>;
@@ -93,7 +93,7 @@ class Primitive : public Tuple<kDim> {
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
-  explicit Primitive(Base const& tuple) : Base(tuple) {}
+  explicit PrimitiveTuple(Base const& tuple) : Base(tuple) {}
   // Accessors and Mutators:
   Density const& rho() const { return this->mass; }
   Pressure const& p() const { return this->energy; }
@@ -114,7 +114,7 @@ class Primitive : public Tuple<kDim> {
 };
 
 template <int kDim>
-struct Conservative : public Tuple<kDim>{
+struct ConservativeTuple : public Tuple<kDim>{
   // Types:
   using Base = Tuple<kDim>;
   using Scalar = typename Base::Scalar;
@@ -124,7 +124,7 @@ struct Conservative : public Tuple<kDim>{
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
-  explicit Conservative(Base const& tuple) : Base(tuple) {
+  explicit ConservativeTuple(Base const& tuple) : Base(tuple) {
   }
 };
 
@@ -169,11 +169,11 @@ class IdealGas {
   }
   // Converters:
   template <int kDim>
-  static double GetSpeedOfSound(Primitive<kDim> const& state) {
+  static double GetSpeedOfSound(PrimitiveTuple<kDim> const& state) {
     return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
-  static Primitive<kDim>& ConservativeToPrimitive(Tuple<kDim>* state) {
+  static PrimitiveTuple<kDim>& ConservativeToPrimitive(Tuple<kDim>* state) {
     auto& rho = state->mass;
     if (rho > 0) {
       // momentum = rho * u
@@ -191,17 +191,17 @@ class IdealGas {
       state->momentum *= 0.0;
       state->energy = 0.0;
     }
-    return reinterpret_cast<Primitive<kDim>&>(*state);
+    return reinterpret_cast<PrimitiveTuple<kDim>&>(*state);
   }
   template <int kDim>
-  static Primitive<kDim> ConservativeToPrimitive(
-      Conservative<kDim> const& conservative) {
-    auto primitive = Primitive{conservative};
+  static PrimitiveTuple<kDim> ConservativeToPrimitive(
+      ConservativeTuple<kDim> const& conservative) {
+    auto primitive = PrimitiveTuple<kDim>{ conservative };
     ConservativeToPrimitive(&primitive);
     return primitive;
   }
   template <int kDim>
-  static Conservative<kDim>& PrimitiveToConservative(Tuple<kDim>* state) {
+  static ConservativeTuple<kDim>& PrimitiveToConservative(Tuple<kDim>* state) {
     auto& rho = state->mass;
     auto& u = state->momentum;
     // energy = p/(gamma - 1) + 0.5*rho*|u|^2
@@ -209,12 +209,12 @@ class IdealGas {
     state->energy += 0.5 * rho * u.Dot(u);  // + 0.5 * rho * |u|^2
     // momentum = rho * u
     state->momentum *= rho;
-    return reinterpret_cast<Conservative<kDim>&>(*state);
+    return reinterpret_cast<ConservativeTuple<kDim>&>(*state);
   }
   template <int kDim>
-  static Conservative<kDim> PrimitiveToConservative(
-      Primitive<kDim> const& primitive) {
-    auto conservative = Conservative{primitive};
+  static ConservativeTuple<kDim> PrimitiveToConservative(
+      PrimitiveTuple<kDim> const& primitive) {
+    auto conservative = ConservativeTuple<kDim>{ primitive };
     PrimitiveToConservative(&conservative);
     return conservative;
   }

@@ -368,7 +368,7 @@ TEST_F(TestProjection, ReconstructVector) {
       auto ek = (u * u + v * v + w * w) / 2;
       auto p = (u_conservative[4] - rho * ek) * 0.4;
       assert(rho > 0 && p > 0);
-      auto u_primitive = mini::riemann::euler::Primitive<3>{rho, u, v, w, p};
+      auto u_primitive = mini::riemann::euler::PrimitiveTuple<3>{rho, u, v, w, p};
       curr.eigen = Matrices(u_primitive, curr.nu, curr.sigma, curr.pi);
       for (auto& adj_projection : adj_projections[i_cell]) {
         curr.projections.emplace_back(adj_projection);
