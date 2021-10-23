@@ -36,9 +36,9 @@ class Implementor {
  public:
   // Types:
   using Flux = FluxTuple<kDim>;
-  using ConservativeType = Conservative<kDim>;
-  using PrimitiveType = Primitive<kDim>;
-  using State = PrimitiveType;
+  using Conservative = ConservativeTuple<kDim>;
+  using Primitive = PrimitiveTuple<kDim>;
+  using State = Primitive;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
@@ -253,9 +253,9 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
-  using ConservativeType = typename Base::ConservativeType;
-  using PrimitiveType = typename Base::PrimitiveType;
-  using State = PrimitiveType;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Primitive;
   // Get F from U
   static Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
@@ -283,9 +283,9 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
-  using ConservativeType = typename Base::ConservativeType;
-  using PrimitiveType = typename Base::PrimitiveType;
-  using State = PrimitiveType;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Primitive;
   // Get F from U
   static Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
@@ -316,9 +316,9 @@ class Exact<GasModel, 3> : public Implementor<GasModel, 3> {
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
-  using ConservativeType = typename Base::ConservativeType;
-  using PrimitiveType = typename Base::PrimitiveType;
-  using State = PrimitiveType;
+  using Conservative = typename Base::Conservative;
+  using Primitive = typename Base::Primitive;
+  using State = Primitive;
   // Get F from U
   static Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();

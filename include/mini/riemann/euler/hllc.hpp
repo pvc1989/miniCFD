@@ -22,9 +22,9 @@ class Hllc<GasModel, 1> {
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<1>;
-  using ConservativeType = Conservative<1>;
-  using PrimitiveType = Primitive<1>;
-  using State = PrimitiveType;
+  using Conservative = ConservativeTuple<1>;
+  using Primitive = PrimitiveTuple<1>;
+  using State = Primitive;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
@@ -86,8 +86,8 @@ class Hllc<GasModel, 1> {
     auto energy = state.p() / Gas::GammaMinusOne() +
                   state.rho() * (state.u() * state.u()) * 0.5;
     double temp = state.rho() * (wave_k - state.u()) / (wave_k - wave_star_);
-    ConservativeType u_k = Gas::PrimitiveToConservative(state);
-    ConservativeType u_star_k;
+    Conservative u_k = Gas::PrimitiveToConservative(state);
+    Conservative u_star_k;
     u_star_k.mass = temp;
     u_star_k.momentum[0] = wave_star_ * temp;
     u_star_k.energy = energy / state.rho() + (wave_star_ - state.u()) *
@@ -106,9 +106,9 @@ class Hllc<GasModel, 2> {
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<2>;
-  using ConservativeType = Conservative<2>;
-  using PrimitiveType = Primitive<2>;
-  using State = PrimitiveType;
+  using Conservative = ConservativeTuple<2>;
+  using Primitive = PrimitiveTuple<2>;
+  using State = Primitive;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
@@ -173,8 +173,8 @@ class Hllc<GasModel, 2> {
               state.rho() * (state.u() * state.u() +
                              state.v() * state.v()) * 0.5;
     double temp = state.rho() * (wave_k - state.u()) / (wave_k - wave_star_);
-    ConservativeType u_k = Gas::PrimitiveToConservative(state);
-    ConservativeType u_star_k;
+    Conservative u_k = Gas::PrimitiveToConservative(state);
+    Conservative u_star_k;
     u_star_k.mass = temp;
     u_star_k.momentum[0] = wave_star_ * temp;
     u_star_k.momentum[1] = state.v() * temp;

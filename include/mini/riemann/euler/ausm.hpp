@@ -22,9 +22,9 @@ class Ausm<GasModel, 1> {
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<1>;
-  using ConservativeType = Conservative<1>;
-  using PrimitiveType = Primitive<1>;
-  using State = PrimitiveType;
+  using Conservative = ConservativeTuple<1>;
+  using Primitive = PrimitiveTuple<1>;
+  using State = Primitive;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
@@ -90,9 +90,9 @@ class Ausm<GasModel, 2> {
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<2>;
-  using ConservativeType = Conservative<2>;
-  using PrimitiveType = Primitive<2>;
-  using State = PrimitiveType;
+  using Conservative = ConservativeTuple<2>;
+  using Primitive = PrimitiveTuple<2>;
+  using State = Primitive;
   using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
