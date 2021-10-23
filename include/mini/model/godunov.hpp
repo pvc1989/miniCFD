@@ -20,7 +20,7 @@ class Godunov {
   using WallType = typename Mesh::WallType;
   using CellType = typename Mesh::CellType;
   using State = typename Riemann::State;
-  using FluxType = typename Riemann::FluxType;
+  using Flux = typename Riemann::Flux;
   using Reader = mesh::vtk::Reader<Mesh>;
   using Writer = mesh::vtk::Writer<Mesh>;
 
@@ -170,7 +170,7 @@ class Godunov {
   }
   void UpdateEachCell() {
     mesh_->ForEachCell([&](CellType& cell) {
-      auto net_flux = FluxType{};
+      auto net_flux = Flux{};
       cell.ForEachWall([&](WallType& wall) {
         if (wall.GetPositiveSide() == &cell) {
           net_flux -= wall.data.flux;
@@ -182,7 +182,7 @@ class Godunov {
       TimeStepping(&(cell.data.state), &net_flux);
     });
   }
-  void TimeStepping(State* u_curr , FluxType* du_dt) {
+  void TimeStepping(State* u_curr , Flux* du_dt) {
     *du_dt *= step_size_;
     *u_curr += *du_dt;
   }

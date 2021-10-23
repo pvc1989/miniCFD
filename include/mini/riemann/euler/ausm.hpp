@@ -21,7 +21,7 @@ class Ausm<GasModel, 1> {
  public:
   // Types:
   using Gas = GasModel;
-  using FluxType = Flux<1>;
+  using Flux = FluxTuple<1>;
   using ConservativeType = Conservative<1>;
   using PrimitiveType = Primitive<1>;
   using State = PrimitiveType;
@@ -29,14 +29,14 @@ class Ausm<GasModel, 1> {
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
-    FluxType flux_positive = GetPositiveFlux(left);
-    FluxType flux_negative = GetNegativeFlux(right);
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+    Flux flux_positive = GetPositiveFlux(left);
+    Flux flux_negative = GetNegativeFlux(right);
     flux_positive += flux_negative;
     return flux_positive;
   }
   // Get F of U
-  FluxType GetFlux(State const& state) {
+  Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(),
@@ -45,13 +45,13 @@ class Ausm<GasModel, 1> {
   }
 
  private:
-  FluxType GetPositiveFlux(State const& state) {
+  Flux GetPositiveFlux(State const& state) {
     double p_positive   = state.p();
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_positive = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5;
-    FluxType flux = {1, state.u(), h};
+    Flux flux = {1, state.u(), h};
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) * 0.25;
       p_positive = state.p() * (mach + 1) * 0.5;
@@ -64,13 +64,13 @@ class Ausm<GasModel, 1> {
     flux.momentum[0] += p_positive;
     return flux;
   }
-  FluxType GetNegativeFlux(State state) {
+  Flux GetNegativeFlux(State state) {
     double p_negative = state.p();
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_negative = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5;
-    FluxType flux = {1, state.u(), h};
+    Flux flux = {1, state.u(), h};
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) * 0.25;
       p_negative = - state.p() * (mach - 1) * 0.5;
@@ -89,7 +89,7 @@ class Ausm<GasModel, 2> {
  public:
   // Types:
   using Gas = GasModel;
-  using FluxType = Flux<2>;
+  using Flux = FluxTuple<2>;
   using ConservativeType = Conservative<2>;
   using PrimitiveType = Primitive<2>;
   using State = PrimitiveType;
@@ -97,14 +97,14 @@ class Ausm<GasModel, 2> {
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
-    FluxType flux_positive = GetPositiveFlux(left);
-    FluxType flux_negative = GetNegativeFlux(right);
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+    Flux flux_positive = GetPositiveFlux(left);
+    Flux flux_negative = GetNegativeFlux(right);
     flux_positive += flux_negative;
     return flux_positive;
   }
   // Get F of U
-  FluxType GetFlux(State const& state) {
+  Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_v = state.rho() * state.v();
     auto rho_u_u = rho_u * state.u();
@@ -114,14 +114,14 @@ class Ausm<GasModel, 2> {
   }
 
  private:
-  FluxType GetPositiveFlux(State const& state) {
+  Flux GetPositiveFlux(State const& state) {
     double p_positive = state.p();
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_positive = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5 +
                                               state.v() * state.v() * 0.5;
-    FluxType flux = {1, state.u(), state.v(), h};
+    Flux flux = {1, state.u(), state.v(), h};
     if (mach >= -1 && mach <= 1) {
       mach_positive = (mach + 1) * (mach + 1) * 0.25;
       p_positive = state.p() * (mach + 1) * 0.5;
@@ -134,14 +134,14 @@ class Ausm<GasModel, 2> {
     flux.momentum[0] += p_positive;
     return flux;
   }
-  FluxType GetNegativeFlux(State state) {
+  Flux GetNegativeFlux(State state) {
     double p_negative = state.p();
     double a = Gas::GetSpeedOfSound(state);
     double mach = state.u() / a;
     double mach_negative = mach;
     double h = a * a / Gas::GammaMinusOne() + state.u() * state.u() * 0.5 +
                                               state.v() * state.v() * 0.5;
-    FluxType flux = {1, state.u(), state.v(), h};
+    Flux flux = {1, state.u(), state.v(), h};
     if (mach >= -1 && mach <= 1) {
       mach_negative = - (mach - 1) * (mach - 1) * 0.25;
       p_negative = - state.p() * (mach - 1) * 0.5;

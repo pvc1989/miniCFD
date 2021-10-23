@@ -21,7 +21,7 @@ class Hllc<GasModel, 1> {
  public:
   // Types:
   using Gas = GasModel;
-  using FluxType = Flux<1>;
+  using Flux = FluxTuple<1>;
   using ConservativeType = Conservative<1>;
   using PrimitiveType = Primitive<1>;
   using State = PrimitiveType;
@@ -29,9 +29,9 @@ class Hllc<GasModel, 1> {
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     Initialize(left, right);
-    FluxType flux;
+    Flux flux;
     if (0.0 <= wave_left_) {
       flux = GetFlux(left);
     } else if (wave_right_ <= 0.0) {
@@ -44,7 +44,7 @@ class Hllc<GasModel, 1> {
     return flux;
   }
   // Get F of U
-  FluxType GetFlux(State const& state) {
+  Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(),
@@ -81,8 +81,8 @@ class Hllc<GasModel, 1> {
       return std::sqrt(temp);
     }
   }
-  FluxType GetStarFlux(State const& state, Speed const& wave_k) {
-    FluxType flux = GetFlux(state);
+  Flux GetStarFlux(State const& state, Speed const& wave_k) {
+    Flux flux = GetFlux(state);
     auto energy = state.p() / Gas::GammaMinusOne() +
                   state.rho() * (state.u() * state.u()) * 0.5;
     double temp = state.rho() * (wave_k - state.u()) / (wave_k - wave_star_);
@@ -105,7 +105,7 @@ class Hllc<GasModel, 2> {
  public:
   // Types:
   using Gas = GasModel;
-  using FluxType = Flux<2>;
+  using Flux = FluxTuple<2>;
   using ConservativeType = Conservative<2>;
   using PrimitiveType = Primitive<2>;
   using State = PrimitiveType;
@@ -113,9 +113,9 @@ class Hllc<GasModel, 2> {
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  FluxType GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
     Initialize(left, right);
-    FluxType flux;
+    Flux flux;
     if (0.0 <= wave_left_) {
       flux = GetFlux(left);
     } else if (wave_right_ <= 0.0) {
@@ -128,7 +128,7 @@ class Hllc<GasModel, 2> {
     return flux;
   }
   // Get F of U
-  FluxType GetFlux(State const& state) {
+  Flux GetFlux(State const& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_v = state.rho() * state.v();
     auto rho_u_u = rho_u * state.u();
@@ -167,8 +167,8 @@ class Hllc<GasModel, 2> {
       return std::sqrt(temp);
     }
   }
-  FluxType GetStarFlux(State const& state, Speed const& wave_k) {
-    FluxType flux = GetFlux(state);
+  Flux GetStarFlux(State const& state, Speed const& wave_k) {
+    Flux flux = GetFlux(state);
     double energy = state.p() / Gas::GammaMinusOne() +
               state.rho() * (state.u() * state.u() +
                              state.v() * state.v()) * 0.5;
