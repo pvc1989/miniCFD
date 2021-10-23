@@ -16,7 +16,7 @@ class TestHllc : public ::testing::Test {
   using Gas = IdealGas<1, 4>;
   using Solver = Hllc<Gas>;
   using State = Solver::State;
-  using Flux = Solver::FluxType;
+  using Flux = Solver::Flux;
   Solver solver;
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
     EXPECT_DOUBLE_EQ(lhs.mass, rhs.mass);
@@ -68,7 +68,7 @@ class TestHllc2d : public ::testing::Test {
   using Solver = Hllc<IdealGas<1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
-  using Flux = Solver::FluxType;
+  using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {

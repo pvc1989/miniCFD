@@ -17,7 +17,7 @@ class TestExact : public ::testing::Test {
   using Gas = IdealGas<1, 4>;
   using Solver = Exact<Gas>;
   using State = Solver::State;
-  using Flux = Solver::FluxType;
+  using Flux = Solver::Flux;
   Solver solver;
   static void ExpectNear(double x, double y, double eps) {
     if (x == 0) {
@@ -90,7 +90,7 @@ class TestExact2d : public ::testing::Test {
   using Solver = Exact<IdealGas<1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
-  using Flux = Solver::FluxType;
+  using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   static void ExpectNear(double x, double y, double eps) {
@@ -171,7 +171,7 @@ class TestExact3d : public ::testing::Test {
   using Solver = Exact<IdealGas<1, 4>, 3>;
   using State = Solver::State;
   using Speed = State::Speed;
-  using Flux = Solver::FluxType;
+  using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   Speed w__left{1.5}, w_right{0.5};

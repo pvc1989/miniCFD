@@ -73,7 +73,8 @@ class Tuple {
 };
 
 template <int kDim>
-class Flux : public Tuple<kDim> {
+class FluxTuple : public Tuple<kDim> {
+ public:
   // Types:
   using Base = Tuple<kDim>;
   // Constructors:
