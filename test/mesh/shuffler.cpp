@@ -68,12 +68,12 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto case_name = std::string("double_mach_hexa");
   char cmd[1024];
-  std::sprintf(cmd, "mkdir -p %s/whole %s/parts",
+  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/whole %s/parts",
       case_name.c_str(), case_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/whole/original.cgns";
   auto new_file_name = case_name + "/whole/shuffled.cgns";
-  std::sprintf(cmd, "gmsh %s/%s.geo -save -o %s",
+  std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto cgns_mesh = CgnsMesh(old_file_name);
