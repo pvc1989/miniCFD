@@ -6,26 +6,26 @@
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "mini/mesh/cgns/parser.hpp"
+#include "mini/mesh/cgns/part.hpp"
 
 namespace mini {
 namespace mesh {
 namespace cgns {
 
-class TestParser : public ::testing::Test {
+class TestPart : public ::testing::Test {
  public:
   static int rank;
 };
-int TestParser::rank;
+int TestPart::rank;
 
-TEST_F(TestParser, Print) {
+TEST_F(TestPart, Print) {
 }
 
 }  // namespace cgns
 }  // namespace mesh
 }  // namespace mini
 
-// mpirun -n 4 ./parser
+// mpirun -n 4 ./part
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
   int comm_size, comm_rank;
@@ -41,13 +41,13 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  std::printf("Run Parser() on proc[%d/%d] at %f sec\n",
+  std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto parser = mini::mesh::cgns::Parser<cgsize_t, double>(
+  auto part = mini::mesh::cgns::Part<cgsize_t, double>(
       "double_mach_hexa", comm_rank);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  parser.Project([](auto const& xyz){
+  part.Project([](auto const& xyz){
     auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
     mini::algebra::Matrix<double, 2, 1> col;
     col[0] = r;
@@ -56,9 +56,9 @@ int main(int argc, char* argv[]) {
   });
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  parser.WriteSolutions();
-  // parser.WriteSolutionsAtQuadPoints();
-  parser.WriteSolutionsOnEachCell();
+  part.WriteSolutions();
+  // part.WriteSolutionsAtQuadPoints();
+  part.WriteSolutionsOnEachCell();
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
