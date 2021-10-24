@@ -13,8 +13,8 @@
 #include "mini/mesh/mapper/cgns_to_metis.hpp"
 #include "mini/mesh/cgns/shuffler.hpp"
 #include "mini/mesh/cgns/format.hpp"
+#include "mini/mesh/cgns/part.hpp"
 #include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/cgns/parser.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 #include "mini/integrator/projection.hpp"
