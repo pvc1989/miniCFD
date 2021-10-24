@@ -369,7 +369,8 @@ class Parser {
             GetCoord(i_zone, nodes[i+2]), GetCoord(i_zone, nodes[i+3]),
             GetCoord(i_zone, nodes[i+4]), GetCoord(i_zone, nodes[i+5]),
             GetCoord(i_zone, nodes[i+6]), GetCoord(i_zone, nodes[i+7]));
-        auto cell = Cell<Int, Real>(std::move(hexa_ptr), metis_ids[i_cell]);
+        auto cell = Cell<Int, Real, kFunc>(
+            std::move(hexa_ptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
         if (rank_ == -1) {
           std::cout << "i_zone = " << i_zone << ", i_sect = " << i_sect
@@ -453,7 +454,8 @@ class Parser {
           GetCoord(i_zone, buf[id+2]), GetCoord(i_zone, buf[id+3]),
           GetCoord(i_zone, buf[id+4]), GetCoord(i_zone, buf[id+5]),
           GetCoord(i_zone, buf[id+6]), GetCoord(i_zone, buf[id+7]));
-        ghost_cells_[m_cell] = Cell<Int, Real>(std::move(hexa_ptr), m_cell);
+        ghost_cells_[m_cell] = Cell<Int, Real, kFunc>(
+            std::move(hexa_ptr), m_cell);
         id += cnt;
       }
       ++i_buf;
@@ -608,7 +610,7 @@ class Parser {
     ostrm << "DATASET UNSTRUCTURED_GRID\n";
     int n_points = 0;
     auto coords = std::vector<Mat3x1>();
-    auto fields = std::vector<typename Cell<Int, Real>::Value>();
+    auto fields = std::vector<typename Cell<Int, Real, kFunc>::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
@@ -655,7 +657,7 @@ class Parser {
     int n_points = 0;
     auto coords = std::vector<Mat3x1>();
     auto cells = std::vector<Int>();
-    auto fields = std::vector<typename Cell<Int, Real>::Value>();
+    auto fields = std::vector<typename Cell<Int, Real, kFunc>::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
@@ -767,13 +769,13 @@ class Parser {
       m_to_node_info_/* [m_node] -> a NodeInfo obj */;
   std::unordered_map<Int, CellInfo<Int>>
       m_to_cell_info_/* [m_cell] -> a CellInfo obj */;
-  std::map<Int, std::map<Int, CellGroup<Int, Real>>>
+  std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
       local_cells_/* [i_zone][i_sect] -> a CellGroup obj */;
-  std::unordered_map<Int, Cell<Int, Real>>
+  std::unordered_map<Int, Cell<Int, Real, kFunc>>
       ghost_cells_/* [m_cell] -> a Cell obj */;
   std::vector<std::pair<Int, Int>>
       local_adjs_/* [i_pair] -> { m_holder, m_sharer } */;
-  std::vector<Face<Int, Real>>
+  std::vector<Face<Int, Real, kFunc>>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
   const std::string directory_;
   const std::string cgns_file_;
