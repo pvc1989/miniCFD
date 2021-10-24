@@ -76,8 +76,8 @@ struct NodeGroup {
   Int size() const {
     return size_;
   }
-  bool has(int nid) const {
-    return head_ <= nid && nid < size_ + head_;
+  bool has(int i_node) const {
+    return head_ <= i_node && i_node < size_ + head_;
   }
 };
 
@@ -118,8 +118,8 @@ struct Cell {
 
   using Value = decltype(func_(gauss_->GetCenter()));
 
-  Cell(GaussPtr&& gauss, Int mid)
-      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(mid) {
+  Cell(GaussPtr&& gauss, Int m_cell)
+      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(m_cell) {
   }
   Cell() = default;
   Cell(const Cell&) = delete;
@@ -162,8 +162,8 @@ class CellGroup {
   Int size() const {
     return size_;
   }
-  bool has(int cid) const {
-    return head_ <= cid && cid < size_ + head_;
+  bool has(int i_cell) const {
+    return head_ <= i_cell && i_cell < size_ + head_;
   }
   const auto& operator[](Int i_cell) const {
     return cells_[i_cell];
@@ -233,24 +233,24 @@ class Parser {
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
         cgp_error_exit();
-      for (int nid = head; nid < tail; ++nid) {
-        auto mid = metis_id[nid];
-        nodes_m_to_c_[mid] = NodeInfo<Int>(i_zone, nid);
+      for (int i_node = head; i_node < tail; ++i_node) {
+        auto m_node = metis_id[i_node];
+        m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
       }
     }
-    std::map<Int, std::vector<Int>> send_nodes, recv_nodes;
     // send nodes info
+    std::map<Int, std::vector<Int>> send_nodes;
     while (istrm.getline(line, 30) && line[0]) {
-      int p, node;
-      std::sscanf(line, "%d %d", &p, &node);
-      send_nodes[p].emplace_back(node);
+      int i_part, m_node;
+      std::sscanf(line, "%d %d", &i_part, &m_node);
+      send_nodes[i_part].emplace_back(m_node);
     }
     std::vector<MPI_Request> requests;
     std::vector<std::vector<Real>> send_bufs;
-    for (auto& [target, nodes] : send_nodes) {
+    for (auto& [i_part, nodes] : send_nodes) {
       auto& buf = send_bufs.emplace_back();
-      for (auto metis_id : nodes) {
-        auto& info = nodes_m_to_c_[metis_id];
+      for (auto m_node : nodes) {
+        auto& info = m_to_node_info_[m_node];
         auto const& coord = GetCoord(info.i_zone, info.i_node);
         buf.emplace_back(coord[0]);
         buf.emplace_back(coord[1]);
@@ -258,43 +258,45 @@ class Parser {
       }
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
-      int tag = target;
-      auto& req = requests.emplace_back();
-      MPI_Isend(buf.data(), count, kMpiRealType, target, tag, MPI_COMM_WORLD,
-          &req);
+      int tag = i_part;
+      auto& request = requests.emplace_back();
+      MPI_Isend(buf.data(), count, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
+          &request);
     }
     // recv nodes info
+    std::map<Int, std::vector<Int>> recv_nodes;
     while (istrm.getline(line, 30) && line[0]) {
-      int p, mid, i_zone, nid;
-      std::sscanf(line, "%d %d %d %d", &p, &mid, &i_zone, &nid);
-      recv_nodes[p].emplace_back(mid);
-      nodes_m_to_c_[mid] = NodeInfo<Int>(i_zone, nid);
+      int i_part, m_node, i_zone, i_node;
+      std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
+      recv_nodes[i_part].emplace_back(m_node);
+      m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
     }
     std::vector<std::vector<Real>> recv_bufs;
-    for (auto& [source, nodes] : recv_nodes) {
+    for (auto& [i_part, nodes] : recv_nodes) {
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int count = 3 * nodes.size();
       auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
       int tag = rank_;
-      auto& req = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, kMpiRealType, source, tag, MPI_COMM_WORLD,
-          &req);
+      auto& request = requests.emplace_back();
+      MPI_Irecv(buf.data(), count, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
+          &request);
     }
+    // wait until all send/recv finish
     std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
     requests.clear();
     // copy node coordinates from buffer to member
     int i_source = 0;
-    for (auto& [source, nodes] : recv_nodes) {
+    for (auto& [i_part, nodes] : recv_nodes) {
       double* xyz = recv_bufs[i_source++].data();
-      for (auto metis_id : nodes) {
-        auto& info = nodes_m_to_c_[metis_id];
-        adj_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
+      for (auto m_node : nodes) {
+        auto& info = m_to_node_info_[m_node];
+        ghost_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
         if (rank_ == -1) {
-          int i_zone = info.i_zone, nid = info.i_node;
-          std::cout << metis_id << ' ' << i_zone << ' ' << nid << ' ';
-          print(adj_nodes_[i_zone][nid].transpose());
+          int i_zone = info.i_zone, i_node = info.i_node;
+          std::cout << m_node << ' ' << i_zone << ' ' << i_node << ' ';
+          print(ghost_nodes_[i_zone][i_node].transpose());
         }
       }
     }
@@ -326,13 +328,16 @@ class Parser {
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
         cgp_error_exit();
-      for (int cid = head; cid < tail; ++cid) {
-        auto mid = metis_ids[cid];
-        cells_m_to_c_[mid] = CellInfo<Int>(i_zone, i_sect, cid);
-        if (rank_ == -1)
-          std::printf("mid = %ld, i_zone = %ld, i_sect = %ld, cid = %ld\n", mid,
-              cells_m_to_c_[mid].i_zone, cells_m_to_c_[mid].i_sect,
-              cells_m_to_c_[mid].i_cell);
+      for (int i_cell = head; i_cell < tail; ++i_cell) {
+        auto m_cell = metis_ids[i_cell];
+        m_to_cell_info_[m_cell] = CellInfo<Int>(i_zone, i_sect, i_cell);
+        if (rank_ == -1) {
+          std::printf("m_cell = %ld, ", m_cell);
+          std::printf("i_zone = %ld, i_sect = %ld, i_cell = %ld\n",
+              m_to_cell_info_[m_cell].i_zone,
+              m_to_cell_info_[m_cell].i_sect,
+              m_to_cell_info_[m_cell].i_cell);
+        }
       }
       char name[33];
       ElementType_t type;
@@ -357,50 +362,51 @@ class Parser {
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
-      for (int cid = head; cid < tail; ++cid) {
-        int i = (cid - head) * 8;
+      for (int i_cell = head; i_cell < tail; ++i_cell) {
+        int i = (i_cell - head) * 8;
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
             GetCoord(i_zone, nodes[i+0]), GetCoord(i_zone, nodes[i+1]),
             GetCoord(i_zone, nodes[i+2]), GetCoord(i_zone, nodes[i+3]),
             GetCoord(i_zone, nodes[i+4]), GetCoord(i_zone, nodes[i+5]),
             GetCoord(i_zone, nodes[i+6]), GetCoord(i_zone, nodes[i+7]));
-        auto cell = Cell<Int, Real>(std::move(hexa_ptr), metis_ids[cid]);
-        local_cells_[i_zone][i_sect][cid] = std::move(cell);
+        auto cell = Cell<Int, Real>(std::move(hexa_ptr), metis_ids[i_cell]);
+        local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
         if (rank_ == -1) {
           std::cout << "i_zone = " << i_zone << ", i_sect = " << i_sect
-              << ", cid = " << cid << ", mid = " << metis_ids[cid] << '\n';
+              << ", i_cell = " << i_cell << ", m_cell = " << metis_ids[i_cell];
+          std::cout << std::endl;
         }
       }
     }
-    // inner adjacency
+    // local adjacency
     while (istrm.getline(line, 30) && line[0]) {
       int i, j;
       std::sscanf(line, "%d %d", &i, &j);
-      inner_adjs_.emplace_back(i, j);
+      local_adjs_.emplace_back(i, j);
     }
-    // interpart adjacency
-    std::map<Int, std::map<Int, Int>> send_infos;  // pid_to_mid_to_cnt
-    std::map<Int, std::map<Int, Int>> recv_infos;
-    std::vector<std::pair<Int, Int>> interpart_adjs;
+    // ghost adjacency
+    std::map<Int, std::map<Int, Int>>
+        send_infos, recv_infos;  // [i_part][m_cell] -> cnt
+    std::vector<std::pair<Int, Int>> ghost_adjs;
     while (istrm.getline(line, 30) && line[0]) {
       int p, i, j, cnt_i, cnt_j;
       std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
       send_infos[p][i] = cnt_i;
       recv_infos[p][j] = cnt_j;
-      interpart_adjs.emplace_back(i, j);
+      ghost_adjs.emplace_back(i, j);
     }
     // send cell info
     std::vector<std::vector<Int>> send_cells;
-    for (auto& [target, cell_infos] : send_infos) {
+    for (auto& [i_part, cell_infos] : send_infos) {
       auto& send_buf = send_cells.emplace_back();
-      for (auto& [mid, cnt] : cell_infos) {
-        auto& info = cells_m_to_c_[mid];
+      for (auto& [m_cell, cnt] : cell_infos) {
+        auto& info = m_to_cell_info_[m_cell];
         if (rank_ == -1)
           std::printf("info at %p\n", &info);
-        Int i_zone = cells_m_to_c_[mid].i_zone,
-            i_sect = cells_m_to_c_[mid].i_sect,
-            cid = cells_m_to_c_[mid].i_cell;
-        auto id = z_s_c_index[i_zone][i_sect][cid];
+        Int i_zone = m_to_cell_info_[m_cell].i_zone,
+            i_sect = m_to_cell_info_[m_cell].i_sect,
+            i_cell = m_to_cell_info_[m_cell].i_cell;
+        auto id = z_s_c_index[i_zone][i_sect][i_cell];
         auto nodes = z_s_nodes[i_zone][i_sect];
         send_buf.emplace_back(i_zone);
         for (int i = 0; i < cnt; ++i) {
@@ -408,53 +414,54 @@ class Parser {
         }
       }
       int count = send_buf.size();
-      int tag = target;
+      int tag = i_part;
       auto& req = requests.emplace_back();
-      MPI_Isend(send_buf.data(), count, kMpiIntType, target, tag,
+      MPI_Isend(send_buf.data(), count, kMpiIntType, i_part, tag,
           MPI_COMM_WORLD, &req);
     }
     // recv cell info
     std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
     std::vector<std::vector<Int>> recv_cells;
-    for (auto& [source, cell_infos] : recv_infos) {
+    for (auto& [i_part, cell_infos] : recv_infos) {
       auto& buf = recv_cells.emplace_back();
       int count = 0;
-      for (auto& [mid, cnt] : cell_infos) {
+      for (auto& [m_cell, cnt] : cell_infos) {
         ++count;
         count += cnt;
       }
       int tag = rank_;
       buf.resize(count);
       auto& req = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, kMpiIntType, source, tag, MPI_COMM_WORLD,
+      MPI_Irecv(buf.data(), count, kMpiIntType, i_part, tag, MPI_COMM_WORLD,
           &req);
     }
+    // wait until all send/recv finish
     statuses = std::vector<MPI_Status>(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
     requests.clear();
     // build ghost cells
-    int buf_id = 0;
-    for (auto& [source, cell_infos] : recv_infos) {
-      auto& buf = recv_cells.at(buf_id);
+    int i_buf = 0;
+    for (auto& [i_part, cell_infos] : recv_infos) {
+      auto& buf = recv_cells.at(i_buf);
       int id = 0;
-      for (auto& [mid, cnt] : cell_infos) {
-        m_to_recv_cells[mid].first = buf_id;
-        m_to_recv_cells[mid].second = id+1;
+      for (auto& [m_cell, cnt] : cell_infos) {
+        m_to_recv_cells[m_cell].first = i_buf;
+        m_to_recv_cells[m_cell].second = id+1;
         int i_zone = buf[id++];
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
           GetCoord(i_zone, buf[id+0]), GetCoord(i_zone, buf[id+1]),
           GetCoord(i_zone, buf[id+2]), GetCoord(i_zone, buf[id+3]),
           GetCoord(i_zone, buf[id+4]), GetCoord(i_zone, buf[id+5]),
           GetCoord(i_zone, buf[id+6]), GetCoord(i_zone, buf[id+7]));
-        ghost_cells_[mid] = Cell<Int, Real>(std::move(hexa_ptr), mid);
+        ghost_cells_[m_cell] = Cell<Int, Real>(std::move(hexa_ptr), m_cell);
         id += cnt;
       }
-      ++buf_id;
+      ++i_buf;
     }
-    // build inner faces
-    for (auto [m_holder, m_sharer] : inner_adjs_) {
-      auto& holder_info = cells_m_to_c_[m_holder];
-      auto& sharer_info = cells_m_to_c_[m_sharer];
+    // build local faces
+    for (auto [m_holder, m_sharer] : local_adjs_) {
+      auto& holder_info = m_to_cell_info_[m_holder];
+      auto& sharer_info = m_to_cell_info_[m_sharer];
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto m_count = std::unordered_map<Int, Int>();
@@ -488,13 +495,13 @@ class Parser {
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
-      inner_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+      local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
     }
-    std::cout << inner_faces_.size() << " internal faces in rank "
-        << rank_ << std::endl;
-    // build interpart faces
-    for (auto [m_holder, m_sharer] : interpart_adjs) {
-      auto& holder_info = cells_m_to_c_[m_holder];
+    std::cout << local_faces_.size() << " local faces in rank " << rank_;
+    std::cout << std::endl;
+    // build ghost faces
+    for (auto [m_holder, m_sharer] : ghost_adjs) {
+      auto& holder_info = m_to_cell_info_[m_holder];
       auto& sharer_info = m_to_recv_cells[m_sharer];
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
@@ -530,11 +537,11 @@ class Parser {
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
       if (m_holder < m_sharer)
-        interpart_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+        ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
       else
-        interpart_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
+        ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
     }
-    std::cout << inner_faces_.size() << " interpart faces in rank "
+    std::cout << local_faces_.size() << " ghost faces in rank "
         << rank_ << std::endl;
     if (cgp_close(i_file))
       cgp_error_exit();
@@ -753,38 +760,39 @@ class Parser {
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
   std::map<Int, NodeGroup<Int, Real>>
-      local_nodes_/* [i_zone][i_sect] */;
+      local_nodes_/* [i_zone] -> a NodeGroup obj */;
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>>
-      adj_nodes_;
+      ghost_nodes_/* [i_zone][i_node] -> a Mat3x1 obj */;
   std::unordered_map<Int, NodeInfo<Int>>
-      nodes_m_to_c_;
+      m_to_node_info_/* [m_node] -> a NodeInfo obj */;
   std::unordered_map<Int, CellInfo<Int>>
-      cells_m_to_c_;
+      m_to_cell_info_/* [m_cell] -> a CellInfo obj */;
   std::map<Int, std::map<Int, CellGroup<Int, Real>>>
-      local_cells_/* [i_zone][i_sect][i_cell] */;
+      local_cells_/* [i_zone][i_sect] -> a CellGroup obj */;
   std::unordered_map<Int, Cell<Int, Real>>
-      ghost_cells_;
+      ghost_cells_/* [m_cell] -> a Cell obj */;
   std::vector<std::pair<Int, Int>>
-      inner_adjs_;
+      local_adjs_/* [i_pair] -> { m_holder, m_sharer } */;
   std::vector<Face<Int, Real>>
-      inner_faces_, interpart_faces_;
+      local_faces_, ghost_faces_;  // [i_face] -> a Face obj
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;
   int rank_;
 
-  Mat3x1 GetCoord(int i_zone, int nid) const {
+  Mat3x1 GetCoord(int i_zone, int i_node) const {
     Mat3x1 coord;
     auto iter_zone = local_nodes_.find(i_zone);
-    if (iter_zone != local_nodes_.end() && iter_zone->second.has(nid)) {
-      coord[0] = iter_zone->second.x_[nid];
-      coord[1] = iter_zone->second.y_[nid];
-      coord[2] = iter_zone->second.z_[nid];
+    if (iter_zone != local_nodes_.end() && iter_zone->second.has(i_node)) {
+      coord[0] = iter_zone->second.x_[i_node];
+      coord[1] = iter_zone->second.y_[i_node];
+      coord[2] = iter_zone->second.z_[i_node];
     } else {
       if (rank_ == -1) {
-        std::cout << "i_zone = " << i_zone << ", nid = " << nid << std::endl;
+        std::cout << "i_zone = " << i_zone << ", i_node = " << i_node;
+        std::cout << std::endl;
       }
-      coord = adj_nodes_.at(i_zone).at(nid);
+      coord = ghost_nodes_.at(i_zone).at(i_node);
     }
     return coord;
   }
