@@ -1,7 +1,4 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-/**
- * This file defines parser of partition info txt.
- */
 #ifndef MINI_MESH_CGNS_PARSER_HPP_
 #define MINI_MESH_CGNS_PARSER_HPP_
 
@@ -186,7 +183,7 @@ class CellGroup {
 };
 
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
-class Parser {
+class Part {
   static constexpr int kLineWidth = 30;
   static constexpr int kDim = 3;
   static constexpr int kFields = kFunc * Cell<Int, Real, kFunc>::N;
@@ -199,7 +196,7 @@ class Parser {
   static const MPI_Datatype kMpiRealType;
 
  public:
-  Parser(std::string const& directory, int rank)
+  Part(std::string const& directory, int rank)
       : directory_(directory), cgns_file_(directory + "/whole/shuffled.cgns"),
         part_path_(directory + "/parts/"), rank_(rank) {
     int i_file;
@@ -800,10 +797,10 @@ class Parser {
   }
 };
 template <typename Int, typename Real, int kFunc>
-MPI_Datatype const Parser<Int, Real, kFunc>::kMpiIntType
+MPI_Datatype const Part<Int, Real, kFunc>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
 template <typename Int, typename Real, int kFunc>
-MPI_Datatype const Parser<Int, Real, kFunc>::kMpiRealType
+MPI_Datatype const Part<Int, Real, kFunc>::kMpiRealType
     = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns
