@@ -105,8 +105,8 @@ struct Cell {
   using Projection = integrator::Projection<Real, kDim, kOrder, kFunc>;
   using Basis = integrator::OrthoNormalBasis<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
-  static constexpr int K = Projection::K/* number of functions */;
-  static constexpr int N = Projection::N/* size of the basis */;
+  static constexpr int K = Projection::K;  // number of functions
+  static constexpr int N = Projection::N;  // size of the basis
 
   Basis basis_;
   GaussPtr gauss_;
@@ -137,7 +137,7 @@ class CellGroup {
   static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
   ShiftedVector<CellType> cells_;
-  ShiftedVector<ShiftedVector<Real>> fields_/* [i_field][i_cell] */;
+  ShiftedVector<ShiftedVector<Real>> fields_;  // [i_field][i_cell]
 
  public:
   CellGroup(int head, int size)
@@ -162,13 +162,13 @@ class CellGroup {
   bool has(int i_cell) const {
     return head_ <= i_cell && i_cell < size_ + head_;
   }
-  const auto& operator[](Int i_cell) const {
+  const CellType& operator[](Int i_cell) const {
     return cells_[i_cell];
   }
-  auto& operator[](Int i_cell) {
+  CellType& operator[](Int i_cell) {
     return cells_[i_cell];
   }
-  const auto& GetField(Int i_field) const {
+  const ShiftedVector<Real>& GetField(Int i_field) const {
     return fields_[i_field];
   }
   void GatherFields() {
@@ -759,19 +759,19 @@ class Part {
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
   std::map<Int, NodeGroup<Int, Real>>
-      local_nodes_/* [i_zone] -> a NodeGroup obj */;
+      local_nodes_;  // [i_zone] -> a NodeGroup obj
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>>
-      ghost_nodes_/* [i_zone][i_node] -> a Mat3x1 obj */;
+      ghost_nodes_;  // [i_zone][i_node] -> a Mat3x1 obj
   std::unordered_map<Int, NodeInfo<Int>>
-      m_to_node_info_/* [m_node] -> a NodeInfo obj */;
+      m_to_node_info_;  // [m_node] -> a NodeInfo obj
   std::unordered_map<Int, CellInfo<Int>>
-      m_to_cell_info_/* [m_cell] -> a CellInfo obj */;
+      m_to_cell_info_;  // [m_cell] -> a CellInfo obj
   std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
-      local_cells_/* [i_zone][i_sect] -> a CellGroup obj */;
+      local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
   std::unordered_map<Int, Cell<Int, Real, kFunc>>
-      ghost_cells_/* [m_cell] -> a Cell obj */;
+      ghost_cells_;  //                 [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
-      local_adjs_/* [i_pair] -> { m_holder, m_sharer } */;
+      local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
   std::vector<Face<Int, Real, kFunc>>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
   const std::string directory_;
