@@ -556,7 +556,7 @@ class Part {
       }
     }
   }
-  void WriteSolutions() {
+  void GatherSolutions() {
     int n_zones = local_nodes_.size();
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
       int n_sects = local_cells_[i_zone].size();
@@ -564,11 +564,14 @@ class Part {
         local_cells_[i_zone][i_sect].GatherFields();
       }
     }
+  }
+  void WriteSolutions() const {
+    int n_zones = local_nodes_.size();
     int i_file;
     if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &i_file))
       cgp_error_exit();
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-      auto& zone = local_cells_[i_zone];
+      auto& zone = local_cells_.at(i_zone);
       int n_solns;
       if (cg_nsols(i_file, i_base, i_zone, &n_solns))
         cgp_error_exit();
@@ -578,9 +581,9 @@ class Part {
         cgp_error_exit();
       int n_fields = kFields;
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
-        int n_sects = local_cells_[i_zone].size();
+        int n_sects = zone.size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
-          auto& section = zone[i_sect];
+          auto& section = zone.at(i_sect);
           auto name = "Field" + std::to_string(i_field);
           int field_id;
           if (cgp_field_write(i_file, i_base, i_zone, i_soln, kRealType,
@@ -598,7 +601,7 @@ class Part {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
-  void WriteSolutionsAtQuadPoints() const {
+  void WriteSolutionsOnGaussPoints() const {
     auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
     auto ostrm = std::ofstream(vtk_file);
     ostrm << "# vtk DataFile Version 2.0\n";
@@ -644,7 +647,7 @@ class Part {
       }
     }
   }
-  void WriteSolutionsOnEachCell() const {
+  void WriteSolutionsOnCellCenters() const {
     auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
     auto ostrm = std::ofstream(vtk_file);
     ostrm << "# vtk DataFile Version 2.0\n";
