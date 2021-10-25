@@ -463,7 +463,7 @@ class Part {
       auto& sharer_info = m_to_cell_info_[m_sharer];
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
-      auto m_count = std::unordered_map<Int, Int>();
+      auto i_node_cnt = std::unordered_map<Int, Int>();
       auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
       auto& sharer_nodes = z_s_nodes[i_zone][sharer_info.i_sect];
       auto holder_head =
@@ -471,14 +471,14 @@ class Part {
       auto sharer_head =
           z_s_c_index[i_zone][sharer_info.i_sect][sharer_info.i_cell];
       for (int i = 0; i < 8; ++i) {
-        ++m_count[holder_nodes[holder_head + i]];
-        ++m_count[sharer_nodes[sharer_head + i]];
+        ++i_node_cnt[holder_nodes[holder_head + i]];
+        ++i_node_cnt[sharer_nodes[sharer_head + i]];
       }
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(4);
-      for (auto [i_cell, cnt] : m_count)
+      for (auto [i_node, cnt] : i_node_cnt)
         if (cnt == 2)
-          common_nodes.emplace_back(i_cell);
+          common_nodes.emplace_back(i_node);
       assert(common_nodes.size() == 4);
       // let the normal vector point from holder to sharer
       // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
@@ -504,21 +504,21 @@ class Part {
       auto& sharer_info = m_to_recv_cells[m_sharer];
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
-      auto m_count = std::unordered_map<Int, Int>();
+      auto i_node_cnt = std::unordered_map<Int, Int>();
       auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
       auto& sharer_nodes = recv_cells[sharer_info.first];
       auto holder_head =
           z_s_c_index[i_zone][holder_info.i_sect][holder_info.i_cell];
       auto sharer_head = sharer_info.second;
       for (int i = 0; i < 8; ++i) {
-        ++m_count[holder_nodes[holder_head + i]];
-        ++m_count[sharer_nodes[sharer_head + i]];
+        ++i_node_cnt[holder_nodes[holder_head + i]];
+        ++i_node_cnt[sharer_nodes[sharer_head + i]];
       }
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(4);
-      for (auto [i_cell, cnt] : m_count) {
+      for (auto [i_node, cnt] : i_node_cnt) {
         if (cnt == 2)
-          common_nodes.emplace_back(i_cell);
+          common_nodes.emplace_back(i_node);
       }
       assert(common_nodes.size() == 4);
       // let the normal vector point from holder to sharer
