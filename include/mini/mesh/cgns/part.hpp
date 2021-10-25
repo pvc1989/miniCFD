@@ -245,19 +245,19 @@ class Part {
     std::vector<MPI_Request> requests;
     std::vector<std::vector<Real>> send_bufs;
     for (auto& [i_part, nodes] : send_nodes) {
-      auto& buf = send_bufs.emplace_back();
+      auto& coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
         auto& info = m_to_node_info_[m_node];
         auto const& coord = GetCoord(info.i_zone, info.i_node);
-        buf.emplace_back(coord[0]);
-        buf.emplace_back(coord[1]);
-        buf.emplace_back(coord[2]);
+        coords.emplace_back(coord[0]);
+        coords.emplace_back(coord[1]);
+        coords.emplace_back(coord[2]);
       }
       assert(std::is_sorted(nodes.begin(), nodes.end()));
-      int count = 3 * nodes.size();
+      int n_reals = 3 * nodes.size();
       int tag = i_part;
       auto& request = requests.emplace_back();
-      MPI_Isend(buf.data(), count, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
+      MPI_Isend(coords.data(), n_reals, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
           &request);
     }
     // recv nodes info
@@ -271,12 +271,12 @@ class Part {
     std::vector<std::vector<Real>> recv_bufs;
     for (auto& [i_part, nodes] : recv_nodes) {
       assert(std::is_sorted(nodes.begin(), nodes.end()));
-      int count = 3 * nodes.size();
-      auto& buf = recv_bufs.emplace_back(std::vector<Real>(count));
+      int n_reals = 3 * nodes.size();
+      auto& coords = recv_bufs.emplace_back(std::vector<Real>(n_reals));
       int tag = rank_;
       auto& request = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
-          &request);
+      MPI_Irecv(coords.data(), n_reals, kMpiRealType, i_part, tag,
+          MPI_COMM_WORLD, &request);
     }
     // wait until all send/recv finish
     std::vector<MPI_Status> statuses(requests.size());
@@ -297,7 +297,7 @@ class Part {
         }
       }
     }
-    // cell ranges
+    // build local cells
     std::map<Int, std::map<Int, ShiftedVector<Int>>> z_s_c_index;
     std::map<Int, std::map<Int, std::vector<Int>>> z_s_nodes;
     while (istrm.getline(line, 30) && line[0]) {
@@ -360,12 +360,12 @@ class Part {
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
       for (int i_cell = head; i_cell < tail; ++i_cell) {
-        int i = (i_cell - head) * 8;
+        auto* i_node_list = &nodes[(i_cell - head) * 8];
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-            GetCoord(i_zone, nodes[i+0]), GetCoord(i_zone, nodes[i+1]),
-            GetCoord(i_zone, nodes[i+2]), GetCoord(i_zone, nodes[i+3]),
-            GetCoord(i_zone, nodes[i+4]), GetCoord(i_zone, nodes[i+5]),
-            GetCoord(i_zone, nodes[i+6]), GetCoord(i_zone, nodes[i+7]));
+            GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+            GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+            GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
+            GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
         auto cell = Cell<Int, Real, kFunc>(
             std::move(hexa_ptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
@@ -384,54 +384,54 @@ class Part {
     }
     // ghost adjacency
     std::map<Int, std::map<Int, Int>>
-        send_infos, recv_infos;  // [i_part][m_cell] -> cnt
+        send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
     std::vector<std::pair<Int, Int>> ghost_adjs;
     while (istrm.getline(line, 30) && line[0]) {
       int p, i, j, cnt_i, cnt_j;
       std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
-      send_infos[p][i] = cnt_i;
-      recv_infos[p][j] = cnt_j;
+      send_cell_cnts[p][i] = cnt_i;
+      recv_cell_cnts[p][j] = cnt_j;
       ghost_adjs.emplace_back(i, j);
     }
-    // send cell info
+    // send cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> send_cells;
-    for (auto& [i_part, cell_infos] : send_infos) {
+    for (auto& [i_part, cell_cnts] : send_cell_cnts) {
       auto& send_buf = send_cells.emplace_back();
-      for (auto& [m_cell, cnt] : cell_infos) {
+      for (auto& [m_cell, cnt] : cell_cnts) {
         auto& info = m_to_cell_info_[m_cell];
         if (rank_ == -1)
           std::printf("info at %p\n", &info);
         Int i_zone = m_to_cell_info_[m_cell].i_zone,
             i_sect = m_to_cell_info_[m_cell].i_sect,
             i_cell = m_to_cell_info_[m_cell].i_cell;
-        auto id = z_s_c_index[i_zone][i_sect][i_cell];
-        auto nodes = z_s_nodes[i_zone][i_sect];
+        auto index = z_s_c_index[i_zone][i_sect][i_cell];
+        auto* i_node_list = &z_s_nodes[i_zone][i_sect][index];
         send_buf.emplace_back(i_zone);
         for (int i = 0; i < cnt; ++i) {
-          send_buf.emplace_back(nodes[id+i]);
+          send_buf.emplace_back(i_node_list[i]);
         }
       }
-      int count = send_buf.size();
+      int n_ints = send_buf.size();
       int tag = i_part;
-      auto& req = requests.emplace_back();
-      MPI_Isend(send_buf.data(), count, kMpiIntType, i_part, tag,
-          MPI_COMM_WORLD, &req);
+      auto& request = requests.emplace_back();
+      MPI_Isend(send_buf.data(), n_ints, kMpiIntType, i_part, tag,
+          MPI_COMM_WORLD, &request);
     }
-    // recv cell info
+    // recv cell.i_zone and cell.node_id_list
     std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
     std::vector<std::vector<Int>> recv_cells;
-    for (auto& [i_part, cell_infos] : recv_infos) {
-      auto& buf = recv_cells.emplace_back();
-      int count = 0;
-      for (auto& [m_cell, cnt] : cell_infos) {
-        ++count;
-        count += cnt;
+    for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
+      auto& recv_buf = recv_cells.emplace_back();
+      int n_ints = 0;
+      for (auto& [m_cell, cnt] : cell_cnts) {
+        ++n_ints;
+        n_ints += cnt;
       }
       int tag = rank_;
-      buf.resize(count);
-      auto& req = requests.emplace_back();
-      MPI_Irecv(buf.data(), count, kMpiIntType, i_part, tag, MPI_COMM_WORLD,
-          &req);
+      recv_buf.resize(n_ints);
+      auto& request = requests.emplace_back();
+      MPI_Irecv(recv_buf.data(), n_ints, kMpiIntType, i_part, tag,
+          MPI_COMM_WORLD, &request);
     }
     // wait until all send/recv finish
     statuses = std::vector<MPI_Status>(requests.size());
@@ -439,21 +439,22 @@ class Part {
     requests.clear();
     // build ghost cells
     int i_buf = 0;
-    for (auto& [i_part, cell_infos] : recv_infos) {
-      auto& buf = recv_cells.at(i_buf);
-      int id = 0;
-      for (auto& [m_cell, cnt] : cell_infos) {
+    for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
+      auto& recv_buf = recv_cells.at(i_buf);
+      int index = 0;
+      for (auto& [m_cell, cnt] : cell_cnts) {
         m_to_recv_cells[m_cell].first = i_buf;
-        m_to_recv_cells[m_cell].second = id+1;
-        int i_zone = buf[id++];
+        m_to_recv_cells[m_cell].second = index + 1;
+        int i_zone = recv_buf[index++];
+        auto* i_node_list = &recv_buf[index];
         auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-          GetCoord(i_zone, buf[id+0]), GetCoord(i_zone, buf[id+1]),
-          GetCoord(i_zone, buf[id+2]), GetCoord(i_zone, buf[id+3]),
-          GetCoord(i_zone, buf[id+4]), GetCoord(i_zone, buf[id+5]),
-          GetCoord(i_zone, buf[id+6]), GetCoord(i_zone, buf[id+7]));
+          GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+          GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+          GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
+          GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
         ghost_cells_[m_cell] = Cell<Int, Real, kFunc>(
             std::move(hexa_ptr), m_cell);
-        id += cnt;
+        index += cnt;
       }
       ++i_buf;
     }
@@ -540,8 +541,8 @@ class Part {
       else
         ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
     }
-    std::cout << local_faces_.size() << " ghost faces in rank "
-        << rank_ << std::endl;
+    std::cout << local_faces_.size() << " ghost faces in rank " << rank_;
+    std::cout << std::endl;
     if (cgp_close(i_file))
       cgp_error_exit();
   }
