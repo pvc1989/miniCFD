@@ -56,9 +56,10 @@ int main(int argc, char* argv[]) {
   });
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
+  part.GatherSolutions();
   part.WriteSolutions();
-  // part.WriteSolutionsAtQuadPoints();
-  part.WriteSolutionsOnEachCell();
+  // part.WriteSolutionsOnGaussPoints();
+  part.WriteSolutionsOnCellCenters();
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
