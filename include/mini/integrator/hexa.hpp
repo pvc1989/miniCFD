@@ -65,6 +65,7 @@ class Hexa : public Cell<Scalar> {
   }
   static constexpr auto BuildFaces() {
     std::array<std::array<int, 4>, 6> faces{
+      // Faces can be distinguished by the sum of the three minimum node ids.
       0, 3, 2, 1/*  3 */, 0, 1, 5, 4/* 5 */, 1, 2, 6, 5/* 8 */,
       2, 3, 7, 6/* 11 */, 0, 4, 7, 3/* 7 */, 4, 5, 6, 7/* 15 */
     };
