@@ -207,12 +207,12 @@ class Part {
     BuildLocalNodes(istrm, i_file);
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
     BuildGhostNodes(recv_nodes, recv_coords);
-    auto connectivity = BuildLocalCells(istrm, i_file);
+    auto z_s_conn = BuildLocalCells(istrm, i_file);
     auto ghost_adj = BuildAdj(istrm);
-    auto recv_cells = ShareGhostCells(ghost_adj, connectivity);
+    auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
-    BuildLocalFaces(connectivity);
-    BuildGhostFaces(ghost_adj, connectivity, recv_cells, m_to_recv_cells);
+    BuildLocalFaces(z_s_conn);
+    BuildGhostFaces(ghost_adj, z_s_conn, recv_cells, m_to_recv_cells);
     if (cgp_close(i_file))
       cgp_error_exit();
   }
@@ -323,16 +323,15 @@ class Part {
       }
     }
   }
-  struct Connectivity {
-    std::map<Int, std::map<Int, ShiftedVector<Int>>> z_s_c_index;
-    std::map<Int, std::map<Int, std::vector<Int>>> z_s_nodes;
+  struct Conn {
+    ShiftedVector<Int> index;
+    std::vector<Int> nodes;
   };
-  Connectivity BuildLocalCells(std::ifstream& istrm, int i_file) {
+  using ZoneSectToConn = std::map<Int, std::map<Int, Conn>>;
+  ZoneSectToConn BuildLocalCells(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
     // build local cells
-    auto connectivity = Connectivity();
-    auto& z_s_c_index = connectivity.z_s_c_index;
-    auto& z_s_nodes = connectivity.z_s_nodes;
+    auto z_s_conn = ZoneSectToConn();
     while (istrm.getline(line, 30) && line[0]) {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
@@ -373,9 +372,10 @@ class Part {
       ElementType_t type;
       cgsize_t u, v;
       int x, y;
-      z_s_c_index[i_zone][i_sect] = ShiftedVector<Int>(mem_dimensions[0], head);
-      auto& index = z_s_c_index[i_zone][i_sect];
-      auto& nodes = z_s_nodes[i_zone][i_sect];
+      auto& conn = z_s_conn[i_zone][i_sect];
+      auto& index = conn.index;
+      auto& nodes = conn.nodes;
+      index = ShiftedVector<Int>(mem_dimensions[0], head);
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
@@ -409,7 +409,7 @@ class Part {
         }
       }
     }
-    return connectivity;
+    return z_s_conn;
   }
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>> send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
@@ -438,11 +438,9 @@ class Part {
     return ghost_adj;
   }
   auto ShareGhostCells(const GhostAdj& ghost_adj,
-      const Connectivity& connectivity) {
+      const ZoneSectToConn& z_s_conn) {
     auto& send_cell_cnts = ghost_adj.send_cell_cnts;
     auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
-    auto& z_s_c_index = connectivity.z_s_c_index;
-    auto& z_s_nodes = connectivity.z_s_nodes;
     // send cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> send_cells;
     std::vector<MPI_Request> requests;
@@ -455,8 +453,10 @@ class Part {
         Int i_zone = m_to_cell_info_[m_cell].i_zone,
             i_sect = m_to_cell_info_[m_cell].i_sect,
             i_cell = m_to_cell_info_[m_cell].i_cell;
-        auto index = z_s_c_index.at(i_zone).at(i_sect)[i_cell];
-        auto* i_node_list = &(z_s_nodes.at(i_zone).at(i_sect)[index]);
+        auto& conn = z_s_conn.at(i_zone).at(i_sect);
+        auto& index = conn.index;
+        auto& nodes = conn.nodes;
+        auto* i_node_list = &(nodes[index[i_cell]]);
         send_buf.emplace_back(i_zone);
         for (int i = 0; i < cnt; ++i) {
           send_buf.emplace_back(i_node_list[i]);
@@ -517,9 +517,7 @@ class Part {
     }
     return m_to_recv_cells;
   }
-  void BuildLocalFaces(const Connectivity& connectivity) {
-    auto& z_s_c_index = connectivity.z_s_c_index;
-    auto& z_s_nodes = connectivity.z_s_nodes;
+  void BuildLocalFaces(const ZoneSectToConn& z_s_conn) {
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
       auto& holder_info = m_to_cell_info_[m_holder];
@@ -527,12 +525,13 @@ class Part {
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& holder_nodes = z_s_nodes.at(i_zone).at(holder_info.i_sect);
-      auto& sharer_nodes = z_s_nodes.at(i_zone).at(sharer_info.i_sect);
-      auto holder_head =
-          z_s_c_index.at(i_zone).at(holder_info.i_sect)[holder_info.i_cell];
-      auto sharer_head =
-          z_s_c_index.at(i_zone).at(sharer_info.i_sect)[sharer_info.i_cell];
+      auto& conn_i_zone = z_s_conn.at(i_zone);
+      auto& holder_conn = conn_i_zone.at(holder_info.i_sect);
+      auto& sharer_conn = conn_i_zone.at(sharer_info.i_sect);
+      auto& holder_nodes = holder_conn.nodes;
+      auto& sharer_nodes = sharer_conn.nodes;
+      auto holder_head = holder_conn.index[holder_info.i_cell];
+      auto sharer_head = sharer_conn.index[sharer_info.i_cell];
       for (int i = 0; i < 8; ++i) {
         ++i_node_cnt[holder_nodes[holder_head + i]];
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
@@ -563,12 +562,10 @@ class Part {
     std::cout << std::endl;
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
-      const Connectivity& connectivity,
+      const ZoneSectToConn& z_s_conn,
       const std::vector<std::vector<Int>>& recv_cells,
       const std::unordered_map<Int, std::pair<int, int>>& m_to_recv_cells) {
     auto& ghost_adjs = ghost_adj.ghost_adjs;
-    auto& z_s_c_index = connectivity.z_s_c_index;
-    auto& z_s_nodes = connectivity.z_s_nodes;
     // build ghost faces
     for (auto [m_holder, m_sharer] : ghost_adjs) {
       auto& holder_info = m_to_cell_info_[m_holder];
@@ -576,10 +573,10 @@ class Part {
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& holder_nodes = z_s_nodes.at(i_zone).at(holder_info.i_sect);
+      auto& holder_conn = z_s_conn.at(i_zone).at(holder_info.i_sect);
+      auto& holder_nodes = holder_conn.nodes;
       auto& sharer_nodes = recv_cells[sharer_info.first];
-      auto holder_head =
-          z_s_c_index.at(i_zone).at(holder_info.i_sect)[holder_info.i_cell];
+      auto holder_head = holder_conn.index[holder_info.i_cell];
       auto sharer_head = sharer_info.second;
       for (int i = 0; i < 8; ++i) {
         ++i_node_cnt[holder_nodes[holder_head + i]];
