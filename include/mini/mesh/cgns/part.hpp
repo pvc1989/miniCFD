@@ -211,6 +211,7 @@ class Part {
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
+    FillCellPtrs(ghost_adj);
     BuildLocalFaces(z_s_conn);
     BuildGhostFaces(ghost_adj, z_s_conn, recv_cells, m_to_recv_cells);
     if (cgp_close(i_file))
@@ -516,6 +517,31 @@ class Part {
       ++i_source;
     }
     return m_to_recv_cells;
+  }
+  void FillCellPtrs(const GhostAdj& ghost_adj) {
+    // fill `send_cells_`
+    for (auto& [i_part, m_cell_cnt] : ghost_adj.send_cell_cnts) {
+      auto& curr_part = send_cell_ptrs_[i_part];
+      for (auto& [m_cell, cnt] : m_cell_cnt) {
+        auto& info = m_to_cell_info_[m_cell];
+        auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
+        curr_part.emplace_back(&cell);
+      }
+      send_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
+    }
+
+    // fill `recv_cells_`
+    for (auto& [i_part, m_cell_cnt] : ghost_adj.recv_cell_cnts) {
+      auto& curr_part = recv_cell_ptrs_[i_part];
+      for (auto& [m_cell, cnt] : m_cell_cnt) {
+        auto& cell = ghost_cells_.at(m_cell);
+        curr_part.emplace_back(&cell);
+      }
+      recv_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
+    }
+    assert(send_cell_ptrs_.size() == send_coeffs_.size());
+    assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
+    requests_.resize(send_coeffs_.size() + recv_coeffs_.size());
   }
   void BuildLocalFaces(const ZoneSectToConn& z_s_conn) {
     // build local faces
@@ -826,6 +852,53 @@ class Part {
       ostrm << '\n';
     }
   }
+  auto ShareGhostCellCoeffs() {
+    int i_req = 0;
+    // send cell.func_.coeff_
+    int i_buf = 0;
+    for (auto& [i_part, cell_ptrs] : send_cell_ptrs_) {
+      auto& send_buf = send_coeffs_[i_buf++];
+      int i_real = 0;
+      for (auto* cell_ptr : cell_ptrs) {
+        auto& coeff = cell_ptr->func_.GetCoeff();
+        const auto& coeff_vec_view = coeff.reshaped();
+        for (int i = 0; i < kFields; ++i) {
+          send_buf[i_real++] = coeff_vec_view[i];
+        }
+      }
+      int tag = i_part;
+      auto& request = requests_[i_req++];
+      MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
+          MPI_COMM_WORLD, &request);
+    }
+    // recv cell.func_.coeff_
+    i_buf = 0;
+    for (auto& [i_part, cell_ptrs] : recv_cell_ptrs_) {
+      auto& recv_buf = recv_coeffs_[i_buf++];
+      int tag = rank_;
+      auto& request = requests_[i_req++];
+      MPI_Irecv(recv_buf.data(), recv_buf.size(), kMpiRealType, i_part, tag,
+          MPI_COMM_WORLD, &request);
+    }
+    assert(i_req == send_coeffs_.size() + recv_coeffs_.size());
+  }
+  void UpdateCoeffs() {
+    // wait until all send/recv finish
+    std::vector<MPI_Status> statuses(requests_.size());
+    MPI_Waitall(requests_.size(), requests_.data(), statuses.data());
+    int req_size = requests_.size();
+    requests_.clear();
+    requests_.resize(req_size);
+    // update coeffs
+    int i_buf = 0;
+    for (auto& [i_part, cell_ptrs] : recv_cell_ptrs_) {
+      auto* recv_buf = recv_coeffs_[i_buf++].data();
+      for (auto* cell_ptr : cell_ptrs) {
+        cell_ptr->func_.UpdateCoeffs(recv_buf);
+        recv_buf += kFields;
+      }
+    }
+  }
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
@@ -839,12 +912,18 @@ class Part {
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
   std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
+  using CellPtr = Cell<Int, Real, kFunc>*;
+  std::map<Int, std::vector<CellPtr>>
+      send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
+  std::vector<std::vector<Real>>
+      send_coeffs_, recv_coeffs_;
   std::unordered_map<Int, Cell<Int, Real, kFunc>>
       ghost_cells_;  //                 [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
   std::vector<Face<Int, Real, kFunc>>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
+  std::vector<MPI_Request> requests_;
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;

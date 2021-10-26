@@ -129,6 +129,13 @@ class Projection {
     average_ += that.average_;
     return *this;
   }
+  void UpdateCoeffs(const Scalar* new_coeffs) {
+    for (int c = 0; c < N; ++c) {
+      for (int r = 0; r < K; ++r) {
+        coeff_(r, c) = *new_coeffs++;
+      }
+    }
+  }
 
  private:
   MatKxN coeff_;
