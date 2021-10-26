@@ -204,8 +204,23 @@ class Part {
       cgp_error_exit();
     auto txt_file = part_path_ + std::to_string(rank) + ".txt";
     auto istrm = std::ifstream(txt_file);
+    BuildLocalNodes(istrm, i_file);
+    auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
+    BuildGhostNodes(recv_nodes, recv_coords);
+    auto connectivity = BuildLocalCells(istrm, i_file);
+    auto ghost_adj = BuildAdj(istrm);
+    auto recv_cells = ShareGhostCells(ghost_adj, connectivity);
+    auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
+    BuildLocalFaces(connectivity);
+    BuildGhostFaces(ghost_adj, connectivity, recv_cells, m_to_recv_cells);
+    if (cgp_close(i_file))
+      cgp_error_exit();
+  }
+
+ private:
+  void BuildLocalNodes(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
-    // node ranges
+    // node coordinates
     while (istrm.getline(line, 30) && line[0]) {
       int i_zone, head, tail;
       std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
@@ -235,6 +250,12 @@ class Part {
         m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
       }
     }
+  }
+  std::pair<
+    std::map<Int, std::vector<Int>>,
+    std::vector<std::vector<Real>>
+  > ShareGhostNodes(std::ifstream& istrm) {
+    char line[kLineWidth];
     // send nodes info
     std::map<Int, std::vector<Int>> send_nodes;
     while (istrm.getline(line, 30) && line[0]) {
@@ -268,11 +289,11 @@ class Part {
       recv_nodes[i_part].emplace_back(m_node);
       m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
     }
-    std::vector<std::vector<Real>> recv_bufs;
+    std::vector<std::vector<Real>> recv_coords;
     for (auto& [i_part, nodes] : recv_nodes) {
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int n_reals = 3 * nodes.size();
-      auto& coords = recv_bufs.emplace_back(std::vector<Real>(n_reals));
+      auto& coords = recv_coords.emplace_back(std::vector<Real>(n_reals));
       int tag = rank_;
       auto& request = requests.emplace_back();
       MPI_Irecv(coords.data(), n_reals, kMpiRealType, i_part, tag,
@@ -282,10 +303,14 @@ class Part {
     std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
     requests.clear();
+    return { recv_nodes, recv_coords };
+  }
+  void BuildGhostNodes(const std::map<Int, std::vector<Int>>& recv_nodes,
+      const std::vector<std::vector<Real>>& recv_coords) {
     // copy node coordinates from buffer to member
     int i_source = 0;
     for (auto& [i_part, nodes] : recv_nodes) {
-      double* xyz = recv_bufs[i_source++].data();
+      auto* xyz = recv_coords[i_source++].data();
       for (auto m_node : nodes) {
         auto& info = m_to_node_info_[m_node];
         ghost_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
@@ -297,9 +322,17 @@ class Part {
         }
       }
     }
-    // build local cells
+  }
+  struct Connectivity {
     std::map<Int, std::map<Int, ShiftedVector<Int>>> z_s_c_index;
     std::map<Int, std::map<Int, std::vector<Int>>> z_s_nodes;
+  };
+  Connectivity BuildLocalCells(std::ifstream& istrm, int i_file) {
+    char line[kLineWidth];
+    // build local cells
+    auto connectivity = Connectivity();
+    auto& z_s_c_index = connectivity.z_s_c_index;
+    auto& z_s_nodes = connectivity.z_s_nodes;
     while (istrm.getline(line, 30) && line[0]) {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
@@ -376,6 +409,14 @@ class Part {
         }
       }
     }
+    return connectivity;
+  }
+  struct GhostAdj {
+    std::map<Int, std::map<Int, Int>> send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
+    std::vector<std::pair<Int, Int>> ghost_adjs;
+  };
+  GhostAdj BuildAdj(std::ifstream& istrm) {
+    char line[kLineWidth];
     // local adjacency
     while (istrm.getline(line, 30) && line[0]) {
       int i, j;
@@ -383,9 +424,10 @@ class Part {
       local_adjs_.emplace_back(i, j);
     }
     // ghost adjacency
-    std::map<Int, std::map<Int, Int>>
-        send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
-    std::vector<std::pair<Int, Int>> ghost_adjs;
+    auto ghost_adj = GhostAdj();
+    auto& send_cell_cnts = ghost_adj.send_cell_cnts;
+    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
+    auto& ghost_adjs = ghost_adj.ghost_adjs;
     while (istrm.getline(line, 30) && line[0]) {
       int p, i, j, cnt_i, cnt_j;
       std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
@@ -393,8 +435,17 @@ class Part {
       recv_cell_cnts[p][j] = cnt_j;
       ghost_adjs.emplace_back(i, j);
     }
+    return ghost_adj;
+  }
+  auto ShareGhostCells(const GhostAdj& ghost_adj,
+      const Connectivity& connectivity) {
+    auto& send_cell_cnts = ghost_adj.send_cell_cnts;
+    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
+    auto& z_s_c_index = connectivity.z_s_c_index;
+    auto& z_s_nodes = connectivity.z_s_nodes;
     // send cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> send_cells;
+    std::vector<MPI_Request> requests;
     for (auto& [i_part, cell_cnts] : send_cell_cnts) {
       auto& send_buf = send_cells.emplace_back();
       for (auto& [m_cell, cnt] : cell_cnts) {
@@ -404,8 +455,8 @@ class Part {
         Int i_zone = m_to_cell_info_[m_cell].i_zone,
             i_sect = m_to_cell_info_[m_cell].i_sect,
             i_cell = m_to_cell_info_[m_cell].i_cell;
-        auto index = z_s_c_index[i_zone][i_sect][i_cell];
-        auto* i_node_list = &z_s_nodes[i_zone][i_sect][index];
+        auto index = z_s_c_index.at(i_zone).at(i_sect)[i_cell];
+        auto* i_node_list = &(z_s_nodes.at(i_zone).at(i_sect)[index]);
         send_buf.emplace_back(i_zone);
         for (int i = 0; i < cnt; ++i) {
           send_buf.emplace_back(i_node_list[i]);
@@ -418,7 +469,6 @@ class Part {
           MPI_COMM_WORLD, &request);
     }
     // recv cell.i_zone and cell.node_id_list
-    std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
     std::vector<std::vector<Int>> recv_cells;
     for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
       auto& recv_buf = recv_cells.emplace_back();
@@ -434,16 +484,23 @@ class Part {
           MPI_COMM_WORLD, &request);
     }
     // wait until all send/recv finish
-    statuses = std::vector<MPI_Status>(requests.size());
+    std::vector<MPI_Status> statuses(requests.size());
     MPI_Waitall(requests.size(), requests.data(), statuses.data());
     requests.clear();
+    return recv_cells;
+  }
+  std::unordered_map<Int, std::pair<int, int>> BuildGhostCells(
+      const GhostAdj& ghost_adj,
+      const std::vector<std::vector<Int>>& recv_cells) {
+    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
     // build ghost cells
-    int i_buf = 0;
+    std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
+    int i_source = 0;
     for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
-      auto& recv_buf = recv_cells.at(i_buf);
+      auto& recv_buf = recv_cells.at(i_source);
       int index = 0;
       for (auto& [m_cell, cnt] : cell_cnts) {
-        m_to_recv_cells[m_cell].first = i_buf;
+        m_to_recv_cells[m_cell].first = i_source;
         m_to_recv_cells[m_cell].second = index + 1;
         int i_zone = recv_buf[index++];
         auto* i_node_list = &recv_buf[index];
@@ -456,8 +513,13 @@ class Part {
             std::move(hexa_ptr), m_cell);
         index += cnt;
       }
-      ++i_buf;
+      ++i_source;
     }
+    return m_to_recv_cells;
+  }
+  void BuildLocalFaces(const Connectivity& connectivity) {
+    auto& z_s_c_index = connectivity.z_s_c_index;
+    auto& z_s_nodes = connectivity.z_s_nodes;
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
       auto& holder_info = m_to_cell_info_[m_holder];
@@ -465,12 +527,12 @@ class Part {
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
-      auto& sharer_nodes = z_s_nodes[i_zone][sharer_info.i_sect];
+      auto& holder_nodes = z_s_nodes.at(i_zone).at(holder_info.i_sect);
+      auto& sharer_nodes = z_s_nodes.at(i_zone).at(sharer_info.i_sect);
       auto holder_head =
-          z_s_c_index[i_zone][holder_info.i_sect][holder_info.i_cell];
+          z_s_c_index.at(i_zone).at(holder_info.i_sect)[holder_info.i_cell];
       auto sharer_head =
-          z_s_c_index[i_zone][sharer_info.i_sect][sharer_info.i_cell];
+          z_s_c_index.at(i_zone).at(sharer_info.i_sect)[sharer_info.i_cell];
       for (int i = 0; i < 8; ++i) {
         ++i_node_cnt[holder_nodes[holder_head + i]];
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
@@ -499,17 +561,25 @@ class Part {
     }
     std::cout << local_faces_.size() << " local faces in rank " << rank_;
     std::cout << std::endl;
+  }
+  void BuildGhostFaces(const GhostAdj& ghost_adj,
+      const Connectivity& connectivity,
+      const std::vector<std::vector<Int>>& recv_cells,
+      const std::unordered_map<Int, std::pair<int, int>>& m_to_recv_cells) {
+    auto& ghost_adjs = ghost_adj.ghost_adjs;
+    auto& z_s_c_index = connectivity.z_s_c_index;
+    auto& z_s_nodes = connectivity.z_s_nodes;
     // build ghost faces
     for (auto [m_holder, m_sharer] : ghost_adjs) {
       auto& holder_info = m_to_cell_info_[m_holder];
-      auto& sharer_info = m_to_recv_cells[m_sharer];
+      auto& sharer_info = m_to_recv_cells.at(m_sharer);
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& holder_nodes = z_s_nodes[i_zone][holder_info.i_sect];
+      auto& holder_nodes = z_s_nodes.at(i_zone).at(holder_info.i_sect);
       auto& sharer_nodes = recv_cells[sharer_info.first];
       auto holder_head =
-          z_s_c_index[i_zone][holder_info.i_sect][holder_info.i_cell];
+          z_s_c_index.at(i_zone).at(holder_info.i_sect)[holder_info.i_cell];
       auto sharer_head = sharer_info.second;
       for (int i = 0; i < 8; ++i) {
         ++i_node_cnt[holder_nodes[holder_head + i]];
@@ -543,9 +613,9 @@ class Part {
     }
     std::cout << local_faces_.size() << " ghost faces in rank " << rank_;
     std::cout << std::endl;
-    if (cgp_close(i_file))
-      cgp_error_exit();
   }
+
+ public:
   template <class Callable>
   void Project(Callable&& new_func) {
     for (auto& [i_zone, sects] : local_cells_) {
