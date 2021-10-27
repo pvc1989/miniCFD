@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
 
   std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = mini::mesh::cgns::Part<cgsize_t, double>(
+  auto part = mini::mesh::cgns::Part<cgsize_t, double, 2>(
       "double_mach_hexa", comm_rank);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -60,8 +60,17 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions();
   // part.WriteSolutionsOnGaussPoints();
   part.WriteSolutionsOnCellCenters();
+  std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
+  std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.ShareGhostCellCoeffs();
-  part.UpdateCoeffs();
+  auto limiter = [](auto* cell_ptr) {
+    if (cell_ptr->local() == false) {
+      assert(cell_ptr->basis_.Measure() == cell_ptr->volume());
+    }
+  };
+  part.Reconstruct(limiter);
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();

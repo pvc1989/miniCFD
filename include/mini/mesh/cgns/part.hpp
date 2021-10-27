@@ -111,12 +111,15 @@ struct Cell {
   Basis basis_;
   GaussPtr gauss_;
   Projection func_;
+  Real volume_;
   Int metis_id;
+  bool local_ = true;
 
   using Value = decltype(func_(gauss_->GetCenter()));
 
   Cell(GaussPtr&& gauss, Int m_cell)
-      : basis_(*gauss), gauss_(std::move(gauss)), metis_id(m_cell) {
+      : basis_(*gauss), gauss_(std::move(gauss)),
+        volume_(basis_.Measure()), metis_id(m_cell) {
   }
   Cell() = default;
   Cell(const Cell&) = delete;
@@ -124,6 +127,13 @@ struct Cell {
   Cell(Cell&&) noexcept = default;
   Cell& operator=(Cell&&) noexcept = default;
   ~Cell() noexcept = default;
+
+  Real volume() const {
+    return volume_;
+  }
+  bool local() const {
+    return local_;
+  }
 
   template <class Callable>
   void Project(Callable&& new_func) {
@@ -525,11 +535,11 @@ class Part {
       for (auto& [m_cell, cnt] : m_cell_cnt) {
         auto& info = m_to_cell_info_[m_cell];
         auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
+        cell.local_ = false;
         curr_part.emplace_back(&cell);
       }
       send_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
     }
-
     // fill `recv_cells_`
     for (auto& [i_part, m_cell_cnt] : ghost_adj.recv_cell_cnts) {
       auto& curr_part = recv_cell_ptrs_[i_part];
@@ -852,7 +862,7 @@ class Part {
       ostrm << '\n';
     }
   }
-  auto ShareGhostCellCoeffs() {
+  void ShareGhostCellCoeffs() {
     int i_req = 0;
     // send cell.func_.coeff_
     int i_buf = 0;
@@ -896,6 +906,28 @@ class Part {
       for (auto* cell_ptr : cell_ptrs) {
         cell_ptr->func_.UpdateCoeffs(recv_buf);
         recv_buf += kFields;
+      }
+    }
+  }
+
+  template <typename Callable>
+  void Reconstruct(Callable&& limiter) {
+    // run the limiter on cells that need no ghost cells
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (int i_cell = sect.head(); i_cell < sect.size(); ++i_cell) {
+          auto& cell = sect[i_cell];
+          if (cell.local()) {
+            limiter(&cell);
+          }
+        }
+      }
+    }
+    // run the limiter on cells that need ghost cells
+    UpdateCoeffs();
+    for (auto [i_part, cell_ptrs] : send_cell_ptrs_) {
+      for (auto* cell_ptr : cell_ptrs) {
+        limiter(cell_ptr);
       }
     }
   }
