@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -18,11 +19,12 @@
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/polynomial/limiter.hpp"
 #include "mini/riemann/euler/eigen.hpp"
 
 #include "gtest/gtest.h"
 
-class TestSimpleWenoLimiter : public ::testing::Test {
+class TestWenoLimiters : public ::testing::Test {
  protected:
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
@@ -30,7 +32,7 @@ class TestSimpleWenoLimiter : public ::testing::Test {
   Gauss gauss_;
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
-TEST_F(TestSimpleWenoLimiter, ReconstructScalar) {
+TEST_F(TestWenoLimiters, ReconstructScalar) {
   auto case_name = std::string("simple_cube");
   // build mesh files
   constexpr int kCommandLength = 1024;
@@ -136,7 +138,7 @@ TEST_F(TestSimpleWenoLimiter, ReconstructScalar) {
     std::printf(" }\n");
   }
 }
-TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
+TEST_F(TestWenoLimiters, ReconstructVector) {
   auto case_name = std::string("simple_cube");
   // build mesh files
   constexpr int kCommandLength = 1024;
@@ -350,11 +352,98 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
             i_cell, cell_adjs[i_cell][j]);
       std::printf(" }\n");
     }
-    std::cout << "\naverage difference =" << std::endl;
-    std::cout << cells[i_cell].func_.GetAverage().transpose() -
-                 weno_projections[i_cell].GetAverage().transpose() << std::endl;
-    std::printf("\n");
+    Mat5x1 diff = cells[i_cell].func_.GetAverage()
+        - weno_projections[i_cell].GetAverage();
+    EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+    std::cout << std::endl;
   }
+}
+TEST_F(TestWenoLimiters, For3dEulerEquations) {
+  auto case_name = std::string("simple_cube");
+  // build a cgns mesh file
+  constexpr int kCommandLength = 1024;
+  char cmd[kCommandLength];
+  std::snprintf(cmd, kCommandLength, "mkdir -p %s/vector", case_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  auto old_file_name = case_name + "/vector/original.cgns";
+  std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
+      test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  using CgnsMesh = mini::mesh::cgns::File<double>;
+  auto cgns_mesh = CgnsMesh(old_file_name);
+  cgns_mesh.ReadBases();
+  // build the dual graph
+  idx_t n_common_nodes{3};
+  auto mapper = mini::mesh::mapper::CgnsToMetis<double, idx_t>();
+  auto metis_mesh = mapper.Map(cgns_mesh);
+  EXPECT_TRUE(mapper.IsValid());
+  auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
+  int n_cells = metis_mesh.CountCells();
+  // build cells and project a vector function on them
+  using Cell = mini::mesh::cgns::Cell<int, double, 5>;
+  auto cells = std::vector<Cell>();
+  cells.reserve(n_cells);
+  auto& zone = cgns_mesh.GetBase(1).GetZone(1);
+  auto& coordinates = zone.GetCoordinates();
+  auto& x = coordinates.x();
+  auto& y = coordinates.y();
+  auto& z = coordinates.z();
+  auto& sect = zone.GetSection(1);
+  // define the function
+  using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
+  auto func = [](Coord const &xyz) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    Mat5x1 res;
+    res[0] = x * x + 10 * (x < y ? +1 : 0.125);
+    res[1] =          2 * (x < y ? -2 : 2);
+    res[2] =          2 * (x < y ? -2 : 2);
+    res[3] =          2 * (x < y ? -2 : 2);
+    res[4] = y * y + 90 * (x < y ? +1 : 0.5);
+    return res;
+  };
+  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    // build a new `Cell`
+    Mat3x8 coords;
+    const cgsize_t* array;  // head of 1-based-node-id list
+    array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
+    for (int i = 0; i < 8; ++i) {
+      auto i_node = array[i] - 1;
+      coords(0, i) = x[i_node];
+      coords(1, i) = y[i_node];
+      coords(2, i) = z[i_node];
+    }
+    auto hexa_ptr = std::make_unique<Gauss>(coords);
+    cells.emplace_back(std::move(hexa_ptr), i_cell);
+    assert(&(cells[i_cell]) == &(cells.back()));
+    // project `func` onto the latest built cell
+    cells[i_cell].Project(func);
+  }
+  // fill `adj_cells_`
+  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+    for (int r = graph.range(i_cell); r < graph.range(i_cell+1); ++r) {
+      int j_cell = graph.index(r);
+      cells[i_cell].adj_cells_.emplace_back(&cells[j_cell]);
+    }
+  }
+  // reconstruct using a `EigenWeno` limiter
+  using Projection = typename Cell::Projection;
+  using IdealGas = mini::riemann::euler::IdealGas<1, 4>;
+  using Matrices = mini::riemann::euler::EigenMatrices<double, IdealGas>;
+  auto limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
+      /* w0 = */0.01, /* eps = */1e-6);
+  auto new_projections = std::vector<Projection>();
+  new_projections.reserve(n_cells);
+  for (auto& cell : cells) {
+    new_projections.emplace_back(limiter(&cell));
+    // print smoothness
+    auto new_smoothness = new_projections.back().GetSmoothness();
+    std::printf("\nsmoothness[%2d] = ", cell.metis_id);
+    std::cout << std::scientific << new_smoothness.transpose();
+    Mat5x1 diff = cell.func_.GetAverage() - new_projections.back().GetAverage();
+    EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+  }
+  std::cout << std::endl;
 }
 
 int main(int argc, char* argv[]) {
