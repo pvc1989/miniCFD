@@ -339,6 +339,7 @@ TEST_F(TestProjection, ReconstructVector) {
   const double eps = 1e-6, w0 = 0.01;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
+    // borrow projections from adjacent cells
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].func_(xyz);
@@ -354,6 +355,7 @@ TEST_F(TestProjection, ReconstructVector) {
     int adj_cnt = cell_adjs[i_cell].size();
     double total_volume = 0.0;
     weno_projections[i_cell] = Projection(cell_i.basis_);
+    // rotate borrowed projections onto faces of cell_i
     for (auto j_cell : cell_adjs[i_cell]) {
       rotations[i_cell].emplace_back();
       auto& curr = rotations[i_cell].back();
@@ -411,6 +413,7 @@ TEST_F(TestProjection, ReconstructVector) {
     }  // for each j_cell
     weno_projections[i_cell] /= total_volume;
   }  // for each i_cell
+  // reconstruct projections by weights
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     int adj_cnt = cell_adjs[i_cell].size();
     auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
