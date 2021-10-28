@@ -110,6 +110,7 @@ struct Cell {
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
 
+  std::vector<Cell*> adj_cells_;
   Basis basis_;
   GaussPtr gauss_;
   Projection func_;
@@ -595,6 +596,8 @@ class Part {
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
       local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+      holder.adj_cells_.emplace_back(&sharer);
+      sharer.adj_cells_.emplace_back(&holder);
     }
     std::cout << local_faces_.size() << " local faces in rank " << rank_;
     std::cout << std::endl;

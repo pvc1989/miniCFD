@@ -24,10 +24,8 @@ namespace polynomial {
  */
 template <typename Scalar, int kDim, int kOrder, int kFunc>
 class Projection {
- private:
-  using Basis = OrthoNormal<Scalar, kDim, kOrder>;
-
  public:
+  using Basis = OrthoNormal<Scalar, kDim, kOrder>;
   static constexpr int N = Basis::N;
   static constexpr int K = kFunc;
   using Coord = typename Basis::Coord;
@@ -37,6 +35,7 @@ class Projection {
   using MatKxN = algebra::Matrix<Scalar, K, N>;
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;
   using MatKxK = algebra::Matrix<Scalar, K, K>;
+  using Value = MatKx1;
 
  public:
   template <typename Callable>
