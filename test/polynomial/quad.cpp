@@ -19,14 +19,14 @@ class TestQuad4x4 : public ::testing::Test {
   using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  using Basis = mini::polynomial::OrthoNormalBasis<double, 2, 2>;
+  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   using Y = typename Basis::MatNx1;
   using A = typename Basis::MatNxN;
   using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
   using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
   using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
 };
-TEST_F(TestQuad4x4, OrthoNormalBasis) {
+TEST_F(TestQuad4x4, OrthoNormal) {
   Mat2x1 origin = {0, 0}, left = {-1, 2}, right = {1, 3};
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;

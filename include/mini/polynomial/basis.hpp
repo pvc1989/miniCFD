@@ -16,10 +16,10 @@ namespace mini {
 namespace polynomial {
 
 template <typename Scalar, int kDim, int kOrder>
-class RawBasis;
+class Raw;
 
 template <typename Scalar>
-class RawBasis<Scalar, 2, 2> {
+class Raw<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -33,7 +33,7 @@ class RawBasis<Scalar, 2, 2> {
 };
 
 template <typename Scalar>
-class RawBasis<Scalar, 3, 2> {
+class Raw<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -104,31 +104,31 @@ class RawBasis<Scalar, 3, 2> {
  * @tparam kOrder the degree of completeness
  */
 template <typename Scalar, int kDim, int kOrder>
-class Basis {
-  using Raw = RawBasis<Scalar, kDim, kOrder>;
+class Linear {
+  using RB = Raw<Scalar, kDim, kOrder>;
 
  public:
-  static constexpr int N = Raw::N;
-  using Coord = typename Raw::Coord;
-  using MatNx1 = typename Raw::MatNx1;
+  static constexpr int N = RB::N;
+  using Coord = typename RB::Coord;
+  using MatNx1 = typename RB::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
   using Gauss = std::conditional_t<kDim == 2, integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
 
  public:
-  explicit Basis(Coord const& center)
+  explicit Linear(Coord const& center)
       : center_(center) {
   }
-  Basis() {
+  Linear() {
     integrator::SetZero(&center_);
   }
-  Basis(const Basis&) = default;
-  Basis(Basis&&) noexcept = default;
-  Basis& operator=(const Basis&) = default;
-  Basis& operator=(Basis&&) noexcept = default;
-  ~Basis() noexcept = default;
+  Linear(const Linear&) = default;
+  Linear(Linear&&) noexcept = default;
+  Linear& operator=(const Linear&) = default;
+  Linear& operator=(Linear&&) noexcept = default;
+  ~Linear() noexcept = default;
 
   MatNx1 operator()(Coord const& point) const {
-    MatNx1 col = Raw::CallAt(point - center_);
+    MatNx1 col = RB::CallAt(point - center_);
     return coeff_ * col;
   }
   Coord const& GetCenter() const {
@@ -150,9 +150,9 @@ class Basis {
 };
 
 template <typename Scalar, int kDim, int kOrder>
-class OrthoNormalBasis {
-  using RB = RawBasis<Scalar, kDim, kOrder>;
-  using GB = Basis<Scalar, kDim, kOrder>;
+class OrthoNormal {
+  using RB = Raw<Scalar, kDim, kOrder>;
+  using GB = Linear<Scalar, kDim, kOrder>;
 
  public:
   static constexpr int N = GB::N;
@@ -162,17 +162,17 @@ class OrthoNormalBasis {
   using MatNxN = typename GB::MatNxN;
 
  public:
-  explicit OrthoNormalBasis(const Gauss& gauss)
+  explicit OrthoNormal(const Gauss& gauss)
       : gauss_ptr_(&gauss), basis_(gauss.GetCenter()) {
     assert(gauss.PhysDim() == kDim);
     OrthoNormalize(&basis_, gauss);
   }
-  OrthoNormalBasis() = default;
-  OrthoNormalBasis(const OrthoNormalBasis&) = default;
-  OrthoNormalBasis(OrthoNormalBasis&&) noexcept = default;
-  OrthoNormalBasis& operator=(const OrthoNormalBasis&) = default;
-  OrthoNormalBasis& operator=(OrthoNormalBasis&&) noexcept = default;
-  ~OrthoNormalBasis() noexcept = default;
+  OrthoNormal() = default;
+  OrthoNormal(const OrthoNormal&) = default;
+  OrthoNormal(OrthoNormal&&) noexcept = default;
+  OrthoNormal& operator=(const OrthoNormal&) = default;
+  OrthoNormal& operator=(OrthoNormal&&) noexcept = default;
+  ~OrthoNormal() noexcept = default;
 
   Coord const& GetCenter() const {
     return basis_.GetCenter();
@@ -196,7 +196,7 @@ class OrthoNormalBasis {
 
  private:
   Gauss const* gauss_ptr_;
-  Basis<Scalar, kDim, kOrder> basis_;
+  Linear<Scalar, kDim, kOrder> basis_;
 };
 
 }  // namespace polynomial

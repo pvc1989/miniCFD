@@ -27,8 +27,8 @@
 
 class TestProjection : public ::testing::Test {
  protected:
-  using RawBasis = mini::polynomial::RawBasis<double, 3, 2>;
-  using Basis = mini::polynomial::OrthoNormalBasis<double, 3, 2>;
+  using Raw = mini::polynomial::Raw<double, 3, 2>;
+  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
   Gauss gauss_;
@@ -65,7 +65,7 @@ TEST_F(TestProjection, VectorFunction) {
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
-  auto v_expect = RawBasis::CallAt({0.3, 0.4, 0.5});
+  auto v_expect = Raw::CallAt({0.3, 0.4, 0.5});
   MatKx1 res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
@@ -86,10 +86,10 @@ TEST_F(TestProjection, VectorFunction) {
 }
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using RawBasis = mini::polynomial::RawBasis<double, 3, 2>;
+  using Raw = mini::polynomial::Raw<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
-    return RawBasis::CallAt(point);
+    return Raw::CallAt(point);
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
@@ -98,7 +98,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto point = Coord{ 0.3, 0.4, 0.5 };
   auto pdv_actual = projection.GetPdvValue(point);
   auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
-  auto pdv_expect = RawBasis::GetPdvValue(point, coeff);
+  auto pdv_expect = Raw::GetPdvValue(point, coeff);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
   auto s_actual = projection.GetSmoothness();
