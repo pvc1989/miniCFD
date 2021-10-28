@@ -214,7 +214,7 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
     nu /= std::hypot(nu[0], nu[1], nu[2]);
     return nu;
   };
-  auto GetSigmaPi = [](Coord const &nu, Coord *sigma, Coord *pi){
+  auto GetMuPi = [](Coord const &nu, Coord *mu, Coord *pi){
     int id = 0;
     for (int i = 1; i < 3; ++i) {
       if (std::abs(nu[i]) < std::abs(nu[id])) {
@@ -224,27 +224,27 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
     auto a = nu[0], b = nu[1], c = nu[2];
     switch (id) {
     case 0:
-      *sigma << 0.0, -c, b;
+      *mu << 0.0, -c, b;
       *pi << (b * b + c * c), -(a * b), -(a * c);
       break;
     case 1:
-      *sigma << c, 0.0, -a;
+      *mu << c, 0.0, -a;
       *pi << -(a * b), (a * a + c * c), -(b * c);
       break;
     case 2:
-      *sigma << -b, a, 0.0;
+      *mu << -b, a, 0.0;
       *pi << -(a * c), -(b * c), (a * a + b * b);
       break;
     default:
       break;
     }
-    *sigma /= std::hypot((*sigma)[0], (*sigma)[1], (*sigma)[2]);
+    *mu /= std::hypot((*mu)[0], (*mu)[1], (*mu)[2]);
     *pi /= std::hypot((*pi)[0], (*pi)[1], (*pi)[2]);
   };
   using IdealGas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, IdealGas>;
   struct Rotation {
-    Coord nu, sigma, pi;
+    Coord nu, mu, pi;
     Matrices eigen;
     std::vector<Projection> projections;
     std::vector<Mat5x1> smoothness;
@@ -256,9 +256,7 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
     auto& cell_i = cells[i_cell];
     // borrow projections from adjacent cells
     for (auto j_cell : cell_adjs[i_cell]) {
-      auto adj_func = [&](Coord const &xyz) {
-        return cells[j_cell].func_(xyz);
-      };
+      auto& adj_func = cells[j_cell].func_;
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
       auto& adj_projection = adj_projections[i_cell].back();
       adj_projection += cell_i.func_.GetAverage() - adj_projection.GetAverage();
@@ -267,16 +265,15 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
       adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
     adj_smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
+    // rotate borrowed projections onto faces of cell_i
     int adj_cnt = cell_adjs[i_cell].size();
     double total_volume = 0.0;
     weno_projections[i_cell] = Projection(cell_i.basis_);
-    // rotate borrowed projections onto faces of cell_i
     for (auto j_cell : cell_adjs[i_cell]) {
       rotations[i_cell].emplace_back();
       auto& curr = rotations[i_cell].back();
       curr.nu = GetNu(cells[i_cell], cells[j_cell]);
-      GetSigmaPi(curr.nu, &(curr.sigma), &(curr.pi));
-      // assert(nu.cross(sigma) == pi);
+      GetMuPi(curr.nu, &(curr.mu), &(curr.pi));
       auto u_conservative = cell_i.func_.GetAverage();
       auto rho = u_conservative[0];
       auto u = u_conservative[1] / rho;
@@ -287,20 +284,15 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
       assert(rho > 0 && p > 0);
       auto u_primitive = mini::riemann::euler::PrimitiveTuple<3>{
           rho, u, v, w, p};
-      curr.eigen = Matrices(u_primitive, curr.nu, curr.sigma, curr.pi);
-      for (auto& adj_projection : adj_projections[i_cell]) {
-        curr.projections.emplace_back(adj_projection);
-      }
+      curr.eigen = Matrices(u_primitive, curr.nu, curr.mu, curr.pi);
+      curr.projections = adj_projections[i_cell];
       curr.projections.emplace_back(cell_i.func_);
       auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
       weights.back() *= -adj_cnt;
       weights.back().array() += 1.0;
-      Mat5x1 s_after;
       for (int i = 0; i <= adj_cnt; ++i) {
         auto& projection = curr.projections[i];
         projection.LeftMultiply(curr.eigen.L);
-        if (i == adj_cnt)
-          s_after = projection.GetSmoothness();
         auto& temp = curr.smoothness.emplace_back(projection.GetSmoothness());
         temp.array() += eps;
         weights[i].array() /= temp.array() * temp.array();
@@ -316,19 +308,14 @@ TEST_F(TestSimpleWenoLimiter, ReconstructVector) {
         curr.projections[i] *= weights[i];
         curr.projections.back() += curr.projections[i];
       }
-      auto s_before = curr.projections.back().GetSmoothness();
-      // std::cout << "L * R =\n" << curr.eigen.L * curr.eigen.R << std::endl;
       curr.projections.back().LeftMultiply(curr.eigen.R);
-      for (int i = 0; i < adj_cnt; ++i)
-        curr.projections[i].LeftMultiply(curr.eigen.R);
-      auto s = curr.projections.back().GetSmoothness();
       curr.projections.back() *= volumes[j_cell];
       weno_projections[i_cell] += curr.projections.back();
       total_volume += volumes[j_cell];
     }  // for each j_cell
     weno_projections[i_cell] /= total_volume;
   }  // for each i_cell
-  // reconstruct projections by weights
+  // reconstruct without rotation
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     int adj_cnt = cell_adjs[i_cell].size();
     auto weights = std::vector<Mat5x1>(adj_cnt + 1, {w0, w0, w0, w0, w0});
