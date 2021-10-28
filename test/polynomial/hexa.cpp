@@ -17,7 +17,7 @@ class TestHexa4x4x4 : public ::testing::Test {
   using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  using Basis = mini::polynomial::OrthoNormalBasis<double, 3, 2>;
+  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Y = typename Basis::MatNx1;
   using A = typename Basis::MatNxN;
   using ScalarPF = mini::polynomial::Projection<double, 3, 2, 1>;
@@ -26,7 +26,7 @@ class TestHexa4x4x4 : public ::testing::Test {
   using Mat11x1 = mini::algebra::Matrix<double, 11, 1>;
   using Mat11x10 = mini::algebra::Matrix<double, 11, 10>;
 };
-TEST_F(TestHexa4x4x4, OrthoNormalBasis) {
+TEST_F(TestHexa4x4x4, OrthoNormal) {
   // build a hexa-integrator
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;

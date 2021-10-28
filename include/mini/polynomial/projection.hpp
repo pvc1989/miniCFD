@@ -25,7 +25,7 @@ namespace polynomial {
 template <typename Scalar, int kDim, int kOrder, int kFunc>
 class Projection {
  private:
-  using Basis = OrthoNormalBasis<Scalar, kDim, kOrder>;
+  using Basis = OrthoNormal<Scalar, kDim, kOrder>;
 
  public:
   static constexpr int N = Basis::N;
@@ -68,7 +68,7 @@ class Projection {
 
   MatKx1 operator()(Coord const& global) const {
     auto local = global; local -= basis_ptr_->GetCenter();
-    MatNx1 col = RawBasis<Scalar, kDim, kOrder>::CallAt(local);
+    MatNx1 col = Raw<Scalar, kDim, kOrder>::CallAt(local);
     return coeff_ * col;
   }
   const MatKxN& GetCoeff() const {
@@ -77,7 +77,7 @@ class Projection {
   MatKxN GetPdvValue(Coord const& global) const {
     MatKxN res; res.setZero();
     auto local = global; local -= basis_ptr_->GetCenter();
-    return RawBasis<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoeff());
+    return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoeff());
   }
   MatKx1 const& GetAverage() const {
     return average_;
@@ -90,7 +90,7 @@ class Projection {
     };
     auto integral = integrator::Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
-    return RawBasis<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
+    return Raw<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
   }
   template <typename Callable>
   void Project(Callable&& func, const Basis& basis) {

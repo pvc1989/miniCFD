@@ -105,7 +105,7 @@ struct Cell {
   static constexpr int kDim = 3;
   static constexpr int kOrder = 2;
   using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
-  using Basis = polynomial::OrthoNormalBasis<Real, kDim, kOrder>;
+  using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
