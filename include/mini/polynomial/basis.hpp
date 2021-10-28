@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_BASIS_HPP_
-#define MINI_INTEGRATOR_BASIS_HPP_
+#ifndef MINI_POLYNOMIAL_BASIS_HPP_
+#define MINI_POLYNOMIAL_BASIS_HPP_
 
 #include <cmath>
 #include <iostream>
@@ -13,7 +13,7 @@
 #include "mini/integrator/cell.hpp"
 
 namespace mini {
-namespace integrator {
+namespace polynomial {
 
 template <typename Scalar, int kDim, int kOrder>
 class RawBasis;
@@ -112,14 +112,14 @@ class Basis {
   using Coord = typename Raw::Coord;
   using MatNx1 = typename Raw::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
-  using Gauss = std::conditional_t<kDim == 2, Face<Scalar, 2>, Cell<Scalar>>;
+  using Gauss = std::conditional_t<kDim == 2, integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
 
  public:
   explicit Basis(Coord const& center)
       : center_(center) {
   }
   Basis() {
-    SetZero(&center_);
+    integrator::SetZero(&center_);
   }
   Basis(const Basis&) = default;
   Basis(Basis&&) noexcept = default;
@@ -199,7 +199,7 @@ class OrthoNormalBasis {
   Basis<Scalar, kDim, kOrder> basis_;
 };
 
-}  // namespace integrator
+}  // namespace polynomial
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_BASIS_HPP_
+#endif  // MINI_POLYNOMIAL_BASIS_HPP_
