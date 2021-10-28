@@ -7,7 +7,6 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/projection.hpp"
 
 namespace mini {
 namespace integrator {

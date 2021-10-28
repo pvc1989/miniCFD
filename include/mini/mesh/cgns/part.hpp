@@ -20,6 +20,7 @@
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/integrator/quad.hpp"
 #include "mini/integrator/hexa.hpp"
+#include "mini/integrator/projection.hpp"
 
 namespace mini {
 namespace mesh {
