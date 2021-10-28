@@ -20,7 +20,8 @@
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/integrator/quad.hpp"
 #include "mini/integrator/hexa.hpp"
-#include "mini/integrator/projection.hpp"
+#include "mini/polynomial/basis.hpp"
+#include "mini/polynomial/projection.hpp"
 
 namespace mini {
 namespace mesh {
@@ -103,8 +104,8 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Cell {
   static constexpr int kDim = 3;
   static constexpr int kOrder = 2;
-  using Projection = integrator::Projection<Real, kDim, kOrder, kFunc>;
-  using Basis = integrator::OrthoNormalBasis<Real, kDim, kOrder>;
+  using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
+  using Basis = polynomial::OrthoNormalBasis<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis

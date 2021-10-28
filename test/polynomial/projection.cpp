@@ -17,17 +17,18 @@
 #include "mini/mesh/metis/format.hpp"
 #include "mini/mesh/metis/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
-#include "mini/integrator/projection.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
+#include "mini/polynomial/basis.hpp"
+#include "mini/polynomial/projection.hpp"
 #include "mini/riemann/euler/eigen.hpp"
 
 #include "gtest/gtest.h"
 
 class TestProjection : public ::testing::Test {
  protected:
-  using RawBasis = mini::integrator::RawBasis<double, 3, 2>;
-  using Basis = mini::integrator::OrthoNormalBasis<double, 3, 2>;
+  using RawBasis = mini::polynomial::RawBasis<double, 3, 2>;
+  using Basis = mini::polynomial::OrthoNormalBasis<double, 3, 2>;
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
   Gauss gauss_;
@@ -38,7 +39,7 @@ TEST_F(TestProjection, ScalarFunction) {
     auto x = point[0], y = point[1], z = point[2];
     return x * x + y * y + z * z;
   };
-  using ProjFunc = mini::integrator::Projection<double, 3, 2, 1>;
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 1>;
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 1);
@@ -52,7 +53,7 @@ TEST_F(TestProjection, ScalarFunction) {
   EXPECT_NEAR(projection.GetAverage()[0], integral_f / integral_1, 1e-14);
 }
 TEST_F(TestProjection, VectorFunction) {
-  using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
@@ -84,8 +85,8 @@ TEST_F(TestProjection, VectorFunction) {
   EXPECT_NEAR(res.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, PartialDerivatives) {
-  using ProjFunc = mini::integrator::Projection<double, 3, 2, 10>;
-  using RawBasis = mini::integrator::RawBasis<double, 3, 2>;
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
+  using RawBasis = mini::polynomial::RawBasis<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
     return RawBasis::CallAt(point);

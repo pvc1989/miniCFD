@@ -11,23 +11,20 @@
 
 using std::sqrt;
 
-namespace mini {
-namespace polynomial {
-
 class TestHexa4x4x4 : public ::testing::Test {
  protected:
-  using Hexa4x4x4 = Hexa<double, 4, 4, 4>;
-  using Mat1x8 = algebra::Matrix<double, 1, 8>;
-  using Mat3x8 = algebra::Matrix<double, 3, 8>;
-  using Mat3x1 = algebra::Matrix<double, 3, 1>;
-  using Basis = OrthoNormalBasis<double, 3, 2>;
+  using Hexa4x4x4 = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
+  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+  using Basis = mini::polynomial::OrthoNormalBasis<double, 3, 2>;
   using Y = typename Basis::MatNx1;
   using A = typename Basis::MatNxN;
-  using ScalarPF = Projection<double, 3, 2, 1>;
-  using Mat1x10 = algebra::Matrix<double, 1, 10>;
-  using VectorPF = Projection<double, 3, 2, 11>;
-  using Mat11x1 = algebra::Matrix<double, 11, 1>;
-  using Mat11x10 = algebra::Matrix<double, 11, 10>;
+  using ScalarPF = mini::polynomial::Projection<double, 3, 2, 1>;
+  using Mat1x10 = mini::algebra::Matrix<double, 1, 10>;
+  using VectorPF = mini::polynomial::Projection<double, 3, 2, 11>;
+  using Mat11x1 = mini::algebra::Matrix<double, 11, 1>;
+  using Mat11x10 = mini::algebra::Matrix<double, 11, 10>;
 };
 TEST_F(TestHexa4x4x4, OrthoNormalBasis) {
   // build a hexa-integrator
@@ -90,9 +87,6 @@ TEST_F(TestHexa4x4x4, Projection) {
   Mat11x10 abs_diff = vector_pf.GetCoeff() - exact_vector;
   EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
-
-}  // namespace polynomial
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

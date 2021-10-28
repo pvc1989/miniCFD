@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_PROJECTION_HPP_
-#define MINI_INTEGRATOR_PROJECTION_HPP_
+#ifndef MINI_POLYNOMIAL_PROJECTION_HPP_
+#define MINI_POLYNOMIAL_PROJECTION_HPP_
 
 #include <cmath>
 #include <iostream>
@@ -8,11 +8,11 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/integrator/basis.hpp"
 #include "mini/integrator/function.hpp"
+#include "mini/polynomial/basis.hpp"
 
 namespace mini {
-namespace integrator {
+namespace polynomial {
 
 /**
  * @brief A vector-valued function projected onto an given orthonormal basis.
@@ -44,7 +44,7 @@ class Projection {
       : basis_ptr_(&basis) {
     using Return = decltype(func(basis.GetCenter()));
     static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
-    coeff_ = Integrate([&](Coord const& xyz) {
+    coeff_ = integrator::Integrate([&](Coord const& xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
@@ -88,7 +88,7 @@ class Projection {
       mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
       return mat_pdv;
     };
-    auto integral = Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
+    auto integral = integrator::Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
     return RawBasis<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
   }
@@ -143,7 +143,7 @@ class Projection {
   const Basis* basis_ptr_;
 };
 
-}  // namespace integrator
+}  // namespace polynomial
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_PROJECTION_HPP_
+#endif  // MINI_POLYNOMIAL_PROJECTION_HPP_
