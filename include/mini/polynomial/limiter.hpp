@@ -20,7 +20,7 @@ class EigenWeno {
 
   Value weights_;
   Scalar eps_;
-  Cell* my_cell_;
+  const Cell* my_cell_;
   Projection new_projection_;
   std::vector<Projection> old_projections_;
 
@@ -30,8 +30,8 @@ class EigenWeno {
     weights_.setOnes();
     weights_ *= w0;
   }
-  Projection operator()(Cell* cell) {
-    my_cell_ = cell;
+  Projection operator()(const Cell& cell) {
+    my_cell_ = &cell;
     Borrow();
     Reconstruct();
     return new_projection_;

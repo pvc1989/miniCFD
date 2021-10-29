@@ -923,7 +923,7 @@ class Part {
         for (int i_cell = sect.head(); i_cell < sect.size(); ++i_cell) {
           auto& cell = sect[i_cell];
           if (cell.local()) {
-            limiter(&cell);
+            limiter(cell);
           }
         }
       }
@@ -932,7 +932,7 @@ class Part {
     UpdateCoeffs();
     for (auto [i_part, cell_ptrs] : send_cell_ptrs_) {
       for (auto* cell_ptr : cell_ptrs) {
-        limiter(cell_ptr);
+        limiter(*cell_ptr);
       }
     }
   }
