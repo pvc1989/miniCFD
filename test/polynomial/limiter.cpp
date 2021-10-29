@@ -435,7 +435,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   auto new_projections = std::vector<Projection>();
   new_projections.reserve(n_cells);
   for (auto& cell : cells) {
-    new_projections.emplace_back(limiter(&cell));
+    new_projections.emplace_back(limiter(cell));
     // print smoothness
     auto new_smoothness = new_projections.back().GetSmoothness();
     std::printf("\nsmoothness[%2d] = ", cell.metis_id);

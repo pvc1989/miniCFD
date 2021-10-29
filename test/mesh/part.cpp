@@ -65,9 +65,9 @@ int main(int argc, char* argv[]) {
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.ShareGhostCellCoeffs();
-  auto limiter = [](auto* cell_ptr) {
-    if (cell_ptr->local() == false) {
-      assert(cell_ptr->basis_.Measure() == cell_ptr->volume());
+  auto limiter = [](const auto& cell) {
+    if (cell.local() == false) {
+      assert(cell.basis_.Measure() == cell.volume());
     }
   };
   part.Reconstruct(limiter);
