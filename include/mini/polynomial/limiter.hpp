@@ -10,6 +10,81 @@
 namespace mini {
 namespace polynomial {
 
+template <typename Cell>
+class LazyWeno {
+  using Scalar = double;
+  using Projection = typename Cell::Projection;
+  using Basis = typename Projection::Basis;
+  using Coord = typename Projection::Coord;
+  using Value = typename Projection::Value;
+
+  std::vector<Projection> old_projections_;
+  Projection* new_projection_ptr_;
+  const Cell* my_cell_;
+  Value weights_;
+  Scalar eps_;
+
+ public:
+  LazyWeno(const Scalar &w0, const Scalar &eps)
+      : eps_(eps) {
+    weights_.setOnes();
+    weights_ *= w0;
+  }
+  Projection operator()(const Cell& cell) {
+    my_cell_ = &cell;
+    Borrow();
+    Reconstruct();
+    return *new_projection_ptr_;
+  }
+
+ private:
+   /**
+   * @brief Borrow projections from adjacent cells.
+   * 
+   */
+  void Borrow() {
+    old_projections_.clear();
+    old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
+    auto& my_average = my_cell_->func_.GetAverage();
+    for (auto* adj_cell : my_cell_->adj_cells_) {
+      old_projections_.emplace_back(adj_cell->func_, my_cell_->basis_);
+      auto& adj_proj = old_projections_.back();
+      adj_proj += my_average - adj_proj.GetAverage();
+    }
+    old_projections_.emplace_back(my_cell_->func_);
+  }
+  void Reconstruct() {
+    int adj_cnt = my_cell_->adj_cells_.size();
+    // initialize weights
+    auto weights = std::vector<Value>(adj_cnt + 1, weights_);
+    weights.back() *= -adj_cnt;
+    weights.back().array() += 1.0;
+    // modify weights by smoothness
+    for (int i = 0; i <= adj_cnt; ++i) {
+      auto& projection_i = old_projections_[i];
+      auto beta = projection_i.GetSmoothness();
+      beta.array() += eps_;
+      beta.array() *= beta.array();
+      weights[i].array() /= beta.array();
+    }
+    // normalize these weights
+    Value sum; sum.setZero();
+    sum = std::accumulate(weights.begin(), weights.end(), sum);
+    assert(weights.size() == adj_cnt + 1);
+    for (auto& weight : weights) {
+      weight.array() /= sum.array();
+    }
+    // build the new (weighted) projection
+    auto& new_projection = old_projections_.back();
+    new_projection *= weights.back();
+    for (int i = 0; i < adj_cnt; ++i) {
+      old_projections_[i] *= weights[i];
+      new_projection += old_projections_[i];
+    }
+    new_projection_ptr_ = &new_projection;
+  }
+};
+
 template <typename Cell, typename Eigen>
 class EigenWeno {
   using Scalar = double;
@@ -90,7 +165,7 @@ class EigenWeno {
    * @brief Rotate borrowed projections onto the interface between cells
    * 
    */
-  void Rotate(const Cell &adj_cell) {
+  void ReconstructOnEachFace(const Cell &adj_cell) {
     int adj_cnt = my_cell_->adj_cells_.size();
     // build eigen-matrices in the rotated coordinate system
     Coord nu = GetNu(*my_cell_, adj_cell), mu, pi;
@@ -141,7 +216,7 @@ class EigenWeno {
     new_projection_ = Projection(my_cell_->basis_);
     total_volume_ = 0.0;
     for (auto* adj_cell : my_cell_->adj_cells_) {
-      Rotate(*adj_cell);
+      ReconstructOnEachFace(*adj_cell);
     }
     new_projection_ /= total_volume_;
   }

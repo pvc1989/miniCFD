@@ -430,17 +430,27 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   using Projection = typename Cell::Projection;
   using IdealGas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, IdealGas>;
-  auto limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
+  auto eigen_limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
       /* w0 = */0.01, /* eps = */1e-6);
-  auto new_projections = std::vector<Projection>();
-  new_projections.reserve(n_cells);
+  auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
+      /* w0 = */0.01, /* eps = */1e-6);
+  auto eigen_projections = std::vector<Projection>();
+  eigen_projections.reserve(n_cells);
+  auto lazy_projections = std::vector<Projection>();
+  lazy_projections.reserve(n_cells);
   for (auto& cell : cells) {
-    new_projections.emplace_back(limiter(cell));
+    eigen_projections.emplace_back(eigen_limiter(cell));
+    lazy_projections.emplace_back(lazy_limiter(cell));
     // print smoothness
-    auto new_smoothness = new_projections.back().GetSmoothness();
-    std::printf("\nsmoothness[%2d] = ", cell.metis_id);
-    std::cout << std::scientific << std::setprecision(3) << new_smoothness.transpose();
-    Mat5x1 diff = cell.func_.GetAverage() - new_projections.back().GetAverage();
+    auto eigen_smoothness = eigen_projections.back().GetSmoothness();
+    auto lazy_smoothness = lazy_projections.back().GetSmoothness();
+    std::printf("\neigen smoothness[%2d] = ", cell.metis_id);
+    std::cout << std::scientific << std::setprecision(3) << eigen_smoothness.transpose();
+    std::printf("\n lazy smoothness[%2d] = ", cell.metis_id);
+    std::cout << std::scientific << std::setprecision(3) << lazy_smoothness.transpose();
+    Mat5x1 diff = cell.func_.GetAverage() - eigen_projections.back().GetAverage();
+    EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+    diff = cell.func_.GetAverage() - lazy_projections.back().GetAverage();
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
   }
   std::cout << std::endl;
