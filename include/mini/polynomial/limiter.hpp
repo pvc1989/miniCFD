@@ -18,11 +18,12 @@ class EigenWeno {
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
 
-  Value weights_;
-  Scalar eps_;
-  const Cell* my_cell_;
   Projection new_projection_;
   std::vector<Projection> old_projections_;
+  const Cell* my_cell_;
+  Value weights_;
+  Scalar eps_;
+  Scalar total_volume_;
 
  public:
   EigenWeno(const Scalar &w0, const Scalar &eps)
@@ -89,7 +90,7 @@ class EigenWeno {
    * @brief Rotate borrowed projections onto the interface between cells
    * 
    */
-  Scalar Rotate(const Cell &adj_cell) {
+  void Rotate(const Cell &adj_cell) {
     int adj_cnt = my_cell_->adj_cells_.size();
     // build eigen-matrices in the rotated coordinate system
     Coord nu = GetNu(*my_cell_, adj_cell), mu, pi;
@@ -130,7 +131,7 @@ class EigenWeno {
     auto adj_volume = adj_cell.volume();
     new_projection *= adj_volume;
     new_projection_ += new_projection;
-    return adj_volume;
+    total_volume_ += adj_volume;
   }
   /**
    * @brief Reconstruct projections by weights
@@ -138,11 +139,11 @@ class EigenWeno {
    */
   void Reconstruct() {
     new_projection_ = Projection(my_cell_->basis_);
-    Scalar total_volume = 0.0;
+    total_volume_ = 0.0;
     for (auto* adj_cell : my_cell_->adj_cells_) {
-      total_volume += Rotate(*adj_cell);
+      Rotate(*adj_cell);
     }
-    new_projection_ /= total_volume;
+    new_projection_ /= total_volume_;
   }
 };
 

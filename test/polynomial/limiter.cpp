@@ -439,7 +439,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     // print smoothness
     auto new_smoothness = new_projections.back().GetSmoothness();
     std::printf("\nsmoothness[%2d] = ", cell.metis_id);
-    std::cout << std::scientific << new_smoothness.transpose();
+    std::cout << std::scientific << std::setprecision(3) << new_smoothness.transpose();
     Mat5x1 diff = cell.func_.GetAverage() - new_projections.back().GetAverage();
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
   }
