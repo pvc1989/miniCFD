@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_MESH_CGNS_PARSER_HPP_
-#define MINI_MESH_CGNS_PARSER_HPP_
+#ifndef MINI_MESH_CGNS_PART_HPP_
+#define MINI_MESH_CGNS_PART_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -294,8 +294,8 @@ class Part {
       int n_reals = 3 * nodes.size();
       int tag = i_part;
       auto& request = requests.emplace_back();
-      MPI_Isend(coords.data(), n_reals, kMpiRealType, i_part, tag, MPI_COMM_WORLD,
-          &request);
+      MPI_Isend(coords.data(), n_reals, kMpiRealType, i_part, tag,
+          MPI_COMM_WORLD, &request);
     }
     // recv nodes info
     std::map<Int, std::vector<Int>> recv_nodes;
@@ -428,8 +428,10 @@ class Part {
     return z_s_conn;
   }
   struct GhostAdj {
-    std::map<Int, std::map<Int, Int>> send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
-    std::vector<std::pair<Int, Int>> ghost_adjs;
+    std::map<Int, std::map<Int, Int>>
+        send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
+    std::vector<std::pair<Int, Int>>
+        ghost_adjs;
   };
   GhostAdj BuildAdj(std::ifstream& istrm) {
     char line[kLineWidth];
@@ -996,4 +998,4 @@ MPI_Datatype const Part<Int, Real, kFunc>::kMpiRealType
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_PARSER_HPP_
+#endif  // MINI_MESH_CGNS_PART_HPP_
