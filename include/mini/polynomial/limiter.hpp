@@ -3,6 +3,7 @@
 #define MINI_POLYNOMIAL_LIMITER_HPP_
 
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <type_traits>
 #include <utility>
@@ -23,10 +24,11 @@ class LazyWeno {
   const Cell* my_cell_;
   Value weights_;
   Scalar eps_;
+  bool verbose_;
 
  public:
-  LazyWeno(const Scalar &w0, const Scalar &eps)
-      : eps_(eps) {
+  LazyWeno(const Scalar &w0, const Scalar &eps, bool verbose = false)
+      : eps_(eps), verbose_(verbose) {
     weights_.setOnes();
     weights_ *= w0;
   }
@@ -50,8 +52,18 @@ class LazyWeno {
       old_projections_.emplace_back(adj_cell->func_, my_cell_->basis_);
       auto& adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
+      if (verbose_) {
+        std::printf("\n  adj smoothness[%2d] = ", adj_cell->metis_id);
+        std::cout << std::scientific << std::setprecision(3) <<
+            adj_proj.GetSmoothness().transpose();
+      }
     }
     old_projections_.emplace_back(my_cell_->func_);
+    if (verbose_) {
+      std::printf("\n  old smoothness[%2d] = ", my_cell_->metis_id);
+      std::cout << std::scientific << std::setprecision(3) <<
+          old_projections_.back().GetSmoothness().transpose();
+    }
   }
   void Reconstruct() {
     int adj_cnt = my_cell_->adj_cells_.size();
