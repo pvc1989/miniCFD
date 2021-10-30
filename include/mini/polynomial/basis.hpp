@@ -112,7 +112,8 @@ class Linear {
   using Coord = typename RB::Coord;
   using MatNx1 = typename RB::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
-  using Gauss = std::conditional_t<kDim == 2, integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
+  using Gauss = std::conditional_t<kDim == 2,
+      integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
 
  public:
   explicit Linear(Coord const& center)

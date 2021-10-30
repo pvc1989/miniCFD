@@ -7,6 +7,7 @@
 #include <iostream>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace mini {
 namespace polynomial {
