@@ -920,7 +920,8 @@ class Part {
     // run the limiter on cells that need no ghost cells
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
-        for (int i_cell = sect.head(); i_cell < sect.size(); ++i_cell) {
+        auto i_tail = sect.head() + sect.size();
+        for (int i_cell = sect.head(); i_cell < i_tail; ++i_cell) {
           auto& cell = sect[i_cell];
           if (cell.local()) {
             limiter(cell);
