@@ -601,8 +601,6 @@ class Part {
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
     }
-    std::cout << local_faces_.size() << " local faces in rank " << rank_;
-    std::cout << std::endl;
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
       const ZoneSectToConn& z_s_conn,
@@ -652,9 +650,6 @@ class Part {
         ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
       holder.adj_cells_.emplace_back(&sharer);
     }
-    std::cout << ghost_faces_.size() << " ghost faces and ";
-    std::cout << ghost_cells_.size() << " ghost cells in rank " << rank_;
-    std::cout << std::endl;
   }
 
  public:
@@ -938,17 +933,10 @@ class Part {
         }
       }
     }
-    std::cout << "In rank[" << rank_ << "], "
-        << n_real_local << " local cells were limited, "
-        << non_local_cells.size() << " local cells to be limited\n";
     // run the limiter on cells that need ghost cells
     UpdateCoeffs();
     for (auto* cell_ptr : non_local_cells) {
-      std::cout << "In rank[" << rank_ << "], " << cell_ptr->metis_id
-          << " is gonna be limited\n";
       limiter(cell_ptr);
-      std::cout << "In rank[" << rank_ << "], " << cell_ptr->metis_id
-          << " was limited\n";
     }
   }
 
