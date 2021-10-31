@@ -429,9 +429,9 @@ class Part {
   }
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>>
-        send_cell_cnts, recv_cell_cnts;  // [i_part][m_cell] -> cnt
+        send_node_cnts, recv_node_cnts;  // [i_part][m_cell] -> node_cnt
     std::vector<std::pair<Int, Int>>
-        ghost_adjs;
+        m_cell_pairs;
   };
   GhostAdj BuildAdj(std::ifstream& istrm) {
     char line[kLineWidth];
@@ -443,28 +443,28 @@ class Part {
     }
     // ghost adjacency
     auto ghost_adj = GhostAdj();
-    auto& send_cell_cnts = ghost_adj.send_cell_cnts;
-    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
-    auto& ghost_adjs = ghost_adj.ghost_adjs;
+    auto& send_node_cnts = ghost_adj.send_node_cnts;
+    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
+    auto& m_cell_pairs = ghost_adj.m_cell_pairs;
     while (istrm.getline(line, 30) && line[0]) {
       int p, i, j, cnt_i, cnt_j;
       std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
-      send_cell_cnts[p][i] = cnt_i;
-      recv_cell_cnts[p][j] = cnt_j;
-      ghost_adjs.emplace_back(i, j);
+      send_node_cnts[p][i] = cnt_i;
+      recv_node_cnts[p][j] = cnt_j;
+      m_cell_pairs.emplace_back(i, j);
     }
     return ghost_adj;
   }
   auto ShareGhostCells(const GhostAdj& ghost_adj,
       const ZoneSectToConn& z_s_conn) {
-    auto& send_cell_cnts = ghost_adj.send_cell_cnts;
-    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
+    auto& send_node_cnts = ghost_adj.send_node_cnts;
+    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
     // send cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> send_cells;
     std::vector<MPI_Request> requests;
-    for (auto& [i_part, cell_cnts] : send_cell_cnts) {
+    for (auto& [i_part, node_cnts] : send_node_cnts) {
       auto& send_buf = send_cells.emplace_back();
-      for (auto& [m_cell, cnt] : cell_cnts) {
+      for (auto& [m_cell, cnt] : node_cnts) {
         auto& info = m_to_cell_info_[m_cell];
         if (rank_ == -1)
           std::printf("info at %p\n", &info);
@@ -488,10 +488,10 @@ class Part {
     }
     // recv cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> recv_cells;
-    for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
+    for (auto& [i_part, node_cnts] : recv_node_cnts) {
       auto& recv_buf = recv_cells.emplace_back();
       int n_ints = 0;
-      for (auto& [m_cell, cnt] : cell_cnts) {
+      for (auto& [m_cell, cnt] : node_cnts) {
         ++n_ints;
         n_ints += cnt;
       }
@@ -510,14 +510,14 @@ class Part {
   std::unordered_map<Int, std::pair<int, int>> BuildGhostCells(
       const GhostAdj& ghost_adj,
       const std::vector<std::vector<Int>>& recv_cells) {
-    auto& recv_cell_cnts = ghost_adj.recv_cell_cnts;
+    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
     // build ghost cells
     std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
     int i_source = 0;
-    for (auto& [i_part, cell_cnts] : recv_cell_cnts) {
+    for (auto& [i_part, node_cnts] : recv_node_cnts) {
       auto& recv_buf = recv_cells.at(i_source);
       int index = 0;
-      for (auto& [m_cell, cnt] : cell_cnts) {
+      for (auto& [m_cell, cnt] : node_cnts) {
         m_to_recv_cells[m_cell].first = i_source;
         m_to_recv_cells[m_cell].second = index + 1;
         int i_zone = recv_buf[index++];
@@ -537,24 +537,24 @@ class Part {
   }
   void FillCellPtrs(const GhostAdj& ghost_adj) {
     // fill `send_cell_ptrs_`
-    for (auto& [i_part, m_cell_cnt] : ghost_adj.send_cell_cnts) {
+    for (auto& [i_part, node_cnts] : ghost_adj.send_node_cnts) {
       auto& curr_part = send_cell_ptrs_[i_part];
-      for (auto& [m_cell, cnt] : m_cell_cnt) {
+      for (auto& [m_cell, cnt] : node_cnts) {
         auto& info = m_to_cell_info_[m_cell];
         auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
         cell.local_ = false;
         curr_part.emplace_back(&cell);
       }
-      send_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
+      send_coeffs_.emplace_back(node_cnts.size() * kFields);
     }
     // fill `recv_cell_ptrs_`
-    for (auto& [i_part, m_cell_cnt] : ghost_adj.recv_cell_cnts) {
+    for (auto& [i_part, node_cnts] : ghost_adj.recv_node_cnts) {
       auto& curr_part = recv_cell_ptrs_[i_part];
-      for (auto& [m_cell, cnt] : m_cell_cnt) {
+      for (auto& [m_cell, cnt] : node_cnts) {
         auto& cell = ghost_cells_.at(m_cell);
         curr_part.emplace_back(&cell);
       }
-      recv_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
+      recv_coeffs_.emplace_back(node_cnts.size() * kFields);
     }
     assert(send_cell_ptrs_.size() == send_coeffs_.size());
     assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
@@ -608,9 +608,9 @@ class Part {
       const ZoneSectToConn& z_s_conn,
       const std::vector<std::vector<Int>>& recv_cells,
       const std::unordered_map<Int, std::pair<int, int>>& m_to_recv_cells) {
-    auto& ghost_adjs = ghost_adj.ghost_adjs;
+    auto& m_cell_pairs = ghost_adj.m_cell_pairs;
     // build ghost faces
-    for (auto [m_holder, m_sharer] : ghost_adjs) {
+    for (auto [m_holder, m_sharer] : m_cell_pairs) {
       auto& holder_info = m_to_cell_info_[m_holder];
       auto& sharer_info = m_to_recv_cells.at(m_sharer);
       auto i_zone = holder_info.i_zone;
