@@ -92,6 +92,7 @@ struct Face {
 
   Face(GaussPtr&& gauss, CellPtr holder, CellPtr sharer)
       : gauss_(std::move(gauss)), holder_(holder), sharer_(sharer) {
+    assert(holder && sharer);
   }
   Face(const Face&) = delete;
   Face& operator=(const Face&) = delete;
@@ -122,7 +123,7 @@ struct Cell {
 
   Cell(GaussPtr&& gauss, Int m_cell)
       : basis_(*gauss), gauss_(std::move(gauss)),
-        volume_(basis_.Measure()), metis_id(m_cell) {
+        volume_(basis_.Measure()), metis_id(m_cell), func_(basis_) {
   }
   Cell() = default;
   Cell(const Cell&) = delete;
@@ -197,6 +198,7 @@ class CellGroup {
 
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 class Part {
+  using CellPtr = Cell<Int, Real, kFunc> *;
   static constexpr int kLineWidth = 30;
   static constexpr int kDim = 3;
   static constexpr int kFields = kFunc * Cell<Int, Real, kFunc>::N;
@@ -532,7 +534,7 @@ class Part {
     return m_to_recv_cells;
   }
   void FillCellPtrs(const GhostAdj& ghost_adj) {
-    // fill `send_cells_`
+    // fill `send_cell_ptrs_`
     for (auto& [i_part, m_cell_cnt] : ghost_adj.send_cell_cnts) {
       auto& curr_part = send_cell_ptrs_[i_part];
       for (auto& [m_cell, cnt] : m_cell_cnt) {
@@ -543,7 +545,7 @@ class Part {
       }
       send_coeffs_.emplace_back(m_cell_cnt.size() * kFields);
     }
-    // fill `recv_cells_`
+    // fill `recv_cell_ptrs_`
     for (auto& [i_part, m_cell_cnt] : ghost_adj.recv_cell_cnts) {
       auto& curr_part = recv_cell_ptrs_[i_part];
       for (auto& [m_cell, cnt] : m_cell_cnt) {
@@ -634,7 +636,7 @@ class Part {
       // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
       auto& zone = local_cells_[i_zone];
       auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
-      auto& sharer = ghost_cells_[m_sharer];
+      auto& sharer = ghost_cells_.at(m_sharer);
       integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
           4, &holder_nodes[holder_head], common_nodes.data());
       if (rank_ == -1)
@@ -648,8 +650,10 @@ class Part {
         ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
       else
         ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
+      holder.adj_cells_.emplace_back(&sharer);
     }
-    std::cout << local_faces_.size() << " ghost faces in rank " << rank_;
+    std::cout << ghost_faces_.size() << " ghost faces and ";
+    std::cout << ghost_cells_.size() << " ghost cells in rank " << rank_;
     std::cout << std::endl;
   }
 
@@ -918,23 +922,33 @@ class Part {
   template <typename Callable>
   void Reconstruct(Callable&& limiter) {
     // run the limiter on cells that need no ghost cells
+    int n_real_local = 0;
+    auto non_local_cells = std::vector<CellPtr>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         auto i_tail = sect.head() + sect.size();
         for (int i_cell = sect.head(); i_cell < i_tail; ++i_cell) {
           auto& cell = sect[i_cell];
           if (cell.local()) {
-            limiter(cell);
+            limiter(&cell);
+            ++n_real_local;
+          } else {
+            non_local_cells.emplace_back(&cell);
           }
         }
       }
     }
+    std::cout << "In rank[" << rank_ << "], "
+        << n_real_local << " local cells were limited, "
+        << non_local_cells.size() << " local cells to be limited\n";
     // run the limiter on cells that need ghost cells
     UpdateCoeffs();
-    for (auto [i_part, cell_ptrs] : send_cell_ptrs_) {
-      for (auto* cell_ptr : cell_ptrs) {
-        limiter(*cell_ptr);
-      }
+    for (auto* cell_ptr : non_local_cells) {
+      std::cout << "In rank[" << rank_ << "], " << cell_ptr->metis_id
+          << " is gonna be limited\n";
+      limiter(cell_ptr);
+      std::cout << "In rank[" << rank_ << "], " << cell_ptr->metis_id
+          << " was limited\n";
     }
   }
 
@@ -950,7 +964,6 @@ class Part {
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
   std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
-  using CellPtr = Cell<Int, Real, kFunc>*;
   std::map<Int, std::vector<CellPtr>>
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
   std::vector<std::vector<Real>>

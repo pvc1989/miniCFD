@@ -20,8 +20,8 @@ class LazyWeno {
   using Value = typename Projection::Value;
 
   std::vector<Projection> old_projections_;
-  Projection* new_projection_ptr_;
-  const Cell* my_cell_;
+  Projection* new_projection_ptr_ = nullptr;
+  const Cell* my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
   bool verbose_;
@@ -36,7 +36,13 @@ class LazyWeno {
     my_cell_ = &cell;
     Borrow();
     Reconstruct();
+    assert(new_projection_ptr_);
     return *new_projection_ptr_;
+  }
+  void operator()(Cell* cell) {
+    assert(cell);
+    auto new_proj = operator()(*cell);
+    cell->func_ = new_proj;
   }
 
  private:
@@ -49,6 +55,7 @@ class LazyWeno {
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
     auto& my_average = my_cell_->func_.GetAverage();
     for (auto* adj_cell : my_cell_->adj_cells_) {
+      assert(adj_cell);
       old_projections_.emplace_back(adj_cell->func_, my_cell_->basis_);
       auto& adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
@@ -64,6 +71,7 @@ class LazyWeno {
       std::cout << std::scientific << std::setprecision(3) <<
           old_projections_.back().GetSmoothness().transpose();
     }
+    new_projection_ptr_ = &(old_projections_.back());
   }
   void Reconstruct() {
     int adj_cnt = my_cell_->adj_cells_.size();
@@ -93,7 +101,6 @@ class LazyWeno {
       old_projections_[i] *= weights[i];
       new_projection += old_projections_[i];
     }
-    new_projection_ptr_ = &new_projection;
   }
 };
 
@@ -107,7 +114,7 @@ class EigenWeno {
 
   Projection new_projection_;
   std::vector<Projection> old_projections_;
-  const Cell* my_cell_;
+  const Cell* my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
   Scalar total_volume_;

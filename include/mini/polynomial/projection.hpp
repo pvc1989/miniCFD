@@ -134,6 +134,9 @@ class Projection {
         coeff_(r, c) = *new_coeffs++;
       }
     }
+    average_ = coeff_.col(0);
+    assert(basis_ptr_);
+    average_ *= basis_ptr_->GetCoeff()(0, 0);
   }
 
  private:
