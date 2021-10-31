@@ -3,27 +3,10 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "gtest/gtest.h"
 #include "mpi.h"
 
 #include "mini/mesh/cgns/part.hpp"
-
-namespace mini {
-namespace mesh {
-namespace cgns {
-
-class TestPart : public ::testing::Test {
- public:
-  static int rank;
-};
-int TestPart::rank;
-
-TEST_F(TestPart, Print) {
-}
-
-}  // namespace cgns
-}  // namespace mesh
-}  // namespace mini
+#include "mini/polynomial/limiter.hpp"
 
 // mpirun -n 4 ./part
 int main(int argc, char* argv[]) {
@@ -54,23 +37,21 @@ int main(int argc, char* argv[]) {
     col[1] = 1 - r + (r >= 1);
     return col;
   });
+  std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
+  std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
+  part.ShareGhostCellCoeffs();
+  using MyCell = mini::mesh::cgns::Cell<cgsize_t, double, 2>;
+  auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
+      /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
+  part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions();
   // part.WriteSolutionsOnGaussPoints();
   part.WriteSolutionsOnCellCenters();
-  std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
-  std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
-  part.ShareGhostCellCoeffs();
-  auto limiter = [](const auto& cell) {
-    if (cell.local() == false) {
-      assert(cell.basis_.Measure() == cell.volume());
-    }
-  };
-  part.Reconstruct(limiter);
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
