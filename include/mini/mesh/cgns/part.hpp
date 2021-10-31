@@ -331,11 +331,6 @@ class Part {
         auto& info = m_to_node_info_[m_node];
         ghost_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
-        if (rank_ == -1) {
-          int i_zone = info.i_zone, i_node = info.i_node;
-          std::cout << m_node << ' ' << i_zone << ' ' << i_node << ' ';
-          print(ghost_nodes_[i_zone][i_node].transpose());
-        }
       }
     }
   }
@@ -351,9 +346,6 @@ class Part {
     while (istrm.getline(line, 30) && line[0]) {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      if (rank_ == -1)
-        std::printf("i_zone = %4d, i_sect = %4d, head = %4d, tail = %4d\n",
-            i_zone, i_sect, head, tail);
       local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
@@ -367,8 +359,6 @@ class Part {
       if (cg_sol_info(i_file, i_base, i_zone, 2, sol_name, &loc) ||
           cg_field_info(i_file, i_base, i_zone, 2, 2, &dt, field_name))
         cgp_error_exit();
-      if (rank_ == -1)
-        std::cout << sol_name << ' ' << field_name << std::endl;
       if (cgp_field_general_read_data(i_file, i_base, i_zone, 2, 2,
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
@@ -376,13 +366,6 @@ class Part {
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
         m_to_cell_info_[m_cell] = CellInfo<Int>(i_zone, i_sect, i_cell);
-        if (rank_ == -1) {
-          std::printf("m_cell = %ld, ", m_cell);
-          std::printf("i_zone = %ld, i_sect = %ld, i_cell = %ld\n",
-              m_to_cell_info_[m_cell].i_zone,
-              m_to_cell_info_[m_cell].i_sect,
-              m_to_cell_info_[m_cell].i_cell);
-        }
       }
       char name[33];
       ElementType_t type;
@@ -418,11 +401,6 @@ class Part {
         auto cell = Cell<Int, Real, kFunc>(
             std::move(hexa_ptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
-        if (rank_ == -1) {
-          std::cout << "i_zone = " << i_zone << ", i_sect = " << i_sect
-              << ", i_cell = " << i_cell << ", m_cell = " << metis_ids[i_cell];
-          std::cout << std::endl;
-        }
       }
     }
     return z_s_conn;
@@ -466,8 +444,6 @@ class Part {
       auto& send_buf = send_cells.emplace_back();
       for (auto& [m_cell, cnt] : node_cnts) {
         auto& info = m_to_cell_info_[m_cell];
-        if (rank_ == -1)
-          std::printf("info at %p\n", &info);
         Int i_zone = m_to_cell_info_[m_cell].i_zone,
             i_sect = m_to_cell_info_[m_cell].i_sect,
             i_cell = m_to_cell_info_[m_cell].i_cell;
@@ -592,9 +568,6 @@ class Part {
       auto& sharer = zone[sharer_info.i_sect][sharer_info.i_cell];
       integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
           4, &holder_nodes[holder_head], common_nodes.data());
-      if (rank_ == -1)
-        std::cout << "Quad{ " << common_nodes[0] << ", " << common_nodes[1]
-            << ", " << common_nodes[2] << ", " << common_nodes[3] << " }\n";
       // build the quad integrator
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
@@ -639,9 +612,6 @@ class Part {
       auto& sharer = ghost_cells_.at(m_sharer);
       integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
           4, &holder_nodes[holder_head], common_nodes.data());
-      if (rank_ == -1)
-        std::cout << "Quad{ " << common_nodes[0] << ", " << common_nodes[1]
-            << ", " << common_nodes[2] << ", " << common_nodes[3] << " }\n";
       // build the quad integrator
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
@@ -978,10 +948,6 @@ class Part {
       coord[1] = iter_zone->second.y_[i_node];
       coord[2] = iter_zone->second.z_[i_node];
     } else {
-      if (rank_ == -1) {
-        std::cout << "i_zone = " << i_zone << ", i_node = " << i_node;
-        std::cout << std::endl;
-      }
       coord = ghost_nodes_.at(i_zone).at(i_node);
     }
     return coord;
