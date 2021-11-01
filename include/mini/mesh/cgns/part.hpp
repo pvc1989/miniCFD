@@ -86,11 +86,11 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real, kFunc>*;
-  GaussPtr gauss_;
+  GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
 
-  Face(GaussPtr&& gauss, CellPtr holder, CellPtr sharer)
-      : gauss_(std::move(gauss)), holder_(holder), sharer_(sharer) {
+  Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer)
+      : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer) {
     assert(holder && sharer);
   }
   Face(const Face&) = delete;
@@ -115,14 +115,14 @@ struct Cell {
 
   std::vector<Cell*> adj_cells_;
   Basis basis_;
-  GaussPtr gauss_;
+  GaussPtr gauss_ptr_;
   Projection projection_;
   Real volume_;
   Int metis_id;
   bool local_ = true;
 
-  Cell(GaussPtr&& gauss, Int m_cell)
-      : basis_(*gauss), gauss_(std::move(gauss)),
+  Cell(GaussPtr&& gauss_ptr, Int m_cell)
+      : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
         volume_(basis_.Measure()), metis_id(m_cell), projection_(basis_) {
   }
   Cell() = default;
@@ -717,7 +717,7 @@ class Part {
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& cell : sect) {
-          auto& gauss_ptr = cell.gauss_;
+          auto& gauss_ptr = cell.gauss_ptr_;
           for (int q = 0; q < gauss_ptr->CountQuadPoints(); ++q) {
             coords.emplace_back(gauss_ptr->GetGlobalCoord(q));
             fields.emplace_back(cell.projection_(coords.back()));
@@ -764,69 +764,69 @@ class Part {
         int i_cell_tail = sect.tail();
         while (i_cell < i_cell_tail) {
           cells.emplace_back(20);
-          auto& gauss = sect[i_cell].gauss_;
+          auto& gauss_ptr = sect[i_cell].gauss_ptr_;
           auto& proj = sect[i_cell].projection_;
           // nodes at corners
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, -1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, -1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, +1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, +1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, -1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, -1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, +1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, +1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
           fields.emplace_back(proj(coords.back()));
           // nodes on edges
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({0., -1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({0., -1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, 0., -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, 0., -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({0., +1, -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({0., +1, -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, 0., -1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, 0., -1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({0., -1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({0., -1, +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, 0., +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, 0., +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({0., +1, +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({0., +1, +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, 0., +1}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, 0., +1}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, -1, 0.}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, 0.}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, -1, 0.}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, 0.}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({+1, +1, 0.}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, 0.}));
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
-          coords.emplace_back(gauss->LocalToGlobal({-1, +1, 0.}));
+          coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, 0.}));
           fields.emplace_back(proj(coords.back()));
           ++i_cell;
         }
