@@ -40,10 +40,9 @@ class LazyWeno {
     assert(new_projection_ptr_);
     return *new_projection_ptr_;
   }
-  void operator()(Cell* cell) {
-    assert(cell);
-    auto new_proj = operator()(*cell);
-    cell->func_ = new_proj;
+  void operator()(Cell* cell_ptr) {
+    assert(cell_ptr);
+    cell_ptr->projection_ = operator()(*cell_ptr);
   }
 
  private:
@@ -54,10 +53,10 @@ class LazyWeno {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto& my_average = my_cell_->func_.GetAverage();
+    auto& my_average = my_cell_->projection_.GetAverage();
     for (auto* adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
-      old_projections_.emplace_back(adj_cell->func_, my_cell_->basis_);
+      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
       auto& adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
       if (verbose_) {
@@ -66,7 +65,7 @@ class LazyWeno {
             adj_proj.GetSmoothness().transpose();
       }
     }
-    old_projections_.emplace_back(my_cell_->func_);
+    old_projections_.emplace_back(my_cell_->projection_);
     if (verbose_) {
       std::printf("\n  old smoothness[%2d] = ", my_cell_->metis_id);
       std::cout << std::scientific << std::setprecision(3) <<
@@ -173,13 +172,13 @@ class EigenWeno {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto& my_average = my_cell_->func_.GetAverage();
+    auto& my_average = my_cell_->projection_.GetAverage();
     for (auto* adj_cell : my_cell_->adj_cells_) {
-      old_projections_.emplace_back(adj_cell->func_, my_cell_->basis_);
+      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
       auto& adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
     }
-    old_projections_.emplace_back(my_cell_->func_);
+    old_projections_.emplace_back(my_cell_->projection_);
   }
   /**
    * @brief Rotate borrowed projections onto the interface between cells
@@ -191,7 +190,7 @@ class EigenWeno {
     Coord nu = GetNu(*my_cell_, adj_cell), mu, pi;
     GetMuPi(nu, &mu, &pi);
     assert(nu.cross(mu) == pi);
-    auto rotated_eigen = Eigen(my_cell_->func_.GetAverage(), nu, mu, pi);
+    auto rotated_eigen = Eigen(my_cell_->projection_.GetAverage(), nu, mu, pi);
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);
     weights.back() *= -adj_cnt;

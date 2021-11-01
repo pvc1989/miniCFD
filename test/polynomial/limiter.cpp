@@ -97,16 +97,17 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   auto adj_smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto& cell_i = cells[i_cell];
-    adj_smoothness[i_cell].emplace_back(cell_i.func_.GetSmoothness());
+    adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
-        return cells[j_cell].func_(xyz);
+        return cells[j_cell].projection_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
       auto& adj_projection = adj_projections[i_cell].back();
-      Mat1x1 diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      Mat1x1 diff = cell_i.projection_.GetAverage()
+          - adj_projection.GetAverage();
       adj_projection += diff;
-      diff = cell_i.func_.GetAverage() - adj_projection.GetAverage();
+      diff = cell_i.projection_.GetAverage() - adj_projection.GetAverage();
       EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
       adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
@@ -124,7 +125,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
       weights[j_cell] /= sum;
     }
-    auto& projection_i = cells[i_cell].func_;
+    auto& projection_i = cells[i_cell].projection_;
     projection_i *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
       projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell];
@@ -232,10 +233,10 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     std::cout << std::scientific << std::setprecision(3)
         << eigen_smoothness.transpose();
     std::cout << std::endl;
-    Mat5x1 diff = cell.func_.GetAverage()
+    Mat5x1 diff = cell.projection_.GetAverage()
         - eigen_projections.back().GetAverage();
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
-    diff = cell.func_.GetAverage() - lazy_projections.back().GetAverage();
+    diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
   }
   std::cout << std::endl;
