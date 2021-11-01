@@ -14,6 +14,7 @@
 #include <vector>
 #include <unordered_map>
 
+#include "mpi.h"
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns/format.hpp"
@@ -236,8 +237,8 @@ class Part {
 
  public:
   Part(std::string const& directory, int rank)
-      : directory_(directory), cgns_file_(directory + "/whole/shuffled.cgns"),
-        part_path_(directory + "/parts/"), rank_(rank) {
+      : directory_(directory), cgns_file_(directory + "/shuffled.cgns"),
+        part_path_(directory + "/partition/"), rank_(rank) {
     int i_file;
     if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
       cgp_error_exit();
@@ -705,8 +706,7 @@ class Part {
       cgp_error_exit();
   }
   void WriteSolutionsOnGaussPoints() const {
-    auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
-    auto ostrm = std::ofstream(vtk_file);
+    auto ostrm = GetFstream();
     ostrm << "# vtk DataFile Version 2.0\n";
     ostrm << "Field values on quadrature points.\n";
     ostrm << "ASCII\n";
@@ -748,8 +748,7 @@ class Part {
     }
   }
   void WriteSolutionsOnCellCenters() const {
-    auto vtk_file = part_path_ + std::to_string(rank_) + ".vtk";
-    auto ostrm = std::ofstream(vtk_file);
+    auto ostrm = GetFstream();
     ostrm << "# vtk DataFile Version 2.0\n";
     ostrm << "Field values on each cell.\n";
     ostrm << "ASCII\n";
@@ -956,7 +955,7 @@ class Part {
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;
-  int rank_;
+  int step_{0}, rank_;
 
   Mat3x1 GetCoord(int i_zone, int i_node) const {
     Mat3x1 coord;
@@ -969,6 +968,18 @@ class Part {
       coord = ghost_nodes_.at(i_zone).at(i_node);
     }
     return coord;
+  }
+  std::ofstream GetFstream() const {
+    char temp[1024];
+    if (rank_ == 0) {
+      std::snprintf(temp, sizeof(temp), "mkdir -p %s/step%d",
+          directory_.c_str(), step_);
+      std::system(temp);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    std::snprintf(temp, sizeof(temp), "%s/step%d/%d.vtk",
+        directory_.c_str(), step_, rank_);
+    return std::ofstream(temp);
   }
 };
 template <typename Int, typename Real, int kFunc>

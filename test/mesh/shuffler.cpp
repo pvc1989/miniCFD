@@ -22,6 +22,8 @@
 namespace mini {
 namespace mesh {
 
+idx_t n_parts = 4;
+
 class ShufflerTest : public ::testing::Test {
  protected:
   using CgnsMesh = mini::mesh::cgns::File<double>;
@@ -68,11 +70,11 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto case_name = std::string("double_mach_hexa");
   char cmd[1024];
-  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/whole %s/parts",
+  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str(), case_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  auto old_file_name = case_name + "/whole/original.cgns";
-  auto new_file_name = case_name + "/whole/shuffled.cgns";
+  auto old_file_name = case_name + "/original.cgns";
+  auto new_file_name = case_name + "/shuffled.cgns";
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
@@ -81,7 +83,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto mapper = MapperType();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
-  idx_t n_parts{4}, n_common_nodes{3};
+  idx_t n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
@@ -186,7 +188,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   }
   /* Write part info to txts: */
   for (int p = 0; p < n_parts; ++p) {
-    auto ostrm = std::ofstream(case_name + "/parts/" + std::to_string(p)
+    auto ostrm = std::ofstream(case_name + "/partition/" + std::to_string(p)
         + ".txt"/*, std::ios::binary */);
     // node ranges
     for (int z = 1; z <= n_zones; ++z) {
@@ -249,5 +251,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
+  if (argc > 1) {
+    mini::mesh::n_parts = std::atoi(argv[1]);
+  }
   return RUN_ALL_TESTS();
 }

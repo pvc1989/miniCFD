@@ -20,7 +20,8 @@ int main(int argc, char* argv[]) {
   if (comm_rank == 0) {
     std::printf("Run ./shuffler on proc[%d/%d] at %f sec\n",
         comm_rank, comm_size, MPI_Wtime() - time_begin);
-    std::system("./shuffler");
+    auto cmd = std::string("./shuffler " + std::to_string(comm_size));
+    std::system(cmd.c_str());
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
