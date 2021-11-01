@@ -176,8 +176,11 @@ class CellGroup {
   Int size() const {
     return size_;
   }
+  Int tail() const {
+    return head_ + size_;
+  }
   bool has(int i_cell) const {
-    return head_ <= i_cell && i_cell < size_ + head_;
+    return head() <= i_cell && i_cell < tail();
   }
   const CellType& operator[](Int i_cell) const {
     return cells_[i_cell];
@@ -185,11 +188,29 @@ class CellGroup {
   CellType& operator[](Int i_cell) {
     return cells_[i_cell];
   }
+  auto begin() {
+    return cells_.begin();
+  }
+  auto end() {
+    return cells_.end();
+  }
+  auto begin() const {
+    return cells_.begin();
+  }
+  auto end() const {
+    return cells_.end();
+  }
+  auto cbegin() const {
+    return cells_.cbegin();
+  }
+  auto cend() const {
+    return cells_.cend();
+  }
   const ShiftedVector<Real>& GetField(Int i_field) const {
     return fields_[i_field];
   }
   void GatherFields() {
-    for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
+    for (int i_cell = head(); i_cell < tail(); ++i_cell) {
       const auto& cell = cells_.at(i_cell);
       const auto& coeff = cell.projection_.coeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
@@ -632,9 +653,8 @@ class Part {
   void Project(Callable&& new_func) {
     for (auto& [i_zone, sects] : local_cells_) {
       for (auto& [i_sect, cells] : sects) {
-        auto tail = cells.head() + cells.size();
-        for (Int i_cell = cells.head(); i_cell < tail; ++i_cell) {
-          cells[i_cell].Project(new_func);
+        for (auto& cell : cells) {
+          cell.Project(new_func);
         }
       }
     }
@@ -674,7 +694,7 @@ class Part {
             cgp_error_exit();
           assert(field_id == i_field);
           cgsize_t first[] = { section.head() };
-          cgsize_t last[] = { section.head() + section.size() - 1 };
+          cgsize_t last[] = { section.tail() - 1 };
           if (cgp_field_write_data(i_file, i_base, i_zone, i_soln, i_field,
               first, last, section.GetField(i_field).data()))
             cgp_error_exit();
@@ -696,15 +716,12 @@ class Part {
     auto fields = std::vector<typename Cell<Int, Real, kFunc>::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
-        int i_cell = sect.head();
-        int i_cell_tail = sect.head() + sect.size();
-        while (i_cell < i_cell_tail) {
-          auto& cell_ptr = sect[i_cell].gauss_;
-          for (int q = 0; q < cell_ptr->CountQuadPoints(); ++q) {
-            coords.emplace_back(cell_ptr->GetGlobalCoord(q));
-            fields.emplace_back(sect[i_cell].projection_(coords.back()));
+        for (auto& cell : sect) {
+          auto& gauss_ptr = cell.gauss_;
+          for (int q = 0; q < gauss_ptr->CountQuadPoints(); ++q) {
+            coords.emplace_back(gauss_ptr->GetGlobalCoord(q));
+            fields.emplace_back(cell.projection_(coords.back()));
           }
-          ++i_cell;
         }
       }
     }
@@ -744,7 +761,7 @@ class Part {
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
-        int i_cell_tail = sect.head() + sect.size();
+        int i_cell_tail = sect.tail();
         while (i_cell < i_cell_tail) {
           cells.emplace_back(20);
           auto& gauss = sect[i_cell].gauss_;
@@ -896,9 +913,7 @@ class Part {
     auto non_local_cells = std::vector<CellPtr>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
-        auto i_tail = sect.head() + sect.size();
-        for (int i_cell = sect.head(); i_cell < i_tail; ++i_cell) {
-          auto& cell = sect[i_cell];
+        for (auto& cell : sect) {
           if (cell.local()) {
             limiter(&cell);
             ++n_real_local;
