@@ -132,10 +132,10 @@ class Linear {
     MatNx1 col = RB::CallAt(point - center_);
     return coeff_ * col;
   }
-  Coord const& GetCenter() const {
+  Coord const& center() const {
     return center_;
   }
-  MatNxN const& GetCoeff() const {
+  MatNxN const& coeff() const {
     return coeff_;
   }
   void Transform(MatNxN const& a) {
@@ -164,7 +164,7 @@ class OrthoNormal {
 
  public:
   explicit OrthoNormal(const Gauss& gauss)
-      : gauss_ptr_(&gauss), basis_(gauss.GetCenter()) {
+      : gauss_ptr_(&gauss), basis_(gauss.center()) {
     assert(gauss.PhysDim() == kDim);
     OrthoNormalize(&basis_, gauss);
   }
@@ -175,23 +175,23 @@ class OrthoNormal {
   OrthoNormal& operator=(OrthoNormal&&) noexcept = default;
   ~OrthoNormal() noexcept = default;
 
-  Coord const& GetCenter() const {
-    return basis_.GetCenter();
+  Coord const& center() const {
+    return basis_.center();
   }
-  MatNxN const& GetCoeff() const {
-    return basis_.GetCoeff();
+  MatNxN const& coeff() const {
+    return basis_.coeff();
   }
   Gauss const& GetGauss() const {
     return *gauss_ptr_;
   }
   MatNx1 operator()(const Coord& global) const {
     auto local = global;
-    local -= GetCenter();
+    local -= center();
     MatNx1 col = RB::CallAt(local);
-    return GetCoeff() * col;
+    return coeff() * col;
   }
   Scalar Measure() const {
-    auto v = basis_.GetCoeff()(0, 0);
+    auto v = basis_.coeff()(0, 0);
     return 1 / (v * v);
   }
 

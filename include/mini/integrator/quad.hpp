@@ -126,7 +126,7 @@ class Quad : public Face<Scalar, D> {
   Scalar const& GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
-  MatDx1 GetCenter() const override {
+  MatDx1 center() const override {
     MatDx1 c = xyz_global_Dx4_.col(0);
     for (int i = 1; i < 4; ++i)
       c += xyz_global_Dx4_.col(i);

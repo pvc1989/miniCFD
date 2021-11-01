@@ -134,7 +134,7 @@ class EigenWeno {
 
  private:
   static Coord GetNu(Cell const &cell_i, Cell const &cell_j) {
-    Coord nu = cell_i.basis_.GetCenter() - cell_j.basis_.GetCenter();
+    Coord nu = cell_i.center() - cell_j.center();
     nu /= std::hypot(nu[0], nu[1], nu[2]);
     return nu;
   }

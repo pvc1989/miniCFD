@@ -36,12 +36,13 @@ class Projection {
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;
   using MatKxK = algebra::Matrix<Scalar, K, K>;
   using Value = MatKx1;
+  using Coeff = MatKxN;
 
  public:
   template <typename Callable>
   Projection(Callable&& func, const Basis& basis)
       : basis_ptr_(&basis) {
-    using Return = decltype(func(basis.GetCenter()));
+    using Return = decltype(func(basis.center()));
     static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
     coeff_ = integrator::Integrate([&](Coord const& xyz) {
       auto f_col = func(xyz);
@@ -50,8 +51,8 @@ class Projection {
       return prod;
     }, basis.GetGauss());
     average_ = coeff_.col(0);
-    average_ *= basis_ptr_->GetCoeff()(0, 0);
-    coeff_ = coeff_ * basis.GetCoeff();
+    average_ *= basis_ptr_->coeff()(0, 0);
+    coeff_ = coeff_ * basis.coeff();
   }
   explicit Projection(const Basis& basis)
       : coeff_(MatKxN::Zero()), average_(MatKx1::Zero()), basis_ptr_(&basis) {
@@ -66,17 +67,17 @@ class Projection {
   ~Projection() noexcept = default;
 
   MatKx1 operator()(Coord const& global) const {
-    auto local = global; local -= basis_ptr_->GetCenter();
+    auto local = global; local -= basis_ptr_->center();
     MatNx1 col = Raw<Scalar, kDim, kOrder>::CallAt(local);
     return coeff_ * col;
   }
-  const MatKxN& GetCoeff() const {
+  const MatKxN& coeff() const {
     return coeff_;
   }
   MatKxN GetPdvValue(Coord const& global) const {
     MatKxN res; res.setZero();
-    auto local = global; local -= basis_ptr_->GetCenter();
-    return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, GetCoeff());
+    auto local = global; local -= basis_ptr_->center();
+    return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, coeff());
   }
   MatKx1 const& GetAverage() const {
     return average_;
@@ -136,7 +137,7 @@ class Projection {
     }
     average_ = coeff_.col(0);
     assert(basis_ptr_);
-    average_ *= basis_ptr_->GetCoeff()(0, 0);
+    average_ *= basis_ptr_->coeff()(0, 0);
   }
 
  private:

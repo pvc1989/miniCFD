@@ -238,7 +238,7 @@ class Hexa : public Cell<Scalar> {
   Hexa& operator=(Hexa&&) noexcept = default;
   virtual ~Hexa() noexcept = default;
 
-  Mat3x1 GetCenter() const override {
+  Mat3x1 center() const override {
     Mat3x1 c = xyz_global_3x8_.col(0);
     for (int i = 1; i < 8; ++i)
       c += xyz_global_3x8_.col(i);

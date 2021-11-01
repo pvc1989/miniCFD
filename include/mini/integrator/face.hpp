@@ -26,7 +26,7 @@ class Face {
   virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
   virtual const Real& GetLocalWeight(int i) const = 0;
   virtual const Real& GetGlobalWeight(int i) const = 0;
-  virtual GlobalCoord GetCenter() const = 0;
+  virtual GlobalCoord center() const = 0;
 
   static constexpr int CellDim() {
     return 2;

@@ -16,7 +16,6 @@
 
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
-
 #include "mini/mesh/cgns/format.hpp"
 #include "mini/integrator/quad.hpp"
 #include "mini/integrator/hexa.hpp"
@@ -105,9 +104,12 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Cell {
   static constexpr int kDim = 3;
   static constexpr int kOrder = 2;
-  using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
-  using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
+  using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
+  using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
+  using Coord = typename Projection::Coord;
+  using Value = typename Projection::Value;
+  using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
 
@@ -118,8 +120,6 @@ struct Cell {
   Real volume_;
   Int metis_id;
   bool local_ = true;
-
-  using Value = decltype(projection_(gauss_->GetCenter()));
 
   Cell(GaussPtr&& gauss, Int m_cell)
       : basis_(*gauss), gauss_(std::move(gauss)),
@@ -137,6 +137,9 @@ struct Cell {
   }
   bool local() const {
     return local_;
+  }
+  const Coord& center() const {
+    return basis_.center();
   }
 
   template <class Callable>
@@ -188,7 +191,7 @@ class CellGroup {
   void GatherFields() {
     for (int i_cell = head(); i_cell < head() + size(); ++i_cell) {
       const auto& cell = cells_.at(i_cell);
-      const auto& coeff = cell.projection_.GetCoeff();
+      const auto& coeff = cell.projection_.coeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         fields_.at(i_field).at(i_cell) = coeff.reshaped()[i_field-1];
       }
@@ -846,7 +849,7 @@ class Part {
       auto& send_buf = send_coeffs_[i_buf++];
       int i_real = 0;
       for (auto* cell_ptr : cell_ptrs) {
-        auto& coeff = cell_ptr->projection_.GetCoeff();
+        auto& coeff = cell_ptr->projection_.coeff();
         const auto& coeff_vec_view = coeff.reshaped();
         for (int i = 0; i < kFields; ++i) {
           send_buf[i_real++] = coeff_vec_view[i];

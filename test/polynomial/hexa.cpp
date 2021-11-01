@@ -70,7 +70,7 @@ TEST_F(TestHexa4x4x4, Projection) {
     return xyz[0] * xyz[1] + xyz[2];
   };
   auto scalar_pf = ScalarPF(scalar_f, basis);
-  double residual = (scalar_pf.GetCoeff()
+  double residual = (scalar_pf.coeff()
       - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0)).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
   auto vector_f = [](Mat3x1 const& xyz) {
@@ -84,7 +84,7 @@ TEST_F(TestHexa4x4x4, Projection) {
   Mat11x10 exact_vector;
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();
-  Mat11x10 abs_diff = vector_pf.GetCoeff() - exact_vector;
+  Mat11x10 abs_diff = vector_pf.coeff() - exact_vector;
   EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 
