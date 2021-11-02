@@ -224,7 +224,7 @@ class CellGroup {
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 class Part {
   using CellPtr = Cell<Int, Real, kFunc> *;
-  static constexpr int kLineWidth = 30;
+  static constexpr int kLineWidth = 128;
   static constexpr int kDim = 3;
   static constexpr int kFields = kFunc * Cell<Int, Real, kFunc>::N;
   static constexpr int i_base = 1;
@@ -261,8 +261,9 @@ class Part {
  private:
   void BuildLocalNodes(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
+    istrm.getline(line, kLineWidth); assert(line[0] == '#');
     // node coordinates
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, head, tail;
       std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
       local_nodes_[i_zone] = NodeGroup<Int, Real>(head, tail - head);
@@ -299,7 +300,7 @@ class Part {
     char line[kLineWidth];
     // send nodes info
     std::map<Int, std::vector<Int>> send_nodes;
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_part, m_node;
       std::sscanf(line, "%d %d", &i_part, &m_node);
       send_nodes[i_part].emplace_back(m_node);
@@ -324,7 +325,7 @@ class Part {
     }
     // recv nodes info
     std::map<Int, std::vector<Int>> recv_nodes;
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_part, m_node, i_zone, i_node;
       std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
       recv_nodes[i_part].emplace_back(m_node);
@@ -368,7 +369,7 @@ class Part {
     char line[kLineWidth];
     // build local cells
     auto z_s_conn = ZoneSectToConn();
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
       local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
@@ -439,7 +440,7 @@ class Part {
   GhostAdj BuildAdj(std::ifstream& istrm) {
     char line[kLineWidth];
     // local adjacency
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i, j;
       std::sscanf(line, "%d %d", &i, &j);
       local_adjs_.emplace_back(i, j);
@@ -449,7 +450,7 @@ class Part {
     auto& send_node_cnts = ghost_adj.send_node_cnts;
     auto& recv_node_cnts = ghost_adj.recv_node_cnts;
     auto& m_cell_pairs = ghost_adj.m_cell_pairs;
-    while (istrm.getline(line, 30) && line[0]) {
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int p, i, j, cnt_i, cnt_j;
       std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
       send_node_cnts[p][i] = cnt_i;

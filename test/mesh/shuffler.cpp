@@ -191,21 +191,22 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     auto ostrm = std::ofstream(case_name + "/partition/" + std::to_string(p)
         + ".txt"/*, std::ios::binary */);
     // node ranges
+    ostrm << "# i_zone i_node_head i_node_tail\n";
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];
       if (head) {
         ostrm << z << ' ' << head << ' ' << tail << '\n';
       }
     }
-    ostrm << '\n';
     // send nodes info
+    ostrm << "# i_part i_node_metis\n";
     for (auto& [recv_pid, nodes] : sendp_recvp_nodes[p]) {
       for (auto i : nodes) {
         ostrm << recv_pid << ' ' << i << '\n';
       }
     }
-    ostrm << '\n';
     // adjacent nodes
+    ostrm << "# i_part i_node_metis i_zone i_node\n";
     for (auto& [i_part, nodes] : part_adj_nodes[p]) {
       for (auto mid : nodes) {
         auto& info = mapper.metis_to_cgns_for_nodes[mid];
@@ -213,8 +214,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
         ostrm << i_part << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
       }
     }
-    ostrm << '\n';
     // cell ranges
+    ostrm << "# i_zone i_sect i_cell_head i_cell_tail\n";
     for (int z = 1; z <= n_zones; ++z) {
       auto n_sects = part_to_cells[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
@@ -224,13 +225,13 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
         }
       }
     }
-    ostrm << '\n';
     // inner adjacency
+    ostrm << "# i_cell_metis j_cell_metis\n";
     for (auto [i, j] : inner_adjs[p]) {
       ostrm << i << ' ' << j << '\n';
     }
-    ostrm << '\n';
     // interpart adjacency
+    ostrm << "# i_part i_cell_metis j_cell_metis i_node_cnt j_node_cnt\n";
     for (auto& [i_part, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
         auto& info_i = mapper.metis_to_cgns_for_cells[i];
@@ -243,6 +244,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
             cnt_j << '\n';
       }
     }
+    ostrm << "#\n";
   }
 }
 
