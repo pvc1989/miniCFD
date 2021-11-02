@@ -75,11 +75,13 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/original.cgns";
   auto new_file_name = case_name + "/shuffled.cgns";
+  /* Generate the original cgns file: */
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
+  /* Partition the mesh: */
   auto mapper = MapperType();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
@@ -88,6 +90,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);
+  /* Shuffle nodes and cells: */
   auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts);
   mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
   shuffler.Shuffle(&cgns_mesh, &mapper);
@@ -98,7 +101,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   cgns_mesh.ReadBases();
   auto& base = cgns_mesh.GetBase(1);
   int n_zones = base.CountZones();
-  /* Prepare info of each part: */
+  /* Prepare to-be-written info for each part: */
   // auto [i_node_min, i_node_max] = part_to_nodes[i_part][i_zone];
   // auto [i_cell_min, i_cell_max] = part_to_cells[i_part][i_zone][i_sect];
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts);
@@ -112,8 +115,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     }
   }
   /* Get index range of each zone's nodes and cells: */
-  for (int zid = 1; zid <= n_zones; ++zid) {
-    auto& zone = base.GetZone(zid);
+  for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+    auto& zone = base.GetZone(i_zone);
     auto& node_field = zone.GetSolution("NodeData").GetField("NodePart");
     // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
@@ -121,17 +124,17 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
     for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
       int curr_part = node_field.at(curr_nid);
       if (curr_part != prev_part) {
-        part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, curr_nid);
+        part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, curr_nid);
         prev_nid = curr_nid;
         prev_part = curr_part;
       }
-    }
-    part_to_nodes[prev_part][zid] = std::make_pair(prev_nid, n_nodes+1);
+    }  // for each node
+    part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, n_nodes+1);
     // slice cell lists by i_part
     int n_cells = zone.CountCells();
     auto& cell_field = zone.GetSolution("CellData").GetField("CellPart");
-    for (int sid = 1; sid <= zone.CountSections(); ++sid) {
-      auto& sect = zone.GetSection(sid);
+    for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
+      auto& sect = zone.GetSection(i_sect);
       if (sect.dim() != base.GetCellDim())
         continue;
       int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
@@ -139,15 +142,16 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
       for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
         int curr_part = cell_field.at(curr_cid);
         if (curr_part != prev_part) {
-          part_to_cells[prev_part][zid][sid]
+          part_to_cells[prev_part][i_zone][i_sect]
               = std::make_pair(prev_cid, curr_cid);
           prev_cid = curr_cid;
           prev_part = curr_part;
         }
-      }
-      part_to_cells[prev_part][zid][sid] = std::make_pair(prev_cid, cid_max+1);
-    }
-  }
+      }  // for each sell
+      part_to_cells[prev_part][i_zone][i_sect]
+          = std::make_pair(prev_cid, cid_max+1);
+    }  // for each sect
+  }  // for each zone
   /* Store cell adjacency for each part: */
   // inner_adjs[i_part] = std::vector of [i_cell_small, i_cell_large]
   auto inner_adjs = std::vector<std::vector<std::pair<int, int>>>(n_parts);
