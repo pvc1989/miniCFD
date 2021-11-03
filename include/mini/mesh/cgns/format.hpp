@@ -27,6 +27,7 @@ template <class Real> class Base;
 template <class Real> class Zone;
 template <class Real> class Coordinates;
 template <class Real> class Section;
+template <class Real> class ZoneBC;
 template <class Real> class Solution;
 
 template <typename Int = int>
@@ -278,6 +279,74 @@ class Section {
 };
 
 template <class Real>
+struct BoCo {
+  char name[64];
+  cgsize_t ptset[2];
+  cgsize_t n_pnts, normal_list_flag, normal_list_size;
+  int normal_index, n_dataset;
+  CGNS_ENUMT(PointSetType_t) ptset_type;
+  CGNS_ENUMT(BCType_t) type;
+  CGNS_ENUMT(GridLocation_t) location;
+  CGNS_ENUMT(DataType_t) normal_data_type;
+};
+template <class Real>
+class ZoneBC {
+  std::vector<BoCo<Real>> bocos_;
+  const Zone<Real>* zone_ptr_;
+
+ public:
+  explicit ZoneBC(const Zone<Real> &zone)
+      : zone_ptr_(&zone) {
+  }
+  File<Real> const& file() const {
+    return zone_ptr_->file();
+  }
+  Base<Real> const& base() const {
+    return zone_ptr_->base();
+  }
+  Zone<Real> const& zone() const {
+    return *zone_ptr_;
+  }
+
+  void Read() {
+    int n_bocos;
+    cg_nbocos(file().id(), base().id(), zone().id(), &n_bocos);
+    bocos_.resize(n_bocos + 1);
+    for (int i_boco = 1; i_boco <= n_bocos; ++i_boco) {
+      auto& boco = bocos_.at(i_boco);
+      cg_boco_info(file().id(), base().id(), zone().id(), i_boco,
+          boco.name, &boco.type, &boco.ptset_type, &boco.n_pnts,
+          &boco.normal_index, &boco.normal_list_size,
+          &boco.normal_data_type, &boco.n_dataset);
+      assert(boco.n_pnts == 2);
+      cg_boco_read(file().id(), base().id(), zone().id(), i_boco,
+          boco.ptset, nullptr);
+      std::cout << "Read BC[" << i_boco << "] " << boco.name << ' '
+          << boco.ptset[0] << ' ' << boco.ptset[1] << std::endl;
+      cg_goto(file().id(), base().id(), "Zone_t", zone().id(),
+          "ZoneBC_t", 1, "BC_t", i_boco, "end");
+      cg_gridlocation_read(&boco.location);
+    }
+  }
+  void Write() const {
+    int n_bocos = bocos_.size() - (bocos_.size() > 0);
+    for (int i_boco = 1; i_boco <= n_bocos; ++i_boco) {
+      auto& boco = bocos_.at(i_boco);
+      int boco_i;
+      cg_boco_write(file().id(), base().id(), zone().id(), boco.name,
+          boco.type, boco.ptset_type, boco.n_pnts, boco.ptset, &boco_i);
+      assert(boco_i == i_boco);
+      cg_goto(file().id(), base().id(), "Zone_t", zone().id(),
+          "ZoneBC_t", 1, "BC_t", i_boco, "end");
+      cg_boco_gridlocation_write(file().id(), base().id(), zone().id(), i_boco,
+          boco.location);
+      std::cout << "Write BC[" << i_boco << "] " << boco.name << ' '
+          << boco.ptset[0] << ' ' << boco.ptset[1] << std::endl;
+    }
+  }
+};
+
+template <class Real>
 class Field {
  public:  // Constructor:
   Field(Solution<Real> const* solution, int fid, char const* name, int size)
@@ -419,7 +488,7 @@ class Zone {
   Zone(Base<Real> const* base, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
       : base_(base), i_zone_(zid), name_(name), n_cells_(n_cells),
-        coordinates_(this, n_nodes) {
+        coordinates_(this, n_nodes), zone_bc_(*this) {
   }
 
  public:  // Copy Control:
@@ -503,6 +572,7 @@ class Zone {
                   CGNS_ENUMV(Unstructured), &i_zone);
     assert(i_zone == i_zone_);
     coordinates_.Write();
+    zone_bc_.Write();
     for (auto& section : sections_) {
       if (section->dim() >= min_dim)
         section->Write();
@@ -539,6 +609,9 @@ class Zone {
   }
   void ReadCoordinates() {
     coordinates_.Read();
+  }
+  void ReadZoneBC() {
+    zone_bc_.Read();
   }
   void ReadAllSections() {
     int n_sections;
@@ -603,6 +676,7 @@ class Zone {
   Coordinates<Real> coordinates_;
   std::vector<std::unique_ptr<Section<Real>>> sections_;
   std::vector<std::unique_ptr<Solution<Real>>> solutions_;
+  ZoneBC<Real> zone_bc_;
   Base<Real> const* base_{nullptr};
   cgsize_t n_cells_;
   int i_zone_;
@@ -699,6 +773,7 @@ class Base {
           this, i_zone, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadCoordinates();
+      zone->ReadZoneBC();
       zone->ReadAllSections();
       zone->ReadSolutions();
     }
