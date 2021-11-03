@@ -286,6 +286,7 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
         }
       }
     }
+    zone.UpdateSectionRanges();
   }
 }
 

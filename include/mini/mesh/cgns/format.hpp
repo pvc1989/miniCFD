@@ -279,8 +279,8 @@ class Section {
 };
 
 template <class Real>
-struct BoCo {
-  char name[64];
+struct BC {
+  char name[32];
   cgsize_t ptset[2];
   cgsize_t n_pnts, normal_list_flag, normal_list_size;
   int normal_index, n_dataset;
@@ -291,7 +291,7 @@ struct BoCo {
 };
 template <class Real>
 class ZoneBC {
-  std::vector<BoCo<Real>> bocos_;
+  std::vector<BC<Real>> bocos_;
   const Zone<Real>* zone_ptr_;
 
  public:
@@ -328,8 +328,17 @@ class ZoneBC {
       cg_gridlocation_read(&boco.location);
     }
   }
+  void UpdateRanges() {
+    int n_bocos = CountBCs();
+    for (int i_boco = 1; i_boco <= n_bocos; ++i_boco) {
+      auto& boco = bocos_.at(i_boco);
+      auto& sect = zone_ptr_->GetSection(boco.name);
+      boco.ptset[0] = sect.CellIdMin();
+      boco.ptset[1] = sect.CellIdMax();
+    }
+  }
   void Write() const {
-    int n_bocos = bocos_.size() - (bocos_.size() > 0);
+    int n_bocos = CountBCs();
     for (int i_boco = 1; i_boco <= n_bocos; ++i_boco) {
       auto& boco = bocos_.at(i_boco);
       int boco_i;
@@ -343,6 +352,12 @@ class ZoneBC {
       std::cout << "Write BC[" << i_boco << "] " << boco.name << ' '
           << boco.ptset[0] << ' ' << boco.ptset[1] << std::endl;
     }
+  }
+
+ private:
+  int CountBCs() const {
+    int n_bocos = bocos_.size() - (bocos_.size() > 0);
+    return n_bocos;
   }
 };
 
@@ -555,10 +570,24 @@ class Zone {
   const Section<Real>& GetSection(int i_sect) const {
     return *(sections_.at(i_sect-1));
   }
+  const Section<Real>& GetSection(const std::string &name) const {
+    // TODO (PVC): use hash table
+    for (auto& sect : sections_) {
+      int pos = 0;
+      if (sect->name().size() > name.size()) {
+        pos = sect->name().size() - name.size();
+      }
+      if (sect->name().substr(pos) == name)
+        return *sect;
+    }
+    throw std::invalid_argument("There is no section named \"" + name + "\".");
+    return *(sections_.back());
+  }
   const Solution<Real>& GetSolution(int i_soln) const {
     return *(solutions_.at(i_soln-1));
   }
   const Solution<Real>& GetSolution(const std::string &name) const {
+    // TODO (PVC): use hash table
     for (auto& soln : solutions_)
       if (soln->name() == name)
         return *soln;
@@ -610,9 +639,6 @@ class Zone {
   void ReadCoordinates() {
     coordinates_.Read();
   }
-  void ReadZoneBC() {
-    zone_bc_.Read();
-  }
   void ReadAllSections() {
     int n_sections;
     cg_nsections(file().id(), base().id(), i_zone_, &n_sections);
@@ -631,6 +657,12 @@ class Zone {
       section->Read();
     }
     SortSectionsByDim();
+  }
+  void ReadZoneBC() {
+    zone_bc_.Read();
+  }
+  void UpdateSectionRanges() {
+    zone_bc_.UpdateRanges();
   }
   void ReadSolutions() {
     int n_solutions;
@@ -773,8 +805,8 @@ class Base {
           this, i_zone, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadCoordinates();
-      zone->ReadZoneBC();
       zone->ReadAllSections();
+      zone->ReadZoneBC();
       zone->ReadSolutions();
     }
   }
