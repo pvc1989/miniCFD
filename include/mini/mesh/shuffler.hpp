@@ -108,22 +108,32 @@ class Shuffler {
  public:
   using CgnsMesh = mini::mesh::cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;
+  using Graph = metis::SparseGraphWithDeleter<Int>;
   using MapperType = mini::mesh::mapper::CgnsToMetis<Real, Int>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
 
   Shuffler(Int n_parts, std::vector<Int> const& cell_parts,
-           std::vector<Int> const& node_parts)
-      : n_parts_{n_parts}, cell_parts_{cell_parts}, node_parts_{node_parts} {
+           std::vector<Int> const& node_parts,
+           const Graph& graph, const MetisMesh& metis_mesh,
+           CgnsMesh* cgns_mesh, MapperType* mapper)
+      : n_parts_{n_parts}, cell_parts_{cell_parts}, node_parts_{node_parts},
+        graph_(graph), metis_mesh_(metis_mesh), cgns_mesh_(cgns_mesh),
+        mapper_(mapper) {
   }
 
-  void Shuffle(CgnsMesh* mesh, MapperType* mapper);
+  void Shuffle();
+  void WritePartitionInfo(const std::string& case_name);
 
  private:
   std::vector<Int> const& cell_parts_;
   std::vector<Int> const& node_parts_;
   std::map<Int, std::map<Int, cgns::ShiftedVector<Int>>> face_parts_;
+  CgnsMesh* cgns_mesh_;
+  MapperType* mapper_;
+  Graph const& graph_;
+  MetisMesh const& metis_mesh_;
   Int n_parts_;
 
   void FillFaceParts(const CgnsMesh& mesh, const MapperType& mapper);
@@ -218,13 +228,13 @@ void Shuffler<Int, Real>::FillFaceParts(
 }
 
 template <typename Int, class Real>
-void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
-  FillFaceParts(*mesh, *mapper);
-  auto& m_to_c_nodes = mapper->metis_to_cgns_for_nodes;
-  auto& m_to_c_cells = mapper->metis_to_cgns_for_cells;
-  auto& c_to_m_nodes = mapper->cgns_to_metis_for_nodes;
-  auto& c_to_m_cells = mapper->cgns_to_metis_for_cells;
-  auto& base = mesh->GetBase(1);
+void Shuffler<Int, Real>::Shuffle() {
+  FillFaceParts(*cgns_mesh_, *mapper_);
+  auto& m_to_c_nodes = mapper_->metis_to_cgns_for_nodes;
+  auto& m_to_c_cells = mapper_->metis_to_cgns_for_cells;
+  auto& c_to_m_nodes = mapper_->cgns_to_metis_for_nodes;
+  auto& c_to_m_cells = mapper_->cgns_to_metis_for_cells;
+  auto& base = cgns_mesh_->GetBase(1);
   auto n_zones = base.CountZones();
   // shuffle nodes, cells and data on them
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
@@ -289,6 +299,161 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
       }
     }
     zone.UpdateSectionRanges();
+  }
+}
+
+template <typename Int, class Real>
+void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
+  auto& base = cgns_mesh_->GetBase(1);
+  int n_zones = base.CountZones();
+  /* Prepare to-be-written info for each part: */
+  // auto [i_node_min, i_node_max] = part_to_nodes[i_part][i_zone];
+  // auto [i_cell_min, i_cell_max] = part_to_cells[i_part][i_zone][i_sect];
+  auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts_);
+  auto part_to_cells
+      = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts_);
+  for (int p = 0; p < n_parts_; ++p) {
+    part_to_nodes[p].resize(n_zones+1);
+    part_to_cells[p].resize(n_zones+1);
+    for (int z = 1; z <= n_zones; ++z) {
+      part_to_cells[p][z].resize(base.GetZone(z).CountSections() + 1);
+    }
+  }
+  /* Get index range of each zone's nodes and cells: */
+  for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+    auto& zone = base.GetZone(i_zone);
+    auto& node_field = zone.GetSolution("NodeData").GetField("NodePart");
+    // slice node lists by i_part
+    int prev_nid = 1, prev_part = node_field.at(prev_nid);
+    int n_nodes = zone.CountNodes();
+    for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
+      int curr_part = node_field.at(curr_nid);
+      if (curr_part != prev_part) {
+        part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, curr_nid);
+        prev_nid = curr_nid;
+        prev_part = curr_part;
+      }
+    }  // for each node
+    part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, n_nodes+1);
+    // slice cell lists by i_part
+    int n_cells = zone.CountCells();
+    auto& cell_field = zone.GetSolution("CellData").GetField("CellPart");
+    for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
+      auto& sect = zone.GetSection(i_sect);
+      if (sect.dim() != base.GetCellDim())
+        continue;
+      int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
+      int prev_cid = cid_min, prev_part = cell_field.at(prev_cid);
+      for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
+        int curr_part = cell_field.at(curr_cid);
+        if (curr_part != prev_part) {
+          part_to_cells[prev_part][i_zone][i_sect]
+              = std::make_pair(prev_cid, curr_cid);
+          prev_cid = curr_cid;
+          prev_part = curr_part;
+        }
+      }  // for each sell
+      part_to_cells[prev_part][i_zone][i_sect]
+          = std::make_pair(prev_cid, cid_max+1);
+    }  // for each sect
+  }  // for each zone
+  /* Store cell adjacency for each part: */
+  // inner_adjs[i_part] = std::vector of [i_cell_small, i_cell_large]
+  auto inner_adjs = std::vector<std::vector<std::pair<int, int>>>(n_parts_);
+  auto part_interpart_adjs
+      = std::vector<std::map<int, std::vector<std::pair<int, int>>>>(n_parts_);
+  auto part_adj_nodes = std::vector<std::map<int, std::set<int>>>(n_parts_);
+  auto sendp_recvp_nodes = std::vector<std::map<int, std::set<int>>>(n_parts_);
+  for (int i = 0; i < metis_mesh_.CountCells(); ++i) {
+    auto part_i = cell_parts_[i];
+    int range_b = metis_mesh_.range(i), range_e = metis_mesh_.range(i+1);
+    for (int i_range = range_b; i_range < range_e; ++i_range) {
+      auto i_node = metis_mesh_.nodes(i_range);
+      auto node_part = node_parts_[i_node];
+      if (node_part != part_i) {
+        part_adj_nodes[part_i][node_part].emplace(i_node);
+        sendp_recvp_nodes[node_part][part_i].emplace(i_node);
+      }
+    }
+    for (int r = graph_.range(i); r < graph_.range(i+1); ++r) {
+      int j = graph_.index(r);
+      auto part_j = cell_parts_[j];
+      if (part_i == part_j) {
+        if (i < j)
+          inner_adjs[part_i].emplace_back(i, j);
+      } else {
+        part_interpart_adjs[part_i][part_j].emplace_back(i, j);
+        int range_b = metis_mesh_.range(j), range_e = metis_mesh_.range(j+1);
+        for (int i_range = range_b; i_range < range_e; ++i_range) {
+          auto i_node = metis_mesh_.nodes(i_range);
+          auto node_part = node_parts_[i_node];
+          if (node_part != part_i) {
+            part_adj_nodes[part_i][node_part].emplace(i_node);
+            sendp_recvp_nodes[node_part][part_i].emplace(i_node);
+          }
+        }
+      }
+    }
+  }
+  /* Write part info to txts: */
+  for (int p = 0; p < n_parts_; ++p) {
+    auto ostrm = std::ofstream(case_name + "/partition/" + std::to_string(p)
+        + ".txt"/*, std::ios::binary */);
+    // node ranges
+    ostrm << "# i_zone i_node_head i_node_tail\n";
+    for (int z = 1; z <= n_zones; ++z) {
+      auto [head, tail] = part_to_nodes[p][z];
+      if (head) {
+        ostrm << z << ' ' << head << ' ' << tail << '\n';
+      }
+    }
+    // send nodes info
+    ostrm << "# i_part i_node_metis\n";
+    for (auto& [recv_pid, nodes] : sendp_recvp_nodes[p]) {
+      for (auto i : nodes) {
+        ostrm << recv_pid << ' ' << i << '\n';
+      }
+    }
+    // adjacent nodes
+    ostrm << "# i_part i_node_metis i_zone i_node\n";
+    for (auto& [i_part, nodes] : part_adj_nodes[p]) {
+      for (auto mid : nodes) {
+        auto& info = mapper_->metis_to_cgns_for_nodes[mid];
+        int zid = info.i_zone, nid = info.i_node;
+        ostrm << i_part << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
+      }
+    }
+    // cell ranges
+    ostrm << "# i_zone i_sect i_cell_head i_cell_tail\n";
+    for (int z = 1; z <= n_zones; ++z) {
+      auto n_sects = part_to_cells[p][z].size() - 1;
+      for (int s = 1; s <= n_sects; ++s) {
+        auto [head, tail] = part_to_cells[p][z][s];
+        if (head) {
+          ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+        }
+      }
+    }
+    // inner adjacency
+    ostrm << "# i_cell_metis j_cell_metis\n";
+    for (auto [i, j] : inner_adjs[p]) {
+      ostrm << i << ' ' << j << '\n';
+    }
+    // interpart adjacency
+    ostrm << "# i_part i_cell_metis j_cell_metis i_node_cnt j_node_cnt\n";
+    for (auto& [i_part, pairs] : part_interpart_adjs[p]) {
+      for (auto [i, j] : pairs) {
+        auto& info_i = mapper_->metis_to_cgns_for_cells[i];
+        auto& info_j = mapper_->metis_to_cgns_for_cells[j];
+        int cnt_i = base.GetZone(info_i.i_zone).GetSection(info_i.i_sect).
+            CountNodesByType();
+        int cnt_j = base.GetZone(info_j.i_zone).GetSection(info_j.i_sect).
+            CountNodesByType();
+        ostrm << i_part << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
+            cnt_j << '\n';
+      }
+    }
+    ostrm << "#\n";
   }
 }
 
