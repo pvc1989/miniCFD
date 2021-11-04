@@ -248,6 +248,7 @@ class Part {
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
     BuildGhostNodes(recv_nodes, recv_coords);
     auto z_s_conn = BuildLocalCells(istrm, i_file);
+    BuildLocalFaces(istrm, i_file);
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
@@ -430,6 +431,15 @@ class Part {
       }
     }
     return z_s_conn;
+  }
+  void BuildLocalFaces(std::ifstream& istrm, int i_file) {
+    char line[kLineWidth];
+    // build local faces
+    while (istrm.getline(line, kLineWidth) && line[0] != '#') {
+      int i_zone, i_sect, head, tail;
+      std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
+      std::printf("%d %d %d %d\n", i_zone, i_sect, head, tail);
+    }
   }
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>>

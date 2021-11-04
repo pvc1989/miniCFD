@@ -7,6 +7,8 @@
 #include <cassert>
 #include <cstring>
 #include <map>
+#include <set>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -309,32 +311,42 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
   /* Prepare to-be-written info for each part: */
   // auto [i_node_min, i_node_max] = part_to_nodes[i_part][i_zone];
   // auto [i_cell_min, i_cell_max] = part_to_cells[i_part][i_zone][i_sect];
+  // auto [i_face_min, i_face_max] = part_to_faces[i_part][i_zone][i_sect];
   auto part_to_nodes = std::vector<std::vector<std::pair<int, int>>>(n_parts_);
   auto part_to_cells
       = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts_);
+  auto part_to_faces
+      = std::vector<std::vector<std::vector<std::pair<int, int>>>>(n_parts_);
   for (int p = 0; p < n_parts_; ++p) {
-    part_to_nodes[p].resize(n_zones+1);
-    part_to_cells[p].resize(n_zones+1);
+    part_to_nodes[p].resize(n_zones + 1);
+    part_to_cells[p].resize(n_zones + 1);
+    part_to_faces[p].resize(n_zones + 1);
     for (int z = 1; z <= n_zones; ++z) {
       part_to_cells[p][z].resize(base.GetZone(z).CountSections() + 1);
+      part_to_faces[p][z].resize(base.GetZone(z).CountSections() + 1);
     }
   }
-  /* Get index range of each zone's nodes and cells: */
+  for (auto& [i_zone, zone] : face_parts_) {
+    for (auto& [i_sect, parts] : zone) {
+      std::sort(parts.begin(), parts.end());
+    }
+  }
+  /* Get index range of each zone's nodes, cells and faces: */
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
     auto& zone = base.GetZone(i_zone);
     auto& node_field = zone.GetSolution("NodeData").GetField("NodePart");
     // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
-    for (int curr_nid = prev_nid+1; curr_nid <= n_nodes; ++curr_nid) {
+    for (int curr_nid = prev_nid + 1; curr_nid <= n_nodes; ++curr_nid) {
       int curr_part = node_field.at(curr_nid);
       if (curr_part != prev_part) {
-        part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, curr_nid);
+        part_to_nodes[prev_part][i_zone] = { prev_nid, curr_nid };
         prev_nid = curr_nid;
         prev_part = curr_part;
       }
     }  // for each node
-    part_to_nodes[prev_part][i_zone] = std::make_pair(prev_nid, n_nodes+1);
+    part_to_nodes[prev_part][i_zone] = { prev_nid, n_nodes + 1 };
     // slice cell lists by i_part
     int n_cells = zone.CountCells();
     auto& cell_field = zone.GetSolution("CellData").GetField("CellPart");
@@ -344,18 +356,34 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
         continue;
       int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
       int prev_cid = cid_min, prev_part = cell_field.at(prev_cid);
-      for (int curr_cid = prev_cid+1; curr_cid <= cid_max; ++curr_cid) {
+      for (int curr_cid = prev_cid + 1; curr_cid <= cid_max; ++curr_cid) {
         int curr_part = cell_field.at(curr_cid);
-        if (curr_part != prev_part) {
-          part_to_cells[prev_part][i_zone][i_sect]
-              = std::make_pair(prev_cid, curr_cid);
+        if (curr_part != prev_part) {  // find a new part
+          part_to_cells[prev_part][i_zone][i_sect] = { prev_cid, curr_cid };
           prev_cid = curr_cid;
           prev_part = curr_part;
         }
       }  // for each sell
-      part_to_cells[prev_part][i_zone][i_sect]
-          = std::make_pair(prev_cid, cid_max+1);
-    }  // for each sect
+      part_to_cells[prev_part][i_zone][i_sect] = { prev_cid, cid_max + 1 };
+    }  // for each sect of cells
+    // slice face lists by i_part
+    for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
+      auto& sect = zone.GetSection(i_sect);
+      auto& face_field = face_parts_[i_zone][i_sect];
+      if (sect.dim() + 1 != base.GetCellDim())
+        continue;
+      int fid_min = sect.CellIdMin(), fid_max = sect.CellIdMax();
+      int prev_fid = fid_min, prev_part = face_field.at(prev_fid);
+      for (int curr_fid = prev_fid + 1; curr_fid <= fid_max; ++curr_fid) {
+        int curr_part = face_field.at(curr_fid);
+        if (curr_part != prev_part) {  // find a new part
+          part_to_faces[prev_part][i_zone][i_sect] = { prev_fid, curr_fid };
+          prev_fid = curr_fid;
+          prev_part = curr_part;
+        }
+      }  // for each face
+      part_to_faces[prev_part][i_zone][i_sect] = { prev_fid, fid_max + 1 };
+    }  // for each sect of faces
   }  // for each zone
   /* Store cell adjacency for each part: */
   // inner_adjs[i_part] = std::vector of [i_cell_small, i_cell_large]
@@ -366,7 +394,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
   auto sendp_recvp_nodes = std::vector<std::map<int, std::set<int>>>(n_parts_);
   for (int i = 0; i < metis_mesh_.CountCells(); ++i) {
     auto part_i = cell_parts_[i];
-    int range_b = metis_mesh_.range(i), range_e = metis_mesh_.range(i+1);
+    int range_b = metis_mesh_.range(i), range_e = metis_mesh_.range(i + 1);
     for (int i_range = range_b; i_range < range_e; ++i_range) {
       auto i_node = metis_mesh_.nodes(i_range);
       auto node_part = node_parts_[i_node];
@@ -375,7 +403,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
         sendp_recvp_nodes[node_part][part_i].emplace(i_node);
       }
     }
-    for (int r = graph_.range(i); r < graph_.range(i+1); ++r) {
+    for (int r = graph_.range(i); r < graph_.range(i + 1); ++r) {
       int j = graph_.index(r);
       auto part_j = cell_parts_[j];
       if (part_i == part_j) {
@@ -383,7 +411,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
           inner_adjs[part_i].emplace_back(i, j);
       } else {
         part_interpart_adjs[part_i][part_j].emplace_back(i, j);
-        int range_b = metis_mesh_.range(j), range_e = metis_mesh_.range(j+1);
+        int range_b = metis_mesh_.range(j), range_e = metis_mesh_.range(j + 1);
         for (int i_range = range_b; i_range < range_e; ++i_range) {
           auto i_node = metis_mesh_.nodes(i_range);
           auto node_part = node_parts_[i_node];
@@ -429,6 +457,17 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
       auto n_sects = part_to_cells[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
         auto [head, tail] = part_to_cells[p][z][s];
+        if (head) {
+          ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+        }
+      }
+    }
+    // face ranges
+    ostrm << "# i_zone i_sect i_face_head i_face_tail\n";
+    for (int z = 1; z <= n_zones; ++z) {
+      auto n_sects = part_to_faces[p][z].size() - 1;
+      for (int s = 1; s <= n_sects; ++s) {
+        auto [head, tail] = part_to_faces[p][z][s];
         if (head) {
           ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
         }
