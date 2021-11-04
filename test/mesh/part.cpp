@@ -4,8 +4,10 @@
 #include <cstdlib>
 
 #include "mpi.h"
+#include "pcgnslib.h"
 
-#include "mini/mesh/cgns/part.hpp"
+#include "mini/mesh/cgns.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/polynomial/limiter.hpp"
 
 // mpirun -n 4 ./part

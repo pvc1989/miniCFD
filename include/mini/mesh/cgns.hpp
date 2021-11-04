@@ -2,12 +2,13 @@
 /**
  * This file defines wrappers of APIs and types in CGNS/MLL.
  */
-#ifndef MINI_MESH_CGNS_FORMAT_HPP_
-#define MINI_MESH_CGNS_FORMAT_HPP_
+#ifndef MINI_MESH_CGNS_HPP_
+#define MINI_MESH_CGNS_HPP_
 
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -571,7 +572,7 @@ class Zone {
     return *(sections_.at(i_sect-1));
   }
   const Section<Real>& GetSection(const std::string &name) const {
-    // TODO (PVC): use hash table
+    // TODO(PVC): use hash table
     for (auto& sect : sections_) {
       int pos = 0;
       if (sect->name().size() > name.size()) {
@@ -587,7 +588,7 @@ class Zone {
     return *(solutions_.at(i_soln-1));
   }
   const Solution<Real>& GetSolution(const std::string &name) const {
-    // TODO (PVC): use hash table
+    // TODO(PVC): use hash table
     for (auto& soln : solutions_)
       if (soln->name() == name)
         return *soln;
@@ -927,4 +928,4 @@ class File {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_FORMAT_HPP_
+#endif  // MINI_MESH_CGNS_HPP_

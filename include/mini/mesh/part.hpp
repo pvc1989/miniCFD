@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_MESH_CGNS_PART_HPP_
-#define MINI_MESH_CGNS_PART_HPP_
+#ifndef MINI_MESH_PART_HPP_
+#define MINI_MESH_PART_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -17,7 +17,7 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
-#include "mini/mesh/cgns/format.hpp"
+#include "mini/mesh/cgns.hpp"
 #include "mini/integrator/quad.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/basis.hpp"
@@ -994,4 +994,4 @@ MPI_Datatype const Part<Int, Real, kFunc>::kMpiRealType
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_PART_HPP_
+#endif  // MINI_MESH_PART_HPP_

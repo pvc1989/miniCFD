@@ -8,8 +8,8 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/metis/partitioner.hpp"
+#include "mini/mesh/metis.hpp"
+#include "mini/mesh/partitioner.hpp"
 
 namespace mini {
 namespace mesh {

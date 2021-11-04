@@ -1,17 +1,19 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_CGNS_SHUFFLER_HPP_
-#define MINI_MESH_CGNS_SHUFFLER_HPP_
+#ifndef MINI_MESH_SHUFFLER_HPP_
+#define MINI_MESH_SHUFFLER_HPP_
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <map>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "mini/mesh/cgns/format.hpp"
-#include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/mapper/cgns_to_metis.hpp"
+#include "mini/mesh/cgns.hpp"
+#include "mini/mesh/metis.hpp"
+#include "mini/mesh/mapper.hpp"
 
 namespace mini {
 namespace mesh {
@@ -293,4 +295,4 @@ void Shuffler<Int, Real>::Shuffle(CgnsMesh* mesh, MapperType* mapper) {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_CGNS_SHUFFLER_HPP_
+#endif  // MINI_MESH_SHUFFLER_HPP_

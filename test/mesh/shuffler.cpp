@@ -12,11 +12,11 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/mesh/mapper/cgns_to_metis.hpp"
-#include "mini/mesh/cgns/shuffler.hpp"
-#include "mini/mesh/cgns/format.hpp"
-#include "mini/mesh/metis/format.hpp"
-#include "mini/mesh/metis/partitioner.hpp"
+#include "mini/mesh/mapper.hpp"
+#include "mini/mesh/shuffler.hpp"
+#include "mini/mesh/cgns.hpp"
+#include "mini/mesh/metis.hpp"
+#include "mini/mesh/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {

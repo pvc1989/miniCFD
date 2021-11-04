@@ -1,7 +1,7 @@
 // Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
-#ifndef MINI_MESH_METIS_FORMAT_HPP_
-#define MINI_MESH_METIS_FORMAT_HPP_
+#ifndef MINI_MESH_METIS_HPP_
+#define MINI_MESH_METIS_HPP_
 
 #include <algorithm>
 #include <type_traits>
@@ -173,4 +173,4 @@ class SparseGraphWithDeleter {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_METIS_FORMAT_HPP_
+#endif  // MINI_MESH_METIS_HPP_

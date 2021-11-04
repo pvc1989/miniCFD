@@ -6,8 +6,8 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/metis/partitioner.hpp"
-#include "mini/mesh/mapper/cgns_to_metis.hpp"
+#include "mini/mesh/partitioner.hpp"
+#include "mini/mesh/mapper.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {

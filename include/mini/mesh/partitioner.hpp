@@ -1,7 +1,7 @@
 // Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
-#ifndef MINI_MESH_METIS_PARTITIONER_HPP_
-#define MINI_MESH_METIS_PARTITIONER_HPP_
+#ifndef MINI_MESH_PARTITIONER_HPP_
+#define MINI_MESH_PARTITIONER_HPP_
 
 #include <memory>
 #include <type_traits>
@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "metis.h"
-#include "mini/mesh/metis/format.hpp"
+#include "mini/mesh/metis.hpp"
 
 namespace mini {
 namespace mesh {
@@ -179,4 +179,4 @@ std::vector<Int> GetNodeParts(
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_METIS_PARTITIONER_HPP_
+#endif  // MINI_MESH_PARTITIONER_HPP_
