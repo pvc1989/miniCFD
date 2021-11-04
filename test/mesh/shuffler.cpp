@@ -16,7 +16,6 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/metis.hpp"
-#include "mini/mesh/partitioner.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {

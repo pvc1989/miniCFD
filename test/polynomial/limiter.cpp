@@ -16,7 +16,6 @@
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/metis.hpp"
-#include "mini/mesh/partitioner.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"

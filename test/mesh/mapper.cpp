@@ -6,7 +6,6 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/mesh/partitioner.hpp"
 #include "mini/mesh/mapper.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 

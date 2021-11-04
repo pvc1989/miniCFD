@@ -9,7 +9,6 @@
 
 #include "gtest/gtest.h"
 #include "mini/mesh/metis.hpp"
-#include "mini/mesh/partitioner.hpp"
 
 namespace mini {
 namespace mesh {
