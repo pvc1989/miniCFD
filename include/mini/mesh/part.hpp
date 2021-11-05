@@ -248,7 +248,8 @@ class Part {
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
     BuildGhostNodes(recv_nodes, recv_coords);
     auto z_s_conn = BuildLocalCells(istrm, i_file);
-    BuildLocalFaces(istrm, i_file);
+    BuildBoundaryFaces(istrm, i_file);
+    std::printf("rank = %d\n", rank_);
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
@@ -397,7 +398,7 @@ class Part {
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
-      int x, y;
+      int x, y, npe;
       auto& conn = z_s_conn[i_zone][i_sect];
       auto& index = conn.index;
       auto& nodes = conn.nodes;
@@ -405,15 +406,10 @@ class Part {
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
-      switch (type) {
-      case CGNS_ENUMV(HEXA_8):
-        nodes.resize(8 * mem_dimensions[0]);
-        for (int i = 0; i < index.size(); ++i) {
-          index.at(head + i) = 8 * i;
-        }
-        break;
-      default:
-        assert(false);
+      cg_npe(type, &npe);
+      nodes.resize(npe * mem_dimensions[0]);
+      for (int i = 0; i < index.size(); ++i) {
+        index.at(head + i) = npe * i;
       }
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
@@ -432,13 +428,38 @@ class Part {
     }
     return z_s_conn;
   }
-  void BuildLocalFaces(std::ifstream& istrm, int i_file) {
+  void BuildBoundaryFaces(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
     // build local faces
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      std::printf("%d %d %d %d\n", i_zone, i_sect, head, tail);
+      // local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
+      cgsize_t range_min[] = { head };
+      cgsize_t range_max[] = { tail - 1 };
+      cgsize_t mem_dimensions[] = { tail - head };
+      // cgsize_t mem_range_min[] = { 1 };
+      // cgsize_t mem_range_max[] = { mem_dimensions[0] };
+      char name[33];
+      ElementType_t type;
+      cgsize_t u, v;
+      int x, y, npe;
+      if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
+          &u, &v, &x, &y))
+        cgp_error_exit();
+      cg_npe(type, &npe);
+      auto nodes = std::vector<Int>(npe * mem_dimensions[0]);
+      auto index = ShiftedVector<Int>(mem_dimensions[0], head);
+      for (int i = 0; i < index.size(); ++i) {
+        index.at(head + i) = npe * i;
+      }
+      if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
+          range_min[0], range_max[0], nodes.data()))
+        cgp_error_exit();
+      std::printf("%s\n", line);
+      std::printf("%s type = %d, npe = %d, size = %d, %d %d %d %d\n",
+          name, (int)type, npe, (int)nodes.size()/npe,
+          i_zone, i_sect, head, tail);
     }
   }
   struct GhostAdj {

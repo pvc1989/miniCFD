@@ -431,7 +431,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     ostrm << "# i_zone i_node_head i_node_tail\n";
     for (int z = 1; z <= n_zones; ++z) {
       auto [head, tail] = part_to_nodes[p][z];
-      if (head) {
+      if (true) {
         ostrm << z << ' ' << head << ' ' << tail << '\n';
       }
     }
@@ -457,7 +457,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
       auto n_sects = part_to_cells[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
         auto [head, tail] = part_to_cells[p][z][s];
-        if (head) {
+        if (base.GetZone(z).GetSection(s).dim() == base.GetCellDim()) {
           ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
         }
       }
@@ -468,7 +468,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
       auto n_sects = part_to_faces[p][z].size() - 1;
       for (int s = 1; s <= n_sects; ++s) {
         auto [head, tail] = part_to_faces[p][z][s];
-        if (head) {
+        if (base.GetZone(z).GetSection(s).dim() + 1 == base.GetCellDim()) {
           ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
         }
       }
