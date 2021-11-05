@@ -69,8 +69,8 @@ class ShiftedVector : public std::vector<Int> {
 template <class Real>
 class Coordinates {
  public:  // Constructors:
-  Coordinates(Zone<Real> const* zone, int size)
-      : zone_(zone), x_(size), y_(size), z_(size), name_("GridCoordinates") {
+  Coordinates(const Zone<Real>& zone, int size)
+      : zone_(&zone), x_(size), y_(size), z_(size), name_("GridCoordinates") {
   }
 
  public:  // Copy Control:
@@ -163,10 +163,10 @@ class Section {
 
  public:  // Constructors:
   Section() = default;
-  Section(Zone<Real> const* zone, int sid,
+  Section(const Zone<Real>& zone, int sid,
           char const* name, cgsize_t first, cgsize_t size,
           int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
-      : zone_{zone},
+      : zone_{&zone},
         i_sect_{sid}, name_{name}, first_{first}, size_{size},
         n_boundary_cells_{n_boundary_cells}, type_{type},
         i_node_list_(size * CountNodesByType(type)) {
@@ -365,8 +365,8 @@ class ZoneBC {
 template <class Real>
 class Field {
  public:  // Constructor:
-  Field(Solution<Real> const* solution, int fid, char const* name, int size)
-      : solution_{solution}, i_field_{fid}, name_{name},  data_(size) {
+  Field(const Solution<Real>& solution, int fid, char const* name, int size)
+      : solution_{&solution}, i_field_{fid}, name_{name},  data_(size) {
   }
 
  public:  // Copy control:
@@ -412,9 +412,9 @@ class Field {
 template <class Real>
 class Solution {
  public:  // Constructors:
-  Solution(Zone<Real> const* zone, int sid, char const* name,
+  Solution(const Zone<Real>& zone, int sid, char const* name,
            CGNS_ENUMT(GridLocation_t) location)
-      : zone_(zone), i_soln_(sid), name_(name), location_(location) {
+      : zone_(&zone), i_soln_(sid), name_(name), location_(location) {
   }
 
  public:  // Copy Control:
@@ -477,7 +477,7 @@ class Solution {
     assert(OnNodes() || OnCells());
     int size = OnCells() ? zone_->CountCells() : zone_->CountNodes();
     fields_.emplace_back(std::make_unique<Field<Real>>(
-        this, fields_.size()+1, name, size));
+        *this, fields_.size()+1, name, size));
     return *(fields_.back());
   }
 
@@ -501,10 +501,10 @@ class Zone {
    * @param n_cells the number of highest-dim cells in this zone
    * @param n_nodes the number of nodes in this zone
    */
-  Zone(Base<Real> const* base, int zid, char const* name,
+  Zone(const Base<Real>& base, int zid, char const* name,
        cgsize_t n_cells, cgsize_t n_nodes)
-      : base_(base), i_zone_(zid), name_(name), n_cells_(n_cells),
-        coordinates_(this, n_nodes), zone_bc_(*this) {
+      : base_(&base), i_zone_(zid), name_(name), n_cells_(n_cells),
+        coordinates_(*this, n_nodes), zone_bc_(*this) {
   }
 
  public:  // Copy Control:
@@ -653,7 +653,7 @@ class Zone {
                       section_name, &cell_type, &first, &last,
                       &n_boundary_cells, &parent_flag);
       auto& section = sections_.emplace_back(std::make_unique<Section<Real>>(
-          this, i_sect, section_name, first, /* size = */last - first + 1,
+          *this, i_sect, section_name, first, /* size = */last - first + 1,
           n_boundary_cells, cell_type));
       section->Read();
     }
@@ -675,7 +675,7 @@ class Zone {
       cg_sol_info(file().id(), base_->id(), i_zone_,
           i_soln, sol_name, &location);
       auto& solution = solutions_.emplace_back(std::make_unique<Solution<Real>>(
-          this, i_soln, sol_name, location));
+          *this, i_soln, sol_name, location));
       int n_fields;
       cg_nfields(file().id(), base_->id(), i_zone_, i_soln, &n_fields);
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
@@ -701,7 +701,7 @@ class Zone {
       CGNS_ENUMT(GridLocation_t) location) {
     int i_soln = solutions_.size() + 1;
     return *(solutions_.emplace_back(std::make_unique<Solution<Real>>(
-        this, i_soln, sol_name, location)));
+        *this, i_soln, sol_name, location)));
   }
 
  private:
@@ -746,9 +746,9 @@ class Zone {
 template <class Real>
 class Base {
  public:  // Constructors:
-  Base(File<Real> const* file, int bid, char const* name,
+  Base(const File<Real>& file, int bid, char const* name,
        int cell_dim, int phys_dim)
-      : file_(file), i_base_(bid), name_(name),
+      : file_(&file), i_base_(bid), name_(name),
         cell_dim_(cell_dim), phys_dim_(phys_dim) {
   }
 
@@ -803,7 +803,7 @@ class Base {
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), i_base_, i_zone, zone_name, zone_size[0]);
       auto& zone = zones_.emplace_back(std::make_unique<Zone<Real>>(
-          this, i_zone, zone_name,
+          *this, i_zone, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadCoordinates();
       zone->ReadAllSections();
@@ -820,7 +820,7 @@ class Base {
       cgsize_t zone_size[3][1];
       cg_zone_read(file().id(), i_base_, i_zone, zone_name, zone_size[0]);
       auto& zone = zones_.emplace_back(std::make_unique<Zone<Real>>(
-          this, i_zone, zone_name,
+          *this, i_zone, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadSectionsWithDim(cell_dim_);
     }
@@ -884,7 +884,7 @@ class File {
       int cell_dim{-1}, phys_dim{-1};
       cg_base_read(i_file_, i_base, base_name, &cell_dim, &phys_dim);
       auto& base = bases_.emplace_back(std::make_unique<Base<Real>>(
-          this, i_base, base_name, cell_dim, phys_dim));
+          *this, i_base, base_name, cell_dim, phys_dim));
       base->ReadZones();
     }
     cg_close(i_file_);
@@ -902,7 +902,7 @@ class File {
       int cell_dim, phys_dim;
       cg_base_read(i_file_, i_base, base_name, &cell_dim, &phys_dim);
       auto& base = bases_.emplace_back(std::make_unique<Base<Real>>(
-          this, i_base, base_name, cell_dim, phys_dim));
+          *this, i_base, base_name, cell_dim, phys_dim));
       base->ReadNodeIdList(i_file_);
     }
     cg_close(i_file_);
