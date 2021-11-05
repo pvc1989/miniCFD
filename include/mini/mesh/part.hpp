@@ -92,7 +92,7 @@ struct Face {
 
   Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer) {
-    assert(holder && sharer);
+    // assert(holder && sharer);
   }
   Face(const Face&) = delete;
   Face& operator=(const Face&) = delete;
@@ -189,6 +189,12 @@ class CellGroup {
   CellType& operator[](Int i_cell) {
     return cells_[i_cell];
   }
+  const CellType& at(Int i_cell) const {
+    return cells_.at(i_cell);
+  }
+  CellType& at(Int i_cell) {
+    return cells_.at(i_cell);
+  }
   auto begin() {
     return cells_.begin();
   }
@@ -247,16 +253,15 @@ class Part {
     BuildLocalNodes(istrm, i_file);
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
     BuildGhostNodes(recv_nodes, recv_coords);
-    auto z_s_conn = BuildLocalCells(istrm, i_file);
+    auto cell_conn = BuildLocalCells(istrm, i_file);
     auto face_conn = BuildBoundaryFaces(istrm, i_file);
-    std::printf("rank = %d\n", rank_);
     auto ghost_adj = BuildAdj(istrm);
-    auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
+    auto recv_cells = ShareGhostCells(ghost_adj, cell_conn);
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
     FillCellPtrs(ghost_adj);
-    BuildLocalFaces(z_s_conn);
-    BuildGhostFaces(ghost_adj, z_s_conn, recv_cells, m_to_recv_cells);
-    LinkBoundaryFaces(z_s_conn, face_conn);
+    BuildLocalFaces(cell_conn);
+    BuildGhostFaces(ghost_adj, cell_conn, recv_cells, m_to_recv_cells);
+    LinkBoundaryFaces(cell_conn, face_conn);
     if (cgp_close(i_file))
       cgp_error_exit();
   }
@@ -371,7 +376,7 @@ class Part {
   ZoneSectToConn BuildLocalCells(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
     // build local cells
-    auto z_s_conn = ZoneSectToConn();
+    auto cell_conn = ZoneSectToConn();
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
@@ -400,10 +405,10 @@ class Part {
       ElementType_t type;
       cgsize_t u, v;
       int x, y, npe;
-      auto& conn = z_s_conn[i_zone][i_sect];
+      auto& conn = cell_conn[i_zone][i_sect];
       auto& index = conn.index;
       auto& nodes = conn.nodes;
-      index = ShiftedVector<Int>(mem_dimensions[0], head);
+      index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
@@ -427,7 +432,7 @@ class Part {
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
-    return z_s_conn;
+    return cell_conn;
   }
   ZoneSectToConn BuildBoundaryFaces(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
@@ -455,7 +460,7 @@ class Part {
       cg_npe(type, &npe);
       nodes.resize(npe * mem_dimensions[0]);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
-      index = ShiftedVector<Int>(mem_dimensions[0], 0);
+      index = ShiftedVector<Int>(mem_dimensions[0] + 1, 0);
       for (int i = 0; i < index.size(); ++i) {
         index.at(i) = npe * i;
       }
@@ -471,8 +476,6 @@ class Part {
             std::move(quad_ptr), nullptr, nullptr);
         faces.emplace_back(std::move(face));
       }
-      std::printf("[%d] %s type = %d, npe = %d, size = %d, total = %d\n",
-          rank_, name, (int)type, npe, (int)nodes.size()/npe, (int)bound_faces_.size());
     }
     return face_conn;
   }
@@ -505,7 +508,7 @@ class Part {
     return ghost_adj;
   }
   auto ShareGhostCells(const GhostAdj& ghost_adj,
-      const ZoneSectToConn& z_s_conn) {
+      const ZoneSectToConn& cell_conn) {
     auto& send_node_cnts = ghost_adj.send_node_cnts;
     auto& recv_node_cnts = ghost_adj.recv_node_cnts;
     // send cell.i_zone and cell.node_id_list
@@ -518,7 +521,7 @@ class Part {
         Int i_zone = m_to_cell_info_[m_cell].i_zone,
             i_sect = m_to_cell_info_[m_cell].i_sect,
             i_cell = m_to_cell_info_[m_cell].i_cell;
-        auto& conn = z_s_conn.at(i_zone).at(i_sect);
+        auto& conn = cell_conn.at(i_zone).at(i_sect);
         auto& index = conn.index;
         auto& nodes = conn.nodes;
         auto* i_node_list = &(nodes[index[i_cell]]);
@@ -607,7 +610,7 @@ class Part {
     assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
     requests_.resize(send_coeffs_.size() + recv_coeffs_.size());
   }
-  void BuildLocalFaces(const ZoneSectToConn& z_s_conn) {
+  void BuildLocalFaces(const ZoneSectToConn& cell_conn) {
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
       auto& holder_info = m_to_cell_info_[m_holder];
@@ -615,7 +618,7 @@ class Part {
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& conn_i_zone = z_s_conn.at(i_zone);
+      auto& conn_i_zone = cell_conn.at(i_zone);
       auto& holder_conn = conn_i_zone.at(holder_info.i_sect);
       auto& sharer_conn = conn_i_zone.at(sharer_info.i_sect);
       auto& holder_nodes = holder_conn.nodes;
@@ -649,7 +652,7 @@ class Part {
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
-      const ZoneSectToConn& z_s_conn,
+      const ZoneSectToConn& cell_conn,
       const std::vector<std::vector<Int>>& recv_cells,
       const std::unordered_map<Int, std::pair<int, int>>& m_to_recv_cells) {
     auto& m_cell_pairs = ghost_adj.m_cell_pairs;
@@ -660,7 +663,7 @@ class Part {
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
-      auto& holder_conn = z_s_conn.at(i_zone).at(holder_info.i_sect);
+      auto& holder_conn = cell_conn.at(i_zone).at(holder_info.i_sect);
       auto& holder_nodes = holder_conn.nodes;
       auto& sharer_nodes = recv_cells[sharer_info.first];
       auto holder_head = holder_conn.index[holder_info.i_cell];
@@ -1005,7 +1008,9 @@ class Part {
   const std::string part_path_;
   int step_{0}, rank_;
 
-  void LinkBoundaryFaces(const ZoneSectToConn& cell_conn, const ZoneSectToConn& face_conn) {
+  void LinkBoundaryFaces(
+      const ZoneSectToConn& cell_conn,
+      const ZoneSectToConn& face_conn) {
     for (auto& [i_zone, zone] : local_cells_) {
       auto node_users = std::unordered_map<Int, std::vector<Int>>(); // i_node -> m_cell
       for (auto& [i_sect, sect] : zone) {
@@ -1013,7 +1018,7 @@ class Part {
         auto& index = conn.index;
         auto& nodes = conn.nodes;
         for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
-          auto& cell = sect[i_cell + sect.head()];
+          auto& cell = sect[i_cell];
           auto m_cell = cell.metis_id;
           for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
             node_users[nodes[i]].emplace_back(m_cell);
@@ -1025,22 +1030,23 @@ class Part {
         auto& conn = face_zone.at(i_sect);
         auto& index = conn.index;
         auto& nodes = conn.nodes;
-        for (int i_face = 0; i_face < index.size(); ++i_face) {
+        int n_faces =  index.size() - 1;
+        for (int i_face = 0; i_face < n_faces; ++i_face) {
           auto cell_cnt = std::unordered_map<int, int>();
           int npe = index.at(i_face+1) - index.at(i_face);
           for (int i = index.at(i_face); i < index.at(i_face+1); ++i) {
-            auto i_node = nodes[i];
-            for (auto m_cell : node_users[i_node]) {
+            for (auto m_cell : node_users[nodes[i]]) {
               cell_cnt[m_cell]++;
             }
           }
           for (auto [m_cell, cnt] : cell_cnt) {
-            assert(cnt < npe);
+            assert(cnt <= npe);
             if (cnt == npe) {
               auto& info = m_to_cell_info_[m_cell];
+              Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
               bound_faces_[i_zone][i_sect][i_face].holder_
-                  = &local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
-              break;          
+                  = &local_cells_.at(z).at(s).at(c);
+              break;
             }
           }
         }
