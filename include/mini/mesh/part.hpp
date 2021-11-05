@@ -248,7 +248,7 @@ class Part {
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
     BuildGhostNodes(recv_nodes, recv_coords);
     auto z_s_conn = BuildLocalCells(istrm, i_file);
-    BuildBoundaryFaces(istrm, i_file);
+    auto face_conn = BuildBoundaryFaces(istrm, i_file);
     std::printf("rank = %d\n", rank_);
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, z_s_conn);
@@ -256,6 +256,7 @@ class Part {
     FillCellPtrs(ghost_adj);
     BuildLocalFaces(z_s_conn);
     BuildGhostFaces(ghost_adj, z_s_conn, recv_cells, m_to_recv_cells);
+    LinkBoundaryFaces(z_s_conn, face_conn);
     if (cgp_close(i_file))
       cgp_error_exit();
   }
@@ -428,13 +429,14 @@ class Part {
     }
     return z_s_conn;
   }
-  void BuildBoundaryFaces(std::ifstream& istrm, int i_file) {
+  ZoneSectToConn BuildBoundaryFaces(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
+    auto face_conn = ZoneSectToConn();
     // build local faces
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      // local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
+      auto& faces = bound_faces_[i_zone][i_sect];
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
@@ -444,23 +446,35 @@ class Part {
       ElementType_t type;
       cgsize_t u, v;
       int x, y, npe;
+      auto& conn = face_conn[i_zone][i_sect];
+      auto& index = conn.index;
+      auto& nodes = conn.nodes;
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
       cg_npe(type, &npe);
-      auto nodes = std::vector<Int>(npe * mem_dimensions[0]);
-      auto index = ShiftedVector<Int>(mem_dimensions[0], head);
+      nodes.resize(npe * mem_dimensions[0]);
+      nodes = std::vector<Int>(npe * mem_dimensions[0]);
+      index = ShiftedVector<Int>(mem_dimensions[0], 0);
       for (int i = 0; i < index.size(); ++i) {
-        index.at(head + i) = npe * i;
+        index.at(i) = npe * i;
       }
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
-      std::printf("%s\n", line);
-      std::printf("%s type = %d, npe = %d, size = %d, %d %d %d %d\n",
-          name, (int)type, npe, (int)nodes.size()/npe,
-          i_zone, i_sect, head, tail);
+      for (int i_face = head; i_face < tail; ++i_face) {
+        auto* i_node_list = &nodes[(i_face - head) * npe];
+        auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
+            GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+            GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+        auto face = Face<Int, Real, kFunc>(
+            std::move(quad_ptr), nullptr, nullptr);
+        faces.emplace_back(std::move(face));
+      }
+      std::printf("[%d] %s type = %d, npe = %d, size = %d, total = %d\n",
+          rank_, name, (int)type, npe, (int)nodes.size()/npe, (int)bound_faces_.size());
     }
+    return face_conn;
   }
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>>
@@ -983,11 +997,56 @@ class Part {
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
   std::vector<Face<Int, Real, kFunc>>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
+  std::map<Int, std::map<Int, ShiftedVector<Face<Int, Real, kFunc>>>>
+      bound_faces_;  // [i_zone][i_sect][i_face] -> a Face obj
   std::vector<MPI_Request> requests_;
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;
   int step_{0}, rank_;
+
+  void LinkBoundaryFaces(const ZoneSectToConn& cell_conn, const ZoneSectToConn& face_conn) {
+    for (auto& [i_zone, zone] : local_cells_) {
+      auto node_users = std::unordered_map<Int, std::vector<Int>>(); // i_node -> m_cell
+      for (auto& [i_sect, sect] : zone) {
+        auto& conn = cell_conn.at(i_zone).at(i_sect);
+        auto& index = conn.index;
+        auto& nodes = conn.nodes;
+        for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
+          auto& cell = sect[i_cell + sect.head()];
+          auto m_cell = cell.metis_id;
+          for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
+            node_users[nodes[i]].emplace_back(m_cell);
+          }
+        }
+      }
+      auto& face_zone = face_conn.at(i_zone);
+      for (auto& [i_sect, sect] : face_zone) {
+        auto& conn = face_zone.at(i_sect);
+        auto& index = conn.index;
+        auto& nodes = conn.nodes;
+        for (int i_face = 0; i_face < index.size(); ++i_face) {
+          auto cell_cnt = std::unordered_map<int, int>();
+          int npe = index.at(i_face+1) - index.at(i_face);
+          for (int i = index.at(i_face); i < index.at(i_face+1); ++i) {
+            auto i_node = nodes[i];
+            for (auto m_cell : node_users[i_node]) {
+              cell_cnt[m_cell]++;
+            }
+          }
+          for (auto [m_cell, cnt] : cell_cnt) {
+            assert(cnt < npe);
+            if (cnt == npe) {
+              auto& info = m_to_cell_info_[m_cell];
+              bound_faces_[i_zone][i_sect][i_face].holder_
+                  = &local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
+              break;          
+            }
+          }
+        }
+      }
+    }
+  }
 
   Mat3x1 GetCoord(int i_zone, int i_node) const {
     Mat3x1 coord;
