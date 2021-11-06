@@ -8,8 +8,7 @@
 #include <set>
 #include <string>
 
-#include "mini/mesh/vtk/reader.hpp"
-#include "mini/mesh/vtk/writer.hpp"
+#include "mini/mesh/vtk.hpp"
 #include "mini/model/boundary.hpp"
 
 namespace mini {
