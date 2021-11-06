@@ -46,3 +46,8 @@ add_executable(test_mesh_part part.cpp)
 target_include_directories(test_mesh_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
 target_link_libraries(test_mesh_part cgns_shared ${MPI_mpi_LIBRARY})
 set_target_properties(test_mesh_part PROPERTIES OUTPUT_NAME part)
+
+add_executable(test_mesh_galerkin galerkin.cpp)
+target_include_directories(test_mesh_galerkin PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+target_link_libraries(test_mesh_galerkin cgns_shared ${MPI_mpi_LIBRARY})
+set_target_properties(test_mesh_galerkin PROPERTIES OUTPUT_NAME galerkin)
