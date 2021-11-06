@@ -7,8 +7,7 @@
 
 #include "mini/element/data.hpp"
 #include "mini/mesh/dim1.hpp"
-#include "mini/mesh/vtk/reader.hpp"
-#include "mini/mesh/vtk/writer.hpp"
+#include "mini/mesh/vtk.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {
