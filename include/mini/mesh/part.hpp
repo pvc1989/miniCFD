@@ -1012,7 +1012,8 @@ class Part {
       const ZoneSectToConn& cell_conn,
       const ZoneSectToConn& face_conn) {
     for (auto& [i_zone, zone] : local_cells_) {
-      auto node_users = std::unordered_map<Int, std::vector<Int>>(); // i_node -> m_cell
+      // [i_node] -> vector of `m_cell`s
+      auto node_users = std::unordered_map<Int, std::vector<Int>>();
       for (auto& [i_sect, sect] : zone) {
         auto& conn = cell_conn.at(i_zone).at(i_sect);
         auto& index = conn.index;
