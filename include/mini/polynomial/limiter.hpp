@@ -131,6 +131,10 @@ class EigenWeno {
     Reconstruct();
     return new_projection_;
   }
+  void operator()(Cell* cell_ptr) {
+    assert(cell_ptr);
+    cell_ptr->projection_ = operator()(*cell_ptr);
+  }
 
  private:
   static Coord GetNu(Cell const &cell_i, Cell const &cell_j) {

@@ -380,7 +380,8 @@ class Part {
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      local_cells_[i_zone][i_sect] = CellGroup<Int, Real>(head, tail - head);
+      local_cells_[i_zone][i_sect]
+          = CellGroup<Int, Real, kFunc>(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
