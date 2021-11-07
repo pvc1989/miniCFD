@@ -54,22 +54,18 @@ int main(int argc, char* argv[]) {
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
   auto consv_after = Gas::PrimitiveToConservative(primitive_after);
+  Value value_after = { consv_after.mass, consv_after.momentum[0],
+      consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
   auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
+  Value value_before = { consv_before.mass, consv_before.momentum[0],
+      consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
+  if (comm_rank == 0)
+    std::cout << value_after << '\n' << value_before << std::endl;
   double x_gap = 1.0 / 6.0;
   part.Project([&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
-    Value col;
-    if ((x - x_gap) * tan_60 < y) {
-      col = { consv_after.mass, consv_after.momentum[0],
-          consv_after.momentum[1], consv_after.momentum[2],
-              consv_after.energy };
-    } else {
-      col = { consv_before.mass, consv_before.momentum[0],
-          consv_before.momentum[1], consv_before.momentum[2],
-          consv_before.energy };
-    }
-    return col;
+    return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
   });
   std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -82,7 +78,6 @@ int main(int argc, char* argv[]) {
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
-  // part.WriteSolutionsOnGaussPoints("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
