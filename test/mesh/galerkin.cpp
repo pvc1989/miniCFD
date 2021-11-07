@@ -81,9 +81,9 @@ int main(int argc, char* argv[]) {
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
-  part.WriteSolutions();
-  // part.WriteSolutionsOnGaussPoints();
-  part.WriteSolutionsOnCellCenters();
+  part.WriteSolutions("Step0");
+  // part.WriteSolutionsOnGaussPoints("Step0");
+  part.WriteSolutionsOnCellCenters("Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
