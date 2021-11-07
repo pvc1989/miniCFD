@@ -89,9 +89,11 @@ struct Face {
   using CellPtr = Cell<Int, Real, kFunc>*;
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
+  Int id_;
 
-  Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer)
-      : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer) {
+  Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
+      : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
+        id_(id) {
     // assert(holder && sharer);
   }
   Face(const Face&) = delete;
@@ -647,7 +649,8 @@ class Part {
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
-      local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+      auto id = local_faces_.size();
+      local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
     }
@@ -691,10 +694,11 @@ class Part {
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
+      auto id = ghost_faces_.size();
       if (m_holder < m_sharer)
-        ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer);
+        ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       else
-        ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder);
+        ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder, id);
       holder.adj_cells_.emplace_back(&sharer);
     }
   }
@@ -937,7 +941,7 @@ class Part {
     }
     assert(i_req == send_coeffs_.size() + recv_coeffs_.size());
   }
-  void UpdateCoeffs() {
+  void UpdateGhostCellCoeffs() {
     // wait until all send/recv finish
     std::vector<MPI_Status> statuses(requests_.size());
     MPI_Waitall(requests_.size(), requests_.data(), statuses.data());
@@ -973,9 +977,32 @@ class Part {
       }
     }
     // run the limiter on cells that need ghost cells
-    UpdateCoeffs();
+    UpdateGhostCellCoeffs();
     for (auto* cell_ptr : non_local_cells) {
       limiter(cell_ptr);
+    }
+  }
+
+  template<class Visitor>
+  void ForEachLocalCell(Visitor&& visit) {
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (auto& cell : sect) {
+          visit(cell);
+        }
+      }
+    }
+  }
+  template<class Visitor>
+  void ForEachLocalFace(Visitor&& visit) {
+    for (auto& face : local_faces_) {
+      visit(face);
+    }
+  }
+  template<class Visitor>
+  void ForEachGhostFace(Visitor&& visit) {
+    for (auto& face : ghost_faces_) {
+      visit(face);
     }
   }
 
