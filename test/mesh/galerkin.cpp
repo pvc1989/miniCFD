@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
 
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, 5>;
   using MyCell = mini::mesh::cgns::Cell<cgsize_t, double, 5>;
+  using MyFace = mini::mesh::cgns::Face<cgsize_t, double, 5>;
   using Coord = typename MyCell::Coord;
   using Value = typename MyCell::Value;
   using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
@@ -63,9 +64,12 @@ int main(int argc, char* argv[]) {
   if (comm_rank == 0)
     std::cout << value_after << '\n' << value_before << std::endl;
   double x_gap = 1.0 / 6.0;
-  part.Project([&](const Coord& xyz){
+  auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
     return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
+  };
+  part.ForEachLocalCell([&](MyCell &cell){
+    cell.Project(initial_condition);
   });
   std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -74,11 +78,38 @@ int main(int argc, char* argv[]) {
   part.ShareGhostCellCoeffs();
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
   part.Reconstruct(limiter);
-  std::printf("Run Write() on proc[%d/%d] at %f sec\n",
+  std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
+
+  double t_final = 0.2;
+  int n_steps = 100, n_steps_io = 50;
+  auto dt = t_final / n_steps;
+  for (int i_step = 1; i_step <= n_steps; ++i_step) {
+    part.ShareGhostCellCoeffs();
+    // part.ForEachBoundaryFace();
+    part.ForEachLocalFace([](MyFace &face){
+      std::printf("%d\n", face.id_);
+    });
+    part.UpdateGhostCellCoeffs();
+    part.ForEachGhostFace([](MyFace &face){
+      std::printf("%d\n", face.id_);
+    });
+    part.ForEachLocalCell([](MyCell &cell){
+      std::printf("%d\n", cell.metis_id);
+    });
+    if (i_step % n_steps_io == 0) {
+      std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
+          i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
+      part.GatherSolutions();
+      auto step_name = "Step" + std::to_string(i_step);
+      part.WriteSolutions(step_name);
+      part.WriteSolutionsOnCellCenters(step_name);
+    }
+  }
+
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
