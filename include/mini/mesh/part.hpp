@@ -43,7 +43,7 @@ struct NodeInfo {
   ~NodeInfo() noexcept = default;
   Int i_zone{0}, i_node{0};
 };
-template <class Int = int>
+template <class Int = cgsize_t>
 struct CellInfo {
   CellInfo() = default;
   CellInfo(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
@@ -719,7 +719,7 @@ class Part {
       }
     }
   }
-  void WriteSolutions() const {
+  void WriteSolutions(const std::string &soln_name = "0") const {
     int n_zones = local_nodes_.size();
     int i_file;
     if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &i_file))
@@ -730,18 +730,18 @@ class Part {
       if (cg_nsols(i_file, i_base, i_zone, &n_solns))
         cgp_error_exit();
       int i_soln;
-      if (cg_sol_write(i_file, i_base, i_zone, "Solution0", CellCenter,
-          &i_soln))
+      if (cg_sol_write(i_file, i_base, i_zone, soln_name.c_str(),
+          CellCenter, &i_soln))
         cgp_error_exit();
       int n_fields = kFields;
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
         int n_sects = zone.size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
           auto& section = zone.at(i_sect);
-          auto name = "Field" + std::to_string(i_field);
+          auto field_name = "Field" + std::to_string(i_field);
           int field_id;
           if (cgp_field_write(i_file, i_base, i_zone, i_soln, kRealType,
-              name.c_str(),  &field_id))
+              field_name.c_str(),  &field_id))
             cgp_error_exit();
           assert(field_id == i_field);
           cgsize_t first[] = { section.head() };
@@ -755,8 +755,8 @@ class Part {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
-  void WriteSolutionsOnGaussPoints() const {
-    auto ostrm = GetFstream();
+  void WriteSolutionsOnGaussPoints(const std::string &soln_name = "0") const {
+    auto ostrm = GetFstream(soln_name);
     ostrm << "# vtk DataFile Version 2.0\n";
     ostrm << "Field values on quadrature points.\n";
     ostrm << "ASCII\n";
@@ -797,8 +797,8 @@ class Part {
       }
     }
   }
-  void WriteSolutionsOnCellCenters() const {
-    auto ostrm = GetFstream();
+  void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
+    auto ostrm = GetFstream(soln_name);
     ostrm << "# vtk DataFile Version 2.0\n";
     ostrm << "Field values on each cell.\n";
     ostrm << "ASCII\n";
@@ -1007,7 +1007,7 @@ class Part {
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;
-  int step_{0}, rank_;
+  int rank_;
 
   void LinkBoundaryFaces(
       const ZoneSectToConn& cell_conn,
@@ -1068,16 +1068,16 @@ class Part {
     }
     return coord;
   }
-  std::ofstream GetFstream() const {
+  std::ofstream GetFstream(const std::string &soln_name) const {
     char temp[1024];
     if (rank_ == 0) {
-      std::snprintf(temp, sizeof(temp), "mkdir -p %s/step%d",
-          directory_.c_str(), step_);
+      std::snprintf(temp, sizeof(temp), "mkdir -p %s/%s",
+          directory_.c_str(), soln_name.c_str());
       std::system(temp);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    std::snprintf(temp, sizeof(temp), "%s/step%d/%d.vtk",
-        directory_.c_str(), step_, rank_);
+    std::snprintf(temp, sizeof(temp), "%s/%s/%d.vtk",
+        directory_.c_str(), soln_name.c_str(), rank_);
     return std::ofstream(temp);
   }
 };
