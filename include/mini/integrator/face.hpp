@@ -13,6 +13,7 @@ class Face {
   using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
   using MatDx1 = algebra::Matrix<Scalar, D, 1>;
   using MatDx2 = algebra::Matrix<Scalar, D, 2>;
+  using MatDxD = algebra::Matrix<Scalar, D, D>;
 
  public:
   using Real = Scalar;
@@ -27,6 +28,7 @@ class Face {
   virtual const Real& GetLocalWeight(int i) const = 0;
   virtual const Real& GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord center() const = 0;
+  virtual const MatDxD& GetNormalFrame(int i) const = 0;
 
   static constexpr int CellDim() {
     return 2;
