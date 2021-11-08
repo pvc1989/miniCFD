@@ -6,6 +6,7 @@
 #include <initializer_list>
 
 #include "mini/algebra/column.hpp"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -79,6 +80,11 @@ class FluxTuple : public Tuple<kDim> {
   using Base = Tuple<kDim>;
   // Constructors:
   using Base::Base;
+
+  operator algebra::Matrix<double, 5, 1>() const {
+    static_assert(kDim == 3);
+    return { this->mass, this->momentum[0], this->momentum[1], this->momentum[2], this->energy };
+  }
 };
 
 template <int kDim>
@@ -125,6 +131,14 @@ struct ConservativeTuple : public Tuple<kDim>{
   // Constructors:
   using Base::Base;
   explicit ConservativeTuple(Base const& tuple) : Base(tuple) {
+  }
+
+  ConservativeTuple(const algebra::Matrix<Scalar, kDim+2, 1>& v) {
+    this->mass = v[0];
+    this->energy = v[kDim+1];
+    for (int i = 0; i < kDim; ++i) {
+      this->momentum[i] = v[i+1];
+    }
   }
 };
 

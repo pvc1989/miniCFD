@@ -1,4 +1,4 @@
-//  Copyright 2019 Weicheng Pei and Minghao Yang
+//  Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
 #ifndef MINI_RIEMANN_ROTATED_EULER_HPP_
 #define MINI_RIEMANN_ROTATED_EULER_HPP_
@@ -7,7 +7,7 @@
 #include <type_traits>
 
 #include "mini/algebra/column.hpp"
-#include "mini/algebra/matrix.hpp"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -68,6 +68,13 @@ class Cartesian<Scalar, 3> {
   void Rotate(const Vector& nu, const Vector& sigma, const Vector& pi) {
     nu_ = nu; sigma_ = sigma; pi_ = pi;
   }
+  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3> &frame) {
+    auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
+    constexpr int x = 0, y = 1, z = 2;
+    nu_[x] = nu[x]; sigma_[x] = sigma[x]; pi_[x] = pi[x];
+    nu_[y] = nu[y]; sigma_[y] = sigma[y]; pi_[y] = pi[y];
+    nu_[z] = nu[z]; sigma_[z] = sigma[z]; pi_[z] = pi[z];
+  }
   void GlobalToNormal(Vector* v) {
     auto v_nu = v->Dot(nu_), v_sigma = v->Dot(sigma_), v_pi = v->Dot(pi_);
     (*v)[0] = v_nu; (*v)[1] = v_sigma; (*v)[2] = v_pi;
@@ -114,6 +121,10 @@ class Euler {
   void Rotate(const Vector& nu, const Vector& sigma, const Vector& pi) {
     static_assert(kDim == 3);
     cartesian_.Rotate(nu, sigma, pi);
+  }
+  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3>& frame) {
+    static_assert(kDim == 3);
+    cartesian_.Rotate(frame);
   }
   Flux GetFluxOnTimeAxis(
       Conservative const& left,
