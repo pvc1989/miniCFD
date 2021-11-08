@@ -29,6 +29,7 @@ class Quad : public Face<Scalar, D> {
   using MatDx4 = algebra::Matrix<Scalar, D, 4>;
   using MatDx2 = algebra::Matrix<Scalar, D, 2>;
   using MatDx1 = algebra::Matrix<Scalar, D, 1>;
+  using MatDxD = algebra::Matrix<Scalar, D, D>;
   using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
   using Mat4x2 = algebra::Matrix<Scalar, 4, 2>;
   using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
@@ -47,6 +48,7 @@ class Quad : public Face<Scalar, D> {
   MatDx4 xyz_global_Dx4_;
   std::array<Scalar, Qx * Qy> global_weights_;
   std::array<GlobalCoord, Qx * Qy> global_coords_;
+  std::array<MatDxD, Qx * Qy> normal_frames_;
 
   int CountQuadPoints() const override {
     return Qx * Qy;
@@ -62,6 +64,18 @@ class Quad : public Face<Scalar, D> {
           : mat_j.determinant();
       global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+    }
+  }
+  void BuildNormalFrames() {
+    int n = CountQuadPoints();
+    for (int i = 0; i < n; ++i) {
+      auto& local = GetLocalCoord(i);
+      auto dn = diff_shape_local_4x2(local[0], local[1]);
+      MatDx2 dr = xyz_global_Dx4_ * dn;
+      auto& frame = normal_frames_[i];
+      frame.col(1) = dr.col(0).normalized();
+      frame.col(2) = dr.col(1).normalized();
+      frame.col(0) = frame.col(1).cross(frame.col(2));
     }
   }
   static constexpr auto BuildLocalCoords() {
@@ -132,6 +146,9 @@ class Quad : public Face<Scalar, D> {
       c += xyz_global_Dx4_.col(i);
     c /= 4;
     return c;
+  }
+  const MatDxD& GetNormalFrame(int i) const override {
+    return normal_frames_[i];
   }
 
  public:

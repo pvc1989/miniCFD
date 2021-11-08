@@ -22,6 +22,8 @@
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/riemann/euler/exact.hpp"
+#include "mini/riemann/rotated/euler.hpp"
 
 namespace mini {
 namespace mesh {
@@ -87,20 +89,38 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real, kFunc>*;
+  using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  using Solver = mini::riemann::euler::Exact<Gas, 3>;
+  using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
+
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
+  std::vector<Riemann> riemanns_;
   Int id_;
 
   Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
         id_(id) {
-    // assert(holder && sharer);
+    riemanns_.resize(gauss_ptr_->CountQuadPoints());
   }
   Face(const Face&) = delete;
   Face& operator=(const Face&) = delete;
   Face(Face&&) noexcept = default;
   Face& operator=(Face&&) noexcept = default;
   ~Face() noexcept = default;
+
+  void SetRiemanns() {
+    for (int q = 0; q < gauss_ptr_->CountQuadPoints(); ++q) {
+      auto& frame = gauss_ptr_->GetNormalFrame(q);
+      riemanns_[q].Rotate(frame);
+    }
+  }
+  const Riemann& GetRiemann(int i) const {
+    return riemanns_[i];
+  }
+  Riemann& GetRiemann(int i) {
+    return riemanns_[i];
+  }
 };
 
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
@@ -121,8 +141,8 @@ struct Cell {
   GaussPtr gauss_ptr_;
   Projection projection_;
   Real volume_;
-  Int metis_id;
-  bool local_ = true;
+  Int metis_id, id_;
+  bool inner_ = true;
 
   Cell(GaussPtr&& gauss_ptr, Int m_cell)
       : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
@@ -138,8 +158,11 @@ struct Cell {
   Real volume() const {
     return volume_;
   }
-  bool local() const {
-    return local_;
+  Int id() const {
+    return id_;
+  }
+  bool inner() const {
+    return inner_;
   }
   const Coord& center() const {
     return basis_.center();
@@ -437,6 +460,26 @@ class Part {
     }
     return cell_conn;
   }
+  void AddLocalCellId() {
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (auto& cell : sect) {
+          if (cell.inner()) {
+            inner_cells_.emplace_back(&cell);
+          } else {
+            inter_cells_.emplace_back(&cell);
+          }
+        }
+      }
+    }
+    Int id = 0;
+    for (auto cell_ptr : inner_cells_) {
+      cell_ptr->id_ = id++;
+    }
+    for (auto cell_ptr : inter_cells_) {
+      cell_ptr->id_ = id++;
+    }
+  }
   ZoneSectToConn BuildBoundaryFaces(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
     auto face_conn = ZoneSectToConn();
@@ -595,7 +638,7 @@ class Part {
       for (auto& [m_cell, cnt] : node_cnts) {
         auto& info = m_to_cell_info_[m_cell];
         auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
-        cell.local_ = false;
+        cell.inner_ = false;
         curr_part.emplace_back(&cell);
       }
       send_coeffs_.emplace_back(node_cnts.size() * kFields);
@@ -653,6 +696,9 @@ class Part {
       local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
+      // rotate riemann solvers
+      auto& face = local_faces_.back();
+      face.SetRiemanns();
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
@@ -700,6 +746,9 @@ class Part {
       else
         ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder, id);
       holder.adj_cells_.emplace_back(&sharer);
+      // rotate riemann solvers
+      auto& face = local_faces_.back();
+      face.SetRiemanns();
     }
   }
 
@@ -713,6 +762,9 @@ class Part {
         }
       }
     }
+  }
+  Int CountLocalCells() const {
+    return inner_cells_.size() + inter_cells_.size();
   }
   void GatherSolutions() {
     int n_zones = local_nodes_.size();
@@ -967,7 +1019,7 @@ class Part {
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& cell : sect) {
-          if (cell.local()) {
+          if (cell.inner()) {
             limiter(&cell);
             ++n_real_local;
           } else {
@@ -983,6 +1035,16 @@ class Part {
     }
   }
 
+  template<class Visitor>
+  void ForEachLocalCell(Visitor&& visit) const {
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (auto& cell : sect) {
+          visit(cell);
+        }
+      }
+    }
+  }
   template<class Visitor>
   void ForEachLocalCell(Visitor&& visit) {
     for (auto& [i_zone, zone] : local_cells_) {
@@ -1018,6 +1080,8 @@ class Part {
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
   std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
+  std::vector<CellPtr>
+      inner_cells_, inter_cells_;  // [i_cell] -> CellPtr
   std::map<Int, std::vector<CellPtr>>
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
   std::vector<std::vector<Real>>
