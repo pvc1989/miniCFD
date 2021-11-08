@@ -139,6 +139,9 @@ class Projection {
     assert(basis_ptr_);
     average_ *= basis_ptr_->coeff()(0, 0);
   }
+  void UpdateCoeffs(const MatKxN &new_coeff) {
+    coeff_ = new_coeff;
+  }
 
  private:
   MatKxN coeff_;
