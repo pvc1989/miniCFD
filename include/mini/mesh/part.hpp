@@ -97,7 +97,7 @@ struct Face {
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
   std::vector<Riemann> riemanns_;
-  Int id_;
+  Int id_{-1};
 
   Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
@@ -142,7 +142,7 @@ struct Cell {
   GaussPtr gauss_ptr_;
   Projection projection_;
   Real volume_;
-  Int metis_id, id_;
+  Int metis_id{-1}, id_{-1};
   bool inner_ = true;
 
   Cell(GaussPtr&& gauss_ptr, Int m_cell)
@@ -283,6 +283,7 @@ class Part {
     auto face_conn = BuildBoundaryFaces(istrm, i_file);
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, cell_conn);
+    AddLocalCellId();
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
     FillCellPtrs(ghost_adj);
     BuildLocalFaces(cell_conn);
@@ -742,14 +743,10 @@ class Part {
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
       auto id = ghost_faces_.size();
-      if (m_holder < m_sharer)
-        ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
-      else
-        ghost_faces_.emplace_back(std::move(quad_ptr), &sharer, &holder, id);
+      ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       // rotate riemann solvers
-      auto& face = local_faces_.back();
-      face.SetRiemanns();
+      local_faces_.back().SetRiemanns();
     }
   }
 
