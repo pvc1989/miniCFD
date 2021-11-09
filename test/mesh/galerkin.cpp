@@ -11,6 +11,7 @@
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/eigen.hpp"
 #include "mini/polynomial/limiter.hpp"
+#include "mini/integrator/ode.hpp"
 
 // mpirun -n 4 ./galerkin
 int main(int argc, char* argv[]) {
@@ -27,11 +28,13 @@ int main(int argc, char* argv[]) {
   using MyFace = mini::mesh::cgns::Face<cgsize_t, double, 5>;
   using Coord = typename MyCell::Coord;
   using Value = typename MyCell::Value;
+  using Coeff = typename MyCell::Coeff;
   using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
   using Conservative = mini::riemann::euler::ConservativeTuple<3>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
   using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  using RK = RungeKutta<cgsize_t, double, 5, 3>;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -87,8 +90,6 @@ int main(int argc, char* argv[]) {
   double t_final = 0.2;
   int n_steps = 100, n_steps_io = 50;
   auto dt = t_final / n_steps;
-  using Coeff = typename MyCell::Coeff;
-  using RK = RungeKutta<Coeff, 3>;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     RK::ReadFromLocalCells(part, &rk.u_old_);
@@ -100,7 +101,7 @@ int main(int argc, char* argv[]) {
     rk.UpdateGhostRhs(part);
     rk.SolveFrac13();
     RK::WriteToLocalCells(rk.u_frac13_, &part);
-    part.Reconstruct();
+    part.Reconstruct(limiter);
   
     part.ShareGhostCellCoeffs();
     rk.UpdateLocalRhs(part);
@@ -109,7 +110,7 @@ int main(int argc, char* argv[]) {
     rk.UpdateGhostRhs(part);
     rk.SolveFrac23();
     RK::WriteToLocalCells(rk.u_frac23_, &part);
-    part.Reconstruct();
+    part.Reconstruct(limiter);
   
     part.ShareGhostCellCoeffs();
     rk.UpdateLocalRhs(part);
@@ -118,7 +119,7 @@ int main(int argc, char* argv[]) {
     rk.UpdateGhostRhs(part);
     rk.SolveFrac33();
     RK::WriteToLocalCells(rk.u_new_, &part);
-    part.Reconstruct();
+    part.Reconstruct(limiter);
 
     if (i_step % n_steps_io == 0) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",

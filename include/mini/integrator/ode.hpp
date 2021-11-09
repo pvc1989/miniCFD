@@ -1,13 +1,19 @@
 #include <cassert>
 #include <vector>
-
 #include "mini/mesh/part.hpp"
 
-template <class Coeff, int kOrder>
-class RungeKutta;
+template <typename Int, typename Real, int kFunc, int kOrder>
+struct RungeKutta;
 
-template <class Coeff>
-struct RungeKutta<Coeff, 3> {
+template <typename Int, typename Real, int kFunc>
+struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
+  using MyPart = mini::mesh::cgns::Part<Int, Real, kFunc>;
+  using MyCell = mini::mesh::cgns::Cell<Int, Real, kFunc>;
+  using MyFace = mini::mesh::cgns::Face<Int, Real, kFunc>;
+  using Projection = typename MyCell::Projection;
+  using Coeff = typename Projection::Coeff;
+  using Value = typename Projection::Value;
+
   std::vector<Coeff> u_old_, u_frac13_, u_frac23_, u_new_;
   std::vector<Coeff> rhs_;
   double dt_;
@@ -22,21 +28,21 @@ struct RungeKutta<Coeff, 3> {
   RungeKutta& operator=(RungeKutta &&) noexcept = default;
   ~RungeKutta() noexcept = default;
 
-  static void ReadFromLocalCells(const Part &part, std::vector<Coeff> *coeffs) {
+  static void ReadFromLocalCells(const MyPart &part, std::vector<Coeff> *coeffs) {
     coeffs->resize(part.CountLocalCells());
     part.ForEachLocalCell([&coeffs](const auto &cell){
       coeffs->at(cell.id()) = cell.projection_.coeff();
     });
   }
-  static void WriteToLocalCells(const std::vector<Coeff> &coeffs, Part *part) {
+  static void WriteToLocalCells(const std::vector<Coeff> &coeffs, MyPart *part) {
     assert(coeffs.size() == part->CountLocalCells());
-    part.ForEachLocalCell([&coeffs](auto &cell){
+    part->ForEachLocalCell([&coeffs](auto &cell){
       cell.projection_.UpdateCoeffs(coeffs.at(cell.id()));
     });
   }
-  static void UpdateLocalRhs(const Part &part, std::vector<Coeff> *rhs) {
-    rhs->resize(CountLocalCells());
-    part.ForEachLocalFace([&rhs](auto &face){
+  static void UpdateLocalRhs(MyPart &part, std::vector<Coeff> *rhs) {
+    rhs->resize(part.CountLocalCells());
+    part.ForEachLocalFace([&rhs](MyFace &face){
       auto& gauss = *(face.gauss_ptr_);
       auto& holder = *(face.holder_);
       auto& sharer = *(face.sharer_);
@@ -44,18 +50,18 @@ struct RungeKutta<Coeff, 3> {
         auto& coord = gauss.GetGlobalCoord(q);
         auto u_holder = holder.projection_(coord);
         auto u_sharer = sharer.projection_(coord);
-        auto& riemann = face.GetRiemannSolver(q);
-        auto flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
+        auto& riemann = face.GetRiemann(q);
+        Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         auto& weight = gauss.GetGlobalWeight(q);
         flux *= weight;
-        rhs->at(holder.id()) += flux;
-        rhs->at(sharer.id()) -= flux;
+        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        rhs->at(sharer.id()) += flux * sharer.basis_(coord).transpose();
       }
     });
   }
-  static void UpdateGhostRhs(const Part &part, std::vector<Coeff> *rhs) {
+  static void UpdateGhostRhs(MyPart &part, std::vector<Coeff> *rhs) {
     assert(rhs->size() == part.CountLocalCells());
-    part.ForEachGhostFace([](MyFace &face){
+    part.ForEachGhostFace([&rhs](MyFace &face){
       auto& gauss = *(face.gauss_ptr_);
       auto& holder = *(face.holder_);
       auto& sharer = *(face.sharer_);
@@ -63,15 +69,24 @@ struct RungeKutta<Coeff, 3> {
         auto& coord = gauss.GetGlobalCoord(q);
         auto u_holder = holder.projection_(coord);
         auto u_sharer = sharer.projection_(coord);
-        auto& riemann = face.GetRiemannSolver(q);
-        auto flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
+        auto& riemann = face.GetRiemann(q);
+        Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         auto& weight = gauss.GetGlobalWeight(q);
         flux *= weight;
-        rhs->at(holder.id()) += flux;
+        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
       }
     });
   }
-  static void UpdateBoundaryRhs(const Part &part, std::vector<Coeff> *rhs) {
+  static void UpdateBoundaryRhs(MyPart &part, std::vector<Coeff> *rhs) {
+  }
+  void UpdateLocalRhs(MyPart &part) {
+    UpdateLocalRhs(part, &rhs_);
+  }
+  void UpdateGhostRhs(MyPart &part) {
+    UpdateGhostRhs(part, &rhs_);
+  }
+  void UpdateBoundaryRhs(MyPart &part) {
+    UpdateBoundaryRhs(part, &rhs_);
   }
   void SolveFrac13() {
     auto n_cells = u_old_.size();
