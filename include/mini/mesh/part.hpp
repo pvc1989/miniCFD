@@ -1014,24 +1014,14 @@ class Part {
 
   template <typename Callable>
   void Reconstruct(Callable&& limiter) {
-    // run the limiter on cells that need no ghost cells
-    int n_real_local = 0;
-    auto non_local_cells = std::vector<CellPtr>();
-    for (auto& [i_zone, zone] : local_cells_) {
-      for (auto& [i_sect, sect] : zone) {
-        for (auto& cell : sect) {
-          if (cell.inner()) {
-            limiter(&cell);
-            ++n_real_local;
-          } else {
-            non_local_cells.emplace_back(&cell);
-          }
-        }
-      }
+    ShareGhostCellCoeffs();
+    // run the limiter on inner cells that need no ghost cells
+    for (auto* cell_ptr : inner_cells_) {
+      limiter(cell_ptr);
     }
-    // run the limiter on cells that need ghost cells
+    // run the limiter on inter cells that need ghost cells
     UpdateGhostCellCoeffs();
-    for (auto* cell_ptr : non_local_cells) {
+    for (auto* cell_ptr : inter_cells_) {
       limiter(cell_ptr);
     }
   }

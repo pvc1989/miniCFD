@@ -40,11 +40,8 @@ int main(int argc, char* argv[]) {
     col[1] = 1 - r + (r >= 1);
     return col;
   });
-  std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  part.ShareGhostCellCoeffs();
   using MyCell = mini::mesh::cgns::Cell<cgsize_t, double, 2>;
   auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
