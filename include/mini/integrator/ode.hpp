@@ -42,20 +42,26 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
   }
   static void UpdateLocalRhs(MyPart &part, std::vector<Coeff> *rhs) {
     rhs->resize(part.CountLocalCells());
+    for (auto& coeff : *rhs) {
+      coeff.setZero();
+    }
     part.ForEachLocalFace([&rhs](MyFace &face){
       auto& gauss = *(face.gauss_ptr_);
       auto& holder = *(face.holder_);
       auto& sharer = *(face.sharer_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         auto& coord = gauss.GetGlobalCoord(q);
-        auto u_holder = holder.projection_(coord);
-        auto u_sharer = sharer.projection_(coord);
+        Value u_holder = holder.projection_(coord);
+        Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         auto& weight = gauss.GetGlobalWeight(q);
         flux *= weight;
-        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
-        rhs->at(sharer.id()) += flux * sharer.basis_(coord).transpose();
+        // std::cout << u_holder.transpose() << '\n';
+        // std::cout << u_sharer.transpose() << '\n';
+        // std::cout << flux.transpose() << '\n' << std::endl;
+        rhs->at(holder.id()) -= (flux * holder.basis_(coord).transpose()).eval();
+        rhs->at(sharer.id()) += (flux * sharer.basis_(coord).transpose()).eval();
       }
     });
   }
@@ -67,13 +73,13 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
       auto& sharer = *(face.sharer_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         auto& coord = gauss.GetGlobalCoord(q);
-        auto u_holder = holder.projection_(coord);
-        auto u_sharer = sharer.projection_(coord);
+        Value u_holder = holder.projection_(coord);
+        Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         auto& weight = gauss.GetGlobalWeight(q);
         flux *= weight;
-        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        rhs->at(holder.id()) -= (flux * holder.basis_(coord).transpose()).eval();
       }
     });
   }

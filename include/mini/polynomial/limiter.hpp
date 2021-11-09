@@ -193,7 +193,7 @@ class EigenWeno {
     // build eigen-matrices in the rotated coordinate system
     Coord nu = GetNu(*my_cell_, adj_cell), mu, pi;
     GetMuPi(nu, &mu, &pi);
-    assert(nu.cross(mu) == pi);
+    // assert(nu.cross(mu) == pi);
     auto rotated_eigen = Eigen(my_cell_->projection_.GetAverage(), nu, mu, pi);
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);

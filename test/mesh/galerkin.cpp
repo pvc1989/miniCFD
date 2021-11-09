@@ -51,9 +51,11 @@ int main(int argc, char* argv[]) {
   assert(rho_after == 8.0);
   auto p_after = p_before * (m_before * m_before * gamma - gamma_minus / 2.0)
       / (gamma_plus / 2.0);
-  assert(p_after == 116.5);
+  // assert(p_after == 116.5);
+  std::cout << "p_after = " << p_after << '\n';
   auto u_n_after = u_gamma * (rho_after - rho_before) / rho_after;
-  assert(u_n_after == 8.25);
+  // assert(u_n_after == 8.25);
+  std::cout << "u_n_after = " << u_n_after << '\n';
   auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
@@ -64,8 +66,6 @@ int main(int argc, char* argv[]) {
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
   Value value_before = { consv_before.mass, consv_before.momentum[0],
       consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
-  if (comm_rank == 0)
-    std::cout << value_after << '\n' << value_before << std::endl;
   double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
@@ -87,11 +87,14 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  double t_final = 0.2;
-  int n_steps = 100, n_steps_io = 50;
+  double t_final = 0.02;
+  int n_steps = 10, n_steps_io = 5;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
+    std::printf("Run Solve(%d) on proc[%d/%d] at %f sec\n",
+        i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
+
     RK::ReadFromLocalCells(part, &rk.u_old_);
 
     part.ShareGhostCellCoeffs();
