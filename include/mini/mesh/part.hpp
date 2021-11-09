@@ -89,6 +89,7 @@ template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
 struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real, kFunc>*;
+  // TODO(PVC): move Riemann out
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Solver = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
@@ -1050,6 +1051,7 @@ class Part {
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& cell : sect) {
+          // TODO(PVC): pass ptr to mutators
           visit(cell);
         }
       }

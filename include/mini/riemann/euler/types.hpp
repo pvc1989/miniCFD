@@ -5,7 +5,7 @@
 #include <cmath>
 #include <initializer_list>
 
-#include "mini/algebra/column.hpp"
+#include "mini/algebra/column.hpp"  // TODO(PVC): replace with EIGEN
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -16,7 +16,7 @@ template <int kDim>
 class Tuple {
  public:
   // Types:
-  using Scalar = double;
+  using Scalar = double;  // TODO(PVC): pass by template argument
   using Vector = algebra::Column<Scalar, kDim>;
   // Data:
   Scalar mass{0}, energy{0};
