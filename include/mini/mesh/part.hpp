@@ -814,7 +814,7 @@ class Part {
   }
   void WriteSolutionsOnGaussPoints(const std::string &soln_name = "0") const {
     auto ostrm = GetFstream(soln_name);
-    ostrm << "# vtk DataFile Version 2.0\n";
+    ostrm << "# vtk DataFile Version 3.0\n";
     ostrm << "Field values on quadrature points.\n";
     ostrm << "ASCII\n";
     ostrm << "DATASET UNSTRUCTURED_GRID\n";
@@ -848,17 +848,18 @@ class Part {
     int K = fields[0].size();
     for (int k = 0; k < K; ++k) {
       ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
-      ostrm << "LOOKUP_TABLE field\n";
+      ostrm << "LOOKUP_TABLE default\n";
       for (auto& f : fields) {
         ostrm << f[k] << '\n';
       }
     }
   }
   void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
+    bool binary = false;
     auto ostrm = GetFstream(soln_name);
-    ostrm << "# vtk DataFile Version 2.0\n";
+    ostrm << "# vtk DataFile Version 3.0\n";
     ostrm << "Field values on each cell.\n";
-    ostrm << "ASCII\n";
+    ostrm << (binary ? "BINARY\n" : "ASCII\n");
     ostrm << "DATASET UNSTRUCTURED_GRID\n";
     int n_points = 0;
     auto coords = std::vector<Mat3x1>();
@@ -940,26 +941,47 @@ class Part {
     }
     ostrm << "POINTS " << coords.size() << " double\n";
     for (auto& xyz : coords) {
-      ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
+      if (binary) {
+        ostrm.write(reinterpret_cast<char*>(&xyz[0]), sizeof(xyz[0]));
+        ostrm.write(reinterpret_cast<char*>(&xyz[1]), sizeof(xyz[1]));
+        ostrm.write(reinterpret_cast<char*>(&xyz[2]), sizeof(xyz[2]));
+      } else {
+        ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
+      }
     }
+    ostrm << '\n';
     auto n_cells = cells.size() / 21;
     ostrm << "CELLS " << n_cells << ' ' << cells.size() << '\n';
-    for (auto c : cells) {
-      ostrm << c << ' ';
+    for (auto& c : cells) {
+      if (binary) {
+        Int ic = c;
+        ostrm.write(reinterpret_cast<char*>(&ic), sizeof(ic));
+      } else {
+        ostrm << c << ' ';
+      }
     }
     ostrm << '\n';
     ostrm << "CELL_TYPES " << n_cells << '\n';
+    Int t = 25;
     for (int i = 0; i < n_cells; ++i) {
-      ostrm << "25 ";
+      if (binary) {
+        ostrm.write(reinterpret_cast<char*>(&t), sizeof(t));
+      } else {
+        ostrm << t << ' ';
+      }
     }
     ostrm << '\n';
     ostrm << "POINT_DATA " << coords.size() << "\n";
     int K = fields[0].size();
     for (int k = 0; k < K; ++k) {
       ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
-      ostrm << "LOOKUP_TABLE field\n";
+      ostrm << "LOOKUP_TABLE default\n";
       for (auto& f : fields) {
-        ostrm << f[k] << '\n';
+        if (binary) {
+          ostrm.write(reinterpret_cast<char*>(&f[k]), sizeof(f[k]));
+        } else {
+          ostrm << f[k] << ' ';
+        }
       }
       ostrm << '\n';
     }
