@@ -63,11 +63,13 @@ TEST_F(TestQuad4x4, In3dSpace) {
   EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(quad.LocalToGlobal(1, 1), Mat3x1(1, 1, 1));
   EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat3x1(-1, -1, -1));
-  EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1){ return 2.0; }, quad), 8.0);
-  EXPECT_DOUBLE_EQ(Integrate([](Mat3x1){ return 2.0; }, quad), sqrt(2) * 8.0);
-  auto f = [](Mat3x1 xyz){ return xyz[0]; };
-  auto g = [](Mat3x1 xyz){ return xyz[1]; };
-  auto h = [](Mat3x1 xyz){ return xyz[0] * xyz[1]; };
+  EXPECT_DOUBLE_EQ(
+      Quadrature([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
+  EXPECT_DOUBLE_EQ(
+      Integrate([](Mat3x1 const&){ return 2.0; }, quad), sqrt(2) * 8.0);
+  auto f = [](Mat3x1 const& xyz){ return xyz[0]; };
+  auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
+  auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, quad), Integrate(h, quad));
   EXPECT_DOUBLE_EQ(Norm(f, quad), sqrt(Innerprod(f, f, quad)));
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
