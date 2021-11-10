@@ -874,7 +874,7 @@ class Part {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
         while (i_cell < i_cell_tail) {
-          cells.emplace_back(20);
+          cells.emplace_back(8);
           auto& gauss_ptr = sect[i_cell].gauss_ptr_;
           auto& proj = sect[i_cell].projection_;
           // nodes at corners
@@ -902,7 +902,7 @@ class Part {
           cells.emplace_back(coords.size());
           coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
           fields.emplace_back(proj(coords.back()));
-          // nodes on edges
+          /* nodes on edges
           cells.emplace_back(coords.size());
           coords.emplace_back(gauss_ptr->LocalToGlobal({0., -1, -1}));
           fields.emplace_back(proj(coords.back()));
@@ -938,7 +938,7 @@ class Part {
           fields.emplace_back(proj(coords.back()));
           cells.emplace_back(coords.size());
           coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, 0.}));
-          fields.emplace_back(proj(coords.back()));
+          fields.emplace_back(proj(coords.back())); */
           ++i_cell;
         }
       }
@@ -954,7 +954,7 @@ class Part {
       }
     }
     ostrm << '\n';
-    auto n_cells = cells.size() / 21;
+    auto n_cells = cells.size() / (8 + 1);
     ostrm << "CELLS " << n_cells << ' ' << cells.size() << '\n';
     for (auto& c : cells) {
       if (binary) {
@@ -966,7 +966,8 @@ class Part {
     }
     ostrm << '\n';
     ostrm << "CELL_TYPES " << n_cells << '\n';
-    Int t = 25;
+    Int t = 12;  // VTK_HEXAHEDRON
+    // Int type = 25;  // VTK_QUADRATIC_HEXAHEDRON
     for (int i = 0; i < n_cells; ++i) {
       if (binary) {
         ostrm.write(reinterpret_cast<char*>(&t), sizeof(t));
