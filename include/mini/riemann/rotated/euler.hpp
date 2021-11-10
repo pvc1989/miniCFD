@@ -104,7 +104,7 @@ class Euler {
   using Flux = typename Base::Flux;
   using Conservative = typename Base::Conservative;
   using Primitive = typename Base::Primitive;
-  using State = Conservative;
+  using State = Primitive;
 
   void Rotate(const Vector& normal) {
     static_assert(kDim == 2);
@@ -125,6 +125,9 @@ class Euler {
   void Rotate(const mini::algebra::Matrix<Scalar, 3, 3>& frame) {
     static_assert(kDim == 3);
     cartesian_.Rotate(frame);
+  }
+  static Flux GetFlux(State const& state) {
+    return Base::GetFlux(state);
   }
   Flux GetFluxOnTimeAxis(
       Conservative const& left,
