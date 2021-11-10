@@ -53,6 +53,19 @@ class Quad : public Face<Scalar, D> {
   int CountQuadPoints() const override {
     return Qx * Qy;
   }
+  void BuildNormalFrames() {
+    static_assert(D == 3);
+    int n = CountQuadPoints();
+    for (int i = 0; i < n; ++i) {
+      auto& local = GetLocalCoord(i);
+      auto dn = diff_shape_local_4x2(local[0], local[1]);
+      MatDx2 dr = xyz_global_Dx4_ * dn;
+      auto& frame = normal_frames_[i];
+      frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
+      frame.col(2) = dr.col(1).normalized();
+      frame.col(1) = frame.col(2).cross(frame.col(0));
+    }
+  }
 
  private:
   void BuildQuadPoints() {
@@ -64,18 +77,6 @@ class Quad : public Face<Scalar, D> {
           : mat_j.determinant();
       global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
-    }
-  }
-  void BuildNormalFrames() {
-    int n = CountQuadPoints();
-    for (int i = 0; i < n; ++i) {
-      auto& local = GetLocalCoord(i);
-      auto dn = diff_shape_local_4x2(local[0], local[1]);
-      MatDx2 dr = xyz_global_Dx4_ * dn;
-      auto& frame = normal_frames_[i];
-      frame.col(1) = dr.col(0).normalized();
-      frame.col(2) = dr.col(1).normalized();
-      frame.col(0) = frame.col(1).cross(frame.col(2));
     }
   }
   static constexpr auto BuildLocalCoords() {
