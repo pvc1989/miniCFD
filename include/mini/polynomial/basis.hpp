@@ -33,10 +33,46 @@ class Raw<Scalar, 2, 2> {
 };
 
 template <typename Scalar>
+class Raw<Scalar, 3, 0> {
+ public:
+  static constexpr int N = 1;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Coord = algebra::Matrix<Scalar, 3, 1>;
+
+  // TODO(PVC): CallAt -> GetValue
+  static MatNx1 CallAt(const Coord &xyz) {
+    MatNx1 col; col(0, 0) = 1;
+    return col;
+  }
+
+  template <typename MatKxN>
+  static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coeff) {
+    MatKxN res; res.setZero();
+    return res;
+  }
+
+  template <int K>
+  static auto GetGradValue(const Coord &xyz,
+      const algebra::Matrix<Scalar, K, N> &coeff) {
+    algebra::Matrix<Scalar, K, 3> res; res.setZero();
+    return res;
+  }
+
+  template <int K>
+  static auto GetSmoothness(
+      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+    using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+    MatKx1 smoothness; smoothness.setZero();
+    return smoothness;
+  }
+};
+
+template <typename Scalar>
 class Raw<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNx3 = algebra::Matrix<Scalar, N, 3>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
   // TODO(PVC): CallAt -> GetValue
@@ -78,6 +114,30 @@ class Raw<Scalar, 3, 2> {
     res.col(9) += coeff.col(9);
     return res;
   }
+
+  template <int K>
+  static auto GetGradValue(const Coord &xyz,
+      const algebra::Matrix<Scalar, K, N> &coeff) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    algebra::Matrix<Scalar, K, 3> res; res.setZero();
+    // pdv_x
+    res.col(0) += coeff.col(1);
+    res.col(0) += coeff.col(4) * (2 * x);
+    res.col(0) += coeff.col(5) * y;
+    res.col(0) += coeff.col(6) * z;
+    // pdv_y
+    res.col(1) += coeff.col(2);
+    res.col(1) += coeff.col(5) * x;
+    res.col(1) += coeff.col(7) * (2 * y);
+    res.col(1) += coeff.col(8) * z;
+    // pdv_z
+    res.col(2) += coeff.col(3);
+    res.col(2) += coeff.col(6) * x;
+    res.col(2) += coeff.col(8) * y;
+    res.col(2) += coeff.col(9) * (2 * z);
+    return res; 
+  }
+
   template <int K>
   static auto GetSmoothness(
       const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
@@ -153,14 +213,15 @@ class Linear {
 template <typename Scalar, int kDim, int kOrder>
 class OrthoNormal {
   using RB = Raw<Scalar, kDim, kOrder>;
-  using GB = Linear<Scalar, kDim, kOrder>;
+  using LB = Linear<Scalar, kDim, kOrder>;
 
  public:
-  static constexpr int N = GB::N;
-  using Coord = typename GB::Coord;
-  using Gauss = typename GB::Gauss;
-  using MatNx1 = typename GB::MatNx1;
-  using MatNxN = typename GB::MatNxN;
+  static constexpr int N = LB::N;
+  using Coord = typename LB::Coord;
+  using Gauss = typename LB::Gauss;
+  using MatNx1 = typename LB::MatNx1;
+  using MatNxN = typename LB::MatNxN;
+  using MatNxD = algebra::Matrix<Scalar, N, kDim>;
 
  public:
   explicit OrthoNormal(const Gauss& gauss)
@@ -193,6 +254,11 @@ class OrthoNormal {
   Scalar Measure() const {
     auto v = basis_.coeff()(0, 0);
     return 1 / (v * v);
+  }
+  MatNxD GetGradValue(const Coord &global) const {
+    auto local = global;
+    local -= center();
+    return RB::GetGradValue(local, coeff());
   }
 
  private:
