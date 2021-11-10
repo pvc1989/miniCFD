@@ -2,14 +2,14 @@
 #include <vector>
 #include "mini/mesh/part.hpp"
 
-template <typename Int, typename Real, int kFunc, int kOrder>
+template <typename Part, int kOrder>
 struct RungeKutta;
 
-template <typename Int, typename Real, int kFunc>
-struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
-  using MyPart = mini::mesh::cgns::Part<Int, Real, kFunc>;
-  using MyCell = mini::mesh::cgns::Cell<Int, Real, kFunc>;
-  using MyFace = mini::mesh::cgns::Face<Int, Real, kFunc>;
+template <typename Part>
+struct RungeKutta<Part, 3/* kOrder */> {
+  using MyPart = Part;
+  using MyCell = typename MyPart::CellType;
+  using MyFace = typename MyPart::FaceType;
   using Projection = typename MyCell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;

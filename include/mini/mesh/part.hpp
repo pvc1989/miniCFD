@@ -82,13 +82,13 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, typename Real, int kFunc>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 struct Cell;
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
-  using CellPtr = Cell<Int, Real, kFunc>*;
+  using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
   // TODO(PVC): move Riemann out
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Solver = mini::riemann::euler::Exact<Gas, 3>;
@@ -122,12 +122,13 @@ struct Face {
   Riemann& GetRiemann(int i) {
     return riemanns_[i];
   }
+  Int id() const {
+    return id_;
+  }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Cell {
-  static constexpr int kDim = 3;
-  static constexpr int kOrder = 2;
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
   using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
@@ -175,9 +176,9 @@ struct Cell {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 class CellGroup {
-  using CellType = Cell<Int, Real, kFunc>;
+  using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
   static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
   ShiftedVector<CellType> cells_;
@@ -253,12 +254,17 @@ class CellGroup {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2>
+template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 class Part {
-  using CellPtr = Cell<Int, Real, kFunc> *;
+ public:
+  using FaceType = Face<Int, Real, kFunc, kDim, kOrder>;
+  using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
+
+ private:
+  using CellGroupType = CellGroup<Int, Real, kFunc, kDim, kOrder>;
+  using CellPtr = CellType *;
   static constexpr int kLineWidth = 128;
-  static constexpr int kDim = 3;
-  static constexpr int kFields = kFunc * Cell<Int, Real, kFunc>::N;
+  static constexpr int kFields = kFunc * CellType::N;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
@@ -283,9 +289,9 @@ class Part {
     auto face_conn = BuildBoundaryFaces(istrm, i_file);
     auto ghost_adj = BuildAdj(istrm);
     auto recv_cells = ShareGhostCells(ghost_adj, cell_conn);
-    AddLocalCellId();
     auto m_to_recv_cells = BuildGhostCells(ghost_adj, recv_cells);
     FillCellPtrs(ghost_adj);
+    AddLocalCellId();
     BuildLocalFaces(cell_conn);
     BuildGhostFaces(ghost_adj, cell_conn, recv_cells, m_to_recv_cells);
     LinkBoundaryFaces(cell_conn, face_conn);
@@ -407,8 +413,7 @@ class Part {
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      local_cells_[i_zone][i_sect]
-          = CellGroup<Int, Real, kFunc>(head, tail - head);
+      local_cells_[i_zone][i_sect] = CellGroupType(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
@@ -455,7 +460,7 @@ class Part {
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
             GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
             GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        auto cell = Cell<Int, Real, kFunc>(
+        auto cell = CellType(
             std::move(hexa_ptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
@@ -521,7 +526,7 @@ class Part {
             GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
         quad_ptr->BuildNormalFrames();
-        auto face = Face<Int, Real, kFunc>(
+        auto face = FaceType(
             std::move(quad_ptr), nullptr, nullptr);
         faces.emplace_back(std::move(face));
       }
@@ -626,7 +631,7 @@ class Part {
           GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
           GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
           GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        ghost_cells_[m_cell] = Cell<Int, Real, kFunc>(
+        ghost_cells_[m_cell] = CellType(
             std::move(hexa_ptr), m_cell);
         index += cnt;
       }
@@ -819,7 +824,7 @@ class Part {
     ostrm << "DATASET UNSTRUCTURED_GRID\n";
     int n_points = 0;
     auto coords = std::vector<Mat3x1>();
-    auto fields = std::vector<typename Cell<Int, Real, kFunc>::Value>();
+    auto fields = std::vector<typename CellType::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& cell : sect) {
@@ -863,7 +868,7 @@ class Part {
     int n_points = 0;
     auto coords = std::vector<Mat3x1>();
     auto cells = std::vector<Int>();
-    auto fields = std::vector<typename Cell<Int, Real, kFunc>::Value>();
+    auto fields = std::vector<typename CellType::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
@@ -1091,7 +1096,7 @@ class Part {
       m_to_node_info_;  // [m_node] -> a NodeInfo obj
   std::unordered_map<Int, CellInfo<Int>>
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
-  std::map<Int, std::map<Int, CellGroup<Int, Real, kFunc>>>
+  std::map<Int, std::map<Int, CellGroupType>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
   std::vector<CellPtr>
       inner_cells_, inter_cells_;  // [i_cell] -> CellPtr
@@ -1099,13 +1104,13 @@ class Part {
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
   std::vector<std::vector<Real>>
       send_coeffs_, recv_coeffs_;
-  std::unordered_map<Int, Cell<Int, Real, kFunc>>
+  std::unordered_map<Int, CellType>
       ghost_cells_;  //                 [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
-  std::vector<Face<Int, Real, kFunc>>
+  std::vector<FaceType>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
-  std::map<Int, std::map<Int, ShiftedVector<Face<Int, Real, kFunc>>>>
+  std::map<Int, std::map<Int, ShiftedVector<FaceType>>>
       bound_faces_;  // [i_zone][i_sect][i_face] -> a Face obj
   std::vector<MPI_Request> requests_;
   const std::string directory_;
@@ -1185,11 +1190,11 @@ class Part {
     return std::ofstream(temp);
   }
 };
-template <typename Int, typename Real, int kFunc>
-MPI_Datatype const Part<Int, Real, kFunc>::kMpiIntType
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, typename Real, int kFunc>
-MPI_Datatype const Part<Int, Real, kFunc>::kMpiRealType
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder>::kMpiRealType
     = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns
