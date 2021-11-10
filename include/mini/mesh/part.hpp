@@ -520,6 +520,7 @@ class Part {
         auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
             GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+        quad_ptr->BuildNormalFrames();
         auto face = Face<Int, Real, kFunc>(
             std::move(quad_ptr), nullptr, nullptr);
         faces.emplace_back(std::move(face));
@@ -694,13 +695,13 @@ class Part {
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
+      quad_ptr->BuildNormalFrames();
       auto id = local_faces_.size();
       local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
       // rotate riemann solvers
-      auto& face = local_faces_.back();
-      face.SetRiemanns();
+      local_faces_.back().SetRiemanns();
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
@@ -742,7 +743,8 @@ class Part {
       auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
-      auto id = ghost_faces_.size();
+      quad_ptr->BuildNormalFrames();
+      auto id = local_faces_.size() + ghost_faces_.size();
       ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       // rotate riemann solvers
