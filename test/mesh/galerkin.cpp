@@ -98,6 +98,7 @@ int main(int argc, char* argv[]) {
     RK::ReadFromLocalCells(part, &rk.u_old_);
 
     part.ShareGhostCellCoeffs();
+    rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);
     rk.UpdateBoundaryRhs(part);
     part.UpdateGhostCellCoeffs();
@@ -107,6 +108,7 @@ int main(int argc, char* argv[]) {
     part.Reconstruct(limiter);
   
     part.ShareGhostCellCoeffs();
+    rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);
     rk.UpdateBoundaryRhs(part);
     part.UpdateGhostCellCoeffs();
@@ -116,6 +118,7 @@ int main(int argc, char* argv[]) {
     part.Reconstruct(limiter);
   
     part.ShareGhostCellCoeffs();
+    rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);
     rk.UpdateBoundaryRhs(part);
     part.UpdateGhostCellCoeffs();

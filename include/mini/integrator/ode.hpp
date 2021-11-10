@@ -13,6 +13,7 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
   using Projection = typename MyCell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;
+  using Gas = typename MyFace::Gas;
 
   std::vector<Coeff> u_old_, u_frac13_, u_frac23_, u_new_;
   std::vector<Coeff> rhs_;
@@ -41,10 +42,7 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
     });
   }
   static void UpdateLocalRhs(MyPart &part, std::vector<Coeff> *rhs) {
-    rhs->resize(part.CountLocalCells());
-    for (auto& coeff : *rhs) {
-      coeff.setZero();
-    }
+    assert(rhs->size() == part.CountLocalCells());
     part.ForEachLocalFace([&rhs](MyFace &face){
       auto& gauss = *(face.gauss_ptr_);
       auto& holder = *(face.holder_);
@@ -55,13 +53,9 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
         Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
-        auto& weight = gauss.GetGlobalWeight(q);
-        flux *= weight;
-        // std::cout << u_holder.transpose() << '\n';
-        // std::cout << u_sharer.transpose() << '\n';
-        // std::cout << flux.transpose() << '\n' << std::endl;
-        rhs->at(holder.id()) -= (flux * holder.basis_(coord).transpose()).eval();
-        rhs->at(sharer.id()) += (flux * sharer.basis_(coord).transpose()).eval();
+        flux *= gauss.GetGlobalWeight(q);
+        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        rhs->at(sharer.id()) += flux * sharer.basis_(coord).transpose();
       }
     });
   }
@@ -77,13 +71,31 @@ struct RungeKutta<Int, Real, kFunc, 3/* kOrder */> {
         Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
-        auto& weight = gauss.GetGlobalWeight(q);
-        flux *= weight;
-        rhs->at(holder.id()) -= (flux * holder.basis_(coord).transpose()).eval();
+        flux *= gauss.GetGlobalWeight(q);
+        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
       }
     });
   }
   static void UpdateBoundaryRhs(MyPart &part, std::vector<Coeff> *rhs) {
+  }
+  void InitializeRhs(const MyPart &part) {
+    rhs_.resize(part.CountLocalCells());
+    for (auto& coeff : rhs_) {
+      coeff.setZero();
+    }
+    part.ForEachLocalCell([&](const MyCell &cell){
+      auto& r = rhs_.at(cell.id());
+      auto& gauss = *(cell.gauss_ptr_);
+      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+        auto& xyz = gauss.GetGlobalCoord(q);
+        Value cv = cell.projection_(xyz);
+        auto flux = Gas::GetFluxMatrix(cv);
+        auto grad = cell.basis_.GetGradValue(xyz);
+        Coeff prod = flux * grad.transpose();
+        prod *= gauss.GetGlobalWeight(q);
+        r += prod;
+      }
+    });
   }
   void UpdateLocalRhs(MyPart &part) {
     UpdateLocalRhs(part, &rhs_);

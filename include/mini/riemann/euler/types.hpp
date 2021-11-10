@@ -144,6 +144,9 @@ struct ConservativeTuple : public Tuple<kDim>{
 
 template <int kInteger = 1, int kDecimal = 4>
 class IdealGas {
+  using Scalar = double;
+  using Mat5x3 = algebra::Matrix<Scalar, 5, 3>;
+
  private:
   static_assert(kInteger >= 1 && kDecimal >= 0);
   static constexpr double Shift(double x) {
@@ -231,6 +234,17 @@ class IdealGas {
     auto conservative = ConservativeTuple<kDim>{ primitive };
     PrimitiveToConservative(&conservative);
     return conservative;
+  }
+  static Mat5x3 GetFluxMatrix(ConservativeTuple<3> const& cv) {
+    Mat5x3 mat;
+    auto pv = ConservativeToPrimitive(cv);
+    auto rho = pv.rho(), u = pv.u(), v = pv.v(), w = pv.w(), p = pv.p();
+    auto rho_u = cv.momentum[0], rho_v = cv.momentum[1], rho_w = cv.momentum[2];
+    auto rho_h0 = cv.energy + p;
+    mat.col(0) << rho_u, rho_u * u + p, rho_v * u, rho_w * u, rho_h0 * u;
+    mat.col(1) << rho_v, rho_u * v, rho_v * v + p, rho_w * v, rho_h0 * v;
+    mat.col(2) << rho_w, rho_u * w, rho_v * w, rho_w * w + p, rho_h0 * w;
+    return mat;
   }
 };
 
