@@ -58,6 +58,7 @@ class Hexa : public Cell<Scalar> {
   Mat3x8 xyz_global_3x8_;
   std::array<GlobalCoord, Qx * Qy * Qz> global_coords_;
   std::array<Scalar, Qx * Qy * Qz> global_weights_;
+  Scalar volume_;
 
  public:
   int CountQuadPoints() const override {
@@ -110,9 +111,11 @@ class Hexa : public Cell<Scalar> {
  private:
   void BuildQuadPoints() {
     int n = CountQuadPoints();
+    volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
       auto det_j = Jacobian(GetLocalCoord(i)).determinant();
       global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      volume_ += global_weights_[i];
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
     }
   }
@@ -244,6 +247,9 @@ class Hexa : public Cell<Scalar> {
       c += xyz_global_3x8_.col(i);
     c /= 8;
     return c;
+  }
+  Scalar volume() const override {
+    return volume_;
   }
   GlobalCoord LocalToGlobal(
       Scalar x_local, Scalar y_local, Scalar z_local) const {
