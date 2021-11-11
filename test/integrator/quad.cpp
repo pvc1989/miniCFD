@@ -54,25 +54,39 @@ TEST_F(TestQuad4x4, In2dSpace) {
 }
 TEST_F(TestQuad4x4, In3dSpace) {
   Mat3x4 xyz_global_i;
-  xyz_global_i.row(0) << -1, 1, 1, -1;
-  xyz_global_i.row(1) << -1, -1, 1, 1;
-  xyz_global_i.row(2) << -1, -1, 1, 1;
+  xyz_global_i.row(0) << 0, 4, 4, 0;
+  xyz_global_i.row(1) << 0, 0, 4, 4;
+  xyz_global_i.row(2) << 0, 0, 4, 4;
   auto quad = Quad3D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 3);
-  EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat3x1(0, 0, 0));
-  EXPECT_EQ(quad.LocalToGlobal(1, 1), Mat3x1(1, 1, 1));
-  EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat3x1(-1, -1, -1));
+  EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat3x1(2, 2, 2));
+  EXPECT_EQ(quad.LocalToGlobal(+1, +1), Mat3x1(4, 4, 4));
+  EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat3x1(0, 0, 0));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Mat2x1 const&){ return 2.0; }, quad), 8.0);
   EXPECT_DOUBLE_EQ(
-      Integrate([](Mat3x1 const&){ return 2.0; }, quad), sqrt(2) * 8.0);
+      Integrate([](Mat3x1 const&){ return 2.0; }, quad), sqrt(2) * 32.0);
   auto f = [](Mat3x1 const& xyz){ return xyz[0]; };
   auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
   auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, quad), Integrate(h, quad));
   EXPECT_DOUBLE_EQ(Norm(f, quad), sqrt(Innerprod(f, f, quad)));
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
+  // test normal frames
+  quad.BuildNormalFrames();
+  for (int q = 0; q < quad.CountQuadPoints(); ++q) {
+    auto& frame = quad.GetNormalFrame(q);
+    auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
+    EXPECT_NEAR((nu - sigma.cross(pi)).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+    EXPECT_NEAR((sigma - pi.cross(nu)).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+    EXPECT_NEAR((pi - nu.cross(sigma)).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+    EXPECT_NEAR((sigma - Mat3x1(1, 0, 0)).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+    auto vec = Mat3x1(0, +sqrt(0.5), sqrt(0.5));
+    EXPECT_NEAR((pi - vec).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+    vec[1] *= -1;
+    EXPECT_NEAR((nu - vec).cwiseAbs().maxCoeff(), 0.0, 1e-15);
+  }
 }
 
 }  // namespace integrator
