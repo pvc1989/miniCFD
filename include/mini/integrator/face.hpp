@@ -29,6 +29,7 @@ class Face {
   virtual const Real& GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord center() const = 0;
   virtual const MatDxD& GetNormalFrame(int i) const = 0;
+  virtual Scalar area() const = 0;
 
   static constexpr int CellDim() {
     return 2;

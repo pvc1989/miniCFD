@@ -49,6 +49,7 @@ class Quad : public Face<Scalar, D> {
   std::array<Scalar, Qx * Qy> global_weights_;
   std::array<GlobalCoord, Qx * Qy> global_coords_;
   std::array<MatDxD, Qx * Qy> normal_frames_;
+  Scalar area_;
 
   int CountQuadPoints() const override {
     return Qx * Qy;
@@ -70,12 +71,14 @@ class Quad : public Face<Scalar, D> {
  private:
   void BuildQuadPoints() {
     int n = CountQuadPoints();
+    area_ = 0.0;
     for (int i = 0; i < n; ++i) {
       auto mat_j = Jacobian(GetLocalCoord(i));
       auto det_j = this->CellDim() < this->PhysDim()
           ? (mat_j.transpose() * mat_j).determinant()
           : mat_j.determinant();
       global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      area_ += global_weights_[i];
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
     }
   }
@@ -147,6 +150,9 @@ class Quad : public Face<Scalar, D> {
       c += xyz_global_Dx4_.col(i);
     c /= 4;
     return c;
+  }
+  Scalar area() const override {
+    return area_;
   }
   const MatDxD& GetNormalFrame(int i) const override {
     return normal_frames_[i];

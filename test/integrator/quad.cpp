@@ -40,6 +40,7 @@ TEST_F(TestQuad4x4, In2dSpace) {
   auto quad = Quad2D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 2);
+  EXPECT_NEAR(quad.area(), 4.0, 1e-15);
   EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat2x1(0, 0));
   EXPECT_EQ(quad.LocalToGlobal(1, 1), Mat2x1(1, 1));
   EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat2x1(-1, -1));
@@ -60,6 +61,7 @@ TEST_F(TestQuad4x4, In3dSpace) {
   auto quad = Quad3D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 3);
+  EXPECT_NEAR(quad.area(), sqrt(2) * 16.0, 1e-14);
   EXPECT_EQ(quad.LocalToGlobal(0, 0), Mat3x1(2, 2, 2));
   EXPECT_EQ(quad.LocalToGlobal(+1, +1), Mat3x1(4, 4, 4));
   EXPECT_EQ(quad.LocalToGlobal(-1, -1), Mat3x1(0, 0, 0));
