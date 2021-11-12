@@ -4,7 +4,7 @@
 LC = 0.05;  // average length of cell edges, a.k.a. characteristic length
 LX = 4;     // length along x-axis
 LY = 1;     // length along y-axis
-LZ = 2*LC;  // length along z-axis
+LZ = 4*LC;  // length along z-axis
 LG = 1./6;  // length of the gap before the wall
 
 Point(1) = { 0., 0., 0., LC };
@@ -23,7 +23,7 @@ Curve Loop(1) = { 1, 2, 3, 4, 5 };
 Plane Surface(1) = { 1 };
 Recombine Surface{ 1 };
 out[] = Extrude{ 0, 0, LZ }{
-  Surface{ 1 }; Layers{ 2 }; Recombine;
+  Surface{ 1 }; Layers{ 4 }; Recombine;
 };
 
 Physical Surface("Gap") = { 15 };
@@ -31,6 +31,8 @@ Physical Surface("Wall") = { 19 };
 Physical Surface("Right") = { 23 };
 Physical Surface("Top") = { 27 };
 Physical Surface("Left") = { 31 };
+Physical Surface("Front") = { 32 };
+Physical Surface("Back") = { 1 };
 Physical Volume("Fluid") = { 1 };
 
 Mesh 3;
