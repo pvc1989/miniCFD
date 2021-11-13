@@ -529,6 +529,7 @@ class Part {
         auto face = FaceType(
             std::move(quad_ptr), nullptr, nullptr);
         faces.emplace_back(std::move(face));
+        faces.back().RotateRiemanns();
       }
     }
     return face_conn;
@@ -706,7 +707,7 @@ class Part {
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
       // rotate riemann solvers
-      local_faces_.back().SetRiemanns();
+      local_faces_.back().RotateRiemanns();
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
@@ -753,7 +754,7 @@ class Part {
       ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       // rotate riemann solvers
-      local_faces_.back().SetRiemanns();
+      ghost_faces_.back().RotateRiemanns();
     }
   }
 
@@ -1156,8 +1157,9 @@ class Part {
             if (cnt == npe) {
               auto& info = m_to_cell_info_[m_cell];
               Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
-              bound_faces_[i_zone][i_sect][i_face].holder_
-                  = &local_cells_.at(z).at(s).at(c);
+              auto& face = bound_faces_[i_zone][i_sect][i_face];
+              auto& cell = local_cells_.at(z).at(s).at(c);
+              face.holder_ = &cell;
               break;
             }
           }
