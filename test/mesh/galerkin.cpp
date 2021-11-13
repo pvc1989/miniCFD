@@ -46,33 +46,36 @@ int main(int argc, char* argv[]) {
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   // prepare the states before and after the shock
-  double rho_before = 1.4, p_before = 1.0;
-  double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
-  double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
-  auto rho_after = rho_before * (m_before * m_before * gamma_plus / 2.0)
-      / (1.0 + m_before * m_before * gamma_minus / 2.0);
-  assert(rho_after == 8.0);
-  auto p_after = p_before * (m_before * m_before * gamma - gamma_minus / 2.0)
-      / (gamma_plus / 2.0);
-  // assert(p_after == 116.5);
-  std::cout << "p_after = " << p_after << '\n';
-  auto u_n_after = u_gamma * (rho_after - rho_before) / rho_after;
-  // assert(u_n_after == 8.25);
-  std::cout << "u_n_after = " << u_n_after << '\n';
-  auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
-  auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
-  auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
+  // double rho_before = 1.4, p_before = 1.0;
+  // double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
+  // double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
+  // auto rho_after = rho_before * (m_before * m_before * gamma_plus / 2.0)
+  //     / (1.0 + m_before * m_before * gamma_minus / 2.0);
+  // assert(rho_after == 8.0);
+  // auto p_after = p_before * (m_before * m_before * gamma - gamma_minus / 2.0)
+  //     / (gamma_plus / 2.0);
+  // // assert(p_after == 116.5);
+  // std::cout << "p_after = " << p_after << '\n';
+  // auto u_n_after = u_gamma * (rho_after - rho_before) / rho_after;
+  // // assert(u_n_after == 8.25);
+  // std::cout << "u_n_after = " << u_n_after << '\n';
+  // auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
+  // auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
+  // auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
+  auto primitive_after = Primitive(1., 0.0, 0.0, 0.0, 1.0);
   auto consv_after = Gas::PrimitiveToConservative(primitive_after);
   Value value_after = { consv_after.mass, consv_after.momentum[0],
       consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
-  auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
+  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+  // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
   Value value_before = { consv_before.mass, consv_before.momentum[0],
       consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
   double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
-    return value_before;
+    // return value_before;
+    return (x > 2.0) ? value_after : value_before;
     // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
   };
   part.ForEachLocalCell([&](MyCell &cell){
@@ -84,15 +87,21 @@ int main(int argc, char* argv[]) {
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.ShareGhostCellCoeffs();
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
-  // part.Reconstruct(limiter);
+  part.Reconstruct(limiter);
   std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  double t_final = 0.02;
-  int n_steps = 1, n_steps_io = 1;
+  part.ForEachLocalCell([&](const MyCell &cell){
+    if (cell.adj_faces_.size() != 6) {
+      std::cout << comm_rank << ' ' << cell.id() << std::endl;
+    }
+  });
+
+  double t_final = 2.5;
+  int n_steps = 25, n_steps_io = 5;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
@@ -110,25 +119,25 @@ int main(int argc, char* argv[]) {
     rk.SolveFrac13();
     RK::WriteToLocalCells(rk.u_frac13_, &part);
     // part.Reconstruct(limiter);
-  
-    part.ShareGhostCellCoeffs();
-    rk.InitializeRhs(part);
-    rk.UpdateLocalRhs(part);
-    rk.UpdateBoundaryRhs(part);
-    part.UpdateGhostCellCoeffs();
-    rk.UpdateGhostRhs(part);
-    rk.SolveFrac23();
-    RK::WriteToLocalCells(rk.u_frac23_, &part);
+
+    // part.ShareGhostCellCoeffs();
+    // rk.InitializeRhs(part);
+    // rk.UpdateLocalRhs(part);
+    // rk.UpdateBoundaryRhs(part);
+    // part.UpdateGhostCellCoeffs();
+    // rk.UpdateGhostRhs(part);
+    // rk.SolveFrac23();
+    // RK::WriteToLocalCells(rk.u_frac23_, &part);
     // part.Reconstruct(limiter);
-  
-    part.ShareGhostCellCoeffs();
-    rk.InitializeRhs(part);
-    rk.UpdateLocalRhs(part);
-    rk.UpdateBoundaryRhs(part);
-    part.UpdateGhostCellCoeffs();
-    rk.UpdateGhostRhs(part);
-    rk.SolveFrac33();
-    RK::WriteToLocalCells(rk.u_new_, &part);
+
+    // part.ShareGhostCellCoeffs();
+    // rk.InitializeRhs(part);
+    // rk.UpdateLocalRhs(part);
+    // rk.UpdateBoundaryRhs(part);
+    // part.UpdateGhostCellCoeffs();
+    // rk.UpdateGhostRhs(part);
+    // rk.SolveFrac33();
+    // RK::WriteToLocalCells(rk.u_new_, &part);
     // part.Reconstruct(limiter);
 
     if (i_step % n_steps_io == 0) {

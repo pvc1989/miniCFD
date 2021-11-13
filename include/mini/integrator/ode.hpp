@@ -45,6 +45,7 @@ struct RungeKutta<Part, 3/* kOrder */> {
     assert(rhs->size() == part.CountLocalCells());
     part.ForEachLocalFace([&rhs](MyFace &face){
       auto& gauss = *(face.gauss_ptr_);
+      std::cout << gauss.area() << std::endl;
       auto& holder = *(face.holder_);
       auto& sharer = *(face.sharer_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
@@ -77,6 +78,20 @@ struct RungeKutta<Part, 3/* kOrder */> {
     });
   }
   static void UpdateBoundaryRhs(MyPart &part, std::vector<Coeff> *rhs) {
+    part.ForEachSolidFace([&rhs](MyFace &face){
+      auto& gauss = *(face.gauss_ptr_);
+      assert(face.sharer_ == nullptr);
+      auto& holder = *(face.holder_);
+      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+        auto& coord = gauss.GetGlobalCoord(q);
+        auto& riemann = face.GetRiemann(q);
+        Value u_holder = holder.projection_(coord);
+        Value flux = riemann.GetFluxOnSolidWall(u_holder);
+        flux *= gauss.GetGlobalWeight(q);
+        // std::cout << holder.gauss_ptr_->volume() << ' ' << holder.volume() << ' ' << holder.basis_(coord) << std::endl;
+        rhs->at(holder.id()) -= flux * holder.basis_(coord).transpose();
+      }
+    });
   }
   void InitializeRhs(const MyPart &part) {
     rhs_.resize(part.CountLocalCells());
