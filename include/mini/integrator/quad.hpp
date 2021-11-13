@@ -75,9 +75,9 @@ class Quad : public Face<Scalar, D> {
     for (int i = 0; i < n; ++i) {
       auto mat_j = Jacobian(GetLocalCoord(i));
       auto det_j = this->CellDim() < this->PhysDim()
-          ? (mat_j.transpose() * mat_j).determinant()
+          ? std::sqrt((mat_j.transpose() * mat_j).determinant())
           : mat_j.determinant();
-      global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      global_weights_[i] = local_weights_[i] * det_j;
       area_ += global_weights_[i];
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
     }

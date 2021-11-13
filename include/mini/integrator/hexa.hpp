@@ -114,7 +114,7 @@ class Hexa : public Cell<Scalar> {
     volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
       auto det_j = Jacobian(GetLocalCoord(i)).determinant();
-      global_weights_[i] = local_weights_[i] * std::sqrt(det_j);
+      global_weights_[i] = local_weights_[i] * det_j;
       volume_ += global_weights_[i];
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
     }
