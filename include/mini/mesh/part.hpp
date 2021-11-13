@@ -110,7 +110,7 @@ struct Face {
   Face& operator=(Face&&) noexcept = default;
   ~Face() noexcept = default;
 
-  void SetRiemanns() {
+  void RotateRiemanns() {
     for (int q = 0; q < gauss_ptr_->CountQuadPoints(); ++q) {
       auto& frame = gauss_ptr_->GetNormalFrame(q);
       riemanns_[q].Rotate(frame);
@@ -137,18 +137,19 @@ struct Cell {
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
+  using MyFace = Face<Int, Real, kFunc, kDim, kOrder>;
 
   std::vector<Cell*> adj_cells_;
+  std::vector<MyFace*> adj_faces_;
   Basis basis_;
   GaussPtr gauss_ptr_;
   Projection projection_;
-  Real volume_;
   Int metis_id{-1}, id_{-1};
   bool inner_ = true;
 
   Cell(GaussPtr&& gauss_ptr, Int m_cell)
       : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
-        volume_(basis_.Measure()), metis_id(m_cell), projection_(basis_) {
+        metis_id(m_cell), projection_(basis_) {
   }
   Cell() = default;
   Cell(const Cell&) = delete;
@@ -158,7 +159,7 @@ struct Cell {
   ~Cell() noexcept = default;
 
   Real volume() const {
-    return volume_;
+    return gauss_ptr_->volume();
   }
   Int id() const {
     return id_;
@@ -706,6 +707,8 @@ class Part {
       local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
+      holder.adj_faces_.emplace_back(&(local_faces_.back()));
+      sharer.adj_faces_.emplace_back(&(local_faces_.back()));
       // rotate riemann solvers
       local_faces_.back().RotateRiemanns();
     }
@@ -753,6 +756,7 @@ class Part {
       auto id = local_faces_.size() + ghost_faces_.size();
       ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
       holder.adj_cells_.emplace_back(&sharer);
+      holder.adj_faces_.emplace_back(&(ghost_faces_.back()));
       // rotate riemann solvers
       ghost_faces_.back().RotateRiemanns();
     }
@@ -1087,6 +1091,16 @@ class Part {
       visit(face);
     }
   }
+  template<class Visitor>
+  void ForEachSolidFace(Visitor&& visit) {
+    for (auto& [i_zone, zone] : bound_faces_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (auto& face : sect) {
+          visit(face);
+        }
+      }
+    }
+  }
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
@@ -1160,6 +1174,7 @@ class Part {
               auto& face = bound_faces_[i_zone][i_sect][i_face];
               auto& cell = local_cells_.at(z).at(s).at(c);
               face.holder_ = &cell;
+              cell.adj_faces_.emplace_back(&face);
               break;
             }
           }
