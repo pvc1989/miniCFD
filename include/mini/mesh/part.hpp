@@ -1088,6 +1088,23 @@ class Part {
 
   void BuildBoundaryFaces(const ZoneSectToConn &cell_conn,
       std::ifstream& istrm, int i_file) {
+    std::unordered_map<Int, std::unordered_map<Int, std::vector<Int>>>
+        z_n_to_m_cells;  // [i_zone][i_node] -> vector of `m_cell`s
+    for (auto& [i_zone, zone] : local_cells_) {
+      auto& n_to_m_cells = z_n_to_m_cells[i_zone];
+      for (auto& [i_sect, sect] : zone) {
+        auto& conn = cell_conn.at(i_zone).at(i_sect);
+        auto& index = conn.index;
+        auto& nodes = conn.nodes;
+        for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
+          auto& cell = sect[i_cell];
+          auto m_cell = cell.metis_id;
+          for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
+            n_to_m_cells[nodes[i]].emplace_back(m_cell);
+          }
+        }
+      }
+    }
     char line[kLineWidth];
     auto face_conn = ZoneSectToConn();
     // build local faces
@@ -1098,8 +1115,6 @@ class Part {
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
-      // cgsize_t mem_range_min[] = { 1 };
-      // cgsize_t mem_range_max[] = { mem_dimensions[0] };
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
@@ -1113,70 +1128,73 @@ class Part {
       cg_npe(type, &npe);
       nodes.resize(npe * mem_dimensions[0]);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
-      index = ShiftedVector<Int>(mem_dimensions[0] + 1, 0);
+      index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       for (int i = 0; i < index.size(); ++i) {
-        index.at(i) = npe * i;
+        index.at(head + i) = npe * i;
       }
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
+      auto& n_to_m_cells = z_n_to_m_cells.at(i_zone);
       for (int i_face = head; i_face < tail; ++i_face) {
         auto* i_node_list = &nodes[(i_face - head) * npe];
+        auto cell_cnt = std::unordered_map<int, int>();
+        for (int i = index.at(i_face); i < index.at(i_face+1); ++i) {
+          for (auto m_cell : n_to_m_cells[nodes[i]]) {
+            cell_cnt[m_cell]++;
+          }
+        }
+        CellType *holder_ptr;
+        for (auto [m_cell, cnt] : cell_cnt) {
+          assert(cnt <= npe);
+          if (cnt == npe) {
+            auto& info = m_to_cell_info_[m_cell];
+            Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
+            holder_ptr = &(local_cells_.at(z).at(s).at(c));
+            auto& holder_conn = cell_conn.at(z).at(s);
+            auto& holder_nodes = holder_conn.nodes;
+            auto holder_head = holder_conn.index[c];
+            integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
+                npe, &holder_nodes[holder_head], i_node_list);
+            break;
+          }
+        }
         auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
             GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
         quad_ptr->BuildNormalFrames();
-        auto face = FaceType(
-            std::move(quad_ptr), nullptr, nullptr);
+        auto face = FaceType(std::move(quad_ptr), holder_ptr, nullptr);
         faces.emplace_back(std::move(face));
         faces.back().RotateRiemanns();
+        holder_ptr->adj_faces_.emplace_back(&faces.back());
       }
     }
     // link boundary faces to cells
-    for (auto& [i_zone, zone] : local_cells_) {
+    // for (auto& [i_zone, zone] : local_cells_) {
       // [i_node] -> vector of `m_cell`s
-      auto node_users = std::unordered_map<Int, std::vector<Int>>();
-      for (auto& [i_sect, sect] : zone) {
-        auto& conn = cell_conn.at(i_zone).at(i_sect);
-        auto& index = conn.index;
-        auto& nodes = conn.nodes;
-        for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
-          auto& cell = sect[i_cell];
-          auto m_cell = cell.metis_id;
-          for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
-            node_users[nodes[i]].emplace_back(m_cell);
-          }
-        }
-      }
-      auto& face_zone = face_conn.at(i_zone);
-      for (auto& [i_sect, sect] : face_zone) {
-        auto& conn = face_zone.at(i_sect);
-        auto& index = conn.index;
-        auto& nodes = conn.nodes;
-        int n_faces =  index.size() - 1;
-        for (int i_face = 0; i_face < n_faces; ++i_face) {
-          auto cell_cnt = std::unordered_map<int, int>();
-          int npe = index.at(i_face+1) - index.at(i_face);
-          for (int i = index.at(i_face); i < index.at(i_face+1); ++i) {
-            for (auto m_cell : node_users[nodes[i]]) {
-              cell_cnt[m_cell]++;
-            }
-          }
-          for (auto [m_cell, cnt] : cell_cnt) {
-            assert(cnt <= npe);
-            if (cnt == npe) {
-              auto& info = m_to_cell_info_[m_cell];
-              Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
-              auto& face = bound_faces_[i_zone][i_sect][i_face];
-              auto& cell = local_cells_.at(z).at(s).at(c);
-              face.holder_ = &cell;
-              cell.adj_faces_.emplace_back(&face);
-              break;
-            }
-          }
-        }
-      }
-    }
+      // auto node_users = std::unordered_map<Int, std::vector<Int>>();
+      // for (auto& [i_sect, sect] : zone) {
+      //   auto& conn = cell_conn.at(i_zone).at(i_sect);
+      //   auto& index = conn.index;
+      //   auto& nodes = conn.nodes;
+      //   for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
+      //     auto& cell = sect[i_cell];
+      //     auto m_cell = cell.metis_id;
+      //     for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
+      //       node_users[nodes[i]].emplace_back(m_cell);
+      //     }
+      //   }
+      // }
+      // auto& face_zone = face_conn.at(i_zone);
+      // for (auto& [i_sect, sect] : face_zone) {
+      //   auto& conn = face_zone.at(i_sect);
+      //   auto& index = conn.index;
+      //   auto& nodes = conn.nodes;
+      //   int n_faces =  index.size() - 1;
+      //   for (int i_face = 0; i_face < n_faces; ++i_face) {
+      //   }
+      // }
+    // }
   }
 
   Mat3x1 GetCoord(int i_zone, int i_node) const {
