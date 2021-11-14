@@ -122,6 +122,9 @@ struct Face {
   Riemann& GetRiemann(int i) {
     return riemanns_[i];
   }
+  Real area() const {
+    return gauss_ptr_->area();
+  }
   Int id() const {
     return id_;
   }
@@ -648,6 +651,8 @@ class Part {
       auto& zone = local_cells_[i_zone];
       auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
       auto& sharer = zone[sharer_info.i_sect][sharer_info.i_cell];
+      holder.adj_cells_.emplace_back(&sharer);
+      sharer.adj_cells_.emplace_back(&holder);
       integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
           4, &holder_nodes[holder_head], common_nodes.data());
       // build the quad integrator
@@ -655,14 +660,12 @@ class Part {
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
       quad_ptr->BuildNormalFrames();
-      auto id = local_faces_.size();
-      local_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
-      holder.adj_cells_.emplace_back(&sharer);
-      sharer.adj_cells_.emplace_back(&holder);
-      holder.adj_faces_.emplace_back(&(local_faces_.back()));
-      sharer.adj_faces_.emplace_back(&(local_faces_.back()));
-      // rotate riemann solvers
-      local_faces_.back().RotateRiemanns();
+      auto face_ptr = std::make_unique<FaceType>(
+          std::move(quad_ptr), &holder, &sharer, local_faces_.size());
+      face_ptr->RotateRiemanns();
+      holder.adj_faces_.emplace_back(face_ptr.get());
+      sharer.adj_faces_.emplace_back(face_ptr.get());
+      local_faces_.emplace_back(std::move(face_ptr));
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
@@ -698,6 +701,7 @@ class Part {
       auto& zone = local_cells_[i_zone];
       auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
       auto& sharer = ghost_cells_.at(m_sharer);
+      holder.adj_cells_.emplace_back(&sharer);
       integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
           4, &holder_nodes[holder_head], common_nodes.data());
       // build the quad integrator
@@ -705,12 +709,12 @@ class Part {
           GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
           GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
       quad_ptr->BuildNormalFrames();
-      auto id = local_faces_.size() + ghost_faces_.size();
-      ghost_faces_.emplace_back(std::move(quad_ptr), &holder, &sharer, id);
-      holder.adj_cells_.emplace_back(&sharer);
-      holder.adj_faces_.emplace_back(&(ghost_faces_.back()));
-      // rotate riemann solvers
-      ghost_faces_.back().RotateRiemanns();
+      auto face_ptr = std::make_unique<FaceType>(
+          std::move(quad_ptr), &holder, &sharer,
+          local_faces_.size() + ghost_faces_.size());
+      face_ptr->RotateRiemanns();
+      holder.adj_faces_.emplace_back(face_ptr.get());
+      ghost_faces_.emplace_back(std::move(face_ptr));
     }
   }
 
@@ -1033,22 +1037,22 @@ class Part {
   }
   template<class Visitor>
   void ForEachLocalFace(Visitor&& visit) {
-    for (auto& face : local_faces_) {
-      visit(face);
+    for (auto& face_uptr : local_faces_) {
+      visit(*face_uptr);
     }
   }
   template<class Visitor>
   void ForEachGhostFace(Visitor&& visit) {
-    for (auto& face : ghost_faces_) {
-      visit(face);
+    for (auto& face_uptr : ghost_faces_) {
+      visit(*face_uptr);
     }
   }
   template<class Visitor>
   void ForEachSolidFace(Visitor&& visit) {
     for (auto& [i_zone, zone] : bound_faces_) {
       for (auto& [i_sect, sect] : zone) {
-        for (auto& face : sect) {
-          visit(face);
+        for (auto& face_uptr : sect) {
+          visit(*face_uptr);
         }
       }
     }
@@ -1076,9 +1080,9 @@ class Part {
       ghost_cells_;  //                 [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
-  std::vector<FaceType>
+  std::vector<std::unique_ptr<FaceType>>
       local_faces_, ghost_faces_;  // [i_face] -> a Face obj
-  std::map<Int, std::map<Int, ShiftedVector<FaceType>>>
+  std::map<Int, std::map<Int, ShiftedVector<std::unique_ptr<FaceType>>>>
       bound_faces_;  // [i_zone][i_sect][i_face] -> a Face obj
   std::vector<MPI_Request> requests_;
   const std::string directory_;
@@ -1163,38 +1167,13 @@ class Part {
             GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
         quad_ptr->BuildNormalFrames();
-        auto face = FaceType(std::move(quad_ptr), holder_ptr, nullptr);
-        faces.emplace_back(std::move(face));
-        faces.back().RotateRiemanns();
-        holder_ptr->adj_faces_.emplace_back(&faces.back());
+        auto face_ptr = std::make_unique<FaceType>(
+            std::move(quad_ptr), holder_ptr, nullptr);
+        face_ptr->RotateRiemanns();
+        holder_ptr->adj_faces_.emplace_back(face_ptr.get());
+        faces.emplace_back(std::move(face_ptr));
       }
     }
-    // link boundary faces to cells
-    // for (auto& [i_zone, zone] : local_cells_) {
-      // [i_node] -> vector of `m_cell`s
-      // auto node_users = std::unordered_map<Int, std::vector<Int>>();
-      // for (auto& [i_sect, sect] : zone) {
-      //   auto& conn = cell_conn.at(i_zone).at(i_sect);
-      //   auto& index = conn.index;
-      //   auto& nodes = conn.nodes;
-      //   for (int i_cell = sect.head(); i_cell < sect.tail(); ++i_cell) {
-      //     auto& cell = sect[i_cell];
-      //     auto m_cell = cell.metis_id;
-      //     for (int i = index.at(i_cell); i < index.at(i_cell+1); ++i) {
-      //       node_users[nodes[i]].emplace_back(m_cell);
-      //     }
-      //   }
-      // }
-      // auto& face_zone = face_conn.at(i_zone);
-      // for (auto& [i_sect, sect] : face_zone) {
-      //   auto& conn = face_zone.at(i_sect);
-      //   auto& index = conn.index;
-      //   auto& nodes = conn.nodes;
-      //   int n_faces =  index.size() - 1;
-      //   for (int i_face = 0; i_face < n_faces; ++i_face) {
-      //   }
-      // }
-    // }
   }
 
   Mat3x1 GetCoord(int i_zone, int i_node) const {
