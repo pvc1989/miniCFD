@@ -462,17 +462,6 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
         }
       }
     }
-    // face ranges
-    ostrm << "# i_zone i_sect i_face_head i_face_tail\n";
-    for (int z = 1; z <= n_zones; ++z) {
-      auto n_sects = part_to_faces[p][z].size() - 1;
-      for (int s = 1; s <= n_sects; ++s) {
-        auto [head, tail] = part_to_faces[p][z][s];
-        if (base.GetZone(z).GetSection(s).dim() + 1 == base.GetCellDim()) {
-          ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
-        }
-      }
-    }
     // inner adjacency
     ostrm << "# i_cell_metis j_cell_metis\n";
     for (auto [i, j] : inner_adjs[p]) {
@@ -490,6 +479,17 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
             CountNodesByType();
         ostrm << i_part << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
             cnt_j << '\n';
+      }
+    }
+    // face ranges
+    ostrm << "# i_zone i_sect i_face_head i_face_tail\n";
+    for (int z = 1; z <= n_zones; ++z) {
+      auto n_sects = part_to_faces[p][z].size() - 1;
+      for (int s = 1; s <= n_sects; ++s) {
+        auto [head, tail] = part_to_faces[p][z][s];
+        if (base.GetZone(z).GetSection(s).dim() + 1 == base.GetCellDim()) {
+          ostrm << z << ' ' << s << ' ' << head << ' ' << tail << '\n';
+        }
       }
     }
     ostrm << "#\n";
