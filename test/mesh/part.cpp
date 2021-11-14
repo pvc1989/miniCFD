@@ -31,6 +31,21 @@ int main(int argc, char* argv[]) {
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   auto part = mini::mesh::cgns::Part<cgsize_t, double, 2>(
       "double_mach_hexa", comm_rank);
+  double volume = 0.0, area = 0.0;
+  int n_cells = 0, n_faces = 0;
+  part.ForEachLocalCell([&](const auto &cell){
+    volume += cell.volume();
+    n_cells += 1;
+    n_faces += cell.adj_faces_.size();
+    for (auto* face_ptr : cell.adj_faces_) {
+      assert(face_ptr);
+      area += face_ptr->area();
+    }
+  });
+  std::printf("On proc[%d/%d], avg_volume = %f = %f / %d\n",
+      comm_rank, comm_size, volume / n_cells, volume, n_cells);
+  std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",
+      comm_rank, comm_size, area / n_faces, area, n_faces);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.Project([](auto const& xyz){

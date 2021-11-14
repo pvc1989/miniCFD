@@ -94,12 +94,6 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  part.ForEachLocalCell([&](const MyCell &cell){
-    if (cell.adj_faces_.size() != 6) {
-      std::cout << comm_rank << ' ' << cell.id() << std::endl;
-    }
-  });
-
   double t_final = 2.5;
   int n_steps = 25, n_steps_io = 5;
   auto dt = t_final / n_steps;
