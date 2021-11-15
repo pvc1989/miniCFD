@@ -7,15 +7,15 @@
 #include <array>
 
 #include "mini/algebra/column.hpp"
-#include "mini/algebra/matrix.hpp"
 
 namespace mini {
 namespace riemann {
 namespace linear {
 
+template <int D>
 class Single {
  public:
-  static constexpr int kDim = 2;
+  static constexpr int kDim = D;
   // Types:
   using Scalar = double;
   using Vector = algebra::Column<double, kDim>;

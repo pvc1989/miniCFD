@@ -7,15 +7,15 @@
 #include <cmath>
 
 #include "mini/algebra/column.hpp"
-#include "mini/algebra/matrix.hpp"
 
 namespace mini {
 namespace riemann {
 namespace nonlinear {
 
+template <int D>
 class Burgers {
  public:
-  static constexpr int kDim = 2;
+  static constexpr int kDim = D;
   // Types:
   using Scalar = double;
   using Vector = algebra::Column<double, kDim>;

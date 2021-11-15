@@ -12,7 +12,7 @@ namespace nonlinear {
 
 class TestBurgers : public ::testing::Test {
  protected:
-  using Solver = Burgers;
+  using Solver = Burgers<2>;
   using State = Solver::State;
 };
 TEST_F(TestBurgers, TestNonZeroK) {

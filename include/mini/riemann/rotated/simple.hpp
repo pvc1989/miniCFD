@@ -3,6 +3,7 @@
 #define MINI_RIEMANN_ROTATED_SIMPLE_HPP_
 
 #include "mini/algebra/column.hpp"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -15,27 +16,42 @@ class Simple {
  public:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using State = typename Base::State;
-  using Flux = typename Base::Flux;
+  using State = algebra::Matrix<double, 1, 1>;
+  using Flux = algebra::Matrix<double, 1, 1>;
   using Jacobi = typename Base::Jacobi;
-  using Coefficient = algebra::Column<Jacobi, 2>;
+  using Coefficient = typename Base::Coefficient;
   void Rotate(Vector const& normal) {
+    static_assert(Base::kDim == 2);
     Rotate(normal[0], normal[1]);
   }
   void Rotate(Scalar const& n_1, Scalar const& n_2) {
+    static_assert(Base::kDim == 2);
     auto a_normal = global_coefficient[0] * n_1;
     a_normal += global_coefficient[1] * n_2;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
+  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3> &frame) {
+    static_assert(Base::kDim == 3);
+    auto &nu = frame.col(0);
+    auto a_normal = global_coefficient[0] * nu[0];
+    a_normal += global_coefficient[1] * nu[1];
+    a_normal += global_coefficient[2] * nu[2];
+    unrotated_simple_ = UnrotatedSimple(a_normal);
+  }
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
-    auto flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
+    Flux flux;
+    flux << unrotated_simple_.GetFluxOnTimeAxis(left[0], right[0]);
     return flux;
   }
   Flux GetFluxOnSolidWall(State const& state) {
-    return {};
+    Flux flux;
+    flux << 0.0;
+    return flux;
   }
   Flux GetFluxOnFreeWall(State const& state) {
-    return unrotated_simple_.GetFlux(state);
+    Flux flux;
+    flux << unrotated_simple_.GetFlux(state[0]);
+    return flux;
   }
   static Coefficient global_coefficient;
 
