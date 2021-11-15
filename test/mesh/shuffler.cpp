@@ -67,7 +67,7 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
-  auto case_name = std::string("forward_step");
+  auto case_name = std::string("double_mach_hexa");
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str(), case_name.c_str());

@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = MyPart("forward_step", comm_rank);
+  auto part = MyPart("double_mach_hexa", comm_rank);
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
     // return value_before;
-    return (x > 2.0) ? value_after : value_before;
+    return (x > 3.0) ? value_after : value_before;
     // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
   };
   part.ForEachLocalCell([&](MyCell &cell){
@@ -98,8 +98,8 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  double t_final = 2.5;
-  int n_steps = 250, n_steps_io = 50;
+  double t_final = 0.2;
+  int n_steps = 200, n_steps_io = 10;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
           i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
       part.GatherSolutions();
-      auto step_name = "Step" + std::to_string(i_step / 10);
+      auto step_name = "Step" + std::to_string(i_step);
       part.WriteSolutions(step_name);
       part.WriteSolutionsOnCellCenters(step_name);
     }
