@@ -1,5 +1,7 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
+#include <cmath>
+
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/basis.hpp"
@@ -65,6 +67,22 @@ TEST_F(TestProjection, VectorFunction) {
   res = projection.GetAverage() - integral_f / integral_1;
   EXPECT_NEAR(res.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
+TEST_F(TestProjection, CoeffConsistency) {
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 5>;
+  using MatKx1 = typename ProjFunc::MatKx1;
+  auto func = [](Coord const &point){
+    auto x = point[0], y = point[1], z = point[2];
+    MatKx1 res = { std::sin(x + y), std::cos(y + z), std::tan(x * z),
+        std::exp(y * z), std::log(z * z) };
+    return res;
+  };
+  auto basis = Basis(gauss_);
+  auto projection = ProjFunc(func, basis);
+  auto coeff_diff = projection.GetCoeffOnRawBasis()
+      - projection.GetCoeffOnOrthoNormalBasis() * basis.coeff();
+  std::cout << projection.GetCoeffOnRawBasis() << std::endl;
+  EXPECT_NEAR(coeff_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+}
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
   using Raw = mini::polynomial::Raw<double, 3, 2>;
@@ -83,7 +101,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
   auto s_actual = projection.GetSmoothness();
-  std::cout << "s_actual =\n" << s_actual << std::endl;
+  std::cout << "s_actual.transpose() =\n" << s_actual.transpose() << std::endl;
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
   EXPECT_NEAR(s_actual[1], 8.0, 1e-13);
   EXPECT_NEAR(s_actual[2], 8.0, 1e-14);
