@@ -71,6 +71,21 @@ class Projection {
     MatNx1 col = Raw<Scalar, kDim, kOrder>::CallAt(local);
     return coeff_ * col;
   }
+  MatKxN GetCoeffOnOrthoNormalBasis() const {
+    auto& mat_a = basis_ptr_->coeff();
+    auto& mat_b = coeff_;
+    MatKxN mat_x = mat_b;
+    for (int i = N-1; i >= 0; --i) {
+      for (int j = i+1; j < N; ++j) {
+        mat_x.col(i) -= mat_x.col(j) * mat_a(j, i);
+      }
+      mat_x.col(i) /= mat_a(i, i);
+    }
+    return mat_x;
+  }
+  const MatKxN& GetCoeffOnRawBasis() const {
+    return coeff_;
+  }
   const MatKxN& coeff() const {
     return coeff_;
   }
