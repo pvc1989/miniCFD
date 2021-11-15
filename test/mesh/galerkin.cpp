@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  constexpr int kFunc = 1;
+  constexpr int kFunc = 5;
   constexpr int kDim = 3;
   constexpr int kOrder = 0;
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
@@ -32,15 +32,6 @@ int main(int argc, char* argv[]) {
   using Coord = typename MyCell::Coord;
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
-  using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<3>;
-  using Gas = mini::riemann::euler::IdealGas<1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
-  // using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
-  using Limiter = mini::polynomial::LazyWeno<MyCell>;
-  using RK = RungeKutta<MyPart, 3>;
-
-  MyFace::Riemann::global_coefficient[0] = -10.0;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -48,40 +39,55 @@ int main(int argc, char* argv[]) {
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
+
+  /* Double Mach Reflection Problem */
+  using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<3>;
+  using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
+  using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  using RK = RungeKutta<MyPart, 3>;
   // prepare the states before and after the shock
-  // double rho_before = 1.4, p_before = 1.0;
-  // double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
-  // double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
-  // auto rho_after = rho_before * (m_before * m_before * gamma_plus / 2.0)
-  //     / (1.0 + m_before * m_before * gamma_minus / 2.0);
-  // assert(rho_after == 8.0);
-  // auto p_after = p_before * (m_before * m_before * gamma - gamma_minus / 2.0)
-  //     / (gamma_plus / 2.0);
-  // // assert(p_after == 116.5);
-  // std::cout << "p_after = " << p_after << '\n';
-  // auto u_n_after = u_gamma * (rho_after - rho_before) / rho_after;
-  // // assert(u_n_after == 8.25);
-  // std::cout << "u_n_after = " << u_n_after << '\n';
-  // auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
-  // auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
+  double rho_before = 1.4, p_before = 1.0;
+  double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
+  double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
+  auto rho_after = rho_before * (m_before * m_before * gamma_plus / 2.0)
+      / (1.0 + m_before * m_before * gamma_minus / 2.0);
+  assert(rho_after == 8.0);
+  auto p_after = p_before * (m_before * m_before * gamma - gamma_minus / 2.0)
+      / (gamma_plus / 2.0);
+  // assert(p_after == 116.5);
+  std::cout << "p_after = " << p_after << '\n';
+  auto u_n_after = u_gamma * (rho_after - rho_before) / rho_after;
+  // assert(u_n_after == 8.25);
+  std::cout << "u_n_after = " << u_n_after << '\n';
+  auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
+  auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   // auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
-  // auto primitive_after = Primitive(1., 0.0, 0.0, 0.0, 1.0);
-  // auto consv_after = Gas::PrimitiveToConservative(primitive_after);
-  // Value value_after = { consv_after.mass, consv_after.momentum[0],
-  //     consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
-  // auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
-  // // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  // auto consv_before = Gas::PrimitiveToConservative(primitive_before);
-  // Value value_before = { consv_before.mass, consv_before.momentum[0],
-  //     consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
-  // double x_gap = 1.0 / 6.0;
-  Value value_after{ 10 }, value_before{ -10 };
+  // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
+  auto primitive_after = Primitive(1.0, 0, 0, 0.0, 1);
+  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+  auto consv_after = Gas::PrimitiveToConservative(primitive_after);
+  auto consv_before = Gas::PrimitiveToConservative(primitive_before);
+  Value value_after = { consv_after.mass, consv_after.momentum[0],
+      consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
+  Value value_before = { consv_before.mass, consv_before.momentum[0],
+      consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
+  double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
-    // return value_before;
-    return (x > 3.0) ? value_after : value_before;
     // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
+    return (x > 2.0) ? value_after : value_before;
   };
+
+  /* Linear Advection Problem */
+  // using Limiter = mini::polynomial::LazyWeno<MyCell>;
+  // MyFace::Riemann::global_coefficient[0] = -10.0;
+  // Value value_after{ 10 }, value_before{ -10 };
+  // auto initial_condition = [&](const Coord& xyz){
+  //   return (xyz[0] > 3.0) ? value_after : value_before;
+  // };
+
   part.ForEachLocalCell([&](MyCell &cell){
     cell.Project(initial_condition);
   });
@@ -98,8 +104,8 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  double t_final = 0.2;
-  int n_steps = 200, n_steps_io = 10;
+  double t_final = 0.25;
+  int n_steps = 250, n_steps_io = 10;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
