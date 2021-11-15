@@ -24,6 +24,8 @@
 #include "mini/polynomial/projection.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
+#include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/rotated/burgers.hpp"
 
 namespace mini {
 namespace mesh {
@@ -91,8 +93,9 @@ struct Face {
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
   // TODO(PVC): move Riemann out
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
-  using Solver = mini::riemann::euler::Exact<Gas, 3>;
-  using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
+  // using Solver = mini::riemann::euler::Exact<Gas, 3>;
+  // using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
+  using Riemann = mini::riemann::rotated::Single<3>;
 
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;

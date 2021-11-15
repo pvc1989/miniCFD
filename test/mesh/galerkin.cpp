@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  constexpr int kFunc = 5;
+  constexpr int kFunc = 1;
   constexpr int kDim = 3;
   constexpr int kOrder = 0;
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
@@ -36,12 +36,15 @@ int main(int argc, char* argv[]) {
   using Conservative = mini::riemann::euler::ConservativeTuple<3>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
-  using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  // using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  using Limiter = mini::polynomial::LazyWeno<MyCell>;
   using RK = RungeKutta<MyPart, 3>;
+
+  MyFace::Riemann::global_coefficient[0] = -10.0;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = MyPart("double_mach_hexa", comm_rank);
+  auto part = MyPart("forward_step", comm_rank);
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -62,16 +65,17 @@ int main(int argc, char* argv[]) {
   // auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
   // auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   // auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
-  auto primitive_after = Primitive(1., 0.0, 0.0, 0.0, 1.0);
-  auto consv_after = Gas::PrimitiveToConservative(primitive_after);
-  Value value_after = { consv_after.mass, consv_after.momentum[0],
-      consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
-  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
-  // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  auto consv_before = Gas::PrimitiveToConservative(primitive_before);
-  Value value_before = { consv_before.mass, consv_before.momentum[0],
-      consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
-  double x_gap = 1.0 / 6.0;
+  // auto primitive_after = Primitive(1., 0.0, 0.0, 0.0, 1.0);
+  // auto consv_after = Gas::PrimitiveToConservative(primitive_after);
+  // Value value_after = { consv_after.mass, consv_after.momentum[0],
+  //     consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
+  // auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+  // // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
+  // auto consv_before = Gas::PrimitiveToConservative(primitive_before);
+  // Value value_before = { consv_before.mass, consv_before.momentum[0],
+  //     consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
+  // double x_gap = 1.0 / 6.0;
+  Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
     // return value_before;
@@ -95,7 +99,7 @@ int main(int argc, char* argv[]) {
   part.WriteSolutionsOnCellCenters("Step0");
 
   double t_final = 2.5;
-  int n_steps = 25, n_steps_io = 5;
+  int n_steps = 250, n_steps_io = 50;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
@@ -138,7 +142,7 @@ int main(int argc, char* argv[]) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
           i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
       part.GatherSolutions();
-      auto step_name = "Step" + std::to_string(i_step);
+      auto step_name = "Step" + std::to_string(i_step / 10);
       part.WriteSolutions(step_name);
       part.WriteSolutionsOnCellCenters(step_name);
     }
