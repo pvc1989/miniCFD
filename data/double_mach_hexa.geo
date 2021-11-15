@@ -23,7 +23,7 @@ Curve Loop(1) = { 1, 2, 3, 4, 5 };
 Plane Surface(1) = { 1 };
 Recombine Surface{ 1 };
 out[] = Extrude{ 0, 0, LZ }{
-  Surface{ 1 }; Layers{ 4 }; Recombine;
+  Surface{ 1 }; Layers{ LZ/LC }; Recombine;
 };
 
 Physical Surface("Gap") = { 15 };
