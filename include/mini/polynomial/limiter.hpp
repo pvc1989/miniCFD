@@ -53,7 +53,7 @@ class LazyWeno {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto& my_average = my_cell_->projection_.GetAverage();
+    auto my_average = my_cell_->projection_.GetAverage();
     for (auto* adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
       old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
@@ -176,7 +176,7 @@ class EigenWeno {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto& my_average = my_cell_->projection_.GetAverage();
+    auto my_average = my_cell_->projection_.GetAverage();
     for (auto* adj_cell : my_cell_->adj_cells_) {
       old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
       auto& adj_proj = old_projections_.back();
