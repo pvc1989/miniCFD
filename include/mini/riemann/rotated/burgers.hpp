@@ -9,7 +9,9 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-using Burgers = Simple<nonlinear::Burgers>;
+template <int kDim = 2>
+class Burgers : public Simple<nonlinear::Burgers<kDim>> {
+};
 
 }  // namespace rotated
 }  // namespace riemann

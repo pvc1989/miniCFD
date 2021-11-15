@@ -9,7 +9,9 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-using Single = Simple<linear::Single>;
+template <int kDim = 2>
+class Single : public Simple<linear::Single<kDim>> {
+};
 
 }  // namespace rotated
 }  // namespace riemann
