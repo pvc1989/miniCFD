@@ -3,8 +3,9 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
+#include <cstring>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <set>
 #include <string>
@@ -22,6 +23,7 @@ namespace mini {
 namespace mesh {
 
 idx_t n_parts = 4;
+std::string case_name = "double_mach_hexa";
 
 class ShufflerTest : public ::testing::Test {
  protected:
@@ -67,7 +69,6 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
   }
 }
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
-  auto case_name = std::string("double_mach_hexa");
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str(), case_name.c_str());
@@ -89,6 +90,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   std::vector<idx_t> node_parts = metis::GetNodeParts(
       metis_mesh, cell_parts, n_parts);
   mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
+  std::cout << "[Done] partition `" << old_file_name <<
+      "` into "<< n_parts << " parts." << std::endl;
   /* Shuffle nodes and cells: */
   auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts,
       graph, metis_mesh, &cgns_mesh, &mapper);
@@ -97,6 +100,8 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   auto new_file_name = case_name + "/shuffled.cgns";
   cgns_mesh.Write(new_file_name, 2);
   shuffler.WritePartitionInfo(case_name);
+  std::cout << "[Done] shuffle the " << n_parts << "-part `" << old_file_name
+      << "` to `" << new_file_name << "`." << std::endl;
 }
 
 }  // namespace mesh
@@ -106,6 +111,9 @@ int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   if (argc > 1) {
     mini::mesh::n_parts = std::atoi(argv[1]);
+  }
+  if (argc > 2) {
+    mini::mesh::case_name = argv[2];
   }
   return RUN_ALL_TESTS();
 }
