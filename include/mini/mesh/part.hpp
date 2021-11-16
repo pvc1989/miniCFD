@@ -271,7 +271,7 @@ class Part {
   using CellGroupType = CellGroup<Int, Real, kFunc, kDim, kOrder>;
   using CellPtr = CellType *;
   static constexpr int kLineWidth = 128;
-  static constexpr int kFields = kFunc * CellType::N;
+  static constexpr int kFields = CellType::K * CellType::N;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
@@ -963,11 +963,17 @@ class Part {
       auto& send_buf = send_coeffs_[i_buf++];
       int i_real = 0;
       for (auto* cell_ptr : cell_ptrs) {
-        auto& coeff = cell_ptr->projection_.coeff();
-        const auto& coeff_vec_view = coeff.reshaped();
-        for (int i = 0; i < kFields; ++i) {
-          send_buf[i_real++] = coeff_vec_view[i];
+        const auto& coeff = cell_ptr->projection_.coeff();
+        static_assert(kFields == CellType::K * CellType::N);
+        for (int c = 0; c < CellType::N; ++c) {
+          for (int r = 0; r < CellType::K; ++r) {
+            send_buf[i_real++] = coeff(r, c);
+          }
         }
+        // const auto& coeff_vec_view = coeff.reshaped();
+        // for (int i = 0; i < kFields; ++i) {
+        //   send_buf[i_real++] = coeff_vec_view[i];
+        // }
       }
       int tag = i_part;
       auto& request = requests_[i_req++];
@@ -1019,9 +1025,9 @@ class Part {
 
   template<class Visitor>
   void ForEachLocalCell(Visitor&& visit) const {
-    for (auto& [i_zone, zone] : local_cells_) {
-      for (auto& [i_sect, sect] : zone) {
-        for (auto& cell : sect) {
+    for (const auto& [i_zone, zone] : local_cells_) {
+      for (const auto& [i_sect, sect] : zone) {
+        for (const auto& cell : sect) {
           visit(cell);
         }
       }
