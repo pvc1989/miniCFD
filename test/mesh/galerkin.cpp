@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 #include "mpi.h"
 #include "pcgnslib.h"
@@ -21,11 +22,23 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
-  double t_final = std::atof(argv[1]);
-  int n_steps = std::atoi(argv[2]);
-  int n_steps_io = std::atoi(argv[3]);
-  auto dt = t_final / n_steps;
-  std::printf("rank = %d, time = [0.0, %f], step = [0, %d], dt = %f\n", comm_rank, t_final, n_steps, dt);
+  if (argc < 6) {
+    if (comm_rank == 0) {
+      std::cout << "usage:\n";
+      std::cout << "  mpirun -n <n_proc> ./galerkin [case_name] <t_start>";
+      std::cout << " <t_stop> <n_steps> <n_steps_per_frame>" << std::endl;
+    }
+    MPI_Finalize();
+    exit(0);
+  }
+  std::string case_name = argv[1];
+  double t_start = std::atof(argv[2]);
+  double t_stop = std::atof(argv[3]);
+  int n_steps = std::atoi(argv[4]);
+  int n_steps_per_frame = std::atoi(argv[5]);
+  auto dt = t_stop / n_steps;
+  std::printf("rank = %d, time = [0.0, %f], step = [0, %d], dt = %f\n",
+      comm_rank, t_stop, n_steps, dt);
 
   auto time_begin = MPI_Wtime();
 
@@ -88,7 +101,7 @@ int main(int argc, char* argv[]) {
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = MyPart("double_mach_hexa", comm_rank);
+  auto part = MyPart(case_name, comm_rank);
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -145,7 +158,7 @@ int main(int argc, char* argv[]) {
     RK::WriteToLocalCells(rk.u_new_, &part);
     part.Reconstruct(limiter);
 
-    if (i_step % n_steps_io == 0) {
+    if (i_step % n_steps_per_frame == 0) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
           i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
       part.GatherSolutions();
