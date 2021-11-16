@@ -39,12 +39,13 @@ int main(int argc, char* argv[]) {
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
 
-  std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = MyPart("double_mach_hexa", comm_rank);
-
-  std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+  /* Linear Advection Problem */
+  using Limiter = mini::polynomial::LazyWeno<MyCell>;
+  MyFace::Riemann::global_coefficient[0] = -10.0;  // must proceed `Part()`
+  Value value_after{ 10 }, value_before{ -10 };
+  auto initial_condition = [&](const Coord& xyz){
+    return (xyz[0] > 3.0) ? value_after : value_before;
+  };
 
   /* Double Mach Reflection Problem 
   using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
@@ -85,19 +86,16 @@ int main(int argc, char* argv[]) {
     return (x > 2.0) ? value_after : value_before;
   }; */
 
-  /* Linear Advection Problem */
-  using Limiter = mini::polynomial::LazyWeno<MyCell>;
-  MyFace::Riemann::global_coefficient[0] = -10.0;
-  Value value_after{ 10 }, value_before{ -10 };
-  auto initial_condition = [&](const Coord& xyz){
-    return (xyz[0] > 3.0) ? value_after : value_before;
-  };
+  std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
+  auto part = MyPart("double_mach_hexa", comm_rank);
 
+  std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
+      comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.ForEachLocalCell([&](MyCell &cell){
     cell.Project(initial_condition);
   });
-  std::printf("Run ShareGhostCellCoeffs() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
