@@ -92,10 +92,10 @@ struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
   // TODO(PVC): move Riemann out
-  using Gas = mini::riemann::euler::IdealGas<1, 4>;
-  using Solver = mini::riemann::euler::Exact<Gas, 3>;
-  using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
-  // using Riemann = mini::riemann::rotated::Single<3>;
+  // using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  // using Solver = mini::riemann::euler::Exact<Gas, 3>;
+  // using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
+  using Riemann = mini::riemann::rotated::Single<3>;
 
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
@@ -979,6 +979,7 @@ class Part {
       auto& request = requests_[i_req++];
       MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
+      std::printf("rank[%d] is gonna send (%d * %d) bytes to rank[%d]\n", rank_, i_real, sizeof(Real), i_part);
     }
     // recv cell.projection_.coeff_
     i_buf = 0;
@@ -988,6 +989,7 @@ class Part {
       auto& request = requests_[i_req++];
       MPI_Irecv(recv_buf.data(), recv_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
+      std::printf("rank[%d] is gonna recv (%d * %d) bytes from rank[%d]\n", rank_, (int)recv_buf.size(), sizeof(Real), i_part);
     }
     assert(i_req == send_coeffs_.size() + recv_coeffs_.size());
   }
