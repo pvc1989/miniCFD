@@ -979,7 +979,7 @@ class Part {
       auto& request = requests_[i_req++];
       MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
-      std::printf("rank[%d] is gonna send (%d * %d) bytes to rank[%d]\n", rank_, i_real, sizeof(Real), i_part);
+      // std::printf("rank[%d] is gonna send (%d * %d) bytes -> rank[%d]\n", rank_, i_real, sizeof(Real), i_part);
     }
     // recv cell.projection_.coeff_
     i_buf = 0;
@@ -989,7 +989,7 @@ class Part {
       auto& request = requests_[i_req++];
       MPI_Irecv(recv_buf.data(), recv_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
-      std::printf("rank[%d] is gonna recv (%d * %d) bytes from rank[%d]\n", rank_, (int)recv_buf.size(), sizeof(Real), i_part);
+      // std::printf("rank[%d] is gonna recv (%d * %d) bytes <- rank[%d]\n", rank_, (int)recv_buf.size(), sizeof(Real), i_part);
     }
     assert(i_req == send_coeffs_.size() + recv_coeffs_.size());
   }

@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
   constexpr int kFunc = 1;
   constexpr int kDim = 3;
-  constexpr int kOrder = 0;
+  constexpr int kOrder = 2;
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
   using MyCell = typename MyPart::CellType;
   using MyFace = typename MyPart::FaceType;
@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
-  // part.Reconstruct(limiter);
+  part.Reconstruct(limiter);
+
   std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
@@ -122,27 +123,27 @@ int main(int argc, char* argv[]) {
     rk.UpdateGhostRhs(part);
     rk.SolveFrac13();
     RK::WriteToLocalCells(rk.u_frac13_, &part);
-    // part.Reconstruct(limiter);
+    part.Reconstruct(limiter);
 
-    // part.ShareGhostCellCoeffs();
-    // rk.InitializeRhs(part);
-    // rk.UpdateLocalRhs(part);
-    // rk.UpdateBoundaryRhs(part);
-    // part.UpdateGhostCellCoeffs();
-    // rk.UpdateGhostRhs(part);
-    // rk.SolveFrac23();
-    // RK::WriteToLocalCells(rk.u_frac23_, &part);
-    // part.Reconstruct(limiter);
+    part.ShareGhostCellCoeffs();
+    rk.InitializeRhs(part);
+    rk.UpdateLocalRhs(part);
+    rk.UpdateBoundaryRhs(part);
+    part.UpdateGhostCellCoeffs();
+    rk.UpdateGhostRhs(part);
+    rk.SolveFrac23();
+    RK::WriteToLocalCells(rk.u_frac23_, &part);
+    part.Reconstruct(limiter);
 
-    // part.ShareGhostCellCoeffs();
-    // rk.InitializeRhs(part);
-    // rk.UpdateLocalRhs(part);
-    // rk.UpdateBoundaryRhs(part);
-    // part.UpdateGhostCellCoeffs();
-    // rk.UpdateGhostRhs(part);
-    // rk.SolveFrac33();
-    // RK::WriteToLocalCells(rk.u_new_, &part);
-    // part.Reconstruct(limiter);
+    part.ShareGhostCellCoeffs();
+    rk.InitializeRhs(part);
+    rk.UpdateLocalRhs(part);
+    rk.UpdateBoundaryRhs(part);
+    part.UpdateGhostCellCoeffs();
+    rk.UpdateGhostRhs(part);
+    rk.SolveFrac33();
+    RK::WriteToLocalCells(rk.u_new_, &part);
+    part.Reconstruct(limiter);
 
     if (i_step % n_steps_io == 0) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",

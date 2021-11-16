@@ -7,6 +7,7 @@
 #include <array>
 
 #include "mini/algebra/column.hpp"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -15,6 +16,7 @@ namespace linear {
 template <int D>
 class Single {
  public:
+  static constexpr int kFunc = 1;
   static constexpr int kDim = D;
   // Types:
   using Scalar = double;
@@ -24,19 +26,28 @@ class Single {
   using State = double;
   using Flux = double;
   using Speed = double;
+  using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
   // Constructor:
   Single() : a_const_(1) {}
   explicit Single(Jacobi const& a_const) : a_const_(a_const) {}
   // Get F on T Axia:
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) const {
+  Flux GetFluxOnTimeAxis(const State& left, const State& right) const {
     if (0 < a_const_) {
       return left * a_const_;
     } else {
       return right* a_const_;
     }
   }
+  Flux GetFluxOnTimeAxis(const MatKx1& left, const MatKx1& right) const {
+    return GetFluxOnTimeAxis(left[0], right[0]);
+  }
   // Get F of U
-  Flux GetFlux(State const& state) const { return state * a_const_ ; }
+  Flux GetFlux(const State& state) const {
+    return state * a_const_ ;
+  }
+  Flux GetFlux(const MatKx1& state) const {
+    return GetFlux(state[0]);
+  }
 
  private:
   Jacobi a_const_;
