@@ -39,18 +39,18 @@ struct RungeKutta<Part, 3/* kOrder */> {
   static void WriteToLocalCells(const std::vector<Coeff> &coeffs, MyPart *part) {
     assert(coeffs.size() == part->CountLocalCells());
     part->ForEachLocalCell([&coeffs](auto &cell){
-      auto new_coeff = coeffs.at(cell.id()) * cell.basis_.coeff();
+      Coeff new_coeff = coeffs.at(cell.id()) * cell.basis_.coeff();
       cell.projection_.UpdateCoeffs(new_coeff);
     });
   }
   static void UpdateLocalRhs(MyPart &part, std::vector<Coeff> *rhs) {
     assert(rhs->size() == part.CountLocalCells());
     part.ForEachLocalFace([&rhs](MyFace &face){
-      auto& gauss = *(face.gauss_ptr_);
-      auto& holder = *(face.holder_);
-      auto& sharer = *(face.sharer_);
+      const auto& gauss = *(face.gauss_ptr_);
+      const auto& holder = *(face.holder_);
+      const auto& sharer = *(face.sharer_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-        auto& coord = gauss.GetGlobalCoord(q);
+        const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
@@ -64,11 +64,11 @@ struct RungeKutta<Part, 3/* kOrder */> {
   static void UpdateGhostRhs(MyPart &part, std::vector<Coeff> *rhs) {
     assert(rhs->size() == part.CountLocalCells());
     part.ForEachGhostFace([&rhs](MyFace &face){
-      auto& gauss = *(face.gauss_ptr_);
-      auto& holder = *(face.holder_);
-      auto& sharer = *(face.sharer_);
+      const auto& gauss = *(face.gauss_ptr_);
+      const auto& holder = *(face.holder_);
+      const auto& sharer = *(face.sharer_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-        auto& coord = gauss.GetGlobalCoord(q);
+        const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
         auto& riemann = face.GetRiemann(q);
@@ -80,11 +80,11 @@ struct RungeKutta<Part, 3/* kOrder */> {
   }
   static void UpdateBoundaryRhs(MyPart &part, std::vector<Coeff> *rhs) {
     part.ForEachSolidFace([&rhs](MyFace &face){
-      auto& gauss = *(face.gauss_ptr_);
+      const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
-      auto& holder = *(face.holder_);
+      const auto& holder = *(face.holder_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-        auto& coord = gauss.GetGlobalCoord(q);
+        const auto& coord = gauss.GetGlobalCoord(q);
         auto& riemann = face.GetRiemann(q);
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
@@ -99,17 +99,17 @@ struct RungeKutta<Part, 3/* kOrder */> {
       coeff.setZero();
     }
     part.ForEachLocalCell([&](const MyCell &cell){
-      // auto& r = rhs_.at(cell.id());
-      // auto& gauss = *(cell.gauss_ptr_);
-      // for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-      //   auto& xyz = gauss.GetGlobalCoord(q);
-      //   Value cv = cell.projection_(xyz);
-      //   auto flux = Gas::GetFluxMatrix(cv);
-      //   auto grad = cell.basis_.GetGradValue(xyz);
-      //   Coeff prod = flux * grad.transpose();
-      //   prod *= gauss.GetGlobalWeight(q);
-      //   r += prod;
-      // }
+      auto& r = rhs_.at(cell.id());
+      const auto& gauss = *(cell.gauss_ptr_);
+      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+        const auto& xyz = gauss.GetGlobalCoord(q);
+        Value cv = cell.projection_(xyz);
+        auto flux = Gas::GetFluxMatrix(cv);
+        auto grad = cell.basis_.GetGradValue(xyz);
+        Coeff prod = flux * grad.transpose();
+        prod *= gauss.GetGlobalWeight(q);
+        r += prod;
+      }
     });
   }
   void UpdateLocalRhs(MyPart &part) {

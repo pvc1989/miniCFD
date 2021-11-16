@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 
   constexpr int kFunc = 5;
   constexpr int kDim = 3;
-  constexpr int kOrder = 0;
+  constexpr int kOrder = 2;
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
   using MyCell = typename MyPart::CellType;
   using MyFace = typename MyPart::FaceType;
@@ -95,7 +95,6 @@ int main(int argc, char* argv[]) {
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  part.ShareGhostCellCoeffs();
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
   part.Reconstruct(limiter);
   std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
@@ -104,8 +103,8 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  double t_final = 0.25;
-  int n_steps = 250, n_steps_io = 10;
+  double t_final = 0.010;
+  int n_steps = 5, n_steps_io = 1;
   auto dt = t_final / n_steps;
   auto rk = RK(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
@@ -122,7 +121,7 @@ int main(int argc, char* argv[]) {
     rk.UpdateGhostRhs(part);
     rk.SolveFrac13();
     RK::WriteToLocalCells(rk.u_frac13_, &part);
-    // part.Reconstruct(limiter);
+    part.Reconstruct(limiter);
 
     // part.ShareGhostCellCoeffs();
     // rk.InitializeRhs(part);
