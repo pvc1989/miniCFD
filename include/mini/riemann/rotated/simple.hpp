@@ -2,6 +2,8 @@
 #ifndef MINI_RIEMANN_ROTATED_SIMPLE_HPP_
 #define MINI_RIEMANN_ROTATED_SIMPLE_HPP_
 
+#include <cstring>
+
 #include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
 
@@ -12,46 +14,67 @@ namespace rotated {
 template <class UnrotatedSimple>
 class Simple {
   using Base = UnrotatedSimple;
+  static constexpr int K = Base::kFunc;
+  static constexpr int D = Base::kDim;
+  static constexpr int x{0}, y{1}, z{2};
 
  public:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using State = algebra::Matrix<double, 1, 1>;
-  using Flux = algebra::Matrix<double, 1, 1>;
+  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+  using State = MatKx1;
+  using Flux = MatKx1;
+  using FluxMatrix = algebra::Matrix<Scalar, K, D>;
+  using Frame3d = mini::algebra::Matrix<Scalar, 3, 3>;
   using Jacobi = typename Base::Jacobi;
   using Coefficient = typename Base::Coefficient;
-  void Rotate(Vector const& normal) {
-    static_assert(Base::kDim == 2);
-    Rotate(normal[0], normal[1]);
+
+ private:
+  template <class Value>
+  static Flux ConvertToFlux(const Value& v) {
+    Flux flux;
+    std::memcpy(flux.data(), &v, K * sizeof(flux[0]));
+    return flux;
   }
-  void Rotate(Scalar const& n_1, Scalar const& n_2) {
-    static_assert(Base::kDim == 2);
-    auto a_normal = global_coefficient[0] * n_1;
-    a_normal += global_coefficient[1] * n_2;
+
+ public:
+  void Rotate(const Scalar& n_x, const Scalar& n_y) {
+    static_assert(D == 2);
+    auto a_normal = global_coefficient[x] * n_x;
+    a_normal += global_coefficient[y] * n_y;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
-  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3> &frame) {
-    static_assert(Base::kDim == 3);
-    auto &nu = frame.col(0);
-    auto a_normal = global_coefficient[0] * nu[0];
-    a_normal += global_coefficient[1] * nu[1];
-    a_normal += global_coefficient[2] * nu[2];
+  void Rotate(const Scalar& n_x, const Scalar& n_y,  const Scalar& n_z) {
+    static_assert(D == 3);
+    auto a_normal = global_coefficient[x] * n_x;
+    a_normal += global_coefficient[y] * n_y;
+    a_normal += global_coefficient[z] * n_z;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  void Rotate(const Frame3d &frame) {
+    const auto& nu = frame.col(0);
+    Rotate(nu[x], nu[y], nu[z]);
+  }
+  Flux GetFluxOnTimeAxis(const State& left, const State& right) {
+    auto raw_flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
+    return ConvertToFlux(raw_flux);
+  }
+  Flux GetFluxOnSolidWall(const State& state) {
     Flux flux;
-    flux << unrotated_simple_.GetFluxOnTimeAxis(left[0], right[0]);
+    flux.setZero();
     return flux;
   }
-  Flux GetFluxOnSolidWall(State const& state) {
-    Flux flux;
-    flux << 0.0;
-    return flux;
+  Flux GetFluxOnFreeWall(const State& state) {
+    auto raw_flux = unrotated_simple_.GetFlux(state);
+    return ConvertToFlux(raw_flux);
   }
-  Flux GetFluxOnFreeWall(State const& state) {
-    Flux flux;
-    flux << unrotated_simple_.GetFlux(state[0]);
-    return flux;
+  static FluxMatrix GetFluxMatrix(const State& state) {
+    FluxMatrix flux_mat;
+    for (int c = 0; c < D; ++c) {
+      flux_mat.col(c) = state;
+      flux_mat.col(c) *= global_coefficient[c];
+    }
+    return flux_mat;
   }
   static Coefficient global_coefficient;
 
