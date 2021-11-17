@@ -178,9 +178,11 @@ class Linear {
  public:
   explicit Linear(Coord const& center)
       : center_(center) {
+    coeff_.setIdentity();
   }
   Linear() {
-    integrator::SetZero(&center_);
+    center_.setZero();
+    coeff_.setIdentity();
   }
   Linear(const Linear&) = default;
   Linear(Linear&&) noexcept = default;
@@ -190,7 +192,8 @@ class Linear {
 
   MatNx1 operator()(Coord const& point) const {
     MatNx1 col = RB::CallAt(point - center_);
-    return coeff_ * col;
+    MatNx1 res = coeff_ * col;
+    return res;
   }
   Coord const& center() const {
     return center_;
@@ -199,7 +202,8 @@ class Linear {
     return coeff_;
   }
   void Transform(MatNxN const& a) {
-    coeff_ = a * coeff_;
+    MatNxN temp = a * coeff_;
+    coeff_ = temp;
   }
   void Shift(const Coord& new_center) {
     center_ = new_center;
@@ -207,7 +211,7 @@ class Linear {
 
  private:
   Coord center_;
-  MatNxN coeff_ = MatNxN::Identity();
+  MatNxN coeff_;
 };
 
 template <typename Scalar, int kDim, int kOrder>

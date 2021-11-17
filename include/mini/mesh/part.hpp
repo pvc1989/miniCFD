@@ -143,6 +143,7 @@ struct Cell {
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
+  static constexpr int kFields = K * N;
   using MyFace = Face<Int, Real, kFunc, kDim, kOrder>;
 
   std::vector<Cell*> adj_cells_;
@@ -157,11 +158,24 @@ struct Cell {
       : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
         metis_id(m_cell), projection_(basis_) {
   }
-  Cell() = default;
+  Cell() = default; 
   Cell(const Cell&) = delete;
   Cell& operator=(const Cell&) = delete;
-  Cell(Cell&&) noexcept = default;
-  Cell& operator=(Cell&&) noexcept = default;
+  Cell(Cell&& that) noexcept {
+    *this = std::move(that);
+  }
+  Cell& operator=(Cell&& that) noexcept {
+    adj_cells_ = std::move(that.adj_cells_);
+    adj_faces_ = std::move(that.adj_faces_);
+    basis_ = std::move(that.basis_);
+    gauss_ptr_ = std::move(that.gauss_ptr_);
+    projection_ = std::move(that.projection_);
+    projection_.basis_ptr_ = &basis_;  //
+    metis_id = that.metis_id;
+    id_ = that.id_;
+    inner_ = that.inner_;
+    return *this;
+  }
   ~Cell() noexcept = default;
 
   Real volume() const {
@@ -186,12 +200,13 @@ struct Cell {
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 class CellGroup {
   using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
-  static constexpr int kFields = CellType::K * CellType::N;
   Int head_, size_;
   ShiftedVector<CellType> cells_;
   ShiftedVector<ShiftedVector<Real>> fields_;  // [i_field][i_cell]
 
  public:
+  static constexpr int kFields = CellType::kFields;
+
   CellGroup(int head, int size)
       : head_(head), size_(size), cells_(size, head), fields_(kFields, 1) {
     for (int i = 1; i <= kFields; ++i) {
@@ -268,10 +283,10 @@ class Part {
   using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
 
  private:
-  using CellGroupType = CellGroup<Int, Real, kFunc, kDim, kOrder>;
+  using CellGrp = CellGroup<Int, Real, kFunc, kDim, kOrder>;
   using CellPtr = CellType *;
   static constexpr int kLineWidth = 128;
-  static constexpr int kFields = CellType::K * CellType::N;
+  static constexpr int kFields = CellGrp::kFields;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
@@ -419,7 +434,7 @@ class Part {
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
-      local_cells_[i_zone][i_sect] = CellGroupType(head, tail - head);
+      local_cells_[i_zone][i_sect] = CellGrp(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       cgsize_t mem_dimensions[] = { tail - head };
@@ -466,8 +481,7 @@ class Part {
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
             GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
             GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        auto cell = CellType(
-            std::move(hexa_ptr), metis_ids[i_cell]);
+        auto cell = CellType(std::move(hexa_ptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
@@ -591,8 +605,12 @@ class Part {
           GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
           GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
           GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        ghost_cells_[m_cell] = CellType(
-            std::move(hexa_ptr), m_cell);
+        auto cell = CellType(std::move(hexa_ptr), m_cell);
+
+      if (cell.metis_id == 33) {
+        // std::cout << cell.projection_.basis_ptr_ << ' ' << &cell.basis_<< std::endl;
+      }
+        ghost_cells_[m_cell] = std::move(cell);
         index += cnt;
       }
       ++i_source;
@@ -603,6 +621,7 @@ class Part {
     // fill `send_cell_ptrs_`
     for (auto& [i_part, node_cnts] : ghost_adj.send_node_cnts) {
       auto& curr_part = send_cell_ptrs_[i_part];
+      assert(curr_part.empty());
       for (auto& [m_cell, cnt] : node_cnts) {
         auto& info = m_to_cell_info_[m_cell];
         auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
@@ -614,6 +633,7 @@ class Part {
     // fill `recv_cell_ptrs_`
     for (auto& [i_part, node_cnts] : ghost_adj.recv_node_cnts) {
       auto& curr_part = recv_cell_ptrs_[i_part];
+      assert(curr_part.empty());
       for (auto& [m_cell, cnt] : node_cnts) {
         auto& cell = ghost_cells_.at(m_cell);
         curr_part.emplace_back(&cell);
@@ -758,8 +778,7 @@ class Part {
       if (cg_sol_write(i_file, i_base, i_zone, soln_name.c_str(),
           CellCenter, &i_soln))
         cgp_error_exit();
-      int n_fields = kFields;
-      for (int i_field = 1; i_field <= n_fields; ++i_field) {
+      for (int i_field = 1; i_field <= kFields; ++i_field) {
         int n_sects = zone.size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
           auto& section = zone.at(i_sect);
@@ -907,6 +926,48 @@ class Part {
         }
       }
     }
+    for (auto& [m_cell, cell] : ghost_cells_) {
+      cells.emplace_back(8);
+      const auto& gauss_ptr = cell.gauss_ptr_;
+      const auto& proj = cell.projection_;
+      // nodes at corners
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
+      fields.emplace_back(proj(coords.back()));
+      if (cell.metis_id == 33) {
+        // // std::cout << coords.back().transpose() << std::endl;
+        // std::cout << proj.center().transpose() << std::endl;
+        // std::cout << cell.center().transpose() << std::endl;
+        // // std::cout << proj.coeff() << std::endl;
+        // std::cout << proj.basis_ptr_ << ' ' << &cell.basis_ << std::endl;
+        // std::cout << &proj.center() << ' ' << &proj.basis_ptr_->center() << ' ' << &cell.center() << ' ' << &cell.basis_.center() << std::endl;
+        // // std::cout << proj.coeff() * mini::polynomial::Raw<Real, kDim, kOrder>::CallAt(cell.center()-cell.center()) << std::endl;
+        // // std::cout << proj(cell.center()) << std::endl;
+        // // std::cout << coords.back() << std::endl;
+        // // std::cout << proj(coords.back())[0] << std::endl;
+      }
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
+      fields.emplace_back(proj(coords.back()));
+      cells.emplace_back(coords.size());
+      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
+      fields.emplace_back(proj(coords.back()));
+    }
     ostrm << "POINTS " << coords.size() << " double\n";
     for (auto& xyz : coords) {
       if (binary) {
@@ -970,16 +1031,15 @@ class Part {
             send_buf[i_real++] = coeff(r, c);
           }
         }
-        // const auto& coeff_vec_view = coeff.reshaped();
-        // for (int i = 0; i < kFields; ++i) {
-        //   send_buf[i_real++] = coeff_vec_view[i];
-        // }
+        if (rank_ == 0) {          
+          // std::cout << cell_ptr->metis_id << " at " << cell_ptr->center().transpose();
+          // std::cout << "\n  sends " << cell_ptr->projection_.coeff() << std::endl;
+        }
       }
       int tag = i_part;
       auto& request = requests_[i_req++];
       MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
-      // std::printf("rank[%d] is gonna send (%d * %d) bytes -> rank[%d]\n", rank_, i_real, sizeof(Real), i_part);
     }
     // recv cell.projection_.coeff_
     i_buf = 0;
@@ -989,7 +1049,6 @@ class Part {
       auto& request = requests_[i_req++];
       MPI_Irecv(recv_buf.data(), recv_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
-      // std::printf("rank[%d] is gonna recv (%d * %d) bytes <- rank[%d]\n", rank_, (int)recv_buf.size(), sizeof(Real), i_part);
     }
     assert(i_req == send_coeffs_.size() + recv_coeffs_.size());
   }
@@ -1006,6 +1065,10 @@ class Part {
       auto* recv_buf = recv_coeffs_[i_buf++].data();
       for (auto* cell_ptr : cell_ptrs) {
         cell_ptr->projection_.UpdateCoeffs(recv_buf);
+        if (rank_ == 1) {          
+          // std::cout << cell_ptr->metis_id << " at " << cell_ptr->center().transpose();
+          // std::cout << "\n  recvs " << recv_buf[0] << " " << recv_buf[1] << std::endl;
+        }
         recv_buf += kFields;
       }
     }
@@ -1079,7 +1142,7 @@ class Part {
       m_to_node_info_;  // [m_node] -> a NodeInfo obj
   std::unordered_map<Int, CellInfo<Int>>
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
-  std::map<Int, std::map<Int, CellGroupType>>
+  std::map<Int, std::map<Int, CellGrp>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
   std::vector<CellPtr>
       inner_cells_, inter_cells_;  // [i_cell] -> CellPtr
