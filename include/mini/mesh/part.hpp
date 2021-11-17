@@ -841,7 +841,8 @@ class Part {
       }
     }
   }
-  void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
+  void WriteSolutionsOnCellCenters(const std::string &soln_name = "0",
+      bool write_ghost_cells = false) const {
     bool binary = false;
     auto ostrm = GetFstream(soln_name);
     ostrm << "# vtk DataFile Version 3.0\n";
@@ -926,47 +927,36 @@ class Part {
         }
       }
     }
-    for (auto& [m_cell, cell] : ghost_cells_) {
-      cells.emplace_back(8);
-      const auto& gauss_ptr = cell.gauss_ptr_;
-      const auto& proj = cell.projection_;
-      // nodes at corners
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
-      fields.emplace_back(proj(coords.back()));
-      if (cell.metis_id == 33) {
-        // // std::cout << coords.back().transpose() << std::endl;
-        // std::cout << proj.center().transpose() << std::endl;
-        // std::cout << cell.center().transpose() << std::endl;
-        // // std::cout << proj.coeff() << std::endl;
-        // std::cout << proj.basis_ptr_ << ' ' << &cell.basis_ << std::endl;
-        // std::cout << &proj.center() << ' ' << &proj.basis_ptr_->center() << ' ' << &cell.center() << ' ' << &cell.basis_.center() << std::endl;
-        // // std::cout << proj.coeff() * mini::polynomial::Raw<Real, kDim, kOrder>::CallAt(cell.center()-cell.center()) << std::endl;
-        // // std::cout << proj(cell.center()) << std::endl;
-        // // std::cout << coords.back() << std::endl;
-        // // std::cout << proj(coords.back())[0] << std::endl;
+    if (write_ghost_cells) {
+      for (auto& [m_cell, cell] : ghost_cells_) {
+        cells.emplace_back(8);
+        const auto& gauss_ptr = cell.gauss_ptr_;
+        const auto& proj = cell.projection_;
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
+        fields.emplace_back(proj(coords.back()));
+        cells.emplace_back(coords.size());
+        coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
+        fields.emplace_back(proj(coords.back()));
       }
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
-      fields.emplace_back(proj(coords.back()));
-      cells.emplace_back(coords.size());
-      coords.emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
-      fields.emplace_back(proj(coords.back()));
     }
     ostrm << "POINTS " << coords.size() << " double\n";
     for (auto& xyz : coords) {

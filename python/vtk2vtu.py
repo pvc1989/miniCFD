@@ -45,3 +45,4 @@ if __name__ == "__main__":
       for i_field in range(n_fields):
         point_data_arrays.append('Field[{0}]'.format(i_field + 1))
       SaveData(filename + '.vtu', proxy=vtk_obj, PointDataArrays=point_data_arrays)
+      os.remove(filename + '.vtk')
