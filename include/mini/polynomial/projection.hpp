@@ -50,13 +50,16 @@ class Projection {
       MatKxN prod = f_col * b_row;
       return prod;
     }, basis.GetGauss());
-    coeff_ = coeff_ * basis.coeff();
+    Coeff temp = coeff_ * basis.coeff();
+    coeff_ = temp;
   }
   explicit Projection(const Basis& basis)
-      : coeff_(MatKxN::Zero()), basis_ptr_(&basis) {
+      : basis_ptr_(&basis) {
+    coeff_.setZero();
   }
   Projection()
-      : coeff_(MatKxN::Zero()), basis_ptr_(nullptr) {
+      : basis_ptr_(nullptr) {
+    coeff_.setZero();
   }
   Projection(const Projection&) = default;
   Projection(Projection&&) noexcept = default;
@@ -65,12 +68,12 @@ class Projection {
   ~Projection() noexcept = default;
 
   MatKx1 operator()(Coord const& global) const {
-    auto local = global; local -= basis_ptr_->center();
+    Coord local = global; local -= center();
     MatNx1 col = Raw<Scalar, kDim, kOrder>::CallAt(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
-    auto& mat_a = basis_ptr_->coeff();
+    const auto& mat_a = basis_ptr_->coeff();
     MatKxN mat_x = coeff_;
     for (int i = N-1; i >= 0; --i) {
       for (int j = i+1; j < N; ++j) {
@@ -83,18 +86,22 @@ class Projection {
   const MatKxN& GetCoeffOnRawBasis() const {
     return coeff_;
   }
+  const Coord& center() const {
+    return basis_ptr_->center();
+  }
   const MatKxN& coeff() const {
     return coeff_;
   }
   MatKxN GetPdvValue(Coord const& global) const {
     MatKxN res; res.setZero();
-    auto local = global; local -= basis_ptr_->center();
+    auto local = global; local -= center();
     return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, coeff());
   }
   MatKx1 GetAverage() const {
     const auto& mat_a = basis_ptr_->coeff();
-    auto mat_x = GetCoeffOnOrthoNormalBasis();
-    return mat_x.col(0) * mat_a(0, 0);
+    MatKxN mat_x = GetCoeffOnOrthoNormalBasis();
+    mat_x.col(0) *= mat_a(0, 0);
+    return mat_x.col(0);
   }
   MatKx1 GetSmoothness() const {
     auto mat_pdv_prod = [&](Coord const& xyz) {
@@ -111,7 +118,8 @@ class Projection {
     *this = Projection(std::forward<Callable>(func), basis);
   }
   Projection& LeftMultiply(const MatKxK& left) {
-    coeff_ = left * coeff_;
+    Coeff temp = left * coeff_;
+    coeff_ = temp;
     return *this;
   }
   Projection& operator*=(const Scalar& ratio) {
@@ -137,7 +145,8 @@ class Projection {
     coeff_ += that.coeff_;
     return *this;
   }
-  void UpdateCoeffs(const Scalar* new_coeffs) {
+  template <class T>
+  void UpdateCoeffs(const T* new_coeffs) {
     for (int c = 0; c < N; ++c) {
       for (int r = 0; r < K; ++r) {
         coeff_(r, c) = *new_coeffs++;
@@ -148,7 +157,7 @@ class Projection {
     coeff_ = new_coeff;
   }
 
- private:
+ public:
   MatKxN coeff_;
   const Basis* basis_ptr_;
 };
