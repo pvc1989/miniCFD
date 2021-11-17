@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 
   /* Linear Advection Problem */
   using Limiter = mini::polynomial::LazyWeno<MyCell>;
-  MyFace::Riemann::global_coefficient[0] = -10.0;  // must proceed `Part()`
+  MyFace::Riemann::global_coefficient = { -10, 0, 0 };  // must proceed `Part()`
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
