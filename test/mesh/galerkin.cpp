@@ -127,7 +127,6 @@ int main(int argc, char* argv[]) {
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
 
     RK::ReadFromLocalCells(part, &rk.u_old_);
-
     part.ShareGhostCellCoeffs();
     rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);
@@ -138,6 +137,7 @@ int main(int argc, char* argv[]) {
     RK::WriteToLocalCells(rk.u_frac13_, &part);
     part.Reconstruct(limiter);
 
+    RK::ReadFromLocalCells(part, &rk.u_frac13_);
     part.ShareGhostCellCoeffs();
     rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);
@@ -148,6 +148,7 @@ int main(int argc, char* argv[]) {
     RK::WriteToLocalCells(rk.u_frac23_, &part);
     part.Reconstruct(limiter);
 
+    RK::ReadFromLocalCells(part, &rk.u_frac23_);
     part.ShareGhostCellCoeffs();
     rk.InitializeRhs(part);
     rk.UpdateLocalRhs(part);

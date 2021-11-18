@@ -165,7 +165,7 @@ struct RungeKutta<Part, 3/* kOrder */> {
     assert(n_cells == u_frac23_.size());
     u_new_ = rhs_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_new_[i_cell] *= dt_;
+      u_new_[i_cell] *= 2 * dt_;
       u_new_[i_cell] += u_frac23_[i_cell];
       u_new_[i_cell] += u_frac23_[i_cell];
       u_new_[i_cell] += u_old_[i_cell];
