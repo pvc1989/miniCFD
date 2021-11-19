@@ -13,6 +13,7 @@ namespace rotated {
 
 template <class UnrotatedSimple>
 class Simple {
+ protected:
   using Base = UnrotatedSimple;
   static constexpr int K = Base::kFunc;
   static constexpr int D = Base::kDim;
@@ -29,7 +30,7 @@ class Simple {
   using Jacobi = typename Base::Jacobi;
   using Coefficient = typename Base::Coefficient;
 
- private:
+ protected:
   template <class Value>
   static Flux ConvertToFlux(const Value& v) {
     Flux flux;
@@ -76,9 +77,10 @@ class Simple {
     }
     return flux_mat;
   }
+
   static Coefficient global_coefficient;
 
- private:
+ protected:
   UnrotatedSimple unrotated_simple_;
 };
 template <class UnrotatedSimple>
