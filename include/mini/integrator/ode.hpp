@@ -115,10 +115,7 @@ struct RungeKutta<Part, 3/* kOrder */> {
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& xyz = gauss.GetGlobalCoord(q);
         Value cv = cell.projection_(xyz);
-        // using Gas = typename MyFace::Gas;
-        // auto flux = Gas::GetFluxMatrix(cv);
-        using Riemann = typename MyFace::Riemann;
-        auto flux = Riemann::GetFluxMatrix(cv);
+        auto flux = MyFace::Riemann::GetFluxMatrix(cv);
         auto grad = cell.basis_.GetGradValue(xyz);
         Coeff prod = flux * grad.transpose();
         prod *= gauss.GetGlobalWeight(q);

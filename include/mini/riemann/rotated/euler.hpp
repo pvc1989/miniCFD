@@ -98,6 +98,7 @@ class Euler {
 
  public:
   using Gas = typename Base::Gas;
+  using FluxMatrix = typename Gas::FluxMatrix;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
@@ -159,6 +160,9 @@ class Euler {
   }
   void NormalToGlobal(Vector* v) {
     cartesian_.NormalToGlobal(v);
+  }
+  static FluxMatrix GetFluxMatrix(Conservative const& conservative) {
+    return Gas::GetFluxMatrix(conservative);
   }
 
  private:
