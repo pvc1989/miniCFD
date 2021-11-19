@@ -52,12 +52,22 @@ int main(int argc, char* argv[]) {
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
 
-  /* Linear Advection Problem */
+  /* Linear Advection Equation
   using Limiter = mini::polynomial::LazyWeno<MyCell>;
   MyFace::Riemann::global_coefficient = { -10, 0, 0 };  // must proceed `Part()`
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
+  }; */
+
+  /* Burgers Equation */
+  using Limiter = mini::polynomial::LazyWeno<MyCell>;
+  MyFace::Riemann::global_coefficient = { 1, 0, 0 };  // must proceed `Part()`
+  auto initial_condition = [&](const Coord& xyz){
+    auto x = xyz[0];
+    Value val;
+    val[0] = x * (x - 2.0) * (x - 4.0);
+    return val;
   };
 
   /* Double Mach Reflection Problem 

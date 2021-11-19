@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include "mini/algebra/column.hpp"
+#include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -16,6 +17,7 @@ template <int D>
 class Burgers {
  public:
   static constexpr int kDim = D;
+  static constexpr int kFunc = 1;
   // Types:
   using Scalar = double;
   using Vector = algebra::Column<double, kDim>;
@@ -23,6 +25,7 @@ class Burgers {
   using State = double;
   using Flux = double;
   using Coefficient = algebra::Column<Jacobi, kDim>;
+  using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
   // Constructor:
   Burgers() : k_(1) {}
   explicit Burgers(double k) : k_(k) {}
@@ -42,6 +45,9 @@ class Burgers {
     } else {  // left_ < slope < right_
       return GetFlux(0 / k_);
     }
+  }
+  Flux GetFluxOnTimeAxis(const MatKx1& left, const MatKx1& right) const {
+    return GetFluxOnTimeAxis(left[0], right[0]);
   }
   // Get F of U
   Flux GetFlux(State const& state) const {
