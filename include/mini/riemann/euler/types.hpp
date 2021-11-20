@@ -12,11 +12,11 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <int kDim>
+template <int kDim, class ScalarType = double>
 class Tuple {
  public:
   // Types:
-  using Scalar = double;  // TODO(PVC): pass by template argument
+  using Scalar = ScalarType;
   using Vector = algebra::Column<Scalar, kDim>;
   // Data:
   Scalar mass{0}, energy{0};
@@ -73,25 +73,32 @@ class Tuple {
   }
 };
 
-template <int kDim>
-class FluxTuple : public Tuple<kDim> {
+template <int kDim, class ScalarType = double>
+class FluxTuple : public Tuple<kDim, ScalarType> {
+  using Base = Tuple<kDim, ScalarType>;
+  using Mat5x1 = algebra::Matrix<ScalarType, 5, 1>;
+
  public:
   // Types:
-  using Base = Tuple<kDim>;
+  using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
+  using FluxMatrix = algebra::Matrix<Scalar, 5, kDim>;
   // Constructors:
   using Base::Base;
 
-  operator algebra::Matrix<double, 5, 1>() const {
+  operator Mat5x1() const {
     static_assert(kDim == 3);
-    return { this->mass, this->momentum[0], this->momentum[1], this->momentum[2], this->energy };
+    return { this->mass, this->momentum[0], this->momentum[1],
+        this->momentum[2], this->energy };
   }
 };
 
-template <int kDim>
-class PrimitiveTuple : public Tuple<kDim> {
+template <int kDim, class ScalarType = double>
+class PrimitiveTuple : public Tuple<kDim, ScalarType> {
+  using Base = Tuple<kDim, ScalarType>;
+
  public:
   // Types:
-  using Base = Tuple<kDim>;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Density = Scalar;
@@ -119,10 +126,11 @@ class PrimitiveTuple : public Tuple<kDim> {
   }
 };
 
-template <int kDim>
-struct ConservativeTuple : public Tuple<kDim>{
+template <int kDim, class ScalarType = double>
+struct ConservativeTuple : public Tuple<kDim, ScalarType> {
+  using Base = Tuple<kDim, ScalarType>;
+
   // Types:
-  using Base = Tuple<kDim>;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Density = Scalar;
@@ -130,9 +138,9 @@ struct ConservativeTuple : public Tuple<kDim>{
   using Speed = Scalar;
   // Constructors:
   using Base::Base;
-  explicit ConservativeTuple(Base const& tuple) : Base(tuple) {
+  explicit ConservativeTuple(Base const& tuple)
+      : Base(tuple) {
   }
-
   ConservativeTuple(const algebra::Matrix<Scalar, kDim+2, 1>& v) {
     this->mass = v[0];
     this->energy = v[kDim+1];
@@ -142,11 +150,10 @@ struct ConservativeTuple : public Tuple<kDim>{
   }
 };
 
-template <int kInteger = 1, int kDecimal = 4>
+template <int kInteger = 1, int kDecimal = 4, class ScalarType = double>
 class IdealGas {
  public:
-  using Scalar = double;
-  using FluxMatrix = algebra::Matrix<Scalar, 5, 3>;
+  using Scalar = ScalarType;
 
  private:
   static_assert(kInteger >= 1 && kDecimal >= 0);
@@ -236,7 +243,8 @@ class IdealGas {
     PrimitiveToConservative(&conservative);
     return conservative;
   }
-  static FluxMatrix GetFluxMatrix(ConservativeTuple<3> const& cv) {
+  static auto GetFluxMatrix(ConservativeTuple<3> const& cv) {
+    using FluxMatrix = typename FluxTuple<3, Scalar>::FluxMatrix;
     FluxMatrix mat;
     auto pv = ConservativeToPrimitive(cv);
     auto rho = pv.rho(), u = pv.u(), v = pv.v(), w = pv.w(), p = pv.p();

@@ -98,10 +98,10 @@ class Euler {
 
  public:
   using Gas = typename Base::Gas;
-  using FluxMatrix = typename Gas::FluxMatrix;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
+  using FluxMatrix = typename Flux::FluxMatrix;
   using Conservative = typename Base::Conservative;
   using Primitive = typename Base::Primitive;
   using State = Primitive;
