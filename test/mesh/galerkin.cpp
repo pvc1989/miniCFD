@@ -130,44 +130,11 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  using RK = RungeKutta<MyPart, 3>;
-  auto rk = RK(dt);
+  auto rk = RungeKutta<MyPart, 3>(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Solve(%d) on proc[%d/%d] at %f sec\n",
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
-
-    RK::ReadFromLocalCells(part, &rk.u_old_);
-    part.ShareGhostCellCoeffs();
-    rk.InitializeRhs(part);
-    rk.UpdateLocalRhs(part);
-    rk.UpdateBoundaryRhs(part);
-    part.UpdateGhostCellCoeffs();
-    rk.UpdateGhostRhs(part);
-    rk.SolveFrac13();
-    RK::WriteToLocalCells(rk.u_frac13_, &part);
-    part.Reconstruct(limiter);
-
-    RK::ReadFromLocalCells(part, &rk.u_frac13_);
-    part.ShareGhostCellCoeffs();
-    rk.InitializeRhs(part);
-    rk.UpdateLocalRhs(part);
-    rk.UpdateBoundaryRhs(part);
-    part.UpdateGhostCellCoeffs();
-    rk.UpdateGhostRhs(part);
-    rk.SolveFrac23();
-    RK::WriteToLocalCells(rk.u_frac23_, &part);
-    part.Reconstruct(limiter);
-
-    RK::ReadFromLocalCells(part, &rk.u_frac23_);
-    part.ShareGhostCellCoeffs();
-    rk.InitializeRhs(part);
-    rk.UpdateLocalRhs(part);
-    rk.UpdateBoundaryRhs(part);
-    part.UpdateGhostCellCoeffs();
-    rk.UpdateGhostRhs(part);
-    rk.SolveFrac33();
-    RK::WriteToLocalCells(rk.u_new_, &part);
-    part.Reconstruct(limiter);
+    rk.Update(&part, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
       std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
