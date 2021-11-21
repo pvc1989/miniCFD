@@ -84,34 +84,34 @@ class Raw<Scalar, 3, 2> {
   template <typename MatKxN>
   static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coeff) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
-    MatKxN res; res.setZero();
+    MatKxN res = coeff; res.col(0).setZero();
     // pdv_x
-    res.col(1) += coeff.col(1);
+    // res.col(1) += coeff.col(1);
     res.col(1) += coeff.col(4) * (2 * x);
     res.col(1) += coeff.col(5) * y;
     res.col(1) += coeff.col(6) * z;
     // pdv_y
-    res.col(2) += coeff.col(2);
+    // res.col(2) += coeff.col(2);
     res.col(2) += coeff.col(5) * x;
     res.col(2) += coeff.col(7) * (2 * y);
     res.col(2) += coeff.col(8) * z;
     // pdv_z
-    res.col(3) += coeff.col(3);
+    // res.col(3) += coeff.col(3);
     res.col(3) += coeff.col(6) * x;
     res.col(3) += coeff.col(8) * y;
     res.col(3) += coeff.col(9) * (2 * z);
     // pdv_xx
-    res.col(4) += coeff.col(4);
+    // res.col(4) += coeff.col(4);
     // pdv_xy
-    res.col(5) += coeff.col(5);
+    // res.col(5) += coeff.col(5);
     // pdv_xz
-    res.col(6) += coeff.col(6);
+    // res.col(6) += coeff.col(6);
     // pdv_yy
-    res.col(7) += coeff.col(7);
+    // res.col(7) += coeff.col(7);
     // pdv_yz
-    res.col(8) += coeff.col(8);
+    // res.col(8) += coeff.col(8);
     // pdv_zz
-    res.col(9) += coeff.col(9);
+    // res.col(9) += coeff.col(9);
     return res;
   }
 
@@ -119,19 +119,19 @@ class Raw<Scalar, 3, 2> {
   static auto GetGradValue(const Coord &xyz,
       const algebra::Matrix<Scalar, K, N> &coeff) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
-    algebra::Matrix<Scalar, K, 3> res; res.setZero();
+    algebra::Matrix<Scalar, K, 3> res;
     // pdv_x
-    res.col(0) += coeff.col(1);
+    res.col(0) = coeff.col(1);
     res.col(0) += coeff.col(4) * (2 * x);
     res.col(0) += coeff.col(5) * y;
     res.col(0) += coeff.col(6) * z;
     // pdv_y
-    res.col(1) += coeff.col(2);
+    res.col(1) = coeff.col(2);
     res.col(1) += coeff.col(5) * x;
     res.col(1) += coeff.col(7) * (2 * y);
     res.col(1) += coeff.col(8) * z;
     // pdv_z
-    res.col(2) += coeff.col(3);
+    res.col(2) = coeff.col(3);
     res.col(2) += coeff.col(6) * x;
     res.col(2) += coeff.col(8) * y;
     res.col(2) += coeff.col(9) * (2 * z);

@@ -93,7 +93,6 @@ class Projection {
     return coeff_;
   }
   MatKxN GetPdvValue(Coord const& global) const {
-    MatKxN res; res.setZero();
     auto local = global; local -= center();
     return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, coeff());
   }
