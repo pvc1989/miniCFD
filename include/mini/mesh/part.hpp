@@ -1068,13 +1068,25 @@ class Part {
   void Reconstruct(Callable&& limiter) {
     ShareGhostCellCoeffs();
     // run the limiter on inner cells that need no ghost cells
+    auto new_projections = std::vector<typename CellType::Projection>();
+    new_projections.reserve(inner_cells_.size());
+    for (const auto* cell_ptr : inner_cells_) {
+      new_projections.emplace_back(limiter(*cell_ptr));
+    }
+    int i = 0;
     for (auto* cell_ptr : inner_cells_) {
-      limiter(cell_ptr);
+      cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
     }
     // run the limiter on inter cells that need ghost cells
+    new_projections.clear();
+    new_projections.reserve(inter_cells_.size());
     UpdateGhostCellCoeffs();
+    for (const auto* cell_ptr : inter_cells_) {
+      new_projections.emplace_back(limiter(*cell_ptr));
+    }
+    i = 0;
     for (auto* cell_ptr : inter_cells_) {
-      limiter(cell_ptr);
+      cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
     }
   }
 
