@@ -33,7 +33,8 @@ int main(int argc, char* argv[]) {
       "double_mach_hexa", comm_rank);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
-  part.ForEachLocalCell([&](const auto &cell){
+  const auto *part_ptr = &part;
+  part_ptr->ForEachLocalCell([&](const auto &cell){
     volume += cell.volume();
     n_cells += 1;
     n_faces += cell.adj_faces_.size();

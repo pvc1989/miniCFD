@@ -10,7 +10,11 @@
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/riemann/euler/types.hpp"
+#include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/euler/eigen.hpp"
+#include "mini/riemann/rotated/euler.hpp"
+#include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/rotated/burgers.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
 
@@ -45,7 +49,7 @@ int main(int argc, char* argv[]) {
   constexpr int kFunc = 5;
   constexpr int kDim = 3;
   constexpr int kOrder = 2;
-  constexpr int kTemporalAccuracy = 3;
+  constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
   using MyCell = typename MyPart::CellType;
   using MyFace = typename MyPart::FaceType;
@@ -54,16 +58,18 @@ int main(int argc, char* argv[]) {
   using Coeff = typename MyCell::Coeff;
 
   /* Linear Advection Equation
-  using Limiter = mini::polynomial::LazyWeno<MyCell>;
-  MyFace::Riemann::global_coefficient = { -10, 0, 0 };  // must proceed `Part()`
+  using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
+  using MyRiemann = mini::riemann::rotated::Single<kDim>;
+  MyRiemann::Riemann::global_coefficient = { -10, 0, 0 };
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
   }; */
 
   /* Burgers Equation
-  using Limiter = mini::polynomial::LazyWeno<MyCell>;
-  MyFace::Riemann::global_coefficient = { 1, 0, 0 };  // must proceed `Part()`
+  using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
+  using MyRiemann = mini::riemann::rotated::Burgers<kDim>;
+  MyRiemann::global_coefficient = { 1, 0, 0 };
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0];
     Value val;
@@ -72,12 +78,14 @@ int main(int argc, char* argv[]) {
   }; */
 
   /* Double Mach Reflection Problem */
-  using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<3>;
+  using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
-  // using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
-  using Limiter = mini::polynomial::LazyWeno<MyCell>;
+  using MyLimiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+  using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;
+  // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   // prepare the states before and after the shock
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
@@ -117,14 +125,16 @@ int main(int argc, char* argv[]) {
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  part.ForEachLocalCell([&](MyCell &cell){
-    cell.Project(initial_condition);
+  part.ForEachLocalCell([&](MyCell *cell_ptr){
+    cell_ptr->Project(initial_condition);
   });
 
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
-  part.Reconstruct(limiter);
+  auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
+  if (kOrder > 0) {
+    part.Reconstruct(limiter);
+  }
 
   std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -132,7 +142,9 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  auto rk = RungeKutta<MyPart, kTemporalAccuracy>(dt);
+  auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
+  rk.BuildRiemannSolvers(part);
+
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Solve(%d) on proc[%d/%d] at %f sec\n",
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
