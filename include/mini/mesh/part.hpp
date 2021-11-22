@@ -22,10 +22,6 @@
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
-#include "mini/riemann/euler/exact.hpp"
-#include "mini/riemann/rotated/euler.hpp"
-#include "mini/riemann/rotated/single.hpp"
-#include "mini/riemann/rotated/burgers.hpp"
 
 namespace mini {
 namespace mesh {
@@ -89,24 +85,17 @@ struct Cell;
 
 template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Face {
-  using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
+  using Gauss = integrator::Face<Real, 3>;
+  using GaussPtr = std::unique_ptr<Gauss>;
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
-  // TODO(PVC): move Riemann out
-  using Gas = mini::riemann::euler::IdealGas<1, 4>;
-  using Solver = mini::riemann::euler::Exact<Gas, 3>;
-  using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
-  // using Riemann = mini::riemann::rotated::Single<3>;
-  // using Riemann = mini::riemann::rotated::Burgers<3>;
 
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
-  std::vector<Riemann> riemanns_;
   Int id_{-1};
 
   Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
         id_(id) {
-    riemanns_.resize(gauss_ptr_->CountQuadPoints());
   }
   Face(const Face&) = delete;
   Face& operator=(const Face&) = delete;
@@ -114,17 +103,8 @@ struct Face {
   Face& operator=(Face&&) noexcept = default;
   ~Face() noexcept = default;
 
-  void RotateRiemanns() {
-    for (int q = 0; q < gauss_ptr_->CountQuadPoints(); ++q) {
-      auto& frame = gauss_ptr_->GetNormalFrame(q);
-      riemanns_[q].Rotate(frame);
-    }
-  }
-  const Riemann& GetRiemann(int i) const {
-    return riemanns_[i];
-  }
-  Riemann& GetRiemann(int i) {
-    return riemanns_[i];
+  const Gauss& gauss() const {
+    return *gauss_ptr_;
   }
   Real area() const {
     return gauss_ptr_->area();
@@ -687,7 +667,6 @@ class Part {
       quad_ptr->BuildNormalFrames();
       auto face_ptr = std::make_unique<FaceType>(
           std::move(quad_ptr), &holder, &sharer, local_faces_.size());
-      face_ptr->RotateRiemanns();
       holder.adj_faces_.emplace_back(face_ptr.get());
       sharer.adj_faces_.emplace_back(face_ptr.get());
       local_faces_.emplace_back(std::move(face_ptr));
@@ -737,7 +716,6 @@ class Part {
       auto face_ptr = std::make_unique<FaceType>(
           std::move(quad_ptr), &holder, &sharer,
           local_faces_.size() + ghost_faces_.size());
-      face_ptr->RotateRiemanns();
       holder.adj_faces_.emplace_back(face_ptr.get());
       ghost_faces_.emplace_back(std::move(face_ptr));
     }
@@ -1092,6 +1070,7 @@ class Part {
     }
   }
 
+  // Accessors:
   template<class Visitor>
   void ForEachLocalCell(Visitor&& visit) const {
     for (const auto& [i_zone, zone] : local_cells_) {
@@ -1103,12 +1082,34 @@ class Part {
     }
   }
   template<class Visitor>
+  void ForEachLocalFace(Visitor&& visit) const {
+    for (auto& face_uptr : local_faces_) {
+      visit(*face_uptr);
+    }
+  }
+  template<class Visitor>
+  void ForEachGhostFace(Visitor&& visit) const {
+    for (auto& face_uptr : ghost_faces_) {
+      visit(*face_uptr);
+    }
+  }
+  template<class Visitor>
+  void ForEachSolidFace(Visitor&& visit) const {
+    for (auto& [i_zone, zone] : bound_faces_) {
+      for (auto& [i_sect, sect] : zone) {
+        for (auto& face_uptr : sect) {
+          visit(*face_uptr);
+        }
+      }
+    }
+  }
+  // Mutators:
+  template<class Visitor>
   void ForEachLocalCell(Visitor&& visit) {
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& cell : sect) {
-          // TODO(PVC): pass ptr to mutators
-          visit(cell);
+          visit(&cell);
         }
       }
     }
@@ -1116,13 +1117,13 @@ class Part {
   template<class Visitor>
   void ForEachLocalFace(Visitor&& visit) {
     for (auto& face_uptr : local_faces_) {
-      visit(*face_uptr);
+      visit(face_uptr.get());
     }
   }
   template<class Visitor>
   void ForEachGhostFace(Visitor&& visit) {
     for (auto& face_uptr : ghost_faces_) {
-      visit(*face_uptr);
+      visit(face_uptr.get());
     }
   }
   template<class Visitor>
@@ -1130,7 +1131,7 @@ class Part {
     for (auto& [i_zone, zone] : bound_faces_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& face_uptr : sect) {
-          visit(*face_uptr);
+          visit(face_uptr.get());
         }
       }
     }
@@ -1189,7 +1190,8 @@ class Part {
     }
     char line[kLineWidth];
     auto face_conn = ZoneSectToConn();
-    // build local faces
+    Int face_id = local_faces_.size() + ghost_faces_.size();
+    // build boundary faces
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
@@ -1246,8 +1248,7 @@ class Part {
             GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
         quad_ptr->BuildNormalFrames();
         auto face_ptr = std::make_unique<FaceType>(
-            std::move(quad_ptr), holder_ptr, nullptr);
-        face_ptr->RotateRiemanns();
+            std::move(quad_ptr), holder_ptr, nullptr, face_id++);
         holder_ptr->adj_faces_.emplace_back(face_ptr.get());
         faces.emplace_back(std::move(face_ptr));
       }

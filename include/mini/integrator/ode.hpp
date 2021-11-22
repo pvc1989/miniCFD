@@ -3,9 +3,10 @@
 #include <stdexcept>
 #include "mini/mesh/part.hpp"
 
-template <typename PartType>
+template <typename PartType, typename RiemannType>
 class RungeKuttaBase {
  public:
+  using Riemann = RiemannType;
   using Part = PartType;
   using Cell = typename Part::CellType;
   using Face = typename Part::FaceType;
@@ -15,6 +16,7 @@ class RungeKuttaBase {
 
  protected:
   std::vector<Coeff> rhs_;
+  std::vector<std::vector<Riemann>> riemann_solvers_;
   double dt_;
 
  public:
@@ -38,10 +40,25 @@ class RungeKuttaBase {
   }
   static void WriteToLocalCells(const std::vector<Coeff> &coeffs, Part *part) {
     assert(coeffs.size() == part->CountLocalCells());
-    part->ForEachLocalCell([&coeffs](auto &cell){
-      Coeff new_coeff = coeffs.at(cell.id()) * cell.basis_.coeff();
-      cell.projection_.UpdateCoeffs(new_coeff);
+    part->ForEachLocalCell([&coeffs](Cell *cell_ptr){
+      Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis_.coeff();
+      cell_ptr->projection_.UpdateCoeffs(new_coeff);
     });
+  }
+  void BuildRiemannSolvers(const Part &part) {
+    auto riemann_builder = [this](const Face &face){
+      auto& solvers = this->riemann_solvers_.emplace_back();
+      assert(face.id() == this->riemann_solvers_.size());
+      auto& gauss = face.gauss();
+      solvers.resize(gauss.CountQuadPoints());
+      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+        auto& frame = gauss.GetNormalFrame(q);
+        solvers[q].Rotate(frame);
+      }
+    };
+    part.ForEachLocalFace(riemann_builder);
+    part.ForEachGhostFace(riemann_builder);
+    part.ForEachSolidFace(riemann_builder);
   }
   void InitializeRhs(const Part &part) {
     rhs_.resize(part.CountLocalCells());
@@ -54,7 +71,7 @@ class RungeKuttaBase {
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& xyz = gauss.GetGlobalCoord(q);
         Value cv = cell.projection_(xyz);
-        auto flux = Face::Riemann::GetFluxMatrix(cv);
+        auto flux = Riemann::GetFluxMatrix(cv);
         auto grad = cell.basis_.GetGradValue(xyz);
         Coeff prod = flux * grad.transpose();
         prod *= gauss.GetGlobalWeight(q);
@@ -62,17 +79,18 @@ class RungeKuttaBase {
       }
     });
   }
-  void UpdateLocalRhs(Part &part) {
+  void UpdateLocalRhs(const Part &part) {
     assert(rhs_.size() == part.CountLocalCells());
-    part.ForEachLocalFace([this](Face &face){
+    part.ForEachLocalFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
+      auto& riemann_solvers = riemann_solvers_.at(face.id());
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        auto& riemann = face.GetRiemann(q);
+        auto& riemann = riemann_solvers[q];
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
@@ -80,17 +98,18 @@ class RungeKuttaBase {
       }
     });
   }
-  void UpdateGhostRhs(Part &part) {
+  void UpdateGhostRhs(const Part &part) {
     assert(rhs_.size() == part.CountLocalCells());
-    part.ForEachGhostFace([this](Face &face){
+    part.ForEachGhostFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
+      auto& riemann_solvers = riemann_solvers_.at(face.id());
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        auto& riemann = face.GetRiemann(q);
+        auto& riemann = riemann_solvers[q];
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff temp = flux * holder.basis_(coord).transpose();
@@ -98,14 +117,15 @@ class RungeKuttaBase {
       }
     });
   }
-  void UpdateBoundaryRhs(Part &part) {
-    part.ForEachSolidFace([this](Face &face){
+  void UpdateBoundaryRhs(const Part &part) {
+    part.ForEachSolidFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
       const auto& holder = *(face.holder_);
+      auto& riemann_solvers = riemann_solvers_.at(face.id());
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
-        auto& riemann = face.GetRiemann(q);
+        auto& riemann = riemann_solvers[q];
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
@@ -115,16 +135,18 @@ class RungeKuttaBase {
   }
 };
 
-template <typename PartType, int kTemporalAccuracy = 3>
+template <int kTemporalAccuracy, typename PartType, typename RiemannType>
 struct RungeKutta;
 
-template <typename PartType>
-struct RungeKutta<PartType, 1> : public RungeKuttaBase<PartType> {
+template <typename PartType, typename RiemannType>
+struct RungeKutta<1, PartType, RiemannType>
+    : public RungeKuttaBase<PartType, RiemannType> {
  private:
-  using Base = RungeKuttaBase<PartType>;
+  using Base = RungeKuttaBase<PartType, RiemannType>;
 
  public:
-  using Part = PartType;
+  using Part = typename Base::Part;
+  using Riemann = typename Base::Riemann;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -145,7 +167,7 @@ struct RungeKutta<PartType, 1> : public RungeKuttaBase<PartType> {
  public:
   template <class Limiter>
   void Update(Part *part_ptr, Limiter& limiter) {
-    Part &part = *part_ptr;  // TODO: change to const ref
+    const Part &part = *part_ptr;  // TODO: change to const ref
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
@@ -166,13 +188,15 @@ struct RungeKutta<PartType, 1> : public RungeKuttaBase<PartType> {
   }
 };
 
-template <typename PartType>
-struct RungeKutta<PartType, 3> : public RungeKuttaBase<PartType> {
+template <typename PartType, typename RiemannType>
+struct RungeKutta<3, PartType, RiemannType>
+    : public RungeKuttaBase<PartType, RiemannType> {
  private:
-  using Base = RungeKuttaBase<PartType>;
+  using Base = RungeKuttaBase<PartType, RiemannType>;
 
  public:
-  using Part = PartType;
+  using Part = typename Base::Part;
+  using Riemann = typename Base::Riemann;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -193,7 +217,7 @@ struct RungeKutta<PartType, 3> : public RungeKuttaBase<PartType> {
  public:
   template <class Limiter>
   void Update(Part *part_ptr, Limiter& limiter) {
-    Part &part = *part_ptr;  // TODO: change to const ref
+    const Part &part = *part_ptr;  // TODO: change to const ref
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
