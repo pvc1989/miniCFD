@@ -14,7 +14,7 @@ namespace polynomial {
 
 template <typename Cell>
 class LazyWeno {
-  using Scalar = double;
+  using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Basis = typename Projection::Basis;
   using Coord = typename Projection::Coord;
@@ -106,7 +106,7 @@ class LazyWeno {
 
 template <typename Cell, typename Eigen>
 class EigenWeno {
-  using Scalar = double;
+  using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Basis = typename Projection::Basis;
   using Coord = typename Projection::Coord;
