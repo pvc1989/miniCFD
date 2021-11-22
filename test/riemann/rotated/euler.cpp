@@ -40,8 +40,7 @@ TEST_F(TestRotatedEuler, Test2dConverter) {
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);
 }
 TEST_F(TestRotatedEuler, Test3dConverter) {
-  using UnrotatedSolver = euler::Exact<Gas, 3>;
-  using Solver = Euler<UnrotatedSolver, 3>;
+  using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
   using State = Solver::State;
@@ -59,8 +58,7 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
   EXPECT_DOUBLE_EQ(v[2], v_copy[2]);
 }
 TEST_F(TestRotatedEuler, Test3dSolver) {
-  using UnrotatedSolver = euler::Exact<Gas, 3>;
-  using Solver = Euler<UnrotatedSolver, 3>;
+  using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
   using State = Solver::State;
   using Speed = State::Speed;
