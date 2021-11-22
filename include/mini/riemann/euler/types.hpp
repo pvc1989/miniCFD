@@ -19,10 +19,13 @@ class Tuple {
   using Scalar = ScalarType;
   using Vector = algebra::Column<Scalar, kDim>;
   // Data:
-  Scalar mass{0}, energy{0};
-  Vector momentum{0};
+  Scalar mass, energy;
+  Vector momentum;
   // Constructors:
-  Tuple() = default;
+  Tuple()
+      : mass{0.0}, energy(0.0) {
+    momentum.fill(0.0);
+  }
   Tuple(Scalar const& rho,
         Scalar const& u,
         Scalar const& p)
