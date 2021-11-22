@@ -92,9 +92,10 @@ class Cartesian<Scalar, 3> {
   static_assert(std::is_scalar_v<Scalar>);
 };
 
-template <class UnrotatedEuler, int kDim = 2>
+template <class UnrotatedEuler>
 class Euler {
   using Base = UnrotatedEuler;
+  constexpr static int kDim = Base::kDim;
 
  public:
   using Gas = typename Base::Gas;

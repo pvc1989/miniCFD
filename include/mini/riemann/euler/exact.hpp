@@ -31,9 +31,10 @@ bool TimeAxisBeforeExpansion<1>(double u, double a) { return u - a > 0; }
 template <>
 bool TimeAxisBeforeExpansion<3>(double u, double a) { return u + a < 0; }
 
-template <class Gas, int kDim>
+template <class Gas, int D>
 class Implementor {
  public:
+  constexpr static int kDim = D;
   // Types:
   using Flux = FluxTuple<kDim>;
   using Conservative = ConservativeTuple<kDim>;
@@ -248,6 +249,7 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
   using Base = Implementor<GasModel, 1>;
 
  public:
+  constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasModel;
   using Scalar = typename Base::Scalar;
@@ -278,6 +280,7 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
   using Base = Implementor<GasModel, 2>;
 
  public:
+  constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasModel;
   using Scalar = typename Base::Scalar;
@@ -311,6 +314,7 @@ class Exact<GasModel, 3> : public Implementor<GasModel, 3> {
   using Base = Implementor<GasModel, 3>;
 
  public:
+  constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasModel;
   using Scalar = typename Base::Scalar;
