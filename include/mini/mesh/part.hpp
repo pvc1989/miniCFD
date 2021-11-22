@@ -138,6 +138,7 @@ struct Cell {
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
   using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
+  using Scalar = Real;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
