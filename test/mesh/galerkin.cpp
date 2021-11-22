@@ -42,9 +42,10 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  constexpr int kFunc = 1;
+  constexpr int kFunc = 5;
   constexpr int kDim = 3;
   constexpr int kOrder = 2;
+  constexpr int kTemporalAccuracy = 3;
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
   using MyCell = typename MyPart::CellType;
   using MyFace = typename MyPart::FaceType;
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]) {
     return (xyz[0] > 3.0) ? value_after : value_before;
   }; */
 
-  /* Burgers Equation */
+  /* Burgers Equation
   using Limiter = mini::polynomial::LazyWeno<MyCell>;
   MyFace::Riemann::global_coefficient = { 1, 0, 0 };  // must proceed `Part()`
   auto initial_condition = [&](const Coord& xyz){
@@ -68,14 +69,15 @@ int main(int argc, char* argv[]) {
     Value val;
     val[0] = x * (x - 2.0) * (x - 4.0);
     return val;
-  };
+  }; */
 
-  /* Double Mach Reflection Problem 
+  /* Double Mach Reflection Problem */
   using Primitive = mini::riemann::euler::PrimitiveTuple<3>;
   using Conservative = mini::riemann::euler::ConservativeTuple<3>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
-  using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  // using Limiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
+  using Limiter = mini::polynomial::LazyWeno<MyCell>;
   // prepare the states before and after the shock
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
@@ -94,7 +96,7 @@ int main(int argc, char* argv[]) {
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   // auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
   // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  auto primitive_after = Primitive(1.0, 0, 0, 0.0, 1);
+  auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
   auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
   auto consv_after = Gas::PrimitiveToConservative(primitive_after);
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
@@ -106,8 +108,8 @@ int main(int argc, char* argv[]) {
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
     // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
-    return (x > 2.0) ? value_after : value_before;
-  }; */
+    return (x < 2.0) ? value_after : value_before;
+  };
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -130,7 +132,7 @@ int main(int argc, char* argv[]) {
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
-  auto rk = RungeKutta<MyPart, 3>(dt);
+  auto rk = RungeKutta<MyPart, kTemporalAccuracy>(dt);
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Solve(%d) on proc[%d/%d] at %f sec\n",
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);

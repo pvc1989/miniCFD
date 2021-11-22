@@ -92,10 +92,11 @@ struct Face {
   using GaussPtr = std::unique_ptr<integrator::Face<Real, 3>>;
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
   // TODO(PVC): move Riemann out
-  // using Gas = mini::riemann::euler::IdealGas<1, 4>;
-  // using Solver = mini::riemann::euler::Exact<Gas, 3>;
-  // using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
-  using Riemann = mini::riemann::rotated::Burgers<3>;
+  using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  using Solver = mini::riemann::euler::Exact<Gas, 3>;
+  using Riemann = mini::riemann::rotated::Euler<Solver, 3>;
+  // using Riemann = mini::riemann::rotated::Single<3>;
+  // using Riemann = mini::riemann::rotated::Burgers<3>;
 
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
