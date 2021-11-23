@@ -1,6 +1,8 @@
 #include <cassert>
+#include <functional>
 #include <vector>
 #include <stdexcept>
+#include <string>
 #include "mini/mesh/part.hpp"
 
 template <typename PartType, typename RiemannType>
@@ -13,10 +15,14 @@ class RungeKuttaBase {
   using Projection = typename Cell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;
+  using Coord = typename Cell::Coord;
 
  protected:
   std::vector<Coeff> rhs_;
   std::vector<std::vector<Riemann>> riemann_solvers_;
+  std::vector<std::string> free_bc_, solid_bc_;
+  using Function = std::function<Value(const Coord&, double)>;
+  std::unordered_map<std::string, Function> prescribed_bc_;
   double dt_;
 
  public:
@@ -29,6 +35,18 @@ class RungeKuttaBase {
   RungeKuttaBase(RungeKuttaBase &&) noexcept = default;
   RungeKuttaBase& operator=(RungeKuttaBase &&) noexcept = default;
   ~RungeKuttaBase() noexcept = default;
+
+ public:  // set BCs
+  template <typename Callable>
+  void SetPrescribedBC(const std::string &name, Callable&& func) {
+    prescribed_bc_[name] = func;
+  }
+  void SetSolidWallBC(const std::string &name) {
+    solid_bc_.emplace_back(name);
+  }
+  void SetFreeOutletBC(const std::string &name) {
+    free_bc_.emplace_back(name);
+  }
 
  public:
   static void ReadFromLocalCells(const Part &part, std::vector<Coeff> *coeffs) {
@@ -58,7 +76,7 @@ class RungeKuttaBase {
     };
     part.ForEachLocalFace(riemann_builder);
     part.ForEachGhostFace(riemann_builder);
-    part.ForEachSolidFace(riemann_builder);
+    part.ForEachBoundaryFace(riemann_builder);
   }
   void InitializeRhs(const Part &part) {
     rhs_.resize(part.CountLocalCells());
@@ -117,8 +135,8 @@ class RungeKuttaBase {
       }
     });
   }
-  void UpdateBoundaryRhs(const Part &part) {
-    part.ForEachSolidFace([this](const Face &face){
+  void ApplySolidWallBC(const Part &part) {
+    auto visit = [this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
       const auto& holder = *(face.holder_);
@@ -131,7 +149,54 @@ class RungeKuttaBase {
         flux *= gauss.GetGlobalWeight(q);
         this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
       }
-    });
+    };
+    for (const auto& name : solid_bc_) {
+      part.ForEachBoundaryFace(visit, name);
+    }
+  }
+  void ApplyFreeOutletBC(const Part &part) {
+    auto visit = [this](const Face &face){
+      const auto& gauss = *(face.gauss_ptr_);
+      assert(face.sharer_ == nullptr);
+      const auto& holder = *(face.holder_);
+      auto& riemann_solvers = riemann_solvers_.at(face.id());
+      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+        const auto& coord = gauss.GetGlobalCoord(q);
+        auto& riemann = riemann_solvers[q];
+        Value u_holder = holder.projection_(coord);
+        Value flux = riemann.GetFluxOnFreeWall(u_holder);
+        flux *= gauss.GetGlobalWeight(q);
+        this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
+      }
+    };
+    for (const auto& name : free_bc_) {
+      part.ForEachBoundaryFace(visit, name);
+    }
+  }
+  void ApplyPrescribedBC(const Part &part, double t_curr) {
+    for (const auto& [name, func] : prescribed_bc_) {
+      auto visit = [this, t_curr, &func](const Face &face){
+        const auto& gauss = *(face.gauss_ptr_);
+        assert(face.sharer_ == nullptr);
+        const auto& holder = *(face.holder_);
+        auto& riemann_solvers = riemann_solvers_.at(face.id());
+        for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+          const auto& coord = gauss.GetGlobalCoord(q);
+          auto& riemann = riemann_solvers[q];
+          Value u_given = func(coord, t_curr);
+          // std::cout << u_given.transpose() << std::endl;
+          Value flux = riemann.GetRotatedFlux(u_given);
+          flux *= gauss.GetGlobalWeight(q);
+          this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        }
+      };
+      part.ForEachBoundaryFace(visit, name);
+    }
+  }
+  void UpdateBoundaryRhs(const Part &part, double t_curr) {
+    ApplySolidWallBC(part);
+    ApplyFreeOutletBC(part);
+    ApplyPrescribedBC(part, t_curr);
   }
 };
 
@@ -166,14 +231,14 @@ struct RungeKutta<1, PartType, RiemannType>
 
  public:
   template <class Limiter>
-  void Update(Part *part_ptr, Limiter& limiter) {
+  void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
     const Part &part = *part_ptr;  // TODO: change to const ref
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeRhs(part);
     this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostRhs(part);
     auto n_cells = u_old_.size();
@@ -216,14 +281,14 @@ struct RungeKutta<3, PartType, RiemannType>
 
  public:
   template <class Limiter>
-  void Update(Part *part_ptr, Limiter& limiter) {
+  void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
     const Part &part = *part_ptr;  // TODO: change to const ref
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeRhs(part);
     this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostRhs(part);
     this->SolveFrac13();
@@ -234,7 +299,7 @@ struct RungeKutta<3, PartType, RiemannType>
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeRhs(part);
     this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostRhs(part);
     this->SolveFrac23();
@@ -245,7 +310,7 @@ struct RungeKutta<3, PartType, RiemannType>
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeRhs(part);
     this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostRhs(part);
     this->SolveFrac33();
