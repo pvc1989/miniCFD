@@ -102,10 +102,10 @@ int main(int argc, char* argv[]) {
   std::cout << "u_n_after = " << u_n_after << '\n';
   auto tan_60 = std::sqrt(3.0), cos_30 = tan_60 * 0.5, sin_30 = 0.5;
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
-  // auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
-  // auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
-  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+  auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
+  auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
+  // auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
+  // auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
   auto consv_after = Gas::PrimitiveToConservative(primitive_after);
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
   Value value_after = { consv_after.mass, consv_after.momentum[0],
@@ -115,8 +115,8 @@ int main(int argc, char* argv[]) {
   double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
-    // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
-    return (x < 2.0) ? value_after : value_before;
+    return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
+    // return (x < 2.0) ? value_after : value_before;
   };
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
     part.Reconstruct(limiter);
   }
 
-  std::printf("Run Write(0) on proc[%d/%d] at %f sec\n",
+  std::printf("Run Write(Step0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
@@ -145,13 +145,27 @@ int main(int argc, char* argv[]) {
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
 
+  auto u_x = u_gamma * cos_30;
+  auto moving_shock = [&](const Coord& xyz, double t){
+    auto x = xyz[0], y = xyz[1];
+    return ((x - (x_gap + u_x * t)) * tan_60 < y) ? value_after : value_before;
+  };
+  rk.SetPrescribedBC("4_S_27", moving_shock);  // Top
+  rk.SetPrescribedBC("4_S_31", moving_shock);  // Left
+  rk.SetSolidWallBC("4_S_1");  // Back
+  rk.SetSolidWallBC("4_S_32");  // Front
+  rk.SetSolidWallBC("4_S_19");  // Bottom
+  rk.SetFreeOutletBC("4_S_23");  // Right
+  rk.SetFreeOutletBC("4_S_15");  // Gap
+
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
-    std::printf("Run Solve(%d) on proc[%d/%d] at %f sec\n",
+    std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
-    rk.Update(&part, limiter);
+    double t_curr = t_start + dt * i_step;
+    rk.Update(&part, t_curr, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
-      std::printf("Run Write(%d) on proc[%d/%d] at %f sec\n",
+      std::printf("Run Write(Step%d) on proc[%d/%d] at %f sec\n",
           i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);

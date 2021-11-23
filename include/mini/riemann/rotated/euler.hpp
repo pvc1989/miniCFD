@@ -130,6 +130,13 @@ class Euler {
   static Flux GetFlux(State const& state) {
     return Base::GetFlux(state);
   }
+  Flux GetRotatedFlux(Conservative const& conservative) {
+    auto primitive = Gas::ConservativeToPrimitive(conservative);
+    GlobalToNormal(&(primitive.momentum));
+    auto flux = unrotated_euler_.GetFlux(primitive);
+    cartesian_.NormalToGlobal(&(flux.momentum));
+    return flux;
+  }
   Flux GetFluxOnTimeAxis(
       Conservative const& left,
       Conservative const& right) {
