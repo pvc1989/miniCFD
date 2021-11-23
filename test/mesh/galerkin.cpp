@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     return val;
   }; */
 
-  /* Double Mach Reflection Problem */
+  /* Euler system */
   using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
   using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
-  // prepare the states before and after the shock
+
+  /* IC for Double-Mach Problem
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
   double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
@@ -118,6 +119,16 @@ int main(int argc, char* argv[]) {
     return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
     // return (x < 2.0) ? value_after : value_before;
   };
+  */
+
+  /* IC for Forward-Step Problem */
+  auto primitive = Primitive(1.4, 3.0, 0.0, 0.0, 1.0);
+  auto conservative = Gas::PrimitiveToConservative(primitive);
+  Value given_value = { conservative.mass, conservative.momentum[0],
+      conservative.momentum[1], conservative.momentum[2], conservative.energy };
+  auto initial_condition = [&given_value](const Coord& xyz){
+    return given_value;
+  };
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -145,6 +156,7 @@ int main(int argc, char* argv[]) {
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
 
+  /* BC for Double-Mach Problem
   auto u_x = u_gamma / cos_30;
   auto moving_shock = [&](const Coord& xyz, double t){
     auto x = xyz[0], y = xyz[1];
@@ -157,6 +169,22 @@ int main(int argc, char* argv[]) {
   rk.SetSolidWallBC("4_S_19");  // Bottom
   rk.SetFreeOutletBC("4_S_23");  // Right
   rk.SetFreeOutletBC("4_S_15");  // Gap
+  */
+
+  /* BC for Forward-Step Problem */
+  auto given_state = [&given_value](const Coord& xyz, double t){
+    return given_value;
+  };
+  rk.SetPrescribedBC("4_S_53", given_state);  // Left-Upper
+  rk.SetPrescribedBC("4_S_31", given_state);  // Left-Lower
+  rk.SetSolidWallBC("4_S_49"); rk.SetSolidWallBC("4_S_71");  // Top
+  rk.SetSolidWallBC("4_S_1"); rk.SetSolidWallBC("4_S_2");
+  rk.SetSolidWallBC("4_S_3");  // Back
+  rk.SetSolidWallBC("4_S_54"); rk.SetSolidWallBC("4_S_76");
+  rk.SetSolidWallBC("4_S_32");  // Front
+  rk.SetSolidWallBC("4_S_19"); rk.SetSolidWallBC("4_S_23");
+  rk.SetSolidWallBC("4_S_63");  // Step
+  rk.SetFreeOutletBC("4_S_67");  // Right
 
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
