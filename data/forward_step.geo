@@ -1,5 +1,5 @@
 
-LC = 0.2;  // the characteristic length, i.e. the average length of cell edges
+LC = 0.05;  // the characteristic length, i.e. the average length of cell edges
 LX = 3.0;     // the length along x-axis
 LY = 1.0;     // the length along y-axis
 LZ = 4*LC;  // the length along z-axis
@@ -41,7 +41,7 @@ Transfinite Surface{ 1, 2, 3 };
 
 Recombine Surface{ 1, 2, 3 };
 out[] = Extrude{ 0, 0, LZ }{
-  Surface{ 1, 2, 3 }; Layers{ LZ/LC }; Recombine;
+  Surface{ 1, 2, 3 }; Layers{ LZ/LC+0.001 }; Recombine;
 };
 
 Physical Surface("Step") = { 19, 23, 63 };
