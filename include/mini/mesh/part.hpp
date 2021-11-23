@@ -1094,13 +1094,21 @@ class Part {
     }
   }
   template<class Visitor>
-  void ForEachSolidFace(Visitor&& visit) const {
+  void ForEachBoundaryFace(Visitor&& visit) const {
     for (auto& [i_zone, zone] : bound_faces_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& face_uptr : sect) {
           visit(*face_uptr);
         }
       }
+    }
+  }
+  template<class Visitor>
+  void ForEachBoundaryFace(
+      Visitor&& visit, const std::string &name) const {
+    const auto& faces = *name_to_faces_.at(name);
+    for (const auto& face_uptr : faces) {
+      visit(*face_uptr);
     }
   }
   // Mutators:
@@ -1127,7 +1135,7 @@ class Part {
     }
   }
   template<class Visitor>
-  void ForEachSolidFace(Visitor&& visit) {
+  void ForEachBoundaryFace(Visitor&& visit) {
     for (auto& [i_zone, zone] : bound_faces_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& face_uptr : sect) {
@@ -1156,13 +1164,15 @@ class Part {
   std::vector<std::vector<Real>>
       send_coeffs_, recv_coeffs_;
   std::unordered_map<Int, CellType>
-      ghost_cells_;  //                 [m_cell] -> a Cell obj
+      ghost_cells_;  // [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
   std::vector<std::unique_ptr<FaceType>>
-      local_faces_, ghost_faces_;  // [i_face] -> a Face obj
+      local_faces_, ghost_faces_;  // [i_face] -> a uptr of Face
   std::map<Int, std::map<Int, ShiftedVector<std::unique_ptr<FaceType>>>>
-      bound_faces_;  // [i_zone][i_sect][i_face] -> a Face obj
+      bound_faces_;  // [i_zone][i_sect][i_face] -> a uptr of Face
+  std::unordered_map<std::string, ShiftedVector<std::unique_ptr<FaceType>> *>
+      name_to_faces_;
   std::vector<MPI_Request> requests_;
   const std::string directory_;
   const std::string cgns_file_;
@@ -1192,6 +1202,8 @@ class Part {
     auto face_conn = ZoneSectToConn();
     Int face_id = local_faces_.size() + ghost_faces_.size();
     // build boundary faces
+    std::unordered_map<std::string, std::pair<int, int>>
+        name_to_z_s;  // name -> { i_zone, i_sect }
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, i_sect, head, tail;
       std::sscanf(line, "%d %d %d %d", &i_zone, &i_sect, &head, &tail);
@@ -1209,6 +1221,7 @@ class Part {
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
+      name_to_z_s[name] = { i_zone, i_sect };
       cg_npe(type, &npe);
       nodes.resize(npe * mem_dimensions[0]);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
@@ -1252,6 +1265,12 @@ class Part {
         holder_ptr->adj_faces_.emplace_back(face_ptr.get());
         faces.emplace_back(std::move(face_ptr));
       }
+    }
+    // build name to ShiftedVector of faces
+    for (auto& [name, z_s] : name_to_z_s) {
+      auto [i_zone, i_sect] = z_s;
+      auto& faces = bound_faces_.at(i_zone).at(i_sect);
+      name_to_faces_[name] = &faces;
     }
   }
 
