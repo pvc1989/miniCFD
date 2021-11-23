@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
 
-  auto u_x = u_gamma * cos_30;
+  auto u_x = u_gamma / cos_30;
   auto moving_shock = [&](const Coord& xyz, double t){
     auto x = xyz[0], y = xyz[1];
     return ((x - (x_gap + u_x * t)) * tan_60 < y) ? value_after : value_before;
