@@ -43,7 +43,7 @@ class Single {
   }
   // Get F of U
   Flux GetFlux(const State& state) const {
-    return state * a_const_ ;
+    return state * a_const_;
   }
   Flux GetFlux(const MatKx1& state) const {
     return GetFlux(state[0]);

@@ -135,7 +135,7 @@ class Raw<Scalar, 3, 2> {
     res.col(2) += coeff.col(6) * x;
     res.col(2) += coeff.col(8) * y;
     res.col(2) += coeff.col(9) * (2 * z);
-    return res; 
+    return res;
   }
 
   template <int K>
