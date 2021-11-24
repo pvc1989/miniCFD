@@ -1,8 +1,14 @@
+// Copyright 2021 PEI Weicheng and JIANG Yuyan
+#ifndef MINI_INTEGRATOR_ODE_HPP_
+#define MINI_INTEGRATOR_ODE_HPP_
+
 #include <cassert>
 #include <functional>
 #include <vector>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
+
 #include "mini/mesh/part.hpp"
 
 template <typename PartType, typename RiemannType>
@@ -232,7 +238,7 @@ struct RungeKutta<1, PartType, RiemannType>
  public:
   template <class Limiter>
   void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
-    const Part &part = *part_ptr;  // TODO: change to const ref
+    const Part &part = *part_ptr;
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
@@ -282,7 +288,7 @@ struct RungeKutta<3, PartType, RiemannType>
  public:
   template <class Limiter>
   void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
-    const Part &part = *part_ptr;  // TODO: change to const ref
+    const Part &part = *part_ptr;
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
@@ -357,3 +363,5 @@ struct RungeKutta<3, PartType, RiemannType>
     }
   }
 };
+
+#endif  // MINI_INTEGRATOR_ODE_HPP_

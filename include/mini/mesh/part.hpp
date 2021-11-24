@@ -83,7 +83,8 @@ struct NodeGroup {
 template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 struct Cell;
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int = cgsize_t, typename Real = double,
+    int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Face {
   using Gauss = integrator::Face<Real, 3>;
   using GaussPtr = std::unique_ptr<Gauss>;
@@ -114,7 +115,8 @@ struct Face {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int = cgsize_t, typename Real = double,
+    int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Cell {
   using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
   using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
@@ -140,7 +142,7 @@ struct Cell {
       : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
         metis_id(m_cell), projection_(basis_) {
   }
-  Cell() = default; 
+  Cell() = default;
   Cell(const Cell&) = delete;
   Cell& operator=(const Cell&) = delete;
   Cell(Cell&& that) noexcept {
@@ -179,7 +181,8 @@ struct Cell {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int = cgsize_t, typename Real = double,
+    int kFunc = 2, int kDim = 3, int kOrder = 2>
 class CellGroup {
   using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
   Int head_, size_;
@@ -258,7 +261,8 @@ class CellGroup {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double, int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int = cgsize_t, typename Real = double,
+    int kFunc = 2, int kDim = 3, int kOrder = 2>
 class Part {
  public:
   using FaceType = Face<Int, Real, kFunc, kDim, kOrder>;
@@ -588,10 +592,6 @@ class Part {
           GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
           GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
         auto cell = CellType(std::move(hexa_ptr), m_cell);
-
-      if (cell.metis_id == 33) {
-        // std::cout << cell.projection_.basis_ptr_ << ' ' << &cell.basis_<< std::endl;
-      }
         ghost_cells_[m_cell] = std::move(cell);
         index += cnt;
       }
@@ -1001,10 +1001,6 @@ class Part {
             send_buf[i_real++] = coeff(r, c);
           }
         }
-        if (rank_ == 0) {          
-          // std::cout << cell_ptr->metis_id << " at " << cell_ptr->center().transpose();
-          // std::cout << "\n  sends " << cell_ptr->projection_.coeff() << std::endl;
-        }
       }
       int tag = i_part;
       auto& request = requests_[i_req++];
@@ -1035,10 +1031,6 @@ class Part {
       auto* recv_buf = recv_coeffs_[i_buf++].data();
       for (auto* cell_ptr : cell_ptrs) {
         cell_ptr->projection_.UpdateCoeffs(recv_buf);
-        if (rank_ == 1) {          
-          // std::cout << cell_ptr->metis_id << " at " << cell_ptr->center().transpose();
-          // std::cout << "\n  recvs " << recv_buf[0] << " " << recv_buf[1] << std::endl;
-        }
         recv_buf += kFields;
       }
     }
