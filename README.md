@@ -8,16 +8,25 @@ This repo is a minimum implementation of *Data Structures and Algorithms (DSA)* 
 ## Build
 ```shell
 git clone https://github.com/pvcStillInGradSchool/miniCFD.git
-git submodule update --init --recursive
 cd miniCFD
-mkdir -p build/Debug
-cd build/Debug
-cmake -D CMAKE_BUILD_TYPE=Debug -G Ninja -S ../.. -B .  # cmake 3.13.5+
+git submodule update --init --recursive
+mkdir -p build/Release
+cd build/Release
+cmake -D CMAKE_BUILD_TYPE=Release -G Ninja -S ../.. -B .  # cmake 3.13.5+
 cmake --build .
 ctest
 mkdir result
 ./demo/euler/tube sod tube.vtk 0.0 0.5 500 5
 ./demo/euler/box  sod  box.vtk 0.0 1.0 800 5
+```
+
+## Parallel Execution
+
+```shell
+cd build/Release/test/mesh
+rm -rf forward_step && ./shuffler 20 forward_step
+mpirun -n 20 ./galerkin forward_step 0.0 4.0 2000 20
+pvpython vtk2vtu.py forward_step 20 0 2000 20 5
 ```
 
 ## Code Style
