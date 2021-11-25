@@ -107,7 +107,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
           - adj_projection.GetAverage();
       adj_projection += diff;
       diff = cell_i.projection_.GetAverage() - adj_projection.GetAverage();
-      EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+      EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
       adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
   }
