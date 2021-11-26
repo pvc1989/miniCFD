@@ -19,6 +19,7 @@ class Hllc;
 template <class GasModel>
 class Hllc<GasModel, 1> {
  public:
+  constexpr static int kDim = 1;
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<1>;
@@ -103,6 +104,7 @@ class Hllc<GasModel, 1> {
 template <class GasModel>
 class Hllc<GasModel, 2> {
  public:
+  constexpr static int kDim = 2;
   // Types:
   using Gas = GasModel;
   using Flux = FluxTuple<2>;
