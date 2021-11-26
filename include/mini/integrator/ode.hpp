@@ -180,8 +180,9 @@ class RungeKuttaBase {
     }
   }
   void ApplyPrescribedBC(const Part &part, double t_curr) {
-    for (const auto& [name, func] : prescribed_bc_) {
-      auto visit = [this, t_curr, &func](const Face &face){
+    for (auto iter = prescribed_bc_.begin(); iter != prescribed_bc_.end();
+        ++iter) {
+      auto visit = [this, t_curr, iter](const Face &face){
         const auto& gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
         const auto& holder = *(face.holder_);
@@ -189,14 +190,13 @@ class RungeKuttaBase {
         for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
           const auto& coord = gauss.GetGlobalCoord(q);
           auto& riemann = riemann_solvers[q];
-          Value u_given = func(coord, t_curr);
-          // std::cout << u_given.transpose() << std::endl;
+          Value u_given = iter->second(coord, t_curr);
           Value flux = riemann.GetRotatedFlux(u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
         }
       };
-      part.ForEachBoundaryFace(visit, name);
+      part.ForEachBoundaryFace(visit, iter->first);
     }
   }
   void UpdateBoundaryRhs(const Part &part, double t_curr) {
