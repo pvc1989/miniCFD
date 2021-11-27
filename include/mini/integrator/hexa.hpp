@@ -64,14 +64,6 @@ class Hexa : public Cell<Scalar> {
   int CountQuadPoints() const override {
     return Qx * Qy * Qz;
   }
-  static constexpr auto BuildFaces() {
-    std::array<std::array<int, 4>, 6> faces{
-      // Faces can be distinguished by the sum of the three minimum node ids.
-      0, 3, 2, 1/*  3 */, 0, 1, 5, 4/* 5 */, 1, 2, 6, 5/* 8 */,
-      2, 3, 7, 6/* 11 */, 0, 4, 7, 3/* 7 */, 4, 5, 6, 7/* 15 */
-    };
-    return faces;
-  }
   template <typename T, typename U>
   static void SortNodesOnFace(int n, const T *hexa_nodes, U *quad) {
     int cnt = 0, nid = 0, sum = 0;
@@ -146,6 +138,14 @@ class Hexa : public Cell<Scalar> {
       }
     }
     return weights;
+  }
+  static constexpr auto BuildFaces() {
+    std::array<std::array<int, 4>, 6> faces{
+      // Faces can be distinguished by the sum of the three minimum node ids.
+      0, 3, 2, 1/*  3 */, 0, 1, 5, 4/* 5 */, 1, 2, 6, 5/* 8 */,
+      2, 3, 7, 6/* 11 */, 0, 4, 7, 3/* 7 */, 4, 5, 6, 7/* 15 */
+    };
+    return faces;
   }
   static Mat8x1 shape_8x1(Mat3x1 const& xyz_local) {
     Arr1x8 n_1x8;
