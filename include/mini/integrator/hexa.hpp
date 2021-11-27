@@ -30,7 +30,6 @@ class Hexa : public Cell<Scalar> {
   using Mat3x8 = algebra::Matrix<Scalar, 3, 8>;
   using Mat8x3 = algebra::Matrix<Scalar, 8, 3>;
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using Mat10x1 = algebra::Matrix<Scalar, 10, 1>;
 
   using Arr1x8 = algebra::Array<Scalar, 1, 8>;
   using Arr8x1 = algebra::Array<Scalar, 8, 1>;
@@ -163,8 +162,8 @@ class Hexa : public Cell<Scalar> {
     n_1x8 /= 8.0;
     return n_1x8.transpose();
   }
-  static Mat8x3 diff_shape_local_8x3(
-      Scalar x_local, Scalar y_local, Scalar z_local) {
+  static Mat8x3 diff_shape_local_8x3(Scalar x_local, Scalar y_local,
+      Scalar z_local) {
     Arr8x3 dn;
     Arr8x1 factor_x = x_local_i_.transpose() * x_local; factor_x += 1;
     Arr8x1 factor_y = y_local_i_.transpose() * y_local; factor_y += 1;
@@ -251,8 +250,8 @@ class Hexa : public Cell<Scalar> {
   Scalar volume() const override {
     return volume_;
   }
-  GlobalCoord LocalToGlobal(
-      Scalar x_local, Scalar y_local, Scalar z_local) const {
+  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
+      Scalar z_local) const {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
   }
   GlobalCoord LocalToGlobal(LocalCoord const& xyz_local) const override {
@@ -261,8 +260,8 @@ class Hexa : public Cell<Scalar> {
   Mat3x3 Jacobian(const LocalCoord& xyz_local) const override {
     return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
-  GlobalCoord global_to_local_3x1(
-      Scalar x_global, Scalar y_global, Scalar z_global) const {
+  LocalCoord global_to_local_3x1(Scalar x_global, Scalar y_global,
+      Scalar z_global) const {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Mat3x1 const& xyz_local) {
       auto res = LocalToGlobal(xyz_local);
@@ -274,7 +273,7 @@ class Hexa : public Cell<Scalar> {
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  GlobalCoord global_to_local_3x1(LocalCoord const& xyz_global) const {
+  LocalCoord global_to_local_3x1(GlobalCoord const& xyz_global) const {
     return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
