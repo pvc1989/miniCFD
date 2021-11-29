@@ -207,6 +207,8 @@ std::vector<Int> PartGraph(
       "`Int` and `idx_t` must have the same size.");
   Int n_vertices = graph.CountVertices();
   auto vertex_parts = std::vector<Int>(n_vertices);
+  if (n_parts == 1)
+    return vertex_parts;
   assert(valid(cost_of_each_vertex, n_vertices));
   assert(valid(size_of_each_vertex, n_vertices));
   assert(valid(cost_of_each_edge, graph.CountEdges()));
