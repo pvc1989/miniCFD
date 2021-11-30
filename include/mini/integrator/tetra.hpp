@@ -54,7 +54,23 @@ class Tetra : public Cell<Scalar> {
     return kQuad;
   }
   template <typename T, typename U>
-  static void SortNodesOnFace(int n, const T *hexa_nodes, U *quad) {
+  static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
+    int cnt = 0, nid = 0, sum = 0;
+    while (cnt < 3) {
+      auto curr_node = cell_nodes[nid];
+      for (int i = 0; i < 3; ++i) {
+        if (face_nodes[i] == curr_node) {
+          sum += nid;
+          ++cnt;
+          break;
+        }
+      }
+      ++nid;
+    }
+    int i_face = sum - 3;
+    for (int i = 0; i < 3; ++i) {
+      face_nodes[i] = cell_nodes[faces_[i_face][i]];
+    }
   }
 
  private:
@@ -212,24 +228,7 @@ template <typename Scalar>
 class TetraBuilder<Scalar, 24> {
   static constexpr int kQuad = 24;
   using LocalCoord = typename Tetra<Scalar, kQuad>::LocalCoord;
-/*
 
-** Mon Nov 29 23:49:21 2021
-3D 24 point order 6 rule (0:3:0:1:0, 109 tries, 66 evals), error = 1.032e-16
-    Perm31(0.214602871259152)
-    Dup31(0.03992275025816749)
-    Perm31(0.04067395853461135)
-    Dup31(0.01007721105532064)
-    Perm31(0.3223378901422755)
-    Dup31(0.05535718154365473)
-    Perm211(0.06366100187501753, 0.6030056647916492)
-    Dup211(0.04821428571428571)
-Range check ok.
- :-:) got a good candidate (proc 0, 109 tries, 66 evals, err = 1.0e-16)
-Seems to be a good solution, stop.
-1 good solution(s) found.
- 
- */
  public:
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, kQuad> points;
