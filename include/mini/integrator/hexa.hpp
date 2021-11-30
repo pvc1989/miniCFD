@@ -64,12 +64,12 @@ class Hexa : public Cell<Scalar> {
     return Qx * Qy * Qz;
   }
   template <typename T, typename U>
-  static void SortNodesOnFace(int n, const T *hexa_nodes, U *quad) {
+  static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
     int cnt = 0, nid = 0, sum = 0;
     while (cnt < 3) {
-      auto curr_node = hexa_nodes[nid];
+      auto curr_node = cell_nodes[nid];
       for (int i = 0; i < 4; ++i) {
-        if (quad[i] == curr_node) {
+        if (face_nodes[i] == curr_node) {
           sum += nid;
           ++cnt;
           break;
@@ -95,7 +95,7 @@ class Hexa : public Cell<Scalar> {
       assert(false);
     }
     for (int i = 0; i < 4; ++i) {
-      quad[i] = hexa_nodes[faces_[i_face][i]];
+      face_nodes[i] = cell_nodes[faces_[i_face][i]];
     }
   }
 
