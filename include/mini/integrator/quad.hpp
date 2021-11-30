@@ -20,8 +20,10 @@ namespace integrator {
  * @tparam Qx 
  * @tparam Qy 
  */
-template <typename Scalar = double, int D = 2, int Qx = 4, int Qy = 4>
-class Quad : public Face<Scalar, D> {
+template <typename Scalar = double, int kDim = 2, int Qx = 4, int Qy = 4>
+class Quad : public Face<Scalar, kDim> {
+  static constexpr int D = kDim;
+
   using Arr1x4 = algebra::Array<Scalar, 1, 4>;
   using Arr4x1 = algebra::Array<Scalar, 4, 1>;
   using Arr4x2 = algebra::Array<Scalar, 4, 2>;
@@ -39,8 +41,10 @@ class Quad : public Face<Scalar, D> {
 
  public:
   using Real = Scalar;
-  using LocalCoord = algebra::Matrix<Scalar, 2, 1>;
-  using GlobalCoord = algebra::Matrix<Scalar, D, 1>;
+  using LocalCoord = Mat2x1;
+  using GlobalCoord = MatDx1;
+
+ private:
   static const Arr1x4 x_local_i_;
   static const Arr1x4 y_local_i_;
   static const std::array<Scalar, Qx * Qy> local_weights_;
@@ -51,6 +55,7 @@ class Quad : public Face<Scalar, D> {
   std::array<MatDxD, Qx * Qy> normal_frames_;
   Scalar area_;
 
+ public:
   int CountQuadPoints() const override {
     return Qx * Qy;
   }
@@ -144,6 +149,15 @@ class Quad : public Face<Scalar, D> {
   Scalar const& GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
+  GlobalCoord LocalToGlobal(const Mat2x1& xy_local) const override {
+    return xyz_global_Dx4_ * shape_4x1(xy_local);
+  }
+  GlobalCoord LocalToGlobal(Scalar x, Scalar y) const {
+    return xyz_global_Dx4_ * shape_4x1(x, y);
+  }
+  MatDx2 Jacobian(const LocalCoord& xy_local) const override {
+    return Jacobian(xy_local[0], xy_local[1]);
+  }
   MatDx1 center() const override {
     MatDx1 c = xyz_global_Dx4_.col(0);
     for (int i = 1; i < 4; ++i)
@@ -175,15 +189,6 @@ class Quad : public Face<Scalar, D> {
       xyz_global_Dx4_[i] = p[i];
     }
     BuildQuadPoints();
-  }
-  MatDx1 LocalToGlobal(const Mat2x1& xy_local) const override {
-    return xyz_global_Dx4_ * shape_4x1(xy_local);
-  }
-  MatDx1 LocalToGlobal(Scalar x, Scalar y) const {
-    return xyz_global_Dx4_ * shape_4x1(x, y);
-  }
-  MatDx2 Jacobian(const LocalCoord& xy_local) const override {
-    return Jacobian(xy_local[0], xy_local[1]);
   }
 };
 
