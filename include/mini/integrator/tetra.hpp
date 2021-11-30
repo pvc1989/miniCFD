@@ -209,6 +209,78 @@ Tetra<Scalar, kQuad>::faces_
     = Tetra<Scalar, kQuad>::BuildFaces();
 
 template <typename Scalar>
+class TetraBuilder<Scalar, 24> {
+  static constexpr int kQuad = 24;
+  using LocalCoord = typename Tetra<Scalar, kQuad>::LocalCoord;
+/*
+
+** Mon Nov 29 23:49:21 2021
+3D 24 point order 6 rule (0:3:0:1:0, 109 tries, 66 evals), error = 1.032e-16
+    Perm31(0.214602871259152)
+    Dup31(0.03992275025816749)
+    Perm31(0.04067395853461135)
+    Dup31(0.01007721105532064)
+    Perm31(0.3223378901422755)
+    Dup31(0.05535718154365473)
+    Perm211(0.06366100187501753, 0.6030056647916492)
+    Dup211(0.04821428571428571)
+Range check ok.
+ :-:) got a good candidate (proc 0, 109 tries, 66 evals, err = 1.0e-16)
+Seems to be a good solution, stop.
+1 good solution(s) found.
+ 
+ */
+ public:
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, kQuad> points;
+    int i = 0;
+    // the three S31 orbits
+    Scalar a_s31[] = {
+        0.214602871259152,
+        0.04067395853461135,
+        0.3223378901422755 };
+    for (auto a : a_s31) {
+      auto c = 1 - 3 * a;
+      points[i++] = { a, a, a };
+      points[i++] = { a, a, c };
+      points[i++] = { a, c, a };
+      points[i++] = { c, a, a };
+    }
+    {  // the only S211 orbit
+      Scalar a = 0.06366100187501753, b = 0.6030056647916492;
+      auto c = 1 - a - a - b;
+      points[i++] = { a, a, b };
+      points[i++] = { a, a, c };
+      points[i++] = { a, b, a };
+      points[i++] = { a, b, c };
+      points[i++] = { a, c, a };
+      points[i++] = { a, c, b };
+      points[i++] = { b, a, a };
+      points[i++] = { b, a, c };
+      points[i++] = { b, c, a };
+      points[i++] = { c, a, a };
+      points[i++] = { c, a, b };
+      points[i++] = { c, b, a };
+    }
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kQuad> weights;
+    for (int i = 0; i < 4; ++i)
+      weights[i] = 0.03992275025816749;
+    for (int i = 4; i < 8; ++i)
+      weights[i] = 0.01007721105532064;
+    for (int i = 8; i < 12; ++i)
+      weights[i] = 0.05535718154365473;
+    for (int i = 12; i < 24; ++i)
+      weights[i] = 0.04821428571428571;
+    for (int i = 0; i < 24; ++i)
+      weights[i] /= 6.0;
+    return weights;
+  }
+};
+
+template <typename Scalar>
 class TetraBuilder<Scalar, 46> {
   static constexpr int kQuad = 46;
   using LocalCoord = typename Tetra<Scalar, kQuad>::LocalCoord;
