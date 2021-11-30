@@ -18,7 +18,9 @@
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns.hpp"
+#include "mini/integrator/tri.hpp"
 #include "mini/integrator/quad.hpp"
+#include "mini/integrator/tetra.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
@@ -46,13 +48,14 @@ struct NodeInfo {
 template <class Int = cgsize_t>
 struct CellInfo {
   CellInfo() = default;
-  CellInfo(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
+  CellInfo(Int z, Int s, Int c, Int n)
+      : i_zone(z), i_sect(s), i_cell(c), npe(n) {}
   CellInfo(CellInfo const&) = default;
   CellInfo& operator=(CellInfo const&) = default;
   CellInfo(CellInfo&&) noexcept = default;
   CellInfo& operator=(CellInfo&&) noexcept = default;
   ~CellInfo() noexcept = default;
-  Int i_zone{0}, i_sect{0}, i_cell{0};
+  Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
 template <typename Int = cgsize_t, typename Real = double>
@@ -408,6 +411,68 @@ class Part {
       }
     }
   }
+  auto BuildTetraUptr(int i_zone, const Int *i_node_list) const {
+    return std::make_unique<integrator::Tetra<Real, 24>>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+  }
+  auto BuildHexaUptr(int i_zone, const Int *i_node_list) const {
+    return std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+        GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
+        GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
+  }
+  auto BuildGaussForCell(int npe, int i_zone, const Int *i_node_list) const {
+    std::unique_ptr<integrator::Cell<Real>> gauss_uptr;
+    switch (npe) {
+      case 4:
+        gauss_uptr = BuildTetraUptr(i_zone, i_node_list); break;
+      case 8:
+        gauss_uptr = BuildHexaUptr(i_zone, i_node_list); break;
+      default:
+        break;
+    }
+    return gauss_uptr;
+  }
+  auto BuildTriUptr(int i_zone, const Int *i_node_list) const {
+    auto quad_uptr = std::make_unique<integrator::Tri<Real, kDim, 16>>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]));
+    quad_uptr->BuildNormalFrames();
+    return quad_uptr;
+  }
+  auto BuildQuadUptr(int i_zone, const Int *i_node_list) const {
+    auto quad_uptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+    quad_uptr->BuildNormalFrames();
+    return quad_uptr;
+  }
+  auto BuildGaussForFace(int npe, int i_zone, const Int *i_node_list) const {
+    std::unique_ptr<integrator::Face<Real, kDim>> gauss_uptr;
+    switch (npe) {
+      case 3:
+        gauss_uptr = BuildTriUptr(i_zone, i_node_list); break;
+      case 4:
+        gauss_uptr = BuildQuadUptr(i_zone, i_node_list); break;
+      default:
+        break;
+    }
+    return gauss_uptr;
+  }
+  static void SortNodesOnFace(int npe, const Int *cell, Int *face) {
+    switch (npe) {
+      case 4:
+        integrator::Tetra<Real, 24>::SortNodesOnFace(cell, face);
+        break;
+      case 8:
+        integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(cell, face);
+        break;
+      default:
+        break;
+    }
+  }
   struct Conn {
     ShiftedVector<Int> index;
     std::vector<Int> nodes;
@@ -437,14 +502,10 @@ class Part {
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
         cgp_error_exit();
-      for (int i_cell = head; i_cell < tail; ++i_cell) {
-        auto m_cell = metis_ids[i_cell];
-        m_to_cell_info_[m_cell] = CellInfo<Int>(i_zone, i_sect, i_cell);
-      }
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
-      int x, y, npe;
+      int x, y;
       auto& conn = cell_conn[i_zone][i_sect];
       auto& index = conn.index;
       auto& nodes = conn.nodes;
@@ -452,7 +513,11 @@ class Part {
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
           &u, &v, &x, &y))
         cgp_error_exit();
-      cg_npe(type, &npe);
+      int npe; cg_npe(type, &npe);
+      for (int i_cell = head; i_cell < tail; ++i_cell) {
+        auto m_cell = metis_ids[i_cell];
+        m_to_cell_info_[m_cell] = CellInfo<Int>(i_zone, i_sect, i_cell, npe);
+      }
       nodes.resize(npe * mem_dimensions[0]);
       for (int i = 0; i < index.size(); ++i) {
         index.at(head + i) = npe * i;
@@ -461,13 +526,9 @@ class Part {
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
       for (int i_cell = head; i_cell < tail; ++i_cell) {
-        auto* i_node_list = &nodes[(i_cell - head) * 8];
-        auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-            GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
-            GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
-            GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
-            GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        auto cell = CellType(std::move(hexa_ptr), metis_ids[i_cell]);
+        auto* i_node_list = &nodes[(i_cell - head) * npe];
+        auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = CellType(std::move(gauss_uptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
@@ -495,7 +556,7 @@ class Part {
   }
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>>
-        send_node_cnts, recv_node_cnts;  // [i_part][m_cell] -> node_cnt
+        send_npes, recv_npes;  // [i_part][m_cell] -> npe
     std::vector<std::pair<Int, Int>>
         m_cell_pairs;
   };
@@ -509,38 +570,37 @@ class Part {
     }
     // ghost adjacency
     auto ghost_adj = GhostAdj();
-    auto& send_node_cnts = ghost_adj.send_node_cnts;
-    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
+    auto& send_npes = ghost_adj.send_npes;
+    auto& recv_npes = ghost_adj.recv_npes;
     auto& m_cell_pairs = ghost_adj.m_cell_pairs;
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
-      int p, i, j, cnt_i, cnt_j;
-      std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &cnt_i, &cnt_j);
-      send_node_cnts[p][i] = cnt_i;
-      recv_node_cnts[p][j] = cnt_j;
+      int p, i, j, npe_i, npe_j;
+      std::sscanf(line, "%d %d %d %d %d", &p, &i, &j, &npe_i, &npe_j);
+      send_npes[p][i] = npe_i;
+      recv_npes[p][j] = npe_j;
       m_cell_pairs.emplace_back(i, j);
     }
     return ghost_adj;
   }
   auto ShareGhostCells(const GhostAdj& ghost_adj,
       const ZoneSectToConn& cell_conn) {
-    auto& send_node_cnts = ghost_adj.send_node_cnts;
-    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
+    auto& send_npes = ghost_adj.send_npes;
+    auto& recv_npes = ghost_adj.recv_npes;
     // send cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> send_cells;
     std::vector<MPI_Request> requests;
-    for (auto& [i_part, node_cnts] : send_node_cnts) {
+    for (auto& [i_part, npes] : send_npes) {
       auto& send_buf = send_cells.emplace_back();
-      for (auto& [m_cell, cnt] : node_cnts) {
+      for (auto& [m_cell, npe] : npes) {
         auto& info = m_to_cell_info_[m_cell];
-        Int i_zone = m_to_cell_info_[m_cell].i_zone,
-            i_sect = m_to_cell_info_[m_cell].i_sect,
-            i_cell = m_to_cell_info_[m_cell].i_cell;
+        assert(npe == info.npe);
+        Int i_zone = info.i_zone, i_sect = info.i_sect, i_cell = info.i_cell;
         auto& conn = cell_conn.at(i_zone).at(i_sect);
         auto& index = conn.index;
         auto& nodes = conn.nodes;
         auto* i_node_list = &(nodes[index[i_cell]]);
         send_buf.emplace_back(i_zone);
-        for (int i = 0; i < cnt; ++i) {
+        for (int i = 0; i < npe; ++i) {
           send_buf.emplace_back(i_node_list[i]);
         }
       }
@@ -552,12 +612,12 @@ class Part {
     }
     // recv cell.i_zone and cell.node_id_list
     std::vector<std::vector<Int>> recv_cells;
-    for (auto& [i_part, node_cnts] : recv_node_cnts) {
+    for (auto& [i_part, npes] : recv_npes) {
       auto& recv_buf = recv_cells.emplace_back();
       int n_ints = 0;
-      for (auto& [m_cell, cnt] : node_cnts) {
+      for (auto& [m_cell, npe] : npes) {
         ++n_ints;
-        n_ints += cnt;
+        n_ints += npe;
       }
       int tag = rank_;
       recv_buf.resize(n_ints);
@@ -571,29 +631,29 @@ class Part {
     requests.clear();
     return recv_cells;
   }
-  std::unordered_map<Int, std::pair<int, int>> BuildGhostCells(
+  struct GhostCellInfo {
+    int source, head, npe;
+  };
+  std::unordered_map<Int, GhostCellInfo> BuildGhostCells(
       const GhostAdj& ghost_adj,
       const std::vector<std::vector<Int>>& recv_cells) {
-    auto& recv_node_cnts = ghost_adj.recv_node_cnts;
+    auto& recv_npes = ghost_adj.recv_npes;
     // build ghost cells
-    std::unordered_map<Int, std::pair<int, int>> m_to_recv_cells;
+    std::unordered_map<Int, GhostCellInfo> m_to_recv_cells;
     int i_source = 0;
-    for (auto& [i_part, node_cnts] : recv_node_cnts) {
+    for (auto& [i_part, npes] : recv_npes) {
       auto& recv_buf = recv_cells.at(i_source);
       int index = 0;
-      for (auto& [m_cell, cnt] : node_cnts) {
-        m_to_recv_cells[m_cell].first = i_source;
-        m_to_recv_cells[m_cell].second = index + 1;
+      for (auto& [m_cell, npe] : npes) {
+        m_to_recv_cells[m_cell].source = i_source;
+        m_to_recv_cells[m_cell].head = index + 1;
+        m_to_recv_cells[m_cell].npe = npe;
         int i_zone = recv_buf[index++];
         auto* i_node_list = &recv_buf[index];
-        auto hexa_ptr = std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
-          GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
-          GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
-          GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
-          GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
-        auto cell = CellType(std::move(hexa_ptr), m_cell);
+        auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = CellType(std::move(gauss_uptr), m_cell);
         ghost_cells_[m_cell] = std::move(cell);
-        index += cnt;
+        index += npe;
       }
       ++i_source;
     }
@@ -601,26 +661,26 @@ class Part {
   }
   void FillCellPtrs(const GhostAdj& ghost_adj) {
     // fill `send_cell_ptrs_`
-    for (auto& [i_part, node_cnts] : ghost_adj.send_node_cnts) {
+    for (auto& [i_part, npes] : ghost_adj.send_npes) {
       auto& curr_part = send_cell_ptrs_[i_part];
       assert(curr_part.empty());
-      for (auto& [m_cell, cnt] : node_cnts) {
+      for (auto& [m_cell, npe] : npes) {
         auto& info = m_to_cell_info_[m_cell];
         auto& cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
         cell.inner_ = false;
         curr_part.emplace_back(&cell);
       }
-      send_coeffs_.emplace_back(node_cnts.size() * kFields);
+      send_coeffs_.emplace_back(npes.size() * kFields);
     }
     // fill `recv_cell_ptrs_`
-    for (auto& [i_part, node_cnts] : ghost_adj.recv_node_cnts) {
+    for (auto& [i_part, npes] : ghost_adj.recv_npes) {
       auto& curr_part = recv_cell_ptrs_[i_part];
       assert(curr_part.empty());
-      for (auto& [m_cell, cnt] : node_cnts) {
+      for (auto& [m_cell, npe] : npes) {
         auto& cell = ghost_cells_.at(m_cell);
         curr_part.emplace_back(&cell);
       }
-      recv_coeffs_.emplace_back(node_cnts.size() * kFields);
+      recv_coeffs_.emplace_back(npes.size() * kFields);
     }
     assert(send_cell_ptrs_.size() == send_coeffs_.size());
     assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
@@ -641,16 +701,16 @@ class Part {
       auto& sharer_nodes = sharer_conn.nodes;
       auto holder_head = holder_conn.index[holder_info.i_cell];
       auto sharer_head = sharer_conn.index[sharer_info.i_cell];
-      for (int i = 0; i < 8; ++i) {
+      for (int i = 0; i < holder_info.npe; ++i)
         ++i_node_cnt[holder_nodes[holder_head + i]];
+      for (int i = 0; i < sharer_info.npe; ++i)
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
-      }
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(4);
       for (auto [i_node, cnt] : i_node_cnt)
         if (cnt == 2)
           common_nodes.emplace_back(i_node);
-      assert(common_nodes.size() == 4);
+      int face_npe = common_nodes.size();
       // let the normal vector point from holder to sharer
       // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
       auto& zone = local_cells_[i_zone];
@@ -658,24 +718,20 @@ class Part {
       auto& sharer = zone[sharer_info.i_sect][sharer_info.i_cell];
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
-      integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
-          4, &holder_nodes[holder_head], common_nodes.data());
-      // build the quad integrator
-      auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
-          GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
-          GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
-      quad_ptr->BuildNormalFrames();
-      auto face_ptr = std::make_unique<FaceType>(
-          std::move(quad_ptr), &holder, &sharer, local_faces_.size());
-      holder.adj_faces_.emplace_back(face_ptr.get());
-      sharer.adj_faces_.emplace_back(face_ptr.get());
-      local_faces_.emplace_back(std::move(face_ptr));
+      auto* i_node_list = common_nodes.data();
+      SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
+      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
+      auto face_uptr = std::make_unique<FaceType>(
+          std::move(gauss_uptr), &holder, &sharer, local_faces_.size());
+      holder.adj_faces_.emplace_back(face_uptr.get());
+      sharer.adj_faces_.emplace_back(face_uptr.get());
+      local_faces_.emplace_back(std::move(face_uptr));
     }
   }
   void BuildGhostFaces(const GhostAdj& ghost_adj,
       const ZoneSectToConn& cell_conn,
       const std::vector<std::vector<Int>>& recv_cells,
-      const std::unordered_map<Int, std::pair<int, int>>& m_to_recv_cells) {
+      const std::unordered_map<Int, GhostCellInfo>& m_to_recv_cells) {
     auto& m_cell_pairs = ghost_adj.m_cell_pairs;
     // build ghost faces
     for (auto [m_holder, m_sharer] : m_cell_pairs) {
@@ -686,38 +742,34 @@ class Part {
       auto i_node_cnt = std::unordered_map<Int, Int>();
       auto& holder_conn = cell_conn.at(i_zone).at(holder_info.i_sect);
       auto& holder_nodes = holder_conn.nodes;
-      auto& sharer_nodes = recv_cells[sharer_info.first];
+      auto& sharer_nodes = recv_cells[sharer_info.source];
       auto holder_head = holder_conn.index[holder_info.i_cell];
-      auto sharer_head = sharer_info.second;
-      for (int i = 0; i < 8; ++i) {
+      auto sharer_head = sharer_info.head;
+      for (int i = 0; i < holder_info.npe; ++i)
         ++i_node_cnt[holder_nodes[holder_head + i]];
+      for (int i = 0; i < sharer_info.npe; ++i)
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
-      }
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(4);
       for (auto [i_node, cnt] : i_node_cnt) {
         if (cnt == 2)
           common_nodes.emplace_back(i_node);
       }
-      assert(common_nodes.size() == 4);
+      int face_npe = common_nodes.size();
       // let the normal vector point from holder to sharer
       // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
       auto& zone = local_cells_[i_zone];
       auto& holder = zone[holder_info.i_sect][holder_info.i_cell];
       auto& sharer = ghost_cells_.at(m_sharer);
       holder.adj_cells_.emplace_back(&sharer);
-      integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
-          4, &holder_nodes[holder_head], common_nodes.data());
-      // build the quad integrator
-      auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
-          GetCoord(i_zone, common_nodes[0]), GetCoord(i_zone, common_nodes[1]),
-          GetCoord(i_zone, common_nodes[2]), GetCoord(i_zone, common_nodes[3]));
-      quad_ptr->BuildNormalFrames();
-      auto face_ptr = std::make_unique<FaceType>(
-          std::move(quad_ptr), &holder, &sharer,
+      auto* i_node_list = common_nodes.data();
+      SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
+      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
+      auto face_uptr = std::make_unique<FaceType>(
+          std::move(gauss_uptr), &holder, &sharer,
           local_faces_.size() + ghost_faces_.size());
-      holder.adj_faces_.emplace_back(face_ptr.get());
-      ghost_faces_.emplace_back(std::move(face_ptr));
+      holder.adj_faces_.emplace_back(face_uptr.get());
+      ghost_faces_.emplace_back(std::move(face_uptr));
     }
   }
 
@@ -1206,7 +1258,7 @@ class Part {
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
-      int x, y, npe;
+      int x, y;
       auto& conn = face_conn[i_zone][i_sect];
       auto& index = conn.index;
       auto& nodes = conn.nodes;
@@ -1214,7 +1266,7 @@ class Part {
           &u, &v, &x, &y))
         cgp_error_exit();
       name_to_z_s[name] = { i_zone, i_sect };
-      cg_npe(type, &npe);
+      int npe; cg_npe(type, &npe);
       nodes.resize(npe * mem_dimensions[0]);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
       index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
@@ -1236,26 +1288,22 @@ class Part {
         CellType *holder_ptr;
         for (auto [m_cell, cnt] : cell_cnt) {
           assert(cnt <= npe);
-          if (cnt == npe) {
+          if (cnt == npe) {  // this cell holds this face
             auto& info = m_to_cell_info_[m_cell];
             Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
             holder_ptr = &(local_cells_.at(z).at(s).at(c));
             auto& holder_conn = cell_conn.at(z).at(s);
             auto& holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(
-                npe, &holder_nodes[holder_head], i_node_list);
+            SortNodesOnFace(info.npe, &holder_nodes[holder_head], i_node_list);
             break;
           }
         }
-        auto quad_ptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
-            GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
-            GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
-        quad_ptr->BuildNormalFrames();
-        auto face_ptr = std::make_unique<FaceType>(
-            std::move(quad_ptr), holder_ptr, nullptr, face_id++);
-        holder_ptr->adj_faces_.emplace_back(face_ptr.get());
-        faces.emplace_back(std::move(face_ptr));
+        auto gauss_uptr = BuildGaussForFace(npe, i_zone, i_node_list);
+        auto face_uptr = std::make_unique<FaceType>(
+            std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
+        holder_ptr->adj_faces_.emplace_back(face_uptr.get());
+        faces.emplace_back(std::move(face_uptr));
       }
     }
     // build name to ShiftedVector of faces
