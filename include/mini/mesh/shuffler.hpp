@@ -468,17 +468,17 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
       ostrm << i << ' ' << j << '\n';
     }
     // interpart adjacency
-    ostrm << "# i_part i_cell_metis j_cell_metis i_node_cnt j_node_cnt\n";
+    ostrm << "# i_part i_cell_metis j_cell_metis i_node_npe j_node_npe\n";
     for (auto& [i_part, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
         auto& info_i = mapper_->metis_to_cgns_for_cells[i];
         auto& info_j = mapper_->metis_to_cgns_for_cells[j];
-        int cnt_i = base.GetZone(info_i.i_zone).GetSection(info_i.i_sect).
+        int npe_i = base.GetZone(info_i.i_zone).GetSection(info_i.i_sect).
             CountNodesByType();
-        int cnt_j = base.GetZone(info_j.i_zone).GetSection(info_j.i_sect).
+        int npe_j = base.GetZone(info_j.i_zone).GetSection(info_j.i_sect).
             CountNodesByType();
-        ostrm << i_part << ' ' << i << ' ' << j << ' ' << cnt_i << ' ' <<
-            cnt_j << '\n';
+        ostrm << i_part << ' ' << i << ' ' << j << ' ' << npe_i << ' ' <<
+            npe_j << '\n';
       }
     }
     // face ranges
