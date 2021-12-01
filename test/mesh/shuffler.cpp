@@ -23,7 +23,7 @@ namespace mini {
 namespace mesh {
 
 idx_t n_parts = 4;
-std::string case_name = "double_mach_hexa";
+std::string case_name = "double_mach";
 
 class ShufflerTest : public ::testing::Test {
  protected:
@@ -71,7 +71,7 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 TEST_F(ShufflerTest, PartitionCgnsMesh) {
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
-      case_name.c_str(), case_name.c_str());
+      case_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/original.cgns";
   /* Generate the original cgns file: */

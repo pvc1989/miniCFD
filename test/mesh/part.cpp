@@ -18,19 +18,26 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
+  auto case_name = std::string("double_mach");
+  if (argc > 1)
+    case_name = argv[1];
+
   auto time_begin = MPI_Wtime();
   if (comm_rank == 0) {
-    std::printf("Run ./shuffler on proc[%d/%d] at %f sec\n",
+    std::printf("Run `./shuffler %d %s` on proc[%d/%d] at %f sec\n",
+        comm_size, case_name.c_str(),
         comm_rank, comm_size, MPI_Wtime() - time_begin);
-    auto cmd = std::string("./shuffler " + std::to_string(comm_size));
+    auto cmd = "./shuffler " + std::to_string(comm_size) + ' ' + case_name;
     std::system(cmd.c_str());
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  std::printf("Run Part() on proc[%d/%d] at %f sec\n",
+  std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
+      case_name.c_str(), comm_rank,
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = mini::mesh::cgns::Part<cgsize_t, double, 2>(
-      "double_mach_hexa", comm_rank);
+  constexpr int kFunc{2}, kDim{3}, kOrder{2};
+  using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  auto part = MyPart(case_name, comm_rank);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
   const auto *part_ptr = &part;
@@ -58,16 +65,15 @@ int main(int argc, char* argv[]) {
   });
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
-  using MyCell = mini::mesh::cgns::Cell<cgsize_t, double, 2>;
+  using MyCell = typename MyPart::CellType;
   auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
-  part.WriteSolutions();
-  // part.WriteSolutionsOnGaussPoints();
-  part.WriteSolutionsOnCellCenters();
+  part.WriteSolutions("Step0");
+  part.WriteSolutionsOnCellCenters("Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   MPI_Finalize();
