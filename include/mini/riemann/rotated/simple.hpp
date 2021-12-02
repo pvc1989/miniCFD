@@ -69,6 +69,10 @@ class Simple {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
+  Flux GetRotatedFlux(const State& state) {
+    auto raw_flux = unrotated_simple_.GetFlux(state);
+    return ConvertToFlux(raw_flux);
+  }
   static FluxMatrix GetFluxMatrix(const State& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
