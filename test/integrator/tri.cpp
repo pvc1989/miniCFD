@@ -36,6 +36,7 @@ TEST_F(TestTri16, In2dSpace) {
   static_assert(tri.CellDim() == 2);
   static_assert(tri.PhysDim() == 2);
   EXPECT_DOUBLE_EQ(tri.area(), 2.0);
+  EXPECT_EQ(tri.center(), Mat2x1(4./3, 2./3));
   EXPECT_EQ(tri.LocalToGlobal(1, 0), Mat2x1(0, 0));
   EXPECT_EQ(tri.LocalToGlobal(0, 1), Mat2x1(2, 0));
   EXPECT_EQ(tri.LocalToGlobal(0, 0), Mat2x1(2, 2));
@@ -57,6 +58,7 @@ TEST_F(TestTri16, In3dSpace) {
   static_assert(tri.CellDim() == 2);
   static_assert(tri.PhysDim() == 3);
   EXPECT_DOUBLE_EQ(tri.area(), 2.0);
+  EXPECT_EQ(tri.center(), Mat3x1(4./3, 2./3, 2.));
   EXPECT_EQ(tri.LocalToGlobal(1, 0), Mat3x1(0, 0, 2));
   EXPECT_EQ(tri.LocalToGlobal(0, 1), Mat3x1(2, 0, 2));
   EXPECT_EQ(tri.LocalToGlobal(0, 0), Mat3x1(2, 2, 2));

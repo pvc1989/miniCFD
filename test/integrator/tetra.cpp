@@ -29,6 +29,7 @@ TEST_F(TestTetra, VirtualMethods) {
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
+  EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountQuadPoints(), kQuad);
 }
 TEST_F(TestTetra, CommonMethods) {
