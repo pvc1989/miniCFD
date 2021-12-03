@@ -3,8 +3,10 @@
 #include <iostream>
 
 #include "mini/integrator/function.hpp"
+#include "mini/integrator/tetra.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/integrator/quad.hpp"
+#include "mini/integrator/tri.hpp"
 #include "mini/polynomial/basis.hpp"
 
 #include "gtest/gtest.h"
@@ -62,9 +64,9 @@ TEST_F(TestRaw, In3dSpace) {
   EXPECT_EQ(res[9], z * z);
 }
 
-class TestBasis : public ::testing::Test {
+class TestLinear : public ::testing::Test {
 };
-TEST_F(TestBasis, In2dSpace) {
+TEST_F(TestLinear, In2dSpace) {
   using Basis = mini::polynomial::Linear<double, 2, 2>;
   auto basis = Basis({0, 0});
   static_assert(Basis::N == 6);
@@ -86,7 +88,7 @@ TEST_F(TestBasis, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestBasis, In3dSpace) {
+TEST_F(TestLinear, In3dSpace) {
   using Basis = mini::polynomial::Linear<double, 3, 2>;
   auto basis = Basis({0, 0, 0});
   static_assert(Basis::N == 10);
@@ -119,19 +121,46 @@ TEST_F(TestBasis, In3dSpace) {
 
 class TestOrthoNormal : public ::testing::Test {
 };
-TEST_F(TestOrthoNormal, In2dSpace) {
+TEST_F(TestOrthoNormal, OnTriangle) {
+  using Gauss = mini::integrator::Tri<double, 2, 16>;
+  using Coord = Gauss::GlobalCoord;
+  Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
+  auto gauss = Gauss(p0, p1, p2);
+  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  auto basis = Basis(gauss);
+  EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
+  std::cout << basis.coeff() << std::endl;
+  auto area = mini::integrator::Integrate(
+        [](const Coord &){ return 1.0; }, basis.GetGauss());
+  EXPECT_DOUBLE_EQ(basis.Measure(), area);
+}
+TEST_F(TestOrthoNormal, OnQuadrangle) {
   using Gauss = mini::integrator::Quad<double, 2, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
   auto gauss = Gauss(p0, p1, p2, p3);
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
+  EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto area = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), area);
 }
-TEST_F(TestOrthoNormal, In3dSpace) {
+TEST_F(TestOrthoNormal, OnTetrahedron) {
+  using Gauss = mini::integrator::Tetra<double, 24>;
+  using Coord = Gauss::GlobalCoord;
+  Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
+  auto gauss = Gauss(p0, p1, p2, p3);
+  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  auto basis = Basis(gauss);
+  EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
+  std::cout << basis.coeff() << std::endl;
+  auto volume = mini::integrator::Integrate(
+        [](const Coord &){ return 1.0; }, basis.GetGauss());
+  EXPECT_DOUBLE_EQ(basis.Measure(), volume);
+}
+TEST_F(TestOrthoNormal, OnHexahedron) {
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
@@ -139,6 +168,7 @@ TEST_F(TestOrthoNormal, In3dSpace) {
   auto gauss = Gauss(p0, p1, p2, p3, p4, p5, p6, p7);
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   auto basis = Basis(gauss);
+  EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto volume = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
