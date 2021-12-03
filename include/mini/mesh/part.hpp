@@ -437,6 +437,7 @@ class Part {
       case 8:
         gauss_uptr = BuildHexaUptr(i_zone, i_node_list); break;
       default:
+        assert(false);
         break;
     }
     return gauss_uptr;
@@ -463,6 +464,7 @@ class Part {
       case 4:
         gauss_uptr = BuildQuadUptr(i_zone, i_node_list); break;
       default:
+        assert(false);
         break;
     }
     return gauss_uptr;
@@ -476,6 +478,7 @@ class Part {
         integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(cell, face);
         break;
       default:
+        assert(false);
         break;
     }
   }

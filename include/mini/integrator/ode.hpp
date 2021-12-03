@@ -71,8 +71,8 @@ class RungeKuttaBase {
   }
   void BuildRiemannSolvers(const Part &part) {
     auto riemann_builder = [this](const Face &face){
-      auto& solvers = this->riemann_solvers_.emplace_back();
       assert(face.id() == this->riemann_solvers_.size());
+      auto& solvers = this->riemann_solvers_.emplace_back();
       auto& gauss = face.gauss();
       solvers.resize(gauss.CountQuadPoints());
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
@@ -248,7 +248,7 @@ struct RungeKutta<1, PartType, RiemannType>
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostRhs(part);
     auto n_cells = u_old_.size();
-    assert(n_cells == rhs_.size());
+    assert(n_cells == this->rhs_.size());
     u_new_ = this->rhs_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_new_[i_cell] *= this->dt_;
@@ -327,7 +327,7 @@ struct RungeKutta<3, PartType, RiemannType>
  private:
   void SolveFrac13() {
     auto n_cells = u_old_.size();
-    assert(n_cells == rhs_.size());
+    assert(n_cells == this->rhs_.size());
     u_frac13_ = this->rhs_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_frac13_[i_cell] *= this->dt_;
@@ -336,7 +336,7 @@ struct RungeKutta<3, PartType, RiemannType>
   }
   void SolveFrac23() {
     auto n_cells = u_old_.size();
-    assert(n_cells == rhs_.size());
+    assert(n_cells == this->rhs_.size());
     assert(n_cells == u_frac13_.size());
     u_frac23_ = this->rhs_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
@@ -350,7 +350,7 @@ struct RungeKutta<3, PartType, RiemannType>
   }
   void SolveFrac33() {
     auto n_cells = u_old_.size();
-    assert(n_cells == rhs_.size());
+    assert(n_cells == this->rhs_.size());
     assert(n_cells == u_frac13_.size());
     assert(n_cells == u_frac23_.size());
     u_new_ = this->rhs_;
