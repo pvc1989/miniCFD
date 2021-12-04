@@ -133,6 +133,12 @@ TEST_F(TestOrthoNormal, OnTriangle) {
   auto area = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), area);
+  auto f = [&basis](const Coord &coord){
+      return Basis::MatNxN(basis(coord) * basis(coord).transpose());
+  };
+  auto diff = mini::integrator::Integrate(f, basis.GetGauss())
+      - Basis::MatNxN::Identity();
+  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
 }
 TEST_F(TestOrthoNormal, OnQuadrangle) {
   using Gauss = mini::integrator::Quad<double, 2, 4, 4>;
@@ -146,6 +152,12 @@ TEST_F(TestOrthoNormal, OnQuadrangle) {
   auto area = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), area);
+  auto f = [&basis](const Coord &coord){
+      return Basis::MatNxN(basis(coord) * basis(coord).transpose());
+  };
+  auto diff = mini::integrator::Integrate(f, basis.GetGauss())
+      - Basis::MatNxN::Identity();
+  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 TEST_F(TestOrthoNormal, OnTetrahedron) {
   using Gauss = mini::integrator::Tetra<double, 24>;
@@ -159,6 +171,12 @@ TEST_F(TestOrthoNormal, OnTetrahedron) {
   auto volume = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), volume);
+  auto f = [&basis](const Coord &coord){
+      return Basis::MatNxN(basis(coord) * basis(coord).transpose());
+  };
+  auto diff = mini::integrator::Integrate(f, basis.GetGauss())
+      - Basis::MatNxN::Identity();
+  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 TEST_F(TestOrthoNormal, OnHexahedron) {
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
@@ -173,6 +191,12 @@ TEST_F(TestOrthoNormal, OnHexahedron) {
   auto volume = mini::integrator::Integrate(
         [](const Coord &){ return 1.0; }, basis.GetGauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), volume);
+  auto f = [&basis](const Coord &coord){
+      return Basis::MatNxN(basis(coord) * basis(coord).transpose());
+  };
+  auto diff = mini::integrator::Integrate(f, basis.GetGauss())
+      - Basis::MatNxN::Identity();
+  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {
