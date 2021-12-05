@@ -316,6 +316,41 @@ class Part {
   }
 
  private:
+  int SolnNameToId(int i_file, int i_base, int i_zone,
+      const std::string &name) {
+    int n_solns;
+    if (cg_nsols(i_file, i_base, i_zone, &n_solns))
+      cgp_error_exit();
+    int i_soln;
+    for (i_soln = 1; i_soln <= n_solns; ++i_soln) {
+      char soln_name[33];
+      GridLocation_t loc;
+      if (cg_sol_info(i_file, i_base, i_zone, i_soln, soln_name, &loc))
+        cgp_error_exit();
+      if (soln_name == name)
+        break;
+    }
+    assert(i_soln <= n_solns);
+    return i_soln;
+  }
+  int FieldNameToId(int i_file, int i_base, int i_zone, int i_soln,
+      const std::string &name) {
+    int n_fields;
+    if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields))
+      cgp_error_exit();
+    int i_field;
+    for (i_field = 1; i_field <= n_fields; ++i_field) {
+      char field_name[33];
+      DataType_t data_t;
+      if (cg_field_info(i_file, i_base, i_zone, i_soln, i_field,
+          &data_t, field_name))
+        cgp_error_exit();
+      if (field_name == name)
+        break;
+    }
+    assert(i_field <= n_fields);
+    return i_field;
+  }
   void BuildLocalNodes(std::ifstream& istrm, int i_file) {
     char line[kLineWidth];
     istrm.getline(line, kLineWidth); assert(line[0] == '#');
@@ -340,7 +375,9 @@ class Part {
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
-      if (cgp_field_general_read_data(i_file, i_base, i_zone, 1, 2,
+      int i_sol = SolnNameToId(i_file, i_base, i_zone, "NodeData");
+      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisNodeId");
+      if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
         cgp_error_exit();
@@ -367,7 +404,9 @@ class Part {
     for (auto& [i_part, nodes] : send_nodes) {
       auto& coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
-        auto& info = m_to_node_info_[m_node];
+        // std::cout << rank_ << " send " << m_node << '\n';
+        auto& info = m_to_node_info_.at(m_node);
+    // std::cout << rank_ << " send " << m_node << ' '  << info.i_zone << ' ' << info.i_node << '\n';
         auto const& coord = GetCoord(info.i_zone, info.i_node);
         coords.emplace_back(coord[0]);
         coords.emplace_back(coord[1]);
@@ -500,13 +539,9 @@ class Part {
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
       ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
-      char sol_name[33], field_name[33];
-      GridLocation_t loc;
-      DataType_t dt;
-      if (cg_sol_info(i_file, i_base, i_zone, 2, sol_name, &loc) ||
-          cg_field_info(i_file, i_base, i_zone, 2, 2, &dt, field_name))
-        cgp_error_exit();
-      if (cgp_field_general_read_data(i_file, i_base, i_zone, 2, 2,
+      int i_sol = SolnNameToId(i_file, i_base, i_zone, "CellData");
+      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisCellId");
+      if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
         cgp_error_exit();
