@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring>
 #include <type_traits>
+#include <utility>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/integrator/cell.hpp"
@@ -312,14 +313,12 @@ class TetraBuilder<Scalar, 46> {
       points[i++] = { c, c, a };
     }
     // the two S211 orbits
-    Scalar ab_s211[][2] = {
+    std::pair<Scalar, Scalar> ab_s211[2]{
       { .0216901620677280048026624826249302,
         .7199319220394659358894349533527348 },
       { .2044800806367957142413355748727453,
         .5805771901288092241753981713906204 }};
-    for (int i = 0; i < 2; ++i) {
-      auto a = ab_s211[i][0];
-      auto b = ab_s211[i][1];
+    for (auto [a, b] : ab_s211) {
       auto c = 1 - a - a - b;
       points[i++] = { a, a, b };
       points[i++] = { a, a, c };
