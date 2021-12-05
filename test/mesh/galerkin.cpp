@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  constexpr int kFunc = 5;
+  constexpr int kFunc = 1;
   constexpr int kDim = 3;
   constexpr int kOrder = 2;
   constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
@@ -57,14 +57,14 @@ int main(int argc, char* argv[]) {
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
 
-  /* Linear Advection Equation
+  /* Linear Advection Equation */
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   using MyRiemann = mini::riemann::rotated::Single<kDim>;
-  MyRiemann::Riemann::global_coefficient = { -10, 0, 0 };
+  MyRiemann::global_coefficient = { -10, 0, 0 };
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
-  }; */
+  };
 
   /* Burgers Equation
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     return val;
   }; */
 
-  /* Euler system */
+  /* Euler system
   using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
   using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
-
+ */
   /* IC for Double-Mach Problem
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
@@ -120,8 +120,7 @@ int main(int argc, char* argv[]) {
     // return (x < 2.0) ? value_after : value_before;
   };
   */
-
-  /* IC for Forward-Step Problem */
+  /* IC for Forward-Step Problem
   auto primitive = Primitive(1.4, 3.0, 0.0, 0.0, 1.0);
   auto conservative = Gas::PrimitiveToConservative(primitive);
   Value given_value = { conservative.mass, conservative.momentum[0],
@@ -129,7 +128,7 @@ int main(int argc, char* argv[]) {
   auto initial_condition = [&given_value](const Coord& xyz){
     return given_value;
   };
-
+ */
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   auto part = MyPart(case_name, comm_rank);
@@ -145,47 +144,49 @@ int main(int argc, char* argv[]) {
   auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
   if (kOrder > 0) {
     part.Reconstruct(limiter);
+    part.Reconstruct(limiter);
   }
 
   std::printf("Run Write(Step0) on proc[%d/%d] at %f sec\n",
       comm_rank, comm_size, MPI_Wtime() - time_begin);
   part.GatherSolutions();
-  part.WriteSolutions("Step0");
+  // part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
 
-  /* BC for Double-Mach Problem
+  /* BC for Double-Mach Problem 
   auto u_x = u_gamma / cos_30;
   auto moving_shock = [&](const Coord& xyz, double t){
     auto x = xyz[0], y = xyz[1];
     return ((x - (x_gap + u_x * t)) * tan_60 < y) ? value_after : value_before;
-  };
-  rk.SetPrescribedBC("4_S_27", moving_shock);  // Top
-  rk.SetPrescribedBC("4_S_31", moving_shock);  // Left
-  rk.SetSolidWallBC("4_S_1");  // Back
-  rk.SetSolidWallBC("4_S_32");  // Front
-  rk.SetSolidWallBC("4_S_19");  // Bottom
-  rk.SetFreeOutletBC("4_S_23");  // Right
-  rk.SetFreeOutletBC("4_S_15");  // Gap
-  */
+  // }; */
+  // rk.SetPrescribedBC("3_S_27", moving_shock);  // Top
+  // rk.SetPrescribedBC("3_S_31", moving_shock);  // Left
+  rk.SetSolidWallBC("3_S_27");  // Top
+  rk.SetSolidWallBC("3_S_31");  // Left
+  rk.SetSolidWallBC("3_S_1");  // Back
+  rk.SetSolidWallBC("3_S_32");  // Front
+  rk.SetSolidWallBC("3_S_19");  // Bottom
+  rk.SetSolidWallBC("3_S_23");  // Right
+  rk.SetSolidWallBC("3_S_15");  // Gap
 
-  /* BC for Forward-Step Problem */
+  /* BC for Forward-Step Problem
   auto given_state = [&given_value](const Coord& xyz, double t){
     return given_value;
   };
-  rk.SetPrescribedBC("4_S_53", given_state);  // Left-Upper
-  rk.SetPrescribedBC("4_S_31", given_state);  // Left-Lower
-  rk.SetSolidWallBC("4_S_49"); rk.SetSolidWallBC("4_S_71");  // Top
-  rk.SetSolidWallBC("4_S_1"); rk.SetSolidWallBC("4_S_2");
-  rk.SetSolidWallBC("4_S_3");  // Back
-  rk.SetSolidWallBC("4_S_54"); rk.SetSolidWallBC("4_S_76");
-  rk.SetSolidWallBC("4_S_32");  // Front
-  rk.SetSolidWallBC("4_S_19"); rk.SetSolidWallBC("4_S_23");
-  rk.SetSolidWallBC("4_S_63");  // Step
-  rk.SetFreeOutletBC("4_S_67");  // Right
-
+  rk.SetPrescribedBC("3_S_53", given_state);  // Left-Upper
+  rk.SetPrescribedBC("3_S_31", given_state);  // Left-Lower
+  rk.SetSolidWallBC("3_S_49"); rk.SetSolidWallBC("3_S_71");  // Top
+  rk.SetSolidWallBC("3_S_1"); rk.SetSolidWallBC("3_S_2");
+  rk.SetSolidWallBC("3_S_3");  // Back
+  rk.SetSolidWallBC("3_S_54"); rk.SetSolidWallBC("3_S_76");
+  rk.SetSolidWallBC("3_S_32");  // Front
+  rk.SetSolidWallBC("3_S_19"); rk.SetSolidWallBC("3_S_23");
+  rk.SetSolidWallBC("3_S_63");  // Step
+  rk.SetFreeOutletBC("3_S_67");  // Right
+ */
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
         i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
@@ -197,7 +198,7 @@ int main(int argc, char* argv[]) {
           i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
-      part.WriteSolutions(step_name);
+      // part.WriteSolutions(step_name);
       part.WriteSolutionsOnCellCenters(step_name);
     }
   }
