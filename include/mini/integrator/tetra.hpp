@@ -78,11 +78,11 @@ class Tetra : public Cell<Scalar> {
   void BuildQuadPoints() {
     int n = CountQuadPoints();
     volume_ = 0.0;
-    for (int i = 0; i < n; ++i) {
-      auto det_j = Jacobian(GetLocalCoord(i)).determinant();
-      global_weights_[i] = local_weights_[i] * std::abs(det_j);
-      volume_ += global_weights_[i];
-      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+    for (int q = 0; q < n; ++q) {
+      auto det_j = Jacobian(GetLocalCoord(q)).determinant();
+      global_weights_[q] = local_weights_[q] * std::abs(det_j);
+      volume_ += global_weights_[q];
+      global_coords_[q] = LocalToGlobal(GetLocalCoord(q));
     }
   }
   static constexpr auto BuildFaces() {
@@ -124,17 +124,17 @@ class Tetra : public Cell<Scalar> {
   }
 
  public:
-  GlobalCoord const& GetGlobalCoord(int i) const override {
-    return global_coords_[i];
+  GlobalCoord const& GetGlobalCoord(int q) const override {
+    return global_coords_[q];
   }
-  Scalar const& GetGlobalWeight(int i) const override {
-    return global_weights_[i];
+  Scalar const& GetGlobalWeight(int q) const override {
+    return global_weights_[q];
   }
-  LocalCoord const& GetLocalCoord(int i) const override {
-    return local_coords_[i];
+  LocalCoord const& GetLocalCoord(int q) const override {
+    return local_coords_[q];
   }
-  Scalar const& GetLocalWeight(int i) const override {
-    return local_weights_[i];
+  Scalar const& GetLocalWeight(int q) const override {
+    return local_weights_[q];
   }
 
  public:
@@ -233,7 +233,7 @@ class TetraBuilder<Scalar, 24> {
  public:
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, kQuad> points;
-    int i = 0;
+    int q = 0;
     // the three S31 orbits
     Scalar a_s31[] = {
         0.214602871259152,
@@ -241,41 +241,42 @@ class TetraBuilder<Scalar, 24> {
         0.3223378901422755 };
     for (auto a : a_s31) {
       auto c = 1 - 3 * a;
-      points[i++] = { a, a, a };
-      points[i++] = { a, a, c };
-      points[i++] = { a, c, a };
-      points[i++] = { c, a, a };
+      points[q++] = { a, a, a };
+      points[q++] = { a, a, c };
+      points[q++] = { a, c, a };
+      points[q++] = { c, a, a };
     }
     {  // the only S211 orbit
       Scalar a = 0.06366100187501753, b = 0.6030056647916492;
       auto c = 1 - a - a - b;
-      points[i++] = { a, a, b };
-      points[i++] = { a, a, c };
-      points[i++] = { a, b, a };
-      points[i++] = { a, b, c };
-      points[i++] = { a, c, a };
-      points[i++] = { a, c, b };
-      points[i++] = { b, a, a };
-      points[i++] = { b, a, c };
-      points[i++] = { b, c, a };
-      points[i++] = { c, a, a };
-      points[i++] = { c, a, b };
-      points[i++] = { c, b, a };
+      points[q++] = { a, a, b };
+      points[q++] = { a, a, c };
+      points[q++] = { a, b, a };
+      points[q++] = { a, b, c };
+      points[q++] = { a, c, a };
+      points[q++] = { a, c, b };
+      points[q++] = { b, a, a };
+      points[q++] = { b, a, c };
+      points[q++] = { b, c, a };
+      points[q++] = { c, a, a };
+      points[q++] = { c, a, b };
+      points[q++] = { c, b, a };
     }
+    assert(q == kQuad);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
     std::array<Scalar, kQuad> weights;
-    for (int i = 0; i < 4; ++i)
-      weights[i] = 0.03992275025816749;
-    for (int i = 4; i < 8; ++i)
-      weights[i] = 0.01007721105532064;
-    for (int i = 8; i < 12; ++i)
-      weights[i] = 0.05535718154365473;
-    for (int i = 12; i < 24; ++i)
-      weights[i] = 0.04821428571428571;
-    for (int i = 0; i < 24; ++i)
-      weights[i] /= 6.0;
+    for (int q = 0; q < 4; ++q)
+      weights[q] = 0.03992275025816749;
+    for (int q = 4; q < 8; ++q)
+      weights[q] = 0.01007721105532064;
+    for (int q = 8; q < 12; ++q)
+      weights[q] = 0.05535718154365473;
+    for (int q = 12; q < 24; ++q)
+      weights[q] = 0.04821428571428571;
+    for (int q = 0; q < 24; ++q)
+      weights[q] /= 6.0;
     return weights;
   }
 };
@@ -288,7 +289,7 @@ class TetraBuilder<Scalar, 46> {
  public:
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, kQuad> points;
-    int i = 0;
+    int q = 0;
     // the four S31 orbits
     Scalar a_s31[] = {
         .0396754230703899012650713295393895,
@@ -297,20 +298,20 @@ class TetraBuilder<Scalar, 46> {
         .1842036969491915122759464173489092 };
     for (auto a : a_s31) {
       auto c = 1 - 3 * a;
-      points[i++] = { a, a, a };
-      points[i++] = { a, a, c };
-      points[i++] = { a, c, a };
-      points[i++] = { c, a, a };
+      points[q++] = { a, a, a };
+      points[q++] = { a, a, c };
+      points[q++] = { a, c, a };
+      points[q++] = { c, a, a };
     }
     {  // the only S22 orbit
       Scalar a = .0634362877545398924051412387018983;
       auto c = 1 - 2 * a;
-      points[i++] = { a, a, c };
-      points[i++] = { a, c, a };
-      points[i++] = { a, c, c };
-      points[i++] = { c, a, a };
-      points[i++] = { c, a, c };
-      points[i++] = { c, c, a };
+      points[q++] = { a, a, c };
+      points[q++] = { a, c, a };
+      points[q++] = { a, c, c };
+      points[q++] = { c, a, a };
+      points[q++] = { c, a, c };
+      points[q++] = { c, c, a };
     }
     // the two S211 orbits
     std::pair<Scalar, Scalar> ab_s211[2]{
@@ -320,39 +321,40 @@ class TetraBuilder<Scalar, 46> {
         .5805771901288092241753981713906204 }};
     for (auto [a, b] : ab_s211) {
       auto c = 1 - a - a - b;
-      points[i++] = { a, a, b };
-      points[i++] = { a, a, c };
-      points[i++] = { a, b, a };
-      points[i++] = { a, b, c };
-      points[i++] = { a, c, a };
-      points[i++] = { a, c, b };
-      points[i++] = { b, a, a };
-      points[i++] = { b, a, c };
-      points[i++] = { b, c, a };
-      points[i++] = { c, a, a };
-      points[i++] = { c, a, b };
-      points[i++] = { c, b, a };
+      points[q++] = { a, a, b };
+      points[q++] = { a, a, c };
+      points[q++] = { a, b, a };
+      points[q++] = { a, b, c };
+      points[q++] = { a, c, a };
+      points[q++] = { a, c, b };
+      points[q++] = { b, a, a };
+      points[q++] = { b, a, c };
+      points[q++] = { b, c, a };
+      points[q++] = { c, a, a };
+      points[q++] = { c, a, b };
+      points[q++] = { c, b, a };
     }
+    assert(q == kQuad);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
     std::array<Scalar, kQuad> weights;
-    for (int i = 0; i < 4; ++i)
-      weights[i] = .0063971477799023213214514203351730;
-    for (int i = 4; i < 8; ++i)
-      weights[i] = .0401904480209661724881611584798178;
-    for (int i = 8; i < 12; ++i)
-      weights[i] = .0243079755047703211748691087719226;
-    for (int i = 12; i < 16; ++i)
-      weights[i] = .0548588924136974404669241239903914;
-    for (int i = 16; i < 22; ++i)
-      weights[i] = .0357196122340991824649509689966176;
-    for (int i = 22; i < 34; ++i)
-      weights[i] = .0071831906978525394094511052198038;
-    for (int i = 34; i < 46; ++i)
-      weights[i] = .0163721819453191175409381397561191;
-    for (int i = 0; i < 46; ++i)
-      weights[i] /= 6.0;
+    for (int q = 0; q < 4; ++q)
+      weights[q] = .0063971477799023213214514203351730;
+    for (int q = 4; q < 8; ++q)
+      weights[q] = .0401904480209661724881611584798178;
+    for (int q = 8; q < 12; ++q)
+      weights[q] = .0243079755047703211748691087719226;
+    for (int q = 12; q < 16; ++q)
+      weights[q] = .0548588924136974404669241239903914;
+    for (int q = 16; q < 22; ++q)
+      weights[q] = .0357196122340991824649509689966176;
+    for (int q = 22; q < 34; ++q)
+      weights[q] = .0071831906978525394094511052198038;
+    for (int q = 34; q < 46; ++q)
+      weights[q] = .0163721819453191175409381397561191;
+    for (int q = 0; q < 46; ++q)
+      weights[q] /= 6.0;
     return weights;
   }
 };
