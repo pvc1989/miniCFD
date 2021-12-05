@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  constexpr int kFunc = 1;
+  constexpr int kFunc = 5;
   constexpr int kDim = 3;
   constexpr int kOrder = 2;
   constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
@@ -57,14 +57,14 @@ int main(int argc, char* argv[]) {
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
 
-  /* Linear Advection Equation */
+  /* Linear Advection Equation
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   using MyRiemann = mini::riemann::rotated::Single<kDim>;
   MyRiemann::global_coefficient = { -10, 0, 0 };
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
-  };
+  }; */
 
   /* Burgers Equation
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     return val;
   }; */
 
-  /* Euler system
+  /* Euler system */
   using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
   using Gas = mini::riemann::euler::IdealGas<1, 4>;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
   using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
- */
+
   /* IC for Double-Mach Problem
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
@@ -105,8 +105,9 @@ int main(int argc, char* argv[]) {
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
   auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  // auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
-  // auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+   */
+  auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
+  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
   auto consv_after = Gas::PrimitiveToConservative(primitive_after);
   auto consv_before = Gas::PrimitiveToConservative(primitive_before);
   Value value_after = { consv_after.mass, consv_after.momentum[0],
@@ -116,10 +117,10 @@ int main(int argc, char* argv[]) {
   double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];
-    return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
-    // return (x < 2.0) ? value_after : value_before;
+    // return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
+    return (x < 2.0) ? value_after : value_before;
   };
-  */
+
   /* IC for Forward-Step Problem
   auto primitive = Primitive(1.4, 3.0, 0.0, 0.0, 1.0);
   auto conservative = Gas::PrimitiveToConservative(primitive);
