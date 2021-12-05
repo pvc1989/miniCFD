@@ -55,11 +55,11 @@ class Tri : public Face<Scalar, kDim> {
   void BuildNormalFrames() {
     static_assert(D == 3);
     int n = CountQuadPoints();
-    for (int i = 0; i < n; ++i) {
-      auto& local = GetLocalCoord(i);
+    for (int q = 0; q < n; ++q) {
+      auto& local = GetLocalCoord(q);
       auto dn = diff_shape_local_3x2(local[0], local[1]);
       MatDx2 dr = xyz_global_Dx3_ * dn;
-      auto& frame = normal_frames_[i];
+      auto& frame = normal_frames_[q];
       frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
       frame.col(2) = dr.col(1).normalized();
       frame.col(1) = frame.col(2).cross(frame.col(0));
@@ -70,14 +70,14 @@ class Tri : public Face<Scalar, kDim> {
   void BuildQuadPoints() {
     int n = CountQuadPoints();
     area_ = 0.0;
-    for (int i = 0; i < n; ++i) {
-      auto mat_j = Jacobian(GetLocalCoord(i));
+    for (int q = 0; q < n; ++q) {
+      auto mat_j = Jacobian(GetLocalCoord(q));
       auto det_j = this->CellDim() < this->PhysDim()
           ? std::sqrt((mat_j.transpose() * mat_j).determinant())
           : mat_j.determinant();
-      global_weights_[i] = local_weights_[i] * std::abs(det_j);
-      area_ += global_weights_[i];
-      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+      global_weights_[q] = local_weights_[q] * std::abs(det_j);
+      area_ += global_weights_[q];
+      global_coords_[q] = LocalToGlobal(GetLocalCoord(q));
     }
   }
   static Mat3x1 shape_3x1(Mat2x1 const& xy_local) {
@@ -100,17 +100,17 @@ class Tri : public Face<Scalar, kDim> {
   }
 
  public:
-  GlobalCoord const& GetGlobalCoord(int i) const override {
-    return global_coords_[i];
+  GlobalCoord const& GetGlobalCoord(int q) const override {
+    return global_coords_[q];
   }
-  Scalar const& GetGlobalWeight(int i) const override {
-    return global_weights_[i];
+  Scalar const& GetGlobalWeight(int q) const override {
+    return global_weights_[q];
   }
-  LocalCoord const& GetLocalCoord(int i) const override {
-    return local_coords_[i];
+  LocalCoord const& GetLocalCoord(int q) const override {
+    return local_coords_[q];
   }
-  Scalar const& GetLocalWeight(int i) const override {
-    return local_weights_[i];
+  Scalar const& GetLocalWeight(int q) const override {
+    return local_weights_[q];
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
     return xyz_global_Dx3_ * shape_3x1(x_local, y_local);
@@ -131,8 +131,8 @@ class Tri : public Face<Scalar, kDim> {
   Scalar area() const override {
     return area_;
   }
-  const MatDxD& GetNormalFrame(int i) const override {
-    return normal_frames_[i];
+  const MatDxD& GetNormalFrame(int q) const override {
+    return normal_frames_[q];
   }
 
  public:
@@ -182,10 +182,10 @@ class TriBuilder<Scalar, kDim, 16> {
  public:
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, kQuad> points;
-    int i = 0;
+    int q = 0;
     {  // the only S3 orbit
       Scalar a = .3333333333333333333333333333333333;
-      points[i++] = { a, a };
+      points[q++] = { a, a };
     }
     // the three S21 orbits
     Scalar a_s21[] = {
@@ -194,37 +194,38 @@ class TriBuilder<Scalar, kDim, 16> {
         .4592925882927231560288155144941693 };
     for (auto a : a_s21) {
       auto b = 1 - a - a;
-      points[i++] = { a, a };
-      points[i++] = { a, b };
-      points[i++] = { b, a };
+      points[q++] = { a, a };
+      points[q++] = { a, b };
+      points[q++] = { b, a };
     }
     {  // the six S111 orbits
       Scalar a = .2631128296346381134217857862846436;
       Scalar b = .0083947774099576053372138345392944;
       Scalar c = 1 - a - b;
-      points[i++] = { a, b };
-      points[i++] = { a, c };
-      points[i++] = { b, a };
-      points[i++] = { b, c };
-      points[i++] = { c, a };
-      points[i++] = { c, b };
+      points[q++] = { a, b };
+      points[q++] = { a, c };
+      points[q++] = { b, a };
+      points[q++] = { b, c };
+      points[q++] = { c, a };
+      points[q++] = { c, b };
     }
+    assert(q == kQuad);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
     std::array<Scalar, kQuad> weights;
-    for (int i = 0; i < 1; ++i)
-      weights[i] = .1443156076777871682510911104890646;
-    for (int i = 1; i < 4; ++i)
-      weights[i] = .1032173705347182502817915502921290;
-    for (int i = 4; i < 7; ++i)
-      weights[i] = .0324584976231980803109259283417806;
-    for (int i = 7; i < 10; ++i)
-      weights[i] = .0950916342672846247938961043885843;
-    for (int i = 10; i < 16; ++i)
-      weights[i] = .0272303141744349942648446900739089;
-    for (int i = 0; i < 16; ++i)
-      weights[i] /= 2.0;
+    for (int q = 0; q < 1; ++q)
+      weights[q] = .1443156076777871682510911104890646;
+    for (int q = 1; q < 4; ++q)
+      weights[q] = .1032173705347182502817915502921290;
+    for (int q = 4; q < 7; ++q)
+      weights[q] = .0324584976231980803109259283417806;
+    for (int q = 7; q < 10; ++q)
+      weights[q] = .0950916342672846247938961043885843;
+    for (int q = 10; q < 16; ++q)
+      weights[q] = .0272303141744349942648446900739089;
+    for (int q = 0; q < 16; ++q)
+      weights[q] /= 2.0;
     return weights;
   }
 };
