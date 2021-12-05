@@ -68,6 +68,50 @@ class Raw<Scalar, 3, 0> {
 };
 
 template <typename Scalar>
+class Raw<Scalar, 3, 1> {
+ public:
+  static constexpr int N = 4;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using MatNx3 = algebra::Matrix<Scalar, N, 3>;
+  using Coord = algebra::Matrix<Scalar, 3, 1>;
+
+  // TODO(PVC): CallAt -> GetValue
+  static MatNx1 CallAt(const Coord &xyz) {
+    auto x = xyz[0], y = xyz[1], z = xyz[2];
+    MatNx1 col = { 1, x, y, z };
+    return col;
+  }
+  template <typename MatKxN>
+  static MatKxN GetPdvValue(const Coord &xyz, const MatKxN &coeff) {
+    MatKxN res = coeff; res.col(0).setZero();
+    return res;
+  }
+
+  template <int K>
+  static auto GetGradValue(const Coord &xyz,
+      const algebra::Matrix<Scalar, K, N> &coeff) {
+    algebra::Matrix<Scalar, K, 3> res;
+    // pdv_x
+    res.col(0) = coeff.col(1);
+    // pdv_y
+    res.col(1) = coeff.col(2);
+    // pdv_z
+    res.col(2) = coeff.col(3);
+    return res;
+  }
+
+  template <int K>
+  static auto GetSmoothness(
+      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+    using MatKx1 = algebra::Matrix<Scalar, K, 1>;
+    MatKx1 smoothness = integral.col(1);
+    smoothness += integral.col(2);
+    smoothness += integral.col(3);
+    return smoothness;
+  }
+};
+
+template <typename Scalar>
 class Raw<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
