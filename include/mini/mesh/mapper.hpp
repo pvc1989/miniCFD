@@ -186,7 +186,7 @@ void CgnsToMetis<Real, Int>::WriteParts(
       auto n_cells = sect.CountCells();
       auto range_min{sect.CellIdMin()};
       auto range_max{sect.CellIdMax()};
-      EXPECT_EQ(n_cells - 1, range_max - range_min);
+      assert(n_cells - 1 == range_max - range_min);
       for (int cgns_i_cell = range_min; cgns_i_cell <= range_max;
            ++cgns_i_cell) {
         auto metis_i_cell = cells_local_to_global.at(cgns_i_cell);
