@@ -27,10 +27,7 @@ std::string case_name = "double_mach";
 
 class ShufflerTest : public ::testing::Test {
  protected:
-  using CgnsMesh = mini::mesh::cgns::File<double>;
-  using MetisMesh = metis::Mesh<idx_t>;
-  using MapperType = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
-  using FieldType = mini::mesh::cgns::Field<double>;
+  using MyShuffler = Shuffler<idx_t, double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ShufflerTest, GetNewOrder) {
@@ -68,7 +65,7 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
     EXPECT_EQ(i_node_list[i], expected_new_i_node_list[i]);
   }
 }
-TEST_F(ShufflerTest, PartitionCgnsMesh) {
+TEST_F(ShufflerTest, ParitionAndShuffle) {
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str());
@@ -78,30 +75,7 @@ TEST_F(ShufflerTest, PartitionCgnsMesh) {
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  auto cgns_mesh = CgnsMesh(old_file_name);
-  cgns_mesh.ReadBases();
-  /* Partition the mesh: */
-  auto mapper = MapperType();
-  auto metis_mesh = mapper.Map(cgns_mesh);
-  EXPECT_TRUE(mapper.IsValid());
-  idx_t n_common_nodes{3};
-  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
-  auto cell_parts = metis::PartGraph(graph, n_parts);
-  std::vector<idx_t> node_parts = metis::GetNodeParts(
-      metis_mesh, cell_parts, n_parts);
-  mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
-  std::cout << "[Done] partition `" << old_file_name <<
-      "` into "<< n_parts << " parts." << std::endl;
-  /* Shuffle nodes and cells: */
-  auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts,
-      graph, metis_mesh, &cgns_mesh, &mapper);
-  shuffler.Shuffle();
-  EXPECT_TRUE(mapper.IsValid());
-  auto new_file_name = case_name + "/shuffled.cgns";
-  cgns_mesh.Write(new_file_name, 2);
-  shuffler.WritePartitionInfo(case_name);
-  std::cout << "[Done] shuffle the " << n_parts << "-part `" << old_file_name
-      << "` to `" << new_file_name << "`." << std::endl;
+  MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_parts);
 }
 
 }  // namespace mesh
