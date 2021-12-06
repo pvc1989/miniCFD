@@ -127,6 +127,8 @@ class Shuffler {
 
   void Shuffle();
   void WritePartitionInfo(const std::string& case_name);
+  static void PartitionAndShuffle(const std::string &case_name,
+      const std::string &old_cgns_name, Int n_parts);
 
  private:
   std::vector<Int> const& cell_parts_;
@@ -140,7 +142,6 @@ class Shuffler {
 
   void FillFaceParts(const CgnsMesh& mesh, const MapperType& mapper);
 };
-
 
 template <typename Int, class Real>
 void Shuffler<Int, Real>::FillFaceParts(
@@ -494,6 +495,39 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     }
     ostrm << "#\n";
   }
+}
+
+template <typename Int, class Real>
+void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
+    const std::string &old_cgns_name, Int n_parts) {
+  char cmd[1024];
+  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
+      case_name.c_str());
+  std::system(cmd);
+  std::printf("[Done] %s\n", cmd);
+  auto cgns_mesh = cgns::File<Real>(old_cgns_name);
+  cgns_mesh.ReadBases();
+  /* Partition the mesh: */
+  auto mapper = mapper::CgnsToMetis<Real, Int>();
+  metis::Mesh<Int> metis_mesh = mapper.Map(cgns_mesh);
+  assert(mapper.IsValid());
+  Int n_common_nodes{3};
+  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
+  auto cell_parts = metis::PartGraph(graph, n_parts);
+  auto node_parts = metis::GetNodeParts(metis_mesh, cell_parts, n_parts);
+  mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
+  std::printf("[Done] partition `%s` into %d parts.\n",
+      old_cgns_name.c_str(), (int)n_parts);
+  /* Shuffle nodes and cells: */
+  auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts,
+      graph, metis_mesh, &cgns_mesh, &mapper);
+  shuffler.Shuffle();
+  assert(mapper.IsValid());
+  auto new_cgns_name = case_name + "/shuffled.cgns";
+  cgns_mesh.Write(new_cgns_name, 2);
+  shuffler.WritePartitionInfo(case_name);
+  std::printf("[Done] shuffle the %d-part `%s` to `%s`.\n",
+      (int)n_parts, old_cgns_name.c_str(), new_cgns_name.c_str());
 }
 
 }  // namespace mesh
