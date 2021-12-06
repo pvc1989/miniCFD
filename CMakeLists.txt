@@ -112,7 +112,7 @@ if (${PROJECT_NAME}_BUILD_TESTS)
   add_subdirectory(test)
 endif (${PROJECT_NAME}_BUILD_TESTS)
 
-option(${PROJECT_NAME}_BUILD_DEMOS "Build demos for this project." "OFF")
+option(${PROJECT_NAME}_BUILD_DEMOS "Build demos for this project." "ON")
 if (${PROJECT_NAME}_BUILD_DEMOS)
   add_subdirectory(demo)
 endif (${PROJECT_NAME}_BUILD_DEMOS)
