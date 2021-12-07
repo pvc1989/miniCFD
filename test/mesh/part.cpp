@@ -13,9 +13,9 @@
 // mpirun -n 4 ./part
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
-  int comm_size, comm_rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  int n_procs, i_proc;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_proc);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   auto case_name = std::string("double_mach");
@@ -23,21 +23,21 @@ int main(int argc, char* argv[]) {
     case_name = argv[1];
 
   auto time_begin = MPI_Wtime();
-  if (comm_rank == 0) {
+  if (i_proc == 0) {
     std::printf("Run `./shuffler %d %s` on proc[%d/%d] at %f sec\n",
-        comm_size, case_name.c_str(),
-        comm_rank, comm_size, MPI_Wtime() - time_begin);
-    auto cmd = "./shuffler " + std::to_string(comm_size) + ' ' + case_name;
+        n_procs, case_name.c_str(),
+        i_proc, n_procs, MPI_Wtime() - time_begin);
+    auto cmd = "./shuffler " + std::to_string(n_procs) + ' ' + case_name;
     std::system(cmd.c_str());
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
-      case_name.c_str(), comm_rank,
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      case_name.c_str(), i_proc,
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   constexpr int kFunc{2}, kDim{3}, kOrder{2};
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
-  auto part = MyPart(case_name, comm_rank);
+  auto part = MyPart(case_name, i_proc);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
   const auto *part_ptr = &part;
@@ -51,11 +51,11 @@ int main(int argc, char* argv[]) {
     }
   });
   std::printf("On proc[%d/%d], avg_volume = %f = %f / %d\n",
-      comm_rank, comm_size, volume / n_cells, volume, n_cells);
+      i_proc, n_procs, volume / n_cells, volume, n_cells);
   std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",
-      comm_rank, comm_size, area / n_faces, area, n_faces);
+      i_proc, n_procs, area / n_faces, area, n_faces);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   part.Project([](auto const& xyz){
     auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
     mini::algebra::Matrix<double, 2, 1> col;
@@ -64,17 +64,17 @@ int main(int argc, char* argv[]) {
     return col;
   });
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   using MyCell = typename MyPart::CellType;
   auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   MPI_Finalize();
 }
