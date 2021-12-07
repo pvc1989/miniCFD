@@ -27,13 +27,13 @@ using FieldType = cgns::Field<double>;
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
-  int comm_size, comm_rank;
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  int n_procs, i_proc;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_proc);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   if (argc < 6) {
-    if (comm_rank == 0) {
+    if (i_proc == 0) {
       std::cout << "usage:\n";
       std::cout << "  mpirun -n <n_proc> ./jf17 <cgns_file> <t_start>";
       std::cout << " <t_stop> <n_steps> <n_steps_per_frame>" << std::endl;
@@ -49,14 +49,14 @@ int main(int argc, char* argv[]) {
   int n_steps_per_frame = std::atoi(argv[5]);
   auto dt = t_stop / n_steps;
   std::printf("rank = %d, time = [0.0, %f], step = [0, %d], dt = %f\n",
-      comm_rank, t_stop, n_steps, dt);
+      i_proc, t_stop, n_steps, dt);
 
   auto time_begin = MPI_Wtime();
 
   /* Partition the mesh */
-  if (comm_rank == 0) {
+  if (i_proc == 0) {
     using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
-    MyShuffler::PartitionAndShuffle(case_name, old_file_name, comm_size);
+    MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
 
   constexpr int kFunc = 5;
@@ -81,11 +81,11 @@ int main(int argc, char* argv[]) {
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
-  auto part = MyPart(case_name, comm_rank);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
+  auto part = MyPart(case_name, i_proc);
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   auto primitive = Primitive(1.4, 2.0, 0.0, 0.0, 1.0);
   auto conservative = Gas::PrimitiveToConservative(primitive);
   Value given_value = { conservative.mass, conservative.momentum[0],
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]) {
   });
 
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
   if (kOrder > 0) {
     part.Reconstruct(limiter);
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   }
 
   std::printf("Run Write(Step0) on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   // part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
@@ -136,13 +136,13 @@ int main(int argc, char* argv[]) {
   /* Main Loop */
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
-        i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
+        i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
     double t_curr = t_start + dt * i_step;
     rk.Update(&part, t_curr, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
       std::printf("Run Write(Step%d) on proc[%d/%d] at %f sec\n",
-          i_step, comm_rank, comm_size, MPI_Wtime() - time_begin);
+          i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
       // part.WriteSolutions(step_name);
@@ -151,6 +151,6 @@ int main(int argc, char* argv[]) {
   }
 
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      comm_rank, comm_size, MPI_Wtime() - time_begin);
+      i_proc, n_procs, MPI_Wtime() - time_begin);
   MPI_Finalize();
 }
