@@ -13,7 +13,6 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/rotated/euler.hpp"
-#include "mini/riemann/rotated/single.hpp"
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
@@ -56,15 +55,6 @@ int main(int argc, char* argv[]) {
   using Coord = typename MyCell::Coord;
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
-
-  /* Linear Advection Equation
-  using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
-  using MyRiemann = mini::riemann::rotated::Single<kDim>;
-  MyRiemann::global_coefficient = { -10, 0, 0 };
-  Value value_after{ 10 }, value_before{ -10 };
-  auto initial_condition = [&](const Coord& xyz){
-    return (xyz[0] > 3.0) ? value_after : value_before;
-  }; */
 
   /* Burgers Equation
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
