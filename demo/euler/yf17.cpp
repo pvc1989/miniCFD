@@ -35,13 +35,13 @@ int main(int argc, char* argv[]) {
   if (argc < 6) {
     if (i_proc == 0) {
       std::cout << "usage:\n";
-      std::cout << "  mpirun -n <n_proc> ./jf17 <cgns_file> <t_start>";
+      std::cout << "  mpirun -n <n_proc> ./yf17 <cgns_file> <t_start>";
       std::cout << " <t_stop> <n_steps> <n_steps_per_frame>" << std::endl;
     }
     MPI_Finalize();
     exit(0);
   }
-  std::string case_name = "jf17_tetra";
+  std::string case_name = "yf17_tetra";
   auto old_file_name = std::string(argv[1]);
   double t_start = std::atof(argv[2]);
   double t_stop = std::atof(argv[3]);
@@ -58,6 +58,7 @@ int main(int argc, char* argv[]) {
     using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
     MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kFunc = 5;
   constexpr int kDim = 3;
@@ -145,7 +146,8 @@ int main(int argc, char* argv[]) {
           i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
-      // part.WriteSolutions(step_name);
+      if (i_step == n_steps)
+        part.WriteSolutions(step_name);
       part.WriteSolutionsOnCellCenters(step_name);
     }
   }
