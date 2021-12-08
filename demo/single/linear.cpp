@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
     MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
+  MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kFunc = 1;
   constexpr int kDim = 3;
