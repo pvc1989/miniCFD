@@ -12,25 +12,6 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <int kField>
-constexpr double AddOrMinus(double x, double y);
-template <>
-constexpr double AddOrMinus<1>(double x, double y) { return x + y; }
-template <>
-constexpr double AddOrMinus<3>(double x, double y) { return x - y; }
-template <int kField>
-bool TimeAxisAfterExpansion(double u, double a);
-template <>
-bool TimeAxisAfterExpansion<1>(double u, double a) { return u - a < 0; }
-template <>
-bool TimeAxisAfterExpansion<3>(double u, double a) { return u + a > 0; }
-template <int kField>
-bool TimeAxisBeforeExpansion(double u, double a);
-template <>
-bool TimeAxisBeforeExpansion<1>(double u, double a) { return u - a > 0; }
-template <>
-bool TimeAxisBeforeExpansion<3>(double u, double a) { return u + a < 0; }
-
 template <class Gas, int D>
 class Implementor {
  public:
@@ -179,16 +160,21 @@ class Implementor {
   // Expansion and related methods:
   template <int kField>
   class Expansion {
+    static constexpr double AddOrMinus(double x, double y) {
+      static_assert(kField == 1 || kField == 3);
+      return kField == 1 ? (x + y) : (x - y);
+    }
+
    public:
     double a_before, a_after;  // speed of sound before/after the wave
     double gri_1, gri_2;  // Generalized Riemann Invariants
     Expansion(State const& before, State const& after)
         : a_before(Gas::GetSpeedOfSound(before)),
           gri_1(before.p() / (std::pow(before.rho(), Gas::Gamma()))) {
-      gri_2 = AddOrMinus<kField>(
-        before.u(), a_before * Gas::GammaMinusOneUnderTwo());
-      a_after = AddOrMinus<kField>(
-        a_before, (before.u() - after.u()) * Gas::GammaMinusOneOverTwo());
+      gri_2 = AddOrMinus(before.u(),
+          Gas::GammaMinusOneUnderTwo() * a_before);
+      a_after = AddOrMinus(a_before,
+          Gas::GammaMinusOneOverTwo() * (before.u() - after.u()));
     }
   };
   static State GetStateInsideExpansion(double gri_1, double gri_2) {
@@ -198,6 +184,16 @@ class Implementor {
     auto rho = std::pow(a_square / gri_1 * Gas::OneOverGamma(),
                         Gas::OneOverGammaMinusOne());
     return {rho, a, a_square * rho * Gas::OneOverGamma()};
+  }
+  template <int kField>
+  constexpr static bool TimeAxisAfterExpansion(double u, double a) {
+    static_assert(kField == 1 || kField == 3);
+    return kField == 1 ? (u - a < 0) : (u + a > 0);
+  }
+  template <int kField>
+  static bool TimeAxisBeforeExpansion(double u, double a) {
+    static_assert(kField == 1 || kField == 3);
+    return kField == 1 ? (u - a > 0) : (u + a < 0);
   }
   template <int kField>
   static State GetStateNearExpansion(State const& before, State* after) {

@@ -5,6 +5,7 @@
 
 #include <initializer_list>
 #include <type_traits>
+#include <utility>
 
 #include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
@@ -107,26 +108,11 @@ class Euler {
   using Primitive = typename Base::Primitive;
   using State = Primitive;
 
-  void Rotate(const Vector& normal) {
-    static_assert(kDim == 2);
-    cartesian_.Rotate(normal);
+  template <typename... Args>
+  void Rotate(Args&&... args) {
+    cartesian_.Rotate(std::forward<Args>(args)...);
   }
-  void Rotate(const Scalar& n_x, const Scalar& n_y) {
-    static_assert(kDim == 2);
-    cartesian_.Rotate(n_x, n_y);
-  }
-  void Rotate(const Vector& nu, const Vector& sigma) {
-    static_assert(kDim == 3);
-    cartesian_.Rotate(nu, sigma);
-  }
-  void Rotate(const Vector& nu, const Vector& sigma, const Vector& pi) {
-    static_assert(kDim == 3);
-    cartesian_.Rotate(nu, sigma, pi);
-  }
-  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3>& frame) {
-    static_assert(kDim == 3);
-    cartesian_.Rotate(frame);
-  }
+
   static Flux GetFlux(State const& state) {
     return Base::GetFlux(state);
   }

@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <numeric>
 #include <type_traits>
 #include <utility>
 #include <vector>

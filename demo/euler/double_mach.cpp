@@ -9,8 +9,8 @@
 
 #include "mini/mesh/shuffler.hpp"
 #include "mini/riemann/euler/types.hpp"
-#include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/euler/eigen.hpp"
+#include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
   /* Euler system */
   using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
-  using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  using Gas = mini::riemann::euler::IdealGas<1, 4, double>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
   using MyLimiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
