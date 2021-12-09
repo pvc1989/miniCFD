@@ -7,23 +7,14 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 
-#include "mini/mesh/cgns.hpp"
-#include "mini/mesh/metis.hpp"
-#include "mini/mesh/mapper.hpp"
 #include "mini/mesh/shuffler.hpp"
-#include "mini/mesh/part.hpp"
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
-
-using namespace mini::mesh;
-using CgnsMesh = cgns::File<double>;
-using MetisMesh = metis::Mesh<idx_t>;
-using MapperType = mapper::CgnsToMetis<double, idx_t>;
-using FieldType = cgns::Field<double>;
+#include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
