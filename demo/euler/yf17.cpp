@@ -18,6 +18,7 @@
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
+#include "rkdg.hpp"
 
 using namespace mini::mesh;
 using CgnsMesh = cgns::File<double>;
