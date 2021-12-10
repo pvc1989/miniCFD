@@ -16,6 +16,7 @@ target_link_libraries(demo_euler_rkdg cgns_shared metis ${MPI_mpi_LIBRARY})
 
 set (cases
   double_mach
+  forward_step
   yf17
 )
 foreach (case ${cases})
