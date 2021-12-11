@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef DEMO_EULER_HPP_
-#define DEMO_EULER_HPP_
+#ifndef DEMO_EULER_RKDG_HPP_
+#define DEMO_EULER_RKDG_HPP_
 
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/eigen.hpp"
@@ -64,4 +64,4 @@ extern template class RungeKutta<1, mini::mesh::cgns::MyPart0,
 extern template class RungeKutta<3, mini::mesh::cgns::MyPart2,
     mini::riemann::rotated::MyRiemann>;
 
-#endif  // DEMO_EULER_HPP_
+#endif  // DEMO_EULER_RKDG_HPP_

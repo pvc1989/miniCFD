@@ -1,10 +1,10 @@
 /*
  * Generate unstructured hexahedral mesh for "double mach" problem.
  */
-LC = 0.05;  // average length of cell edges, a.k.a. characteristic length
+LC = 0.1;  // average length of cell edges, a.k.a. characteristic length
 LX = 4;     // length along x-axis
 LY = 1;     // length along y-axis
-LZ = 1*LC;  // length along z-axis
+LZ = 2*LC;  // length along z-axis
 LG = 1./6;  // length of the gap before the wall
 
 Point(1) = { 0., 0., 0., LC };
@@ -21,9 +21,9 @@ Line(5) = { 5, 1 };
 
 Curve Loop(1) = { 1, 2, 3, 4, 5 };
 Plane Surface(1) = { 1 };
-// Recombine Surface{ 1 };
+Recombine Surface{ 1 };
 out[] = Extrude{ 0, 0, LZ }{
-  Surface{ 1 }; Layers{ LZ/LC+0.001 };
+  Surface{ 1 }; Layers{ LZ/LC+0.001 }; Recombine;
 };
 
 Physical Surface("Gap") = { 15 };
