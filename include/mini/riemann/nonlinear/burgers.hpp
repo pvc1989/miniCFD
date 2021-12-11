@@ -53,6 +53,9 @@ class Burgers {
   Flux GetFlux(State const& state) const {
     return state * state * k_ / 2;
   }
+  Flux GetFlux(const MatKx1& state) const {
+    return GetFlux(state[0]);
+  }
 
  private:
   Jacobi k_;

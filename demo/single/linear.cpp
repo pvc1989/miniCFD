@@ -15,6 +15,7 @@
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/ode.hpp"
+#include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -64,7 +65,11 @@ int main(int argc, char* argv[]) {
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;
 
-  /* Linear Advection Equation */
+  std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
+      i_proc, n_procs, MPI_Wtime() - time_begin);
+  auto part = MyPart(case_name, i_proc);
+
+  /* Initial Condition */
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   using MyRiemann = mini::riemann::rotated::Single<kDim>;
   MyRiemann::global_coefficient = { -10, 0, 0 };
@@ -72,10 +77,6 @@ int main(int argc, char* argv[]) {
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > 3.0) ? value_after : value_before;
   };
-
-  std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  auto part = MyPart(case_name, i_proc);
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
