@@ -3,6 +3,19 @@ project(miniCFD)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_FLAGS "-Wno-format")
 
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries." FORCE)
+if (${BUILD_SHARED_LIBS})
+  set(SHARED TRUE CACHE BOOL "Build a shared library for METIS." FORCE)
+  set(CGNS_BUILD_SHARED ON CACHE BOOL "Build a shared library for CGNS." FORCE)
+  set(CGNS_USE_SHARED ON CACHE BOOL "Link programs to the CGNS shared library." FORCE)
+  set(CGNS_LIB cgns_shared CACHE STRING "The target of the CGNS shared library." FORCE)
+else (${BUILD_SHARED_LIBS})
+  set(SHARED FALSE CACHE BOOL "Build a shared library for METIS." FORCE)
+  set(CGNS_BUILD_SHARED OFF CACHE BOOL "Build a shared library for CGNS." FORCE)
+  set(CGNS_USE_SHARED OFF CACHE BOOL "Link programs to the CGNS static library." FORCE)
+  set(CGNS_LIB cgns_static CACHE STRING "The target of the CGNS static library." FORCE)
+endif (${BUILD_SHARED_LIBS})
+
 # GoogleTest related settings
 option(${PROJECT_NAME}_SUBMODULE_GOOGLETEST "Add GoogleTest as a git submodule." "ON")
 # Prevent overriding the parent project's compiler/linker settings on Windows
