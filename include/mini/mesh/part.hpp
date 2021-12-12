@@ -6,6 +6,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <ios>
 #include <map>
 #include <memory>
 #include <set>
@@ -919,8 +920,8 @@ class Part {
   }
   void WriteSolutionsOnCellCenters(const std::string &soln_name = "0",
       bool write_ghost_cells = false) const {
-    bool binary = false;
-    auto ostrm = GetFstream(soln_name);
+    bool binary = true;
+    auto ostrm = GetFstream(soln_name, binary);
     ostrm << "# vtk DataFile Version 3.0\n";
     ostrm << "Field values on each cell.\n";
     ostrm << (binary ? "BINARY\n" : "ASCII\n");
@@ -958,9 +959,8 @@ class Part {
     ostrm << "POINTS " << coords.size() << " double\n";
     for (auto& xyz : coords) {
       if (binary) {
-        ostrm.write(reinterpret_cast<char*>(&xyz[0]), sizeof(xyz[0]));
-        ostrm.write(reinterpret_cast<char*>(&xyz[1]), sizeof(xyz[1]));
-        ostrm.write(reinterpret_cast<char*>(&xyz[2]), sizeof(xyz[2]));
+        for (double v : xyz)
+          WriteInBigEndian(v, ostrm);
       } else {
         ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
       }
@@ -969,8 +969,8 @@ class Part {
     ostrm << "CELLS " << n_cells << ' ' << cells.size() << '\n';
     for (auto& c : cells) {
       if (binary) {
-        Int ic = c;
-        ostrm.write(reinterpret_cast<char*>(&ic), sizeof(ic));
+        int v = c;
+        WriteInBigEndian(v, ostrm);
       } else {
         ostrm << c << ' ';
       }
@@ -991,7 +991,8 @@ class Part {
           break;
       }
       if (binary) {
-        ostrm.write(reinterpret_cast<char*>(&type), sizeof(type));
+        int v = type;
+        WriteInBigEndian(v, ostrm);
       } else {
         ostrm << type << ' ';
       }
@@ -1005,13 +1006,23 @@ class Part {
       ostrm << "LOOKUP_TABLE default\n";
       for (auto& f : fields) {
         if (binary) {
-          ostrm.write(reinterpret_cast<char*>(&f[k]), sizeof(f[k]));
+          double v = f[k];
+          WriteInBigEndian(v, ostrm);
         } else {
           ostrm << f[k] << ' ';
         }
       }
       ostrm << '\n';
     }
+  }
+  template <class V>
+  static void WriteInBigEndian(const V& v, std::ofstream &ostrm) {
+    char a[sizeof(v)];
+    auto *pv = reinterpret_cast<const char*>(&v);
+    for (int i = 0; i < sizeof(v); ++i) {
+      a[i] = pv[sizeof(v) - 1 - i];
+    }
+    ostrm.write(a, sizeof(v));
   }
   static void WriteSolutionsOnTetra4(const CellType &cell,
       std::vector<Int> *cells, std::vector<Mat3x1> *coords,
@@ -1416,7 +1427,7 @@ class Part {
     }
     return coord;
   }
-  std::ofstream GetFstream(const std::string &soln_name) const {
+  std::ofstream GetFstream(const std::string &soln_name, bool binary=false) const {
     char temp[1024];
     if (rank_ == 0) {
       std::snprintf(temp, sizeof(temp), "mkdir -p %s/%s",
@@ -1426,7 +1437,7 @@ class Part {
     MPI_Barrier(MPI_COMM_WORLD);
     std::snprintf(temp, sizeof(temp), "%s/%s/%d.vtk",
         directory_.c_str(), soln_name.c_str(), rank_);
-    return std::ofstream(temp);
+    return std::ofstream(temp, std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
 template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
