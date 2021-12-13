@@ -876,52 +876,10 @@ class Part {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
-  void WriteSolutionsOnGaussPoints(const std::string &soln_name = "0") const {
-    auto ostrm = GetFstream(soln_name);
-    ostrm << "# vtk DataFile Version 3.0\n";
-    ostrm << "Field values on quadrature points.\n";
-    ostrm << "ASCII\n";
-    ostrm << "DATASET UNSTRUCTURED_GRID\n";
-    int n_points = 0;
-    auto coords = std::vector<Mat3x1>();
-    auto fields = std::vector<typename CellType::Value>();
-    for (auto& [i_zone, zone] : local_cells_) {
-      for (auto& [i_sect, sect] : zone) {
-        for (auto& cell : sect) {
-          auto& gauss_ptr = cell.gauss_ptr_;
-          for (int q = 0; q < gauss_ptr->CountQuadPoints(); ++q) {
-            coords.emplace_back(gauss_ptr->GetGlobalCoord(q));
-            fields.emplace_back(cell.projection_(coords.back()));
-          }
-        }
-      }
-    }
-    ostrm << "POINTS " << coords.size() << " double\n";
-    for (auto& xyz : coords) {
-      ostrm << xyz[0] << ' ' << xyz[1] << ' ' << xyz[2] << '\n';
-    }
-    ostrm << "CELLS " << coords.size() << ' ' << coords.size() * 2 << '\n';
-    for (int i = 0; i < coords.size(); ++i) {
-      ostrm << "1 " << i << '\n';
-    }
-    ostrm << "CELL_TYPES " << coords.size() << '\n';
-    for (int i = 0; i < coords.size(); ++i) {
-      ostrm << "1\n";
-    }
-    ostrm << "POINT_DATA " << coords.size() << "\n";
-    int K = fields[0].size();
-    for (int k = 0; k < K; ++k) {
-      ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
-      ostrm << "LOOKUP_TABLE default\n";
-      for (auto& f : fields) {
-        ostrm << f[k] << '\n';
-      }
-    }
-  }
-  void WriteSolutionsOnCellCenters(const std::string &soln_name = "0",
+  void WriteSolutionsOnCellCentersVTK(const std::string &soln_name = "0",
       bool write_ghost_cells = false) const {
     bool binary = true;
-    auto ostrm = GetFstream(soln_name, binary);
+    auto ostrm = GetFileStream(soln_name, binary, "vtk");
     ostrm << "# vtk DataFile Version 3.0\n";
     ostrm << "Field values on each cell.\n";
     ostrm << (binary ? "BINARY\n" : "ASCII\n");
@@ -1014,6 +972,107 @@ class Part {
       }
       ostrm << '\n';
     }
+  }
+  void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
+    // prepare data to be written
+    Int n_cells = 0;
+    auto cells = std::vector<Int>();
+    auto coords = std::vector<Mat3x1>();
+    auto fields = std::vector<typename CellType::Value>();
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        int i_cell = sect.head();
+        int i_cell_tail = sect.tail();
+        int npe = sect.npe();
+        while (i_cell < i_cell_tail) {
+          cells.emplace_back(npe);
+          switch (npe) {
+            case 4:
+              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);break;
+            case 8:
+              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);break;
+            default:
+              assert(false);
+              break;
+          }
+          ++i_cell; ++n_cells;
+        }
+      }
+    }
+    // write to an ofstream
+    bool binary = false;
+    auto vtu = GetFileStream(soln_name, binary, "vtu");
+    vtu << "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\""
+        << " byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
+    vtu << "  <UnstructuredGrid>\n";
+    vtu << "    <Piece NumberOfPoints=\"" << coords.size()
+        << "\" NumberOfCells=\"" << n_cells << "\">\n";
+    vtu << "      <PointData>\n";
+    vtu << "      </PointData>\n";
+    vtu << "      <CellData>\n";
+    vtu << "      </CellData>\n";
+    vtu << "      <Points>\n";
+    vtu << "        <DataArray type=\"Float64\" Name=\"Points\" "
+        << "NumberOfComponents=\"3\" format=\"ascii\">\n";
+    for (auto& xyz : coords) {
+      for (auto v : xyz) {
+        vtu << v << ' ';
+      }
+    }
+    vtu << "\n        </DataArray>\n";
+    vtu << "      </Points>\n";
+    vtu << "      <Cells>\n";
+    vtu << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
+        << "format=\"ascii\">\n";
+    for (int i_node = 0; i_node < coords.size(); ++i_node) {
+      vtu << i_node << ' ';
+    }
+    vtu << "\n        </DataArray>\n";
+    vtu << "        <DataArray type=\"Int32\" Name=\"offsets\" "
+        << "format=\"ascii\">\n";
+    int offset = 0;
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        int i_cell = sect.head();
+        int i_cell_tail = sect.tail();
+        int npe = sect.npe();
+        while (i_cell < i_cell_tail) {
+          offset += npe;
+          vtu << offset << ' ';
+          ++i_cell;
+        }
+      }
+    }
+    vtu << "\n        </DataArray>\n";
+    vtu << "        <DataArray type=\"UInt8\" Name=\"types\" "
+        << "format=\"ascii\">\n";
+    for (auto& [i_zone, zone] : local_cells_) {
+      for (auto& [i_sect, sect] : zone) {
+        int i_cell = sect.head();
+        int i_cell_tail = sect.tail();
+        int type;
+        switch(sect.npe()) {
+          case 4:
+            type = 10;  // VTK_TETRA
+            break;
+          case 8:
+            type = 12;  // VTK_HEXAHEDRON
+            break;
+          default:
+            assert(false);
+            break;
+        }
+        while (i_cell < i_cell_tail) {
+          vtu << type << ' ';
+          ++i_cell;
+        }
+      }
+    }
+    vtu << "\n        </DataArray>\n";
+    vtu << "      </Cells>\n";
+    vtu << "    </Piece>\n";
+    vtu << "  </UnstructuredGrid>\n";
+    vtu << "</VTKFile>\n";
   }
   template <class V>
   static void WriteInBigEndian(const V& v, std::ofstream &ostrm) {
@@ -1427,7 +1486,8 @@ class Part {
     }
     return coord;
   }
-  std::ofstream GetFstream(const std::string &soln_name, bool binary=false) const {
+  std::ofstream GetFileStream(const std::string &soln_name, bool binary,
+      const std::string &suffix) const {
     char temp[1024];
     if (rank_ == 0) {
       std::snprintf(temp, sizeof(temp), "mkdir -p %s/%s",
@@ -1435,9 +1495,10 @@ class Part {
       std::system(temp);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    std::snprintf(temp, sizeof(temp), "%s/%s/%d.vtk",
-        directory_.c_str(), soln_name.c_str(), rank_);
-    return std::ofstream(temp, std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
+    std::snprintf(temp, sizeof(temp), "%s/%s/%d.%s",
+        directory_.c_str(), soln_name.c_str(), rank_, suffix.c_str());
+    return std::ofstream(temp,
+        std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
 template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
