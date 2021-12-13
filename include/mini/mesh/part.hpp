@@ -1008,6 +1008,15 @@ class Part {
     vtu << "    <Piece NumberOfPoints=\"" << coords.size()
         << "\" NumberOfCells=\"" << n_cells << "\">\n";
     vtu << "      <PointData>\n";
+    int K = fields[0].size();
+    for (int k = 0; k < K; ++k) {
+      vtu << "        <DataArray type=\"Float64\" Name=\"Field[" << k+1
+          << "]\" format=\"ascii\">\n";
+      for (auto& f : fields) {
+        vtu << f[k] << ' ';
+      }
+      vtu << "\n        </DataArray>\n";
+    }
     vtu << "      </PointData>\n";
     vtu << "      <CellData>\n";
     vtu << "      </CellData>\n";
