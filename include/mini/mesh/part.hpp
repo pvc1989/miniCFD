@@ -999,6 +999,31 @@ class Part {
         }
       }
     }
+    if (rank_ == 0) {
+      char temp[1024];
+      std::snprintf(temp, sizeof(temp), "%s/%s.pvtu",
+          directory_.c_str(), soln_name.c_str());
+      auto pvtu = std::ofstream(temp, std::ios::out);
+      pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
+      pvtu << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
+      pvtu << "    <PPointData>\n";
+      for (int k = 0; k < kFunc; ++k) {
+        pvtu << "      <PDataArray type=\"Float64\" Name=\"Field[" << k+1
+            << "]\"/>\n";
+      }
+      pvtu << "    </PPointData>\n";
+      pvtu << "    <PPoints>\n";
+      pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\"/>\n";
+      pvtu << "    </PPoints>\n";
+      int n_parts;
+      MPI_Comm_size(MPI_COMM_WORLD, &n_parts);
+      for (int i_part = 0; i_part < n_parts; ++i_part) {
+        pvtu << "    <Piece Source=\"./" << soln_name << '/'
+            << i_part << ".vtu\"/>\n";
+      }
+      pvtu << "  </PUnstructuredGrid>\n";
+      pvtu << "</VTKFile>\n";
+    }
     // write to an ofstream
     bool binary = false;
     auto vtu = GetFileStream(soln_name, binary, "vtu");
