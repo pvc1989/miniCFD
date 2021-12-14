@@ -315,6 +315,9 @@ class Part {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
+  void SetFieldNames(const std::array<std::string, kFunc>& names) {
+    field_names_ = names;
+  }
 
  private:
   int SolnNameToId(int i_file, int i_base, int i_zone,
@@ -960,7 +963,7 @@ class Part {
     ostrm << "POINT_DATA " << coords.size() << "\n";
     int K = fields[0].size();
     for (int k = 0; k < K; ++k) {
-      ostrm << "SCALARS Field[" << k + 1 << "] double 1\n";
+      ostrm << "SCALARS " << field_names_[k] << " double 1\n";
       ostrm << "LOOKUP_TABLE default\n";
       for (auto& f : fields) {
         if (binary) {
@@ -1008,8 +1011,8 @@ class Part {
       pvtu << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
       pvtu << "    <PPointData>\n";
       for (int k = 0; k < kFunc; ++k) {
-        pvtu << "      <PDataArray type=\"Float64\" Name=\"Field[" << k+1
-            << "]\"/>\n";
+        pvtu << "      <PDataArray type=\"Float64\" Name=\""
+            << field_names_[k] << "\"/>\n";
       }
       pvtu << "    </PPointData>\n";
       pvtu << "    <PPoints>\n";
@@ -1035,8 +1038,8 @@ class Part {
     vtu << "      <PointData>\n";
     int K = fields[0].size();
     for (int k = 0; k < K; ++k) {
-      vtu << "        <DataArray type=\"Float64\" Name=\"Field[" << k+1
-          << "]\" format=\"ascii\">\n";
+      vtu << "        <DataArray type=\"Float64\" Name=\""
+          << field_names_[k] << "\" format=\"ascii\">\n";
       for (auto& f : fields) {
         vtu << f[k] << ' ';
       }
@@ -1412,6 +1415,7 @@ class Part {
   std::unordered_map<std::string, ShiftedVector<std::unique_ptr<FaceType>> *>
       name_to_faces_;
   std::vector<MPI_Request> requests_;
+  std::array<std::string, kFunc> field_names_;
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;

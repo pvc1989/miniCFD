@@ -85,6 +85,8 @@ int main(int argc, char* argv[]) {
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
   auto part = MyPart(case_name, i_proc);
+  part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
+      "EnergyStagnationDensity"});
 
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
