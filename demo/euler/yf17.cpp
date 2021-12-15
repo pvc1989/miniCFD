@@ -35,9 +35,9 @@ int main(int argc, char* argv[]) {
 
   if (argc < 6) {
     if (i_proc == 0) {
-      std::cout << "usage:\n";
-      std::cout << "  mpirun -n <n_proc> ./yf17 <cgns_file> <t_start>";
-      std::cout << " <t_stop> <n_steps> <n_steps_per_frame>" << std::endl;
+      std::cout << "usage:\n"
+          << "  mpirun -n <n_proc> ./yf17 <cgns_file>"
+          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>\n";
     }
     MPI_Finalize();
     exit(0);

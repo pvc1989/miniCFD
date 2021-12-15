@@ -25,20 +25,20 @@ int main(int argc, char* argv[]) {
 
   if (argc < 7) {
     if (i_proc == 0) {
-      std::cout << "usage:\n";
-      std::cout << "  mpirun -n <n_proc> ./shock_tube <cgns_file> <t_start>";
-      std::cout << " <t_stop> <n_steps> <n_steps_per_frame> <hexa|tetra>\n";
+      std::cout << "usage:\n"
+          << "  mpirun -n <n_proc> ./shock_tube <cgns_file> <hexa|tetra>"
+          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>\n";
     }
     MPI_Finalize();
     exit(0);
   }
   auto old_file_name = std::string(argv[1]);
-  double t_start = std::atof(argv[2]);
-  double t_stop = std::atof(argv[3]);
-  int n_steps = std::atoi(argv[4]);
-  int n_steps_per_frame = std::atoi(argv[5]);
+  auto suffix = std::string(argv[2]);
+  double t_start = std::atof(argv[3]);
+  double t_stop = std::atof(argv[4]);
+  int n_steps = std::atoi(argv[5]);
+  int n_steps_per_frame = std::atoi(argv[6]);
   auto dt = t_stop / n_steps;
-  auto suffix = std::string(argv[6]);
 
   std::string case_name = "shock_tube_" + suffix;
   std::printf("rank = %d, time = [0.0, %f], step = [0, %d], dt = %f\n",
