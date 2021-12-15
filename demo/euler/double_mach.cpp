@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
         i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
-    double t_curr = t_start + dt * i_step;
+    double t_curr = t_start + dt * (i_step - 1);
     rk.Update(&part, t_curr, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
