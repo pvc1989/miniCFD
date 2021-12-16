@@ -259,12 +259,24 @@ class CellGroup {
   const ShiftedVector<Real>& GetField(Int i_field) const {
     return fields_[i_field];
   }
+  ShiftedVector<Real>& GetField(Int i_field) {
+    return fields_[i_field];
+  }
   void GatherFields() {
     for (int i_cell = head(); i_cell < tail(); ++i_cell) {
       const auto& cell = cells_.at(i_cell);
       const auto& coeff = cell.projection_.coeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         fields_.at(i_field).at(i_cell) = coeff.reshaped()[i_field-1];
+      }
+    }
+  }
+  void ScatterFields() {
+    for (int i_cell = head(); i_cell < tail(); ++i_cell) {
+      auto& cell = cells_.at(i_cell);
+      auto& coeff = cell.projection_.coeff();
+      for (int i_field = 1; i_field <= kFields; ++i_field) {
+        coeff.reshaped()[i_field-1] = fields_.at(i_field).at(i_cell);
       }
     }
   }
@@ -844,6 +856,15 @@ class Part {
       }
     }
   }
+  void ScatterSolutions() {
+    int n_zones = local_nodes_.size();
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      int n_sects = local_cells_[i_zone].size();
+      for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+        local_cells_[i_zone][i_sect].ScatterFields();
+      }
+    }
+  }
   void WriteSolutions(const std::string &soln_name = "0") const {
     int n_zones = local_nodes_.size();
     int i_file;
@@ -871,6 +892,50 @@ class Part {
           cgsize_t first[] = { section.head() };
           cgsize_t last[] = { section.tail() - 1 };
           if (cgp_field_write_data(i_file, i_base, i_zone, i_soln, i_field,
+              first, last, section.GetField(i_field).data()))
+            cgp_error_exit();
+        }
+      }
+    }
+    if (cgp_close(i_file))
+      cgp_error_exit();
+  }
+  void ReadSolutions(const std::string &soln_name) {
+    int n_zones = local_nodes_.size();
+    int i_file;
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
+      cgp_error_exit();
+    for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      auto& zone = local_cells_.at(i_zone);
+      int n_solns;
+      if (cg_nsols(i_file, i_base, i_zone, &n_solns))
+        cgp_error_exit();
+      int i_soln;
+      char name[33];
+      GridLocation_t lc;
+      for (i_soln = 1; i_soln <= n_solns; ++i_soln) {
+        if (cg_sol_info(i_file, i_base, i_zone, i_soln, name, &lc))
+          cgp_error_exit();
+        if (name == soln_name)
+          break;
+      }
+      int n_fields;
+      if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields)) {
+        cgp_error_exit();
+      }
+      assert(n_fields == kFields);
+      for (int i_field = 1; i_field <= n_fields; ++i_field) {
+        int n_sects = zone.size();
+        for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+          auto& section = zone.at(i_sect);
+          char field_name[33];
+          DataType_t data_type;
+          if (cg_field_info(i_file, i_base, i_zone, i_soln, i_field,
+              &data_type, field_name))
+            cgp_error_exit();
+          cgsize_t first[] = { section.head() };
+          cgsize_t last[] = { section.tail() - 1 };
+          if (cgp_field_read_data(i_file, i_base, i_zone, i_soln, i_field,
               first, last, section.GetField(i_field).data()))
             cgp_error_exit();
         }

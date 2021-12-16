@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     if (i_proc == 0) {
       std::cout << "usage:\n"
           << "  mpirun -n <n_proc> ./shock_tube <cgns_file> <hexa|tetra>"
-          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>\n";
+          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame> [i_start]\n";
     }
     MPI_Finalize();
     exit(0);
@@ -38,16 +38,21 @@ int main(int argc, char* argv[]) {
   double t_stop = std::atof(argv[4]);
   int n_steps = std::atoi(argv[5]);
   int n_steps_per_frame = std::atoi(argv[6]);
-  auto dt = t_stop / n_steps;
+  auto dt = (t_stop - t_start) / n_steps;
+  int i_start = 0;
+  if (argc > 7) {
+    i_start = std::atoi(argv[7]);
+  }
+  int i_stop = i_start + n_steps;
 
   std::string case_name = "shock_tube_" + suffix;
-  std::printf("rank = %d, time = [0.0, %f], step = [0, %d], dt = %f\n",
-      i_proc, t_stop, n_steps, dt);
+  std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
+      i_proc, t_start, t_stop, i_start, i_stop, dt);
 
   auto time_begin = MPI_Wtime();
 
   /* Partition the mesh */
-  if (i_proc == 0) {
+  if (i_proc == 0 && argc == 7) {
     using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
     MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
@@ -79,7 +84,9 @@ int main(int argc, char* argv[]) {
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
   using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
+  auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
 
+if (argc == 7) {
   /* IC for Shock-Tube Problem */
   auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
   auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
@@ -103,7 +110,6 @@ int main(int argc, char* argv[]) {
 
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
-  auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
   if (kOrder > 0) {
     part.Reconstruct(limiter);
     if (suffix == "tetra") {
@@ -116,6 +122,10 @@ int main(int argc, char* argv[]) {
   part.GatherSolutions();
   // part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
+} else {
+  part.ReadSolutions("Step" + std::to_string(i_start));
+  part.ScatterSolutions();
+}
 
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
@@ -141,10 +151,10 @@ int main(int argc, char* argv[]) {
   }
 
   /* Main Loop */
-  for (int i_step = 1; i_step <= n_steps; ++i_step) {
+  for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
         i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
-    double t_curr = t_start + dt * (i_step - 1);
+    double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
@@ -152,7 +162,7 @@ int main(int argc, char* argv[]) {
           i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
-      if (i_step == n_steps)
+      if (i_step == i_stop)
         part.WriteSolutions(step_name);
       part.WriteSolutionsOnCellCenters(step_name);
     }
