@@ -335,7 +335,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
   /* Get index range of each zone's nodes, cells and faces: */
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
     auto& zone = base.GetZone(i_zone);
-    auto& node_field = zone.GetSolution("NodeData").GetField("NodePart");
+    auto& node_field = zone.GetSolution("DataOnNodes").GetField("PartIndex");
     // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
@@ -350,7 +350,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     part_to_nodes[prev_part][i_zone] = { prev_nid, n_nodes + 1 };
     // slice cell lists by i_part
     int n_cells = zone.CountCells();
-    auto& cell_field = zone.GetSolution("CellData").GetField("CellPart");
+    auto& cell_field = zone.GetSolution("DataOnCells").GetField("PartIndex");
     for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
       auto& sect = zone.GetSection(i_sect);
       if (sect.dim() != base.GetCellDim())

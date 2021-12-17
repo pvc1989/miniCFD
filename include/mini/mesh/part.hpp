@@ -391,8 +391,8 @@ class Part {
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
-      int i_sol = SolnNameToId(i_file, i_base, i_zone, "NodeData");
-      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisNodeId");
+      int i_sol = SolnNameToId(i_file, i_base, i_zone, "DataOnNodes");
+      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
@@ -555,8 +555,8 @@ class Part {
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
       ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
-      int i_sol = SolnNameToId(i_file, i_base, i_zone, "CellData");
-      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisCellId");
+      int i_sol = SolnNameToId(i_file, i_base, i_zone, "DataOnCells");
+      int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
           1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
@@ -1111,8 +1111,8 @@ class Part {
       vtu << "\n        </DataArray>\n";
     }
     vtu << "      </PointData>\n";
-    vtu << "      <CellData>\n";
-    vtu << "      </CellData>\n";
+    vtu << "      <DataOnCells>\n";
+    vtu << "      </DataOnCells>\n";
     vtu << "      <Points>\n";
     vtu << "        <DataArray type=\"Float64\" Name=\"Points\" "
         << "NumberOfComponents=\"3\" format=\"ascii\">\n";

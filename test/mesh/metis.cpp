@@ -80,7 +80,7 @@ void Partitioner::WritePartitionedMesh(
     ostrm << "9\n";  // VTK_QUAD = 9
   }
   ostrm << "CELL_DATA " << n_cells << "\n";
-  ostrm << "SCALARS CellPartID float 1\n";
+  ostrm << "SCALARS PartIndex float 1\n";
   ostrm << "LOOKUP_TABLE cell_parts\n";
   for (auto x : cell_parts) {
     ostrm << static_cast<float>(x) << "\n";
@@ -92,7 +92,7 @@ void Partitioner::WritePartitionedMesh(
   }
   if (node_parts.size()) {
     ostrm << "POINT_DATA " << n_nodes << "\n";
-    ostrm << "SCALARS NodePartID float 1\n";
+    ostrm << "SCALARS PartIndex float 1\n";
     ostrm << "LOOKUP_TABLE node_parts\n";
     for (auto x : node_parts) {
       ostrm << static_cast<float>(x) << "\n";
