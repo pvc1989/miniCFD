@@ -440,6 +440,9 @@ class Solution {
   std::string const& name() const {
     return name_;
   }
+  CGNS_ENUMT(GridLocation_t) localtion() const {
+    return location_;
+  }
   bool OnNodes() const {
     return location_ == CGNS_ENUMV(Vertex);
   }
@@ -475,6 +478,13 @@ class Solution {
   }
   Field<Real>& AddField(char const* name) {
     assert(OnNodes() || OnCells());
+    // find an old one
+    for (auto &field_uptr : fields_) {
+      if (field_uptr->name() == name) {
+        return *field_uptr;
+      }
+    }
+    // build a new one
     int size = OnCells() ? zone_->CountCells() : zone_->CountNodes();
     fields_.emplace_back(std::make_unique<Field<Real>>(
         *this, fields_.size()+1, name, size));
@@ -699,6 +709,13 @@ class Zone {
   }
   Solution<Real>& AddSolution(char const* sol_name,
       CGNS_ENUMT(GridLocation_t) location) {
+    // find an old one
+    for (auto &soln_uptr : solutions_) {
+      if (soln_uptr->name() == sol_name && soln_uptr->localtion() == location) {
+        return *soln_uptr;
+      }
+    }
+    // build a new one
     int i_soln = solutions_.size() + 1;
     return *(solutions_.emplace_back(std::make_unique<Solution<Real>>(
         *this, i_soln, sol_name, location)));

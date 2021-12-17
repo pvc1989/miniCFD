@@ -26,8 +26,9 @@ int main(int argc, char* argv[]) {
   if (argc < 7) {
     if (i_proc == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_proc> ./shock_tube <cgns_file> <hexa|tetra>"
-          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame> [i_start]\n";
+          << "  mpirun -n <n_procs> ./shock_tube <cgns_file> <hexa|tetra>"
+          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
+          << " [<i_start> [n_parts_prev]]\n";
     }
     MPI_Finalize();
     exit(0);
@@ -43,16 +44,18 @@ int main(int argc, char* argv[]) {
   if (argc > 7) {
     i_start = std::atoi(argv[7]);
   }
+  int n_parts_prev = 0;
+  if (argc > 8) {
+    n_parts_prev = std::atoi(argv[8]);
+  }
   int i_stop = i_start + n_steps;
 
   std::string case_name = "shock_tube_" + suffix;
-  std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
-      i_proc, t_start, t_stop, i_start, i_stop, dt);
 
   auto time_begin = MPI_Wtime();
 
   /* Partition the mesh */
-  if (i_proc == 0 && argc == 7) {
+  if (i_proc == 0 && n_parts_prev != n_procs) {
     using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
     MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
@@ -86,7 +89,6 @@ int main(int argc, char* argv[]) {
   // using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
 
-if (argc == 7) {
   /* IC for Shock-Tube Problem */
   auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
   auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
@@ -102,6 +104,7 @@ if (argc == 7) {
     return (x < 2.0) ? value_after : value_before;
   };
 
+if (argc == 7) {
   std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
   part.ForEachLocalCell([&](MyCell *cell_ptr){
@@ -117,12 +120,14 @@ if (argc == 7) {
     }
   }
 
-  std::printf("Run Write(Step0) on proc[%d/%d] at %f sec\n",
+  std::printf("Run WriteSolutions(Step0) on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
   part.GatherSolutions();
-  // part.WriteSolutions("Step0");
+  part.WriteSolutions("Step0");
   part.WriteSolutionsOnCellCenters("Step0");
 } else {
+  std::printf("Run ReadSolutions(Step%d) on proc[%d/%d] at %f sec\n",
+      i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
   part.ReadSolutions("Step" + std::to_string(i_start));
   part.ScatterSolutions();
 }
@@ -158,7 +163,7 @@ if (argc == 7) {
     rk.Update(&part, t_curr, limiter);
 
     if (i_step % n_steps_per_frame == 0) {
-      std::printf("Run Write(Step%d) on proc[%d/%d] at %f sec\n",
+      std::printf("Run WriteSolutions(Step%d) on proc[%d/%d] at %f sec\n",
           i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
@@ -167,6 +172,9 @@ if (argc == 7) {
       part.WriteSolutionsOnCellCenters(step_name);
     }
   }
+
+  std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
+      i_proc, t_start, t_stop, i_start, i_stop, dt);
 
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
