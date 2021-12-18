@@ -104,33 +104,33 @@ int main(int argc, char* argv[]) {
     return (x < 2.0) ? value_after : value_before;
   };
 
-if (argc == 7) {
-  std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  part.ForEachLocalCell([&](MyCell *cell_ptr){
-    cell_ptr->Project(initial_condition);
-  });
+  if (argc == 7) {
+    std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
+        i_proc, n_procs, MPI_Wtime() - time_begin);
+    part.ForEachLocalCell([&](MyCell *cell_ptr){
+      cell_ptr->Project(initial_condition);
+    });
 
-  std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  if (kOrder > 0) {
-    part.Reconstruct(limiter);
-    if (suffix == "tetra") {
+    std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
+        i_proc, n_procs, MPI_Wtime() - time_begin);
+    if (kOrder > 0) {
       part.Reconstruct(limiter);
+      if (suffix == "tetra") {
+        part.Reconstruct(limiter);
+      }
     }
-  }
 
-  std::printf("Run WriteSolutions(Step0) on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  part.GatherSolutions();
-  part.WriteSolutions("Step0");
-  part.WriteSolutionsOnCellCenters("Step0");
-} else {
-  std::printf("Run ReadSolutions(Step%d) on proc[%d/%d] at %f sec\n",
-      i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
-  part.ReadSolutions("Step" + std::to_string(i_start));
-  part.ScatterSolutions();
-}
+    std::printf("Run WriteSolutions(Step0) on proc[%d/%d] at %f sec\n",
+        i_proc, n_procs, MPI_Wtime() - time_begin);
+    part.GatherSolutions();
+    part.WriteSolutions("Step0");
+    part.WriteSolutionsOnCellCenters("Step0");
+  } else {
+    std::printf("Run ReadSolutions(Step%d) on proc[%d/%d] at %f sec\n",
+        i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
+    part.ReadSolutions("Step" + std::to_string(i_start));
+    part.ScatterSolutions();
+  }
 
   auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
   rk.BuildRiemannSolvers(part);
