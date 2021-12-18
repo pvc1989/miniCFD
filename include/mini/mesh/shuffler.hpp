@@ -526,8 +526,8 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   auto new_cgns_name = case_name + "/shuffled.cgns";
   cgns_mesh.Write(new_cgns_name, 2);
   shuffler.WritePartitionInfo(case_name);
-  std::printf("[Done] shuffle the %d-part `%s` to `%s`.\n",
-      (int)n_parts, old_cgns_name.c_str(), new_cgns_name.c_str());
+  std::printf("[Done] the %d-part `./%s` has been shuffled.\n",
+      (int)n_parts, new_cgns_name.c_str());
 }
 
 }  // namespace mesh
