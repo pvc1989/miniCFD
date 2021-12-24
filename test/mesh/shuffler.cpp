@@ -23,7 +23,7 @@ namespace mini {
 namespace mesh {
 
 idx_t n_parts = 4;
-std::string case_name = "double_mach";
+char case_name[33] = "double_mach";
 
 class ShufflerTest : public ::testing::Test {
  protected:
@@ -67,13 +67,12 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 }
 TEST_F(ShufflerTest, ParitionAndShuffle) {
   char cmd[1024];
-  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
-      case_name.c_str());
+  std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition", case_name);
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  auto old_file_name = case_name + "/original.cgns";
+  auto old_file_name = case_name + std::string("/original.cgns");
   /* Generate the original cgns file: */
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
-      test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+      test_data_dir_.c_str(), case_name, old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
   MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_parts);
 }
@@ -87,7 +86,7 @@ int main(int argc, char* argv[]) {
     mini::mesh::n_parts = std::atoi(argv[1]);
   }
   if (argc > 2) {
-    mini::mesh::case_name = argv[2];
+    std::strncpy(mini::mesh::case_name, argv[2], sizeof(mini::mesh::case_name));
   }
   return RUN_ALL_TESTS();
 }
