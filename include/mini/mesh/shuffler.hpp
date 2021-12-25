@@ -517,7 +517,7 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   auto node_parts = metis::GetNodeParts(metis_mesh, cell_parts, n_parts);
   mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
   std::printf("[Done] partition `%s` into %d parts.\n",
-      old_cgns_name.c_str(), (int)n_parts);
+      old_cgns_name.c_str(), static_cast<int>(n_parts));
   /* Shuffle nodes and cells: */
   auto shuffler = Shuffler<idx_t, double>(n_parts, cell_parts, node_parts,
       graph, metis_mesh, &cgns_mesh, &mapper);
@@ -527,7 +527,7 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   cgns_mesh.Write(new_cgns_name, 2);
   shuffler.WritePartitionInfo(case_name);
   std::printf("[Done] the %d-part `./%s` has been shuffled.\n",
-      (int)n_parts, new_cgns_name.c_str());
+      static_cast<int>(n_parts), new_cgns_name.c_str());
 }
 
 }  // namespace mesh
