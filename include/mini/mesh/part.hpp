@@ -420,9 +420,7 @@ class Part {
     for (auto& [i_part, nodes] : send_nodes) {
       auto& coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
-        // std::cout << rank_ << " send " << m_node << '\n';
         auto& info = m_to_node_info_.at(m_node);
-    // std::cout << rank_ << " send " << m_node << ' '  << info.i_zone << ' ' << info.i_node << '\n';
         auto const& coord = GetCoord(info.i_zone, info.i_node);
         coords.emplace_back(coord[0]);
         coords.emplace_back(coord[1]);
@@ -965,9 +963,11 @@ class Part {
           cells.emplace_back(npe);
           switch (npe) {
             case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);break;
+              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);
+              break;
             case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);break;
+              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);
+              break;
             default:
               assert(false);
               break;
@@ -1005,7 +1005,7 @@ class Part {
     ostrm << "CELL_TYPES " << n_cells << '\n';
     for (int i = 0; i < cells.size(); ++i) {
       int type, npe = cells[i];
-      switch(npe) {
+      switch (npe) {
         case 4:
           type = 10;  // VTK_TETRA
           break;
@@ -1056,9 +1056,11 @@ class Part {
           cells.emplace_back(npe);
           switch (npe) {
             case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);break;
+              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);
+              break;
             case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);break;
+              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);
+              break;
             default:
               assert(false);
               break;
@@ -1072,7 +1074,8 @@ class Part {
       std::snprintf(temp, sizeof(temp), "%s/%s.pvtu",
           directory_.c_str(), soln_name.c_str());
       auto pvtu = std::ofstream(temp, std::ios::out);
-      pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
+      pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" "
+          << "byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
       pvtu << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
       pvtu << "    <PPointData>\n";
       for (int k = 0; k < kFunc; ++k) {
@@ -1081,7 +1084,8 @@ class Part {
       }
       pvtu << "    </PPointData>\n";
       pvtu << "    <PPoints>\n";
-      pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" NumberOfComponents=\"3\"/>\n";
+      pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" "
+          << "NumberOfComponents=\"3\"/>\n";
       pvtu << "    </PPoints>\n";
       int n_parts;
       MPI_Comm_size(MPI_COMM_WORLD, &n_parts);
@@ -1153,7 +1157,7 @@ class Part {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
         int type;
-        switch(sect.npe()) {
+        switch (sect.npe()) {
           case 4:
             type = 10;  // VTK_TETRA
             break;
