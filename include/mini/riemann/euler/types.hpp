@@ -3,6 +3,7 @@
 #define MINI_RIEMANN_EULER_TYPES_HPP_
 
 #include <cmath>
+#include <cstring>
 #include <initializer_list>
 
 #include "mini/algebra/column.hpp"  // TODO(PVC): replace with EIGEN
@@ -146,10 +147,9 @@ struct ConservativeTuple : public Tuple<kDim, ScalarType> {
   }
   ConservativeTuple(const algebra::Matrix<Scalar, kDim+2, 1>& v) {
     this->mass = v[0];
+    constexpr int n_bytes = kDim * sizeof(Scalar);
+    std::memcpy(&this->momentum[0], &v[1], n_bytes);
     this->energy = v[kDim+1];
-    for (int i = 0; i < kDim; ++i) {
-      this->momentum[i] = v[i+1];
-    }
   }
 };
 
