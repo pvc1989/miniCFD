@@ -33,21 +33,21 @@ class Column : public std::array<Value, kSize> {
   }
   Column& operator*=(Value const& rhs) {
     for (int i = 0; i != this->size(); ++i) {
-      this->at(i) *= rhs;
+      (*this)[i] *= rhs;
     }
     return *this;
   }
   Column& operator/=(Value const& rhs) {
     assert(rhs != 0);
     for (auto i = 0; i != this->size(); ++i) {
-      this->at(i) /= rhs;
+      (*this)[i] /= rhs;
     }
     return *this;
   }
   Value Dot(const Column& that) const {
     Value dot{0};
     for (auto i = 0; i != kSize; ++i) {
-      dot += this->at(i) * that[i];
+      dot += (*this)[i] * that[i];
     }
     return dot;
   }
@@ -56,10 +56,10 @@ class Column : public std::array<Value, kSize> {
   template <class Operation>
   Column& ForEachPair(Column const& that, Operation&& operation) {
     assert(this->size() == that.size());
-    auto this_head = this->begin(), tail = this->end();
+    auto this_head = this->begin(), this_tail = this->end();
     auto that_head = that.begin();
-    for (; this_head != tail; ++this_head, ++that_head) {
-      operation(*this_head, *that_head);
+    while (this_head != this_tail) {
+      operation(*this_head++, *that_head++);
     }
     return *this;
   }
