@@ -4,7 +4,6 @@
 
 #include <cstring>
 
-#include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {

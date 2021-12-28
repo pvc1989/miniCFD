@@ -2,8 +2,8 @@
 
 #include <cmath>
 
+#include "mini/algebra/eigen.hpp"
 #include "mini/integrator/gauss.hpp"
-#include "mini/algebra/column.hpp"
 
 #include "gtest/gtest.h"
 
@@ -29,7 +29,7 @@ class TestGauss : public ::testing::Test {
   template <int kPoints>
   void TestVectorFunction() {
     auto integrand = [&](double x) {
-      auto result = algebra::Column<double, 2 * kPoints>();
+      auto result = algebra::Vector<double, 2 * kPoints>();
       for (int p = 0; p != 2 * kPoints; ++p) {
         result[p] = std::pow(x, p);
       }

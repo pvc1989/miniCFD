@@ -6,7 +6,6 @@
 #include <array>
 #include <cmath>
 
-#include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -20,11 +19,11 @@ class Burgers {
   static constexpr int kFunc = 1;
   // Types:
   using Scalar = double;
-  using Vector = algebra::Column<double, kDim>;
+  using Vector = algebra::Vector<double, kDim>;
   using Jacobi = double;
   using State = double;
   using Flux = double;
-  using Coefficient = algebra::Column<Jacobi, kDim>;
+  using Coefficient = algebra::Vector<Jacobi, kDim>;
   using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
   // Constructor:
   Burgers() : k_(1) {}

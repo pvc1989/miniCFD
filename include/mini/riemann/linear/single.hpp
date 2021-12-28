@@ -6,7 +6,6 @@
 #include <cmath>
 #include <array>
 
-#include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -20,9 +19,9 @@ class Single {
   static constexpr int kDim = D;
   // Types:
   using Scalar = double;
-  using Vector = algebra::Column<double, kDim>;
+  using Vector = algebra::Vector<double, kDim>;
   using Jacobi = double;
-  using Coefficient = algebra::Column<Jacobi, kDim>;
+  using Coefficient = algebra::Vector<Jacobi, kDim>;
   using State = double;
   using Flux = double;
   using Speed = double;
