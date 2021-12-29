@@ -7,7 +7,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "mini/algebra/column.hpp"
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -22,7 +21,7 @@ class Cartesian<Scalar, 2> {
   static constexpr int x{0}, y{1}, n{0}, t{1};
 
  public:
-  using Vector = mini::algebra::Column<Scalar, 2>;
+  using Vector = mini::algebra::Vector<Scalar, 2>;
 
   void Rotate(const Vector& nu) {
     nu_ = nu;
@@ -57,7 +56,7 @@ class Cartesian<Scalar, 3> {
   static constexpr int x = 0, y = 1, z = 2;
 
  public:
-  using Vector = mini::algebra::Column<Scalar, 3>;
+  using Vector = mini::algebra::Vector<Scalar, 3>;
 
   void Rotate(const Vector& nu, const Vector& sigma) {
     nu_ = nu; sigma_ = sigma;
@@ -76,7 +75,7 @@ class Cartesian<Scalar, 3> {
     nu_[z] = nu[z]; sigma_[z] = sigma[z]; pi_[z] = pi[z];
   }
   void GlobalToNormal(Vector* v) {
-    auto v_nu = v->Dot(nu_), v_sigma = v->Dot(sigma_), v_pi = v->Dot(pi_);
+    auto v_nu = v->dot(nu_), v_sigma = v->dot(sigma_), v_pi = v->dot(pi_);
     constexpr int nu = 0, sigma = 1, pi = 2;
     (*v)[nu] = v_nu; (*v)[sigma] = v_sigma; (*v)[pi] = v_pi;
   }

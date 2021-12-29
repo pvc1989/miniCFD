@@ -6,7 +6,6 @@
 
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
-#include "mini/riemann/euler/hllc.hpp"
 
 namespace mini {
 namespace riemann {

@@ -6,7 +6,6 @@
 #include <cstring>
 #include <initializer_list>
 
-#include "mini/algebra/column.hpp"  // TODO(PVC): replace with EIGEN
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -18,7 +17,7 @@ class Tuple {
  public:
   // Types:
   using Scalar = ScalarType;
-  using Vector = algebra::Column<Scalar, kDim>;
+  using Vector = algebra::Vector<Scalar, kDim>;
   // Data:
   Scalar mass, energy;
   Vector momentum;
@@ -30,8 +29,10 @@ class Tuple {
   Tuple(Scalar const& rho,
         Scalar const& u,
         Scalar const& p)
-      : mass{rho}, energy{p}, momentum{u} {
+      : mass{rho}, energy{p} {
     static_assert(kDim >= 1);
+    momentum.setZero();
+    momentum[0] = u;
   }
   Tuple(Scalar const& rho,
         Scalar const& u, Scalar const& v,
@@ -208,7 +209,7 @@ class IdealGas {
       state->momentum /= rho;
       auto& u = state->momentum;
       // energy = p/(gamma - 1) + 0.5*rho*|u|^2
-      state->energy -= 0.5 * rho * u.Dot(u);
+      state->energy -= 0.5 * rho * u.dot(u);
       state->energy *= GammaMinusOne();
       if (state->energy < 0) {
         assert(-0.0001 < state->energy);
@@ -234,7 +235,7 @@ class IdealGas {
     auto& u = state->momentum;
     // energy = p/(gamma - 1) + 0.5*rho*|u|^2
     state->energy *= OneOverGammaMinusOne();  // p / (gamma - 1)
-    state->energy += 0.5 * rho * u.Dot(u);  // + 0.5 * rho * |u|^2
+    state->energy += 0.5 * rho * u.dot(u);  // + 0.5 * rho * |u|^2
     // momentum = rho * u
     state->momentum *= rho;
     return reinterpret_cast<ConservativeTuple<kDim>&>(*state);
