@@ -2,9 +2,9 @@
 #ifndef MINI_RIEMANN_EULER_TYPES_HPP_
 #define MINI_RIEMANN_EULER_TYPES_HPP_
 
+#include <cassert>
 #include <cmath>
 #include <cstring>
-#include <initializer_list>
 
 #include "mini/algebra/eigen.hpp"
 
@@ -30,21 +30,20 @@ class Tuple {
         Scalar const& u,
         Scalar const& p)
       : mass{rho}, energy{p} {
-    static_assert(kDim >= 1);
-    momentum.setZero();
+    assert(kDim == 1);
     momentum[0] = u;
   }
   Tuple(Scalar const& rho,
         Scalar const& u, Scalar const& v,
         Scalar const& p)
       : mass{rho}, energy{p}, momentum{u, v} {
-    static_assert(kDim >= 2);
+    assert(kDim == 2);
   }
   Tuple(Scalar const& rho,
         Scalar const& u, Scalar const& v, Scalar const& w,
         Scalar const& p)
       : mass{rho}, energy{p}, momentum{u, v, w} {
-    static_assert(kDim == 3);
+    assert(kDim == 3);
   }
   // Arithmetic Operators:
   Tuple& operator+=(Tuple const& that) {
