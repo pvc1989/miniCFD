@@ -17,11 +17,11 @@ class Implementor {
  public:
   constexpr static int kDim = D;
   // Types:
-  using Flux = FluxTuple<kDim>;
-  using Conservative = ConservativeTuple<kDim>;
-  using Primitive = PrimitiveTuple<kDim>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<kDim, Scalar>;
+  using Conservative = ConservativeTuple<kDim, Scalar>;
+  using Primitive = PrimitiveTuple<kDim, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Data:
@@ -39,7 +39,7 @@ class Implementor {
       return u_change__left.Prime(p) + u_change_right.Prime(p);
     };
     if (f(0) < 0) {  // Ordinary case: Wave[2] is a contact.
-      auto star = State{0, 0, 0};
+      auto star = State();
       star.p() = FindRoot(f, f_prime, left.p());
       star.u() = 0.5 * (right.u() + u_change_right(star.p())
                         +left.u() - u_change__left(star.p()));
@@ -183,7 +183,11 @@ class Implementor {
     auto a_square = a * a;
     auto rho = std::pow(a_square / gri_1 * Gas::OneOverGamma(),
                         Gas::OneOverGammaMinusOne());
-    return {rho, a, a_square * rho * Gas::OneOverGamma()};
+    auto state = State();
+    state.rho() = rho;
+    state.u() = a;
+    state.p() = a_square * rho * Gas::OneOverGamma();
+    return state;
   }
   template <int kField>
   constexpr static bool TimeAxisAfterExpansion(double u, double a) {
@@ -230,14 +234,16 @@ class Implementor {
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
           return GetStateInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vacuumed region.
-          return {0, 0, 0};
+          auto state = State();
+          state.setZero();
+          return state;
         }
       }
     }
   }
 };
 
-template <class GasModel, int kDim = 1>
+template <class GasModel, int kDim>
 class Exact;
 
 template <class GasModel>
@@ -296,7 +302,8 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(State const& left, State const& right) {
-    return GetFlux(GetStateOnTimeAxis(left, right));
+    auto state = GetStateOnTimeAxis(left, right);
+    return GetFlux(state);
   }
   // Get U on t-Axis
   State GetStateOnTimeAxis(State const& left, State const& right) {

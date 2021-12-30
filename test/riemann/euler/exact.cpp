@@ -14,7 +14,7 @@ namespace euler {
 class TestExact : public ::testing::Test {
  protected:
   using Gas = IdealGas<1, 4>;
-  using Solver = Exact<Gas>;
+  using Solver = Exact<Gas, 1>;
   using State = Solver::State;
   using Flux = Solver::Flux;
   Solver solver;
@@ -27,15 +27,15 @@ class TestExact : public ::testing::Test {
   }
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
     constexpr double eps = 1e-4;
-    ExpectNear(lhs.mass, rhs.mass, eps);
-    ExpectNear(lhs.energy, rhs.energy, eps);
-    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
+    ExpectNear(lhs.mass(), rhs.mass(), eps);
+    ExpectNear(lhs.energy(), rhs.energy(), eps);
+    ExpectNear(lhs.momentumX(), rhs.momentumX(), eps);
   }
 };
 TEST_F(TestExact, TestFlux) {
   auto rho{0.1}, u{0.2}, p{0.3};
   auto flux = Flux{rho * u, rho * u * u + p, u};
-  flux.energy *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
+  flux.energy() *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
 TEST_F(TestExact, TestEqualStates) {
@@ -101,10 +101,10 @@ class TestExact2d : public ::testing::Test {
   }
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
     constexpr double eps = 1e-4;
-    ExpectNear(lhs.mass, rhs.mass, eps);
-    ExpectNear(lhs.energy, rhs.energy, eps);
-    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
-    ExpectNear(lhs.momentum[1], rhs.momentum[1], eps);
+    ExpectNear(lhs.mass(), rhs.mass(), eps);
+    ExpectNear(lhs.energy(), rhs.energy(), eps);
+    ExpectNear(lhs.momentumX(), rhs.momentumX(), eps);
+    ExpectNear(lhs.momentumY(), rhs.momentumY(), eps);
   }
 };
 TEST_F(TestExact2d, TestEqualStates) {
@@ -183,11 +183,11 @@ class TestExact3d : public ::testing::Test {
   }
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
     constexpr double eps = 1e-4;
-    ExpectNear(lhs.mass, rhs.mass, eps);
-    ExpectNear(lhs.energy, rhs.energy, eps);
-    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
-    ExpectNear(lhs.momentum[1], rhs.momentum[1], eps);
-    ExpectNear(lhs.momentum[2], rhs.momentum[2], eps);
+    ExpectNear(lhs.mass(), rhs.mass(), eps);
+    ExpectNear(lhs.energy(), rhs.energy(), eps);
+    ExpectNear(lhs.momentumX(), rhs.momentumX(), eps);
+    ExpectNear(lhs.momentumY(), rhs.momentumY(), eps);
+    ExpectNear(lhs.momentumZ(), rhs.momentumZ(), eps);
   }
 };
 TEST_F(TestExact3d, TestEqualStates) {
