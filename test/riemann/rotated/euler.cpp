@@ -66,11 +66,11 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
 
   auto CompareFlux = [](Flux const& lhs, Flux const& rhs) {
     constexpr double eps = 1e-4;
-    ExpectNear(lhs.mass, rhs.mass, eps);
-    ExpectNear(lhs.energy, rhs.energy, eps);
-    ExpectNear(lhs.momentum[0], rhs.momentum[0], eps);
-    ExpectNear(lhs.momentum[1], rhs.momentum[1], eps);
-    ExpectNear(lhs.momentum[2], rhs.momentum[2], eps);
+    ExpectNear(lhs.mass(), rhs.mass(), eps);
+    ExpectNear(lhs.energy(), rhs.energy(), eps);
+    ExpectNear(lhs.momentumX(), rhs.momentumX(), eps);
+    ExpectNear(lhs.momentumY(), rhs.momentumY(), eps);
+    ExpectNear(lhs.momentumZ(), rhs.momentumZ(), eps);
   };
 
   Solver solver;

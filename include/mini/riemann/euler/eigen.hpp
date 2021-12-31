@@ -32,7 +32,7 @@ class EigenMatrices {
     auto u_mu = (u_x * mu[x] + u_y * mu[y] + u_z * mu[z]);
     auto u_pi = (u_x * pi[x] + u_y * pi[y] + u_z * pi[z]);
     auto a = IdealGas::GetSpeedOfSound(primitive);
-    auto& velocity = primitive.momentum;
+    auto& velocity = primitive.momentum();
     auto ek = velocity.dot(velocity) / 2;
     auto e0 = a * a * IdealGas::OneOverGammaMinusOne();
     auto h0 = e0 + ek;

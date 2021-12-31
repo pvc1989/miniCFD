@@ -26,6 +26,9 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
   const Scalar& mass() const {
     return (*this)[0];
   }
+  const Vector& momentum() const {
+    return *reinterpret_cast<const Vector*>(&momentumX());
+  }
   const Scalar& momentumX() const {
     return (*this)[1];
   }
@@ -42,6 +45,9 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
   }
   Scalar& mass() {
     return (*this)[0];
+  }
+  Vector& momentum() {
+    return *reinterpret_cast<Vector*>(&momentumX());
   }
   Scalar& momentumX() {
     return (*this)[1];
