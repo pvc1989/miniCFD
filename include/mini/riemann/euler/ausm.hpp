@@ -22,11 +22,11 @@ class Ausm<GasModel, 1> {
   constexpr static int kDim = 1;
   // Types:
   using Gas = GasModel;
-  using Flux = FluxTuple<1>;
-  using Conservative = ConservativeTuple<1>;
-  using Primitive = PrimitiveTuple<1>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<1, Scalar>;
+  using Conservative = ConservativeTuple<1, Scalar>;
+  using Primitive = PrimitiveTuple<1, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -62,7 +62,7 @@ class Ausm<GasModel, 1> {
     }
     double temp = state.rho() * a * mach_positive;
     flux *= temp;
-    flux.momentum[0] += p_positive;
+    flux.momentumX() += p_positive;
     return flux;
   }
   Flux GetNegativeFlux(State state) {
@@ -80,7 +80,7 @@ class Ausm<GasModel, 1> {
       p_negative = 0.0;
     }
     flux *= state.rho() * a * mach_negative;
-    flux.momentum[0] += p_negative;
+    flux.momentumX() += p_negative;
     return flux;
   }
 };
@@ -91,11 +91,11 @@ class Ausm<GasModel, 2> {
   constexpr static int kDim = 2;
   // Types:
   using Gas = GasModel;
-  using Flux = FluxTuple<2>;
-  using Conservative = ConservativeTuple<2>;
-  using Primitive = PrimitiveTuple<2>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<2, Scalar>;
+  using Conservative = ConservativeTuple<2, Scalar>;
+  using Primitive = PrimitiveTuple<2, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -133,7 +133,7 @@ class Ausm<GasModel, 2> {
     }
     double temp = state.rho() * a * mach_positive;
     flux *= temp;
-    flux.momentum[0] += p_positive;
+    flux.momentumX() += p_positive;
     return flux;
   }
   Flux GetNegativeFlux(State state) {
@@ -153,7 +153,7 @@ class Ausm<GasModel, 2> {
     }
     double temp = state.rho() * a * mach_negative;
     flux *= temp;
-    flux.momentum[0] += p_negative;
+    flux.momentumX() += p_negative;
     return flux;
   }
 };
@@ -164,11 +164,11 @@ class Ausm<GasModel, 3> {
   constexpr static int kDim = 3;
   // Types:
   using Gas = GasModel;
-  using Flux = FluxTuple<3>;
-  using Conservative = ConservativeTuple<3>;
-  using Primitive = PrimitiveTuple<3>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<3, Scalar>;
+  using Conservative = ConservativeTuple<3, Scalar>;
+  using Primitive = PrimitiveTuple<3, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -207,7 +207,7 @@ class Ausm<GasModel, 3> {
     }
     double temp = state.rho() * a * mach_positive;
     flux *= temp;
-    flux.momentum[0] += p_positive;
+    flux.momentumX() += p_positive;
     return flux;
   }
   Flux GetNegativeFlux(State state) {
@@ -227,7 +227,7 @@ class Ausm<GasModel, 3> {
     }
     double temp = state.rho() * a * mach_negative;
     flux *= temp;
-    flux.momentum[0] += p_negative;
+    flux.momentumX() += p_negative;
     return flux;
   }
 };
