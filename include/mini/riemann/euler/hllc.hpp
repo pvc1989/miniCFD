@@ -22,11 +22,11 @@ class Hllc<GasModel, 1> {
   constexpr static int kDim = 1;
   // Types:
   using Gas = GasModel;
-  using Flux = FluxTuple<1>;
-  using Conservative = ConservativeTuple<1>;
-  using Primitive = PrimitiveTuple<1>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<1, Scalar>;
+  using Conservative = ConservativeTuple<1, Scalar>;
+  using Primitive = PrimitiveTuple<1, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -89,11 +89,11 @@ class Hllc<GasModel, 1> {
     double temp = state.rho() * (wave_k - state.u()) / (wave_k - wave_star_);
     Conservative u_k = Gas::PrimitiveToConservative(state);
     Conservative u_star_k;
-    u_star_k.mass = temp;
-    u_star_k.momentum[0] = wave_star_ * temp;
-    u_star_k.energy = energy / state.rho() + (wave_star_ - state.u()) *
-                (wave_star_ + state.p() / (state.rho() * (wave_k - state.u())));
-    u_star_k.energy *= temp;
+    u_star_k.mass() = temp;
+    u_star_k.momentumX() = wave_star_ * temp;
+    u_star_k.energy() = energy / state.rho() + (wave_star_ - state.u()) *
+        (wave_star_ + state.p() / (state.rho() * (wave_k - state.u())));
+    u_star_k.energy() *= temp;
     u_star_k -= u_k;
     u_star_k *= wave_k;
     flux += u_star_k;
@@ -107,11 +107,11 @@ class Hllc<GasModel, 2> {
   constexpr static int kDim = 2;
   // Types:
   using Gas = GasModel;
-  using Flux = FluxTuple<2>;
-  using Conservative = ConservativeTuple<2>;
-  using Primitive = PrimitiveTuple<2>;
+  using Scalar = typename Gas::Scalar;
+  using Flux = FluxTuple<2, Scalar>;
+  using Conservative = ConservativeTuple<2, Scalar>;
+  using Primitive = PrimitiveTuple<2, Scalar>;
   using State = Primitive;
-  using Scalar = typename State::Scalar;
   using Vector = typename State::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -177,12 +177,12 @@ class Hllc<GasModel, 2> {
     double temp = state.rho() * (wave_k - state.u()) / (wave_k - wave_star_);
     Conservative u_k = Gas::PrimitiveToConservative(state);
     Conservative u_star_k;
-    u_star_k.mass = temp;
-    u_star_k.momentum[0] = wave_star_ * temp;
-    u_star_k.momentum[1] = state.v() * temp;
-    u_star_k.energy = energy / state.rho() + (wave_star_ - state.u()) *
-                (wave_star_ + state.p() / (state.rho() * (wave_k - state.u())));
-    u_star_k.energy *= temp;
+    u_star_k.mass() = temp;
+    u_star_k.momentumX() = wave_star_ * temp;
+    u_star_k.momentumY() = state.v() * temp;
+    u_star_k.energy() = energy / state.rho() + (wave_star_ - state.u()) *
+        (wave_star_ + state.p() / (state.rho() * (wave_k - state.u())));
+    u_star_k.energy() *= temp;
     u_star_k -= u_k;
     u_star_k *= wave_k;
     flux += u_star_k;

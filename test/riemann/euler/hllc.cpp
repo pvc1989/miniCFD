@@ -19,15 +19,15 @@ class TestHllc : public ::testing::Test {
   using Flux = Solver::Flux;
   Solver solver;
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    EXPECT_DOUBLE_EQ(lhs.mass, rhs.mass);
-    EXPECT_DOUBLE_EQ(lhs.energy, rhs.energy);
-    EXPECT_DOUBLE_EQ(lhs.momentum[0], rhs.momentum[0]);
+    EXPECT_DOUBLE_EQ(lhs.mass(), rhs.mass());
+    EXPECT_DOUBLE_EQ(lhs.energy(), rhs.energy());
+    EXPECT_DOUBLE_EQ(lhs.momentumX(), rhs.momentumX());
   }
 };
 TEST_F(TestHllc, TestFlux) {
   auto rho{0.1}, u{0.2}, p{0.3};
   auto flux = Flux{rho * u, rho * u * u + p, u};
-  flux.energy *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
+  flux.energy() *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
 TEST_F(TestHllc, TestSod) {
@@ -72,10 +72,10 @@ class TestHllc2d : public ::testing::Test {
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    EXPECT_DOUBLE_EQ(lhs.mass, rhs.mass);
-    EXPECT_DOUBLE_EQ(lhs.energy, rhs.energy);
-    EXPECT_DOUBLE_EQ(lhs.momentum[0], rhs.momentum[0]);
-    EXPECT_DOUBLE_EQ(lhs.momentum[1], rhs.momentum[1]);
+    EXPECT_DOUBLE_EQ(lhs.mass(), rhs.mass());
+    EXPECT_DOUBLE_EQ(lhs.energy(), rhs.energy());
+    EXPECT_DOUBLE_EQ(lhs.momentumX(), rhs.momentumX());
+    EXPECT_DOUBLE_EQ(lhs.momentumY(), rhs.momentumY());
   }
 };
 TEST_F(TestHllc2d, TestSod) {
