@@ -50,17 +50,17 @@ class TestPerformance : public ::testing::Test {
 };
 TEST_F(TestPerformance, TestAusm) {
   for (int i = 0; i < n; ++i) {
-    run<Ausm<Gas>>();
+    run<Ausm<Gas, 1>>();
   }
 }
 TEST_F(TestPerformance, TestHllc) {
   for (int i = 0; i < n; ++i) {
-    run<Hllc<Gas>>();
+    run<Hllc<Gas, 1>>();
   }
 }
 TEST_F(TestPerformance, TestExact) {
   for (int i = 0; i < n; ++i) {
-    run<Exact<Gas>>();
+    run<Exact<Gas, 1>>();
   }
 }
 

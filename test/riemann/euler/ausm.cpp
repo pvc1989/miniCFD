@@ -14,7 +14,7 @@ namespace euler {
 class TestAusm : public ::testing::Test {
  protected:
   using Gas = IdealGas<1, 4>;
-  using Solver = Ausm<Gas>;
+  using Solver = Ausm<Gas, 1>;
   using State = Solver::State;
   using Flux = Solver::Flux;
   Solver solver;

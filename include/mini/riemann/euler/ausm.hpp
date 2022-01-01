@@ -13,7 +13,7 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class GasModel, int kDim = 1>
+template <class GasModel, int kDim>
 class Ausm;
 
 template <class GasModel>
