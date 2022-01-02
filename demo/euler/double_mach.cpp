@@ -107,12 +107,8 @@ int main(int argc, char* argv[]) {
   auto u_after = u_n_after * cos_30, v_after = u_n_after * (-sin_30);
   auto primitive_after = Primitive(rho_after, u_after, v_after, 0.0, p_after);
   auto primitive_before = Primitive(rho_before, 0.0, 0.0, 0.0, p_before);
-  auto consv_after = Gas::PrimitiveToConservative(primitive_after);
-  auto consv_before = Gas::PrimitiveToConservative(primitive_before);
-  Value value_after = { consv_after.mass, consv_after.momentum[0],
-      consv_after.momentum[1], consv_after.momentum[2], consv_after.energy };
-  Value value_before = { consv_before.mass, consv_before.momentum[0],
-      consv_before.momentum[1], consv_before.momentum[2], consv_before.energy };
+  Value value_after = Gas::PrimitiveToConservative(primitive_after);
+  Value value_before = Gas::PrimitiveToConservative(primitive_before);
   double x_gap = 1.0 / 6.0;
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0], y = xyz[1];

@@ -91,9 +91,7 @@ int main(int argc, char* argv[]) {
 
   /* IC for Forward-Step Problem */
   auto primitive = Primitive(1.4, 3.0, 0.0, 0.0, 1.0);
-  auto conservative = Gas::PrimitiveToConservative(primitive);
-  Value given_value = { conservative.mass, conservative.momentum[0],
-      conservative.momentum[1], conservative.momentum[2], conservative.energy };
+  Value given_value = Gas::PrimitiveToConservative(primitive);
   auto initial_condition = [&given_value](const Coord& xyz){
     return given_value;
   };
