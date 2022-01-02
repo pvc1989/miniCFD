@@ -187,7 +187,7 @@ struct ConservativeTuple : public Tuple<kDim, ScalarType> {
   using Base::Base;
 };
 
-template <int kInteger = 1, int kDecimal = 4, class ScalarType = double>
+template <class ScalarType, int kInteger = 1, int kDecimal = 4>
 class IdealGas {
  public:
   using Scalar = ScalarType;

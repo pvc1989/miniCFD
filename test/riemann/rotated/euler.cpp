@@ -14,7 +14,7 @@ namespace rotated {
 
 class TestRotatedEuler : public ::testing::Test {
  protected:
-  using Gas = euler::IdealGas<1, 4>;
+  using Gas = euler::IdealGas<double, 1, 4>;
   static void ExpectNear(double x, double y, double eps) {
     if (x == 0) {
       EXPECT_EQ(y, 0);

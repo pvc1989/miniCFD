@@ -13,7 +13,7 @@ namespace euler {
 
 class TestExact : public ::testing::Test {
  protected:
-  using Gas = IdealGas<1, 4>;
+  using Gas = IdealGas<double, 1, 4>;
   using Solver = Exact<Gas, 1>;
   using State = Solver::State;
   using Flux = Solver::Flux;
@@ -86,7 +86,7 @@ TEST_F(TestExact, TestVacuumed) {
 
 class TestExact2d : public ::testing::Test {
  protected:
-  using Solver = Exact<IdealGas<1, 4>, 2>;
+  using Solver = Exact<IdealGas<double, 1, 4>, 2>;
   using State = Solver::State;
   using Speed = State::Speed;
   using Flux = Solver::Flux;
@@ -167,7 +167,7 @@ TEST_F(TestExact2d, TestVacuumed) {
 
 class TestExact3d : public ::testing::Test {
  protected:
-  using Solver = Exact<IdealGas<1, 4>, 3>;
+  using Solver = Exact<IdealGas<double, 1, 4>, 3>;
   using State = Solver::State;
   using Speed = State::Speed;
   using Flux = Solver::Flux;

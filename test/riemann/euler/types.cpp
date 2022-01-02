@@ -12,7 +12,7 @@ namespace euler {
 
 class TestIdealGas : public ::testing::Test {
  protected:
-  using Gas = IdealGas<1, 4>;
+  using Gas = IdealGas<double, 1, 4>;
   static constexpr auto gamma = Gas::Gamma();
 };
 TEST_F(TestIdealGas, TestConverters) {

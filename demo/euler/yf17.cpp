@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   /* Euler system */
   using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
-  using Gas = mini::riemann::euler::IdealGas<1, 4>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
   using MyLimiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;

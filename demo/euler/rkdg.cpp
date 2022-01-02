@@ -17,8 +17,8 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template class IdealGas<1, 4, double>;
-template class EigenMatrices<double, IdealGas<1, 4, double>>;
+template class IdealGas<double, 1, 4>;
+template class EigenMatrices<double, IdealGas<double, 1, 4>>;
 template class Exact<IdealGas<1, 4, double>, 3>;
 
 }  // namespace euler
