@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
+  using Matrices = mini::riemann::euler::EigenMatrices<Gas>;
   using MyLimiter = mini::polynomial::EigenWeno<MyCell, Matrices>;
   using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
   using MyRiemann = mini::riemann::rotated::Euler<Unrotated>;

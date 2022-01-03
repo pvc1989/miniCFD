@@ -12,8 +12,9 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <typename Scalar, typename IdealGas>
+template <typename IdealGas>
 class EigenMatrices {
+  using Scalar = typename IdealGas::Scalar;
   using Conservative = ConservativeTuple<Scalar, 3>;
   using Primitive = PrimitiveTuple<Scalar, 3>;
 

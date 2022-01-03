@@ -18,7 +18,7 @@ namespace riemann {
 namespace euler {
 
 template class IdealGas<double, 1, 4>;
-template class EigenMatrices<double, IdealGas<double, 1, 4>>;
+template class EigenMatrices<IdealGas<double, 1, 4>>;
 template class Exact<IdealGas<double, 1, 4>, 3>;
 
 }  // namespace euler

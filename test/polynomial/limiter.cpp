@@ -209,7 +209,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   // reconstruct using a `EigenWeno` limiter
   using Projection = typename Cell::Projection;
   using IdealGas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<double, IdealGas>;
+  using Matrices = mini::riemann::euler::EigenMatrices<IdealGas>;
   auto eigen_limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
       /* w0 = */0.01, /* eps = */1e-6);
   auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(

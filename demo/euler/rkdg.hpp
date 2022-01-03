@@ -29,7 +29,7 @@ namespace riemann {
 namespace euler {
 
 extern template class IdealGas<double, 1, 4>;
-extern template class EigenMatrices<double, IdealGas<double, 1, 4>>;
+extern template class EigenMatrices<IdealGas<double, 1, 4>>;
 extern template class Exact<IdealGas<double, 1, 4>, 3>;
 using MyRiemann = Exact<IdealGas<double, 1, 4>, 3>;
 
@@ -49,7 +49,7 @@ namespace mini {
 namespace polynomial {
 
 using MyGas = riemann::euler::IdealGas<double, 1, 4>;
-using MyEigen = riemann::euler::EigenMatrices<double, MyGas>;
+using MyEigen = riemann::euler::EigenMatrices<MyGas>;
 using MyCell0 = mesh::cgns::MyPart0::CellType;
 using MyCell2 = mesh::cgns::MyPart2::CellType;
 
