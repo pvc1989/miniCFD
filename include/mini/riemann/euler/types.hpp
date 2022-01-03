@@ -12,7 +12,7 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <int kDim, class ScalarType = double>
+template <class ScalarType, int kDim>
 class Tuple : public algebra::Vector<ScalarType, kDim+2> {
   using Base = algebra::Vector<ScalarType, kDim+2>;
 
@@ -65,42 +65,42 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
   }
 };
 
-template <int kDim, class Scalar>
+template <class Scalar, int kDim>
 class Converter;
 
 template <class Scalar>
-class Converter<1, Scalar> {
+class Converter<Scalar, 1> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<1, Scalar> *tuple) {
+  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 1> *tuple) {
     tuple->momentumX() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<1, Scalar> *tuple) {
+  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 1> *tuple) {
     tuple->momentumX() /= rho;
   }
 };
 
 template <class Scalar>
-class Converter<2, Scalar> {
+class Converter<Scalar, 2> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<2, Scalar> *tuple) {
+  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 2> *tuple) {
     tuple->momentumX() *= rho;
     tuple->momentumY() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<2, Scalar> *tuple) {
+  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 2> *tuple) {
     tuple->momentumX() /= rho;
     tuple->momentumY() /= rho;
   }
 };
 
 template <class Scalar>
-class Converter<3, Scalar> {
+class Converter<Scalar, 3> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<3, Scalar> *tuple) {
+  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 3> *tuple) {
     tuple->momentumX() *= rho;
     tuple->momentumY() *= rho;
     tuple->momentumZ() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<3, Scalar> *tuple) {
+  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 3> *tuple) {
     tuple->momentumX() /= rho;
     tuple->momentumY() /= rho;
     tuple->momentumZ() /= rho;
@@ -108,9 +108,9 @@ class Converter<3, Scalar> {
 };
 
 
-template <int kDim, class ScalarType = double>
-class FluxTuple : public Tuple<kDim, ScalarType> {
-  using Base = Tuple<kDim, ScalarType>;
+template <class ScalarType, int kDim>
+class FluxTuple : public Tuple<ScalarType, kDim> {
+  using Base = Tuple<ScalarType, kDim>;
   using Mat5x1 = algebra::Matrix<ScalarType, 5, 1>;
 
  public:
@@ -122,9 +122,9 @@ class FluxTuple : public Tuple<kDim, ScalarType> {
   using Base::Base;
 };
 
-template <int kDim, class ScalarType = double>
-class PrimitiveTuple : public Tuple<kDim, ScalarType> {
-  using Base = Tuple<kDim, ScalarType>;
+template <class ScalarType, int kDim>
+class PrimitiveTuple : public Tuple<ScalarType, kDim> {
+  using Base = Tuple<ScalarType, kDim>;
 
  public:
   // Types:
@@ -173,9 +173,9 @@ class PrimitiveTuple : public Tuple<kDim, ScalarType> {
   }
 };
 
-template <int kDim, class ScalarType = double>
-struct ConservativeTuple : public Tuple<kDim, ScalarType> {
-  using Base = Tuple<kDim, ScalarType>;
+template <class ScalarType, int kDim>
+struct ConservativeTuple : public Tuple<ScalarType, kDim> {
+  using Base = Tuple<ScalarType, kDim>;
 
   // Types:
   using Scalar = typename Base::Scalar;
@@ -231,15 +231,15 @@ class IdealGas {
   }
   // Converters:
   template <int kDim>
-  static double GetSpeedOfSound(PrimitiveTuple<kDim, Scalar> const& state) {
+  static double GetSpeedOfSound(PrimitiveTuple<Scalar, kDim> const& state) {
     return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
-  static PrimitiveTuple<kDim, Scalar> ConservativeToPrimitive(
-      ConservativeTuple<kDim, Scalar> const &conservative) {
-    auto primitive = PrimitiveTuple<kDim, Scalar>(conservative);
+  static PrimitiveTuple<Scalar, kDim> ConservativeToPrimitive(
+      ConservativeTuple<Scalar, kDim> const &conservative) {
+    auto primitive = PrimitiveTuple<Scalar, kDim>(conservative);
     if (primitive.rho() > 0) {
-      Converter<kDim, Scalar>::MomentumToVelocity(primitive.rho(), &primitive);
+      Converter<Scalar, kDim>::MomentumToVelocity(primitive.rho(), &primitive);
       primitive.energy() -= primitive.GetDynamicPressure();
       primitive.energy() *= primitive.energy() < 0 ? 0 : GammaMinusOne();
     } else {
@@ -248,16 +248,16 @@ class IdealGas {
     return primitive;
   }
   template <int kDim>
-  static ConservativeTuple<kDim, Scalar> PrimitiveToConservative(
-      PrimitiveTuple<kDim, Scalar> const &primitive) {
-    auto conservative = ConservativeTuple<kDim, Scalar>(primitive);
-    Converter<kDim, Scalar>::VelocityToMomentum(primitive.rho(), &conservative);
+  static ConservativeTuple<Scalar, kDim> PrimitiveToConservative(
+      PrimitiveTuple<Scalar, kDim> const &primitive) {
+    auto conservative = ConservativeTuple<Scalar, kDim>(primitive);
+    Converter<Scalar, kDim>::VelocityToMomentum(primitive.rho(), &conservative);
     conservative.energy() *= OneOverGammaMinusOne();  // p / (gamma - 1)
     conservative.energy() += primitive.GetDynamicPressure();
     return conservative;
   }
-  static auto GetFluxMatrix(ConservativeTuple<3, Scalar> const& cv) {
-    using FluxMatrix = typename FluxTuple<3, Scalar>::FluxMatrix;
+  static auto GetFluxMatrix(ConservativeTuple<Scalar, 3> const& cv) {
+    using FluxMatrix = typename FluxTuple<Scalar, 3>::FluxMatrix;
     FluxMatrix mat;
     auto pv = ConservativeToPrimitive(cv);
     auto rho = pv.rho(), u = pv.u(), v = pv.v(), w = pv.w(), p = pv.p();

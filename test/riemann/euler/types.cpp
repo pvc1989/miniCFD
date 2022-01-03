@@ -17,8 +17,8 @@ class TestIdealGas : public ::testing::Test {
 };
 TEST_F(TestIdealGas, TestConverters) {
   auto rho{0.1}, u{+0.2}, v{-0.2}, p{0.3};
-  auto primitive = PrimitiveTuple<2, double>{rho, u, v, p};
-  auto conservative = ConservativeTuple<2, double>{
+  auto primitive = PrimitiveTuple<double, 2>{rho, u, v, p};
+  auto conservative = ConservativeTuple<double, 2>{
     rho, rho*u, rho*v, p/(gamma-1) + 0.5*rho*(u*u + v*v)
   };
   EXPECT_EQ(Gas::PrimitiveToConservative(primitive), conservative);

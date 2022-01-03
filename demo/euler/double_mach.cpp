@@ -79,8 +79,8 @@ int main(int argc, char* argv[]) {
       "EnergyStagnationDensity"});
 
   /* Euler system */
-  using Primitive = mini::riemann::euler::PrimitiveTuple<kDim>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<kDim>;
+  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<double, Gas>;
   using MyLimiter = mini::polynomial::EigenWeno<MyCell, Matrices>;

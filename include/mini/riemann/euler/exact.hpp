@@ -18,9 +18,9 @@ class Implementor {
   constexpr static int kDim = D;
   // Types:
   using Scalar = typename Gas::Scalar;
-  using Flux = FluxTuple<kDim, Scalar>;
-  using Conservative = ConservativeTuple<kDim, Scalar>;
-  using Primitive = PrimitiveTuple<kDim, Scalar>;
+  using Flux = FluxTuple<Scalar, kDim>;
+  using Conservative = ConservativeTuple<Scalar, kDim>;
+  using Primitive = PrimitiveTuple<Scalar, kDim>;
   using State = Primitive;
   using Vector = typename State::Vector;
   using Speed = Scalar;
