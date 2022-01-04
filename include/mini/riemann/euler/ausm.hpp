@@ -13,15 +13,15 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class GasModel, int kDim>
+template <class GasType, int kDim>
 class Ausm;
 
-template <class GasModel>
-class Ausm<GasModel, 1> {
+template <class GasType>
+class Ausm<GasType, 1> {
  public:
   constexpr static int kDim = 1;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 1>;
   using Conservative = ConservativeTuple<Scalar, 1>;
@@ -85,12 +85,12 @@ class Ausm<GasModel, 1> {
   }
 };
 
-template <class GasModel>
-class Ausm<GasModel, 2> {
+template <class GasType>
+class Ausm<GasType, 2> {
  public:
   constexpr static int kDim = 2;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 2>;
   using Conservative = ConservativeTuple<Scalar, 2>;
@@ -158,12 +158,12 @@ class Ausm<GasModel, 2> {
   }
 };
 
-template <class GasModel>
-class Ausm<GasModel, 3> {
+template <class GasType>
+class Ausm<GasType, 3> {
  public:
   constexpr static int kDim = 3;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 3>;
   using Conservative = ConservativeTuple<Scalar, 3>;

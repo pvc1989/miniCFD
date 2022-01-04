@@ -243,17 +243,17 @@ class Implementor {
   }
 };
 
-template <class GasModel, int kDim>
+template <class GasType, int kDim>
 class Exact;
 
-template <class GasModel>
-class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
-  using Base = Implementor<GasModel, 1>;
+template <class GasType>
+class Exact<GasType, 1> : public Implementor<GasType, 1> {
+  using Base = Implementor<GasType, 1>;
 
  public:
   constexpr static int kDim = Base::kDim;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
@@ -277,14 +277,14 @@ class Exact<GasModel, 1> : public Implementor<GasModel, 1> {
     return Base::GetStateOnTimeAxis(left, right);
   }
 };
-template <class GasModel>
-class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
-  using Base = Implementor<GasModel, 2>;
+template <class GasType>
+class Exact<GasType, 2> : public Implementor<GasType, 2> {
+  using Base = Implementor<GasType, 2>;
 
  public:
   constexpr static int kDim = Base::kDim;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;
@@ -312,14 +312,14 @@ class Exact<GasModel, 2> : public Implementor<GasModel, 2> {
     return state;
   }
 };
-template <class GasModel>
-class Exact<GasModel, 3> : public Implementor<GasModel, 3> {
-  using Base = Implementor<GasModel, 3>;
+template <class GasType>
+class Exact<GasType, 3> : public Implementor<GasType, 3> {
+  using Base = Implementor<GasType, 3>;
 
  public:
   constexpr static int kDim = Base::kDim;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Flux = typename Base::Flux;

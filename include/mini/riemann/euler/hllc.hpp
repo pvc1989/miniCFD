@@ -13,15 +13,15 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class GasModel, int kDim>
+template <class GasType, int kDim>
 class Hllc;
 
-template <class GasModel>
-class Hllc<GasModel, 1> {
+template <class GasType>
+class Hllc<GasType, 1> {
  public:
   constexpr static int kDim = 1;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 1>;
   using Conservative = ConservativeTuple<Scalar, 1>;
@@ -101,12 +101,12 @@ class Hllc<GasModel, 1> {
   }
 };
 
-template <class GasModel>
-class Hllc<GasModel, 2> {
+template <class GasType>
+class Hllc<GasType, 2> {
  public:
   constexpr static int kDim = 2;
   // Types:
-  using Gas = GasModel;
+  using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 2>;
   using Conservative = ConservativeTuple<Scalar, 2>;
