@@ -61,7 +61,7 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
   using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
   using State = Solver::State;
-  using Speed = State::Speed;
+  using Speed = Scalar;
   using Flux = Solver::Flux;
 
   auto CompareFlux = [](Flux const& lhs, Flux const& rhs) {

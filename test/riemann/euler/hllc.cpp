@@ -67,7 +67,7 @@ class TestHllc2d : public ::testing::Test {
  protected:
   using Solver = Hllc<IdealGas<double, 1, 4>, 2>;
   using State = Solver::State;
-  using Speed = State::Speed;
+  using Speed = Solver::Scalar;
   using Flux = Solver::Flux;
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};

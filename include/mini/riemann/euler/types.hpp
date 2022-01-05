@@ -130,9 +130,6 @@ class PrimitiveTuple : public Tuple<ScalarType, kDim> {
   // Types:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using Density = Scalar;
-  using Pressure = Scalar;
-  using Speed = Scalar;
   // Constructors:
   using Base::Base;
   // Accessors and Mutators:
@@ -180,9 +177,6 @@ struct ConservativeTuple : public Tuple<ScalarType, kDim> {
   // Types:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using Density = Scalar;
-  using Pressure = Scalar;
-  using Speed = Scalar;
   // Constructors:
   using Base::Base;
 };
