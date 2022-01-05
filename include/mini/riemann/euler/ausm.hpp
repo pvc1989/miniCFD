@@ -36,12 +36,8 @@ class Ausm<GasType, 1> {
     return flux_positive;
   }
   // Get F of U
-  Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * rho_u_u)};
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
   }
 
  private:
@@ -104,13 +100,8 @@ class Ausm<GasType, 2> {
     return flux_positive;
   }
   // Get F of U
-  Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_v = state.rho() * state.v();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(), rho_v * state.u(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * (rho_u_u + rho_v * state.v()))};
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
   }
 
  private:
@@ -176,14 +167,8 @@ class Ausm<GasType, 3> {
     return flux_positive;
   }
   // Get F of U
-  Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_v = state.rho() * state.v();
-    auto rho_w = state.rho() * state.w();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(), rho_v * state.u(), rho_w * state.u(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-            + 0.5 * (rho_u_u + rho_v * state.v() + rho_w * state.w()))};
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
   }
 
  private:

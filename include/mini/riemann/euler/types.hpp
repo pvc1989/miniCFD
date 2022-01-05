@@ -250,6 +250,15 @@ class IdealGas {
     conservative.energy() += primitive.GetDynamicPressure();
     return conservative;
   }
+  template <int kDim>
+  static FluxTuple<Scalar, kDim> PrimitiveToFlux(const PrimitiveTuple<Scalar, kDim> &primitive) {
+    auto conservative = PrimitiveToConservative(primitive);
+    conservative *= primitive.u();
+    auto flux_x = FluxTuple<Scalar, kDim>(conservative);
+    flux_x.momentumX() += primitive.p();
+    flux_x.energy() += primitive.p() * primitive.u();
+    return flux_x;
+  }
   static auto GetFluxMatrix(ConservativeTuple<Scalar, 3> const& cv) {
     using FluxMatrix = typename FluxTuple<Scalar, 3>::FluxMatrix;
     FluxMatrix mat;

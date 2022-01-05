@@ -44,12 +44,8 @@ class Hllc<GasType, 1> {
     return flux;
   }
   // Get F of U
-  Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * rho_u_u)};
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
   }
 
  private:
@@ -128,13 +124,8 @@ class Hllc<GasType, 2> {
     return flux;
   }
   // Get F of U
-  Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_v = state.rho() * state.v();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(), rho_v * state.u(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                       + 0.5 * (rho_u_u + rho_v * state.v()))};
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
   }
 
  private:

@@ -260,11 +260,7 @@ class Exact<GasType, 1> : public Implementor<GasType, 1> {
   using Primitive = typename Base::Primitive;
   // Get F from U
   static Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                         + 0.5 * rho_u_u)};
+    return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
@@ -290,12 +286,7 @@ class Exact<GasType, 2> : public Implementor<GasType, 2> {
   using Primitive = typename Base::Primitive;
   // Get F from U
   static Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_v = state.rho() * state.v();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(), rho_v * state.u(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-                         + 0.5 * (rho_u_u + rho_v * state.v()))};
+    return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
@@ -324,13 +315,7 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
   using Primitive = typename Base::Primitive;
   // Get F from U
   static Flux GetFlux(const Primitive& state) {
-    auto rho_u = state.rho() * state.u();
-    auto rho_v = state.rho() * state.v();
-    auto rho_w = state.rho() * state.w();
-    auto rho_u_u = rho_u * state.u();
-    return {rho_u, rho_u_u + state.p(), rho_v * state.u(), rho_w * state.u(),
-            state.u() * (state.p() * Gas::GammaOverGammaMinusOne()
-            + 0.5 * (rho_u_u + rho_v * state.v() + rho_w * state.w()))};
+    return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
