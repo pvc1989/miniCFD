@@ -26,7 +26,7 @@ class Implementor {
   // Data:
   Speed star_u{0.0};
   // Get U on t-Axis
-  Primitive GetStateOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
     // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u() - left.u();
     auto u_change__left = SpeedChange(left);
@@ -45,19 +45,19 @@ class Implementor {
       star_u = star.u();
       if (0 < star.u()) {  // Axis[t] <<< Wave[2]
         if (star.p() >= left.p()) {  // Wave[1] is a shock.
-          return GetStateNearShock<1>(left, &star);
+          return PrimitiveNearShock<1>(left, &star);
         } else {  // star.p() < left.p() : Wave[1] is an expansion.
-          return GetStateNearExpansion<1>(left, &star);
+          return PrimitiveNearExpansion<1>(left, &star);
         }
       } else {  // star.u() < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
         if (star.p() >= right.p()) {  // Wave[3] is a shock.
-          return GetStateNearShock<3>(right, &star);
+          return PrimitiveNearShock<3>(right, &star);
         } else {  // star.p() < right.p() : Wave[3] is an expansion.
-          return GetStateNearExpansion<3>(right, &star);
+          return PrimitiveNearExpansion<3>(right, &star);
         }
       }
     } else {  // The region BETWEEN Wave[1] and Wave[3] is vacuumed.
-      return GetStateNearVacuum(left, right);
+      return PrimitiveNearVacuum(left, right);
     }
   }
 
@@ -143,7 +143,7 @@ class Implementor {
   static bool TimeAxisAfterShock(Shock<1> const& wave) { return wave.u < 0; }
   static bool TimeAxisAfterShock(Shock<3> const& wave) { return wave.u > 0; }
   template <int kField>
-  static Primitive GetStateNearShock(const Primitive& before, Primitive* after) {
+  static Primitive PrimitiveNearShock(const Primitive& before, Primitive* after) {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterShock(shock)) {  // i.e. (x=0, t) is AFTER the shock.
@@ -176,7 +176,7 @@ class Implementor {
           Gas::GammaMinusOneOverTwo() * (before.u() - after.u()));
     }
   };
-  static Primitive GetStateInsideExpansion(double gri_1, double gri_2) {
+  static Primitive PrimitiveInsideExpansion(double gri_1, double gri_2) {
     constexpr auto r = Gas::GammaMinusOne() / Gas::GammaPlusOne();
     auto a = r * gri_2;
     auto a_square = a * a;
@@ -199,7 +199,7 @@ class Implementor {
     return kField == 1 ? (u - a > 0) : (u + a < 0);
   }
   template <int kField>
-  static Primitive GetStateNearExpansion(const Primitive& before, Primitive* after) {
+  static Primitive PrimitiveNearExpansion(const Primitive& before, Primitive* after) {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
     if (TimeAxisAfterExpansion<kField>(after->u(), wave.a_after)) {
@@ -210,10 +210,10 @@ class Implementor {
     } else if (TimeAxisBeforeExpansion<kField>(before.u(), wave.a_before)) {
       return before;
     } else {  // Axis[t] is inside the Expansion.
-      return GetStateInsideExpansion(wave.gri_1, wave.gri_2);
+      return PrimitiveInsideExpansion(wave.gri_1, wave.gri_2);
     }
   }
-  static Primitive GetStateNearVacuum(const Primitive& left, const Primitive& right) {
+  static Primitive PrimitiveNearVacuum(const Primitive& left, const Primitive& right) {
     auto left_a = Gas::GetSpeedOfSound(left);
     if (left.u() > left_a) {  // Axis[t] <<< Wave[1].
       return left;
@@ -225,13 +225,13 @@ class Implementor {
       auto gri_1 = left.p() / (std::pow(left.rho(), Gas::Gamma()));
       auto gri_2 = left.u() + left_a * Gas::GammaMinusOneUnderTwo();
       if (gri_2 >= 0) {  // Axis[t] is inside Wave[1].
-        return GetStateInsideExpansion(gri_1, gri_2);
+        return PrimitiveInsideExpansion(gri_1, gri_2);
       } else {  // gri_2 < 0
         // Axis[t] is to the RIGHT of Wave[1].
         gri_1 = right.p() / (std::pow(right.rho(), Gas::Gamma()));
         gri_2 = right.u() - right_a * Gas::GammaMinusOneUnderTwo();
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
-          return GetStateInsideExpansion(gri_1, gri_2);
+          return PrimitiveInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vacuumed region.
           auto state = Primitive();
           state.setZero();
@@ -268,11 +268,11 @@ class Exact<GasType, 1> : public Implementor<GasType, 1> {
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
-    return GetFlux(GetStateOnTimeAxis(left, right));
+    return GetFlux(PrimitiveOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  Primitive GetStateOnTimeAxis(const Primitive& left, const Primitive& right) {
-    return Base::GetStateOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
+    return Base::PrimitiveOnTimeAxis(left, right);
   }
 };
 template <class GasType>
@@ -299,12 +299,12 @@ class Exact<GasType, 2> : public Implementor<GasType, 2> {
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
-    auto state = GetStateOnTimeAxis(left, right);
+    auto state = PrimitiveOnTimeAxis(left, right);
     return GetFlux(state);
   }
   // Get U on t-Axis
-  Primitive GetStateOnTimeAxis(const Primitive& left, const Primitive& right) {
-    auto state = Base::GetStateOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
+    auto state = Base::PrimitiveOnTimeAxis(left, right);
     state.v() = this->star_u > 0 ? left.v() : right.v();
     return state;
   }
@@ -334,11 +334,11 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
   }
   // Get F on t-Axis
   Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
-    return GetFlux(GetStateOnTimeAxis(left, right));
+    return GetFlux(PrimitiveOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  Primitive GetStateOnTimeAxis(const Primitive& left, const Primitive& right) {
-    auto state = Base::GetStateOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
+    auto state = Base::PrimitiveOnTimeAxis(left, right);
     state.v() = this->star_u > 0 ? left.v() : right.v();
     state.w() = this->star_u > 0 ? left.w() : right.w();
     return state;
