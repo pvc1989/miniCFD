@@ -26,9 +26,7 @@ class TestRotatedEuler : public ::testing::Test {
 TEST_F(TestRotatedEuler, Test2dConverter) {
   using UnrotatedSolver = euler::Exact<Gas, 2>;
   using Solver = Euler<UnrotatedSolver>;
-  using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
-  using State = Solver::State;
   Solver solver;
   Vector n{+0.6, 0.8}, t{-0.8, 0.6}, v{3.0, 4.0}, v_copy{3.0, 4.0};
   solver.Rotate(n);
@@ -43,7 +41,6 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
   using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
-  using State = Solver::State;
   Solver solver;
   Vector nu{+0.6, 0.8, 0.0}, sigma{-0.8, 0.6, 0.0}, pi{0.0, 0.0, 1.0};
   Vector v{3.0, 4.0, 5.0}, v_copy{3.0, 4.0, 5.0};
@@ -60,7 +57,7 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
 TEST_F(TestRotatedEuler, Test3dSolver) {
   using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
-  using State = Solver::State;
+  using Primitive = Solver::Primitive;
   using Speed = Scalar;
   using Flux = Solver::Flux;
 
@@ -82,8 +79,8 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
   frame.col(1) << 0, 1, 0;
   frame.col(2) << 0, 0, 1;
   solver.Rotate(frame);
-  State  left{1.000, 0.0, v__left, w__left, 1.0};
-  State right{0.125, 0.0, v_right, w_right, 0.1};
+  Primitive  left{1.000, 0.0, v__left, w__left, 1.0};
+  Primitive right{0.125, 0.0, v_right, w_right, 0.1};
   auto left_c  = Gas::PrimitiveToConservative(left);
   auto right_c = Gas::PrimitiveToConservative(right);
   CompareFlux(solver.GetFluxOnTimeAxis(left_c, right_c),

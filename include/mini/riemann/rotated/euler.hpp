@@ -105,14 +105,13 @@ class Euler {
   using FluxMatrix = typename Flux::FluxMatrix;
   using Conservative = typename Base::Conservative;
   using Primitive = typename Base::Primitive;
-  using State = Primitive;
 
   template <typename... Args>
   void Rotate(Args&&... args) {
     cartesian_.Rotate(std::forward<Args>(args)...);
   }
 
-  static Flux GetFlux(State const& state) {
+  static Flux GetFlux(const Primitive& state) {
     return Base::GetFlux(state);
   }
   Flux GetRotatedFlux(Conservative const& conservative) {

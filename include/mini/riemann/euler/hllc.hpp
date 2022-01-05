@@ -26,11 +26,10 @@ class Hllc<GasType, 1> {
   using Flux = FluxTuple<Scalar, 1>;
   using Conservative = ConservativeTuple<Scalar, 1>;
   using Primitive = PrimitiveTuple<Scalar, 1>;
-  using State = Primitive;
-  using Vector = typename State::Vector;
+  using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
     Initialize(left, right);
     Flux flux;
     if (0.0 <= wave_left_) {
@@ -45,7 +44,7 @@ class Hllc<GasType, 1> {
     return flux;
   }
   // Get F of U
-  Flux GetFlux(State const& state) {
+  Flux GetFlux(const Primitive& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_u_u = rho_u * state.u();
     return {rho_u, rho_u_u + state.p(),
@@ -57,7 +56,7 @@ class Hllc<GasType, 1> {
   Speed wave_star_;
   Speed wave_left_;
   Speed wave_right_;
-  void Initialize(State const& left, State const& right) {
+  void Initialize(const Primitive& left, const Primitive& right) {
     double rho_average = (left.rho() + right.rho()) / 2;
     double a_left = Gas::GetSpeedOfSound(left);
     double a_right = Gas::GetSpeedOfSound(right);
@@ -82,7 +81,7 @@ class Hllc<GasType, 1> {
       return std::sqrt(temp);
     }
   }
-  Flux GetStarFlux(State const& state, Speed const& wave_k) {
+  Flux GetStarFlux(const Primitive& state, Speed const& wave_k) {
     Flux flux = GetFlux(state);
     auto energy = state.p() / Gas::GammaMinusOne() +
                   state.rho() * (state.u() * state.u()) * 0.5;
@@ -111,11 +110,10 @@ class Hllc<GasType, 2> {
   using Flux = FluxTuple<Scalar, 2>;
   using Conservative = ConservativeTuple<Scalar, 2>;
   using Primitive = PrimitiveTuple<Scalar, 2>;
-  using State = Primitive;
-  using Vector = typename State::Vector;
+  using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) {
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
     Initialize(left, right);
     Flux flux;
     if (0.0 <= wave_left_) {
@@ -130,7 +128,7 @@ class Hllc<GasType, 2> {
     return flux;
   }
   // Get F of U
-  Flux GetFlux(State const& state) {
+  Flux GetFlux(const Primitive& state) {
     auto rho_u = state.rho() * state.u();
     auto rho_v = state.rho() * state.v();
     auto rho_u_u = rho_u * state.u();
@@ -144,7 +142,7 @@ class Hllc<GasType, 2> {
   Speed wave_left_;
   Speed wave_right_;
   // double rho_u_time_axis_;
-  void Initialize(State const& left, State const& right) {
+  void Initialize(const Primitive& left, const Primitive& right) {
     double rho_average = (left.rho() + right.rho()) / 2;
     double a_left = Gas::GetSpeedOfSound(left);
     double a_right = Gas::GetSpeedOfSound(right);
@@ -169,7 +167,7 @@ class Hllc<GasType, 2> {
       return std::sqrt(temp);
     }
   }
-  Flux GetStarFlux(State const& state, Speed const& wave_k) {
+  Flux GetStarFlux(const Primitive& state, Speed const& wave_k) {
     Flux flux = GetFlux(state);
     double energy = state.p() / Gas::GammaMinusOne() +
               state.rho() * (state.u() * state.u() +

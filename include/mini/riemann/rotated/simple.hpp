@@ -22,7 +22,7 @@ class Simple {
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;
-  using State = MatKx1;
+  using Conservative = MatKx1;
   using Flux = MatKx1;
   using FluxMatrix = algebra::Matrix<Scalar, K, D>;
   using Frame3d = mini::algebra::Matrix<Scalar, 3, 3>;
@@ -55,24 +55,24 @@ class Simple {
     const auto& nu = frame.col(0);
     Rotate(nu[x], nu[y], nu[z]);
   }
-  Flux GetFluxOnTimeAxis(const State& left, const State& right) {
+  Flux GetFluxOnTimeAxis(const Conservative& left, const Conservative& right) {
     auto raw_flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
     return ConvertToFlux(raw_flux);
   }
-  Flux GetFluxOnSolidWall(const State& state) {
+  Flux GetFluxOnSolidWall(const Conservative& state) {
     Flux flux;
     flux.setZero();
     return flux;
   }
-  Flux GetFluxOnFreeWall(const State& state) {
+  Flux GetFluxOnFreeWall(const Conservative& state) {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
-  Flux GetRotatedFlux(const State& state) {
+  Flux GetRotatedFlux(const Conservative& state) {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
-  static FluxMatrix GetFluxMatrix(const State& state) {
+  static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
       flux_mat.col(c) = state;

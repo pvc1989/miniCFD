@@ -17,28 +17,28 @@ using Gas = IdealGas<double, 1, 4>;
 
 template <class Solver>
 auto run() {
-  using State = typename Solver::State;
+  using Primitive = typename Solver::Primitive;
   using Flux = typename Solver::Flux;
   Solver solver;
   Flux flux{};
   {
-  State left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
+  Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
   flux += solver.GetFluxOnTimeAxis(left, right);
   flux += solver.GetFluxOnTimeAxis(right, left);
   } {
-  State left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
+  Primitive left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
   flux += solver.GetFluxOnTimeAxis(left, right);
   } {
-  State left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
+  Primitive left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
   flux += solver.GetFluxOnTimeAxis(left, right);
   } {
-  State left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
+  Primitive left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
   flux += solver.GetFluxOnTimeAxis(left, right);
   } {
-  State left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
+  Primitive left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
   flux += solver.GetFluxOnTimeAxis(left, right);
   } {
-  State left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
+  Primitive left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
   flux += solver.GetFluxOnTimeAxis(left, right);
   }
   return flux;

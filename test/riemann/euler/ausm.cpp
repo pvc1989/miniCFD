@@ -15,7 +15,7 @@ class TestAusm : public ::testing::Test {
  protected:
   using Gas = IdealGas<double, 1, 4>;
   using Solver = Ausm<Gas, 1>;
-  using State = Solver::State;
+  using Primitive = Solver::Primitive;
   using Flux = Solver::Flux;
   Solver solver;
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
@@ -31,34 +31,34 @@ TEST_F(TestAusm, TestFlux) {
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
 }
 TEST_F(TestAusm, TestSod) {
-  State left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
+  Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.426319, +0.927453, 0.303130}));
   CompareFlux(solver.GetFluxOnTimeAxis(right, left),
               solver.GetFlux({0.426319, -0.927453, 0.303130}));
 }
 TEST_F(TestAusm, TestShockCollision) {
-  State left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
+  Primitive left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({5.99924, 19.5975, 460.894}));
 }
 TEST_F(TestAusm, TestBlastFromLeft) {
-  State left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
+  Primitive left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575062, 19.59745, 460.8938}));
 }
 TEST_F(TestAusm, TestBlastFromRight) {
-  State left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
+  Primitive left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, 46.09504}));
 }
 TEST_F(TestAusm, TestAlmostVaccumed) {
-  State left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
+  Primitive left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, 0.001894}));
 }
 TEST_F(TestAusm, TestVaccumed) {
-  State left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
+  Primitive left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, 0.0}));
 }
@@ -66,7 +66,7 @@ TEST_F(TestAusm, TestVaccumed) {
 class Ausm2dTest : public ::testing::Test {
  protected:
   using Solver = Ausm<IdealGas<double, 1, 4>, 2>;
-  using State = Solver::State;
+  using Primitive = Solver::Primitive;
   using Speed = Solver::Scalar;
   using Flux = Solver::Flux;
   Solver solver;
@@ -79,42 +79,42 @@ class Ausm2dTest : public ::testing::Test {
   }
 };
 TEST_F(Ausm2dTest, TestSod) {
-  State  left{1.000, 0.0, v__left, 1.0};
-  State right{0.125, 0.0, v_right, 0.1};
+  Primitive  left{1.000, 0.0, v__left, 1.0};
+  Primitive right{0.125, 0.0, v_right, 0.1};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.426319, +0.927453, v__left, 0.303130}));
   CompareFlux(solver.GetFluxOnTimeAxis(right, left),
               solver.GetFlux({0.426319, -0.927453, v__left, 0.303130}));
 }
 TEST_F(Ausm2dTest, TestShockCollision) {
-  State  left{5.99924, 19.5975, v__left, 460.894};
-  State right{5.99242, 6.19633, v_right, 46.0950};
+  Primitive  left{5.99924, 19.5975, v__left, 460.894};
+  Primitive right{5.99242, 6.19633, v_right, 46.0950};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({5.99924, 19.5975, v__left, 460.894}));
 }
 TEST_F(Ausm2dTest, TestBlastFromLeft) {
-  State  left{1.0, 0.0, v__left, 1e+3};
-  State right{1.0, 0.0, v_right, 1e-2};
+  Primitive  left{1.0, 0.0, v__left, 1e+3};
+  Primitive right{1.0, 0.0, v_right, 1e-2};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575062, 19.59745, v__left, 460.8938}));
 }
 TEST_F(Ausm2dTest, TestBlastFromRight) {
-  State  left{1.0, 0.0, v__left, 1e-2};
-  State right{1.0, 0.0, v_right, 1e+2};
+  Primitive  left{1.0, 0.0, v__left, 1e-2};
+  Primitive right{1.0, 0.0, v_right, 1e+2};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
 }
 TEST_F(Ausm2dTest, TestAlmostVaccumed) {
-  State  left{1.0, -2.0, v__left, 0.4};
-  State right{1.0, +2.0, v_right, 0.4};
+  Primitive  left{1.0, -2.0, v__left, 0.4};
+  Primitive right{1.0, +2.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, v__left, 0.001894}));
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
 }
 TEST_F(Ausm2dTest, TestVaccumed) {
-  State  left{1.0, -4.0, v__left, 0.4};
-  State right{1.0, +4.0, v_right, 0.4};
+  Primitive  left{1.0, -4.0, v__left, 0.4};
+  Primitive right{1.0, +4.0, v_right, 0.4};
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, v__left, 0.0}));
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),

@@ -22,7 +22,7 @@ class Single {
   using Vector = algebra::Vector<double, kDim>;
   using Jacobi = double;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
-  using State = double;
+  using Conservative = double;
   using Flux = double;
   using Speed = double;
   using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
@@ -30,7 +30,7 @@ class Single {
   Single() : a_const_(1) {}
   explicit Single(Jacobi const& a_const) : a_const_(a_const) {}
   // Get F on T Axia:
-  Flux GetFluxOnTimeAxis(const State& left, const State& right) const {
+  Flux GetFluxOnTimeAxis(const Conservative& left, const Conservative& right) const {
     if (0 < a_const_) {
       return left * a_const_;
     } else {
@@ -41,7 +41,7 @@ class Single {
     return GetFluxOnTimeAxis(left[0], right[0]);
   }
   // Get F of U
-  Flux GetFlux(const State& state) const {
+  Flux GetFlux(const Conservative& state) const {
     return state * a_const_;
   }
   Flux GetFlux(const MatKx1& state) const {

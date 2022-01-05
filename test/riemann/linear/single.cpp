@@ -13,12 +13,12 @@ namespace linear {
 class TestSingleWaveTest : public ::testing::Test {
  protected:
   using Solver = Single<2>;
-  using State = Solver::State;
+  using Conservative = Solver::Conservative;
   using Flux = Solver::Flux;
   using Speed = Solver::Speed;
 };
 TEST_F(TestSingleWaveTest, TestFlux) {
-  State u_l{2.0}, u_r{1.0};
+  Conservative u_l{2.0}, u_r{1.0};
   // right running wave
   auto solver = Solver(/* speed = */1.0);
   EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));

@@ -119,7 +119,7 @@ template <class Mesh, class Riemann>
 class Godunov {
   using Node = typename Mesh::Node;
   using Cell = typename Mesh::Cell;
-  using State = typename Riemann::State;
+  using Conservative = typename Riemann::Conservative;
   using Flux = typename Riemann::Flux;
   using Reader = mesh::VtkReader<Mesh>;
   using Writer = mesh::VtkWriter<Mesh>;
@@ -246,7 +246,7 @@ class Godunov {
       TimeStepping(&(cell.data.state), &net_flux);
     });
   }
-  void TimeStepping(State* u_curr , Flux* du_dt) {
+  void TimeStepping(Conservative* u_curr , Flux* du_dt) {
     *du_dt *= step_size_;
     *u_curr += *du_dt;
   }
@@ -263,7 +263,7 @@ class Godunov {
   int refresh_rate_;
   std::set<Node*> inside_node_;
   Manager<Mesh> node_manager_;
-  State inlet_;
+  Conservative inlet_;
   Riemann riemann_;
 };
 

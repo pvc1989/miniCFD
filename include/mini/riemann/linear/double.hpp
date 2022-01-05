@@ -23,13 +23,13 @@ class Double {
   using Matrix = algebra::Matrix<double, 2, 2>;
   using Jacobi = Matrix;
   using Coefficient = algebra::Column<Jacobi, kDim>;
-  using State = Column;
+  using Conservative = Column;
   using Flux = Column;
   // Constructor:
   Double() : a_const_{{1, 0}, {0, -1}} {Decompose(); }
   explicit Double(Jacobi const& a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
-  State GetFluxOnTimeAxis(State const& left, State const& right) const {
+  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right) const {
     Flux flux;
     if (0 <= eigen_values_[0]) {
       flux = GetFlux(left);
@@ -41,12 +41,12 @@ class Double {
     return flux;
   }
   // Get F of U
-  Flux GetFlux(State const& state) const {
+  Flux GetFlux(Conservative const& state) const {
     return a_const_ * state;
   }
 
  private:
-  State FluxInsideSector(State const& left, State const& right, int k) const {
+  Flux FluxInsideSector(Conservative const& left, Conservative const& right, int k) const {
     Flux flux{0, 0};
     for (int i = 0; i < k; i++) {
       Row l = {eigen_matrix_l_[i][0], eigen_matrix_l_[i][1]};

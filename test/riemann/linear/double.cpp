@@ -13,11 +13,11 @@ namespace linear {
 class TestDoubleWave : public ::testing::Test {
  protected:
   using Solver = Double;
-  using State = Solver::State;
+  using Conservative = Solver::Conservative;
   using Flux = Solver::Flux;
   using Column = Solver::Column;
   using Matrix = Solver::Matrix;
-  State left{1.0, 11.0}, right{2.0, 22.0};
+  Conservative left{1.0, 11.0}, right{2.0, 22.0};
 };
 TEST_F(TestDoubleWave, TestTwoLeftRunningWaves) {
   // eigen_values = {-2, -1}

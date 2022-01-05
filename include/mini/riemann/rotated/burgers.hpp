@@ -18,11 +18,11 @@ class Burgers : public Simple<nonlinear::Burgers<kDim>> {
  public:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using State = typename Base::State;
+  using Conservative = typename Base::Conservative;
   using Flux = typename Base::Flux;
   using FluxMatrix = typename Base::FluxMatrix;
 
-  static FluxMatrix GetFluxMatrix(const State& state) {
+  static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
       flux_mat(0, c) = state[0] * state[0];

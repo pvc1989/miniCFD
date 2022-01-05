@@ -21,7 +21,7 @@ class Burgers {
   using Scalar = double;
   using Vector = algebra::Vector<double, kDim>;
   using Jacobi = double;
-  using State = double;
+  using Conservative = double;
   using Flux = double;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
   using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
@@ -29,10 +29,10 @@ class Burgers {
   Burgers() : k_(1) {}
   explicit Burgers(double k) : k_(k) {}
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(State const& left, State const& right) const {
+  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right) const {
     if (k_ == 0.0) { return 0.0; }
-    State left_ = k_ * left;
-    State right_ = k_ * right;
+    Conservative left_ = k_ * left;
+    Conservative right_ = k_ * right;
     if (left_ >= right_) {  // shock
       left_ = (left_ + right_) / 2;
       right_ = left_;
@@ -49,7 +49,7 @@ class Burgers {
     return GetFluxOnTimeAxis(left[0], right[0]);
   }
   // Get F of U
-  Flux GetFlux(State const& state) const {
+  Flux GetFlux(Conservative const& state) const {
     return state * state * k_ / 2;
   }
   Flux GetFlux(const MatKx1& state) const {
