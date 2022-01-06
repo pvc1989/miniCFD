@@ -162,12 +162,9 @@ class EigenWeno {
     assert(my_cell_->adj_faces_.size() == my_cell_->adj_cells_.size());
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
-    auto &frame = adj_face.gauss().GetNormalFrame(0);
-    auto &nu = frame.col(0);
-    auto &mu = frame.col(1);
-    auto &pi = frame.col(2);
-    // assert(nu.cross(mu) == pi);
-    auto rotated_eigen = Eigen(my_cell_->projection_.GetAverage(), nu, mu, pi);
+    const auto &value = my_cell_->projection_.GetAverage();
+    const auto &frame = adj_face.gauss().GetNormalFrame(0);
+    auto rotated_eigen = Eigen(value, frame);
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);
     weights.back() *= -adj_cnt;

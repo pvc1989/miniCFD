@@ -2,9 +2,6 @@
 #ifndef MINI_RIEMANN_EULER_EIGEN_HPP_
 #define MINI_RIEMANN_EULER_EIGEN_HPP_
 
-#include <cmath>
-#include <initializer_list>
-
 #include "mini/algebra/eigen.hpp"
 #include "mini/riemann/euler/types.hpp"
 
@@ -20,7 +17,9 @@ class EigenMatrices {
 
  public:
   using Mat5x5 = algebra::Matrix<Scalar, 5, 5>;
+  using Mat5x1 = algebra::Matrix<Scalar, 5, 1>;
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
+  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
 
   Mat5x5 L, R;
 
@@ -55,18 +54,14 @@ class EigenMatrices {
                 -(b1 * u_z - nu[z] / a) / 2;
     L.col(4) << b1 / 2, -b1, 0, 0, b1 / 2;
   }
-
   EigenMatrices(const Conservative &conservative,  // orthonormal vectors:
       const Mat3x1& nu, const Mat3x1& mu, const Mat3x1& pi) {
     auto primitive = IdealGas::ConservativeToPrimitive(conservative);
     *this = EigenMatrices(primitive, nu, mu, pi);
   }
-
-  template <typename Array>
-  EigenMatrices(const Array &a,  // orthonormal vectors:
-      const Mat3x1& nu, const Mat3x1& mu, const Mat3x1& pi) {
-    auto conservative = Conservative(a[0], a[1], a[2], a[3], a[4]);
-    *this = EigenMatrices(conservative, nu, mu, pi);
+  EigenMatrices(const Mat5x1 &tuple, const Mat3x3& frame) {
+    const auto &consv = *reinterpret_cast<const Conservative *>(&tuple);
+    *this = EigenMatrices(consv, frame.col(0), frame.col(1), frame.col(2));
   }
 };
 
