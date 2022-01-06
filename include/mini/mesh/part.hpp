@@ -93,6 +93,7 @@ struct Face {
   using Gauss = integrator::Face<Real, 3>;
   using GaussPtr = std::unique_ptr<Gauss>;
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
+  using ConstCellPtr = const Cell<Int, Real, kFunc, kDim, kOrder> *;
 
   GaussPtr gauss_ptr_;
   CellPtr holder_, sharer_;
@@ -116,6 +117,10 @@ struct Face {
   }
   Int id() const {
     return id_;
+  }
+  ConstCellPtr other(ConstCellPtr cell) const {
+    assert(cell == sharer_ || cell == holder_);
+    return cell == holder_ ? sharer_ : holder_;
   }
 };
 
@@ -1569,7 +1574,7 @@ class Part {
         auto gauss_uptr = BuildGaussForFace(npe, i_zone, i_node_list);
         auto face_uptr = std::make_unique<FaceType>(
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
-        holder_ptr->adj_faces_.emplace_back(face_uptr.get());
+        // holder_ptr->adj_faces_.emplace_back(face_uptr.get());
         faces.emplace_back(std::move(face_uptr));
       }
     }

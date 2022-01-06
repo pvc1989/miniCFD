@@ -109,6 +109,7 @@ template <typename Cell, typename Eigen>
 class EigenWeno {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
+  using Face = typename Cell::MyFace;
   using Basis = typename Projection::Basis;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
@@ -138,38 +139,6 @@ class EigenWeno {
   }
 
  private:
-  static Coord GetNu(Cell const &cell_i, Cell const &cell_j) {
-    Coord nu = cell_i.center() - cell_j.center();
-    nu /= std::hypot(nu[0], nu[1], nu[2]);
-    return nu;
-  }
-  static void GetMuPi(Coord const &nu, Coord *mu, Coord *pi) {
-    int id = 0;
-    for (int i = 1; i < 3; ++i) {
-      if (std::abs(nu[i]) < std::abs(nu[id])) {
-        id = i;
-      }
-    }
-    auto a = nu[0], b = nu[1], c = nu[2];
-    switch (id) {
-    case 0:
-      *mu << 0.0, -c, b;
-      *pi << (b * b + c * c), -(a * b), -(a * c);
-      break;
-    case 1:
-      *mu << c, 0.0, -a;
-      *pi << -(a * b), (a * a + c * c), -(b * c);
-      break;
-    case 2:
-      *mu << -b, a, 0.0;
-      *pi << -(a * c), -(b * c), (a * a + b * b);
-      break;
-    default:
-      break;
-    }
-    *mu /= std::hypot((*mu)[0], (*mu)[1], (*mu)[2]);
-    *pi /= std::hypot((*pi)[0], (*pi)[1], (*pi)[2]);
-  }
   /**
    * @brief Borrow projections from adjacent cells.
    * 
@@ -189,11 +158,14 @@ class EigenWeno {
    * @brief Rotate borrowed projections onto the interface between cells
    * 
    */
-  void ReconstructOnEachFace(const Cell &adj_cell) {
-    int adj_cnt = my_cell_->adj_cells_.size();
+  void ReconstructOnEachFace(const Face &adj_face) {
+    assert(my_cell_->adj_faces_.size() == my_cell_->adj_cells_.size());
+    int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
-    Coord nu = GetNu(*my_cell_, adj_cell), mu, pi;
-    GetMuPi(nu, &mu, &pi);
+    auto &frame = adj_face.gauss().GetNormalFrame(0);
+    auto &nu = frame.col(0);
+    auto &mu = frame.col(1);
+    auto &pi = frame.col(2);
     // assert(nu.cross(mu) == pi);
     auto rotated_eigen = Eigen(my_cell_->projection_.GetAverage(), nu, mu, pi);
     // initialize weights
@@ -227,7 +199,7 @@ class EigenWeno {
     // rotate the new projection back to the global system
     new_projection.LeftMultiply(rotated_eigen.R);
     // scale the new projection by volume
-    auto adj_volume = adj_cell.volume();
+    auto adj_volume = adj_face.other(my_cell_)->volume();
     new_projection *= adj_volume;
     new_projection_ += new_projection;
     total_volume_ += adj_volume;
@@ -239,8 +211,8 @@ class EigenWeno {
   void Reconstruct() {
     new_projection_ = Projection(my_cell_->basis_);
     total_volume_ = 0.0;
-    for (auto* adj_cell : my_cell_->adj_cells_) {
-      ReconstructOnEachFace(*adj_cell);
+    for (auto* adj_face : my_cell_->adj_faces_) {
+      ReconstructOnEachFace(*adj_face);
     }
     new_projection_ /= total_volume_;
   }
