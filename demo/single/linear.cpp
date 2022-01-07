@@ -76,14 +76,15 @@ int main(int argc, char* argv[]) {
 
   /* Single-wave equation */
   using MyRiemann = mini::riemann::rotated::Single<kDim>;
-  MyRiemann::global_coefficient = { -10, 0, 0 };
+  auto a_x = -10.0;
+  MyRiemann::global_coefficient = { a_x, 0, 0 };
   using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
   auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Initial Condition */
-  Value value_after{ 10 }, value_before{ -10 };
+  Value value_right{ 10 }, value_left{ -10 };
   auto initial_condition = [&](const Coord& xyz){
-    return (xyz[0] > 4.0) ? value_after : value_before;
+    return (xyz[0] > 4.0) ? value_right : value_left;
   };
 
   if (argc == 7) {
@@ -118,15 +119,15 @@ int main(int argc, char* argv[]) {
   rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */
-  auto state_after = [&value_after](const Coord& xyz, double t){
-    return value_after;
+  auto state_right = [&value_right](const Coord& xyz, double t){
+    return value_right;
   };
-  auto state_before = [&value_before](const Coord& xyz, double t){
-    return value_before;
+  auto state_left = [&value_left](const Coord& xyz, double t){
+    return value_left;
   };
   if (suffix == "tetra") {
-    rk.SetPrescribedBC("3_S_31", state_before);  // Left
-    rk.SetPrescribedBC("3_S_23", state_after);  // Right
+    rk.SetPrescribedBC("3_S_31", state_left);   // Left
+    rk.SetPrescribedBC("3_S_23", state_right);  // Right
     rk.SetSolidWallBC("3_S_27");  // Top
     rk.SetSolidWallBC("3_S_1");   // Back
     rk.SetSolidWallBC("3_S_32");  // Front
@@ -134,8 +135,8 @@ int main(int argc, char* argv[]) {
     rk.SetSolidWallBC("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    rk.SetPrescribedBC("4_S_31", state_before);  // Left
-    rk.SetPrescribedBC("4_S_23", state_after);  // Right
+    rk.SetPrescribedBC("4_S_31", state_left);   // Left
+    rk.SetPrescribedBC("4_S_23", state_right);  // Right
     rk.SetSolidWallBC("4_S_27");  // Top
     rk.SetSolidWallBC("4_S_1");   // Back
     rk.SetSolidWallBC("4_S_32");  // Front
