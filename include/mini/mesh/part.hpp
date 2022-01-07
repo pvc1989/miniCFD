@@ -90,16 +90,16 @@ struct Cell;
 template <typename Int = cgsize_t, typename Real = double,
     int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Face {
-  using Gauss = integrator::Face<Real, 3>;
-  using GaussPtr = std::unique_ptr<Gauss>;
+  using Gauss = integrator::Face<Real, kDim>;
+  using GaussUptr = std::unique_ptr<Gauss>;
   using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
   using ConstCellPtr = const Cell<Int, Real, kFunc, kDim, kOrder> *;
 
-  GaussPtr gauss_ptr_;
+  GaussUptr gauss_ptr_;
   CellPtr holder_, sharer_;
   Int id_{-1};
 
-  Face(GaussPtr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
+  Face(GaussUptr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
         id_(id) {
   }
@@ -127,7 +127,8 @@ struct Face {
 template <typename Int = cgsize_t, typename Real = double,
     int kFunc = 2, int kDim = 3, int kOrder = 2>
 struct Cell {
-  using GaussPtr = std::unique_ptr<integrator::Cell<Real>>;
+  using Gauss = integrator::Cell<Real>;
+  using GaussUptr = std::unique_ptr<Gauss>;
   using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
   using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
   using Scalar = Real;
@@ -142,12 +143,12 @@ struct Cell {
   std::vector<Cell*> adj_cells_;
   std::vector<MyFace*> adj_faces_;
   Basis basis_;
-  GaussPtr gauss_ptr_;
+  GaussUptr gauss_ptr_;
   Projection projection_;
   Int metis_id{-1}, id_{-1};
   bool inner_ = true;
 
-  Cell(GaussPtr&& gauss_ptr, Int m_cell)
+  Cell(GaussUptr&& gauss_ptr, Int m_cell)
       : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
         metis_id(m_cell), projection_(basis_) {
   }
@@ -182,6 +183,9 @@ struct Cell {
   }
   const Coord& center() const {
     return basis_.center();
+  }
+  const Gauss& gauss() const {
+    return *gauss_ptr_;
   }
 
   template <class Callable>
