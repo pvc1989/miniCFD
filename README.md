@@ -5,7 +5,7 @@
 ## Intention
 This repo is a minimum implementation of *Data Structures and Algorithms (DSA)* used in *Computational Fluid Dynamics (CFD)*.
 
-## Build
+## Build and Test
 ```shell
 git clone https://github.com/pvcStillInGradSchool/miniCFD.git
 cd miniCFD
@@ -15,18 +15,18 @@ cd build/Release
 cmake -D CMAKE_BUILD_TYPE=Release -G Ninja -S ../.. -B .  # cmake 3.13.5+
 cmake --build .
 ctest
-mkdir result
-./demo/euler/tube sod tube.vtk 0.0 0.5 500 5
-./demo/euler/box  sod  box.vtk 0.0 1.0 800 5
 ```
 
 ## Parallel Execution
 
 ```shell
-cd build/Release/test/mesh
-rm -rf forward_step && ./shuffler 20 forward_step
-mpirun -n 20 ./galerkin forward_step 0.0 4.0 2000 20
-pvpython vtk2vtu.py forward_step 20 0 2000 20 5
+cd build/Release/demo/euler
+# start a new case
+mpirun -n 2 ./shock_tube <filename>.cgns hexa 0.0 0.2 200 10
+# restart the old case with a new partition
+mpirun -n 4 ./shock_tube ./shock_tube_hexa/shuffled.cgns hexa 0.2 0.4 200 10 200 2
+# restart the old case with the old partition
+mpirun -n 4 ./shock_tube ./shock_tube_hexa/shuffled.cgns hexa 0.4 0.8 400 10 400 4
 ```
 
 ## Code Style
