@@ -176,12 +176,16 @@ int main(int argc, char* argv[]) {
     rk.SetFreeOutletBC("4_S_15");  // Gap
   }
 
+  auto wtime_start = MPI_Wtime();
   /* Main Loop */
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
-    std::printf("Run Update(Step%d) on proc[%d/%d] at %f sec\n",
-        i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr, limiter);
+
+    auto wtime_curr = MPI_Wtime() - wtime_start;
+    auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
+    std::printf("[Done] Update(Step%d/%d) on proc[%d/%d] at %fs (%fs to go)\n",
+        i_step, i_stop, i_proc, n_procs, wtime_curr, wtime_left);
 
     if (i_step % n_steps_per_frame == 0) {
       std::printf("Run WriteSolutions(Step%d) on proc[%d/%d] at %f sec\n",
