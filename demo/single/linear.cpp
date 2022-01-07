@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
   /* Initial Condition */
   Value value_after{ 10 }, value_before{ -10 };
   auto initial_condition = [&](const Coord& xyz){
-    return (xyz[0] > 3.0) ? value_after : value_before;
+    return (xyz[0] > 4.0) ? value_after : value_before;
   };
 
   if (argc == 7) {
@@ -118,22 +118,28 @@ int main(int argc, char* argv[]) {
   rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */
+  auto state_after = [&value_after](const Coord& xyz, double t){
+    return value_after;
+  };
+  auto state_before = [&value_before](const Coord& xyz, double t){
+    return value_before;
+  };
   if (suffix == "tetra") {
+    rk.SetPrescribedBC("3_S_31", state_before);  // Left
+    rk.SetPrescribedBC("3_S_23", state_after);  // Right
     rk.SetSolidWallBC("3_S_27");  // Top
-    rk.SetSolidWallBC("3_S_31");  // Left
     rk.SetSolidWallBC("3_S_1");   // Back
     rk.SetSolidWallBC("3_S_32");  // Front
     rk.SetSolidWallBC("3_S_19");  // Bottom
-    rk.SetSolidWallBC("3_S_23");  // Right
     rk.SetSolidWallBC("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
+    rk.SetPrescribedBC("4_S_31", state_before);  // Left
+    rk.SetPrescribedBC("4_S_23", state_after);  // Right
     rk.SetSolidWallBC("4_S_27");  // Top
-    rk.SetSolidWallBC("4_S_31");  // Left
     rk.SetSolidWallBC("4_S_1");   // Back
     rk.SetSolidWallBC("4_S_32");  // Front
     rk.SetSolidWallBC("4_S_19");  // Bottom
-    rk.SetSolidWallBC("4_S_23");  // Right
     rk.SetSolidWallBC("4_S_15");  // Gap
   }
 
