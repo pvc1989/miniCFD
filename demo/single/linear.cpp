@@ -10,6 +10,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
+#include "mini/integrator/function.hpp"
 #include "mini/integrator/ode.hpp"
 #include "rkdg.hpp"
 
@@ -83,8 +84,12 @@ int main(int argc, char* argv[]) {
 
   /* Initial Condition */
   Value value_right{ 10 }, value_left{ -10 };
+  double x_0 = 4.0;
   auto initial_condition = [&](const Coord& xyz){
-    return (xyz[0] > 4.0) ? value_right : value_left;
+    return (xyz[0] > x_0) ? value_right : value_left;
+  };
+  auto exact_solution = [&](const Coord& xyz, double t){
+    return (xyz[0] - x_0 > a_x * t) ? value_right : value_left;
   };
 
   if (argc == 7) {
@@ -149,6 +154,20 @@ int main(int argc, char* argv[]) {
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr, limiter);
+
+    double l1_error = 0.0, t_next = t_curr + dt;
+    auto visitor = [&t_next, &exact_solution, &l1_error](const MyCell&cell){
+      auto func = [&t_next, &exact_solution, &cell](const Coord &xyz){
+        auto v_actual = cell.projection_(xyz)[0];
+        auto v_expect = exact_solution(xyz, t_next)[0];
+        return std::abs(v_actual - v_expect);
+      };
+      l1_error += mini::integrator::Integrate(func, cell.gauss());
+    };
+    const auto &const_part = part;
+    const_part.ForEachLocalCell(visitor);
+    std::printf("[%d/%d] t = %f, l1_error = %e\n",
+        i_proc, n_procs, t_next, l1_error);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
