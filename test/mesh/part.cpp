@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
   });
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
-  using MyCell = typename MyPart::CellType;
+  using MyCell = typename MyPart::Cell;
   auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);

@@ -92,14 +92,13 @@ template <typename Int = cgsize_t, typename Real = double,
 struct Face {
   using Gauss = integrator::Face<Real, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using CellPtr = Cell<Int, Real, kFunc, kDim, kOrder> *;
-  using ConstCellPtr = const Cell<Int, Real, kFunc, kDim, kOrder> *;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
 
   GaussUptr gauss_ptr_;
-  CellPtr holder_, sharer_;
+  Cell *holder_, *sharer_;
   Int id_{-1};
 
-  Face(GaussUptr&& gauss_ptr, CellPtr holder, CellPtr sharer, Int id = 0)
+  Face(GaussUptr&& gauss_ptr, Cell *holder, Cell *sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
         id_(id) {
   }
@@ -118,7 +117,7 @@ struct Face {
   Int id() const {
     return id_;
   }
-  ConstCellPtr other(ConstCellPtr cell) const {
+  const Cell *other(const Cell *cell) const {
     assert(cell == sharer_ || cell == holder_);
     return cell == holder_ ? sharer_ : holder_;
   }
@@ -138,10 +137,10 @@ struct Cell {
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using MyFace = Face<Int, Real, kFunc, kDim, kOrder>;
+  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder>;
 
   std::vector<Cell*> adj_cells_;
-  std::vector<MyFace*> adj_faces_;
+  std::vector<Face*> adj_faces_;
   Basis basis_;
   GaussUptr gauss_ptr_;
   Projection projection_;
@@ -197,14 +196,14 @@ struct Cell {
 template <typename Int = cgsize_t, typename Real = double,
     int kFunc = 2, int kDim = 3, int kOrder = 2>
 class CellGroup {
-  using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
   Int head_, size_;
-  ShiftedVector<CellType> cells_;
+  ShiftedVector<Cell> cells_;
   ShiftedVector<ShiftedVector<Real>> fields_;  // [i_field][i_cell]
   int npe_;
 
  public:
-  static constexpr int kFields = CellType::kFields;
+  static constexpr int kFields = Cell::kFields;
 
   CellGroup(int head, int size, int npe)
       : head_(head), size_(size), cells_(size, head), fields_(kFields, 1),
@@ -235,16 +234,16 @@ class CellGroup {
   bool has(int i_cell) const {
     return head() <= i_cell && i_cell < tail();
   }
-  const CellType& operator[](Int i_cell) const {
+  const Cell& operator[](Int i_cell) const {
     return cells_[i_cell];
   }
-  CellType& operator[](Int i_cell) {
+  Cell& operator[](Int i_cell) {
     return cells_[i_cell];
   }
-  const CellType& at(Int i_cell) const {
+  const Cell& at(Int i_cell) const {
     return cells_.at(i_cell);
   }
-  CellType& at(Int i_cell) {
+  Cell& at(Int i_cell) {
     return cells_.at(i_cell);
   }
   auto begin() {
@@ -295,15 +294,18 @@ template <typename Int = cgsize_t, typename Real = double,
     int kFunc = 2, int kDim = 3, int kOrder = 2>
 class Part {
  public:
-  using FaceType = Face<Int, Real, kFunc, kDim, kOrder>;
-  using CellType = Cell<Int, Real, kFunc, kDim, kOrder>;
+  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder>;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
-  using CellGrp = CellGroup<Int, Real, kFunc, kDim, kOrder>;
-  using CellPtr = CellType *;
+  using NodeInfo = cgns::NodeInfo<Int>;
+  using CellInfo = cgns::CellInfo<Int>;
+  using NodeGroup = cgns::NodeGroup<Int, Real>;
+  using CellGroup = cgns::CellGroup<Int, Real, kFunc, kDim, kOrder>;
+  using CellPtr = Cell *;
   static constexpr int kLineWidth = 128;
-  static constexpr int kFields = CellGrp::kFields;
+  static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
@@ -383,7 +385,7 @@ class Part {
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, head, tail;
       std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
-      local_nodes_[i_zone] = NodeGroup<Int, Real>(head, tail - head);
+      local_nodes_[i_zone] = NodeGroup(head, tail - head);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       auto& x = local_nodes_[i_zone].x_;
@@ -408,7 +410,7 @@ class Part {
         cgp_error_exit();
       for (int i_node = head; i_node < tail; ++i_node) {
         auto m_node = metis_id[i_node];
-        m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
+        m_to_node_info_[m_node] = NodeInfo(i_zone, i_node);
       }
     }
   }
@@ -448,7 +450,7 @@ class Part {
       int i_part, m_node, i_zone, i_node;
       std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
       recv_nodes[i_part].emplace_back(m_node);
-      m_to_node_info_[m_node] = NodeInfo<Int>(i_zone, i_node);
+      m_to_node_info_[m_node] = cgns::NodeInfo<Int>(i_zone, i_node);
     }
     std::vector<std::vector<Real>> recv_coords;
     for (auto& [i_part, nodes] : recv_nodes) {
@@ -582,7 +584,7 @@ class Part {
       int npe; cg_npe(type, &npe);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
-        m_to_cell_info_[m_cell] = CellInfo<Int>(i_zone, i_sect, i_cell, npe);
+        m_to_cell_info_[m_cell] = CellInfo(i_zone, i_sect, i_cell, npe);
       }
       nodes.resize(npe * mem_dimensions[0]);
       for (int i = 0; i < index.size(); ++i) {
@@ -591,11 +593,11 @@ class Part {
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
-      local_cells_[i_zone][i_sect] = CellGrp(head, tail - head, npe);
+      local_cells_[i_zone][i_sect] = CellGroup(head, tail - head, npe);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto* i_node_list = &nodes[(i_cell - head) * npe];
         auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = CellType(std::move(gauss_uptr), metis_ids[i_cell]);
+        auto cell = Cell(std::move(gauss_uptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
@@ -718,7 +720,7 @@ class Part {
         int i_zone = recv_buf[index++];
         auto* i_node_list = &recv_buf[index];
         auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = CellType(std::move(gauss_uptr), m_cell);
+        auto cell = Cell(std::move(gauss_uptr), m_cell);
         ghost_cells_[m_cell] = std::move(cell);
         index += npe;
       }
@@ -788,7 +790,7 @@ class Part {
       auto* i_node_list = common_nodes.data();
       SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
-      auto face_uptr = std::make_unique<FaceType>(
+      auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer, local_faces_.size());
       holder.adj_faces_.emplace_back(face_uptr.get());
       sharer.adj_faces_.emplace_back(face_uptr.get());
@@ -832,7 +834,7 @@ class Part {
       auto* i_node_list = common_nodes.data();
       SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
-      auto face_uptr = std::make_unique<FaceType>(
+      auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer,
           local_faces_.size() + ghost_faces_.size());
       holder.adj_faces_.emplace_back(face_uptr.get());
@@ -962,7 +964,7 @@ class Part {
     Int n_points = 0, n_cells = 0;
     auto cells = std::vector<Int>();
     auto coords = std::vector<Mat3x1>();
-    auto fields = std::vector<typename CellType::Value>();
+    auto fields = std::vector<typename Cell::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
@@ -1055,7 +1057,7 @@ class Part {
     Int n_cells = 0;
     auto cells = std::vector<Int>();
     auto coords = std::vector<Mat3x1>();
-    auto fields = std::vector<typename CellType::Value>();
+    auto fields = std::vector<typename Cell::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
@@ -1198,9 +1200,9 @@ class Part {
     }
     ostrm.write(a, sizeof(v));
   }
-  static void WriteSolutionsOnTetra4(const CellType &cell,
+  static void WriteSolutionsOnTetra4(const Cell &cell,
       std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename CellType::Value> *fields) {
+      std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
     cells->emplace_back(coords->size());
@@ -1216,9 +1218,9 @@ class Part {
     coords->emplace_back(gauss_ptr->LocalToGlobal({0, 0, 0}));
     fields->emplace_back(proj(coords->back()));
   }
-  static void WriteSolutionsOnHexa8(const CellType &cell,
+  static void WriteSolutionsOnHexa8(const Cell &cell,
       std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename CellType::Value> *fields) {
+      std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
     cells->emplace_back(coords->size());
@@ -1246,9 +1248,9 @@ class Part {
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
     fields->emplace_back(proj(coords->back()));
   }
-  static void WriteSolutionsOnHexa20(const CellType &cell,
+  static void WriteSolutionsOnHexa20(const Cell &cell,
       std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename CellType::Value> *fields) {
+      std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
     // nodes at corners
@@ -1323,9 +1325,9 @@ class Part {
       int i_real = 0;
       for (auto* cell_ptr : cell_ptrs) {
         const auto& coeff = cell_ptr->projection_.coeff();
-        static_assert(kFields == CellType::K * CellType::N);
-        for (int c = 0; c < CellType::N; ++c) {
-          for (int r = 0; r < CellType::K; ++r) {
+        static_assert(kFields == Cell::K * Cell::N);
+        for (int c = 0; c < Cell::N; ++c) {
+          for (int r = 0; r < Cell::K; ++r) {
             send_buf[i_real++] = coeff(r, c);
           }
         }
@@ -1368,7 +1370,7 @@ class Part {
   void Reconstruct(Callable&& limiter) {
     ShareGhostCellCoeffs();
     // run the limiter on inner cells that need no ghost cells
-    auto new_projections = std::vector<typename CellType::Projection>();
+    auto new_projections = std::vector<typename Cell::Projection>();
     new_projections.reserve(inner_cells_.size());
     for (const auto* cell_ptr : inner_cells_) {
       new_projections.emplace_back(limiter(*cell_ptr));
@@ -1466,15 +1468,15 @@ class Part {
   }
 
  private:
-  std::map<Int, NodeGroup<Int, Real>>
+  std::map<Int, NodeGroup>
       local_nodes_;  // [i_zone] -> a NodeGroup obj
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>>
       ghost_nodes_;  // [i_zone][i_node] -> a Mat3x1 obj
-  std::unordered_map<Int, NodeInfo<Int>>
+  std::unordered_map<Int, NodeInfo>
       m_to_node_info_;  // [m_node] -> a NodeInfo obj
-  std::unordered_map<Int, CellInfo<Int>>
+  std::unordered_map<Int, CellInfo>
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
-  std::map<Int, std::map<Int, CellGrp>>
+  std::map<Int, std::map<Int, CellGroup>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
   std::vector<CellPtr>
       inner_cells_, inter_cells_;  // [i_cell] -> CellPtr
@@ -1482,15 +1484,15 @@ class Part {
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
   std::vector<std::vector<Real>>
       send_coeffs_, recv_coeffs_;
-  std::unordered_map<Int, CellType>
+  std::unordered_map<Int, Cell>
       ghost_cells_;  // [m_cell] -> a Cell obj
   std::vector<std::pair<Int, Int>>
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
-  std::vector<std::unique_ptr<FaceType>>
+  std::vector<std::unique_ptr<Face>>
       local_faces_, ghost_faces_;  // [i_face] -> a uptr of Face
-  std::map<Int, std::map<Int, ShiftedVector<std::unique_ptr<FaceType>>>>
+  std::map<Int, std::map<Int, ShiftedVector<std::unique_ptr<Face>>>>
       bound_faces_;  // [i_zone][i_sect][i_face] -> a uptr of Face
-  std::unordered_map<std::string, ShiftedVector<std::unique_ptr<FaceType>> *>
+  std::unordered_map<std::string, ShiftedVector<std::unique_ptr<Face>> *>
       name_to_faces_;
   std::vector<MPI_Request> requests_;
   std::array<std::string, kFunc> field_names_;
@@ -1561,7 +1563,7 @@ class Part {
             cell_cnt[m_cell]++;
           }
         }
-        CellType *holder_ptr;
+        Cell *holder_ptr;
         for (auto [m_cell, cnt] : cell_cnt) {
           assert(cnt <= npe);
           if (cnt == npe) {  // this cell holds this face
@@ -1576,7 +1578,7 @@ class Part {
           }
         }
         auto gauss_uptr = BuildGaussForFace(npe, i_zone, i_node_list);
-        auto face_uptr = std::make_unique<FaceType>(
+        auto face_uptr = std::make_unique<Face>(
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
         // holder_ptr->adj_faces_.emplace_back(face_uptr.get());
         faces.emplace_back(std::move(face_uptr));

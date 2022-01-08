@@ -36,8 +36,8 @@ extern template class Burgers<3>;
 namespace mini {
 namespace polynomial {
 
-using MyCell0 = mesh::cgns::MyPart0::CellType;
-using MyCell2 = mesh::cgns::MyPart2::CellType;
+using MyCell0 = mesh::cgns::MyPart0::Cell;
+using MyCell2 = mesh::cgns::MyPart2::Cell;
 
 extern template class mini::polynomial::LazyWeno<MyCell0>;
 extern template class mini::polynomial::LazyWeno<MyCell2>;

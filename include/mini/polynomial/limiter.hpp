@@ -109,7 +109,7 @@ template <typename Cell, typename Eigen>
 class EigenWeno {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
-  using Face = typename Cell::MyFace;
+  using Face = typename Cell::Face;
   using Basis = typename Projection::Basis;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;

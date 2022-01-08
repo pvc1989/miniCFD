@@ -16,8 +16,8 @@ class RungeKuttaBase {
  public:
   using Riemann = RiemannType;
   using Part = PartType;
-  using Cell = typename Part::CellType;
-  using Face = typename Part::FaceType;
+  using Cell = typename Part::Cell;
+  using Face = typename Part::Face;
   using Projection = typename Cell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;

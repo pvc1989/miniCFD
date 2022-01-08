@@ -66,8 +66,8 @@ int main(int argc, char* argv[]) {
   constexpr int kOrder = 2;
   constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
   using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
-  using MyCell = typename MyPart::CellType;
-  using MyFace = typename MyPart::FaceType;
+  using MyCell = typename MyPart::Cell;
+  using MyFace = typename MyPart::Face;
   using Coord = typename MyCell::Coord;
   using Value = typename MyCell::Value;
   using Coeff = typename MyCell::Coeff;

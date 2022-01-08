@@ -50,8 +50,8 @@ namespace polynomial {
 
 using MyGas = riemann::euler::IdealGas<double, 1, 4>;
 using MyEigen = riemann::euler::EigenMatrices<MyGas>;
-using MyCell0 = mesh::cgns::MyPart0::CellType;
-using MyCell2 = mesh::cgns::MyPart2::CellType;
+using MyCell0 = mesh::cgns::MyPart0::Cell;
+using MyCell2 = mesh::cgns::MyPart2::Cell;
 
 extern template class mini::polynomial::EigenWeno<MyCell0, MyEigen>;
 extern template class mini::polynomial::EigenWeno<MyCell2, MyEigen>;
