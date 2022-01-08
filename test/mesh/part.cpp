@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
   const auto *part_ptr = &part;
-  part_ptr->ForEachLocalCell([&](const auto &cell){
+  part_ptr->ForEachConstLocalCell([&](const auto &cell){
     volume += cell.volume();
     n_cells += 1;
     n_faces += cell.adj_faces_.size();

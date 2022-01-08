@@ -1392,7 +1392,7 @@ class Part {
 
   // Accessors:
   template<class Visitor>
-  void ForEachLocalCell(Visitor&& visit) const {
+  void ForEachConstLocalCell(Visitor&& visit) const {
     for (const auto& [i_zone, zone] : local_cells_) {
       for (const auto& [i_sect, sect] : zone) {
         for (const auto& cell : sect) {
@@ -1402,19 +1402,19 @@ class Part {
     }
   }
   template<class Visitor>
-  void ForEachLocalFace(Visitor&& visit) const {
+  void ForEachConstLocalFace(Visitor&& visit) const {
     for (auto& face_uptr : local_faces_) {
       visit(*face_uptr);
     }
   }
   template<class Visitor>
-  void ForEachGhostFace(Visitor&& visit) const {
+  void ForEachConstGhostFace(Visitor&& visit) const {
     for (auto& face_uptr : ghost_faces_) {
       visit(*face_uptr);
     }
   }
   template<class Visitor>
-  void ForEachBoundaryFace(Visitor&& visit) const {
+  void ForEachConstBoundaryFace(Visitor&& visit) const {
     for (auto& [i_zone, zone] : bound_faces_) {
       for (auto& [i_sect, sect] : zone) {
         for (auto& face_uptr : sect) {
@@ -1424,8 +1424,8 @@ class Part {
     }
   }
   template<class Visitor>
-  void ForEachBoundaryFace(
-      Visitor&& visit, const std::string &name) const {
+  void ForEachConstBoundaryFace(Visitor&& visit,
+      const std::string &name) const {
     const auto& faces = *name_to_faces_.at(name);
     for (const auto& face_uptr : faces) {
       visit(*face_uptr);

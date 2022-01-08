@@ -57,7 +57,7 @@ class RungeKuttaBase {
  public:
   static void ReadFromLocalCells(const Part &part, std::vector<Coeff> *coeffs) {
     coeffs->resize(part.CountLocalCells());
-    part.ForEachLocalCell([&coeffs](const auto &cell){
+    part.ForEachConstLocalCell([&coeffs](const auto &cell){
       coeffs->at(cell.id())
           = cell.projection_.GetCoeffOnOrthoNormalBasis();
     });
@@ -80,16 +80,16 @@ class RungeKuttaBase {
         solvers[q].Rotate(frame);
       }
     };
-    part.ForEachLocalFace(riemann_builder);
-    part.ForEachGhostFace(riemann_builder);
-    part.ForEachBoundaryFace(riemann_builder);
+    part.ForEachConstLocalFace(riemann_builder);
+    part.ForEachConstGhostFace(riemann_builder);
+    part.ForEachConstBoundaryFace(riemann_builder);
   }
   void InitializeRhs(const Part &part) {
     rhs_.resize(part.CountLocalCells());
     for (auto& coeff : rhs_) {
       coeff.setZero();
     }
-    part.ForEachLocalCell([this](const Cell &cell){
+    part.ForEachConstLocalCell([this](const Cell &cell){
       auto& r = this->rhs_.at(cell.id());
       const auto& gauss = *(cell.gauss_ptr_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
@@ -105,7 +105,7 @@ class RungeKuttaBase {
   }
   void UpdateLocalRhs(const Part &part) {
     assert(rhs_.size() == part.CountLocalCells());
-    part.ForEachLocalFace([this](const Face &face){
+    part.ForEachConstLocalFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
@@ -124,7 +124,7 @@ class RungeKuttaBase {
   }
   void UpdateGhostRhs(const Part &part) {
     assert(rhs_.size() == part.CountLocalCells());
-    part.ForEachGhostFace([this](const Face &face){
+    part.ForEachConstGhostFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
@@ -157,7 +157,7 @@ class RungeKuttaBase {
       }
     };
     for (const auto& name : solid_bc_) {
-      part.ForEachBoundaryFace(visit, name);
+      part.ForEachConstBoundaryFace(visit, name);
     }
   }
   void ApplyFreeOutletBC(const Part &part) {
@@ -176,7 +176,7 @@ class RungeKuttaBase {
       }
     };
     for (const auto& name : free_bc_) {
-      part.ForEachBoundaryFace(visit, name);
+      part.ForEachConstBoundaryFace(visit, name);
     }
   }
   void ApplyPrescribedBC(const Part &part, double t_curr) {
@@ -196,7 +196,7 @@ class RungeKuttaBase {
           this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
         }
       };
-      part.ForEachBoundaryFace(visit, iter->first);
+      part.ForEachConstBoundaryFace(visit, iter->first);
     }
   }
   void UpdateBoundaryRhs(const Part &part, double t_curr) {

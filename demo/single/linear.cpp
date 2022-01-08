@@ -164,8 +164,7 @@ int main(int argc, char* argv[]) {
       };
       l1_error += mini::integrator::Integrate(func, cell.gauss());
     };
-    const auto &const_part = part;
-    const_part.ForEachLocalCell(visitor);
+    part.ForEachConstLocalCell(visitor);
     std::printf("[%d/%d] t = %f, l1_error = %e\n",
         i_proc, n_procs, t_next, l1_error);
 
