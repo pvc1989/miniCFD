@@ -12,10 +12,11 @@
 #include <vector>
 
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
-#include "mini/mesh/mapper.hpp"
 #include "mini/mesh/cgns.hpp"
-#include "mini/mesh/part.hpp"
 #include "mini/mesh/metis.hpp"
+#include "mini/mesh/mapper.hpp"
+#include "mini/mesh/shuffler.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"
@@ -139,37 +140,28 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   }
 }
 TEST_F(TestWenoLimiters, For3dEulerEquations) {
-  auto case_name = std::string("simple_cube");
+  auto case_name = "simple_cube";
   // build a cgns mesh file
   constexpr int kCommandLength = 1024;
   char cmd[kCommandLength];
-  std::snprintf(cmd, kCommandLength, "mkdir -p %s/vector", case_name.c_str());
+  std::snprintf(cmd, kCommandLength, "mkdir -p %s/partition", case_name);
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  auto old_file_name = case_name + "/vector/original.cgns";
+  auto old_file_name = case_name + std::string("/original.cgns");
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
-      test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+      test_data_dir_.c_str(), case_name, old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  using CgnsMesh = mini::mesh::cgns::File<double>;
-  auto cgns_mesh = CgnsMesh(old_file_name);
-  cgns_mesh.ReadBases();
-  // build the dual graph
-  idx_t n_common_nodes{3};
-  auto mapper = mini::mesh::mapper::CgnsToMetis<idx_t, double>();
-  auto metis_mesh = mapper.Map(cgns_mesh);
-  EXPECT_TRUE(mapper.IsValid());
-  auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
-  int n_cells = metis_mesh.CountCells();
-  // build cells and project a vector function on them
-  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 5, 3, 2>;
-  auto cells = std::vector<Cell>();
-  cells.reserve(n_cells);
-  auto& zone = cgns_mesh.GetBase(1).GetZone(1);
-  auto& coordinates = zone.GetCoordinates();
-  auto& x = coordinates.x();
-  auto& y = coordinates.y();
-  auto& z = coordinates.z();
-  auto& sect = zone.GetSection(1);
-  // define the function
+  // build a `Part` from the cgns file
+  MPI_Init(NULL, NULL);
+  int n_procs, i_proc;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_proc);
+  cgp_mpi_comm(MPI_COMM_WORLD);
+  using Shuffler = mini::mesh::Shuffler<idx_t, double>;
+  Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, 5, 3, 2>;
+  auto part = Part(case_name, i_proc);
+  MPI_Finalize();
+  // project the function
   using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
   auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
@@ -181,35 +173,13 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     res[4] = y * y + 90 * (x < y ? +1 : 0.5);
     return res;
   };
-  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
-  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-    // build a new `Cell`
-    Mat3x8 coords;
-    const cgsize_t* array;  // head of 1-based-node-id list
-    array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
-    for (int i = 0; i < 8; ++i) {
-      auto i_node = array[i] - 1;
-      coords(0, i) = x[i_node];
-      coords(1, i) = y[i_node];
-      coords(2, i) = z[i_node];
-    }
-    auto hexa_ptr = std::make_unique<Gauss>(coords);
-    cells.emplace_back(std::move(hexa_ptr), i_cell);
-    assert(&(cells[i_cell]) == &(cells.back()));
-    // project `func` onto the latest built cell
-    cells[i_cell].Project(func);
-  }
-  // fill `adj_cells_`
-  for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-    for (int r = graph.range(i_cell); r < graph.range(i_cell+1); ++r) {
-      int j_cell = graph.index(r);
-      cells[i_cell].adj_cells_.emplace_back(&cells[j_cell]);
-    }
-  }
+  part.Project(func);
   // reconstruct using a `EigenWeno` limiter
+  using Cell = typename Part::Cell;
   using Projection = typename Cell::Projection;
   using IdealGas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Matrices = mini::riemann::euler::EigenMatrices<IdealGas>;
+  auto n_cells = part.CountLocalCells();
   auto eigen_limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
       /* w0 = */0.01, /* eps = */1e-6);
   auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
@@ -218,7 +188,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   eigen_projections.reserve(n_cells);
   auto lazy_projections = std::vector<Projection>();
   lazy_projections.reserve(n_cells);
-  for (auto& cell : cells) {
+  part.ForEachConstLocalCell([&](const Cell &cell){
     //  lasy limiter
     lazy_projections.emplace_back(lazy_limiter(cell));
     auto lazy_smoothness = lazy_projections.back().GetSmoothness();
@@ -237,7 +207,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
     diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
     EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
-  }
+  });
   std::cout << std::endl;
 }
 

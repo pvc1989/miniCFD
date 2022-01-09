@@ -25,6 +25,6 @@ add_test(NAME TestPolynomialProjection COMMAND projection)
 
 add_executable(test_polynomial_limiter limiter.cpp)
 target_include_directories(test_polynomial_limiter PRIVATE ${EIGEN_INC} ${CGNS_INC} ${METIS_INC} ${MPI_CXX_HEADER_DIR})
-target_link_libraries(test_polynomial_limiter ${CGNS_LIB} metis)
+target_link_libraries(test_polynomial_limiter ${CGNS_LIB} ${MPI_mpi_LIBRARY} metis)
 set_target_properties(test_polynomial_limiter PROPERTIES OUTPUT_NAME limiter)
 add_test(NAME TestPolynomialLimiter COMMAND limiter)
