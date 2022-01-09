@@ -6,10 +6,14 @@
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/mesh/part.hpp"
+#include "mini/mesh/shuffler.hpp"
 #include "mini/integrator/ode.hpp"
 
 namespace mini {
 namespace mesh {
+
+extern template class Shuffler<idx_t, double>;
+
 namespace cgns {
 
 extern template class Part<cgsize_t, double, 1, 3, 0>;

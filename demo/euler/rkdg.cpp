@@ -4,6 +4,9 @@
 
 namespace mini {
 namespace mesh {
+
+template class Shuffler<idx_t, double>;
+
 namespace cgns {
 
 template class Part<cgsize_t, double, 5, 3, 0>;

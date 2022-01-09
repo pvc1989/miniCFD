@@ -111,15 +111,15 @@ class Shuffler {
   using CgnsMesh = mini::mesh::cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;
   using Graph = metis::SparseGraphWithDeleter<Int>;
-  using MapperType = mini::mesh::mapper::CgnsToMetis<Int, Real>;
-  using SectionType = mini::mesh::cgns::Section<Real>;
-  using SolutionType = mini::mesh::cgns::Solution<Real>;
-  using FieldType = mini::mesh::cgns::Field<Real>;
+  using Mapper = mini::mesh::mapper::CgnsToMetis<Int, Real>;
+  using Section = mini::mesh::cgns::Section<Real>;
+  using Solution = mini::mesh::cgns::Solution<Real>;
+  using Field = mini::mesh::cgns::Field<Real>;
 
   Shuffler(Int n_parts, std::vector<Int> const& cell_parts,
            std::vector<Int> const& node_parts,
            const Graph& graph, const MetisMesh& metis_mesh,
-           CgnsMesh* cgns_mesh, MapperType* mapper)
+           CgnsMesh* cgns_mesh, Mapper* mapper)
       : n_parts_{n_parts}, cell_parts_{cell_parts}, node_parts_{node_parts},
         graph_(graph), metis_mesh_(metis_mesh), cgns_mesh_(cgns_mesh),
         mapper_(mapper) {
@@ -135,17 +135,17 @@ class Shuffler {
   std::vector<Int> const& node_parts_;
   std::map<Int, std::map<Int, cgns::ShiftedVector<Int>>> face_parts_;
   CgnsMesh* cgns_mesh_;
-  MapperType* mapper_;
+  Mapper* mapper_;
   Graph const& graph_;
   MetisMesh const& metis_mesh_;
   Int n_parts_;
 
-  void FillFaceParts(const CgnsMesh& mesh, const MapperType& mapper);
+  void FillFaceParts(const CgnsMesh& mesh, const Mapper& mapper);
 };
 
 template <typename Int, class Real>
 void Shuffler<Int, Real>::FillFaceParts(
-    const CgnsMesh& mesh, const MapperType& mapper) {
+    const CgnsMesh& mesh, const Mapper& mapper) {
   auto& m_to_c_nodes = mapper.metis_to_cgns_for_nodes;
   auto& m_to_c_cells = mapper.metis_to_cgns_for_cells;
   auto& c_to_m_nodes = mapper.cgns_to_metis_for_nodes;
