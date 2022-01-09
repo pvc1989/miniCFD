@@ -299,7 +299,6 @@ class Part {
   using CellInfo = cgns::CellInfo<Int>;
   using NodeGroup = cgns::NodeGroup<Int, Real>;
   using CellGroup = cgns::CellGroup<Int, Real, kFunc, kDim, kOrder>;
-  using CellPtr = Cell *;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
@@ -1474,10 +1473,10 @@ class Part {
       m_to_cell_info_;  // [m_cell] -> a CellInfo obj
   std::map<Int, std::map<Int, CellGroup>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
-  std::vector<CellPtr>
-      inner_cells_, inter_cells_;  // [i_cell] -> CellPtr
-  std::map<Int, std::vector<CellPtr>>
-      send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<CellPtr>
+  std::vector<Cell*>
+      inner_cells_, inter_cells_;  // [i_cell] -> Cell*
+  std::map<Int, std::vector<Cell*>>
+      send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<Cell*>
   std::vector<std::vector<Real>>
       send_coeffs_, recv_coeffs_;
   std::unordered_map<Int, Cell>
