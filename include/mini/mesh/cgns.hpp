@@ -31,7 +31,7 @@ template <class Real> class Section;
 template <class Real> class ZoneBC;
 template <class Real> class Solution;
 
-template <typename Int = int>
+template <typename Int>
 class ShiftedVector : public std::vector<Int> {
  private:
   using Base = std::vector<Int>;

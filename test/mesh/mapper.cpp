@@ -15,7 +15,7 @@ namespace mapper {
 
 class MeshMapperTest : public ::testing::Test {
  protected:
-  using Mapper = CgnsToMetis<double, idx_t>;
+  using Mapper = CgnsToMetis<idx_t, double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
@@ -25,7 +25,7 @@ TEST_F(MeshMapperTest, MapCgnsToMetis) {
   auto file_name = test_data_dir_ + "/ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(file_name);
   cgns_mesh.ReadBases();
-  auto mapper = CgnsToMetis();
+  auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   auto* cell_ptr = &(metis_mesh.range(0));
   auto* i_cellx = &(metis_mesh.nodes(0));

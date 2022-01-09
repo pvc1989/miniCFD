@@ -45,7 +45,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   using CgnsMesh = mini::mesh::cgns::File<double>;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
-  using Mapper = mini::mesh::mapper::CgnsToMetis<double, idx_t>;
+  using Mapper = mini::mesh::mapper::CgnsToMetis<idx_t, double>;
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
@@ -61,7 +61,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     }
   }
   // build cells and project the function on them
-  using Cell = mini::mesh::cgns::Cell<int, double, 1>;
+  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 1, 3, 2>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -154,13 +154,13 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   cgns_mesh.ReadBases();
   // build the dual graph
   idx_t n_common_nodes{3};
-  auto mapper = mini::mesh::mapper::CgnsToMetis<double, idx_t>();
+  auto mapper = mini::mesh::mapper::CgnsToMetis<idx_t, double>();
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
   auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
   int n_cells = metis_mesh.CountCells();
   // build cells and project a vector function on them
-  using Cell = mini::mesh::cgns::Cell<int, double, 5>;
+  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 5, 3, 2>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);

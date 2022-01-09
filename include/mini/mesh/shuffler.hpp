@@ -28,7 +28,7 @@ namespace mesh {
  * @param n 
  * @return a pair of std::vector<int>
  */
-template <typename T = int>
+template <typename T>
 std::pair<std::vector<int>, std::vector<int>>
 GetNewOrder(const T* parts, int n) {
   auto new_to_old = std::vector<int>(n);
@@ -111,7 +111,7 @@ class Shuffler {
   using CgnsMesh = mini::mesh::cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;
   using Graph = metis::SparseGraphWithDeleter<Int>;
-  using MapperType = mini::mesh::mapper::CgnsToMetis<Real, Int>;
+  using MapperType = mini::mesh::mapper::CgnsToMetis<Int, Real>;
   using SectionType = mini::mesh::cgns::Section<Real>;
   using SolutionType = mini::mesh::cgns::Solution<Real>;
   using FieldType = mini::mesh::cgns::Field<Real>;
@@ -508,7 +508,7 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   auto cgns_mesh = cgns::File<Real>(old_cgns_name);
   cgns_mesh.ReadBases();
   /* Partition the mesh: */
-  auto mapper = mapper::CgnsToMetis<Real, Int>();
+  auto mapper = mapper::CgnsToMetis<Int, Real>();
   metis::Mesh<Int> metis_mesh = mapper.Map(cgns_mesh);
   assert(mapper.IsValid());
   Int n_common_nodes{3};

@@ -35,7 +35,7 @@ void print(Object&& obj) {
   std::cout << obj << '\n' << std::endl;
 }
 
-template <class Int = cgsize_t>
+template <class Int>
 struct NodeInfo {
   NodeInfo() = default;
   NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
@@ -46,7 +46,7 @@ struct NodeInfo {
   ~NodeInfo() noexcept = default;
   Int i_zone{0}, i_node{0};
 };
-template <class Int = cgsize_t>
+template <class Int>
 struct CellInfo {
   CellInfo() = default;
   CellInfo(Int z, Int s, Int c, Int n)
@@ -59,7 +59,7 @@ struct CellInfo {
   Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
-template <typename Int = cgsize_t, typename Real = double>
+template <typename Int, typename Real>
 struct NodeGroup {
   Int head_, size_;
   ShiftedVector<Int> metis_id_;
@@ -87,8 +87,7 @@ struct NodeGroup {
 template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 struct Cell;
 
-template <typename Int = cgsize_t, typename Real = double,
-    int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 struct Face {
   using Gauss = integrator::Face<Real, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
@@ -123,8 +122,7 @@ struct Face {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double,
-    int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 struct Cell {
   using Gauss = integrator::Cell<Real>;
   using GaussUptr = std::unique_ptr<Gauss>;
@@ -193,8 +191,7 @@ struct Cell {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double,
-    int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 class CellGroup {
   using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
   Int head_, size_;
@@ -290,8 +287,7 @@ class CellGroup {
   }
 };
 
-template <typename Int = cgsize_t, typename Real = double,
-    int kFunc = 2, int kDim = 3, int kOrder = 2>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
 class Part {
  public:
   using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder>;
