@@ -106,12 +106,12 @@ class Projection {
     return mat_x.col(0);
   }
   MatKx1 GetSmoothness() const {
-    auto mat_pdv_prod = [&](Coord const& xyz) {
+    auto mat_pdv_func = [&](Coord const& xyz) {
       auto mat_pdv = GetPdvValue(xyz);
-      mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
+      mat_pdv = mat_pdv.cwiseAbs();
       return mat_pdv;
     };
-    auto integral = integrator::Integrate(mat_pdv_prod, basis_ptr_->GetGauss());
+    auto integral = integrator::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
     return Raw<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
   }

@@ -187,13 +187,13 @@ class Raw<Scalar, 3, 2> {
       const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     auto w1  // weight of 1st-order partial derivatives
-        = std::pow(volume, 2./3-1);
+        = std::pow(volume, 1./3-1);
     MatKx1 smoothness = integral.col(1);
     smoothness += integral.col(2);
     smoothness += integral.col(3);
     smoothness *= w1;
     auto w2  // weight of 2nd-order partial derivatives
-        = std::pow(volume, 4./3-1) / 4;
+        = std::pow(volume, 2./3-1) / 4;
     smoothness += integral.col(4) * w2;
     smoothness += integral.col(5) * w2;
     smoothness += integral.col(6) * w2;
