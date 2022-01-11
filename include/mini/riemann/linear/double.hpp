@@ -29,7 +29,8 @@ class Double {
   Double() : a_const_{{1, 0}, {0, -1}} {Decompose(); }
   explicit Double(Jacobi const& a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right) const {
+  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right)
+      const {
     Flux flux;
     if (0 <= eigen_values_[0]) {
       flux = GetFlux(left);
@@ -46,7 +47,8 @@ class Double {
   }
 
  private:
-  Flux FluxInsideSector(Conservative const& left, Conservative const& right, int k) const {
+  Flux FluxInsideSector(Conservative const& left, Conservative const& right,
+      int k) const {
     Flux flux{0, 0};
     for (int i = 0; i < k; i++) {
       Row l = {eigen_matrix_l_[i][0], eigen_matrix_l_[i][1]};

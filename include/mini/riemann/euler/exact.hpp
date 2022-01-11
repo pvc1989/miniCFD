@@ -134,7 +134,8 @@ class Implementor {
       u += (divisor ? (after.p() - before.p()) / divisor
                     : before.u());
     }
-    double GetDensityAfterIt(const Primitive& before, const Primitive& after) const {
+    double GetDensityAfterIt(const Primitive& before, const Primitive& after)
+        const {
       auto divisor = after.u() - u;
       return divisor ? before.rho() * (before.u() - u) / divisor
                      : before.rho();
@@ -143,7 +144,8 @@ class Implementor {
   static bool TimeAxisAfterShock(Shock<1> const& wave) { return wave.u < 0; }
   static bool TimeAxisAfterShock(Shock<3> const& wave) { return wave.u > 0; }
   template <int kField>
-  static Primitive PrimitiveNearShock(const Primitive& before, Primitive* after) {
+  static Primitive PrimitiveNearShock(const Primitive& before,
+      Primitive* after) {
     static_assert(kField == 1 || kField == 3);
     auto shock = Shock<kField>(before, *after);
     if (TimeAxisAfterShock(shock)) {  // i.e. (x=0, t) is AFTER the shock.
@@ -199,7 +201,8 @@ class Implementor {
     return kField == 1 ? (u - a > 0) : (u + a < 0);
   }
   template <int kField>
-  static Primitive PrimitiveNearExpansion(const Primitive& before, Primitive* after) {
+  static Primitive PrimitiveNearExpansion(const Primitive& before,
+      Primitive* after) {
     static_assert(kField == 1 || kField == 3);
     auto wave = Expansion<kField>(before, *after);
     if (TimeAxisAfterExpansion<kField>(after->u(), wave.a_after)) {
@@ -213,7 +216,8 @@ class Implementor {
       return PrimitiveInsideExpansion(wave.gri_1, wave.gri_2);
     }
   }
-  static Primitive PrimitiveNearVacuum(const Primitive& left, const Primitive& right) {
+  static Primitive PrimitiveNearVacuum(const Primitive& left,
+      const Primitive& right) {
     auto left_a = Gas::GetSpeedOfSound(left);
     if (left.u() > left_a) {  // Axis[t] <<< Wave[1].
       return left;

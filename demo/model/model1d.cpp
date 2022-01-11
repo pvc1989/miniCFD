@@ -234,11 +234,11 @@ class Euler1DTest {
     // model.SetSolidBoundary("left");
     // model.SetSolidBoundary("right");
     // Set Initial Conditions:
-    // TODO: move to main()
+    // TODO(PVC): move to main()
     /* Sod */
     // auto  left = State{1.00, 0, 0, 1.0};
     // auto right = State{.125, 0, 0, 0.1};
-    
+
     /* Collision (start=0, stop=0.04, steps=2000)
     auto  left = State{5.99924, 19.59750, 0, 460.894};
     auto right = State{5.99242, -6.19633, 0, 46.0950};

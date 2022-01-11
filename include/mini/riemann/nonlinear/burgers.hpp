@@ -29,7 +29,8 @@ class Burgers {
   Burgers() : k_(1) {}
   explicit Burgers(double k) : k_(k) {}
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right) const {
+  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right)
+      const {
     if (k_ == 0.0) { return 0.0; }
     Conservative left_ = k_ * left;
     Conservative right_ = k_ * right;

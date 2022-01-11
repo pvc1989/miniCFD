@@ -30,7 +30,8 @@ class Single {
   Single() : a_const_(1) {}
   explicit Single(Jacobi const& a_const) : a_const_(a_const) {}
   // Get F on T Axia:
-  Flux GetFluxOnTimeAxis(const Conservative& left, const Conservative& right) const {
+  Flux GetFluxOnTimeAxis(const Conservative& left, const Conservative& right)
+      const {
     if (0 < a_const_) {
       return left * a_const_;
     } else {
