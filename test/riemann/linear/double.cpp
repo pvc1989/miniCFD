@@ -12,11 +12,10 @@ namespace linear {
 
 class TestDoubleWave : public ::testing::Test {
  protected:
-  using Solver = Double;
-  using Conservative = Solver::Conservative;
-  using Flux = Solver::Flux;
-  using Column = Solver::Column;
-  using Matrix = Solver::Matrix;
+  using Solver = Double<3>;
+  using Conservative = typename Solver::Conservative;
+  using Flux = typename Solver::Flux;
+  using Matrix = typename Solver::Matrix;
   Conservative left{1.0, 11.0}, right{2.0, 22.0};
 };
 TEST_F(TestDoubleWave, TestTwoLeftRunningWaves) {
