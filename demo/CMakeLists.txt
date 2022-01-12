@@ -1,4 +1,4 @@
-add_subdirectory(single)
+add_subdirectory(linear)
 add_subdirectory(burgers)
 add_subdirectory(euler)
 
