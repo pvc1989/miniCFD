@@ -12,7 +12,6 @@
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/ode.hpp"
-#include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
