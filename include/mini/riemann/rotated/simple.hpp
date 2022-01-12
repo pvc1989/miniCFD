@@ -46,7 +46,7 @@ class Simple {
   }
   void Rotate(const Scalar& n_x, const Scalar& n_y,  const Scalar& n_z) {
     static_assert(D == 3);
-    auto a_normal = global_coefficient[x] * n_x;
+    Jacobi a_normal = global_coefficient[x] * n_x;
     a_normal += global_coefficient[y] * n_y;
     a_normal += global_coefficient[z] * n_z;
     unrotated_simple_ = UnrotatedSimple(a_normal);
@@ -75,8 +75,7 @@ class Simple {
   static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
-      flux_mat.col(c) = state;
-      flux_mat.col(c) *= global_coefficient[c];
+      flux_mat.col(c) = global_coefficient[c] * state;
     }
     return flux_mat;
   }

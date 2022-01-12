@@ -5,6 +5,7 @@ target_link_libraries(demo_single_rkdg cgns_shared metis ${MPI_mpi_LIBRARY})
 set (cases
   linear
   burgers
+  double
 )
 foreach (case ${cases})
   add_executable(demo_single_${case} ${case}.cpp)
