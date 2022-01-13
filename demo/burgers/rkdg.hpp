@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef DEMO_SINGLE_RKDG_HPP_
-#define DEMO_SINGLE_RKDG_HPP_
+#ifndef DEMO_BURGERS_RKDG_HPP_
+#define DEMO_BURGERS_RKDG_HPP_
 
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/riemann/rotated/single.hpp"
@@ -54,4 +54,4 @@ extern template class RungeKutta<1, mini::mesh::cgns::MyPart0,
 extern template class RungeKutta<3, mini::mesh::cgns::MyPart2,
     mini::riemann::rotated::Burgers<3>>;
 
-#endif  // DEMO_SINGLE_RKDG_HPP_
+#endif  // DEMO_BURGERS_RKDG_HPP_
