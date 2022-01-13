@@ -36,8 +36,8 @@ int main(int argc, char* argv[]) {
       case_name.c_str(), i_proc,
       i_proc, n_procs, MPI_Wtime() - time_begin);
   constexpr int kFunc{2}, kDim{3}, kOrder{2};
-  using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
-  auto part = MyPart(case_name, i_proc);
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  auto part = Part(case_name, i_proc);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
   const auto *part_ptr = &part;
@@ -65,8 +65,8 @@ int main(int argc, char* argv[]) {
   });
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
-  using MyCell = typename MyPart::Cell;
-  auto lazy_limiter = mini::polynomial::LazyWeno<MyCell>(
+  using Cell = typename Part::Cell;
+  auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",

@@ -15,7 +15,7 @@ namespace integrator {
 class TestTetra : public ::testing::Test {
  protected:
   static constexpr int kQuad = 24;
-  using MyTetra = Tetra<double, kQuad>;
+  using Tetra = integrator::Tetra<double, kQuad>;
   using Mat1x4 = algebra::Matrix<double, 1, 4>;
   using Mat3x4 = algebra::Matrix<double, 3, 4>;
   using Mat3x1 = algebra::Matrix<double, 3, 1>;
@@ -25,7 +25,7 @@ TEST_F(TestTetra, VirtualMethods) {
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
   xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = MyTetra(xyz_global_i);
+  auto tetra = Tetra(xyz_global_i);
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
@@ -37,7 +37,7 @@ TEST_F(TestTetra, CommonMethods) {
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
   xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = MyTetra(xyz_global_i);
+  auto tetra = Tetra(xyz_global_i);
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));

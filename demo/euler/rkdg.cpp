@@ -28,7 +28,7 @@ template class Exact<IdealGas<double, 1, 4>, 3>;
 
 namespace rotated {
 
-template class Euler<euler::MyRiemann>;
+template class Euler<euler::Riemann>;
 
 }  // namespace rotated
 
@@ -38,13 +38,13 @@ template class Euler<euler::MyRiemann>;
 namespace mini {
 namespace polynomial {
 
-template class mini::polynomial::EigenWeno<MyCell0, MyEigen>;
-template class mini::polynomial::EigenWeno<MyCell2, MyEigen>;
+template class mini::polynomial::EigenWeno<Cell0, Eigen>;
+template class mini::polynomial::EigenWeno<Cell2, Eigen>;
 
 }  // namespace polynomial
 }  // namespace mini
 
-template class RungeKutta<1, mini::mesh::cgns::MyPart0,
-    mini::riemann::rotated::MyRiemann>;
-template class RungeKutta<3, mini::mesh::cgns::MyPart2,
-    mini::riemann::rotated::MyRiemann>;
+template class RungeKutta<1, mini::mesh::cgns::Part0,
+    mini::riemann::rotated::Riemann>;
+template class RungeKutta<3, mini::mesh::cgns::Part2,
+    mini::riemann::rotated::Riemann>;

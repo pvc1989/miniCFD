@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
 
   /* Partition the mesh */
   if (i_proc == 0 && n_parts_prev != n_procs) {
-    using MyShuffler = mini::mesh::Shuffler<idx_t, double>;
-    MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
+    using Shuffler = mini::mesh::Shuffler<idx_t, double>;
+    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -62,24 +62,24 @@ int main(int argc, char* argv[]) {
   constexpr int kDim = 3;
   constexpr int kOrder = 2;
   constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
-  using MyPart = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
-  using MyCell = typename MyPart::Cell;
-  using MyFace = typename MyPart::Face;
-  using Coord = typename MyCell::Coord;
-  using Value = typename MyCell::Value;
-  using Coeff = typename MyCell::Coeff;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Cell = typename Part::Cell;
+  using Face = typename Part::Face;
+  using Coord = typename Cell::Coord;
+  using Value = typename Cell::Value;
+  using Coeff = typename Cell::Coeff;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
       i_proc, n_procs, MPI_Wtime() - time_begin);
-  auto part = MyPart(case_name, i_proc);
+  auto part = Part(case_name, i_proc);
   part.SetFieldNames({"U"});
 
   /* Single-wave equation */
-  using MyRiemann = mini::riemann::rotated::Single<kDim>;
+  using Riemann = mini::riemann::rotated::Single<kDim>;
   auto a_x = -10.0;
-  MyRiemann::global_coefficient = { a_x, 0, 0 };
-  using MyLimiter = mini::polynomial::LazyWeno<MyCell>;
-  auto limiter = MyLimiter(/* w0 = */0.001, /* eps = */1e-6);
+  Riemann::global_coefficient = { a_x, 0, 0 };
+  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Initial Condition */
   Value value_right{ 10 }, value_left{ -10 };
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
   if (argc == 7) {
     std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
         i_proc, n_procs, MPI_Wtime() - time_begin);
-    part.ForEachLocalCell([&](MyCell *cell_ptr){
+    part.ForEachLocalCell([&](Cell *cell_ptr){
       cell_ptr->Project(initial_condition);
     });
 
@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  auto rk = RungeKutta<kTemporalAccuracy, MyPart, MyRiemann>(dt);
+  auto rk = RungeKutta<kTemporalAccuracy, Part, Riemann>(dt);
   rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
     rk.Update(&part, t_curr, limiter);
 
     double l1_error = 0.0, t_next = t_curr + dt;
-    auto visitor = [&t_next, &exact_solution, &l1_error](const MyCell&cell){
+    auto visitor = [&t_next, &exact_solution, &l1_error](const Cell&cell){
       auto func = [&t_next, &exact_solution, &cell](const Coord &xyz){
         auto v_actual = cell.projection_(xyz)[0];
         auto v_expect = exact_solution(xyz, t_next)[0];

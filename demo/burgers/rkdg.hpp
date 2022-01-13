@@ -19,8 +19,8 @@ namespace cgns {
 extern template class Part<cgsize_t, double, 1, 3, 0>;
 extern template class Part<cgsize_t, double, 1, 3, 2>;
 
-using MyPart0 = Part<cgsize_t, double, 1, 3, 0>;
-using MyPart2 = Part<cgsize_t, double, 1, 3, 2>;
+using Part0 = Part<cgsize_t, double, 1, 3, 0>;
+using Part2 = Part<cgsize_t, double, 1, 3, 2>;
 
 }  // namespace cgns
 }  // namespace mesh
@@ -40,18 +40,18 @@ extern template class Burgers<3>;
 namespace mini {
 namespace polynomial {
 
-using MyCell0 = mesh::cgns::MyPart0::Cell;
-using MyCell2 = mesh::cgns::MyPart2::Cell;
+using Cell0 = mesh::cgns::Part0::Cell;
+using Cell2 = mesh::cgns::Part2::Cell;
 
-extern template class mini::polynomial::LazyWeno<MyCell0>;
-extern template class mini::polynomial::LazyWeno<MyCell2>;
+extern template class mini::polynomial::LazyWeno<Cell0>;
+extern template class mini::polynomial::LazyWeno<Cell2>;
 
 }  // namespace polynomial
 }  // namespace mini
 
-extern template class RungeKutta<1, mini::mesh::cgns::MyPart0,
+extern template class RungeKutta<1, mini::mesh::cgns::Part0,
     mini::riemann::rotated::Burgers<3>>;
-extern template class RungeKutta<3, mini::mesh::cgns::MyPart2,
+extern template class RungeKutta<3, mini::mesh::cgns::Part2,
     mini::riemann::rotated::Burgers<3>>;
 
 #endif  // DEMO_BURGERS_RKDG_HPP_

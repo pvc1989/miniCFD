@@ -27,7 +27,7 @@ char case_name[33] = "double_mach";
 
 class ShufflerTest : public ::testing::Test {
  protected:
-  using MyShuffler = Shuffler<idx_t, double>;
+  using Shuffler = mesh::Shuffler<idx_t, double>;
   std::string const test_data_dir_{TEST_DATA_DIR};
 };
 TEST_F(ShufflerTest, GetNewOrder) {
@@ -74,7 +74,7 @@ TEST_F(ShufflerTest, ParitionAndShuffle) {
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name, old_file_name.c_str());
   std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
-  MyShuffler::PartitionAndShuffle(case_name, old_file_name, n_parts);
+  Shuffler::PartitionAndShuffle(case_name, old_file_name, n_parts);
 }
 
 }  // namespace mesh
