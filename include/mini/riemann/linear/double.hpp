@@ -110,7 +110,7 @@ class Double {
   Matrix eigen_matrix_r_;
   Matrix eigen_matrix_l_;
   Matrix a_const_;
-  Vector eigen_values_;
+  Column eigen_values_;
 };
 
 }  // namespace linear
