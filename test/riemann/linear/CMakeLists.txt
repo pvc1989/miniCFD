@@ -5,3 +5,7 @@ add_test(NAME TestRiemannLinearSingle COMMAND single)
 add_executable(test_riemann_linear_double double.cpp)
 set_target_properties(test_riemann_linear_double PROPERTIES OUTPUT_NAME double)
 add_test(NAME TestRiemannLinearDouble COMMAND double)
+
+add_executable(test_riemann_linear_multiple multiple.cpp)
+set_target_properties(test_riemann_linear_multiple PROPERTIES OUTPUT_NAME multiple)
+add_test(NAME TestRiemannLinearMultiple COMMAND multiple)
