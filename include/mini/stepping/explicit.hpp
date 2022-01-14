@@ -11,11 +11,12 @@
 
 #include "mini/mesh/part.hpp"
 
-template <typename PartType, typename RiemannType>
+template <typename P, typename R, typename L>
 class RungeKuttaBase {
  public:
-  using Riemann = RiemannType;
-  using Part = PartType;
+  using Limiter = L;
+  using Riemann = R;
+  using Part = P;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Projection = typename Cell::Projection;
@@ -29,11 +30,12 @@ class RungeKuttaBase {
   std::vector<std::string> free_bc_, solid_bc_;
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> prescribed_bc_;
+  Limiter limiter_;
   double dt_;
 
  public:
-  explicit RungeKuttaBase(double dt)
-      : dt_(dt) {
+  RungeKuttaBase(double dt, const Limiter &limiter)
+      : dt_(dt), limiter_(limiter) {
     assert(dt > 0.0);
   }
   RungeKuttaBase(const RungeKuttaBase &) = default;
@@ -206,18 +208,19 @@ class RungeKuttaBase {
   }
 };
 
-template <int kSteps, typename PartType, typename RiemannType>
+template <int kSteps, typename Part, typename Riemann, typename Limiter>
 struct RungeKutta;
 
-template <typename PartType, typename RiemannType>
-struct RungeKutta<1, PartType, RiemannType>
-    : public RungeKuttaBase<PartType, RiemannType> {
+template <typename P, typename R, typename L>
+struct RungeKutta<1, P, R, L>
+    : public RungeKuttaBase<P, R, L> {
  private:
-  using Base = RungeKuttaBase<PartType, RiemannType>;
+  using Base = RungeKuttaBase<P, R, L>;
 
  public:
   using Part = typename Base::Part;
   using Riemann = typename Base::Riemann;
+  using Limiter = typename Base::Limiter;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -236,8 +239,7 @@ struct RungeKutta<1, PartType, RiemannType>
   ~RungeKutta() noexcept = default;
 
  public:
-  template <class Limiter>
-  void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
+  void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
 
     Base::ReadFromLocalCells(part, &u_old_);
@@ -255,19 +257,20 @@ struct RungeKutta<1, PartType, RiemannType>
       u_new_[i_cell] += u_old_[i_cell];
     }
     Base::WriteToLocalCells(u_new_, part_ptr);
-    // part_ptr->Reconstruct(limiter);  // only for high order methods
+    // part_ptr->Reconstruct(this->limiter_);  // only for high order methods
   }
 };
 
-template <typename PartType, typename RiemannType>
-struct RungeKutta<3, PartType, RiemannType>
-    : public RungeKuttaBase<PartType, RiemannType> {
+template <typename P, typename R, typename L>
+struct RungeKutta<3, P, R, L>
+    : public RungeKuttaBase<P, R, L> {
  private:
-  using Base = RungeKuttaBase<PartType, RiemannType>;
+  using Base = RungeKuttaBase<P, R, L>;
 
  public:
   using Part = typename Base::Part;
   using Riemann = typename Base::Riemann;
+  using Limiter = typename Base::Limiter;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -286,8 +289,7 @@ struct RungeKutta<3, PartType, RiemannType>
   ~RungeKutta() noexcept = default;
 
  public:
-  template <class Limiter>
-  void Update(Part *part_ptr, double t_curr, Limiter&& limiter) {
+  void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
 
     Base::ReadFromLocalCells(part, &u_old_);
@@ -299,7 +301,7 @@ struct RungeKutta<3, PartType, RiemannType>
     this->UpdateGhostRhs(part);
     this->SolveFrac13();
     Base::WriteToLocalCells(u_frac13_, part_ptr);
-    part_ptr->Reconstruct(limiter);
+    part_ptr->Reconstruct(this->limiter_);
 
     Base::ReadFromLocalCells(part, &u_frac13_);
     part_ptr->ShareGhostCellCoeffs();
@@ -310,7 +312,7 @@ struct RungeKutta<3, PartType, RiemannType>
     this->UpdateGhostRhs(part);
     this->SolveFrac23();
     Base::WriteToLocalCells(u_frac23_, part_ptr);
-    part_ptr->Reconstruct(limiter);
+    part_ptr->Reconstruct(this->limiter_);
 
     Base::ReadFromLocalCells(part, &u_frac23_);
     part_ptr->ShareGhostCellCoeffs();
@@ -321,7 +323,7 @@ struct RungeKutta<3, PartType, RiemannType>
     this->UpdateGhostRhs(part);
     this->SolveFrac33();
     Base::WriteToLocalCells(u_new_, part_ptr);
-    part_ptr->Reconstruct(limiter);
+    part_ptr->Reconstruct(this->limiter_);
   }
 
  private:

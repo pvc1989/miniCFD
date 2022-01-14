@@ -45,6 +45,6 @@ template class mini::polynomial::EigenWeno<Cell2, Eigen>;
 }  // namespace mini
 
 template class RungeKutta<1, mini::mesh::cgns::Part0,
-    mini::riemann::rotated::Riemann>;
+    mini::riemann::rotated::Riemann, mini::polynomial::Limiter0>;
 template class RungeKutta<3, mini::mesh::cgns::Part2,
-    mini::riemann::rotated::Riemann>;
+    mini::riemann::rotated::Riemann, mini::polynomial::Limiter2>;

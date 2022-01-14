@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  auto rk = RungeKutta<kSteps, Part, Riemann>(dt);
+  auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
   rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
   /* Main Loop */
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
-    rk.Update(&part, t_curr, limiter);
+    rk.Update(&part, t_curr);
 
     double l1_error = 0.0, t_next = t_curr + dt;
     auto visitor = [&t_next, &exact_solution, &l1_error](const Cell&cell){

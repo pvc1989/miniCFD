@@ -54,18 +54,22 @@ namespace polynomial {
 
 using Gas = riemann::euler::IdealGas<double, 1, 4>;
 using Eigen = riemann::euler::EigenMatrices<Gas>;
+
 using Cell0 = mesh::cgns::Part0::Cell;
 using Cell2 = mesh::cgns::Part2::Cell;
 
 extern template class mini::polynomial::EigenWeno<Cell0, Eigen>;
 extern template class mini::polynomial::EigenWeno<Cell2, Eigen>;
 
+using Limiter0 = mini::polynomial::EigenWeno<Cell0, Eigen>;
+using Limiter2 = mini::polynomial::EigenWeno<Cell2, Eigen>;
+
 }  // namespace polynomial
 }  // namespace mini
 
 extern template class RungeKutta<1, mini::mesh::cgns::Part0,
-    mini::riemann::rotated::Riemann>;
+    mini::riemann::rotated::Riemann, mini::polynomial::Limiter0>;
 extern template class RungeKutta<3, mini::mesh::cgns::Part2,
-    mini::riemann::rotated::Riemann>;
+    mini::riemann::rotated::Riemann, mini::polynomial::Limiter2>;
 
 #endif  // DEMO_EULER_RKDG_HPP_
