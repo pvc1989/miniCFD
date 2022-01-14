@@ -9,7 +9,7 @@
 #include "mini/polynomial/limiter.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/shuffler.hpp"
-#include "mini/integrator/ode.hpp"
+#include "mini/stepping/explicit.hpp"
 
 namespace mini {
 namespace mesh {

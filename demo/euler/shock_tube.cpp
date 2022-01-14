@@ -13,7 +13,7 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/integrator/ode.hpp"
+#include "mini/stepping/explicit.hpp"
 #include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {

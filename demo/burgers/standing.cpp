@@ -10,7 +10,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/integrator/ode.hpp"
+#include "mini/stepping/explicit.hpp"
 #include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {
