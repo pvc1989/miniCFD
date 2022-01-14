@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   constexpr int kFunc = 5;
   constexpr int kDim = 3;
   constexpr int kOrder = 0;
-  constexpr int kTemporalAccuracy = std::min(3, kOrder + 1);
+  constexpr int kSteps = std::min(3, kOrder + 1);
   using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  auto rk = RungeKutta<kTemporalAccuracy, Part, Riemann>(dt);
+  auto rk = RungeKutta<kSteps, Part, Riemann>(dt);
   rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */

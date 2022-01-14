@@ -206,7 +206,7 @@ class RungeKuttaBase {
   }
 };
 
-template <int kTemporalAccuracy, typename PartType, typename RiemannType>
+template <int kSteps, typename PartType, typename RiemannType>
 struct RungeKutta;
 
 template <typename PartType, typename RiemannType>
