@@ -170,19 +170,21 @@ class Euler {
   }
 
  private:
+  using EigenMatrices = riemann::euler::EigenMatrices<Gas>;
+  EigenMatrices eigen_matrices_;
   UnrotatedEuler unrotated_euler_;
   Cartesian<Scalar, kDim> cartesian_;
 
- private:
-  using EigenMatrices = riemann::euler::EigenMatrices<Gas>;
-  EigenMatrices eigen_matrices_;
-
  public:
   using Matrix = typename EigenMatrices::Mat5x5;
-  const Matrix& L(const Conservative& big_u) const {
+  void UpdateEigenMatrices(const Conservative& big_u) {
+    eigen_matrices_ = EigenMatrices(big_u,
+        cartesian_.nu(), cartesian_.sigma(), cartesian_.pi());
+  }
+  const Matrix& L() const {
     return eigen_matrices_.L;
   }
-  const Matrix& R(const Conservative& big_u) const {
+  const Matrix& R() const {
     return eigen_matrices_.R;
   }
 };

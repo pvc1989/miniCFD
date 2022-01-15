@@ -163,7 +163,8 @@ class EigenWeno {
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
     const auto &big_u = my_cell_->projection_.GetAverage();
-    const auto &riemann = adj_face.riemann_;
+    auto *riemann = const_cast<typename Face::Riemann *>(&adj_face.riemann_);
+    riemann->UpdateEigenMatrices(big_u);
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);
     weights.back() *= -adj_cnt;
@@ -172,7 +173,7 @@ class EigenWeno {
     auto rotated_projections = old_projections_;
     for (int i = 0; i <= adj_cnt; ++i) {
       auto& projection_i = rotated_projections[i];
-      projection_i.LeftMultiply(riemann.L(big_u));
+      projection_i.LeftMultiply(riemann->L());
       auto beta = projection_i.GetSmoothness();
       beta.array() += eps_;
       beta.array() *= beta.array();
@@ -193,7 +194,7 @@ class EigenWeno {
       new_projection += rotated_projections[i];
     }
     // rotate the new projection back to the global system
-    new_projection.LeftMultiply(riemann.R(big_u));
+    new_projection.LeftMultiply(riemann->R());
     // scale the new projection by volume
     auto adj_volume = adj_face.other(my_cell_)->volume();
     new_projection *= adj_volume;

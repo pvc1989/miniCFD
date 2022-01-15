@@ -17,10 +17,12 @@ class Double : public Simple<linear::Double<kDim>> {
   using Jacobi = typename Base::Jacobi;
   using Conservative = typename Base::Conservative;
 
-  const Jacobi& L(const Conservative &) const {
+  void UpdateEigenMatrices(const Conservative &) {
+  }
+  const Jacobi& L() const {
     return this->unrotated_simple_.L();
   }
-  const Jacobi& R(const Conservative &) const {
+  const Jacobi& R() const {
     return this->unrotated_simple_.R();
   }
 };
