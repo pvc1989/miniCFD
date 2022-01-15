@@ -66,6 +66,7 @@ class Double {
   }
   void Decompose() {
     GetEigenValues();
+    // TODO(PVC): fix for 0 in eigenvalues.
     GetEigenVectors();
     GetInverseEigenVectors();
   }
@@ -107,10 +108,23 @@ class Double {
     eigen_matrix_l_(1, 0) = -eigen_matrix_r_(1, 0) / det;
     eigen_matrix_l_(1, 1) =  eigen_matrix_r_(0, 0) / det;
   }
+
+ private:
   Matrix eigen_matrix_r_;
   Matrix eigen_matrix_l_;
   Matrix a_const_;
   Column eigen_values_;
+
+ public:
+  const Matrix& A() const {
+    return a_const_;
+  }
+  const Matrix& L() const {
+    return eigen_matrix_l_;
+  }
+  const Matrix& R() const {
+    return eigen_matrix_r_;
+  }
 };
 
 }  // namespace linear

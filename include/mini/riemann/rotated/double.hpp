@@ -10,7 +10,20 @@ namespace riemann {
 namespace rotated {
 
 template <int kDim>
-using Double = Simple<linear::Double<kDim>>;
+class Double : public Simple<linear::Double<kDim>> {
+  using Base = Simple<linear::Double<kDim>>;
+
+ public:
+  using Jacobi = typename Base::Jacobi;
+  using Conservative = typename Base::Conservative;
+
+  const Jacobi& L(const Conservative &) const {
+    return this->unrotated_simple_.L();
+  }
+  const Jacobi& R(const Conservative &) const {
+    return this->unrotated_simple_.R();
+  }
+};
 
 }  // namespace rotated
 }  // namespace riemann

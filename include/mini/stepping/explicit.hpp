@@ -26,7 +26,6 @@ class RungeKuttaBase {
 
  protected:
   std::vector<Coeff> rhs_;
-  std::vector<std::vector<Riemann>> riemann_solvers_;
   std::vector<std::string> free_bc_, solid_bc_;
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> prescribed_bc_;
@@ -71,21 +70,6 @@ class RungeKuttaBase {
       cell_ptr->projection_.UpdateCoeffs(new_coeff);
     });
   }
-  void BuildRiemannSolvers(const Part &part) {
-    auto riemann_builder = [this](const Face &face){
-      assert(face.id() == this->riemann_solvers_.size());
-      auto& solvers = this->riemann_solvers_.emplace_back();
-      auto& gauss = face.gauss();
-      solvers.resize(gauss.CountQuadPoints());
-      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-        auto& frame = gauss.GetNormalFrame(q);
-        solvers[q].Rotate(frame);
-      }
-    };
-    part.ForEachConstLocalFace(riemann_builder);
-    part.ForEachConstGhostFace(riemann_builder);
-    part.ForEachConstBoundaryFace(riemann_builder);
-  }
   void InitializeRhs(const Part &part) {
     rhs_.resize(part.CountLocalCells());
     for (auto& coeff : rhs_) {
@@ -111,12 +95,11 @@ class RungeKuttaBase {
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
-      auto& riemann_solvers = riemann_solvers_.at(face.id());
+      auto& riemann = const_cast<Riemann &>(face.riemann_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        auto& riemann = riemann_solvers[q];
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
@@ -130,12 +113,11 @@ class RungeKuttaBase {
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
       const auto& sharer = *(face.sharer_);
-      auto& riemann_solvers = riemann_solvers_.at(face.id());
+      auto& riemann = const_cast<Riemann &>(face.riemann_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        auto& riemann = riemann_solvers[q];
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff temp = flux * holder.basis_(coord).transpose();
@@ -148,10 +130,9 @@ class RungeKuttaBase {
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
       const auto& holder = *(face.holder_);
-      auto& riemann_solvers = riemann_solvers_.at(face.id());
+      auto& riemann = const_cast<Riemann &>(face.riemann_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
-        auto& riemann = riemann_solvers[q];
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
@@ -167,10 +148,9 @@ class RungeKuttaBase {
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
       const auto& holder = *(face.holder_);
-      auto& riemann_solvers = riemann_solvers_.at(face.id());
+      auto& riemann = const_cast<Riemann &>(face.riemann_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
-        auto& riemann = riemann_solvers[q];
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnFreeWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
@@ -188,10 +168,9 @@ class RungeKuttaBase {
         const auto& gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
         const auto& holder = *(face.holder_);
-        auto& riemann_solvers = riemann_solvers_.at(face.id());
+        auto& riemann = const_cast<Riemann &>(face.riemann_);
         for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
           const auto& coord = gauss.GetGlobalCoord(q);
-          auto& riemann = riemann_solvers[q];
           Value u_given = iter->second(coord, t_curr);
           Value flux = riemann.GetRotatedFlux(u_given);
           flux *= gauss.GetGlobalWeight(q);

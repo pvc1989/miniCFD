@@ -105,7 +105,7 @@ class LazyWeno {
   }
 };
 
-template <typename Cell, typename Eigen>
+template <typename Cell>
 class EigenWeno {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
@@ -158,13 +158,12 @@ class EigenWeno {
    * @brief Rotate borrowed projections onto the interface between cells
    * 
    */
-  void ReconstructOnEachFace(const Face &adj_face) {
+  void ReconstructOnFace(const Face &adj_face) {
     assert(my_cell_->adj_faces_.size() == my_cell_->adj_cells_.size());
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
-    const auto &value = my_cell_->projection_.GetAverage();
-    const auto &frame = adj_face.gauss().GetNormalFrame(0);
-    auto rotated_eigen = Eigen(value, frame);
+    const auto &big_u = my_cell_->projection_.GetAverage();
+    const auto &riemann = adj_face.riemann_;
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);
     weights.back() *= -adj_cnt;
@@ -173,7 +172,7 @@ class EigenWeno {
     auto rotated_projections = old_projections_;
     for (int i = 0; i <= adj_cnt; ++i) {
       auto& projection_i = rotated_projections[i];
-      projection_i.LeftMultiply(rotated_eigen.L);
+      projection_i.LeftMultiply(riemann.L(big_u));
       auto beta = projection_i.GetSmoothness();
       beta.array() += eps_;
       beta.array() *= beta.array();
@@ -194,7 +193,7 @@ class EigenWeno {
       new_projection += rotated_projections[i];
     }
     // rotate the new projection back to the global system
-    new_projection.LeftMultiply(rotated_eigen.R);
+    new_projection.LeftMultiply(riemann.R(big_u));
     // scale the new projection by volume
     auto adj_volume = adj_face.other(my_cell_)->volume();
     new_projection *= adj_volume;
@@ -209,7 +208,7 @@ class EigenWeno {
     new_projection_ = Projection(my_cell_->basis_);
     total_volume_ = 0.0;
     for (auto* adj_face : my_cell_->adj_faces_) {
-      ReconstructOnEachFace(*adj_face);
+      ReconstructOnFace(*adj_face);
     }
     new_projection_ /= total_volume_;
   }

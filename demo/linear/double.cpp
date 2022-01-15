@@ -81,7 +81,8 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"U1", "U2"});
 
   /* Build a `Limiter` object */
-  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Initial Condition */
@@ -122,7 +123,6 @@ int main(int argc, char* argv[]) {
   /* Choose the time-stepping scheme */
   constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
-  rk.BuildRiemannSolvers(part);
 
   /* Boundary Conditions */
   auto state_right = [&value_right](const Coord& xyz, double t){
