@@ -84,22 +84,25 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
 struct Cell;
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
 struct Face {
+  using Riemann = R;
   using Gauss = integrator::Face<Real, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, Riemann>;
 
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
+  Riemann riemann_;
   Int id_{-1};
 
   Face(GaussUptr&& gauss_ptr, Cell *holder, Cell *sharer, Int id = 0)
       : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
         id_(id) {
+    riemann_.Rotate(gauss_ptr_->GetNormalFrame(0));
   }
   Face(const Face&) = delete;
   Face& operator=(const Face&) = delete;
@@ -122,7 +125,7 @@ struct Face {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
 struct Cell {
   using Gauss = integrator::Cell<Real>;
   using GaussUptr = std::unique_ptr<Gauss>;
@@ -135,7 +138,7 @@ struct Cell {
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder>;
+  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder, R>;
 
   std::vector<Cell*> adj_cells_;
   std::vector<Face*> adj_faces_;
@@ -191,9 +194,9 @@ struct Cell {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
 class CellGroup {
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, R>;
   Int head_, size_;
   ShiftedVector<Cell> cells_;
   ShiftedVector<ShiftedVector<Real>> fields_;  // [i_field][i_cell]
@@ -287,18 +290,18 @@ class CellGroup {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
 class Part {
  public:
-  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder>;
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder>;
+  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder, R>;
+  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, R>;
 
  private:
   using Mat3x1 = algebra::Matrix<Real, 3, 1>;
   using NodeInfo = cgns::NodeInfo<Int>;
   using CellInfo = cgns::CellInfo<Int>;
   using NodeGroup = cgns::NodeGroup<Int, Real>;
-  using CellGroup = cgns::CellGroup<Int, Real, kFunc, kDim, kOrder>;
+  using CellGroup = cgns::CellGroup<Int, Real, kFunc, kDim, kOrder, R>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
@@ -1614,11 +1617,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
-MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder>::kMpiIntType
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder, R>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder>
-MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder>::kMpiRealType
+template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder, R>::kMpiRealType
     = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns

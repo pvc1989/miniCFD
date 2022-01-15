@@ -51,6 +51,14 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
+  /* Double-wave equation */
+  constexpr int kDim = 3;
+  using Riemann = mini::riemann::rotated::Double<kDim>;
+  using Jacobi = typename Riemann::Jacobi;
+  Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
+  Riemann::global_coefficient[1].setZero();
+  Riemann::global_coefficient[2].setZero();
+
   /* Partition the mesh */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
@@ -59,10 +67,8 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kFunc = 2;
-  constexpr int kDim = 3;
   constexpr int kOrder = 2;
-  constexpr int kSteps = std::min(3, kOrder + 1);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -74,12 +80,7 @@ int main(int argc, char* argv[]) {
   auto part = Part(case_name, i_proc);
   part.SetFieldNames({"U1", "U2"});
 
-  /* Double-wave equation */
-  using Riemann = mini::riemann::rotated::Double<kDim>;
-  using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
-  Riemann::global_coefficient[1].setZero();
-  Riemann::global_coefficient[2].setZero();
+  /* Build a `Limiter` object */
   using Limiter = mini::polynomial::LazyWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
@@ -118,6 +119,8 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+  /* Choose the time-stepping scheme */
+  constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
   rk.BuildRiemannSolvers(part);
 
