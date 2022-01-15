@@ -28,7 +28,7 @@ class Multiple {
   using Flux = Column;
 
   // Constructor:
-  Multiple() = delete;
+  Multiple() = default;
   explicit Multiple(const Matrix &a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
   Flux GetFluxOnTimeAxis(const Conservative &left, const Conservative &right)
@@ -58,6 +58,17 @@ class Multiple {
   Matrix eigen_cols_;
   Matrix a_const_;
   Column eigen_values_;
+
+ public:
+  const Matrix& A() const {
+    return a_const_;
+  }
+  const Matrix& L() const {
+    return eigen_rows_;
+  }
+  const Matrix& R() const {
+    return eigen_cols_;
+  }
 };
 
 }  // namespace linear

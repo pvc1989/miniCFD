@@ -8,7 +8,7 @@
 #include "pcgnslib.h"
 
 #include "mini/mesh/shuffler.hpp"
-#include "mini/riemann/rotated/double.hpp"
+#include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"
 #include "mini/stepping/explicit.hpp"
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   if (argc < 7) {
     if (i_proc == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_proc> ./double <cgns_file> <hexa|tetra>"
+          << "  mpirun -n <n_proc> ./double_eigen <cgns_file> <hexa|tetra>"
           << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
           << " [<i_start> [n_parts_prev]]\n";
     }
@@ -47,13 +47,14 @@ int main(int argc, char* argv[]) {
   }
   int i_stop = i_start + n_steps;
 
-  std::string case_name = "double_" + suffix;
+  std::string case_name = "double_eigen_" + suffix;
 
   auto time_begin = MPI_Wtime();
 
   /* Double-wave equation */
+  constexpr int kFunc = 2;
   constexpr int kDim = 3;
-  using Riemann = mini::riemann::rotated::Double<kDim>;
+  using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
   Riemann::global_coefficient[1].setZero();
@@ -66,7 +67,6 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kFunc = 2;
   constexpr int kOrder = 2;
   using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
@@ -81,7 +81,8 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"U1", "U2"});
 
   /* Build a `Limiter` object */
-  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Initial Condition */
