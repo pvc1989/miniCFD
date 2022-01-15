@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/riemann/euler/eigen.hpp"
 
 namespace mini {
 namespace riemann {
@@ -90,6 +91,17 @@ class Cartesian<Scalar, 3> {
  private:
   Vector nu_{1, 0, 0}, sigma_{0, 1, 0}, pi_{0, 0, 1};
   static_assert(std::is_scalar_v<Scalar>);
+
+ public:
+  const Vector& nu() const {
+    return nu_;
+  }
+  const Vector& sigma() const {
+    return sigma_;
+  }
+  const Vector& pi() const {
+    return pi_;
+  }
 };
 
 template <class UnrotatedEuler>
@@ -160,6 +172,19 @@ class Euler {
  private:
   UnrotatedEuler unrotated_euler_;
   Cartesian<Scalar, kDim> cartesian_;
+
+ private:
+  using EigenMatrices = riemann::euler::EigenMatrices<Gas>;
+  EigenMatrices eigen_matrices_;
+
+ public:
+  using Matrix = typename EigenMatrices::Mat5x5;
+  const Matrix& L(const Conservative& big_u) const {
+    return eigen_matrices_.L;
+  }
+  const Matrix& R(const Conservative& big_u) const {
+    return eigen_matrices_.R;
+  }
 };
 
 }  // namespace rotated

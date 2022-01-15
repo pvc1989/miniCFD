@@ -9,7 +9,6 @@
 
 #include "mini/mesh/shuffler.hpp"
 #include "mini/riemann/euler/types.hpp"
-#include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
@@ -54,7 +53,15 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  /* Partition the mesh */
+  /* Define types for the Euler system. */
+  constexpr int kDim = 3;
+  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+
+  /* Partition the mesh. */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
@@ -62,10 +69,8 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kFunc = 5;
-  constexpr int kDim = 3;
   constexpr int kOrder = 2;
-  constexpr int kSteps = std::min(3, kOrder + 1);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -78,18 +83,12 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
-  /* Euler system */
-  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
-  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<Gas>;
-  using Limiter = mini::polynomial::EigenWeno<Cell, Matrices>;
-  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
-  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+  /* Build a `Limiter` object. */
   // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
-  /* IC for Shock-Tube Problem */
+  /* Set initial conditions. */
   auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
   auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
   Value value_after = Gas::PrimitiveToConservative(primitive_after);
@@ -128,10 +127,11 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+  /* Choose the time-stepping scheme */
+  constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
-  rk.BuildRiemannSolvers(part);
 
-  /* Boundary Conditions */
+  /* Set boundary conditions. */
   if (suffix == "tetra") {
     rk.SetSolidWallBC("3_S_27");  // Top
     rk.SetSolidWallBC("3_S_31");  // Left
@@ -151,8 +151,8 @@ int main(int argc, char* argv[]) {
     rk.SetSolidWallBC("4_S_15");  // Gap
   }
 
-  auto wtime_start = MPI_Wtime();
   /* Main Loop */
+  auto wtime_start = MPI_Wtime();
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);
