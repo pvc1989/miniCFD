@@ -12,19 +12,19 @@ namespace mini {
 namespace riemann {
 namespace linear {
 
-template <int D>
+template <typename S, int D>
 class Single {
  public:
   static constexpr int kFunc = 1;
   static constexpr int kDim = D;
   // Types:
-  using Scalar = double;
-  using Vector = algebra::Vector<double, kDim>;
-  using Jacobi = double;
+  using Scalar = S;
+  using Vector = algebra::Vector<Scalar, kDim>;
+  using Jacobi = Scalar;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
-  using Conservative = double;
-  using Flux = double;
-  using Speed = double;
+  using Conservative = Scalar;
+  using Flux = Scalar;
+  using Speed = Scalar;
   using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
   // Constructor:
   Single() : a_const_(1) {}

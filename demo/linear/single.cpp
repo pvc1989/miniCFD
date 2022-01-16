@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   if (argc < 7) {
     if (i_proc == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_proc> ./linear <cgns_file> <hexa|tetra>"
+          << "  mpirun -n <n_proc> ./single <cgns_file> <hexa|tetra>"
           << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
           << " [<i_start> [n_parts_prev]]\n";
     }
@@ -47,22 +47,26 @@ int main(int argc, char* argv[]) {
   }
   int i_stop = i_start + n_steps;
 
-  std::string case_name = "linear_" + suffix;
+  std::string case_name = "single_" + suffix;
 
   auto time_begin = MPI_Wtime();
 
-  /* Partition the mesh */
+  /* Define the single-wave equation. */
+  constexpr int kFunc = 1;
+  constexpr int kDim = 3;
+  using Riemann = mini::riemann::rotated::Single<double, kDim>;
+  auto a_x = -10.0;
+  Riemann::global_coefficient = { a_x, 0, 0 };
+
+  /* Partition the mesh. */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kFunc = 1;
-  constexpr int kDim = 3;
   constexpr int kOrder = 2;
-  constexpr int kSteps = std::min(3, kOrder + 1);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -74,14 +78,11 @@ int main(int argc, char* argv[]) {
   auto part = Part(case_name, i_proc);
   part.SetFieldNames({"U"});
 
-  /* Single-wave equation */
-  using Riemann = mini::riemann::rotated::Single<kDim>;
-  auto a_x = -10.0;
-  Riemann::global_coefficient = { a_x, 0, 0 };
+  /* Build a `Limiter` object. */
   using Limiter = mini::polynomial::LazyWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
-  /* Initial Condition */
+  /* Set initial conditions. */
   Value value_right{ 10 }, value_left{ -10 };
   double x_0 = 4.0;
   auto initial_condition = [&](const Coord& xyz){
@@ -119,10 +120,11 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+  /* Choose the time-stepping scheme. */
+  constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
-  rk.BuildRiemannSolvers(part);
 
-  /* Boundary Conditions */
+  /* Set boundary conditions. */
   auto state_right = [&value_right](const Coord& xyz, double t){
     return value_right;
   };
@@ -148,8 +150,8 @@ int main(int argc, char* argv[]) {
     rk.SetSolidWallBC("4_S_15");  // Gap
   }
 
-  auto wtime_start = MPI_Wtime();
   /* Main Loop */
+  auto wtime_start = MPI_Wtime();
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);
