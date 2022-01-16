@@ -53,18 +53,24 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  /* Partition the mesh */
+  /* Define the Euler system. */
+  constexpr int kFunc = 5;
+  constexpr int kDim = 3;
+  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+
+  /* Partition the mesh. */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kFunc = 5;
-  constexpr int kDim = 3;
   constexpr int kOrder = 0;
-  constexpr int kSteps = std::min(3, kOrder + 1);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -77,18 +83,12 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
-  /* Euler system */
-  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
-  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<Gas>;
-  using Limiter = mini::polynomial::EigenWeno<Cell, Matrices>;
-  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
-  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+  /* Build a `Limiter` object. */
   // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
-  /* Initial Condition */
+  /* Set initial conditions. */
   auto primitive = Primitive(1.4, 2.0, 0.0, 0.0, 1.0);
   Value given_value = Gas::PrimitiveToConservative(primitive);
   auto initial_condition = [&given_value](const Coord& xyz){
@@ -122,10 +122,11 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+  /* Choose the time-stepping scheme. */
+  constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
-  rk.BuildRiemannSolvers(part);
 
-  /* Boundary Conditions */
+  /* Set boundary conditions. */
   auto given_state = [&given_value](const Coord& xyz, double t){
     return given_value;
   };
@@ -144,8 +145,8 @@ int main(int argc, char* argv[]) {
   rk.SetSolidWallBC("fuselage");
   rk.SetSolidWallBC("symmetry");
 
-  auto wtime_start = MPI_Wtime();
   /* Main Loop */
+  auto wtime_start = MPI_Wtime();
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);

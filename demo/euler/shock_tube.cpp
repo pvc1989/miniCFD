@@ -53,7 +53,8 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  /* Define types for the Euler system. */
+  /* Define the Euler system. */
+  constexpr int kFunc = 5;
   constexpr int kDim = 3;
   using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
   using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
@@ -68,7 +69,6 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kFunc = 5;
   constexpr int kOrder = 2;
   using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  /* Choose the time-stepping scheme */
+  /* Choose the time-stepping scheme. */
   constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
 

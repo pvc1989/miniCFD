@@ -54,18 +54,24 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  /* Partition the mesh */
+  /* Define the Euler system. */
+  constexpr int kFunc = 5;
+  constexpr int kDim = 3;
+  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
+  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+
+  /* Partition the mesh. */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kFunc = 5;
-  constexpr int kDim = 3;
   constexpr int kOrder = 2;
-  constexpr int kSteps = std::min(3, kOrder + 1);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -78,18 +84,12 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
-  /* Euler system */
-  using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
-  using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
-  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<Gas>;
-  using Limiter = mini::polynomial::EigenWeno<Cell, Matrices>;
-  using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
-  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+  /* Build a `Limiter` object. */
   // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
-  /* IC for Double-Mach Problem */
+  /* Set initial conditions. */
   double rho_before = 1.4, p_before = 1.0;
   double m_before = 10.0, a_before = 1.0, u_gamma = m_before * a_before;
   double gamma_plus = 2.4, gamma = 1.4, gamma_minus = 0.4;
@@ -144,10 +144,11 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+  /* Choose the time-stepping scheme. */
+  constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
-  rk.BuildRiemannSolvers(part);
 
-  /* Boundary Conditions */
+  /* Set boundary conditions. */
   auto u_x = u_gamma / cos_30;
   auto moving_shock = [&](const Coord& xyz, double t){
     auto x = xyz[0], y = xyz[1];
@@ -176,8 +177,8 @@ int main(int argc, char* argv[]) {
     rk.SetFreeOutletBC("4_S_15");  // Gap
   }
 
-  auto wtime_start = MPI_Wtime();
   /* Main Loop */
+  auto wtime_start = MPI_Wtime();
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);
