@@ -51,8 +51,8 @@ using Limiter2 = mini::polynomial::EigenWeno<Cell2>;
 }  // namespace mini
 
 extern template class RungeKutta<1, mini::mesh::cgns::Part0,
-    mini::riemann::rotated::Riemann, mini::polynomial::Limiter0>;
+    mini::polynomial::Limiter0>;
 extern template class RungeKutta<3, mini::mesh::cgns::Part2,
-    mini::riemann::rotated::Riemann, mini::polynomial::Limiter2>;
+    mini::polynomial::Limiter2>;
 
 #endif  // DEMO_EULER_RKDG_HPP_

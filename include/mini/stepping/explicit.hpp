@@ -11,12 +11,12 @@
 
 #include "mini/mesh/part.hpp"
 
-template <typename P, typename R, typename L>
+template <typename P, typename L>
 class RungeKuttaBase {
  public:
-  using Limiter = L;
-  using Riemann = R;
   using Part = P;
+  using Limiter = L;
+  using Riemann = typename Part::Riemann;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Projection = typename Cell::Projection;
@@ -187,14 +187,14 @@ class RungeKuttaBase {
   }
 };
 
-template <int kSteps, typename Part, typename Riemann, typename Limiter>
+template <int kSteps, typename Part, typename Limiter>
 struct RungeKutta;
 
-template <typename P, typename R, typename L>
-struct RungeKutta<1, P, R, L>
-    : public RungeKuttaBase<P, R, L> {
+template <typename P, typename L>
+struct RungeKutta<1, P, L>
+    : public RungeKuttaBase<P, L> {
  private:
-  using Base = RungeKuttaBase<P, R, L>;
+  using Base = RungeKuttaBase<P, L>;
 
  public:
   using Part = typename Base::Part;
@@ -240,11 +240,11 @@ struct RungeKutta<1, P, R, L>
   }
 };
 
-template <typename P, typename R, typename L>
-struct RungeKutta<3, P, R, L>
-    : public RungeKuttaBase<P, R, L> {
+template <typename P, typename L>
+struct RungeKutta<3, P, L>
+    : public RungeKuttaBase<P, L> {
  private:
-  using Base = RungeKuttaBase<P, R, L>;
+  using Base = RungeKuttaBase<P, L>;
 
  public:
   using Part = typename Base::Part;

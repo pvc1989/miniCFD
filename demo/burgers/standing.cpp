@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
 
   /* Choose the time-stepping scheme. */
   constexpr int kSteps = std::min(3, kOrder + 1);
-  auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
+  auto rk = RungeKutta<kSteps, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */
   if (suffix == "tetra") {
