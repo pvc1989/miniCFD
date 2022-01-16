@@ -9,13 +9,13 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <typename S, int kDim>
-class Burgers : public Simple<nonlinear::Burgers<S, kDim>> {
-  using Base = Simple<nonlinear::Burgers<S, kDim>>;
-  static constexpr int K = Base::K; static_assert(K == 1);
-  static constexpr int D = Base::D;
+template <typename S, int D>
+class Burgers : public Simple<nonlinear::Burgers<S, D>> {
+  using Base = Simple<nonlinear::Burgers<S, D>>;
 
  public:
+  constexpr static int kFunc = 1;
+  constexpr static int kDim = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Conservative = typename Base::Conservative;

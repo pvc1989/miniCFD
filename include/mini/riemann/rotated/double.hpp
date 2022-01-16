@@ -9,11 +9,14 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <typename Scalar, int kDim>
-class Double : public Simple<linear::Double<Scalar, kDim>> {
-  using Base = Simple<linear::Double<Scalar, kDim>>;
+template <typename S, int D>
+class Double : public Simple<linear::Double<S, D>> {
+  using Base = Simple<linear::Double<S, D>>;
 
  public:
+  constexpr static int kFunc = 2;
+  constexpr static int kDim = D;
+  using Scalar = S;
   using Jacobi = typename Base::Jacobi;
   using Conservative = typename Base::Conservative;
 

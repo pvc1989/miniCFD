@@ -19,6 +19,8 @@ class Simple {
   static constexpr int x{0}, y{1}, z{2};
 
  public:
+  static constexpr int kFunc = Base::kFunc;
+  static constexpr int kDim = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;

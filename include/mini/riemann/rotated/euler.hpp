@@ -107,9 +107,10 @@ class Cartesian<Scalar, 3> {
 template <class UnrotatedEuler>
 class Euler {
   using Base = UnrotatedEuler;
-  constexpr static int kDim = Base::kDim;
 
  public:
+  constexpr static int kFunc = Base::kFunc;
+  constexpr static int kDim = Base::kDim;
   using Gas = typename Base::Gas;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
