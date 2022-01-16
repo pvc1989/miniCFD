@@ -12,22 +12,22 @@ namespace mini {
 namespace riemann {
 namespace nonlinear {
 
-template <int D>
+template <typename S, int D>
 class Burgers {
  public:
   static constexpr int kDim = D;
   static constexpr int kFunc = 1;
   // Types:
-  using Scalar = double;
-  using Vector = algebra::Vector<double, kDim>;
-  using Jacobi = double;
-  using Conservative = double;
-  using Flux = double;
+  using Scalar = S;
+  using Vector = algebra::Vector<Scalar, kDim>;
+  using Jacobi = Scalar;
+  using Conservative = Scalar;
+  using Flux = Scalar;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
   using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
   // Constructor:
   Burgers() : k_(1) {}
-  explicit Burgers(double k) : k_(k) {}
+  explicit Burgers(Scalar k) : k_(k) {}
   // Get F on T Axia
   Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right)
       const {

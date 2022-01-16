@@ -9,9 +9,9 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <int kDim = 2>
-class Burgers : public Simple<nonlinear::Burgers<kDim>> {
-  using Base = Simple<nonlinear::Burgers<kDim>>;
+template <typename S, int kDim>
+class Burgers : public Simple<nonlinear::Burgers<S, kDim>> {
+  using Base = Simple<nonlinear::Burgers<S, kDim>>;
   static constexpr int K = Base::K; static_assert(K == 1);
   static constexpr int D = Base::D;
 
