@@ -59,11 +59,11 @@ struct CellInfo {
   Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
-template <typename Int, typename Real>
+template <typename Int, typename Scalar>
 struct NodeGroup {
   Int head_, size_;
   ShiftedVector<Int> metis_id_;
-  ShiftedVector<Real> x_, y_, z_;
+  ShiftedVector<Scalar> x_, y_, z_;
 
   NodeGroup(int head, int size)
       : head_(head), size_(size), metis_id_(size, head),
@@ -84,15 +84,18 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+template <typename Int, int kOrder, class R>
 struct Cell;
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+template <typename Int, int kOrder, class R>
 struct Face {
   using Riemann = R;
-  using Gauss = integrator::Face<Real, kDim>;
+  using Scalar = typename Riemann::Scalar;
+  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kDim = Riemann::kDim;
+  using Gauss = integrator::Face<Scalar, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, Riemann>;
+  using Cell = cgns::Cell<Int, kOrder, Riemann>;
 
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
@@ -113,7 +116,7 @@ struct Face {
   const Gauss& gauss() const {
     return *gauss_ptr_;
   }
-  Real area() const {
+  Scalar area() const {
     return gauss_ptr_->area();
   }
   Int id() const {
@@ -125,20 +128,23 @@ struct Face {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+template <typename Int, int kOrder, class R>
 struct Cell {
-  using Gauss = integrator::Cell<Real>;
+  using Riemann = R;
+  using Scalar = typename Riemann::Scalar;
+  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kDim = Riemann::kDim;
+  using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Basis = polynomial::OrthoNormal<Real, kDim, kOrder>;
-  using Projection = polynomial::Projection<Real, kDim, kOrder, kFunc>;
-  using Scalar = Real;
+  using Basis = polynomial::OrthoNormal<Scalar, kDim, kOrder>;
+  using Projection = polynomial::Projection<Scalar, kDim, kOrder, kFunc>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder, R>;
+  using Face = cgns::Face<Int, kOrder, R>;
 
   std::vector<Cell*> adj_cells_;
   std::vector<Face*> adj_faces_;
@@ -172,7 +178,7 @@ struct Cell {
   }
   ~Cell() noexcept = default;
 
-  Real volume() const {
+  Scalar volume() const {
     return gauss_ptr_->volume();
   }
   Int id() const {
@@ -194,12 +200,14 @@ struct Cell {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+template <typename Int, int kOrder, class R>
 class CellGroup {
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, R>;
+  using Cell = cgns::Cell<Int, kOrder, R>;
+  using Scalar = typename Cell::Scalar;
+
   Int head_, size_;
   ShiftedVector<Cell> cells_;
-  ShiftedVector<ShiftedVector<Real>> fields_;  // [i_field][i_cell]
+  ShiftedVector<ShiftedVector<Scalar>> fields_;  // [i_field][i_cell]
   int npe_;
 
  public:
@@ -209,7 +217,7 @@ class CellGroup {
       : head_(head), size_(size), cells_(size, head), fields_(kFields, 1),
         npe_(npe) {
     for (int i = 1; i <= kFields; ++i) {
-      fields_[i] = ShiftedVector<Real>(size, head);
+      fields_[i] = ShiftedVector<Scalar>(size, head);
     }
   }
   CellGroup() = default;
@@ -264,10 +272,10 @@ class CellGroup {
   auto cend() const {
     return cells_.cend();
   }
-  const ShiftedVector<Real>& GetField(Int i_field) const {
+  const ShiftedVector<Scalar>& GetField(Int i_field) const {
     return fields_[i_field];
   }
-  ShiftedVector<Real>& GetField(Int i_field) {
+  ShiftedVector<Scalar>& GetField(Int i_field) {
     return fields_[i_field];
   }
   void GatherFields() {
@@ -290,25 +298,29 @@ class CellGroup {
   }
 };
 
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
+template <typename Int, int kOrder, class R>
 class Part {
  public:
-  using Face = cgns::Face<Int, Real, kFunc, kDim, kOrder, R>;
-  using Cell = cgns::Cell<Int, Real, kFunc, kDim, kOrder, R>;
+  using Face = cgns::Face<Int, kOrder, R>;
+  using Cell = cgns::Cell<Int, kOrder, R>;
+  using Riemann = R;
+  using Scalar = typename Riemann::Scalar;
+  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kDim = Riemann::kDim;
 
  private:
-  using Mat3x1 = algebra::Matrix<Real, 3, 1>;
+  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
   using NodeInfo = cgns::NodeInfo<Int>;
   using CellInfo = cgns::CellInfo<Int>;
-  using NodeGroup = cgns::NodeGroup<Int, Real>;
-  using CellGroup = cgns::CellGroup<Int, Real, kFunc, kDim, kOrder, R>;
+  using NodeGroup = cgns::NodeGroup<Int, Scalar>;
+  using CellGroup = cgns::CellGroup<Int, kOrder, R>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
   static constexpr auto kRealType
-      = sizeof(Real) == 8 ? CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
+      = sizeof(Scalar) == 8 ? CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
   static const MPI_Datatype kMpiIntType;
   static const MPI_Datatype kMpiRealType;
 
@@ -414,7 +426,7 @@ class Part {
   }
   std::pair<
     std::map<Int, std::vector<Int>>,
-    std::vector<std::vector<Real>>
+    std::vector<std::vector<Scalar>>
   > ShareGhostNodes(std::ifstream& istrm) {
     char line[kLineWidth];
     // send nodes info
@@ -425,7 +437,7 @@ class Part {
       send_nodes[i_part].emplace_back(m_node);
     }
     std::vector<MPI_Request> requests;
-    std::vector<std::vector<Real>> send_bufs;
+    std::vector<std::vector<Scalar>> send_bufs;
     for (auto& [i_part, nodes] : send_nodes) {
       auto& coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
@@ -450,11 +462,11 @@ class Part {
       recv_nodes[i_part].emplace_back(m_node);
       m_to_node_info_[m_node] = cgns::NodeInfo<Int>(i_zone, i_node);
     }
-    std::vector<std::vector<Real>> recv_coords;
+    std::vector<std::vector<Scalar>> recv_coords;
     for (auto& [i_part, nodes] : recv_nodes) {
       assert(std::is_sorted(nodes.begin(), nodes.end()));
       int n_reals = 3 * nodes.size();
-      auto& coords = recv_coords.emplace_back(std::vector<Real>(n_reals));
+      auto& coords = recv_coords.emplace_back(std::vector<Scalar>(n_reals));
       int tag = rank_;
       auto& request = requests.emplace_back();
       MPI_Irecv(coords.data(), n_reals, kMpiRealType, i_part, tag,
@@ -467,7 +479,7 @@ class Part {
     return { recv_nodes, recv_coords };
   }
   void BuildGhostNodes(const std::map<Int, std::vector<Int>>& recv_nodes,
-      const std::vector<std::vector<Real>>& recv_coords) {
+      const std::vector<std::vector<Scalar>>& recv_coords) {
     // copy node coordinates from buffer to member
     int i_source = 0;
     for (auto& [i_part, nodes] : recv_nodes) {
@@ -480,19 +492,19 @@ class Part {
     }
   }
   auto BuildTetraUptr(int i_zone, const Int *i_node_list) const {
-    return std::make_unique<integrator::Tetra<Real, 24>>(
+    return std::make_unique<integrator::Tetra<Scalar, 24>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
   }
   auto BuildHexaUptr(int i_zone, const Int *i_node_list) const {
-    return std::make_unique<integrator::Hexa<Real, 4, 4, 4>>(
+    return std::make_unique<integrator::Hexa<Scalar, 4, 4, 4>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
         GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
   }
   auto BuildGaussForCell(int npe, int i_zone, const Int *i_node_list) const {
-    std::unique_ptr<integrator::Cell<Real>> gauss_uptr;
+    std::unique_ptr<integrator::Cell<Scalar>> gauss_uptr;
     switch (npe) {
       case 4:
         gauss_uptr = BuildTetraUptr(i_zone, i_node_list); break;
@@ -505,21 +517,21 @@ class Part {
     return gauss_uptr;
   }
   auto BuildTriUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Tri<Real, kDim, 16>>(
+    auto quad_uptr = std::make_unique<integrator::Tri<Scalar, kDim, 16>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
     quad_uptr->BuildNormalFrames();
     return quad_uptr;
   }
   auto BuildQuadUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Quad<Real, kDim, 4, 4>>(
+    auto quad_uptr = std::make_unique<integrator::Quad<Scalar, kDim, 4, 4>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
     quad_uptr->BuildNormalFrames();
     return quad_uptr;
   }
   auto BuildGaussForFace(int npe, int i_zone, const Int *i_node_list) const {
-    std::unique_ptr<integrator::Face<Real, kDim>> gauss_uptr;
+    std::unique_ptr<integrator::Face<Scalar, kDim>> gauss_uptr;
     switch (npe) {
       case 3:
         gauss_uptr = BuildTriUptr(i_zone, i_node_list); break;
@@ -534,10 +546,10 @@ class Part {
   static void SortNodesOnFace(int npe, const Int *cell, Int *face) {
     switch (npe) {
       case 4:
-        integrator::Tetra<Real, 24>::SortNodesOnFace(cell, face);
+        integrator::Tetra<Scalar, 24>::SortNodesOnFace(cell, face);
         break;
       case 8:
-        integrator::Hexa<Real, 4, 4, 4>::SortNodesOnFace(cell, face);
+        integrator::Hexa<Scalar, 4, 4, 4>::SortNodesOnFace(cell, face);
         break;
       default:
         assert(false);
@@ -1480,7 +1492,7 @@ class Part {
       inner_cells_, inter_cells_;  // [i_cell] -> Cell*
   std::map<Int, std::vector<Cell*>>
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<Cell*>
-  std::vector<std::vector<Real>>
+  std::vector<std::vector<Scalar>>
       send_coeffs_, recv_coeffs_;
   std::unordered_map<Int, Cell>
       ghost_cells_;  // [m_cell] -> a Cell obj
@@ -1617,12 +1629,12 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
-MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder, R>::kMpiIntType
+template <typename Int, int kOrder, class R>
+MPI_Datatype const Part<Int, kOrder, R>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, typename Real, int kFunc, int kDim, int kOrder, class R>
-MPI_Datatype const Part<Int, Real, kFunc, kDim, kOrder, R>::kMpiRealType
-    = sizeof(Real) == 8 ? MPI_DOUBLE : MPI_FLOAT;
+template <typename Int, int kOrder, class R>
+MPI_Datatype const Part<Int, kOrder, R>::kMpiRealType
+    = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns
 }  // namespace mesh

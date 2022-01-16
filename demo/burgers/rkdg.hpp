@@ -26,15 +26,11 @@ extern template class Shuffler<idx_t, double>;
 
 namespace cgns {
 
-extern template class Part<cgsize_t, double, 1, 3, 0,
-    mini::riemann::rotated::Riemann>;
-extern template class Part<cgsize_t, double, 1, 3, 2,
-    mini::riemann::rotated::Riemann>;
+extern template class Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
+extern template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 
-using Part0 = Part<cgsize_t, double, 1, 3, 0,
-    mini::riemann::rotated::Riemann>;
-using Part2 = Part<cgsize_t, double, 1, 3, 2,
-    mini::riemann::rotated::Riemann>;
+using Part0 = Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
+using Part2 = Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 
 }  // namespace cgns
 }  // namespace mesh

@@ -19,8 +19,8 @@ namespace mesh {
 template class Shuffler<idx_t, double>;
 
 namespace cgns {
-template class Part<cgsize_t, double, 5, 3, 0, riemann::rotated::Riemann>;
-template class Part<cgsize_t, double, 5, 3, 2, riemann::rotated::Riemann>;
+template class Part<cgsize_t, 0, riemann::rotated::Riemann>;
+template class Part<cgsize_t, 2, riemann::rotated::Riemann>;
 }  // namespace cgns
 }  // namespace mesh
 

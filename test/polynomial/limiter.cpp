@@ -65,7 +65,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   }
   // build cells and project the function on them
   using Riemann = mini::riemann::rotated::Single<double, 3>;
-  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 1, 3, 2, Riemann>;
+  using Cell = mini::mesh::cgns::Cell<cgsize_t, 2, Riemann>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -164,7 +164,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, 5, 3, 2, Riemann>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, 2, Riemann>;
   auto part = Part(case_name, i_proc);
   MPI_Finalize();
   // project the function

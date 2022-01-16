@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
       i_proc, n_procs, MPI_Wtime() - time_begin);
   constexpr int kFunc{2}, kDim{3}, kOrder{2};
   using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, kOrder, Riemann>;
   auto part = Part(case_name, i_proc);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;

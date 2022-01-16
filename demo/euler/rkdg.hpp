@@ -31,10 +31,10 @@ namespace mesh {
 extern template class Shuffler<idx_t, double>;
 
 namespace cgns {
-extern template class Part<cgsize_t, double, 5, 3, 0, riemann::rotated::Riemann>;
-extern template class Part<cgsize_t, double, 5, 3, 2, riemann::rotated::Riemann>;
-using Part0 = Part<cgsize_t, double, 5, 3, 0, riemann::rotated::Riemann>;
-using Part2 = Part<cgsize_t, double, 5, 3, 2, riemann::rotated::Riemann>;
+extern template class Part<cgsize_t, 0, riemann::rotated::Riemann>;
+extern template class Part<cgsize_t, 2, riemann::rotated::Riemann>;
+using Part0 = Part<cgsize_t, 0, riemann::rotated::Riemann>;
+using Part2 = Part<cgsize_t, 2, riemann::rotated::Riemann>;
 }  // namespace cgns
 }  // namespace mesh
 
