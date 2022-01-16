@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
-  /* Double-wave equation */
+  /* Define the Double-wave equation. */
   constexpr int kFunc = 2;
   constexpr int kDim = 3;
   using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
   Riemann::global_coefficient[1].setZero();
   Riemann::global_coefficient[2].setZero();
 
-  /* Partition the mesh */
+  /* Partition the mesh. */
   if (i_proc == 0 && n_parts_prev != n_procs) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
@@ -80,12 +80,11 @@ int main(int argc, char* argv[]) {
   auto part = Part(case_name, i_proc);
   part.SetFieldNames({"U1", "U2"});
 
-  /* Build a `Limiter` object */
-  // using Limiter = mini::polynomial::LazyWeno<Cell>;
+  /* Build a `Limiter` object. */
   using Limiter = mini::polynomial::EigenWeno<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
-  /* Initial Condition */
+  /* Set initial conditions. */
   Value value_right{ 10, 5 }, value_left{ -10, -5 };
   double x_0 = 0.0;
   auto initial_condition = [&](const Coord& xyz){
@@ -120,11 +119,11 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  /* Choose the time-stepping scheme */
+  /* Choose the time-stepping scheme. */
   constexpr int kSteps = std::min(3, kOrder + 1);
   auto rk = RungeKutta<kSteps, Part, Riemann, Limiter>(dt, limiter);
 
-  /* Boundary Conditions */
+  /* Set boundary conditions. */
   auto state_right = [&value_right](const Coord& xyz, double t){
     return value_right;
   };
@@ -150,8 +149,8 @@ int main(int argc, char* argv[]) {
     rk.SetSolidWallBC("4_S_15");  // Gap
   }
 
-  auto wtime_start = MPI_Wtime();
   /* Main Loop */
+  auto wtime_start = MPI_Wtime();
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);

@@ -12,7 +12,7 @@ namespace linear {
 
 class TestDoubleWave : public ::testing::Test {
  protected:
-  using Solver = Double<3>;
+  using Solver = Double<double, 3>;
   using Conservative = typename Solver::Conservative;
   using Matrix = typename Solver::Matrix;
   Conservative left{1.0, 11.0}, right{2.0, 22.0};

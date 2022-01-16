@@ -9,9 +9,9 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <int kDim>
-class Double : public Simple<linear::Double<kDim>> {
-  using Base = Simple<linear::Double<kDim>>;
+template <typename Scalar, int kDim>
+class Double : public Simple<linear::Double<Scalar, kDim>> {
+  using Base = Simple<linear::Double<Scalar, kDim>>;
 
  public:
   using Jacobi = typename Base::Jacobi;

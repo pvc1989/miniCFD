@@ -11,12 +11,12 @@ namespace mini {
 namespace riemann {
 namespace linear {
 
-template <int D>
+template <typename S, int D>
 class Double {
  public:
   static constexpr int kDim = D;
   static constexpr int kFunc = 2;
-  using Scalar = double;
+  using Scalar = S;
   using Vector = algebra::Vector<Scalar, kDim>;
   using Column = algebra::Vector<Scalar, kFunc>;
   using Matrix = algebra::Matrix<Scalar, kFunc, kFunc>;
@@ -52,13 +52,13 @@ class Double {
     using Row = Column;
     for (int i = 0; i < k; i++) {
       auto l = Row(eigen_matrix_l_(i, 0), eigen_matrix_l_(i, 1));
-      double temp = l.dot(right) * eigen_values_[i];
+      Scalar temp = l.dot(right) * eigen_values_[i];
       flux[0] += temp * eigen_matrix_r_(0, i);
       flux[1] += temp * eigen_matrix_r_(1, i);
     }
     for (int i = k; i < 2; i++) {
       auto l = Row(eigen_matrix_l_(i, 0), eigen_matrix_l_(i, 1));
-      double temp = l.dot(left) * eigen_values_[i];
+      Scalar temp = l.dot(left) * eigen_values_[i];
       flux[0] += temp * eigen_matrix_r_(0, i);
       flux[1] += temp * eigen_matrix_r_(1, i);
     }
@@ -71,18 +71,18 @@ class Double {
     GetInverseEigenVectors();
   }
   void GetEigenValues() {
-    double b = a_const_(0, 0) + a_const_(1, 1);
-    double c = a_const_(0, 0) * a_const_(1, 1) -
+    Scalar b = a_const_(0, 0) + a_const_(1, 1);
+    Scalar c = a_const_(0, 0) * a_const_(1, 1) -
                a_const_(0, 1) * a_const_(1, 0);
-    double delta = std::sqrt(b * b - 4 * c);
+    Scalar delta = std::sqrt(b * b - 4 * c);
     eigen_values_[0] = (b - delta) / 2;
     eigen_values_[1] = (b + delta) / 2;
   }
   void GetEigenVectors() {
-    double a = a_const_(0, 0) - eigen_values_[0];
-    double b = a_const_(0, 1);
-    double c = a_const_(1, 0);
-    double d = a_const_(1, 1) - eigen_values_[0];
+    Scalar a = a_const_(0, 0) - eigen_values_[0];
+    Scalar b = a_const_(0, 1);
+    Scalar c = a_const_(1, 0);
+    Scalar d = a_const_(1, 1) - eigen_values_[0];
     if (a == 0 && b == 0) {
       eigen_matrix_r_(0, 0) = d;
       eigen_matrix_r_(1, 0) = -c;
@@ -101,7 +101,7 @@ class Double {
     }
   }
   void GetInverseEigenVectors() {
-    double det = eigen_matrix_r_(0, 0) * eigen_matrix_r_(1, 1) -
+    Scalar det = eigen_matrix_r_(0, 0) * eigen_matrix_r_(1, 1) -
                  eigen_matrix_r_(0, 1) * eigen_matrix_r_(1, 0);
     eigen_matrix_l_(0, 0) =  eigen_matrix_r_(1, 1) / det;
     eigen_matrix_l_(0, 1) = -eigen_matrix_r_(0, 1) / det;
