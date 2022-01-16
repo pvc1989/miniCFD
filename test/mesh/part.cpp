@@ -9,6 +9,7 @@
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/polynomial/limiter.hpp"
+#include "mini/riemann/rotated/multiple.hpp"
 
 // mpirun -n 4 ./part
 int main(int argc, char* argv[]) {
@@ -36,7 +37,8 @@ int main(int argc, char* argv[]) {
       case_name.c_str(), i_proc,
       i_proc, n_procs, MPI_Wtime() - time_begin);
   constexpr int kFunc{2}, kDim{3}, kOrder{2};
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder>;
+  using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, kFunc, kDim, kOrder, Riemann>;
   auto part = Part(case_name, i_proc);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;

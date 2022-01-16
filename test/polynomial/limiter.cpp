@@ -20,7 +20,9 @@
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/riemann/euler/eigen.hpp"
+#include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/rotated/euler.hpp"
+#include "mini/riemann/euler/exact.hpp"
 
 #include "gtest/gtest.h"
 
@@ -62,7 +64,8 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     }
   }
   // build cells and project the function on them
-  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 1, 3, 2>;
+  using Riemann = mini::riemann::rotated::Single<double, 3>;
+  using Cell = mini::mesh::cgns::Cell<cgsize_t, double, 1, 3, 2, Riemann>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto& zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -158,7 +161,10 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   cgp_mpi_comm(MPI_COMM_WORLD);
   using Shuffler = mini::mesh::Shuffler<idx_t, double>;
   Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
-  using Part = mini::mesh::cgns::Part<cgsize_t, double, 5, 3, 2>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+  using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
+  using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, double, 5, 3, 2, Riemann>;
   auto part = Part(case_name, i_proc);
   MPI_Finalize();
   // project the function
@@ -177,10 +183,8 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   // reconstruct using a `EigenWeno` limiter
   using Cell = typename Part::Cell;
   using Projection = typename Cell::Projection;
-  using IdealGas = mini::riemann::euler::IdealGas<double, 1, 4>;
-  using Matrices = mini::riemann::euler::EigenMatrices<IdealGas>;
   auto n_cells = part.CountLocalCells();
-  auto eigen_limiter = mini::polynomial::EigenWeno<Cell, Matrices>(
+  auto eigen_limiter = mini::polynomial::EigenWeno<Cell>(
       /* w0 = */0.01, /* eps = */1e-6);
   auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
       /* w0 = */0.01, /* eps = */1e-6, /* verbose = */true);
