@@ -193,10 +193,86 @@ struct Cell {
   const Gauss& gauss() const {
     return *gauss_ptr_;
   }
+  void WriteSolutions(int npe, std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    switch (npe) {
+      case 4:
+        WriteSolutionsOnTetra4(coords, fields);
+        break;
+      case 8:
+        WriteSolutionsOnHexa8(coords, fields);
+        break;
+      default:
+        assert(false);
+        break;
+    }
+  }
 
   template <class Callable>
   void Project(Callable&& func) {
     projection_.Project(func, basis_);
+  }
+
+ private:
+  void WriteSolutionsOnTetra4(std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    coords->emplace_back(gauss().LocalToGlobal({1, 0, 0}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 1, 0}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 0, 1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 0, 0}));
+    fields->emplace_back(projection_(coords->back()));
+  }
+  void WriteSolutionsOnHexa8(std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    coords->emplace_back(gauss().LocalToGlobal({-1, -1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+  }
+  void WriteSolutionsOnHexa20(std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    // nodes at corners
+    WriteSolutionsOnHexa8(coords, fields);
+    // nodes on edges
+    coords->emplace_back(gauss().LocalToGlobal({0., -1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, 0., -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0., +1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, 0., -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0., -1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, 0., +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0., +1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, 0., +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -1, 0.}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -1, 0.}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +1, 0.}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +1, 0.}));
+    fields->emplace_back(projection_(coords->back()));
   }
 };
 
@@ -984,17 +1060,7 @@ class Part {
           cells.emplace_back(npe);
           for (int i = 0; i < npe; ++i)
             cells.emplace_back(coords.size() + i);
-          switch (npe) {
-            case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &coords, &fields);
-              break;
-            case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &coords, &fields);
-              break;
-            default:
-              assert(false);
-              break;
-          }
+          sect[i_cell].WriteSolutions(npe, &coords, &fields);
           ++i_cell; ++n_cells;
         }
       }
@@ -1077,17 +1143,7 @@ class Part {
         int i_cell_tail = sect.tail();
         int npe = sect.npe();
         while (i_cell < i_cell_tail) {
-          switch (npe) {
-            case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &coords, &fields);
-              break;
-            case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &coords, &fields);
-              break;
-            default:
-              assert(false);
-              break;
-          }
+          sect[i_cell].WriteSolutions(npe, &coords, &fields);
           ++i_cell; ++n_cells;
         }
       }
@@ -1211,72 +1267,6 @@ class Part {
       a[i] = pv[sizeof(v) - 1 - i];
     }
     ostrm.write(a, sizeof(v));
-  }
-  static void WriteSolutionsOnTetra4(const Cell &cell,
-      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
-    auto& gauss = cell.gauss();
-    auto& proj = cell.projection_;
-    coords->emplace_back(gauss.LocalToGlobal({1, 0, 0}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0, 1, 0}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0, 0, 1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0, 0, 0}));
-    fields->emplace_back(proj(coords->back()));
-  }
-  static void WriteSolutionsOnHexa8(const Cell &cell,
-      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
-    auto& gauss = cell.gauss();
-    auto& proj = cell.projection_;
-    coords->emplace_back(gauss.LocalToGlobal({-1, -1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, -1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, +1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, +1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, -1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, -1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, +1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, +1, +1}));
-    fields->emplace_back(proj(coords->back()));
-  }
-  static void WriteSolutionsOnHexa20(const Cell &cell,
-      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
-    auto& gauss = cell.gauss();
-    auto& proj = cell.projection_;
-    // nodes at corners
-    WriteSolutionsOnHexa8(cell, coords, fields);
-    // nodes on edges
-    coords->emplace_back(gauss.LocalToGlobal({0., -1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, 0., -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0., +1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, 0., -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0., -1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, 0., +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({0., +1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, 0., +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, -1, 0.}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, -1, 0.}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, +1, 0.}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, +1, 0.}));
-    fields->emplace_back(proj(coords->back()));
   }
   void ShareGhostCellCoeffs() {
     int i_req = 0;
