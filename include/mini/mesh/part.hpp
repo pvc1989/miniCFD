@@ -982,12 +982,14 @@ class Part {
         int npe = sect.npe();
         while (i_cell < i_cell_tail) {
           cells.emplace_back(npe);
+          for (int i = 0; i < npe; ++i)
+            cells.emplace_back(coords.size() + i);
           switch (npe) {
             case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);
+              WriteSolutionsOnTetra4(sect[i_cell], &coords, &fields);
               break;
             case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);
+              WriteSolutionsOnHexa8(sect[i_cell], &coords, &fields);
               break;
             default:
               assert(false);
@@ -1000,7 +1002,9 @@ class Part {
     if (write_ghost_cells) {  // just for debug, only support Hexa8
       for (auto& [m_cell, cell] : ghost_cells_) {
         cells.emplace_back(8);
-        WriteSolutionsOnHexa8(cell, &cells, &coords, &fields);
+        for (int i = 0; i < 8; ++i)
+          cells.emplace_back(coords.size() + i);
+        WriteSolutionsOnHexa8(cell, &coords, &fields);
       }
     }
     ostrm << "POINTS " << coords.size() << " double\n";
@@ -1065,7 +1069,6 @@ class Part {
   void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
     // prepare data to be written
     Int n_cells = 0;
-    auto cells = std::vector<Int>();
     auto coords = std::vector<Mat3x1>();
     auto fields = std::vector<typename Cell::Value>();
     for (auto& [i_zone, zone] : local_cells_) {
@@ -1074,13 +1077,12 @@ class Part {
         int i_cell_tail = sect.tail();
         int npe = sect.npe();
         while (i_cell < i_cell_tail) {
-          cells.emplace_back(npe);
           switch (npe) {
             case 4:
-              WriteSolutionsOnTetra4(sect[i_cell], &cells, &coords, &fields);
+              WriteSolutionsOnTetra4(sect[i_cell], &coords, &fields);
               break;
             case 8:
-              WriteSolutionsOnHexa8(sect[i_cell], &cells, &coords, &fields);
+              WriteSolutionsOnHexa8(sect[i_cell], &coords, &fields);
               break;
             default:
               assert(false);
@@ -1211,118 +1213,83 @@ class Part {
     ostrm.write(a, sizeof(v));
   }
   static void WriteSolutionsOnTetra4(const Cell &cell,
-      std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename Cell::Value> *fields) {
+      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({1, 0, 0}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0, 1, 0}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0, 0, 1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0, 0, 0}));
     fields->emplace_back(proj(coords->back()));
   }
   static void WriteSolutionsOnHexa8(const Cell &cell,
-      std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename Cell::Value> *fields) {
+      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
     fields->emplace_back(proj(coords->back()));
   }
   static void WriteSolutionsOnHexa20(const Cell &cell,
-      std::vector<Int> *cells, std::vector<Mat3x1> *coords,
-      std::vector<typename Cell::Value> *fields) {
+      std::vector<Mat3x1> *coords, std::vector<typename Cell::Value> *fields) {
     auto& gauss_ptr = cell.gauss_ptr_;
     auto& proj = cell.projection_;
     // nodes at corners
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, -1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, -1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, +1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, -1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, -1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, +1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, +1}));
     fields->emplace_back(proj(coords->back()));
     // nodes on edges
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0., -1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, 0., -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0., +1, -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, 0., -1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0., -1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, 0., +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({0., +1, +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, 0., +1}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, -1, 0.}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, -1, 0.}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({+1, +1, 0.}));
     fields->emplace_back(proj(coords->back()));
-    cells->emplace_back(coords->size());
     coords->emplace_back(gauss_ptr->LocalToGlobal({-1, +1, 0.}));
     fields->emplace_back(proj(coords->back()));
   }
