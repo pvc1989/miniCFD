@@ -1251,22 +1251,7 @@ class Part {
     auto& gauss = cell.gauss();
     auto& proj = cell.projection_;
     // nodes at corners
-    coords->emplace_back(gauss.LocalToGlobal({-1, -1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, -1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, +1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, +1, -1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, -1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, -1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({+1, +1, +1}));
-    fields->emplace_back(proj(coords->back()));
-    coords->emplace_back(gauss.LocalToGlobal({-1, +1, +1}));
-    fields->emplace_back(proj(coords->back()));
+    WriteSolutionsOnHexa8(cell, coords, fields);
     // nodes on edges
     coords->emplace_back(gauss.LocalToGlobal({0., -1, -1}));
     fields->emplace_back(proj(coords->back()));
