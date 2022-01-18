@@ -193,14 +193,51 @@ struct Cell {
   const Gauss& gauss() const {
     return *gauss_ptr_;
   }
-  void WriteSolutions(int npe, std::vector<Coord> *coords,
-      std::vector<Value> *fields) const {
-    switch (npe) {
+  static int GetVtkType(int n_corners) {
+    int type;
+    switch (n_corners) {
       case 4:
-        WriteSolutionsOnTetra4(coords, fields);
+        type = 10;  // VTK_TETRA
         break;
       case 8:
+        // type = 12;  // VTK_HEXAHEDRON
+        type = 25;  // VTK_QUADRATIC_HEXAHEDRON
+        break;
+      default:
+        assert(false);
+        break;
+    }
+    return type;
+  }
+  static int CountNodes(int vtk_type) {
+    int n_nodes;
+    switch (vtk_type) {
+      case 10:  // VTK_TETRA
+        n_nodes = 4;
+        break;
+      case 12:  // VTK_HEXAHEDRON
+        n_nodes = 8;
+        break;
+      case 25:  // VTK_QUADRATIC_HEXAHEDRON
+        n_nodes = 20;
+        break;
+      default:
+        assert(false);
+        break;
+    }
+    return n_nodes;
+  }
+  void WriteSolutions(int vtk_type, std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    switch (vtk_type) {
+      case 10:  // VTK_TETRA
+        WriteSolutionsOnTetra4(coords, fields);
+        break;
+      case 12:  // VTK_HEXAHEDRON
         WriteSolutionsOnHexa8(coords, fields);
+        break;
+      case 25:  // VTK_QUADRATIC_HEXAHEDRON
+        WriteSolutionsOnHexa20(coords, fields);
         break;
       default:
         assert(false);
@@ -1141,9 +1178,9 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        int npe = sect.npe();
+        int type = Cell::GetVtkType(sect.npe());
         while (i_cell < i_cell_tail) {
-          sect[i_cell].WriteSolutions(npe, &coords, &fields);
+          sect[i_cell].WriteSolutions(type, &coords, &fields);
           ++i_cell; ++n_cells;
         }
       }
@@ -1220,9 +1257,9 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        int npe = sect.npe();
+        int n_nodes = Cell::CountNodes(Cell::GetVtkType(sect.npe()));
         while (i_cell < i_cell_tail) {
-          offset += npe;
+          offset += n_nodes;
           vtu << offset << ' ';
           ++i_cell;
         }
@@ -1235,18 +1272,7 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        int type;
-        switch (sect.npe()) {
-          case 4:
-            type = 10;  // VTK_TETRA
-            break;
-          case 8:
-            type = 12;  // VTK_HEXAHEDRON
-            break;
-          default:
-            assert(false);
-            break;
-        }
+        auto type = Cell::GetVtkType(sect.npe());
         while (i_cell < i_cell_tail) {
           vtu << type << ' ';
           ++i_cell;
