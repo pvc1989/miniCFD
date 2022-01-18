@@ -193,15 +193,26 @@ struct Cell {
   const Gauss& gauss() const {
     return *gauss_ptr_;
   }
-  static int GetVtkType(int n_corners) {
-    int type;
+
+  template <class Callable>
+  void Project(Callable&& func) {
+    projection_.Project(func, basis_);
+  }
+
+ public:  // VTK related types and methods
+  enum class VtkCellType {
+    kTetra = 10,
+    kHexahedron = 12,
+    kQuadraticHexahedron = 25,
+  };
+  static VtkCellType GetVtkType(int n_corners) {
+    VtkCellType type;
     switch (n_corners) {
       case 4:
-        type = 10;  // VTK_TETRA
+        type = VtkCellType::kTetra;
         break;
       case 8:
-        // type = 12;  // VTK_HEXAHEDRON
-        type = 25;  // VTK_QUADRATIC_HEXAHEDRON
+        type = VtkCellType::kQuadraticHexahedron;
         break;
       default:
         assert(false);
@@ -209,16 +220,16 @@ struct Cell {
     }
     return type;
   }
-  static int CountNodes(int vtk_type) {
+  static int CountNodes(VtkCellType vtk_type) {
     int n_nodes;
     switch (vtk_type) {
-      case 10:  // VTK_TETRA
+      case VtkCellType::kTetra:
         n_nodes = 4;
         break;
-      case 12:  // VTK_HEXAHEDRON
+      case VtkCellType::kHexahedron:
         n_nodes = 8;
         break;
-      case 25:  // VTK_QUADRATIC_HEXAHEDRON
+      case VtkCellType::kQuadraticHexahedron:
         n_nodes = 20;
         break;
       default:
@@ -227,27 +238,22 @@ struct Cell {
     }
     return n_nodes;
   }
-  void WriteSolutions(int vtk_type, std::vector<Coord> *coords,
+  void WriteSolutions(VtkCellType vtk_type, std::vector<Coord> *coords,
       std::vector<Value> *fields) const {
     switch (vtk_type) {
-      case 10:  // VTK_TETRA
+      case VtkCellType::kTetra:
         WriteSolutionsOnTetra4(coords, fields);
         break;
-      case 12:  // VTK_HEXAHEDRON
+      case VtkCellType::kHexahedron:
         WriteSolutionsOnHexa8(coords, fields);
         break;
-      case 25:  // VTK_QUADRATIC_HEXAHEDRON
+      case VtkCellType::kQuadraticHexahedron:
         WriteSolutionsOnHexa20(coords, fields);
         break;
       default:
         assert(false);
         break;
     }
-  }
-
-  template <class Callable>
-  void Project(Callable&& func) {
-    projection_.Project(func, basis_);
   }
 
  private:
@@ -1085,7 +1091,7 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        int type = Cell::GetVtkType(sect.npe());
+        auto type = Cell::GetVtkType(sect.npe());
         while (i_cell < i_cell_tail) {
           sect[i_cell].WriteSolutions(type, &coords, &fields);
           ++i_cell; ++n_cells;
@@ -1181,7 +1187,7 @@ class Part {
         int i_cell_tail = sect.tail();
         auto type = Cell::GetVtkType(sect.npe());
         while (i_cell < i_cell_tail) {
-          vtu << type << ' ';
+          vtu << static_cast<int>(type) << ' ';
           ++i_cell;
         }
       }
