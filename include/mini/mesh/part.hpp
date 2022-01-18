@@ -203,13 +203,14 @@ struct Cell {
   enum class VtkCellType {
     kTetra = 10,
     kHexahedron = 12,
+    kQuadraticTetra = 24,
     kQuadraticHexahedron = 25,
   };
   static VtkCellType GetVtkType(int n_corners) {
     VtkCellType type;
     switch (n_corners) {
       case 4:
-        type = VtkCellType::kTetra;
+        type = VtkCellType::kQuadraticTetra;
         break;
       case 8:
         type = VtkCellType::kQuadraticHexahedron;
@@ -229,6 +230,9 @@ struct Cell {
       case VtkCellType::kHexahedron:
         n_nodes = 8;
         break;
+      case VtkCellType::kQuadraticTetra:
+        n_nodes = 10;
+        break;
       case VtkCellType::kQuadraticHexahedron:
         n_nodes = 20;
         break;
@@ -246,6 +250,9 @@ struct Cell {
         break;
       case VtkCellType::kHexahedron:
         WriteSolutionsOnHexa8(coords, fields);
+        break;
+      case VtkCellType::kQuadraticTetra:
+        WriteSolutionsOnTetra10(coords, fields);
         break;
       case VtkCellType::kQuadraticHexahedron:
         WriteSolutionsOnHexa20(coords, fields);
@@ -266,6 +273,24 @@ struct Cell {
     coords->emplace_back(gauss().LocalToGlobal({0, 0, 1}));
     fields->emplace_back(projection_(coords->back()));
     coords->emplace_back(gauss().LocalToGlobal({0, 0, 0}));
+    fields->emplace_back(projection_(coords->back()));
+  }
+  void WriteSolutionsOnTetra10(std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    // nodes at corners
+    WriteSolutionsOnTetra4(coords, fields);
+    // nodes on edges
+    coords->emplace_back(gauss().LocalToGlobal({0.5, 0.5, 0}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 0.5, 0.5}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0.5, 0, 0.5}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0.5, 0, 0}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 0.5, 0}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({0, 0, 0.5}));
     fields->emplace_back(projection_(coords->back()));
   }
   void WriteSolutionsOnHexa8(std::vector<Coord> *coords,
