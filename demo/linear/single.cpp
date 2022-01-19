@@ -156,18 +156,10 @@ int main(int argc, char* argv[]) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);
 
-    double l1_error = 0.0, t_next = t_curr + dt;
-    auto visitor = [&t_next, &exact_solution, &l1_error](const Cell&cell){
-      auto func = [&t_next, &exact_solution, &cell](const Coord &xyz){
-        auto v_actual = cell.projection_(xyz)[0];
-        auto v_expect = exact_solution(xyz, t_next)[0];
-        return std::abs(v_actual - v_expect);
-      };
-      l1_error += mini::integrator::Integrate(func, cell.gauss());
-    };
-    part.ForEachConstLocalCell(visitor);
+    double t_next = t_curr + dt;
+    auto l1_error = part.MeasureL1Error(exact_solution, t_next);
     std::printf("[%d/%d] t = %f, l1_error = %e\n",
-        i_proc, n_procs, t_next, l1_error);
+        i_proc, n_procs, t_next, l1_error[0]);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
