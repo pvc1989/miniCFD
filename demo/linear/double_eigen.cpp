@@ -90,6 +90,19 @@ int main(int argc, char* argv[]) {
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > x_0) ? value_right : value_left;
   };
+  // build exact solution
+  auto eig_solver = Eigen::EigenSolver<Jacobi>(Riemann::global_coefficient[0]);
+  Value eig_vals = eig_solver.eigenvalues().real();
+  Jacobi eig_rows = eig_solver.eigenvectors().real();
+  Jacobi eig_cols = eig_rows.inverse();
+  auto exact_solution = [&](const Coord& xyz, double t){
+    Value value; value.setZero();
+    for (int i = 0; i < kFunc; ++i) {
+      value += eig_cols.col(i) * eig_rows.row(i).dot(
+          (xyz[0] - x_0 > eig_vals[i] * t) ? value_right : value_left);
+    }
+    return value;
+  };
 
   if (argc == 7) {
     std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
@@ -154,6 +167,11 @@ int main(int argc, char* argv[]) {
   for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
     double t_curr = t_start + dt * (i_step - i_start - 1);
     rk.Update(&part, t_curr);
+
+    double t_next = t_curr + dt;
+    auto l1_error = part.MeasureL1Error(exact_solution, t_next);
+    std::printf("[%d/%d] t = %f, l1_error = ", i_proc, n_procs, t_next);
+    std::cout << std::scientific << l1_error.transpose() << std::endl;
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
