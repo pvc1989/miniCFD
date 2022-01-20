@@ -12,7 +12,7 @@ endif (${PROJECT_NAME}_ENABLE_VTK)
 
 add_library(demo_euler_rkdg rkdg.cpp)
 target_include_directories(demo_euler_rkdg PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-target_link_libraries(demo_euler_rkdg cgns_shared metis ${MPI_mpi_LIBRARY})
+target_link_libraries(demo_euler_rkdg ${CGNS_LIB} metis ${MPI_LIBRARY})
 
 set (cases
   double_mach
