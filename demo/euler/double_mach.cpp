@@ -157,8 +157,6 @@ int main(int argc, char* argv[]) {
   if (suffix == "tetra") {
     rk.SetPrescribedBC("3_S_27", moving_shock);  // Top
     rk.SetPrescribedBC("3_S_31", moving_shock);  // Left
-    rk.SetSolidWallBC("3_S_27");  // Top
-    rk.SetSolidWallBC("3_S_31");  // Left
     rk.SetSolidWallBC("3_S_1");   // Back
     rk.SetSolidWallBC("3_S_32");  // Front
     rk.SetSolidWallBC("3_S_19");  // Bottom
@@ -168,8 +166,6 @@ int main(int argc, char* argv[]) {
     assert(suffix == "hexa");
     rk.SetPrescribedBC("4_S_27", moving_shock);  // Top
     rk.SetPrescribedBC("4_S_31", moving_shock);  // Left
-    rk.SetSolidWallBC("4_S_27");  // Top
-    rk.SetSolidWallBC("4_S_31");  // Left
     rk.SetSolidWallBC("4_S_1");   // Back
     rk.SetSolidWallBC("4_S_32");  // Front
     rk.SetSolidWallBC("4_S_19");  // Bottom
