@@ -6,13 +6,54 @@
 This repo is a minimum implementation of *Data Structures and Algorithms (DSA)* used in *Computational Fluid Dynamics (CFD)*.
 
 ## Build and Test
+
+### Build HDF5
+
+```shell
+mkdir HDF5 && cd HDF5
+git clone https://github.com/HDFGroup/hdf5.git repo
+mkdir build install && cd build
+cmake -S ../repo -B . -G Ninja -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTING=OFF -D HDF5_BUILD_TOOLS=OFF -D HDF5_ENABLE_PARALLEL=ON
+cmake --build .
+cpack -C Release CPackConfig.cmake
+cd ../install
+../build/HDF5-1.13.1.1-Linux.sh
+```
+
+After accepting the license, the script will prompt:
+
+```shell
+By default the HDF5 will be installed in:
+  "<current directory>/HDF5-1.13.X-Linux"
+Do you want to include the subdirectory HDF5-1.13.X-Linux?
+Saying no will install in: "<current directory>" [Yn]:
+```
+
+Type `n` will get the following directory structure relative to `<current directory>`:
+
+```
+install
+└── HDF_Group
+    └── HDF5
+        └── 1.13.X
+            ├── bin
+            ├── include
+            ├── lib
+            └── share
+                └── cmake
+```
+
+Set `MY_HDF5_DIR` to the `share/cmake` directory, which contains some `*.cmake` files.
+
+### Build miniCFD
+
 ```shell
 git clone https://github.com/pvcStillInGradSchool/miniCFD.git
 cd miniCFD
 git submodule update --init --recursive
 mkdir -p build/Release
 cd build/Release
-cmake -D CMAKE_BUILD_TYPE=Release -G Ninja -S ../.. -B .  # cmake 3.13.5+
+cmake -D CMAKE_BUILD_TYPE=Release -D HDF5_DIR=$MY_HDF5_DIR  -G Ninja -S ../.. -B .  # cmake 3.13.5+
 cmake --build .
 ctest
 ```
