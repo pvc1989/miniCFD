@@ -113,8 +113,6 @@ TEST_F(TestProjection, PartialDerivatives) {
   EXPECT_NEAR(s_actual[8], 64.0/3, 1e-13);
   EXPECT_NEAR(s_actual[9], 80.0/3, 1e-12);
 }
-TEST_F(TestProjection, ArithmeticOperators) {
-}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
