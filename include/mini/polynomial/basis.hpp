@@ -130,32 +130,35 @@ class Raw<Scalar, 3, 2> {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatKxN res = coeff; res.col(0).setZero();
     // pdv_x
-    // res.col(1) += coeff.col(1);
+    assert(res.col(1) == coeff.col(1));
     res.col(1) += coeff.col(4) * (2 * x);
     res.col(1) += coeff.col(5) * y;
     res.col(1) += coeff.col(6) * z;
     // pdv_y
-    // res.col(2) += coeff.col(2);
+    assert(res.col(2) == coeff.col(2));
     res.col(2) += coeff.col(5) * x;
     res.col(2) += coeff.col(7) * (2 * y);
     res.col(2) += coeff.col(8) * z;
     // pdv_z
-    // res.col(3) += coeff.col(3);
+    assert(res.col(3) == coeff.col(3));
     res.col(3) += coeff.col(6) * x;
     res.col(3) += coeff.col(8) * y;
     res.col(3) += coeff.col(9) * (2 * z);
     // pdv_xx
-    // res.col(4) += coeff.col(4);
+    res.col(4) += coeff.col(4);
+    assert(res.col(4) == coeff.col(4) * 2);
     // pdv_xy
-    // res.col(5) += coeff.col(5);
+    assert(res.col(5) == coeff.col(5));
     // pdv_xz
-    // res.col(6) += coeff.col(6);
+    assert(res.col(6) == coeff.col(6));
     // pdv_yy
-    // res.col(7) += coeff.col(7);
+    res.col(7) += coeff.col(7);
+    assert(res.col(7) == coeff.col(7) * 2);
     // pdv_yz
-    // res.col(8) += coeff.col(8);
+    assert(res.col(8) == coeff.col(8));
     // pdv_zz
-    // res.col(9) += coeff.col(9);
+    res.col(9) += coeff.col(9);
+    assert(res.col(9) == coeff.col(9) * 2);
     return res;
   }
 
