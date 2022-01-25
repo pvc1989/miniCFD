@@ -94,12 +94,43 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
-  auto point = Coord{ 0.3, 0.4, 0.5 };
+  auto x = 0.3, y = 0.4, z = 0.5;
+  auto point = Coord{ x, y, z };
   auto pdv_actual = projection.GetPdvValue(point);
   auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
   auto pdv_expect = Raw::GetPdvValue(point, coeff);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  auto pdv_values = ProjFunc::MatKxN(); pdv_values.setZero();
+  pdv_values(1, 1) = 1;  // (∂/∂x)(x)
+  pdv_values(2, 2) = 1;  // (∂/∂y)(y)
+  pdv_values(3, 3) = 1;  // (∂/∂z)(z)
+  pdv_values(4, 1) = 2*x;  //     (∂/∂x)(x*x)
+  pdv_values(4, 4) = 2;  // (∂/∂x)(∂/∂x)(x*x)
+  pdv_values(5, 1) = y;  //       (∂/∂x)(x*y)
+  pdv_values(5, 2) = x;  //       (∂/∂y)(x*y)
+  pdv_values(5, 5) = 1;  // (∂/∂x)(∂/∂y)(x*y)
+  pdv_values(6, 1) = z;  //       (∂/∂x)(x*z)
+  pdv_values(6, 3) = x;  //       (∂/∂z)(x*z)
+  pdv_values(6, 6) = 1;  // (∂/∂x)(∂/∂z)(x*z)
+  pdv_values(7, 2) = 2*y;  //     (∂/∂y)(y*y)
+  pdv_values(7, 7) = 2;  // (∂/∂y)(∂/∂y)(y*y)
+  pdv_values(8, 2) = z;  //       (∂/∂y)(y*z)
+  pdv_values(8, 3) = y;  //       (∂/∂z)(y*z)
+  pdv_values(8, 8) = 1;  // (∂/∂y)(∂/∂z)(y*z)
+  pdv_values(9, 3) = 2*z;  //     (∂/∂z)(z*z)
+  pdv_values(9, 9) = 2;  // (∂/∂z)(∂/∂z)(z*z)
+  EXPECT_EQ(pdv_expect, pdv_values);
+}
+TEST_F(TestProjection, Smoothness) {
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
+  using Raw = mini::polynomial::Raw<double, 3, 2>;
+  using MatKx1 = typename ProjFunc::MatKx1;
+  auto func = [](Coord const &point) {
+    return Raw::CallAt(point);
+  };
+  auto basis = Basis(gauss_);
+  auto projection = ProjFunc(func, basis);
   auto s_actual = projection.GetSmoothness();
   std::cout << "s_actual.transpose() =\n" << s_actual.transpose() << std::endl;
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
