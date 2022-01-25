@@ -132,17 +132,16 @@ TEST_F(TestProjection, Smoothness) {
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
   auto s_actual = projection.GetSmoothness();
-  std::cout << "s_actual.transpose() =\n" << s_actual.transpose() << std::endl;
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
   EXPECT_NEAR(s_actual[1], 4.0, 1e-14);
   EXPECT_NEAR(s_actual[2], 4.0, 1e-14);
   EXPECT_NEAR(s_actual[3], 4.0, 1e-14);
-  EXPECT_NEAR(s_actual[4], 16./3 + 16, 1e-13);
-  EXPECT_NEAR(s_actual[5], 8.0/3 + 4., 1e-14);
-  EXPECT_NEAR(s_actual[6], 8.0/3 + 4., 1e-14);
-  EXPECT_NEAR(s_actual[7], 16./3 + 16, 1e-13);
-  EXPECT_NEAR(s_actual[8], 8.0/3 + 4., 1e-14);
-  EXPECT_NEAR(s_actual[9], 16./3 + 16, 1e-12);
+  EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-13);
+  EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-14);
+  EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-14);
+  EXPECT_NEAR(s_actual[7], 16./3 + 64, 1e-12);
+  EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-14);
+  EXPECT_NEAR(s_actual[9], 16./3 + 64, 1e-12);
 }
 
 int main(int argc, char* argv[]) {

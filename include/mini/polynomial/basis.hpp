@@ -196,7 +196,7 @@ class Raw<Scalar, 3, 2> {
     smoothness += integral.col(3);
     smoothness *= w1;
     auto w2  // weight of 2nd-order partial derivatives
-        = std::pow(volume, 4./3-1) / 4;
+        = std::pow(volume, 4./3-1);
     smoothness += integral.col(4) * w2;
     smoothness += integral.col(5) * w2;
     smoothness += integral.col(6) * w2;
