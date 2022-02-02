@@ -187,7 +187,7 @@ class RungeKuttaBase {
   }
 };
 
-template <int kSteps, typename Part, typename Limiter>
+template <int kOrder, typename Part, typename Limiter>
 struct RungeKutta;
 
 template <typename P, typename L>
@@ -237,6 +237,84 @@ struct RungeKutta<1, P, L>
     }
     Base::WriteToLocalCells(u_new_, part_ptr);
     // part_ptr->Reconstruct(this->limiter_);  // only for high order methods
+  }
+};
+
+template <typename P, typename L>
+struct RungeKutta<2, P, L>
+    : public RungeKuttaBase<P, L> {
+ private:
+  using Base = RungeKuttaBase<P, L>;
+
+ public:
+  using Part = typename Base::Part;
+  using Riemann = typename Base::Riemann;
+  using Limiter = typename Base::Limiter;
+  using Cell = typename Base::Cell;
+  using Face = typename Base::Face;
+  using Projection = typename Base::Projection;
+  using Coeff = typename Base::Coeff;
+  using Value = typename Base::Value;
+
+ private:
+  std::vector<Coeff> u_old_, u_frac12_, u_new_;
+
+ public:
+  using Base::Base;
+  RungeKutta(const RungeKutta &) = default;
+  RungeKutta& operator=(const RungeKutta &) = default;
+  RungeKutta(RungeKutta &&) noexcept = default;
+  RungeKutta& operator=(RungeKutta &&) noexcept = default;
+  ~RungeKutta() noexcept = default;
+
+ public:
+  void Update(Part *part_ptr, double t_curr) {
+    const Part &part = *part_ptr;
+
+    Base::ReadFromLocalCells(part, &u_old_);
+    part_ptr->ShareGhostCellCoeffs();
+    this->InitializeRhs(part);
+    this->UpdateLocalRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
+    part_ptr->UpdateGhostCellCoeffs();
+    this->UpdateGhostRhs(part);
+    this->SolveFrac12();
+    Base::WriteToLocalCells(u_frac12_, part_ptr);
+    part_ptr->Reconstruct(this->limiter_);
+
+    Base::ReadFromLocalCells(part, &u_frac12_);
+    part_ptr->ShareGhostCellCoeffs();
+    this->InitializeRhs(part);
+    this->UpdateLocalRhs(part);
+    this->UpdateBoundaryRhs(part, t_curr);
+    part_ptr->UpdateGhostCellCoeffs();
+    this->UpdateGhostRhs(part);
+    this->SolveFrac22();
+    Base::WriteToLocalCells(u_new_, part_ptr);
+    part_ptr->Reconstruct(this->limiter_);
+  }
+
+ private:
+  void SolveFrac12() {
+    auto n_cells = u_old_.size();
+    assert(n_cells == this->rhs_.size());
+    u_frac12_ = this->rhs_;
+    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+      u_frac12_[i_cell] *= this->dt_;
+      u_frac12_[i_cell] += u_old_[i_cell];
+    }
+  }
+  void SolveFrac22() {
+    auto n_cells = u_old_.size();
+    assert(n_cells == this->rhs_.size());
+    assert(n_cells == u_frac12_.size());
+    u_new_ = this->rhs_;
+    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
+      u_new_[i_cell] *= this->dt_;
+      u_new_[i_cell] += u_frac12_[i_cell];
+      u_new_[i_cell] += u_old_[i_cell];
+      u_new_[i_cell] /= 2;
+    }
   }
 };
 
