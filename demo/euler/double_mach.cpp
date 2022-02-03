@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
       std::cout << "usage:\n"
           << "  mpirun -n <n_proc> ./double_mach <cgns_file> <hexa|tetra>"
           << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
-          << " [<i_start> [n_parts_prev]]\n";
+          << " [<i_frame_start> [n_parts_prev]]\n";
     }
     MPI_Finalize();
     exit(0);
@@ -40,9 +40,9 @@ int main(int argc, char* argv[]) {
   int n_steps = std::atoi(argv[5]);
   int n_steps_per_frame = std::atoi(argv[6]);
   auto dt = (t_stop - t_start) / n_steps;
-  int i_start = 0;
+  int i_start = 0, i_frame = 0;
   if (argc > 7) {
-    i_start = std::atoi(argv[7]);
+    i_frame = std::atoi(argv[7]);
   }
   int n_parts_prev = 0;
   if (argc > 8) {
@@ -132,15 +132,15 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    std::printf("Run WriteSolutions(Step0) on proc[%d/%d] at %f sec\n",
+    std::printf("Run WriteSolutions(Frame0) on proc[%d/%d] at %f sec\n",
         i_proc, n_procs, MPI_Wtime() - time_begin);
     part.GatherSolutions();
-    part.WriteSolutions("Step0");
-    part.WriteSolutionsOnCellCenters("Step0");
+    part.WriteSolutions("Frame0");
+    part.WriteSolutionsOnCellCenters("Frame0");
   } else {
-    std::printf("Run ReadSolutions(Step%d) on proc[%d/%d] at %f sec\n",
+    std::printf("Run ReadSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
         i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
-    part.ReadSolutions("Step" + std::to_string(i_start));
+    part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
   }
 
@@ -185,13 +185,14 @@ int main(int argc, char* argv[]) {
         i_step, i_stop, i_proc, n_procs, wtime_curr, wtime_left);
 
     if (i_step % n_steps_per_frame == 0) {
-      std::printf("Run WriteSolutions(Step%d) on proc[%d/%d] at %f sec\n",
-          i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
+      ++i_frame;
+      std::printf("Run WriteSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
+          i_frame, i_proc, n_procs, MPI_Wtime() - time_begin);
       part.GatherSolutions();
-      auto step_name = "Step" + std::to_string(i_step);
+      auto frame_name = "Frame" + std::to_string(i_frame);
       if (i_step == i_stop)
-        part.WriteSolutions(step_name);
-      part.WriteSolutionsOnCellCenters(step_name);
+        part.WriteSolutions(frame_name);
+      part.WriteSolutionsOnCellCenters(frame_name);
     }
   }
 
