@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
     part.WriteSolutionsOnCellCenters("Frame0");
   } else {
     std::printf("Run ReadSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
-        i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_frame, i_proc, n_procs, MPI_Wtime() - time_begin);
     part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
   }
