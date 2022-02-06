@@ -18,15 +18,15 @@
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
-  int n_procs, i_proc;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &i_proc);
+  int n_cores, i_core;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   if (argc < 6) {
-    if (i_proc == 0) {
+    if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_proc> ./yf17 <cgns_file> tetra"
+          << "  mpirun -n <n_cores> ./yf17 <cgns_file> tetra"
           << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
           << " [<i_frame_start> [n_parts_prev]]\n";
     }
@@ -64,9 +64,9 @@ int main(int argc, char* argv[]) {
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
   /* Partition the mesh. */
-  if (i_proc == 0 && n_parts_prev != n_procs) {
+  if (i_core == 0 && n_parts_prev != n_cores) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
+    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_cores);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -79,8 +79,8 @@ int main(int argc, char* argv[]) {
   using Coeff = typename Cell::Coeff;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  auto part = Part(case_name, i_proc);
+      i_core, n_cores, MPI_Wtime() - time_begin);
+  auto part = Part(case_name, i_core);
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
@@ -98,13 +98,13 @@ int main(int argc, char* argv[]) {
 
   if (argc == 7) {
     std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     part.ForEachLocalCell([&](Cell *cell_ptr){
       cell_ptr->Project(initial_condition);
     });
 
     std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
     if (kOrder > 0) {
       part.Reconstruct(limiter);
@@ -112,13 +112,13 @@ int main(int argc, char* argv[]) {
     }
 
     std::printf("Run WriteSolutions(Frame0) on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     part.GatherSolutions();
     part.WriteSolutions("Frame0");
     part.WriteSolutionsOnCellCenters("Frame0");
   } else {
     std::printf("Run ReadSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
-        i_frame, i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_frame, i_core, n_cores, MPI_Wtime() - time_begin);
     part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
   }
@@ -155,12 +155,12 @@ int main(int argc, char* argv[]) {
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
     std::printf("[Done] Update(Step%d/%d) on proc[%d/%d] at %fs (%fs to go)\n",
-        i_step, i_stop, i_proc, n_procs, wtime_curr, wtime_left);
+        i_step, i_stop, i_core, n_cores, wtime_curr, wtime_left);
 
     if (i_step % n_steps_per_frame == 0) {
       ++i_frame;
       std::printf("Run WriteSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
-          i_frame, i_proc, n_procs, MPI_Wtime() - time_begin);
+          i_frame, i_core, n_cores, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto frame_name = "Frame" + std::to_string(i_frame);
       if (i_step == i_stop)
@@ -170,9 +170,9 @@ int main(int argc, char* argv[]) {
   }
 
   std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
-      i_proc, t_start, t_stop, i_start, i_stop, dt);
+      i_core, t_start, t_stop, i_start, i_stop, dt);
 
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
+      i_core, n_cores, MPI_Wtime() - time_begin);
   MPI_Finalize();
 }

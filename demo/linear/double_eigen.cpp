@@ -15,15 +15,15 @@
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
-  int n_procs, i_proc;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_procs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &i_proc);
+  int n_cores, i_core;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   if (argc < 7) {
-    if (i_proc == 0) {
+    if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_proc> ./double_eigen <cgns_file> <hexa|tetra>"
+          << "  mpirun -n <n_cores> ./double_eigen <cgns_file> <hexa|tetra>"
           << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
           << " [<i_start> [n_parts_prev]]\n";
     }
@@ -61,9 +61,9 @@ int main(int argc, char* argv[]) {
   Riemann::global_coefficient[2].setZero();
 
   /* Partition the mesh. */
-  if (i_proc == 0 && n_parts_prev != n_procs) {
+  if (i_core == 0 && n_parts_prev != n_cores) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_procs);
+    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_cores);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -76,8 +76,8 @@ int main(int argc, char* argv[]) {
   using Coeff = typename Cell::Coeff;
 
   std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
-  auto part = Part(case_name, i_proc);
+      i_core, n_cores, MPI_Wtime() - time_begin);
+  auto part = Part(case_name, i_core);
   part.SetFieldNames({"U1", "U2"});
 
   /* Build a `Limiter` object. */
@@ -106,13 +106,13 @@ int main(int argc, char* argv[]) {
 
   if (argc == 7) {
     std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     part.ForEachLocalCell([&](Cell *cell_ptr){
       cell_ptr->Project(initial_condition);
     });
 
     std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     if (kOrder > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
@@ -121,13 +121,13 @@ int main(int argc, char* argv[]) {
     }
 
     std::printf("Run WriteSolutions(Step0) on proc[%d/%d] at %f sec\n",
-        i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_core, n_cores, MPI_Wtime() - time_begin);
     part.GatherSolutions();
     part.WriteSolutions("Step0");
     part.WriteSolutionsOnCellCenters("Step0");
   } else {
     std::printf("Run ReadSolutions(Step%d) on proc[%d/%d] at %f sec\n",
-        i_start, i_proc, n_procs, MPI_Wtime() - time_begin);
+        i_start, i_core, n_cores, MPI_Wtime() - time_begin);
     part.ReadSolutions("Step" + std::to_string(i_start));
     part.ScatterSolutions();
   }
@@ -170,17 +170,17 @@ int main(int argc, char* argv[]) {
 
     double t_next = t_curr + dt;
     auto l1_error = part.MeasureL1Error(exact_solution, t_next);
-    std::printf("[%d/%d] t = %f, l1_error = ", i_proc, n_procs, t_next);
+    std::printf("[%d/%d] t = %f, l1_error = ", i_core, n_cores, t_next);
     std::cout << std::scientific << l1_error.transpose() << std::endl;
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
     std::printf("[Done] Update(Step%d/%d) on proc[%d/%d] at %fs (%fs to go)\n",
-        i_step, i_stop, i_proc, n_procs, wtime_curr, wtime_left);
+        i_step, i_stop, i_core, n_cores, wtime_curr, wtime_left);
 
     if (i_step % n_steps_per_frame == 0) {
       std::printf("Run WriteSolutions(Step%d) on proc[%d/%d] at %f sec\n",
-          i_step, i_proc, n_procs, MPI_Wtime() - time_begin);
+          i_step, i_core, n_cores, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto step_name = "Step" + std::to_string(i_step);
       if (i_step == i_stop)
@@ -190,9 +190,9 @@ int main(int argc, char* argv[]) {
   }
 
   std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
-      i_proc, t_start, t_stop, i_start, i_stop, dt);
+      i_core, t_start, t_stop, i_start, i_stop, dt);
 
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      i_proc, n_procs, MPI_Wtime() - time_begin);
+      i_core, n_cores, MPI_Wtime() - time_begin);
   MPI_Finalize();
 }
