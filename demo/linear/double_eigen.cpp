@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   constexpr int kDim = 3;
   using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
   using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
+  Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
   Riemann::global_coefficient[1].setZero();
   Riemann::global_coefficient[2].setZero();
 
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Set initial conditions. */
-  Value value_right{ 10, 5 }, value_left{ -10, -5 };
+  Value value_right{ 12., -4. }, value_left{ 0., 0. };
   double x_0 = 0.0;
   auto initial_condition = [&](const Coord& xyz){
     return (xyz[0] > x_0) ? value_right : value_left;
