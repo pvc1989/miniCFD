@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
     if (i_core == 0) {
       std::cout << "usage:\n"
           << "  mpirun -n <n_cores> ./single <cgns_file> <hexa|tetra>"
-          << " <t_start> <t_stop> <n_steps> <n_steps_per_frame>"
+          << " <t_start> <t_stop> <n_steps_per_frame> <n_frames>"
           << " [<i_frame_start> [n_parts_prev]]\n";
     }
     MPI_Finalize();
@@ -34,10 +34,11 @@ int main(int argc, char* argv[]) {
   auto suffix = std::string(argv[2]);
   double t_start = std::atof(argv[3]);
   double t_stop = std::atof(argv[4]);
-  int n_steps = std::atoi(argv[5]);
-  int n_steps_per_frame = std::atoi(argv[6]);
+  int n_steps_per_frame = std::atoi(argv[5]);
+  int n_frames = std::atoi(argv[6]);
+  int n_steps = n_frames * n_steps_per_frame;
   auto dt = (t_stop - t_start) / n_steps;
-  int i_start = 0, i_frame = 0;
+  int i_frame = 0;
   if (argc > 7) {
     i_frame = std::atoi(argv[7]);
   }
@@ -45,7 +46,6 @@ int main(int argc, char* argv[]) {
   if (argc > 8) {
     n_parts_prev = std::atoi(argv[8]);
   }
-  int i_stop = i_start + n_steps;
 
   std::string case_name = "single_" + suffix;
 
@@ -152,8 +152,8 @@ int main(int argc, char* argv[]) {
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
-  for (int i_step = i_start + 1; i_step <= i_stop; ++i_step) {
-    double t_curr = t_start + dt * (i_step - i_start - 1);
+  for (int i_step = 1; i_step <= n_steps; ++i_step) {
+    double t_curr = t_start + dt * (i_step - 1);
     rk.Update(&part, t_curr);
 
     double t_next = t_curr + dt;
@@ -162,9 +162,9 @@ int main(int argc, char* argv[]) {
         i_core, n_cores, t_next, l1_error[0]);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
-    auto wtime_left = wtime_curr * (i_stop - i_step) / (i_step - i_start);
+    auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
     std::printf("[Done] Update(Step%d/%d) on proc[%d/%d] at %fs (%fs to go)\n",
-        i_step, i_stop, i_core, n_cores, wtime_curr, wtime_left);
+        i_step, n_steps, i_core, n_cores, wtime_curr, wtime_left);
 
     if (i_step % n_steps_per_frame == 0) {
       ++i_frame;
@@ -172,14 +172,14 @@ int main(int argc, char* argv[]) {
           i_frame, i_core, n_cores, MPI_Wtime() - time_begin);
       part.GatherSolutions();
       auto frame_name = "Frame" + std::to_string(i_frame);
-      if (i_step == i_stop)
+      if (i_step == n_steps)
         part.WriteSolutions(frame_name);
       part.WriteSolutionsOnCellCenters(frame_name);
     }
   }
 
-  std::printf("rank = %d, time = [%f, %f], step = [%d, %d], dt = %f\n",
-      i_core, t_start, t_stop, i_start, i_stop, dt);
+  std::printf("rank = %d, time = [%f, %f], frame = [%d, %d], dt = %f\n",
+      i_core, t_start, t_stop, i_frame - n_frames, i_frame, dt);
 
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       i_core, n_cores, MPI_Wtime() - time_begin);
