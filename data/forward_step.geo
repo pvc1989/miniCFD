@@ -1,7 +1,7 @@
 
-LC = 0.05;  // the characteristic length, i.e. the average length of cell edges
-LX = 3.0;     // the length along x-axis
-LY = 1.0;     // the length along y-axis
+LC = 1./20;  // the characteristic length, i.e. the average length of cell edges
+LX = 3.0;   // the length along x-axis
+LY = 1.0;   // the length along y-axis
 LZ = 4*LC;  // the length along z-axis
 LW = 0.6;   // the width of the bottom before the the step
 LH = 0.2;   // the height of the step
@@ -33,11 +33,13 @@ Plane Surface(1) = { 1 };
 Plane Surface(2) = { 2 };
 Plane Surface(3) = { 3 };
 
+/*
 Transfinite Curve{ 1, 2, 4 } = LW/LC + 1.01;
 Transfinite Curve{ 3, 5 } = (LX-LW)/LC + 1.01;
 Transfinite Curve{ 6, 8 } = LH/LC + 1.01;
 Transfinite Curve{ 7, 9, 10 } = (LY-LH)/LC + 1.01;
 Transfinite Surface{ 1, 2, 3 };
+ */
 
 Recombine Surface{ 1, 2, 3 };
 out[] = Extrude{ 0, 0, LZ }{
