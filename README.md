@@ -13,6 +13,8 @@ This repo is a minimum implementation of *Data Structures and Algorithms (DSA)* 
 mkdir HDF5 && cd HDF5
 git clone https://github.com/HDFGroup/hdf5.git repo
 mkdir build install && cd build
+PATH="path-to-your-mpi-install/bin":$PATH
+export PATH
 cmake -S ../repo -B . -G Ninja -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTING=OFF -D HDF5_BUILD_TOOLS=OFF -D HDF5_ENABLE_PARALLEL=ON
 cmake --build .
 cpack -C Release CPackConfig.cmake
@@ -53,7 +55,7 @@ cd miniCFD
 git submodule update --init --recursive
 mkdir -p build/Release
 cd build/Release
-cmake -D CMAKE_BUILD_TYPE=Release -D HDF5_DIR=$MY_HDF5_DIR  -G Ninja -S ../.. -B .  # cmake 3.13.5+
+cmake -D CMAKE_BUILD_TYPE=Release -D HDF5_DIR=$MY_HDF5_DIR -G Ninja -S ../.. -B .  # cmake 3.13.5+
 cmake --build .
 ctest
 ```
