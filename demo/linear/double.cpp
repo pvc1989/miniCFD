@@ -75,8 +75,10 @@ int main(int argc, char* argv[]) {
   using Value = typename Cell::Value;
   using Coeff = typename Cell::Coeff;
 
-  std::printf("Create a `Part` obj on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+  if (i_core == 0) {
+    std::printf("Create %d `Part`s at %f sec\n",
+        n_cores, MPI_Wtime() - time_begin);
+  }
   auto part = Part(case_name, i_core);
   part.SetFieldNames({"U1", "U2"});
 
@@ -92,14 +94,18 @@ int main(int argc, char* argv[]) {
   };
 
   if (argc == 7) {
-    std::printf("Initialize by `Project()` on proc[%d/%d] at %f sec\n",
-        i_core, n_cores, MPI_Wtime() - time_begin);
+    if (i_core == 0) {
+      std::printf("[Start] `Project()` on %d cores at %f sec\n",
+          n_cores, MPI_Wtime() - time_begin);
+    }
     part.ForEachLocalCell([&](Cell *cell_ptr){
       cell_ptr->Project(initial_condition);
     });
 
-    std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-        i_core, n_cores, MPI_Wtime() - time_begin);
+    if (i_core == 0) {
+      std::printf("[Start] `Reconstruct()` on %d cores at %f sec\n",
+          n_cores, MPI_Wtime() - time_begin);
+    }
     if (kOrder > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
@@ -107,14 +113,18 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    std::printf("Run WriteSolutions(Frame0) on proc[%d/%d] at %f sec\n",
-        i_core, n_cores, MPI_Wtime() - time_begin);
     part.GatherSolutions();
+    if (i_core == 0) {
+      std::printf("[Start] `WriteSolutions(Frame0)` on %d cores at %f sec\n",
+          n_cores, MPI_Wtime() - time_begin);
+    }
     part.WriteSolutions("Frame0");
     part.WriteSolutionsOnCellCenters("Frame0");
   } else {
-    std::printf("Run ReadSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
-        i_frame, i_core, n_cores, MPI_Wtime() - time_begin);
+    if (i_core == 0) {
+      std::printf("[Start] `ReadSolutions(Frame%d)` on %d cores at %f sec\n",
+          i_frame, n_cores, MPI_Wtime() - time_begin);
+    }
     part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
   }
@@ -157,14 +167,18 @@ int main(int argc, char* argv[]) {
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
-    std::printf("[Done] Update(Step%d/%d) on proc[%d/%d] at %fs (%fs to go)\n",
-        i_step, n_steps, i_core, n_cores, wtime_curr, wtime_left);
+    if (i_core == 0) {
+      std::printf("[Done] `Update(Step%d/%d)` on %d cores at %fs (%fs to go)\n",
+          i_step, n_steps, n_cores, wtime_curr, wtime_left);
+    }
 
     if (i_step % n_steps_per_frame == 0) {
       ++i_frame;
-      std::printf("Run WriteSolutions(Frame%d) on proc[%d/%d] at %f sec\n",
-          i_frame, i_core, n_cores, MPI_Wtime() - time_begin);
       part.GatherSolutions();
+      if (i_core == 0) {
+        std::printf("[Start] `WriteSolutions(Frame%d)` on %d cores at %f sec\n",
+            i_frame, n_cores, MPI_Wtime() - wtime_start);
+      }
       auto frame_name = "Frame" + std::to_string(i_frame);
       if (i_step == n_steps)
         part.WriteSolutions(frame_name);
@@ -172,10 +186,11 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  std::printf("rank = %d, time = [%f, %f], frame = [%d, %d], dt = %f\n",
-      i_core, t_start, t_stop, i_frame - n_frames, i_frame, dt);
-
-  std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+  if (i_core == 0) {
+    std::printf("time-range = [%f, %f], frame-range = [%d, %d], dt = %f\n",
+        t_start, t_stop, i_frame - n_frames, i_frame, dt);
+    std::printf("[Start] MPI_Finalize() on %d cores at %f sec\n",
+        n_cores, MPI_Wtime() - time_begin);
+  }
   MPI_Finalize();
 }
