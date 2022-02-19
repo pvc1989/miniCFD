@@ -167,10 +167,11 @@ int main(int argc, char* argv[]) {
     rk.Update(&part, t_curr);
 
     double t_next = t_curr + dt;
-    auto l1_error = part.MeasureL1Error(exact_solution, t_next);
-    std::printf("[%d/%d] t = %f, l1_error = %e\n",
-        i_core, n_cores, t_next, l1_error[0]);
-
+    double error, local_error = part.MeasureL1Error(exact_solution, t_next)[0];
+    MPI_Reduce(&local_error, &error, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (i_core == 0) {
+      std::printf("When t = %f, error = %e\n", t_next, error);
+    }
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
     if (i_core == 0) {
