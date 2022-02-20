@@ -3,7 +3,6 @@
 #ifndef MINI_RIEMANN_ROTATED_EULER_HPP_
 #define MINI_RIEMANN_ROTATED_EULER_HPP_
 
-#include <initializer_list>
 #include <type_traits>
 #include <utility>
 
@@ -148,7 +147,7 @@ class Euler {
   }
   Flux GetFluxOnSolidWall(Conservative const& conservative) {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
-    auto flux = Flux();
+    Flux flux; flux.setZero();
     flux.momentumX() = primitive.p();
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
