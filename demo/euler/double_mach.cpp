@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
             i_frame, n_cores, MPI_Wtime() - wtime_start);
       }
       auto frame_name = "Frame" + std::to_string(i_frame);
-      if (i_step == n_steps)
+      if (true || i_step == n_steps)
         part.WriteSolutions(frame_name);
       part.WriteSolutionsOnCellCenters(frame_name);
     }
