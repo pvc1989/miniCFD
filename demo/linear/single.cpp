@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
   if (argc < 7) {
     if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_cores> ./single <cgns_file> <hexa|tetra>"
+          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> <hexa|tetra>"
           << " <t_start> <t_stop> <n_steps_per_frame> <n_frames>"
           << " [<i_frame_start> [n_parts_prev]]\n";
     }
