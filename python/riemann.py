@@ -120,14 +120,12 @@ class Euler(RiemannSolver):
       u_R - 2*a_R/self._gas.gamma_minus_1()])
     # determine wave heads and tails and states between 1-wave and 3-wave
     if self._exist_vacuum():
-      self._p_2 = 0
-      self._rho_2_L, self._rho_2_R = 0, 0
+      self._p_2 = self._rho_2_L = self._rho_2_R = self._u_2 = np.nan
       self._v_1_L = u_L - a_L
       self._v_3_R = u_R + a_R
       self._v_1_R = self._riemann_invariants_L[1]
       self._v_3_L = self._riemann_invariants_R[1]
       self._v_2 = (self._v_1_R + self._v_3_L) / 2
-      self._u_2 = self._v_2
       assert self._v_1_L < self._v_1_R <= self._v_2 <= self._v_3_L < self._v_3_R
     else:  # no vacuum
       # 2-field: always a contact
@@ -271,7 +269,6 @@ class Euler(RiemannSolver):
         rho = a**2 / self._gas.gamma() / self._riemann_invariants_R[0]
         rho = rho**self._gas.one_over_gamma_minus_1()
         p = a**2 * rho / self._gas.gamma()
-    assert p >= 0, p
     return self._equation.u_p_rho_to_U(u, p, rho)
 
 
