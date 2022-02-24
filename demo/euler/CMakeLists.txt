@@ -26,3 +26,17 @@ foreach (case ${cases})
   target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
   target_link_libraries(demo_euler_${case} demo_euler_rkdg)
 endforeach (case ${cases})
+
+add_library(demo_euler_main main.cpp)
+target_include_directories(demo_euler_main PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+target_link_libraries(demo_euler_main ${CGNS_LIB} metis ${MPI_LIBRARY})
+
+set (cases
+  lax
+)
+foreach (case ${cases})
+  add_executable(demo_euler_${case} ${case}.cpp)
+  set_target_properties(demo_euler_${case} PROPERTIES OUTPUT_NAME ${case})
+  target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+  target_link_libraries(demo_euler_${case} demo_euler_main)
+endforeach (case ${cases})
