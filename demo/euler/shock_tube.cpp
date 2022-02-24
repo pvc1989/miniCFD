@@ -91,14 +91,21 @@ int main(int argc, char* argv[]) {
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Set initial conditions. */
-  auto primitive_after = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
-  auto primitive_before = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
-  Value value_after = Gas::PrimitiveToConservative(primitive_after);
-  Value value_before = Gas::PrimitiveToConservative(primitive_before);
-  double x_gap = 1.0 / 6.0;
+  Primitive primitive_left, primitive_right;
+  // Sod
+  primitive_left = Primitive(1.0, 0.0, 0.0, 0.0, 1.0);
+  primitive_right = Primitive(0.125, 0.0, 0.0, 0.0, 0.1);
+  // Lax
+  primitive_left = Primitive(0.445, 0.698, 0.0, 0.0, 3.528);
+  primitive_right = Primitive(0.5, 0.0, 0.0, 0.0, 0.571);
+  // Almost vacuumed
+  primitive_left = Primitive(1.0, -4., 0.0, 0.0, 0.4);
+  primitive_right = Primitive(1.0, +4., 0.0, 0.0, 0.4);
+  Value value_left = Gas::PrimitiveToConservative(primitive_left);
+  Value value_right = Gas::PrimitiveToConservative(primitive_right);
   auto initial_condition = [&](const Coord& xyz){
     auto x = xyz[0];
-    return (x < 2.0) ? value_after : value_before;
+    return (x < 2.0) ? value_left : value_right;
   };
 
   if (argc == 7) {
@@ -142,22 +149,28 @@ int main(int argc, char* argv[]) {
   auto rk = RungeKutta<kSteps, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */
+  auto state_left = [&value_left](const Coord& xyz, double t){
+    return value_left;
+  };
+  auto state_right = [&value_right](const Coord& xyz, double t){
+    return value_right;
+  };
   if (suffix == "tetra") {
+    rk.SetPrescribedBC("3_S_31", state_left);  // Left
+    rk.SetPrescribedBC("3_S_23", state_right);  // Right
     rk.SetSolidWallBC("3_S_27");  // Top
-    rk.SetSolidWallBC("3_S_31");  // Left
     rk.SetSolidWallBC("3_S_1");   // Back
     rk.SetSolidWallBC("3_S_32");  // Front
     rk.SetSolidWallBC("3_S_19");  // Bottom
-    rk.SetSolidWallBC("3_S_23");  // Right
     rk.SetSolidWallBC("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
+    rk.SetPrescribedBC("4_S_31", state_left);  // Left
+    rk.SetPrescribedBC("4_S_23", state_right);  // Right
     rk.SetSolidWallBC("4_S_27");  // Top
-    rk.SetSolidWallBC("4_S_31");  // Left
     rk.SetSolidWallBC("4_S_1");   // Back
     rk.SetSolidWallBC("4_S_32");  // Front
     rk.SetSolidWallBC("4_S_19");  // Bottom
-    rk.SetSolidWallBC("4_S_23");  // Right
     rk.SetSolidWallBC("4_S_15");  // Gap
   }
 
