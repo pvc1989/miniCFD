@@ -15,10 +15,6 @@ target_include_directories(demo_euler_rkdg PRIVATE ${CGNS_INC} ${METIS_INC} ${EI
 target_link_libraries(demo_euler_rkdg ${CGNS_LIB} metis ${MPI_LIBRARY})
 
 set (cases
-  double_mach
-  forward_step
-  shock_tube
-  yf17
 )
 foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
@@ -32,7 +28,10 @@ target_include_directories(demo_euler_main PRIVATE ${CGNS_INC} ${METIS_INC} ${EI
 target_link_libraries(demo_euler_main ${CGNS_LIB} metis ${MPI_LIBRARY})
 
 set (cases
+  # shock tube problems:
+  sod
   lax
+  almost_vacuumed
 )
 foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
