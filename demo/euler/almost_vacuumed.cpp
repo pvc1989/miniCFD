@@ -12,12 +12,8 @@ Value MyIC(const Coord &xyz) {
 }
 
 /* Set boundary conditions. */
-inline Value state_left(const Coord& xyz, double t) {
-  return value_left;
-};
-inline Value state_right(const Coord& xyz, double t) {
-  return value_right;
-};
+auto state_left = [](const Coord& xyz, double t){ return value_left; };
+auto state_right = [](const Coord& xyz, double t) { return value_right; };
 
 void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {
