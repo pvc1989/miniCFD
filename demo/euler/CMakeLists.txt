@@ -18,7 +18,7 @@ set (cases
   # shock tube problems:
   sod
   lax
-  almost_vacuumed
+  vacuum
   # two-dimensional problems:
   double_mach
   forward_step
