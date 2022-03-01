@@ -322,6 +322,7 @@ if __name__ == '__main__':
       pass
     plt.figure(figsize=(4,5))
     # subplots = (311, 312, 313)
+    np.savetxt(name+".csv", (x_vec, rho_vec), delimiter=',')
     titles = (r'$\rho(x)$', r'$p(x)$', r'$u(x)$')
     y_data = (rho_vec, p_vec, u_vec)
     for i in range(3):
