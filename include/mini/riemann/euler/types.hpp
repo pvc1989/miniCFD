@@ -226,7 +226,7 @@ class IdealGas {
   // Converters:
   template <int kDim>
   static double GetSpeedOfSound(PrimitiveTuple<Scalar, kDim> const& state) {
-    return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
+    return state.rho() > 0 ? std::sqrt(Gamma() * state.p() / state.rho()) : 0;
   }
   template <int kDim>
   static PrimitiveTuple<Scalar, kDim> ConservativeToPrimitive(
