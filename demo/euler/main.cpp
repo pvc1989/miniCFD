@@ -76,39 +76,39 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
 
   /* Initialization. */
   if (argc == 7) {
-    if (i_core == 0) {
-      std::printf("[Start] `Project()` on %d cores at %f sec\n",
-          n_cores, MPI_Wtime() - time_begin);
-    }
     part.ForEachLocalCell([&](Cell *cell_ptr){
       cell_ptr->Project(ic);
     });
-
     if (i_core == 0) {
-      std::printf("[Start] `Reconstruct()` on %d cores at %f sec\n",
+      std::printf("[Done] `Project()` on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
+
     if (kOrder > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
         part.Reconstruct(limiter);
       }
     }
-
-    part.GatherSolutions();
     if (i_core == 0) {
-      std::printf("[Start] `WriteSolutions(Frame0)` on %d cores at %f sec\n",
+      std::printf("[Done] `Reconstruct()` on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
+
+    part.GatherSolutions();
     part.WriteSolutions("Frame0");
     part.WriteSolutionsOnCellCenters("Frame0");
-  } else {
     if (i_core == 0) {
-      std::printf("[Start] `ReadSolutions(Frame%d)` on %d cores at %f sec\n",
-          i_frame, n_cores, MPI_Wtime() - time_begin);
+      std::printf("[Done] `WriteSolutions(Frame0)` on %d cores at %f sec\n",
+          n_cores, MPI_Wtime() - time_begin);
     }
+  } else {
     part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
+    if (i_core == 0) {
+      std::printf("[Done] `ReadSolutions(Frame%d)` on %d cores at %f sec\n",
+          i_frame, n_cores, MPI_Wtime() - time_begin);
+    }
   }
 
   /* Choose the time-stepping scheme. */
@@ -132,14 +132,14 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
 
     if (i_step % n_steps_per_frame == 0) {
       ++i_frame;
-      part.GatherSolutions();
-      if (i_core == 0) {
-        std::printf("[Start] `WriteSolutions(Frame%d)` on %d cores at %f sec\n",
-            i_frame, n_cores, MPI_Wtime() - wtime_start);
-      }
       auto frame_name = "Frame" + std::to_string(i_frame);
+      part.GatherSolutions();
       part.WriteSolutions(frame_name);
       part.WriteSolutionsOnCellCenters(frame_name);
+      if (i_core == 0) {
+        std::printf("[Done] `WriteSolutions(Frame%d)` on %d cores at %f sec\n",
+            i_frame, n_cores, MPI_Wtime() - wtime_start);
+      }
     }
   }
 
