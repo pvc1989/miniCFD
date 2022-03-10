@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <stdexcept>
 
 #include "mini/algebra/eigen.hpp"
 
@@ -193,6 +194,12 @@ class IdealGas {
   }
   static constexpr double gamma_ = kInteger + Shift(kDecimal);
 
+  static void AssertNonNegative(const Scalar &val) {
+    if (val < 0) {
+      throw std::runtime_error("The value must be non-negative.");
+    }
+  }
+
  public:
   // Constants:
   static constexpr double Gamma() { return gamma_; }
@@ -226,16 +233,19 @@ class IdealGas {
   // Converters:
   template <int kDim>
   static double GetSpeedOfSound(PrimitiveTuple<Scalar, kDim> const& state) {
-    return state.rho() > 0 ? std::sqrt(Gamma() * state.p() / state.rho()) : 0;
+    AssertNonNegative(state.rho());
+    return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
   static PrimitiveTuple<Scalar, kDim> ConservativeToPrimitive(
       ConservativeTuple<Scalar, kDim> const &conservative) {
     auto primitive = PrimitiveTuple<Scalar, kDim>(conservative);
-    if (primitive.rho() > 0) {
+    AssertNonNegative(primitive.rho());
+    if (primitive.rho()) {
       Converter<Scalar, kDim>::MomentumToVelocity(primitive.rho(), &primitive);
       primitive.energy() -= primitive.GetDynamicPressure();
-      primitive.energy() *= primitive.energy() < 0 ? 0 : GammaMinusOne();
+      AssertNonNegative(primitive.energy());
+      primitive.energy() *= GammaMinusOne();
     } else {
       primitive.setZero();
     }
