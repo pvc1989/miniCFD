@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <string>
 
 #include "mpi.h"
 #include "pcgnslib.h"
@@ -47,7 +48,13 @@ int main(int argc, char* argv[]) {
     n_parts_prev = std::atoi(argv[8]);
   }
 
-  std::string case_name = "double_" + suffix;
+  auto case_name = std::string(argv[0]);
+  auto pos = case_name.find_last_of('/');
+  if (pos != std::string::npos) {
+    case_name = case_name.substr(pos+1);
+  }
+  case_name.push_back('_');
+  case_name += suffix;
 
   auto time_begin = MPI_Wtime();
 
