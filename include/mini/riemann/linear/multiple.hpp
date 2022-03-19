@@ -3,8 +3,6 @@
 #ifndef MINI_RIEMANN_LINEAR_MULTIPLE_HPP_
 #define MINI_RIEMANN_LINEAR_MULTIPLE_HPP_
 
-#include <cmath>
-
 #include <Eigen/Eigenvalues>
 
 #include "mini/algebra/eigen.hpp"

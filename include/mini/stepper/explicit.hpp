@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_STEPPING_EXPLICIT_HPP_
-#define MINI_STEPPING_EXPLICIT_HPP_
+#ifndef MINI_STEPPER_EXPLICIT_HPP_
+#define MINI_STEPPER_EXPLICIT_HPP_
 
 #include <cassert>
 #include <functional>
@@ -423,4 +423,4 @@ struct RungeKutta<3, P, L>
   }
 };
 
-#endif  // MINI_STEPPING_EXPLICIT_HPP_
+#endif  // MINI_STEPPER_EXPLICIT_HPP_

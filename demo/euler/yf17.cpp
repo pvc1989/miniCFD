@@ -1,3 +1,4 @@
+//  Copyright 2022 PEI Weicheng
 #include "main.hpp"
 
 /* Set initial conditions. */

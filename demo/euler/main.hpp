@@ -1,4 +1,8 @@
+//  Copyright 2022 PEI Weicheng
+#ifndef DEMO_EULER_MAIN_HPP_
+#define DEMO_EULER_MAIN_HPP_
 
+#include <algorithm>
 #include <string>
 
 #include "mini/riemann/euler/types.hpp"
@@ -36,3 +40,5 @@ using IC = Value(*)(const Coord &);
 using BC = void(*)(const std::string &, Solver *);
 
 int Main(int argc, char* argv[], IC ic, BC bc);
+
+#endif  // DEMO_EULER_MAIN_HPP_
