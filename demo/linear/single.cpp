@@ -12,7 +12,7 @@
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"
-#include "mini/stepping/explicit.hpp"
+#include "mini/stepper/explicit.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);

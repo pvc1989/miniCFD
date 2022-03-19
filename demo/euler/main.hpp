@@ -6,7 +6,7 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/stepping/explicit.hpp"
+#include "mini/stepper/explicit.hpp"
 
 /* Define the Euler system. */
 constexpr int kFunc = 5;

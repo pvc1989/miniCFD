@@ -7,7 +7,7 @@
 #include "mini/polynomial/limiter.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/shuffler.hpp"
-#include "mini/stepping/explicit.hpp"
+#include "mini/stepper/explicit.hpp"
 
 namespace mini {
 
