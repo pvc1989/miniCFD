@@ -1,7 +1,7 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_SHUFFLER_HPP_
-#define MINI_MESH_SHUFFLER_HPP_
+#ifndef MINI_DATASET_SHUFFLER_HPP_
+#define MINI_DATASET_SHUFFLER_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -533,4 +533,4 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_SHUFFLER_HPP_
+#endif  // MINI_DATASET_SHUFFLER_HPP_

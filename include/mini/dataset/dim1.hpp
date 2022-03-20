@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_DIM1_HPP_
-#define MINI_MESH_DIM1_HPP_
+#ifndef MINI_DATASET_DIM1_HPP_
+#define MINI_DATASET_DIM1_HPP_
 
 #include <algorithm>
 #include <array>
@@ -200,4 +200,4 @@ class Mesh {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_DIM1_HPP_
+#endif  // MINI_DATASET_DIM1_HPP_

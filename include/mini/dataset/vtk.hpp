@@ -1,7 +1,7 @@
 // Copyright 2019 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_VTK_HPP_
-#define MINI_MESH_VTK_HPP_
+#ifndef MINI_DATASET_VTK_HPP_
+#define MINI_DATASET_VTK_HPP_
 
 // C++ system headers:
 #include <array>
@@ -329,4 +329,4 @@ class Writer {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_VTK_HPP_
+#endif  // MINI_DATASET_VTK_HPP_

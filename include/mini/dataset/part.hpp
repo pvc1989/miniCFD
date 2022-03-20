@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_MESH_PART_HPP_
-#define MINI_MESH_PART_HPP_
+#ifndef MINI_DATASET_PART_HPP_
+#define MINI_DATASET_PART_HPP_
 
 #include <algorithm>
 #include <cassert>
@@ -1565,4 +1565,4 @@ MPI_Datatype const Part<Int, kOrder, R>::kMpiRealType
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_PART_HPP_
+#endif  // MINI_DATASET_PART_HPP_

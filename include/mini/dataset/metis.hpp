@@ -1,7 +1,7 @@
 // Copyright 2021 PEI Weicheng and YANG Minghao and JIANG Yuyan
 
-#ifndef MINI_MESH_METIS_HPP_
-#define MINI_MESH_METIS_HPP_
+#ifndef MINI_DATASET_METIS_HPP_
+#define MINI_DATASET_METIS_HPP_
 
 #include <algorithm>
 #include <memory>
@@ -337,4 +337,4 @@ std::vector<Int> GetNodeParts(
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_METIS_HPP_
+#endif  // MINI_DATASET_METIS_HPP_

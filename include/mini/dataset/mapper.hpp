@@ -1,7 +1,7 @@
 // Copyright 2020 Weicheng Pei and Minghao Yang
 
-#ifndef MINI_MESH_MAPPER_HPP_
-#define MINI_MESH_MAPPER_HPP_
+#ifndef MINI_DATASET_MAPPER_HPP_
+#define MINI_DATASET_MAPPER_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -201,4 +201,4 @@ void CgnsToMetis<Int, Real>::WriteParts(
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_MESH_MAPPER_HPP_
+#endif  // MINI_DATASET_MAPPER_HPP_
