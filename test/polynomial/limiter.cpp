@@ -12,11 +12,11 @@
 #include <vector>
 
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
-#include "mini/mesh/cgns.hpp"
-#include "mini/mesh/metis.hpp"
-#include "mini/mesh/mapper.hpp"
-#include "mini/mesh/shuffler.hpp"
-#include "mini/mesh/part.hpp"
+#include "mini/dataset/cgns.hpp"
+#include "mini/dataset/metis.hpp"
+#include "mini/dataset/mapper.hpp"
+#include "mini/dataset/shuffler.hpp"
+#include "mini/dataset/part.hpp"
 #include "mini/integrator/hexa.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"

@@ -8,7 +8,7 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 
-#include "mini/mesh/shuffler.hpp"
+#include "mini/dataset/shuffler.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"

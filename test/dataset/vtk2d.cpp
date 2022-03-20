@@ -6,8 +6,8 @@
 #include "gtest/gtest.h"
 
 #include "mini/element/data.hpp"
-#include "mini/mesh/dim2.hpp"
-#include "mini/mesh/vtk.hpp"
+#include "mini/dataset/dim2.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/data/path.hpp"  // defines TEST_DATA_DIR
 
 namespace mini {

@@ -7,7 +7,7 @@
 #include <string>
 
 #include "mini/element/data.hpp"
-#include "mini/mesh/dim2.hpp"
+#include "mini/dataset/dim2.hpp"
 #include "mini/riemann/euler/types.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/euler/ausm.hpp"

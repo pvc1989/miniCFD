@@ -8,7 +8,7 @@
 #include <set>
 #include <string>
 
-#include "mini/mesh/vtk.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/model/boundary.hpp"
 
 namespace mini {

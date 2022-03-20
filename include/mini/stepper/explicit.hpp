@@ -9,7 +9,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "mini/mesh/part.hpp"
+#include "mini/dataset/part.hpp"
 
 template <typename P, typename L>
 class RungeKuttaBase {

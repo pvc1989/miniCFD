@@ -15,8 +15,8 @@
 
 #include "cgnslib.h"
 
-#include "mini/mesh/cgns.hpp"
-#include "mini/mesh/metis.hpp"
+#include "mini/dataset/cgns.hpp"
+#include "mini/dataset/metis.hpp"
 
 namespace mini {
 namespace mesh {

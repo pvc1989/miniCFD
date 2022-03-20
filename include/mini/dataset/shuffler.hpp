@@ -13,9 +13,9 @@
 #include <utility>
 #include <vector>
 
-#include "mini/mesh/cgns.hpp"
-#include "mini/mesh/metis.hpp"
-#include "mini/mesh/mapper.hpp"
+#include "mini/dataset/cgns.hpp"
+#include "mini/dataset/metis.hpp"
+#include "mini/dataset/mapper.hpp"
 
 namespace mini {
 namespace mesh {

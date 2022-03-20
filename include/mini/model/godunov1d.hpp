@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "mini/mesh/vtk.hpp"
+#include "mini/dataset/vtk.hpp"
 
 namespace mini {
 namespace model {

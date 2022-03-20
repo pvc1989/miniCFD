@@ -7,8 +7,8 @@
 #include <string>
 
 #include "mini/element/data.hpp"
-#include "mini/mesh/dim2.hpp"
-#include "mini/mesh/vtk.hpp"
+#include "mini/dataset/dim2.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/riemann/rotated/double.hpp"
 #include "mini/riemann/rotated/burgers.hpp"

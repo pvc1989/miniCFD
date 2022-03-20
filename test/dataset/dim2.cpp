@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "mini/mesh/dim2.hpp"
+#include "mini/dataset/dim2.hpp"
 
 #include "gtest/gtest.h"
 

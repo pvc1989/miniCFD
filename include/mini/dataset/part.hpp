@@ -18,7 +18,7 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
-#include "mini/mesh/cgns.hpp"
+#include "mini/dataset/cgns.hpp"
 #include "mini/integrator/tri.hpp"
 #include "mini/integrator/quad.hpp"
 #include "mini/integrator/tetra.hpp"

@@ -8,7 +8,7 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 
-#include "mini/mesh/shuffler.hpp"
+#include "mini/dataset/shuffler.hpp"
 
 #include "main.hpp"
 
