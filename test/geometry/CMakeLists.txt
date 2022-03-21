@@ -21,3 +21,7 @@ add_test(NAME TestGeometryTriangle COMMAND triangle)
 add_executable(test_geometry_rectangle rectangle.cpp)
 set_target_properties(test_geometry_rectangle PROPERTIES OUTPUT_NAME rectangle)
 add_test(NAME TestGeometryRectangle COMMAND rectangle)
+
+add_executable(test_geometry_frame frame.cpp)
+set_target_properties(test_geometry_frame PROPERTIES OUTPUT_NAME frame)
+add_test(NAME TestGeometryFrame COMMAND frame)
