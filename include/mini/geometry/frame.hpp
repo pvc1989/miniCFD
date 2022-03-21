@@ -27,24 +27,27 @@ class Frame {
   static Scalar pi() {
     return 3.1415926535897932384626433832795028841971693993751;
   }
-  Frame& RotateX(Scalar angle) {
-    auto [cos, sin] = CosSin(angle);
+  static Scalar deg2rad(Scalar deg) {
+    return deg * pi() / 180;
+  }
+  Frame& RotateX(Scalar deg) {
+    auto [cos, sin] = CosSin(deg);
     Vector new_y = Y() * cos + Z() * sin;
     Vector new_z = Z() * cos - Y() * sin;
     y_ = new_y;
     z_ = new_z;
     return *this;
   }
-  Frame& RotateY(Scalar angle) {
-    auto [cos, sin] = CosSin(angle);
+  Frame& RotateY(Scalar deg) {
+    auto [cos, sin] = CosSin(deg);
     Vector new_x = X() * cos - Z() * sin;
     Vector new_z = Z() * cos + X() * sin;
     x_ = new_x;
     z_ = new_z;
     return *this;
   }
-  Frame& RotateZ(Scalar angle) {
-    auto [cos, sin] = CosSin(angle);
+  Frame& RotateZ(Scalar deg) {
+    auto [cos, sin] = CosSin(deg);
     Vector new_x = X() * cos + Y() * sin;
     Vector new_y = Y() * cos - X() * sin;
     x_ = new_x;
@@ -55,8 +58,9 @@ class Frame {
  private:
   Vector x_{1, 0, 0}, y_{0, 1, 0}, z_{0, 0, 1};
 
-  static std::pair<Scalar, Scalar> CosSin(Scalar angle) {
-    return { std::cos(angle), std::sin(angle) };
+  static std::pair<Scalar, Scalar> CosSin(Scalar deg) {
+    auto rad = deg2rad(deg);
+    return { std::cos(rad), std::sin(rad) };
   }
 };
 
