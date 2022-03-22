@@ -15,7 +15,7 @@ TEST_F(TestRotaryWing, Constructors) {
   rotor.SetOmega(10.0/* rps */);
   rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
-  frame.RotateY(-5/* deg */);
+  frame.RotateY(-0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
@@ -46,6 +46,9 @@ TEST_F(TestRotaryWing, Constructors) {
   EXPECT_NEAR((blade_1.GetPoint(0.0) - point).norm(), 0, 1e-16);
   point = rotor_o + rotor_x * tip;
   EXPECT_NEAR((blade_1.GetPoint(1.0) - point).norm(), 0, 1e-15);
+  // test section query
+  auto section = blade_1.GetSection(0.5);
+  EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
 }
 
 int main(int argc, char* argv[]) {

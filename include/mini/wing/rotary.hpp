@@ -2,6 +2,7 @@
 #ifndef MINI_WING_ROTARY_HPP_
 #define MINI_WING_ROTARY_HPP_
 
+#include <algorithm>
 #include <vector>
 #include <stdexcept>
 
@@ -21,12 +22,40 @@ class Airfoil {
   }
 };
 
+
+template <typename Scalar>
+class Blade;
+
+template <typename Scalar>
+class Section {
+  using Blade = mini::wing::Blade<Scalar>;
+  using Frame = mini::geometry::Frame<Scalar>;
+  using Point = typename Frame::Vector;
+
+  Frame frame_;
+  const Blade* blade_;
+  Point origin_;
+  Scalar position_, chord_;
+
+ public:
+  Section(const Blade& blade, Scalar y_blade, Scalar chord, Scalar twist)
+      : blade_(&blade), origin_(blade.GetPoint(y_blade)), chord_(chord),
+        frame_(blade.GetFrame()) {
+    frame_.RotateY(twist);
+  }
+
+  const Point& GetOrigin() const {
+    return origin_;
+  }
+};
+
 template <typename Scalar>
 class Rotor;
 
 template <typename Scalar>
 class Blade {
   using Airfoil = mini::wing::Airfoil<Scalar>;
+  using Section = mini::wing::Section<Scalar>;
   using Rotor = mini::wing::Rotor<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
@@ -115,6 +144,25 @@ class Blade {
     point *= y_blade * GetSpan();
     point += GetOrigin();
     return point;
+  }
+  Section GetSection(Scalar y_blade) const {
+    assert(0 <= y_blade && y_blade <= 1);
+    auto position = y_blade * GetSpan();
+    auto itr = std::lower_bound(positions_.begin(), positions_.end(), y_blade);
+    assert(itr != positions_.end());
+    auto i_1 = itr - positions_.begin();
+    auto chord = chords_[i_1];
+    auto twist = twists_[i_1];
+    if (*itr != position) {
+      // linear interpolation
+      assert(i_1 > 0);
+      auto i_0 = i_1 - 1;
+      auto lambda_1 = (itr[0] - position) / (itr[0] - itr[-1]);
+      auto lambda_0 = 1 - lambda_1;
+      chord = chord * lambda_1 + chords_[i_0] * lambda_0;
+      twist = twist * lambda_1 + twists_[i_0] * lambda_0;
+    }
+    return Section(*this, y_blade, chord, twist);
   }
 };
 
