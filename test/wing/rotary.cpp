@@ -1,5 +1,6 @@
 // Copyright 2022 PEI Weicheng
 #include "mini/wing/rotary.hpp"
+#include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 
 #include "gtest/gtest.h"
@@ -7,14 +8,15 @@
 class TestRotaryWing : public ::testing::Test {
  protected:
   using Scalar = double;
+  using Point = mini::algebra::Matrix<Scalar, 3, 1>;
 };
 TEST_F(TestRotaryWing, Constructors) {
-  auto rotor = mini::wing::Rotor<Scalar, 2>();
+  auto rotor = mini::wing::Rotor<Scalar>();
   rotor.SetOmega(10.0/* rps */);
-  rotor.SetOrigin(0, 0, 0);
+  rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
   frame.RotateY(-5/* deg */);
-  rotor.SetOrientation(frame);
+  rotor.SetFrame(frame);
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
@@ -22,16 +24,28 @@ TEST_F(TestRotaryWing, Constructors) {
   blade.InstallSection(position, chord, twist, airfoil);
   position = 2.0, twist = -5.0/* deg */;
   blade.InstallSection(position, chord, twist, airfoil);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), 2.0);
   // install two blades
   Scalar root{0.1};
-  rotor.InstallBlade(0, root, blade);
-  rotor.InstallBlade(1, root, blade);
+  auto tip = position + root;
+  EXPECT_EQ(rotor.CountBlades(), 0);
+  rotor.InstallBlade(root, blade);
+  EXPECT_EQ(rotor.CountBlades(), 1);
+  rotor.InstallBlade(root, blade);
+  EXPECT_EQ(rotor.CountBlades(), 2);
   // test azimuth query
   Scalar deg = 90.0;
-  Scalar sec = deg / rotor.GetOmega();
-  EXPECT_DOUBLE_EQ(rotor.GetAzimuth(sec), deg);
-  EXPECT_DOUBLE_EQ(rotor.GetAzimuth(sec, 0), deg);
-  EXPECT_DOUBLE_EQ(rotor.GetAzimuth(sec, 1), deg + 180);
+  rotor.SetAzimuth(deg);
+  EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
+  // test position query
+  auto& blade_1 = rotor.GetBlade(1);
+  EXPECT_DOUBLE_EQ(blade_1.GetAzimuth(), deg + 180);
+  auto rotor_x = rotor.GetFrame().X();
+  auto rotor_o = rotor.GetOrigin();
+  Point point = rotor_o + rotor_x * root;
+  EXPECT_NEAR((blade_1.GetPoint(0.0) - point).norm(), 0, 1e-16);
+  point = rotor_o + rotor_x * tip;
+  EXPECT_NEAR((blade_1.GetPoint(1.0) - point).norm(), 0, 1e-15);
 }
 
 int main(int argc, char* argv[]) {
