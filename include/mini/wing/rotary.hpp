@@ -56,13 +56,14 @@ class Rotor {
 
   std::array<Blade, kBlades> blades_;
   std::array<Scalar, kBlades> roots_;
+  std::array<Scalar, kBlades> azimuths_/* deg */;
   Frame frame_;
   Vector origin_;
-  Scalar omega_;
+  Scalar omega_/* deg / s */;
 
  public:
-  Rotor& SetOmega(Scalar omega) {
-    omega_ = omega;
+  Rotor& SetOmega(Scalar rps) {
+    omega_ = rps * 360.0;
     return *this;
   }
   Rotor& SetOrigin(Scalar x, Scalar y, Scalar z) {
@@ -75,13 +76,37 @@ class Rotor {
   }
   Rotor& InstallBlade(int i, Scalar root, const Blade& blade) {
     roots_.at(i) = root;
+    azimuths_.at(i) = 360.0 / kBlades * i;
     blades_.at(i) = blade;
     return *this;
   }
 
  public:
-  Scalar Azimuth(Scalar t) const {
+  /**
+   * @brief Get the rotating speed of this `Rotor`.
+   * 
+   * @return Scalar The rotating speed in degrees per second.
+   */
+  Scalar GetOmega() const {
+    return omega_;
+  }
+  /**
+   * @brief Get the azimuth of this `Rotor`.
+   * 
+   * @param t The query time in seconds.
+   * @return Scalar The azimuth in degrees.
+   */
+  Scalar GetAzimuth(Scalar t) const {
     return omega_ * t;
+  }
+  /**
+   * @brief Get the azimuth of the `i`th `Blade`.
+   * 
+   * @param t The query time in seconds.
+   * @return Scalar The azimuth in degrees.
+   */
+  Scalar GetAzimuth(Scalar t, int i) const {
+    return GetAzimuth(t) + azimuths_.at(i);
   }
 
 };
