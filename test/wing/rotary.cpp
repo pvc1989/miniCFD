@@ -13,7 +13,11 @@ class TestRotaryWing : public ::testing::Test {
 };
 TEST_F(TestRotaryWing, Constructors) {
   auto rotor = mini::wing::Rotor<Scalar>();
-  rotor.SetOmega(20.0/* rps */);
+  rotor.SetRevolutionsPerSecond(20.0);
+  auto omega = mini::geometry::pi() * 40;
+  EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
+  rotor.SetOmega(omega);
+  EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
   rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
   frame.RotateY(-0/* deg */);
@@ -50,7 +54,7 @@ TEST_F(TestRotaryWing, Constructors) {
   // test section query
   auto section = blade_1.GetSection(0.5);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
-  auto v_y = frame.deg2rad(rotor.GetOmega()) * (root + tip) / 2;
+  auto v_y = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = Vector(0, v_y, 0);
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }

@@ -52,7 +52,7 @@ class Section {
   }
   Vector GetVelocity() const {
     auto& blade = GetBlade();
-    auto omega = Frame::deg2rad(blade.GetRotor().GetOmega());
+    auto omega = blade.GetRotor().GetOmega();
     Vector v = -blade.GetFrame().X();
     v *= omega * (blade.GetRoot() + blade.GetSpan() * y_blade_);
     return v;
@@ -186,11 +186,22 @@ class Rotor {
   std::vector<Blade> blades_;
   Frame frame_;
   Point origin_;
-  Scalar azimuth_/* deg */, omega_/* deg / s */;
+  Scalar azimuth_/* deg */, omega_/* rad / s */;
 
  public:
-  Rotor& SetOmega(Scalar rps) {
-    omega_ = rps * 360.0;
+  /**
+   * @brief Set the rotating speed of this `Rotor`.
+   * 
+   * @param omega The rotating speed in radian per second.
+   * @return Rotor& The reference to this `Rotor`.
+   */
+  Rotor& SetOmega(Scalar omega) {
+    omega_ = omega;
+    return *this;
+  }
+
+  Rotor& SetRevolutionsPerSecond(Scalar rps) {
+    omega_ = rps * mini::geometry::pi() * 2;
     return *this;
   }
 
@@ -228,7 +239,7 @@ class Rotor {
   /**
    * @brief Get the rotating speed of this `Rotor`.
    * 
-   * @return Scalar The rotating speed in degrees per second.
+   * @return Scalar The rotating speed in radian per second.
    */
   Scalar GetOmega() const {
     return omega_;

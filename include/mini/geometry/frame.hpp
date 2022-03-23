@@ -9,6 +9,13 @@
 namespace mini {
 namespace geometry {
 
+inline double pi() {
+  return 3.1415926535897932384626433832795028841971693993751;
+}
+inline double deg2rad(double deg) {
+  return deg * pi() / 180;
+}
+
 template <typename Scalar>
 class Frame {
  public:
@@ -24,12 +31,6 @@ class Frame {
   }
 
  public:
-  static Scalar pi() {
-    return 3.1415926535897932384626433832795028841971693993751;
-  }
-  static Scalar deg2rad(Scalar deg) {
-    return deg * pi() / 180;
-  }
   Frame& RotateX(Scalar deg) {
     auto [cos, sin] = CosSin(deg);
     Vector new_y = Y() * cos + Z() * sin;
