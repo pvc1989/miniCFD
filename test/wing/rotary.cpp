@@ -20,7 +20,7 @@ TEST_F(TestRotaryWing, Constructors) {
   EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
   rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
-  frame.RotateY(-0/* deg */);
+  frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
@@ -38,6 +38,27 @@ TEST_F(TestRotaryWing, Constructors) {
   EXPECT_EQ(rotor.CountBlades(), 1);
   rotor.InstallBlade(root, blade);
   EXPECT_EQ(rotor.CountBlades(), 2);
+}
+TEST_F(TestRotaryWing, NightyDegree) {
+  auto rotor = mini::wing::Rotor<Scalar>();
+  rotor.SetRevolutionsPerSecond(20.0);
+  auto omega = mini::geometry::pi() * 40;
+  rotor.SetOrigin(0.1, 0.2, 0.3);
+  auto frame = mini::geometry::Frame<Scalar>();
+  frame.RotateY(-5/* deg */);
+  rotor.SetFrame(frame);
+  // build a blade
+  auto airfoil = mini::wing::Airfoil<Scalar>();
+  auto blade = mini::wing::Blade<Scalar>();
+  Scalar position{0.0}, chord{0.1}, twist{0.0/* deg */};
+  blade.InstallSection(position, chord, twist, airfoil);
+  position = 2.0, twist = -5.0/* deg */;
+  blade.InstallSection(position, chord, twist, airfoil);
+  // install two blades
+  Scalar root{0.1};
+  auto tip = position + root;
+  rotor.InstallBlade(root, blade);
+  rotor.InstallBlade(root, blade);
   // test azimuth query
   Scalar deg = 90.0;
   rotor.SetAzimuth(deg);
