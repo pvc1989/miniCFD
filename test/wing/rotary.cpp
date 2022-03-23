@@ -8,11 +8,12 @@
 class TestRotaryWing : public ::testing::Test {
  protected:
   using Scalar = double;
-  using Point = mini::algebra::Matrix<Scalar, 3, 1>;
+  using Vector = mini::algebra::Matrix<Scalar, 3, 1>;
+  using Point = Vector;
 };
 TEST_F(TestRotaryWing, Constructors) {
   auto rotor = mini::wing::Rotor<Scalar>();
-  rotor.SetOmega(10.0/* rps */);
+  rotor.SetOmega(20.0/* rps */);
   rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
   frame.RotateY(-0/* deg */);
@@ -38,7 +39,7 @@ TEST_F(TestRotaryWing, Constructors) {
   rotor.SetAzimuth(deg);
   EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
   // test position query
-  auto& blade_1 = rotor.GetBlade(1);
+  auto& blade_1 = rotor.GetBlade(1);  // blade_y == rotor_x
   EXPECT_DOUBLE_EQ(blade_1.GetAzimuth(), deg + 180);
   auto rotor_x = rotor.GetFrame().X();
   auto rotor_o = rotor.GetOrigin();
@@ -49,6 +50,9 @@ TEST_F(TestRotaryWing, Constructors) {
   // test section query
   auto section = blade_1.GetSection(0.5);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
+  auto v_y = frame.deg2rad(rotor.GetOmega()) * (root + tip) / 2;
+  auto veclocity = Vector(0, v_y, 0);
+  EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }
 
 int main(int argc, char* argv[]) {

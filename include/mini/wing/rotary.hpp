@@ -30,22 +30,32 @@ template <typename Scalar>
 class Section {
   using Blade = mini::wing::Blade<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
-  using Point = typename Frame::Vector;
+  using Vector = typename Frame::Vector;
+  using Point = Vector;
 
   Frame frame_;
   const Blade* blade_;
-  Point origin_;
-  Scalar position_, chord_;
+  Scalar y_blade_, chord_;
 
  public:
   Section(const Blade& blade, Scalar y_blade, Scalar chord, Scalar twist)
-      : blade_(&blade), origin_(blade.GetPoint(y_blade)), chord_(chord),
+      : blade_(&blade), y_blade_(y_blade), chord_(chord),
         frame_(blade.GetFrame()) {
     frame_.RotateY(twist);
   }
 
-  const Point& GetOrigin() const {
-    return origin_;
+  const Blade& GetBlade() const {
+    return *blade_;
+  }
+  Point GetOrigin() const {
+    return GetBlade().GetPoint(y_blade_);
+  }
+  Vector GetVelocity() const {
+    auto& blade = GetBlade();
+    auto omega = Frame::deg2rad(blade.GetRotor().GetOmega());
+    Vector v = -blade.GetFrame().X();
+    v *= omega * (blade.GetRoot() + blade.GetSpan() * y_blade_);
+    return v;
   }
 };
 
