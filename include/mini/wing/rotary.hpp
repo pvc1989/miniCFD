@@ -35,11 +35,11 @@ class Section {
 
   Frame frame_;
   const Blade* blade_;
-  Scalar y_blade_, chord_;
+  Scalar y_ratio_, chord_;
 
  public:
-  Section(const Blade& blade, Scalar y_blade, Scalar chord, Scalar twist)
-      : blade_(&blade), y_blade_(y_blade), chord_(chord),
+  Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist)
+      : blade_(&blade), y_ratio_(y_ratio), chord_(chord),
         frame_(blade.GetFrame()) {
     frame_.RotateY(twist);
   }
@@ -48,13 +48,13 @@ class Section {
     return *blade_;
   }
   Point GetOrigin() const {
-    return GetBlade().GetPoint(y_blade_);
+    return GetBlade().GetPoint(y_ratio_);
   }
   Vector GetVelocity() const {
     auto& blade = GetBlade();
     auto omega = blade.GetRotor().GetOmega();
     Vector v = -blade.GetFrame().X();
-    v *= omega * (blade.GetRoot() + blade.GetSpan() * y_blade_);
+    v *= omega * (blade.GetRoot() + blade.GetSpan() * y_ratio_);
     return v;
   }
 };
@@ -146,22 +146,22 @@ class Blade {
   /**
    * @brief Get a `Point` on the span axis of this `Blade`.
    * 
-   * @param y_blade The dimensionless position, `0` for root, `1` for tip.
+   * @param y_ratio The dimensionless position, `0` for root, `1` for tip.
    * @return Point The absolute coordinates of the `Point`.
    */
-  Point GetPoint(Scalar y_blade) const {
-    if (y_blade < 0 || 1 < y_blade) {
+  Point GetPoint(Scalar y_ratio) const {
+    if (y_ratio < 0 || 1 < y_ratio) {
       throw std::domain_error("The argument must be in [0.0, 1.0].");
     }
     Point point = GetFrame().Y();
-    point *= y_blade * GetSpan();
+    point *= y_ratio * GetSpan();
     point += GetOrigin();
     return point;
   }
-  Section GetSection(Scalar y_blade) const {
-    assert(0 <= y_blade && y_blade <= 1);
-    auto position = y_blade * GetSpan();
-    auto itr = std::lower_bound(positions_.begin(), positions_.end(), y_blade);
+  Section GetSection(Scalar y_ratio) const {
+    assert(0 <= y_ratio && y_ratio <= 1);
+    auto position = y_ratio * GetSpan();
+    auto itr = std::lower_bound(positions_.begin(), positions_.end(), y_ratio);
     assert(itr != positions_.end());
     auto i_1 = itr - positions_.begin();
     auto chord = chords_[i_1];
@@ -175,7 +175,7 @@ class Blade {
       chord = chord * lambda_1 + chords_[i_0] * lambda_0;
       twist = twist * lambda_1 + twists_[i_0] * lambda_0;
     }
-    return Section(*this, y_blade, chord, twist);
+    return Section(*this, y_ratio, chord, twist);
   }
 };
 
