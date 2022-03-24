@@ -75,8 +75,48 @@ TEST_F(TestRotaryWing, NightyDegree) {
   // test section query
   auto section = blade_1.GetSection(0.5);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
-  auto v_y = rotor.GetOmega() * (root + tip) / 2;
-  auto veclocity = Vector(0, v_y, 0);
+  auto v_norm = rotor.GetOmega() * (root + tip) / 2;
+  auto veclocity = -v_norm * blade_1.GetFrame().X();
+  EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
+}
+TEST_F(TestRotaryWing, HalfCycle) {
+  auto rotor = mini::wing::Rotor<Scalar>();
+  rotor.SetRevolutionsPerSecond(20.0);
+  auto omega = mini::geometry::pi() * 40;
+  rotor.SetOrigin(0.1, 0.2, 0.3);
+  auto frame = mini::geometry::Frame<Scalar>();
+  frame.RotateY(-5/* deg */);
+  rotor.SetFrame(frame);
+  // build a blade
+  auto airfoil = mini::wing::Airfoil<Scalar>();
+  auto blade = mini::wing::Blade<Scalar>();
+  Scalar position{0.0}, chord{0.1}, twist{0.0/* deg */};
+  blade.InstallSection(position, chord, twist, airfoil);
+  position = 2.0, twist = -5.0/* deg */;
+  blade.InstallSection(position, chord, twist, airfoil);
+  // install two blades
+  Scalar root{0.1};
+  auto tip = position + root;
+  rotor.InstallBlade(root, blade);
+  rotor.InstallBlade(root, blade);
+  // test azimuth query
+  Scalar deg = 180.0;
+  rotor.SetAzimuth(deg);
+  EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
+  // test position query
+  auto& blade_0 = rotor.GetBlade(0);  // blade_y == -rotor_y
+  EXPECT_DOUBLE_EQ(blade_0.GetAzimuth(), deg);
+  auto rotor_y = rotor.GetFrame().Y();
+  auto rotor_o = rotor.GetOrigin();
+  Point point = rotor_o - rotor_y * root;
+  EXPECT_NEAR((blade_0.GetPoint(0.0) - point).norm(), 0, 1e-16);
+  point = rotor_o - rotor_y * tip;
+  EXPECT_NEAR((blade_0.GetPoint(1.0) - point).norm(), 0, 1e-15);
+  // test section query
+  auto section = blade_0.GetSection(0.5);
+  EXPECT_EQ(section.GetOrigin(), blade_0.GetPoint(0.5));
+  auto v_norm = rotor.GetOmega() * (root + tip) / 2;
+  auto veclocity = -v_norm * blade_0.GetFrame().X();
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }
 
