@@ -25,14 +25,14 @@ TEST_F(TestRotaryWing, Constructors) {
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar position{0.0}, chord{0.1}, twist{0.0/* deg */};
-  blade.InstallSection(position, chord, twist, airfoil);
-  position = 2.0, twist = -5.0/* deg */;
-  blade.InstallSection(position, chord, twist, airfoil);
+  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
+  blade.InstallSection(y_value, chord, twist, airfoil);
+  y_value = 2.0, twist = -5.0/* deg */;
+  blade.InstallSection(y_value, chord, twist, airfoil);
   EXPECT_DOUBLE_EQ(blade.GetSpan(), 2.0);
   // install two blades
   Scalar root{0.1};
-  auto tip = position + root;
+  auto tip = y_value + root;
   EXPECT_EQ(rotor.CountBlades(), 0);
   rotor.InstallBlade(root, blade);
   EXPECT_EQ(rotor.CountBlades(), 1);
@@ -50,20 +50,20 @@ TEST_F(TestRotaryWing, NightyDegree) {
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar position{0.0}, chord{0.1}, twist{0.0/* deg */};
-  blade.InstallSection(position, chord, twist, airfoil);
-  position = 2.0, twist = -5.0/* deg */;
-  blade.InstallSection(position, chord, twist, airfoil);
+  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
+  blade.InstallSection(y_value, chord, twist, airfoil);
+  y_value = 2.0, twist = -5.0/* deg */;
+  blade.InstallSection(y_value, chord, twist, airfoil);
   // install two blades
   Scalar root{0.1};
-  auto tip = position + root;
+  auto tip = y_value + root;
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   // test azimuth query
   Scalar deg = 90.0;
   rotor.SetAzimuth(deg);
   EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
-  // test position query
+  // test y_value query
   auto& blade_1 = rotor.GetBlade(1);  // blade_y == rotor_x
   EXPECT_DOUBLE_EQ(blade_1.GetAzimuth(), deg + 180);
   auto rotor_x = rotor.GetFrame().X();
@@ -90,20 +90,20 @@ TEST_F(TestRotaryWing, HalfCycle) {
   // build a blade
   auto airfoil = mini::wing::Airfoil<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar position{0.0}, chord{0.1}, twist{0.0/* deg */};
-  blade.InstallSection(position, chord, twist, airfoil);
-  position = 2.0, twist = -5.0/* deg */;
-  blade.InstallSection(position, chord, twist, airfoil);
+  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
+  blade.InstallSection(y_value, chord, twist, airfoil);
+  y_value = 2.0, twist = -5.0/* deg */;
+  blade.InstallSection(y_value, chord, twist, airfoil);
   // install two blades
   Scalar root{0.1};
-  auto tip = position + root;
+  auto tip = y_value + root;
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   // test azimuth query
   Scalar deg = 180.0;
   rotor.SetAzimuth(deg);
   EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
-  // test position query
+  // test y_value query
   auto& blade_0 = rotor.GetBlade(0);  // blade_y == -rotor_y
   EXPECT_DOUBLE_EQ(blade_0.GetAzimuth(), deg);
   auto rotor_y = rotor.GetFrame().Y();

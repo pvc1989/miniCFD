@@ -71,14 +71,14 @@ class Blade {
   using Vector = typename Frame::Vector;
   using Point = Vector;
 
-  std::vector<Scalar> positions_, chords_, twists_;
+  std::vector<Scalar> y_values_, chords_, twists_;
   std::vector<Airfoil> airfoils_;
   Frame frame_;  // absolute
   Scalar root_, azimuth_;
   const Rotor* rotor_;
 
   int CountSections() const {
-    return positions_.size();
+    return y_values_.size();
   }
 
  public:
@@ -96,22 +96,22 @@ class Blade {
     frame_.RotateZ(deg);
     return *this;
   }
-  Blade& InstallSection(Scalar position, Scalar chord, Scalar twist,
+  Blade& InstallSection(Scalar y_value, Scalar chord, Scalar twist,
       const Airfoil& airfoil) {
-    if (CountSections() == 0 && position) {
+    if (CountSections() == 0 && y_value) {
       throw std::invalid_argument("First position must be 0.");
     }
-    if (CountSections() && positions_.back() >= position) {
+    if (CountSections() && y_values_.back() >= y_value) {
       throw std::invalid_argument("New position must > existing ones.");
     }
-    positions_.emplace_back(position);
+    y_values_.emplace_back(y_value);
     chords_.emplace_back(chord);
     twists_.emplace_back(twist);
     airfoils_.emplace_back(airfoil);
     return *this;
   }
   Scalar GetSpan() const {
-    return positions_.empty() ? 0.0 : positions_.back();
+    return y_values_.empty() ? 0.0 : y_values_.back();
   }
 
   /**
@@ -160,17 +160,17 @@ class Blade {
   }
   Section GetSection(Scalar y_ratio) const {
     assert(0 <= y_ratio && y_ratio <= 1);
-    auto position = y_ratio * GetSpan();
-    auto itr = std::lower_bound(positions_.begin(), positions_.end(), y_ratio);
-    assert(itr != positions_.end());
-    auto i_1 = itr - positions_.begin();
+    auto y_value = y_ratio * GetSpan();
+    auto itr = std::lower_bound(y_values_.begin(), y_values_.end(), y_ratio);
+    assert(itr != y_values_.end());
+    auto i_1 = itr - y_values_.begin();
     auto chord = chords_[i_1];
     auto twist = twists_[i_1];
-    if (*itr != position) {
+    if (*itr != y_value) {
       // linear interpolation
       assert(i_1 > 0);
       auto i_0 = i_1 - 1;
-      auto lambda_1 = (itr[0] - position) / (itr[0] - itr[-1]);
+      auto lambda_1 = (itr[0] - y_value) / (itr[0] - itr[-1]);
       auto lambda_0 = 1 - lambda_1;
       chord = chord * lambda_1 + chords_[i_0] * lambda_0;
       twist = twist * lambda_1 + twists_[i_0] * lambda_0;
