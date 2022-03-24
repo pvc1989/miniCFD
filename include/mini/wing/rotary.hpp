@@ -98,8 +98,11 @@ class Blade {
   }
   Blade& InstallSection(Scalar position, Scalar chord, Scalar twist,
       const Airfoil& airfoil) {
+    if (CountSections() == 0 && position) {
+      throw std::invalid_argument("First position must be 0.");
+    }
     if (CountSections() && positions_.back() >= position) {
-      throw std::range_error("New position must be larger than existing ones.");
+      throw std::invalid_argument("New position must > existing ones.");
     }
     positions_.emplace_back(position);
     chords_.emplace_back(chord);
@@ -148,7 +151,7 @@ class Blade {
    */
   Point GetPoint(Scalar y_blade) const {
     if (y_blade < 0 || 1 < y_blade) {
-      throw std::range_error("The dimensionless position must be in [0.0, 1.0].");
+      throw std::domain_error("The argument must be in [0.0, 1.0].");
     }
     Point point = GetFrame().Y();
     point *= y_blade * GetSpan();
