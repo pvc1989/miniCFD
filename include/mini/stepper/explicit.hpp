@@ -25,7 +25,7 @@ class RungeKuttaBase {
   using Coord = typename Cell::Coord;
 
  protected:
-  std::vector<Coeff> rhs_;
+  std::vector<Coeff> residual_;
   std::vector<std::string> free_bc_, solid_bc_;
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> prescribed_bc_;
@@ -70,13 +70,13 @@ class RungeKuttaBase {
       cell_ptr->projection_.UpdateCoeffs(new_coeff);
     });
   }
-  void InitializeRhs(const Part &part) {
-    rhs_.resize(part.CountLocalCells());
-    for (auto& coeff : rhs_) {
+  void InitializeResidual(const Part &part) {
+    residual_.resize(part.CountLocalCells());
+    for (auto& coeff : residual_) {
       coeff.setZero();
     }
     part.ForEachConstLocalCell([this](const Cell &cell){
-      auto& r = this->rhs_.at(cell.id());
+      auto& r = this->residual_.at(cell.id());
       const auto& gauss = *(cell.gauss_ptr_);
       for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
         const auto& xyz = gauss.GetGlobalCoord(q);
@@ -89,8 +89,8 @@ class RungeKuttaBase {
       }
     });
   }
-  void UpdateLocalRhs(const Part &part) {
-    assert(rhs_.size() == part.CountLocalCells());
+  void UpdateLocalResidual(const Part &part) {
+    assert(residual_.size() == part.CountLocalCells());
     part.ForEachConstLocalFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
@@ -102,13 +102,15 @@ class RungeKuttaBase {
         Value u_sharer = sharer.projection_(coord);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
-        this->rhs_.at(sharer.id()) += flux * sharer.basis_(coord).transpose();
+        this->residual_.at(holder.id())
+            -= flux * holder.basis_(coord).transpose();
+        this->residual_.at(sharer.id())
+            += flux * sharer.basis_(coord).transpose();
       }
     });
   }
-  void UpdateGhostRhs(const Part &part) {
-    assert(rhs_.size() == part.CountLocalCells());
+  void UpdateGhostResidual(const Part &part) {
+    assert(residual_.size() == part.CountLocalCells());
     part.ForEachConstGhostFace([this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       const auto& holder = *(face.holder_);
@@ -121,7 +123,7 @@ class RungeKuttaBase {
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff temp = flux * holder.basis_(coord).transpose();
-        this->rhs_.at(holder.id()) -= temp;
+        this->residual_.at(holder.id()) -= temp;
       }
     });
   }
@@ -136,7 +138,8 @@ class RungeKuttaBase {
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
-        this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        this->residual_.at(holder.id())
+            -= flux * holder.basis_(coord).transpose();
       }
     };
     for (const auto& name : solid_bc_) {
@@ -154,7 +157,8 @@ class RungeKuttaBase {
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnFreeWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
-        this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
+        this->residual_.at(holder.id())
+            -= flux * holder.basis_(coord).transpose();
       }
     };
     for (const auto& name : free_bc_) {
@@ -174,13 +178,14 @@ class RungeKuttaBase {
           Value u_given = iter->second(coord, t_curr);
           Value flux = riemann.GetRotatedFlux(u_given);
           flux *= gauss.GetGlobalWeight(q);
-          this->rhs_.at(holder.id()) -= flux * holder.basis_(coord).transpose();
+          this->residual_.at(holder.id())
+              -= flux * holder.basis_(coord).transpose();
         }
       };
       part.ForEachConstBoundaryFace(visit, iter->first);
     }
   }
-  void UpdateBoundaryRhs(const Part &part, double t_curr) {
+  void UpdateBoundaryResidual(const Part &part, double t_curr) {
     ApplySolidWallBC(part);
     ApplyFreeOutletBC(part);
     ApplyPrescribedBC(part, t_curr);
@@ -223,14 +228,14 @@ struct RungeKutta<1, P, L>
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
-    u_new_ = this->rhs_;
+    assert(n_cells == this->residual_.size());
+    u_new_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_new_[i_cell] *= this->dt_;
       u_new_[i_cell] += u_old_[i_cell];
@@ -273,22 +278,22 @@ struct RungeKutta<2, P, L>
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     this->SolveFrac12();
     Base::WriteToLocalCells(u_frac12_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
     Base::ReadFromLocalCells(part, &u_frac12_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     this->SolveFrac22();
     Base::WriteToLocalCells(u_new_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
@@ -297,8 +302,8 @@ struct RungeKutta<2, P, L>
  private:
   void SolveFrac12() {
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
-    u_frac12_ = this->rhs_;
+    assert(n_cells == this->residual_.size());
+    u_frac12_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_frac12_[i_cell] *= this->dt_;
       u_frac12_[i_cell] += u_old_[i_cell];
@@ -306,9 +311,9 @@ struct RungeKutta<2, P, L>
   }
   void SolveFrac22() {
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
+    assert(n_cells == this->residual_.size());
     assert(n_cells == u_frac12_.size());
-    u_new_ = this->rhs_;
+    u_new_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_new_[i_cell] *= this->dt_;
       u_new_[i_cell] += u_frac12_[i_cell];
@@ -351,33 +356,33 @@ struct RungeKutta<3, P, L>
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     this->SolveFrac13();
     Base::WriteToLocalCells(u_frac13_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
     Base::ReadFromLocalCells(part, &u_frac13_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     this->SolveFrac23();
     Base::WriteToLocalCells(u_frac23_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
     Base::ReadFromLocalCells(part, &u_frac23_);
     part_ptr->ShareGhostCellCoeffs();
-    this->InitializeRhs(part);
-    this->UpdateLocalRhs(part);
-    this->UpdateBoundaryRhs(part, t_curr);
+    this->InitializeResidual(part);
+    this->UpdateLocalResidual(part);
+    this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostRhs(part);
+    this->UpdateGhostResidual(part);
     this->SolveFrac33();
     Base::WriteToLocalCells(u_new_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
@@ -386,8 +391,8 @@ struct RungeKutta<3, P, L>
  private:
   void SolveFrac13() {
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
-    u_frac13_ = this->rhs_;
+    assert(n_cells == this->residual_.size());
+    u_frac13_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_frac13_[i_cell] *= this->dt_;
       u_frac13_[i_cell] += u_old_[i_cell];
@@ -395,9 +400,9 @@ struct RungeKutta<3, P, L>
   }
   void SolveFrac23() {
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
+    assert(n_cells == this->residual_.size());
     assert(n_cells == u_frac13_.size());
-    u_frac23_ = this->rhs_;
+    u_frac23_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_frac23_[i_cell] *= this->dt_;
       u_frac23_[i_cell] += u_frac13_[i_cell];
@@ -409,10 +414,10 @@ struct RungeKutta<3, P, L>
   }
   void SolveFrac33() {
     auto n_cells = u_old_.size();
-    assert(n_cells == this->rhs_.size());
+    assert(n_cells == this->residual_.size());
     assert(n_cells == u_frac13_.size());
     assert(n_cells == u_frac23_.size());
-    u_new_ = this->rhs_;
+    u_new_ = this->residual_;
     for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
       u_new_[i_cell] *= 2 * this->dt_;
       u_new_[i_cell] += u_frac23_[i_cell];
