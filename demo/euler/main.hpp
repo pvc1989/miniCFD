@@ -21,8 +21,8 @@ using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
-constexpr int kOrder = 2;
-using Part = mini::mesh::cgns::Part<cgsize_t, kOrder, Riemann>;
+constexpr int kDegree = 2;
+using Part = mini::mesh::cgns::Part<cgsize_t, kDegree, Riemann>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
 using Coord = typename Cell::Coord;
@@ -33,7 +33,7 @@ using Coeff = typename Cell::Coeff;
 using Limiter = mini::polynomial::EigenWeno<Cell>;
 
 /* Choose the time-stepping scheme. */
-constexpr int kSteps = std::min(3, kOrder + 1);
+constexpr int kSteps = std::min(3, kDegree + 1);
 using Solver = RungeKutta<kSteps, Part, Limiter>;
 
 using IC = Value(*)(const Coord &);

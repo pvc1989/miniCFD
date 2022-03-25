@@ -15,7 +15,7 @@
 namespace mini {
 namespace polynomial {
 
-template <typename Scalar, int kDim, int kOrder>
+template <typename Scalar, int kDim, int kDegree>
 class Raw;
 
 template <typename Scalar>
@@ -212,11 +212,11 @@ class Raw<Scalar, 3, 2> {
  * 
  * @tparam Scalar the data type of scalar components
  * @tparam kDim the dimension of the underlying physical space
- * @tparam kOrder the degree of completeness
+ * @tparam kDegree the degree of completeness
  */
-template <typename Scalar, int kDim, int kOrder>
+template <typename Scalar, int kDim, int kDegree>
 class Linear {
-  using RB = Raw<Scalar, kDim, kOrder>;
+  using RB = Raw<Scalar, kDim, kDegree>;
 
  public:
   static constexpr int N = RB::N;
@@ -265,10 +265,10 @@ class Linear {
   MatNxN coeff_;
 };
 
-template <typename Scalar, int kDim, int kOrder>
+template <typename Scalar, int kDim, int kDegree>
 class OrthoNormal {
-  using RB = Raw<Scalar, kDim, kOrder>;
-  using LB = Linear<Scalar, kDim, kOrder>;
+  using RB = Raw<Scalar, kDim, kDegree>;
+  using LB = Linear<Scalar, kDim, kDegree>;
 
  public:
   static constexpr int N = LB::N;
@@ -318,7 +318,7 @@ class OrthoNormal {
 
  private:
   Gauss const* gauss_ptr_;
-  Linear<Scalar, kDim, kOrder> basis_;
+  Linear<Scalar, kDim, kDegree> basis_;
 };
 
 }  // namespace polynomial

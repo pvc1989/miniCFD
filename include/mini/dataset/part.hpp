@@ -84,10 +84,10 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, int kOrder, class R>
+template <typename Int, int kDegree, class R>
 struct Cell;
 
-template <typename Int, int kOrder, class R>
+template <typename Int, int kDegree, class R>
 struct Face {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
@@ -95,7 +95,7 @@ struct Face {
   constexpr static int kDim = Riemann::kDim;
   using Gauss = integrator::Face<Scalar, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Cell = cgns::Cell<Int, kOrder, Riemann>;
+  using Cell = cgns::Cell<Int, kDegree, Riemann>;
 
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
@@ -128,7 +128,7 @@ struct Face {
   }
 };
 
-template <typename Int, int kOrder, class R>
+template <typename Int, int kDegree, class R>
 struct Cell {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
@@ -136,15 +136,15 @@ struct Cell {
   constexpr static int kDim = Riemann::kDim;
   using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Basis = polynomial::OrthoNormal<Scalar, kDim, kOrder>;
-  using Projection = polynomial::Projection<Scalar, kDim, kOrder, kFunc>;
+  using Basis = polynomial::OrthoNormal<Scalar, kDim, kDegree>;
+  using Projection = polynomial::Projection<Scalar, kDim, kDegree, kFunc>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using Face = cgns::Face<Int, kOrder, R>;
+  using Face = cgns::Face<Int, kDegree, R>;
 
   std::vector<Cell*> adj_cells_;
   std::vector<Face*> adj_faces_;
@@ -344,9 +344,9 @@ struct Cell {
   }
 };
 
-template <typename Int, int kOrder, class R>
+template <typename Int, int kDegree, class R>
 class CellGroup {
-  using Cell = cgns::Cell<Int, kOrder, R>;
+  using Cell = cgns::Cell<Int, kDegree, R>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
@@ -442,25 +442,25 @@ class CellGroup {
   }
 };
 
-template <typename Int, int kOrder, class R>
+template <typename Int, int kDegree, class R>
 class Part {
  public:
-  using Face = cgns::Face<Int, kOrder, R>;
-  using Cell = cgns::Cell<Int, kOrder, R>;
+  using Face = cgns::Face<Int, kDegree, R>;
+  using Cell = cgns::Cell<Int, kDegree, R>;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
   constexpr static int kFunc = Riemann::kFunc;
   constexpr static int kDim = Riemann::kDim;
-  constexpr static int kAccuracyOrder = kOrder;
+  constexpr static int kAccuracyOrder = kDegree + 1;
 
  private:
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
   using NodeInfo = cgns::NodeInfo<Int>;
   using CellInfo = cgns::CellInfo<Int>;
   using NodeGroup = cgns::NodeGroup<Int, Scalar>;
-  using CellGroup = cgns::CellGroup<Int, kOrder, R>;
+  using CellGroup = cgns::CellGroup<Int, kDegree, R>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
@@ -1555,11 +1555,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, int kOrder, class R>
-MPI_Datatype const Part<Int, kOrder, R>::kMpiIntType
+template <typename Int, int kDegree, class R>
+MPI_Datatype const Part<Int, kDegree, R>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, int kOrder, class R>
-MPI_Datatype const Part<Int, kOrder, R>::kMpiRealType
+template <typename Int, int kDegree, class R>
+MPI_Datatype const Part<Int, kDegree, R>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns

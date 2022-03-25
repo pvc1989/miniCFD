@@ -19,13 +19,13 @@ namespace polynomial {
  * 
  * @tparam Scalar the data type of scalar components
  * @tparam kDim the dimension of the underlying physical space
- * @tparam kOrder the degree of completeness
+ * @tparam kDegree the degree of completeness
  * @tparam kFunc the number of function components
  */
-template <typename Scalar, int kDim, int kOrder, int kFunc>
+template <typename Scalar, int kDim, int kDegree, int kFunc>
 class Projection {
  public:
-  using Basis = OrthoNormal<Scalar, kDim, kOrder>;
+  using Basis = OrthoNormal<Scalar, kDim, kDegree>;
   static constexpr int N = Basis::N;
   static constexpr int K = kFunc;
   using Coord = typename Basis::Coord;
@@ -69,7 +69,7 @@ class Projection {
 
   MatKx1 operator()(Coord const& global) const {
     Coord local = global; local -= center();
-    MatNx1 col = Raw<Scalar, kDim, kOrder>::CallAt(local);
+    MatNx1 col = Raw<Scalar, kDim, kDegree>::CallAt(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
@@ -97,7 +97,7 @@ class Projection {
   }
   MatKxN GetPdvValue(Coord const& global) const {
     auto local = global; local -= center();
-    return Raw<Scalar, kDim, kOrder>::GetPdvValue(local, coeff());
+    return Raw<Scalar, kDim, kDegree>::GetPdvValue(local, coeff());
   }
   MatKx1 GetAverage() const {
     const auto& mat_a = basis_ptr_->coeff();
@@ -113,7 +113,7 @@ class Projection {
     };
     auto integral = integrator::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
-    return Raw<Scalar, kDim, kOrder>::GetSmoothness(integral, volume);
+    return Raw<Scalar, kDim, kDegree>::GetSmoothness(integral, volume);
   }
   template <typename Callable>
   void Project(Callable&& func, const Basis& basis) {

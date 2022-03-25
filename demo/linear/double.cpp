@@ -74,8 +74,8 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kOrder = 2;
-  using Part = mini::mesh::cgns::Part<cgsize_t, kOrder, Riemann>;
+  constexpr int kDegree = 2;
+  using Part = mini::mesh::cgns::Part<cgsize_t, kDegree, Riemann>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
   using Coord = typename Cell::Coord;
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
       std::printf("[Start] `Reconstruct()` on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
-    if (kOrder > 0) {
+    if (kDegree > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
         part.Reconstruct(limiter);
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
   }
 
   /* Choose the time-stepping scheme. */
-  constexpr int kSteps = std::min(3, kOrder + 1);
+  constexpr int kSteps = std::min(3, kDegree + 1);
   auto rk = RungeKutta<kSteps, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */

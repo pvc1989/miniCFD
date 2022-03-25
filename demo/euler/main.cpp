@@ -84,7 +84,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
           n_cores, MPI_Wtime() - time_begin);
     }
 
-    if (kOrder > 0) {
+    if (kDegree > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
         part.Reconstruct(limiter);
