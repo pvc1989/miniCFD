@@ -453,6 +453,7 @@ class Part {
   using Value = typename Cell::Value;
   constexpr static int kFunc = Riemann::kFunc;
   constexpr static int kDim = Riemann::kDim;
+  constexpr static int kAccuracyOrder = kOrder;
 
  private:
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;

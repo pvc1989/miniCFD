@@ -11,7 +11,7 @@
 
 #include "mini/dataset/part.hpp"
 
-template <int kOrder, typename P, typename L>
+template <typename P, typename L>
 class RungeKuttaBase {
  public:
   using Part = P;
@@ -75,10 +75,10 @@ class RungeKuttaBase {
     for (auto& coeff : residual_) {
       coeff.setZero();
     }
-    if (kOrder == 1) {
+    if (Part::kAccuracyOrder == 1) {
       return;
     }
-    // The following step is necessary only for high-order schemes.
+    // The following step is necessary only for high-order DG schemes.
     part.ForEachConstLocalCell([this](const Cell &cell){
       auto& r = this->residual_.at(cell.id());
       const auto& gauss = *(cell.gauss_ptr_);
@@ -201,9 +201,9 @@ struct RungeKutta;
 
 template <typename P, typename L>
 struct RungeKutta<1, P, L>
-    : public RungeKuttaBase<1, P, L> {
+    : public RungeKuttaBase<P, L> {
  private:
-  using Base = RungeKuttaBase<1, P, L>;
+  using Base = RungeKuttaBase<P, L>;
 
  public:
   using Part = typename Base::Part;
@@ -245,15 +245,18 @@ struct RungeKutta<1, P, L>
       u_new_[i_cell] += u_old_[i_cell];
     }
     Base::WriteToLocalCells(u_new_, part_ptr);
-    // part_ptr->Reconstruct(this->limiter_);  // only for high order methods
+    if (Part::kAccuracyOrder == 1) {
+      return;
+    }
+    part_ptr->Reconstruct(this->limiter_);
   }
 };
 
 template <typename P, typename L>
 struct RungeKutta<2, P, L>
-    : public RungeKuttaBase<2, P, L> {
+    : public RungeKuttaBase<P, L> {
  private:
-  using Base = RungeKuttaBase<2, P, L>;
+  using Base = RungeKuttaBase<P, L>;
 
  public:
   using Part = typename Base::Part;
@@ -329,9 +332,9 @@ struct RungeKutta<2, P, L>
 
 template <typename P, typename L>
 struct RungeKutta<3, P, L>
-    : public RungeKuttaBase<3, P, L> {
+    : public RungeKuttaBase<P, L> {
  private:
-  using Base = RungeKuttaBase<3, P, L>;
+  using Base = RungeKuttaBase<P, L>;
 
  public:
   using Part = typename Base::Part;
