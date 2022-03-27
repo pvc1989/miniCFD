@@ -24,24 +24,24 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
   // Constructors:
   using Base::Base;
   // Accessors and Mutators:
-  const Scalar& mass() const {
+  Scalar mass() const {
     return (*this)[0];
   }
   const Vector& momentum() const {
-    return *reinterpret_cast<const Vector*>(&momentumX());
+    return *reinterpret_cast<const Vector*>(&((*this)[1]));
   }
-  const Scalar& momentumX() const {
+  Scalar momentumX() const {
     return (*this)[1];
   }
-  const Scalar& momentumY() const {
+  Scalar momentumY() const {
     assert(kDim >= 2);
     return (*this)[2];
   }
-  const Scalar& momentumZ() const {
+  Scalar momentumZ() const {
     assert(kDim == 3);
     return (*this)[3];
   }
-  const Scalar& energy() const {
+  Scalar energy() const {
     return (*this)[kDim+1];
   }
   Scalar& mass() {
@@ -72,10 +72,10 @@ class Converter;
 template <class Scalar>
 class Converter<Scalar, 1> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 1> *tuple) {
+  static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 1> *tuple) {
     tuple->momentumX() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 1> *tuple) {
+  static void MomentumToVelocity(Scalar rho, Tuple<Scalar, 1> *tuple) {
     tuple->momentumX() /= rho;
   }
 };
@@ -83,11 +83,11 @@ class Converter<Scalar, 1> {
 template <class Scalar>
 class Converter<Scalar, 2> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 2> *tuple) {
+  static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 2> *tuple) {
     tuple->momentumX() *= rho;
     tuple->momentumY() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 2> *tuple) {
+  static void MomentumToVelocity(Scalar rho, Tuple<Scalar, 2> *tuple) {
     tuple->momentumX() /= rho;
     tuple->momentumY() /= rho;
   }
@@ -96,12 +96,12 @@ class Converter<Scalar, 2> {
 template <class Scalar>
 class Converter<Scalar, 3> {
  public:
-  static void VelocityToMomentum(const Scalar &rho, Tuple<Scalar, 3> *tuple) {
+  static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 3> *tuple) {
     tuple->momentumX() *= rho;
     tuple->momentumY() *= rho;
     tuple->momentumZ() *= rho;
   }
-  static void MomentumToVelocity(const Scalar &rho, Tuple<Scalar, 3> *tuple) {
+  static void MomentumToVelocity(Scalar rho, Tuple<Scalar, 3> *tuple) {
     tuple->momentumX() /= rho;
     tuple->momentumY() /= rho;
     tuple->momentumZ() /= rho;
@@ -134,19 +134,19 @@ class PrimitiveTuple : public Tuple<ScalarType, kDim> {
   // Constructors:
   using Base::Base;
   // Accessors and Mutators:
-  const Scalar& rho() const {
+  Scalar rho() const {
     return this->mass();
   }
-  const Scalar& u() const {
+  Scalar u() const {
     return this->momentumX();
   }
-  const Scalar& v() const {
+  Scalar v() const {
     return this->momentumY();
   }
-  const Scalar& w() const {
+  Scalar w() const {
     return this->momentumZ();
   }
-  const Scalar& p() const {
+  Scalar p() const {
     return this->energy();
   }
   Scalar& rho() {
@@ -194,7 +194,7 @@ class IdealGas {
   }
   static constexpr double gamma_ = kInteger + Shift(kDecimal);
 
-  static void AssertNonNegative(const Scalar &val, const char *name) {
+  static void AssertNonNegative(Scalar val, const char *name) {
     if (val < 0) {
       auto msg = name + std::string(" cannot be ") + std::to_string(val);
       throw std::runtime_error(msg);
