@@ -194,9 +194,10 @@ class IdealGas {
   }
   static constexpr double gamma_ = kInteger + Shift(kDecimal);
 
-  static void AssertNonNegative(const Scalar &val) {
+  static void AssertNonNegative(const Scalar &val, const char *name) {
     if (val < 0) {
-      throw std::runtime_error("The value must be non-negative.");
+      auto msg = name + std::string(" cannot be ") + std::to_string(val);
+      throw std::runtime_error(msg);
     }
   }
 
@@ -233,19 +234,19 @@ class IdealGas {
   // Converters:
   template <int kDim>
   static double GetSpeedOfSound(PrimitiveTuple<Scalar, kDim> const& state) {
-    AssertNonNegative(state.rho());
+    AssertNonNegative(state.rho(), "density");
     return state.rho() == 0 ? 0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
   static PrimitiveTuple<Scalar, kDim> ConservativeToPrimitive(
       ConservativeTuple<Scalar, kDim> const &conservative) {
     auto primitive = PrimitiveTuple<Scalar, kDim>(conservative);
-    AssertNonNegative(primitive.rho());
+    AssertNonNegative(primitive.rho(), "density");
     if (primitive.rho()) {
       Converter<Scalar, kDim>::MomentumToVelocity(primitive.rho(), &primitive);
       primitive.energy() -= primitive.GetDynamicPressure();
-      AssertNonNegative(primitive.energy());
       primitive.energy() *= GammaMinusOne();
+      AssertNonNegative(primitive.energy(), "pressure");
     } else {
       primitive.setZero();
     }
