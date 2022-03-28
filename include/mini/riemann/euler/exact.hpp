@@ -27,6 +27,47 @@ class Implementor {
   Speed star_u{0.0};
   // Get U on t-Axis
   Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
+    Primitive result;
+    if (left.rho() > 0) {
+      if (right.rho() > 0) {
+        // ordinary case
+      } else {
+        // only right vacuum
+        auto a_left = Gas::GetSpeedOfSound(left);
+        if (left.u() >= a_left) {
+          result = left;
+        } else {
+          auto u_star = left.u() + a_left * Gas::GammaMinusOneUnderTwo();
+          if (u_star <= 0) {
+            result.setZero();
+          } else {
+            auto gri_1 = left.p() / std::pow(left.rho(), Gas::Gamma());
+            result = PrimitiveInsideExpansion(gri_1, u_star);
+          }
+        }
+        return result;
+      }
+    } else {
+      if (right.rho() > 0) {
+        // only left vacuum
+        auto a_right = Gas::GetSpeedOfSound(right);
+        if (right.u() < a_right) {
+          result = right;
+        } else {
+          auto u_star = right.u() - a_right * Gas::GammaMinusOneUnderTwo();
+          if (u_star >= 0) {
+            result.setZero();
+          } else {
+            auto gri_1 = right.p() / std::pow(right.rho(), Gas::Gamma());
+            result = PrimitiveInsideExpansion(gri_1, u_star);
+          }
+        }
+      } else {
+        // both vacuum
+        result.setZero();
+      }
+      return result;
+    }
     // Construct the function of speed change, aka the pressure function.
     auto u_change_given = right.u() - left.u();
     auto u_change__left = SpeedChange(left);
@@ -45,20 +86,21 @@ class Implementor {
       star_u = star.u();
       if (0 < star.u()) {  // Axis[t] <<< Wave[2]
         if (star.p() >= left.p()) {  // Wave[1] is a shock.
-          return PrimitiveNearShock<1>(left, &star);
+          result = PrimitiveNearShock<1>(left, &star);
         } else {  // star.p() < left.p() : Wave[1] is an expansion.
-          return PrimitiveNearExpansion<1>(left, &star);
+          result = PrimitiveNearExpansion<1>(left, &star);
         }
       } else {  // star.u() < 0 : Wave[2] <<< Axis[t] <<< Wave[3].
         if (star.p() >= right.p()) {  // Wave[3] is a shock.
-          return PrimitiveNearShock<3>(right, &star);
+          result = PrimitiveNearShock<3>(right, &star);
         } else {  // star.p() < right.p() : Wave[3] is an expansion.
-          return PrimitiveNearExpansion<3>(right, &star);
+          result = PrimitiveNearExpansion<3>(right, &star);
         }
       }
     } else {  // The region BETWEEN Wave[1] and Wave[3] is vacuumed.
-      return PrimitiveNearVacuum(left, right);
+      result = PrimitiveNearVacuum(left, right);
     }
+    return result;
   }
 
  private:
