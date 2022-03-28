@@ -51,7 +51,7 @@ class Implementor {
       if (right.rho() > 0) {
         // only left vacuum
         auto a_right = Gas::GetSpeedOfSound(right);
-        if (right.u() < a_right) {
+        if (right.u() + a_right <= 0) {
           result = right;
         } else {
           auto u_star = right.u() - a_right * Gas::GammaMinusOneUnderTwo();

@@ -209,7 +209,8 @@ TEST_F(TestExact2d, TestVacuumed) {
 
 class TestExact3d : public ::testing::Test {
  protected:
-  using Solver = Exact<IdealGas<double, 1, 4>, 3>;
+  using Gas = IdealGas<double, 1, 4>;
+  using Solver = Exact<Gas, 3>;
   using Primitive = Solver::Primitive;
   using Speed = Solver::Scalar;
   using Flux = Solver::Flux;
@@ -288,6 +289,60 @@ TEST_F(TestExact3d, TestVacuumed) {
               solver.GetFlux({0.0, 0.0, v__left, w__left, 0.0}));
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, v_right, w_right, 0.0}));
+}
+TEST_F(TestExact3d, TestLeftVacuum) {
+  // u_* = u_R - \frac{2 a_R}{1.4 - 1} = u_R - 5 a_R
+  double u{100.0}, v{50.0}, w{20};
+  Primitive left{0, -u, -v, -w, 0}, right{1.4, u, v, w, 1.0};
+  EXPECT_DOUBLE_EQ(Gas::GetSpeedOfSound(right), 1.0);
+  Flux flux_actual, flux_expect;
+  // Axis[t] <<< Wave[3]
+  right.u() = +6;  // [u_R - 5 a_R, u_R + a_R] = [+1, +7]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(left);
+  EXPECT_DOUBLE_EQ(flux_actual.mass(), flux_expect.mass());
+  EXPECT_DOUBLE_EQ(flux_actual.momentumX(), flux_expect.momentumX());
+  EXPECT_DOUBLE_EQ(flux_actual.momentumY(), flux_expect.momentumY());
+  EXPECT_DOUBLE_EQ(flux_actual.momentumZ(), flux_expect.momentumZ());
+  EXPECT_DOUBLE_EQ(flux_actual.energy(), flux_expect.energy());
+  right.u() = +5;  // [u_R - 5 a_R, u_R + a_R] = [+0, +6]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(left);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-18);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-18);
+  EXPECT_NEAR(flux_actual.momentumY(), flux_expect.momentumY(), 1e-18);
+  EXPECT_NEAR(flux_actual.momentumZ(), flux_expect.momentumZ(), 1e-18);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-18);
+  // Axis[t] inside  Wave[3]
+  right.u() = +4;  // [u_R - 5 a_R, u_R + a_R] = [-1, +5]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  Primitive primitive;
+  primitive.rho() = 1.4 * std::pow(6.0, -5);
+  primitive.u() = -std::pow(6.0, -1); primitive.v() = v; primitive.w() = w;
+  primitive.p() = std::pow(6.0, -7);
+  flux_expect = solver.GetFlux(primitive);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-19);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-19);
+  EXPECT_NEAR(flux_actual.momentumY(), flux_expect.momentumY(), 1e-17);
+  EXPECT_NEAR(flux_actual.momentumZ(), flux_expect.momentumZ(), 1e-17);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-16);
+  // Wave[3] <<< Axis[t]
+  right.u() = -1;  // [u_R - 5 a_R, u_R + a_R] = [-6, 0]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(right);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumY(), flux_expect.momentumY(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumZ(), flux_expect.momentumZ(), 1e-14);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-12);
+  right.u() = -2;  // [u_R - 5 a_R, u_R + a_R] = [-7, -1]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(right);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumY(), flux_expect.momentumY(), 1e-18);
+  EXPECT_NEAR(flux_actual.momentumZ(), flux_expect.momentumZ(), 1e-18);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-14);
 }
 
 }  // namespace euler

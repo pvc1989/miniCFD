@@ -5,7 +5,6 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <stdexcept>
 
 #include "mini/algebra/eigen.hpp"
 
