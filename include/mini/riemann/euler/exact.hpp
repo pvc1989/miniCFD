@@ -79,7 +79,7 @@ class Implementor {
       return u_change__left.Prime(p) + u_change_right.Prime(p);
     };
     if (f(0) < 0) {  // Ordinary case: Wave[2] is a contact.
-      auto star = Primitive();
+      Primitive star;  // state in star region
       star.p() = FindRoot(f, f_prime, left.p());
       star.u() = 0.5 * (right.u() + u_change_right(star.p())
                         +left.u() - u_change__left(star.p()));
@@ -226,11 +226,11 @@ class Implementor {
     auto a_square = a * a;
     auto rho = std::pow(a_square / gri_1 * Gas::OneOverGamma(),
                         Gas::OneOverGammaMinusOne());
-    auto state = Primitive();
-    state.rho() = rho;
-    state.u() = a;
-    state.p() = a_square * rho * Gas::OneOverGamma();
-    return state;
+    Primitive axis;  // state on t-axis
+    axis.rho() = rho;
+    axis.u() = a;
+    axis.p() = a_square * rho * Gas::OneOverGamma();
+    return axis;
   }
   template <int kField>
   constexpr static bool TimeAxisAfterExpansion(double u, double a) {
@@ -279,9 +279,9 @@ class Implementor {
         if (gri_2 < 0) {  // Axis[t] is inside Wave[3].
           return PrimitiveInsideExpansion(gri_1, gri_2);
         } else {  // Axis[t] is inside the vacuumed region.
-          auto state = Primitive();
-          state.setZero();
-          return state;
+          Primitive axis;  // state on t-axis
+          axis.setZero();
+          return axis;
         }
       }
     }
