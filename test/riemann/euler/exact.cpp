@@ -83,6 +83,48 @@ TEST_F(TestExact, TestVacuumed) {
   CompareFlux(solver.GetFluxOnTimeAxis(left, right),
               solver.GetFlux({0.0, 0.0, 0.0}));
 }
+TEST_F(TestExact, TestRightVacuum) {
+  // u_* = u_L + \frac{2 a_L}{1.4 - 1} = u_L + 5 a_L
+  Primitive left{1.4, 100.0, 1.0}, right{0, 100.0, 0};
+  EXPECT_DOUBLE_EQ(Gas::GetSpeedOfSound(left), 1.0);
+  Flux flux_actual, flux_expect;
+  // Wave[1] <<< Axis[t]
+  left.u() = -6;  // [u_L - a_L, u_L + 5 a_L] = [-7, -1]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(right);
+  EXPECT_DOUBLE_EQ(flux_actual.mass(), flux_expect.mass());
+  EXPECT_DOUBLE_EQ(flux_actual.momentumX(), flux_expect.momentumX());
+  EXPECT_DOUBLE_EQ(flux_actual.energy(), flux_expect.energy());
+  left.u() = -5;  // [u_L - a_L, u_L + 5 a_L] = [-6, 0]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(right);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-18);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-18);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-18);
+  // Axis[t] inside  Wave[1]
+  left.u() = -4;  // [u_L - a_L, u_L + 5 a_L] = [-5, 1]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  auto rho = 1.4 * std::pow(6.0, -5);
+  auto u = std::pow(6.0, -1);
+  auto p = std::pow(6.0, -7);
+  flux_expect = solver.GetFlux(Primitive(rho, u, p));
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-19);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-19);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-20);
+  // Axis[t] <<< Wave[1]
+  left.u() = 1;  // [u_L - a_L, u_L + 5 a_L] = [0, 6]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(left);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-14);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-14);
+  left.u() = 2;  // [u_L - a_L, u_L + 5 a_L] = [1, 7]
+  flux_actual = solver.GetFluxOnTimeAxis(left, right);
+  flux_expect = solver.GetFlux(left);
+  EXPECT_NEAR(flux_actual.mass(), flux_expect.mass(), 1e-14);
+  EXPECT_NEAR(flux_actual.momentumX(), flux_expect.momentumX(), 1e-14);
+  EXPECT_NEAR(flux_actual.energy(), flux_expect.energy(), 1e-14);
+}
 
 class TestExact2d : public ::testing::Test {
  protected:
