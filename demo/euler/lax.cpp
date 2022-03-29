@@ -9,7 +9,7 @@ auto value_right = Gas::PrimitiveToConservative(primitive_right);
 
 Value MyIC(const Coord &xyz) {
   auto x = xyz[0];
-  return (x < 2.0) ? value_left : value_right;
+  return (x < 2.5) ? value_left : value_right;
 }
 
 /* Set boundary conditions. */
