@@ -283,6 +283,9 @@ if __name__ == '__main__':
   problems['Sod'] = (0.25,
     euler.u_p_rho_to_U(u=0, p=1.0, rho=1.0),
     euler.u_p_rho_to_U(u=0, p=0.1, rho=0.125))
+  problems['Lax'] = (0.15,
+    euler.u_p_rho_to_U(u=0.698, p=3.528, rho=0.445),
+    euler.u_p_rho_to_U(u=0.0, p=0.571, rho=0.5))
   problems['ShockCollision'] = (0.035, 
     euler.u_p_rho_to_U(u=19.5975,  p=460.894, rho=5.99924),
     euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99242))
@@ -301,7 +304,7 @@ if __name__ == '__main__':
     euler.u_p_rho_to_U(u=+4, p=0.4, rho=1))
 
   # range for plot
-  x_vec = np.linspace(start=-0.5, stop=0.5, num=101)
+  x_vec = np.linspace(start=-0.5, stop=0.5, num=1001)
 
   for name, problem in problems.items():
     U_L = problem[1]
@@ -322,14 +325,15 @@ if __name__ == '__main__':
       pass
     plt.figure(figsize=(4,5))
     # subplots = (311, 312, 313)
-    np.savetxt(name+".csv", (x_vec, rho_vec), delimiter=',')
+    l = 5.0
+    np.savetxt(name+".csv", (x_vec*l+l/2, rho_vec), delimiter=',')
     titles = (r'$\rho(x)$', r'$p(x)$', r'$u(x)$')
     y_data = (rho_vec, p_vec, u_vec)
     for i in range(3):
       plt.subplot(3,1,i+1)
       plt.grid(True)
       plt.title(titles[i])
-      plt.plot(x_vec, y_data[i], '.', markersize='3')
+      plt.plot(x_vec*l+l/2, y_data[i], '.', markersize='3')
     plt.tight_layout()
     # plt.show()
     plt.savefig(name+'.pdf')
