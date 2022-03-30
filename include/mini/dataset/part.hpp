@@ -205,6 +205,7 @@ struct Cell {
     kHexahedron = 12,
     kQuadraticTetra = 24,
     kQuadraticHexahedron = 25,
+    kCubicHexahedron = 72,
   };
   static VtkCellType GetVtkType(int n_corners) {
     VtkCellType type;
@@ -213,7 +214,7 @@ struct Cell {
         type = VtkCellType::kQuadraticTetra;
         break;
       case 8:
-        type = VtkCellType::kQuadraticHexahedron;
+        type = VtkCellType::kCubicHexahedron;
         break;
       default:
         assert(false);
@@ -236,6 +237,9 @@ struct Cell {
       case VtkCellType::kQuadraticHexahedron:
         n_nodes = 20;
         break;
+      case VtkCellType::kCubicHexahedron:
+        n_nodes = 64;
+        break;
       default:
         assert(false);
         break;
@@ -256,6 +260,9 @@ struct Cell {
         break;
       case VtkCellType::kQuadraticHexahedron:
         WriteSolutionsOnHexa20(coords, fields);
+        break;
+      case VtkCellType::kCubicHexahedron:
+        WriteSolutionsOnHexa64(coords, fields);
         break;
       default:
         assert(false);
@@ -340,6 +347,134 @@ struct Cell {
     coords->emplace_back(gauss().LocalToGlobal({+1, +1, 0.}));
     fields->emplace_back(projection_(coords->back()));
     coords->emplace_back(gauss().LocalToGlobal({-1, +1, 0.}));
+    fields->emplace_back(projection_(coords->back()));
+  }
+  void WriteSolutionsOnHexa64(std::vector<Coord> *coords,
+      std::vector<Value> *fields) const {
+    // [0, 8) nodes at corners
+    WriteSolutionsOnHexa8(coords, fields);
+    constexpr double a = 1. / 3;
+    // [8, 16) nodes on bottom edges
+    coords->emplace_back(gauss().LocalToGlobal({-a, -1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +1, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    // [16, 24) nodes on top edges
+    coords->emplace_back(gauss().LocalToGlobal({-a, -1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +1, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    // [24, 32) nodes on vertical edges
+    coords->emplace_back(gauss().LocalToGlobal({-1, -1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    // [32, 36) nodes on the left face
+    coords->emplace_back(gauss().LocalToGlobal({-1, -a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, -a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-1, +a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    // [36, 40) nodes on the right face
+    coords->emplace_back(gauss().LocalToGlobal({+1, -a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, -a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+1, +a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    // [40, 44) nodes on the front face
+    coords->emplace_back(gauss().LocalToGlobal({-a, -1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, -1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    // [44, 48) nodes on the back face
+    coords->emplace_back(gauss().LocalToGlobal({-a, +1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +1, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +1, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    // [48, 52) nodes on the bottom face
+    coords->emplace_back(gauss().LocalToGlobal({-a, -a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +a, -1}));
+    fields->emplace_back(projection_(coords->back()));
+    // [52, 56) nodes on the top face
+    coords->emplace_back(gauss().LocalToGlobal({-a, -a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +a, +1}));
+    fields->emplace_back(projection_(coords->back()));
+    // [56, 64) nodes inside the body
+    coords->emplace_back(gauss().LocalToGlobal({-a, -a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +a, -a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, -a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, -a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({-a, +a, +a}));
+    fields->emplace_back(projection_(coords->back()));
+    coords->emplace_back(gauss().LocalToGlobal({+a, +a, +a}));
     fields->emplace_back(projection_(coords->back()));
   }
 };
