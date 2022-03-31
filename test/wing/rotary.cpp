@@ -77,6 +77,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_1.GetFrame().X();
+  EXPECT_NEAR(veclocity.dot(rotor.GetFrame().X()), 0.0, 1e-13);
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }
 TEST_F(TestRotaryWing, HalfCycle) {
@@ -117,6 +118,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   EXPECT_EQ(section.GetOrigin(), blade_0.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_0.GetFrame().X();
+  EXPECT_NEAR(veclocity.dot(rotor.GetFrame().Y()), 0.0, 1e-13);
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }
 
