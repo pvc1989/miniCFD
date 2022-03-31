@@ -29,10 +29,9 @@ TEST_F(TestRotaryWing, Constructors) {
   blade.InstallSection(y_value, chord, twist, airfoil);
   y_value = 2.0, twist = -5.0/* deg */;
   blade.InstallSection(y_value, chord, twist, airfoil);
-  EXPECT_DOUBLE_EQ(blade.GetSpan(), 2.0);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_value);
   // install two blades
   Scalar root{0.1};
-  auto tip = y_value + root;
   EXPECT_EQ(rotor.CountBlades(), 0);
   rotor.InstallBlade(root, blade);
   EXPECT_EQ(rotor.CountBlades(), 1);
@@ -54,9 +53,9 @@ TEST_F(TestRotaryWing, NightyDegree) {
   blade.InstallSection(y_value, chord, twist, airfoil);
   y_value = 2.0, twist = -5.0/* deg */;
   blade.InstallSection(y_value, chord, twist, airfoil);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_value);
   // install two blades
   Scalar root{0.1};
-  auto tip = y_value + root;
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   // test azimuth query
@@ -70,6 +69,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   auto rotor_o = rotor.GetOrigin();
   Point point = rotor_o + rotor_x * root;
   EXPECT_NEAR((blade_1.GetPoint(0.0) - point).norm(), 0, 1e-16);
+  auto tip = root + blade_1.GetSpan();
   point = rotor_o + rotor_x * tip;
   EXPECT_NEAR((blade_1.GetPoint(1.0) - point).norm(), 0, 1e-15);
   // test section query
@@ -96,7 +96,6 @@ TEST_F(TestRotaryWing, HalfCycle) {
   blade.InstallSection(y_value, chord, twist, airfoil);
   // install two blades
   Scalar root{0.1};
-  auto tip = y_value + root;
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   // test azimuth query
@@ -110,6 +109,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   auto rotor_o = rotor.GetOrigin();
   Point point = rotor_o - rotor_y * root;
   EXPECT_NEAR((blade_0.GetPoint(0.0) - point).norm(), 0, 1e-16);
+  auto tip = root + blade_0.GetSpan();
   point = rotor_o - rotor_y * tip;
   EXPECT_NEAR((blade_0.GetPoint(1.0) - point).norm(), 0, 1e-15);
   // test section query
