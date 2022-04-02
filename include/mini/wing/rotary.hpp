@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <iostream>
 #include <stdexcept>
 
 #include "mini/geometry/frame.hpp"
@@ -27,17 +28,23 @@ class Section {
   Airfoil *airfoil_;
   Frame frame_;
   const Blade* blade_;
-  Scalar y_ratio_, chord_;
+  Scalar y_ratio_, chord_, twist_;
 
  public:
   Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist)
-      : blade_(&blade), y_ratio_(y_ratio), chord_(chord),
+      : blade_(&blade), y_ratio_(y_ratio), chord_(chord), twist_(twist),
         frame_(blade.GetFrame()) {
     frame_.RotateY(twist);
   }
 
   const Blade& GetBlade() const {
     return *blade_;
+  }
+  Scalar GetChord() const {
+    return chord_;
+  }
+  Scalar GetTwist() const {
+    return twist_;
   }
   Point GetOrigin() const {
     return GetBlade().GetPoint(y_ratio_);
@@ -155,7 +162,7 @@ class Blade {
   Section GetSection(Scalar y_ratio) const {
     assert(0 <= y_ratio && y_ratio <= 1);
     auto y_value = y_ratio * GetSpan();
-    auto itr = std::lower_bound(y_values_.begin(), y_values_.end(), y_ratio);
+    auto itr = std::lower_bound(y_values_.begin(), y_values_.end(), y_value);
     assert(itr != y_values_.end());
     auto i_1 = itr - y_values_.begin();
     auto chord = chords_[i_1];

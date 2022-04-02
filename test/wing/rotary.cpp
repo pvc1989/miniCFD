@@ -50,9 +50,9 @@ TEST_F(TestRotaryWing, NightyDegree) {
   // build a blade
   auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
+  Scalar y_value{0.0}, chord{0.3}, twist{0.0/* deg */};
   blade.InstallSection(y_value, chord, twist, airfoil);
-  y_value = 2.0, twist = -5.0/* deg */;
+  y_value = 2.0, chord = 0.1, twist = -5.0/* deg */;
   blade.InstallSection(y_value, chord, twist, airfoil);
   EXPECT_DOUBLE_EQ(blade.GetSpan(), y_value);
   // install two blades
@@ -75,6 +75,8 @@ TEST_F(TestRotaryWing, NightyDegree) {
   EXPECT_NEAR((blade_1.GetPoint(1.0) - point).norm(), 0, 1e-15);
   // test section query
   auto section = blade_1.GetSection(0.5);
+  EXPECT_DOUBLE_EQ(section.GetChord(), +0.2);
+  EXPECT_DOUBLE_EQ(section.GetTwist(), -2.5);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_1.GetFrame().X();
@@ -92,9 +94,9 @@ TEST_F(TestRotaryWing, HalfCycle) {
   // build a blade
   auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
+  Scalar y_value{0.0}, chord{0.3}, twist{0.0/* deg */};
   blade.InstallSection(y_value, chord, twist, airfoil);
-  y_value = 2.0, twist = -5.0/* deg */;
+  y_value = 2.0, chord = 0.1, twist = -5.0/* deg */;
   blade.InstallSection(y_value, chord, twist, airfoil);
   // install two blades
   Scalar root{0.1};
@@ -116,6 +118,8 @@ TEST_F(TestRotaryWing, HalfCycle) {
   EXPECT_NEAR((blade_0.GetPoint(1.0) - point).norm(), 0, 1e-15);
   // test section query
   auto section = blade_0.GetSection(0.5);
+  EXPECT_DOUBLE_EQ(section.GetChord(), +0.2);
+  EXPECT_DOUBLE_EQ(section.GetTwist(), -2.5);
   EXPECT_EQ(section.GetOrigin(), blade_0.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_0.GetFrame().X();
