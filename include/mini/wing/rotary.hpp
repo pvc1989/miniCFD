@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <utility>
 
 #include "mini/geometry/frame.hpp"
 
@@ -25,15 +26,16 @@ class Section {
   using Point = Vector;
 
  private:
-  Airfoil *airfoil_;
   Frame frame_;
   const Blade* blade_;
+  std::pair<const Airfoil *, Scalar> left_, right_;
   Scalar y_ratio_, chord_, twist_;
 
  public:
-  Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist)
+  Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist,
+      const Airfoil *a_0, Scalar w_0, const Airfoil *a_1, Scalar w_1)
       : blade_(&blade), y_ratio_(y_ratio), chord_(chord), twist_(twist),
-        frame_(blade.GetFrame()) {
+        left_(a_0, w_0), right_(a_1, w_1), frame_(blade.GetFrame()) {
     frame_.RotateY(twist);
   }
 
@@ -45,6 +47,14 @@ class Section {
   }
   Scalar GetTwist() const {
     return twist_;
+  }
+  Scalar Lift(Scalar alpha) const {
+    return left_.first->Lift(alpha) * left_.second
+        + right_.first->Lift(alpha) * right_.second;
+  }
+  Scalar Drag(Scalar alpha) const {
+    return left_.first->Drag(alpha) * left_.second
+        + right_.first->Drag(alpha) * right_.second;
   }
   Point GetOrigin() const {
     return GetBlade().GetPoint(y_ratio_);
@@ -65,7 +75,7 @@ template <typename Scalar>
 class Blade {
  public:
   using Section = mini::wing::Section<Scalar>;
-  using Airfoil = typename Section::Airfoil;
+  using Airfoil = mini::wing::airfoil::Abstract<Scalar>;
   using Rotor = mini::wing::Rotor<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
@@ -167,6 +177,9 @@ class Blade {
     auto i_1 = itr - y_values_.begin();
     auto chord = chords_[i_1];
     auto twist = twists_[i_1];
+    auto a_1 = airfoils_[i_1];
+    auto a_0 = a_1;
+    auto w_1 = 1.0, w_0 = 0.0;
     if (*itr != y_value) {
       // linear interpolation
       assert(i_1 > 0);
@@ -175,8 +188,11 @@ class Blade {
       auto lambda_0 = 1 - lambda_1;
       chord = chord * lambda_1 + chords_[i_0] * lambda_0;
       twist = twist * lambda_1 + twists_[i_0] * lambda_0;
+      a_0 = airfoils_[i_0];
+      w_0 = lambda_0;
+      w_1 = lambda_1;
     }
-    return Section(*this, y_ratio, chord, twist);
+    return Section(*this, y_ratio, chord, twist, a_0, w_0, a_1, w_1);
   }
 };
 
