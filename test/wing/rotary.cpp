@@ -1,4 +1,5 @@
 // Copyright 2022 PEI Weicheng
+#include "mini/wing/airfoil.hpp"
 #include "mini/wing/rotary.hpp"
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
@@ -23,7 +24,7 @@ TEST_F(TestRotaryWing, Constructors) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::Airfoil<Scalar>();
+  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
   Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
   blade.InstallSection(y_value, chord, twist, airfoil);
@@ -47,7 +48,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::Airfoil<Scalar>();
+  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
   Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
   blade.InstallSection(y_value, chord, twist, airfoil);
@@ -89,7 +90,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::Airfoil<Scalar>();
+  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
   Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
   blade.InstallSection(y_value, chord, twist, airfoil);

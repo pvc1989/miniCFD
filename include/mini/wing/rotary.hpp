@@ -12,27 +12,19 @@ namespace mini {
 namespace wing {
 
 template <typename Scalar>
-class Airfoil {
- public:
-  Scalar Lift(Scalar alpha) const {
-    return 6.0;
-  }
-  Scalar Drag(Scalar alpha) const {
-    return 0.0;
-  }
-};
-
-
-template <typename Scalar>
 class Blade;
 
 template <typename Scalar>
 class Section {
+ public:
   using Blade = mini::wing::Blade<Scalar>;
+  using Airfoil = mini::wing::airfoil::Abstract<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
 
+ private:
+  Airfoil *airfoil_;
   Frame frame_;
   const Blade* blade_;
   Scalar y_ratio_, chord_;
@@ -64,15 +56,17 @@ class Rotor;
 
 template <typename Scalar>
 class Blade {
-  using Airfoil = mini::wing::Airfoil<Scalar>;
+ public:
   using Section = mini::wing::Section<Scalar>;
+  using Airfoil = typename Section::Airfoil;
   using Rotor = mini::wing::Rotor<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
 
+ private:
   std::vector<Scalar> y_values_, chords_, twists_;
-  std::vector<Airfoil> airfoils_;
+  std::vector<const Airfoil *> airfoils_;
   Frame frame_;  // absolute
   Scalar root_, azimuth_;
   const Rotor* rotor_;
@@ -107,7 +101,7 @@ class Blade {
     y_values_.emplace_back(y_value);
     chords_.emplace_back(chord);
     twists_.emplace_back(twist);
-    airfoils_.emplace_back(airfoil);
+    airfoils_.emplace_back(&airfoil);
     return *this;
   }
   Scalar GetSpan() const {
@@ -181,11 +175,13 @@ class Blade {
 
 template <typename Scalar>
 class Rotor {
+ public:
   using Frame = mini::geometry::Frame<Scalar>;
   using Blade = mini::wing::Blade<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
 
+ private:
   std::vector<Blade> blades_;
   Frame frame_;
   Point origin_;
