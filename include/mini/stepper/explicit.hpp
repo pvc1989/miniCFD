@@ -237,6 +237,13 @@ struct RungeKutta<1, P, L>
     this->UpdateBoundaryResidual(part, t_curr);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
+    this->SolveFrac11();
+    Base::WriteToLocalCells(u_new_, part_ptr);
+    part_ptr->Reconstruct(this->limiter_);
+  }
+
+ private:
+  void SolveFrac11() {
     auto n_cells = u_old_.size();
     assert(n_cells == this->residual_.size());
     u_new_ = this->residual_;
@@ -244,11 +251,6 @@ struct RungeKutta<1, P, L>
       u_new_[i_cell] *= this->dt_;
       u_new_[i_cell] += u_old_[i_cell];
     }
-    Base::WriteToLocalCells(u_new_, part_ptr);
-    if (Part::kAccuracyOrder == 1) {
-      return;
-    }
-    part_ptr->Reconstruct(this->limiter_);
   }
 };
 

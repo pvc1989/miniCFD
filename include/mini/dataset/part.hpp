@@ -1439,6 +1439,9 @@ class Part {
 
   template <typename Callable>
   void Reconstruct(Callable&& limiter) {
+    if (kDegree == 0) {
+      return;
+    }
     ShareGhostCellCoeffs();
     // run the limiter on inner cells that need no ghost cells
     auto new_projections = std::vector<typename Cell::Projection>();
