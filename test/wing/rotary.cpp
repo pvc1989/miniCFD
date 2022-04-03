@@ -6,6 +6,8 @@
 
 #include "gtest/gtest.h"
 
+#include <vector>
+
 class TestRotaryWing : public ::testing::Test {
  protected:
   using Scalar = double;
@@ -24,13 +26,20 @@ TEST_F(TestRotaryWing, Constructors) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar y_value{0.0}, chord{0.1}, twist{0.0/* deg */};
-  blade.InstallSection(y_value, chord, twist, airfoil);
-  y_value = 2.0, twist = -5.0/* deg */;
-  blade.InstallSection(y_value, chord, twist, airfoil);
-  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_value);
+  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  airfoils.emplace_back(6.0, 0.0);
+  airfoils.emplace_back(5.0, 0.2);
+  std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
+  blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
+  blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_values.back());
+  // test section query
+  auto section = blade.GetSection(0.5);
+  EXPECT_DOUBLE_EQ(section.GetChord(), +0.2);
+  EXPECT_DOUBLE_EQ(section.GetTwist(), -2.5);
+  EXPECT_DOUBLE_EQ(section.Lift(12.5), 5.5);
+  EXPECT_DOUBLE_EQ(section.Drag(12.5), 0.1);
   // install two blades
   Scalar root{0.1};
   EXPECT_EQ(rotor.CountBlades(), 0);
@@ -48,13 +57,14 @@ TEST_F(TestRotaryWing, NightyDegree) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar y_value{0.0}, chord{0.3}, twist{0.0/* deg */};
-  blade.InstallSection(y_value, chord, twist, airfoil);
-  y_value = 2.0, chord = 0.1, twist = -5.0/* deg */;
-  blade.InstallSection(y_value, chord, twist, airfoil);
-  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_value);
+  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  airfoils.emplace_back(6.0, 0.0);
+  airfoils.emplace_back(5.0, 0.2);
+  std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
+  blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
+  blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_values.back());
   // install two blades
   Scalar root{0.1};
   rotor.InstallBlade(root, blade);
@@ -77,6 +87,8 @@ TEST_F(TestRotaryWing, NightyDegree) {
   auto section = blade_1.GetSection(0.5);
   EXPECT_DOUBLE_EQ(section.GetChord(), +0.2);
   EXPECT_DOUBLE_EQ(section.GetTwist(), -2.5);
+  EXPECT_DOUBLE_EQ(section.Lift(12.5), 5.5);
+  EXPECT_DOUBLE_EQ(section.Drag(12.5), 0.1);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_1.GetFrame().X();
@@ -92,12 +104,14 @@ TEST_F(TestRotaryWing, HalfCycle) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto airfoil = mini::wing::airfoil::Simple<Scalar>();
   auto blade = mini::wing::Blade<Scalar>();
-  Scalar y_value{0.0}, chord{0.3}, twist{0.0/* deg */};
-  blade.InstallSection(y_value, chord, twist, airfoil);
-  y_value = 2.0, chord = 0.1, twist = -5.0/* deg */;
-  blade.InstallSection(y_value, chord, twist, airfoil);
+  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  airfoils.emplace_back(6.0, 0.0);
+  airfoils.emplace_back(5.0, 0.2);
+  std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
+  blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
+  blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
+  EXPECT_DOUBLE_EQ(blade.GetSpan(), y_values.back());
   // install two blades
   Scalar root{0.1};
   rotor.InstallBlade(root, blade);
@@ -120,6 +134,8 @@ TEST_F(TestRotaryWing, HalfCycle) {
   auto section = blade_0.GetSection(0.5);
   EXPECT_DOUBLE_EQ(section.GetChord(), +0.2);
   EXPECT_DOUBLE_EQ(section.GetTwist(), -2.5);
+  EXPECT_DOUBLE_EQ(section.Lift(12.5), 5.5);
+  EXPECT_DOUBLE_EQ(section.Drag(12.5), 0.1);
   EXPECT_EQ(section.GetOrigin(), blade_0.GetPoint(0.5));
   auto v_norm = rotor.GetOmega() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_0.GetFrame().X();

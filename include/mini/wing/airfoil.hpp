@@ -15,12 +15,17 @@ class Abstract {
 
 template <typename Scalar>
 class Simple : public Abstract<Scalar> {
+  Scalar c_lift_, c_drag_;
+
  public:
+  Simple(Scalar c_l, Scalar c_d)
+      : c_lift_(c_l), c_drag_(c_d) {
+  }
   Scalar Lift(Scalar alpha) const override {
-    return 6.0;
+    return c_lift_;
   }
   Scalar Drag(Scalar alpha) const override {
-    return 0.0;
+    return c_drag_;
   }
 };
 
