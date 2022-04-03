@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <functional>
+#include <memory>
 #include <vector>
 #include <stdexcept>
 #include <string>
@@ -30,7 +31,7 @@ class RungeKuttaBase {
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> prescribed_bc_;
   Limiter limiter_;
-  double dt_;
+  double dt_, t_curr_;
 
  public:
   RungeKuttaBase(double dt, const Limiter &limiter)
@@ -169,17 +170,17 @@ class RungeKuttaBase {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
-  void ApplyPrescribedBC(const Part &part, double t_curr) {
+  void ApplyPrescribedBC(const Part &part) {
     for (auto iter = prescribed_bc_.begin(); iter != prescribed_bc_.end();
         ++iter) {
-      auto visit = [this, t_curr, iter](const Face &face){
+      auto visit = [this, iter](const Face &face){
         const auto& gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
         const auto& holder = *(face.holder_);
         auto& riemann = const_cast<Riemann &>(face.riemann_);
         for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
           const auto& coord = gauss.GetGlobalCoord(q);
-          Value u_given = iter->second(coord, t_curr);
+          Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetRotatedFlux(u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
@@ -189,10 +190,10 @@ class RungeKuttaBase {
       part.ForEachConstBoundaryFace(visit, iter->first);
     }
   }
-  void UpdateBoundaryResidual(const Part &part, double t_curr) {
+  void UpdateBoundaryResidual(const Part &part) {
     ApplySolidWallBC(part);
     ApplyFreeOutletBC(part);
-    ApplyPrescribedBC(part, t_curr);
+    ApplyPrescribedBC(part);
   }
 };
 
@@ -229,12 +230,13 @@ struct RungeKutta<1, P, L>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
+    this->t_curr_ = t_curr;
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac11();
@@ -284,12 +286,13 @@ struct RungeKutta<2, P, L>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
+    this->t_curr_ = t_curr;
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac12();
@@ -300,7 +303,7 @@ struct RungeKutta<2, P, L>
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac22();
@@ -362,12 +365,13 @@ struct RungeKutta<3, P, L>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
+    this->t_curr_ = t_curr;
 
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac13();
@@ -378,7 +382,7 @@ struct RungeKutta<3, P, L>
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac23();
@@ -389,7 +393,7 @@ struct RungeKutta<3, P, L>
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
     this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part, t_curr);
+    this->UpdateBoundaryResidual(part);
     part_ptr->UpdateGhostCellCoeffs();
     this->UpdateGhostResidual(part);
     this->SolveFrac33();
