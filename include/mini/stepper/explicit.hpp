@@ -12,11 +12,23 @@
 
 #include "mini/dataset/part.hpp"
 
-template <typename P, typename L>
+template <typename P>
+class DummySource {
+ public:
+  using Part = P;
+  using Cell = typename Part::Cell;
+  using Coeff = typename Cell::Projection::Coeff;
+
+  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
+  }
+};
+
+template <typename P, typename L, typename S>
 class RungeKuttaBase {
  public:
   using Part = P;
   using Limiter = L;
+  using Source = S;
   using Riemann = typename Part::Riemann;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
@@ -31,6 +43,7 @@ class RungeKuttaBase {
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> prescribed_bc_;
   Limiter limiter_;
+  Source source_;
   double dt_, t_curr_;
 
  public:
@@ -43,6 +56,11 @@ class RungeKuttaBase {
   RungeKuttaBase(RungeKuttaBase &&) noexcept = default;
   RungeKuttaBase& operator=(RungeKuttaBase &&) noexcept = default;
   ~RungeKuttaBase() noexcept = default;
+
+ public:
+  void SetSource(const Source &source) {
+    source_ = source;
+  }
 
  public:  // set BCs
   template <typename Callable>
@@ -76,6 +94,11 @@ class RungeKuttaBase {
     for (auto& coeff : residual_) {
       coeff.setZero();
     }
+    // Evaluate the source term, if there is any.
+    part.ForEachConstLocalCell([this](const Cell &cell){
+      auto& r = this->residual_.at(cell.id());
+      source_.UpdateCoeff(cell, this->t_curr_, &r);
+    });
     if (Part::kAccuracyOrder == 1) {
       return;
     }
@@ -197,19 +220,21 @@ class RungeKuttaBase {
   }
 };
 
-template <int kOrder, typename Part, typename Limiter>
-struct RungeKutta;
+template <int kOrder, typename Part, typename Limiter,
+    typename Source = DummySource<Part>
+> struct RungeKutta;
 
-template <typename P, typename L>
-struct RungeKutta<1, P, L>
-    : public RungeKuttaBase<P, L> {
+template <typename P, typename L, typename S>
+struct RungeKutta<1, P, L, S>
+    : public RungeKuttaBase<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L>;
+  using Base = RungeKuttaBase<P, L, S>;
 
  public:
   using Part = typename Base::Part;
   using Riemann = typename Base::Riemann;
   using Limiter = typename Base::Limiter;
+  using Source = typename Base::Source;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -256,16 +281,17 @@ struct RungeKutta<1, P, L>
   }
 };
 
-template <typename P, typename L>
-struct RungeKutta<2, P, L>
-    : public RungeKuttaBase<P, L> {
+template <typename P, typename L, typename S>
+struct RungeKutta<2, P, L, S>
+    : public RungeKuttaBase<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L>;
+  using Base = RungeKuttaBase<P, L, S>;
 
  public:
   using Part = typename Base::Part;
   using Riemann = typename Base::Riemann;
   using Limiter = typename Base::Limiter;
+  using Source = typename Base::Source;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
@@ -335,16 +361,17 @@ struct RungeKutta<2, P, L>
   }
 };
 
-template <typename P, typename L>
-struct RungeKutta<3, P, L>
-    : public RungeKuttaBase<P, L> {
+template <typename P, typename L, typename S>
+struct RungeKutta<3, P, L, S>
+    : public RungeKuttaBase<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L>;
+  using Base = RungeKuttaBase<P, L, S>;
 
  public:
   using Part = typename Base::Part;
   using Riemann = typename Base::Riemann;
   using Limiter = typename Base::Limiter;
+  using Source = typename Base::Source;
   using Cell = typename Base::Cell;
   using Face = typename Base::Face;
   using Projection = typename Base::Projection;
