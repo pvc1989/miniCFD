@@ -49,6 +49,12 @@ class Tri : public Face<Scalar, kDim> {
   Scalar area_;
 
  public:
+  int CountVertices() const override {
+    return 3;
+  }
+  GlobalCoord GetVertex(int i) const override {
+    return xyz_global_Dx3_.col(i);
+  }
   int CountQuadPoints() const override {
     return kQuad;
   }

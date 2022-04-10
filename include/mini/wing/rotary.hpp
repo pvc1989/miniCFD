@@ -306,7 +306,8 @@ class RotorSource : public Rotor<Scalar> {
       Coord p = blade.GetPoint(0.0);
       Coord q = blade.GetPoint(1.0);
       Coord pq = q - p;
-      Scalar r_ratio{-1}, t_ratio{-1};
+      Scalar r_ratio; bool r_found = false;
+      Scalar t_ratio; bool t_found = false;
       for (const Face *face : cell.adj_faces_) {
         const auto &gauss = face->gauss();
         // Currently, only triangle is supported.
@@ -322,15 +323,19 @@ class RotorSource : public Rotor<Scalar> {
         Coord lambda = mat.fullPivLu().solve(pq);
         if (lambda.minCoeff() >= 0) {
           auto ratio = 1.0 / lambda.sum();
-          if (r_ratio == -1) {
+          if (!r_found) {
             r_ratio = ratio;
-          } else if (t_ratio == -1) {
+            r_found = true;
+          } else if (!t_found) {
             t_ratio = ratio;
+            t_found = true;
           } else {
             // More than two common points are found.
             assert(false);
           }
         }
+      }
+      if (r_found && t_found) {
         // Integrate along (r)---(t);
       }
     }
