@@ -15,6 +15,9 @@ inline double pi() {
 inline double deg2rad(double deg) {
   return deg * pi() / 180;
 }
+inline double rad2deg(double rad) {
+  return rad / pi() * 180;
+}
 
 template <typename Scalar>
 class Frame {

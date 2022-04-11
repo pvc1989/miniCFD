@@ -68,6 +68,15 @@ class Section {
     v *= omega * (blade.GetRoot() + blade.GetSpan() * y_ratio_);
     return v;
   }
+  Vector GetForce(Scalar rho, Vector velocity) const {
+    velocity -= GetVelocity();
+    auto u = velocity.dot(frame_.X());
+    auto w = velocity.dot(frame_.Z());
+    auto alpha = mini::geometry::rad2deg(std::atan(w / u));
+    auto force = Lift(alpha) * frame_.Z() + Drag(alpha) * frame_.X();
+    force *= 0.5 * rho * (u * u + w * w) * GetChord();
+    return -force;  // Newton's third law
+  }
 };
 
 template <typename Scalar>
@@ -350,7 +359,7 @@ class RotorSource : public Rotor<Scalar> {
           const auto &proj = cell.projection_;
           auto cv = proj(xyz);  // conservative variable
           auto uvw = cv.momentum() / cv.mass();
-          auto force = section.GetForce(uvw);
+          auto force = section.GetForce(cv.mass(), uvw);
           using Mat3xN = mini::algebra::Matrix<Scalar, 3, Cell::N>;
           Mat3xN prod = force * cell.basis_(xyz).transpose();
           return prod;
