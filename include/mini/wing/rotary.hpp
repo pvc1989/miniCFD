@@ -10,6 +10,7 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
+#include "mini/integrator/line.hpp"
 
 namespace mini {
 namespace wing {
@@ -337,6 +338,28 @@ class RotorSource : public Rotor<Scalar> {
       }
       if (r_found && t_found) {
         // Integrate along (r)---(t);
+        if (r_ratio > t_ratio) {
+          std::swap(r_ratio, t_ratio);
+        }
+        auto r = blade.GetPoint(r_ratio);
+        auto t = blade.GetPoint(t_ratio);
+        auto line = mini::integrator::Line<Scalar, 4, 1>({r_ratio, t_ratio});
+        auto func = [&cell, &blade](const Scalar &ratio){
+          auto section = blade.GetSection(ratio);
+          auto xyz = section.GetOrigin();
+          const auto &proj = cell.projection_;
+          auto cv = proj(xyz);  // conservative variable
+          auto uvw = cv.momentum() / cv.mass();
+          auto force = section.GetForce(uvw);
+          using Mat3xN = mini::algebra::Matrix<Scalar, 3, Cell::N>;
+          Mat3xN prod = force * cell.basis_(xyz).transpose();
+          return prod;
+        };
+        auto integral = line.integrate(func);
+        integral *= blade.GetSpan();
+        coeff->row(0) += integral.row(0);
+        coeff->row(1) += integral.row(1);
+        coeff->row(2) += integral.row(2);
       }
     }
   }
