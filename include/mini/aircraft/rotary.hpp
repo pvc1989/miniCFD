@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "mini/aircraft/airfoil.hpp"
 #include "mini/geometry/frame.hpp"
 
 namespace mini {
@@ -70,9 +71,9 @@ class Section {
     auto u = velocity.dot(frame_.X());
     auto w = velocity.dot(frame_.Z());
     auto alpha = mini::geometry::rad2deg(std::atan(w / u));
-    auto force = Lift(alpha) * frame_.Z() + Drag(alpha) * frame_.X();
-    force *= 0.5 * rho * (u * u + w * w) * GetChord();
-    return -force;  // Newton's third law
+    Vector force = Lift(alpha) * frame_.Z() + Drag(alpha) * frame_.X();
+    force *= -0.5 * rho * (u * u + w * w) * GetChord();
+    return force;
   }
 };
 

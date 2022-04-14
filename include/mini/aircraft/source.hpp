@@ -21,6 +21,7 @@ class RotorSource : public Rotor<Scalar> {
   using Face = typename Cell::Face;
   using Coord = typename Cell::Coord;
   using Coeff = typename Cell::Projection::Coeff;
+  using Conservative = typename Part::Riemann::Conservative;
 
   // TODO(PVC): apply to Part, rather than Cell
   void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
@@ -65,11 +66,13 @@ class RotorSource : public Rotor<Scalar> {
         auto r = blade.GetPoint(r_ratio);
         auto t = blade.GetPoint(t_ratio);
         auto line = mini::integrator::Line<Scalar, 4, 1>({r_ratio, t_ratio});
-        auto func = [&cell, &blade](const Scalar &ratio){
-          auto section = blade.GetSection(ratio);
+        using Ratio = mini::algebra::Matrix<Scalar, 1, 1>;
+        auto func = [&cell, &blade](const Ratio &ratio){
+          auto section = blade.GetSection(ratio[0]);
           auto xyz = section.GetOrigin();
           const auto &proj = cell.projection_;
-          auto cv = proj(xyz);  // conservative variable
+          auto value = proj(xyz);  // conservative variable
+          auto &cv = *reinterpret_cast<Conservative *>(&value);
           auto uvw = cv.momentum() / cv.mass();
           auto force = section.GetForce(cv.mass(), uvw);
           using Mat3xN = mini::algebra::Matrix<Scalar, 3, Cell::N>;
