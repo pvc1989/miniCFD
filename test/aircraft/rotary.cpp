@@ -1,6 +1,6 @@
 // Copyright 2022 PEI Weicheng
-#include "mini/wing/airfoil.hpp"
-#include "mini/wing/rotary.hpp"
+#include "mini/aircraft/airfoil.hpp"
+#include "mini/aircraft/rotary.hpp"
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 
@@ -15,7 +15,7 @@ class TestRotaryWing : public ::testing::Test {
   using Point = Vector;
 };
 TEST_F(TestRotaryWing, Constructors) {
-  auto rotor = mini::wing::Rotor<Scalar>();
+  auto rotor = mini::aircraft::Rotor<Scalar>();
   rotor.SetRevolutionsPerSecond(20.0);
   auto omega = mini::geometry::pi() * 40;
   EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
@@ -26,8 +26,8 @@ TEST_F(TestRotaryWing, Constructors) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto blade = mini::wing::Blade<Scalar>();
-  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  auto blade = mini::aircraft::Blade<Scalar>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
@@ -49,7 +49,7 @@ TEST_F(TestRotaryWing, Constructors) {
   EXPECT_EQ(rotor.CountBlades(), 2);
 }
 TEST_F(TestRotaryWing, NightyDegree) {
-  auto rotor = mini::wing::Rotor<Scalar>();
+  auto rotor = mini::aircraft::Rotor<Scalar>();
   rotor.SetRevolutionsPerSecond(20.0);
   auto omega = mini::geometry::pi() * 40;
   rotor.SetOrigin(0.1, 0.2, 0.3);
@@ -57,8 +57,8 @@ TEST_F(TestRotaryWing, NightyDegree) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto blade = mini::wing::Blade<Scalar>();
-  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  auto blade = mini::aircraft::Blade<Scalar>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
@@ -96,7 +96,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
 }
 TEST_F(TestRotaryWing, HalfCycle) {
-  auto rotor = mini::wing::Rotor<Scalar>();
+  auto rotor = mini::aircraft::Rotor<Scalar>();
   rotor.SetRevolutionsPerSecond(20.0);
   auto omega = mini::geometry::pi() * 40;
   rotor.SetOrigin(0.1, 0.2, 0.3);
@@ -104,8 +104,8 @@ TEST_F(TestRotaryWing, HalfCycle) {
   frame.RotateY(-5/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto blade = mini::wing::Blade<Scalar>();
-  auto airfoils = std::vector<mini::wing::airfoil::Simple<Scalar>>();
+  auto blade = mini::aircraft::Blade<Scalar>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};

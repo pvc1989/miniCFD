@@ -1,6 +1,6 @@
 // Copyright 2022 PEI Weicheng
-#ifndef MINI_WING_ROTARY_HPP_
-#define MINI_WING_ROTARY_HPP_
+#ifndef MINI_AIRCRAFT_ROTARY_HPP_
+#define MINI_AIRCRAFT_ROTARY_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -10,7 +10,7 @@
 #include "mini/geometry/frame.hpp"
 
 namespace mini {
-namespace wing {
+namespace aircraft {
 
 template <typename Scalar>
 class Blade;
@@ -18,8 +18,8 @@ class Blade;
 template <typename Scalar>
 class Section {
  public:
-  using Blade = mini::wing::Blade<Scalar>;
-  using Airfoil = mini::wing::airfoil::Abstract<Scalar>;
+  using Blade = mini::aircraft::Blade<Scalar>;
+  using Airfoil = mini::aircraft::airfoil::Abstract<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
@@ -82,9 +82,9 @@ class Rotor;
 template <typename Scalar>
 class Blade {
  public:
-  using Section = mini::wing::Section<Scalar>;
-  using Airfoil = mini::wing::airfoil::Abstract<Scalar>;
-  using Rotor = mini::wing::Rotor<Scalar>;
+  using Section = mini::aircraft::Section<Scalar>;
+  using Airfoil = mini::aircraft::airfoil::Abstract<Scalar>;
+  using Rotor = mini::aircraft::Rotor<Scalar>;
   using Frame = mini::geometry::Frame<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
@@ -208,7 +208,7 @@ template <typename Scalar>
 class Rotor {
  public:
   using Frame = mini::geometry::Frame<Scalar>;
-  using Blade = mini::wing::Blade<Scalar>;
+  using Blade = mini::aircraft::Blade<Scalar>;
   using Vector = typename Frame::Vector;
   using Point = Vector;
 
@@ -297,7 +297,7 @@ class Rotor {
   }
 };
 
-}  // namespace wing
+}  // namespace aircraft
 }  // namespace mini
 
-#endif  // MINI_WING_ROTARY_HPP_
+#endif  // MINI_AIRCRAFT_ROTARY_HPP_

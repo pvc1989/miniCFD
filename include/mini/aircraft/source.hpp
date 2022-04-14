@@ -1,6 +1,6 @@
 // Copyright 2022 PEI Weicheng
-#ifndef MINI_WING_SOURCE_HPP_
-#define MINI_WING_SOURCE_HPP_
+#ifndef MINI_AIRCRAFT_SOURCE_HPP_
+#define MINI_AIRCRAFT_SOURCE_HPP_
 
 #include <algorithm>
 #include <vector>
@@ -8,10 +8,10 @@
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 #include "mini/integrator/line.hpp"
-#include "mini/wing/rotary.hpp"
+#include "mini/aircraft/rotary.hpp"
 
 namespace mini {
-namespace wing {
+namespace aircraft {
 
 template <typename P, typename Scalar>
 class RotorSource : public Rotor<Scalar> {
@@ -86,7 +86,7 @@ class RotorSource : public Rotor<Scalar> {
   }
 };
 
-}  // namespace wing
+}  // namespace aircraft
 }  // namespace mini
 
-#endif  // MINI_WING_SOURCE_HPP_
+#endif  // MINI_AIRCRAFT_SOURCE_HPP_

@@ -1,9 +1,9 @@
 // Copyright 2022 PEI Weicheng
-#ifndef MINI_WING_AIRFOIL_HPP_
-#define MINI_WING_AIRFOIL_HPP_
+#ifndef MINI_AIRCRAFT_AIRFOIL_HPP_
+#define MINI_AIRCRAFT_AIRFOIL_HPP_
 
 namespace mini {
-namespace wing {
+namespace aircraft {
 namespace airfoil {
 
 template <typename Scalar>
@@ -30,7 +30,7 @@ class Simple : public Abstract<Scalar> {
 };
 
 }  // namespace airfoil
-}  // namespace wing
+}  // namespace aircraft
 }  // namespace mini
 
-#endif  // MINI_WING_AIRFOIL_HPP_
+#endif  // MINI_AIRCRAFT_AIRFOIL_HPP_
