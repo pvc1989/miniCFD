@@ -45,16 +45,19 @@ class RotorSource : public Rotor<Scalar> {
         assert(mat.determinant());  // may fail when p is in the surface of abc
         Coord lambda = mat.fullPivLu().solve(pq);
         if (lambda.minCoeff() >= 0) {
-          auto ratio = 1.0 / lambda.sum();
-          if (!r_found) {
-            r_ratio = ratio;
-            r_found = true;
-          } else if (!t_found) {
-            t_ratio = ratio;
-            t_found = true;
-          } else {
-            // More than two common points are found.
-            assert(false);
+          auto ratio = lambda.sum();
+          if (1.0 <= ratio) {
+            ratio = 1.0 / ratio;
+            if (!r_found) {
+              r_ratio = ratio;
+              r_found = true;
+            } else if (!t_found) {
+              t_ratio = ratio;
+              t_found = true;
+            } else {
+              // More than two common points are found.
+              assert(false);
+            }
           }
         }
       }
