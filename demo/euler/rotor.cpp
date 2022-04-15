@@ -61,20 +61,12 @@ auto given_state = [](const Coord& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetPrescribedBC("upstream", given_state);
-  solver->SetFreeOutletBC("downstream");
-  solver->SetSolidWallBC("intake");
-  solver->SetSolidWallBC("exhaust");
-  solver->SetSolidWallBC("intake ramp");
-  solver->SetSolidWallBC("lower");
-  solver->SetSolidWallBC("upper");
-  solver->SetSolidWallBC("strake");
-  solver->SetSolidWallBC("vertical tail");
-  solver->SetSolidWallBC("horizontal tail");
-  solver->SetSolidWallBC("side");
-  solver->SetSolidWallBC("wing");
-  solver->SetSolidWallBC("fuselage");
-  solver->SetSolidWallBC("symmetry");
+  solver->SetPrescribedBC("3_S_1", given_state);
+  solver->SetFreeOutletBC("3_S_2");
+  solver->SetSolidWallBC("3_S_3");
+  solver->SetSolidWallBC("3_S_4");
+  solver->SetSolidWallBC("3_S_5");
+  solver->SetSolidWallBC("3_S_6");
 }
 
 int Main(int argc, char* argv[], IC ic, BC bc) {
@@ -175,26 +167,24 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   }
 
   auto rotor = Source();
-  rotor.SetRevolutionsPerSecond(20.0);
-  rotor.SetOrigin(0.1, 0.2, 0.3);
+  rotor.SetRevolutionsPerSecond(0.0);
+  rotor.SetOrigin(0.0, -1.1, 0.0);
   auto frame = Frame();
-  frame.RotateY(-5/* deg */);
+  frame.RotateY(+10.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
   auto blade = Blade();
   auto airfoils = std::vector<mini::aircraft::airfoil::Simple<double>>();
+  airfoils.emplace_back(5.0, 0.2);
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
-  std::vector<double> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
+  std::vector<double> y_values{0.0, 1.0, 2.0}, chords{0.1, 0.3, 0.1},
+      twists{-5.0, -5.0, -5.0};
   blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
   blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
-  // test section query
-  auto section = blade.GetSection(0.5);
-  // install two blades
+  blade.InstallSection(y_values[2], chords[2], twists[2], airfoils[2]);
   double root{0.1};
   rotor.InstallBlade(root, blade);
-  rotor.InstallBlade(root, blade);
-
   /* Choose the time-stepping scheme. */
   auto rk = Solver(dt, limiter);
   rk.SetSource(rotor);
