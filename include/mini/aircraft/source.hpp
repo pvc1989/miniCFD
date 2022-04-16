@@ -84,9 +84,9 @@ class RotorSource : public Rotor<Scalar> {
         };
         auto integral = line.integrate(func);
         integral *= blade.GetSpan();
-        coeff->row(0) += integral.row(0);
-        coeff->row(1) += integral.row(1);
-        coeff->row(2) += integral.row(2);
+        coeff->row(1) += integral.row(0);
+        coeff->row(2) += integral.row(1);
+        coeff->row(3) += integral.row(2);
       }
     }
   }
