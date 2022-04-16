@@ -9,8 +9,8 @@ namespace airfoil {
 template <typename Scalar>
 class Abstract {
  public:
-  virtual Scalar Lift(Scalar alpha) const = 0;
-  virtual Scalar Drag(Scalar alpha) const = 0;
+  virtual Scalar Lift(Scalar deg) const = 0;
+  virtual Scalar Drag(Scalar deg) const = 0;
 };
 
 template <typename Scalar>
@@ -18,13 +18,13 @@ class Simple : public Abstract<Scalar> {
   Scalar c_lift_, c_drag_;
 
  public:
-  Simple(Scalar c_l, Scalar c_d)
-      : c_lift_(c_l), c_drag_(c_d) {
+  Simple(Scalar c_lift/* deg^{-1} */, Scalar c_drag/* deg^{-1} */)
+      : c_lift_(c_lift), c_drag_(c_drag) {
   }
-  Scalar Lift(Scalar alpha) const override {
+  Scalar Lift(Scalar deg) const override {
     return c_lift_;
   }
-  Scalar Drag(Scalar alpha) const override {
+  Scalar Drag(Scalar deg) const override {
     return c_drag_;
   }
 };

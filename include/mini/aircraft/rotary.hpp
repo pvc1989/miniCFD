@@ -29,7 +29,7 @@ class Section {
   Frame frame_;
   const Blade* blade_;
   std::pair<const Airfoil *, Scalar> left_, right_;
-  Scalar y_ratio_, chord_, twist_;
+  Scalar y_ratio_, chord_, twist_/* deg */;
 
  public:
   Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist,
@@ -48,13 +48,13 @@ class Section {
   Scalar GetTwist() const {
     return twist_;
   }
-  Scalar Lift(Scalar alpha) const {
-    return left_.first->Lift(alpha) * left_.second
-        + right_.first->Lift(alpha) * right_.second;
+  Scalar Lift(Scalar deg) const {
+    return left_.first->Lift(deg) * left_.second
+        + right_.first->Lift(deg) * right_.second;
   }
-  Scalar Drag(Scalar alpha) const {
-    return left_.first->Drag(alpha) * left_.second
-        + right_.first->Drag(alpha) * right_.second;
+  Scalar Drag(Scalar deg) const {
+    return left_.first->Drag(deg) * left_.second
+        + right_.first->Drag(deg) * right_.second;
   }
   Point GetOrigin() const {
     return GetBlade().GetPoint(y_ratio_);
@@ -70,8 +70,8 @@ class Section {
     velocity -= GetVelocity();
     auto u = velocity.dot(frame_.X());
     auto w = velocity.dot(frame_.Z());
-    auto alpha = mini::geometry::rad2deg(std::atan(w / u));
-    Vector force = Lift(alpha) * frame_.Z() + Drag(alpha) * frame_.X();
+    auto deg = mini::geometry::rad2deg(std::atan(w / u));
+    Vector force = Lift(deg) * frame_.Z() + Drag(deg) * frame_.X();
     force *= -0.5 * rho * (u * u + w * w) * GetChord();
     return force;
   }
