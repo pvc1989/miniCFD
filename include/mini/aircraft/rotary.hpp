@@ -3,6 +3,7 @@
 #define MINI_AIRCRAFT_ROTARY_HPP_
 
 #include <algorithm>
+#include <iostream>
 #include <vector>
 #include <stdexcept>
 #include <utility>
@@ -42,6 +43,9 @@ class Section {
   const Blade& GetBlade() const {
     return *blade_;
   }
+  const Frame& GetFrame() const {
+    return frame_;
+  }
   Scalar GetChord() const {
     return chord_;
   }
@@ -76,6 +80,16 @@ class Section {
     return force;
   }
 };
+
+template <typename Scalar>
+std::ostream& operator<<(std::ostream &out, const Section<Scalar> &section) {
+  out << "frame = " << section.GetFrame() << "\n";
+  out << "origin = " << section.GetOrigin().transpose() << "\n";
+  out << "velocity = " << section.GetVelocity().transpose() << "\n";
+  out << "chord = " << section.GetChord() << ", ";
+  out << "twist = " << section.GetTwist() << " deg";
+  return out;
+}
 
 template <typename Scalar>
 class Rotor;

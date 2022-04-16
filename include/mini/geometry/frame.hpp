@@ -2,6 +2,7 @@
 #ifndef MINI_GEOMETRY_FRAME_HPP_
 #define MINI_GEOMETRY_FRAME_HPP_
 
+#include <iostream>
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
@@ -67,6 +68,14 @@ class Frame {
     return { std::cos(rad), std::sin(rad) };
   }
 };
+
+template <typename Scalar>
+std::ostream& operator<<(std::ostream &out, const Frame<Scalar> &frame) {
+  out << "[" << frame.X().transpose() << "] ";
+  out << "[" << frame.Y().transpose() << "] ";
+  out << "[" << frame.Z().transpose() << "] ";
+  return out;
+}
 
 }  // namespace geometry
 }  // namespace mini
