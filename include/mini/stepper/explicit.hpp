@@ -90,28 +90,29 @@ class RungeKuttaBase {
     for (auto& coeff : residual_) {
       coeff.setZero();
     }
-    // Evaluate the source term, if there is any.
-    part.ForEachConstLocalCell([this](const Cell &cell){
-      auto& r = this->residual_.at(cell.id());
-      source_.UpdateCoeff(cell, this->t_curr_, &r);
-    });
-    if (Part::kAccuracyOrder == 1) {
-      return;
+    // Integrate the source term, if there is any.
+    if (!std::is_same_v<Source, DummySource<Part>>) {
+      part.ForEachConstLocalCell([this](const Cell &cell){
+        auto& coeff = this->residual_.at(cell.id());
+        source_.UpdateCoeff(cell, this->t_curr_, &coeff);
+      });
     }
-    // The following step is necessary only for high-order DG schemes.
-    part.ForEachConstLocalCell([this](const Cell &cell){
-      auto& r = this->residual_.at(cell.id());
-      const auto& gauss = *(cell.gauss_ptr_);
-      for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
-        const auto& xyz = gauss.GetGlobalCoord(q);
-        Value cv = cell.projection_(xyz);
-        auto flux = Riemann::GetFluxMatrix(cv);
-        auto grad = cell.basis_.GetGradValue(xyz);
-        Coeff prod = flux * grad.transpose();
-        prod *= gauss.GetGlobalWeight(q);
-        r += prod;
-      }
-    });
+    // Integrate the dot-product of flux and gradient, if there is any.
+    if (Part::kAccuracyOrder > 1) {
+      part.ForEachConstLocalCell([this](const Cell &cell){
+        auto& coeff = this->residual_.at(cell.id());
+        const auto& gauss = *(cell.gauss_ptr_);
+        for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+          const auto& xyz = gauss.GetGlobalCoord(q);
+          Value cv = cell.projection_(xyz);
+          auto flux = Riemann::GetFluxMatrix(cv);
+          auto grad = cell.basis_.GetGradValue(xyz);
+          Coeff prod = flux * grad.transpose();
+          prod *= gauss.GetGlobalWeight(q);
+          coeff += prod;
+        }
+      });
+    }
   }
   void UpdateLocalResidual(const Part &part) {
     assert(residual_.size() == part.CountLocalCells());
