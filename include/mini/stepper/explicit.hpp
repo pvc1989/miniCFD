@@ -47,8 +47,9 @@ class RungeKuttaBase {
   double dt_, t_curr_;
 
  public:
-  RungeKuttaBase(double dt, const Limiter &limiter)
-      : dt_(dt), limiter_(limiter) {
+  RungeKuttaBase(double dt, const Limiter &limiter,
+      const Source &source = Source())
+      : dt_(dt), limiter_(limiter), source_(source) {
     assert(dt > 0.0);
   }
   RungeKuttaBase(const RungeKuttaBase &) = default;
@@ -56,11 +57,6 @@ class RungeKuttaBase {
   RungeKuttaBase(RungeKuttaBase &&) noexcept = default;
   RungeKuttaBase& operator=(RungeKuttaBase &&) noexcept = default;
   ~RungeKuttaBase() noexcept = default;
-
- public:
-  void SetSource(const Source &source) {
-    source_ = source;
-  }
 
  public:  // set BCs
   template <typename Callable>

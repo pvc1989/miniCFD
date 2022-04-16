@@ -186,8 +186,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   double root{0.1};
   rotor.InstallBlade(root, blade);
   /* Choose the time-stepping scheme. */
-  auto rk = Solver(dt, limiter);
-  rk.SetSource(rotor);
+  auto rk = Solver(dt, limiter, rotor);
 
   /* Set boundary conditions. */
   bc(suffix, &rk);
