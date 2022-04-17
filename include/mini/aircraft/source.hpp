@@ -9,7 +9,7 @@
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 #include "mini/integrator/line.hpp"
-#include "mini/aircraft/rotary.hpp"
+#include "mini/aircraft/rotor.hpp"
 
 namespace mini {
 namespace aircraft {

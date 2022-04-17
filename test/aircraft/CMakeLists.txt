@@ -1,3 +1,3 @@
-add_executable(test_aircraft_rotary rotary.cpp)
-set_target_properties(test_aircraft_rotary PROPERTIES OUTPUT_NAME rotary)
-add_test(NAME TestAircraftRotary COMMAND rotary)
+add_executable(test_aircraft_rotor rotor.cpp)
+set_target_properties(test_aircraft_rotor PROPERTIES OUTPUT_NAME rotor)
+add_test(NAME TestAircraftRotor COMMAND rotor)
