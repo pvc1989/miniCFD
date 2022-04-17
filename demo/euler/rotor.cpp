@@ -47,7 +47,7 @@ using IC = Value(*)(const Coord &);
 using BC = void(*)(const std::string &, Solver *);
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.4, 2.0, 0.0, 0.0, 1.0);
+auto primitive = Primitive(1.4, 0.5, 0.0, 0.0, 1.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -167,23 +167,26 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
 
   auto rotor = Source();
   rotor.SetRevolutionsPerSecond(0.0);
-  rotor.SetOrigin(0.0, -1.1, 0.0);
+  rotor.SetOrigin(0.0, -1.2, 0.0);
   auto frame = Frame();
   frame.RotateY(+10.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  auto blade = Blade();
-  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<double>>();
-  airfoils.emplace_back(5.0, 0.2);
-  airfoils.emplace_back(6.0, 0.0);
-  airfoils.emplace_back(5.0, 0.2);
-  std::vector<double> y_values{0.0, 1.0, 2.0}, chords{0.1, 0.3, 0.1},
+  std::vector<double> y_values{0.0, 1.1, 2.2}, chords{0.1, 0.3, 0.1},
       twists{-5.0, -5.0, -5.0};
+  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<double>>();
+  auto c_lift = mini::geometry::deg2rad(2 * mini::geometry::pi());
+  airfoils.emplace_back(c_lift, 0.0);
+  airfoils.emplace_back(c_lift, 0.0);
+  airfoils.emplace_back(c_lift, 0.0);
+  auto blade = Blade();
   blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
   blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
   blade.InstallSection(y_values[2], chords[2], twists[2], airfoils[2]);
   double root{0.1};
   rotor.InstallBlade(root, blade);
+  rotor.SetAzimuth(0.0);
+
   /* Choose the time-stepping scheme. */
   auto rk = Solver(dt, limiter, rotor);
 
