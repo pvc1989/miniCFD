@@ -209,7 +209,8 @@ class Raw<Scalar, 3, 2> {
 
 template <typename Scalar>
 class Raw<Scalar, 3, 3> {
-  static constexpr int X{1}, Y{2}, Z{3}, XX{4}, XY{5}, XZ{6}, YY{7}, YZ{8}, ZZ{9};
+  static constexpr int X{1}, Y{2}, Z{3};
+  static constexpr int XX{4}, XY{5}, XZ{6}, YY{7}, YZ{8}, ZZ{9};
   static constexpr int XXX{10}, XXY{11}, XXZ{12}, XYY{13}, XYZ{14}, XZZ{15};
   static constexpr int YYY{16}, YYZ{17}, YZZ{18}, ZZZ{19};
 

@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #include "mini/aircraft/section.hpp"
 

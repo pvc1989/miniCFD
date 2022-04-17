@@ -3,6 +3,7 @@
 #define MINI_AIRCRAFT_SOURCE_HPP_
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "mini/algebra/eigen.hpp"

@@ -3,6 +3,7 @@
 #define MINI_AIRCRAFT_SECTION_HPP_
 
 #include <iostream>
+#include <utility>
 
 #include "mini/aircraft/airfoil.hpp"
 #include "mini/geometry/frame.hpp"

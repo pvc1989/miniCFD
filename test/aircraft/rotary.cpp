@@ -1,12 +1,13 @@
 // Copyright 2022 PEI Weicheng
+#include <vector>
+
 #include "mini/aircraft/airfoil.hpp"
-#include "mini/aircraft/rotary.hpp"
+#include "mini/aircraft/rotor.hpp"
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 
 #include "gtest/gtest.h"
 
-#include <vector>
 
 class TestRotaryWing : public ::testing::Test {
  protected:
