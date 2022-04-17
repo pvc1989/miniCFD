@@ -13,7 +13,6 @@
 #include "mini/stepper/explicit.hpp"
 
 /* Define the Euler system. */
-constexpr int kFunc = 5;
 constexpr int kDim = 3;
 using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
 using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;

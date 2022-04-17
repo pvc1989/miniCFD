@@ -1,9 +1,9 @@
 //  Copyright 2022 PEI Weicheng
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include "mini/riemann/euler/types.hpp"
-#include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
@@ -15,13 +15,12 @@
 #include "pcgnslib.h"
 
 /* Define the Euler system. */
-constexpr int kFunc = 5;
 constexpr int kDim = 3;
-using Primitive = mini::riemann::euler::PrimitiveTuple<double, kDim>;
-using Conservative = mini::riemann::euler::ConservativeTuple<double, kDim>;
 using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
+using Primitive = typename Riemann::Primitive;
+using Conservative = typename Riemann::Conservative;
 
 constexpr int kDegree = 2;
 using Part = mini::mesh::cgns::Part<cgsize_t, kDegree, Riemann>;
@@ -38,7 +37,7 @@ using Source = mini::aircraft::RotorSource<Part, double>;
 using Rotor = mini::aircraft::Rotor<double>;
 using Blade = typename Rotor::Blade;
 using Frame = typename Blade::Frame;
-using Airfoil = mini::aircraft::airfoil::Simple<double>;
+using Airfoil = typename Blade::Airfoil;
 
 /* Choose the time-stepping scheme. */
 constexpr int kSteps = std::min(3, kDegree + 1);

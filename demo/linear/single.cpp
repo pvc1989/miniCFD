@@ -59,7 +59,6 @@ int main(int argc, char* argv[]) {
   auto time_begin = MPI_Wtime();
 
   /* Define the single-wave equation. */
-  constexpr int kFunc = 1;
   constexpr int kDim = 3;
   using Riemann = mini::riemann::rotated::Single<double, kDim>;
   auto a_x = -10.0;
