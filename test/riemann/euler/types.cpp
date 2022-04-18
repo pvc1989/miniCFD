@@ -14,7 +14,7 @@ class TestTypes : public ::testing::Test {
 };
 TEST_F(TestTypes, TestTuples) {
   auto rho{0.1}, u{+0.3}, v{-0.4}, p{0.5};
-  auto primitive = PrimitiveTuple<double, 2>{rho, u, v, p};
+  auto primitive = Primitives<double, 2>{rho, u, v, p};
   EXPECT_DOUBLE_EQ(primitive[0], primitive.rho());
   EXPECT_DOUBLE_EQ(primitive.rho(), primitive.mass());
   EXPECT_DOUBLE_EQ(primitive[1], primitive.u());
@@ -23,16 +23,16 @@ TEST_F(TestTypes, TestTuples) {
   EXPECT_DOUBLE_EQ(primitive.v(), primitive.momentumY());
   EXPECT_DOUBLE_EQ(primitive[3], primitive.p());
   EXPECT_DOUBLE_EQ(primitive.p(), primitive.energy());
-  using Vector = typename PrimitiveTuple<double, 2>::Vector;
+  using Vector = typename Primitives<double, 2>::Vector;
   EXPECT_EQ(primitive.momentum(), Vector(+0.3, -0.4));
   EXPECT_DOUBLE_EQ(primitive.GetDynamicPressure(), rho * (u*u + v*v) / 2);
 }
 TEST_F(TestTypes, TestConverters) {
   auto rho{0.1}, u{+0.2}, v{-0.2}, p{0.3};
-  auto primitive = PrimitiveTuple<double, 2>{rho, u, v, p};
+  auto primitive = Primitives<double, 2>{rho, u, v, p};
   using Gas = IdealGas<double, 1, 4>;
   constexpr auto gamma = Gas::Gamma();
-  auto conservative = ConservativeTuple<double, 2>{
+  auto conservative = Conservatives<double, 2>{
     rho, rho*u, rho*v, p/(gamma-1) + 0.5*rho*(u*u + v*v)
   };
   EXPECT_EQ(Gas::PrimitiveToConservative(primitive), conservative);

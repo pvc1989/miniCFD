@@ -25,8 +25,8 @@ class Hllc<GasType, 1> {
   using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 1>;
-  using Conservative = ConservativeTuple<Scalar, 1>;
-  using Primitive = PrimitiveTuple<Scalar, 1>;
+  using Conservative = Conservatives<Scalar, 1>;
+  using Primitive = Primitives<Scalar, 1>;
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
@@ -106,8 +106,8 @@ class Hllc<GasType, 2> {
   using Gas = GasType;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, 2>;
-  using Conservative = ConservativeTuple<Scalar, 2>;
-  using Primitive = PrimitiveTuple<Scalar, 2>;
+  using Conservative = Conservatives<Scalar, 2>;
+  using Primitive = Primitives<Scalar, 2>;
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia

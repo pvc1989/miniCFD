@@ -12,7 +12,7 @@ class TestEigenMatrices : public ::testing::Test {
 };
 TEST_F(TestEigenMatrices, OrthoNormality) {
   auto rho{0.1}, u{0.2}, v{0.3}, w{0.4}, p{0.5};
-  auto state = PrimitiveTuple<double, 3>{rho, u, v, w, p};
+  auto state = Primitives<double, 3>{rho, u, v, w, p};
   using Matrices = EigenMatrices<IdealGas<double, 1, 4>>;
   typename Matrices::Mat3x1 nu{ 0, 0, 1 }, sigma{ 1, 0, 0 }, pi{ 0, 1, 0 };
   auto eigen_matrices = Matrices(state, nu, sigma, pi);

@@ -19,8 +19,8 @@ class Implementor {
   // Types:
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, kDim>;
-  using Conservative = ConservativeTuple<Scalar, kDim>;
-  using Primitive = PrimitiveTuple<Scalar, kDim>;
+  using Conservative = Conservatives<Scalar, kDim>;
+  using Primitive = Primitives<Scalar, kDim>;
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Data:

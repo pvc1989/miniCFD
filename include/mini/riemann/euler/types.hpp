@@ -123,7 +123,7 @@ class FluxTuple : public Tuple<ScalarType, kDim> {
 };
 
 template <class ScalarType, int kDim>
-class PrimitiveTuple : public Tuple<ScalarType, kDim> {
+class Primitives : public Tuple<ScalarType, kDim> {
   using Base = Tuple<ScalarType, kDim>;
 
  public:
@@ -171,7 +171,7 @@ class PrimitiveTuple : public Tuple<ScalarType, kDim> {
 };
 
 template <class ScalarType, int kDim>
-struct ConservativeTuple : public Tuple<ScalarType, kDim> {
+struct Conservatives : public Tuple<ScalarType, kDim> {
   using Base = Tuple<ScalarType, kDim>;
 
   // Types:
@@ -235,15 +235,15 @@ class IdealGas {
   }
   // Converters:
   template <int kDim>
-  static double GetSpeedOfSound(PrimitiveTuple<Scalar, kDim> const& state) {
+  static double GetSpeedOfSound(Primitives<Scalar, kDim> const& state) {
     // SetZeroIfNegative(state);
     return state.rho() <= 0 || state.p() <= 0 ?
         0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
   template <int kDim>
-  static PrimitiveTuple<Scalar, kDim> ConservativeToPrimitive(
-      ConservativeTuple<Scalar, kDim> const &conservative) {
-    auto primitive = PrimitiveTuple<Scalar, kDim>(conservative);
+  static Primitives<Scalar, kDim> ConservativeToPrimitive(
+      Conservatives<Scalar, kDim> const &conservative) {
+    auto primitive = Primitives<Scalar, kDim>(conservative);
     SetZeroIfNegative(&primitive);
     if (primitive.rho()) {
       Converter<Scalar, kDim>::MomentumToVelocity(primitive.rho(), &primitive);
@@ -254,9 +254,9 @@ class IdealGas {
     return primitive;
   }
   template <int kDim>
-  static ConservativeTuple<Scalar, kDim> PrimitiveToConservative(
-      PrimitiveTuple<Scalar, kDim> const &primitive) {
-    auto conservative = ConservativeTuple<Scalar, kDim>(primitive);
+  static Conservatives<Scalar, kDim> PrimitiveToConservative(
+      Primitives<Scalar, kDim> const &primitive) {
+    auto conservative = Conservatives<Scalar, kDim>(primitive);
     Converter<Scalar, kDim>::VelocityToMomentum(primitive.rho(), &conservative);
     conservative.energy() *= OneOverGammaMinusOne();  // p / (gamma - 1)
     conservative.energy() += primitive.GetDynamicPressure();
@@ -264,7 +264,7 @@ class IdealGas {
   }
   template <int kDim>
   static FluxTuple<Scalar, kDim> PrimitiveToFlux(
-      const PrimitiveTuple<Scalar, kDim> &primitive) {
+      const Primitives<Scalar, kDim> &primitive) {
     auto conservative = PrimitiveToConservative(primitive);
     conservative *= primitive.u();
     auto flux_x = FluxTuple<Scalar, kDim>(conservative);
@@ -272,7 +272,7 @@ class IdealGas {
     flux_x.energy() += primitive.p() * primitive.u();
     return flux_x;
   }
-  static auto GetFluxMatrix(ConservativeTuple<Scalar, 3> const& cv) {
+  static auto GetFluxMatrix(Conservatives<Scalar, 3> const& cv) {
     using FluxMatrix = typename FluxTuple<Scalar, 3>::FluxMatrix;
     FluxMatrix mat;
     auto pv = ConservativeToPrimitive(cv);
