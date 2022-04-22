@@ -30,7 +30,7 @@ class Cartesian<Scalar, 2> {
     nu_[x] = nu_x;
     nu_[y] = nu_y;
   }
-  void GlobalToNormal(Vector* v) {
+  void GlobalToNormal(Vector* v) const {
     /* Calculate the normal component: */
     auto v_n = (*v)[x] * nu_[x] + (*v)[y] * nu_[y];
     /* Calculate the tangential component: */
@@ -39,7 +39,7 @@ class Cartesian<Scalar, 2> {
     /* Write the normal component: */
     (*v)[n] = v_n;
   }
-  void NormalToGlobal(Vector* v) {
+  void NormalToGlobal(Vector* v) const {
     auto t_x = -nu_[y], t_y = nu_[x];
     auto v_x = (*v)[n] * nu_[x] + (*v)[t] * t_x;
     (*v)[y]  = (*v)[n] * nu_[y] + (*v)[t] * t_y;
@@ -74,12 +74,12 @@ class Cartesian<Scalar, 3> {
     nu_[y] = nu[y]; sigma_[y] = sigma[y]; pi_[y] = pi[y];
     nu_[z] = nu[z]; sigma_[z] = sigma[z]; pi_[z] = pi[z];
   }
-  void GlobalToNormal(Vector* v) {
+  void GlobalToNormal(Vector* v) const {
     auto v_nu = v->dot(nu_), v_sigma = v->dot(sigma_), v_pi = v->dot(pi_);
     constexpr int nu = 0, sigma = 1, pi = 2;
     (*v)[nu] = v_nu; (*v)[sigma] = v_sigma; (*v)[pi] = v_pi;
   }
-  void NormalToGlobal(Vector* v) {
+  void NormalToGlobal(Vector* v) const {
     constexpr int nu = 0, sigma = 1, pi = 2;
     auto v_x = (*v)[nu] * nu_[x] + (*v)[sigma] * sigma_[x] + (*v)[pi] * pi_[x];
     auto v_y = (*v)[nu] * nu_[y] + (*v)[sigma] * sigma_[y] + (*v)[pi] * pi_[y];
@@ -126,16 +126,18 @@ class Euler {
   static Flux GetFlux(const Primitive& state) {
     return Base::GetFlux(state);
   }
-  Flux GetRotatedFlux(Conservative const& conservative) {
+  static FluxMatrix GetFluxMatrix(Conservative const& conservative) {
+    return Gas::GetFluxMatrix(conservative);
+  }
+  Flux GetRotatedFlux(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     GlobalToNormal(&(primitive.momentum()));
     auto flux = unrotated_euler_.GetFlux(primitive);
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
-  Flux GetFluxOnTimeAxis(
-      Conservative const& left,
-      Conservative const& right) {
+  Flux GetFluxOnTimeAxis(Conservative const& left,
+      Conservative const& right) const {
     auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
     GlobalToNormal(&(left__primitive.momentum()));
@@ -145,28 +147,25 @@ class Euler {
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
-  Flux GetFluxOnSolidWall(Conservative const& conservative) {
+  Flux GetFluxOnSolidWall(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     Flux flux; flux.setZero();
     flux.momentumX() = primitive.p();
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
-  Flux GetFluxOnFreeWall(Conservative const& conservative) {
+  Flux GetFluxOnFreeWall(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     cartesian_.GlobalToNormal(&(primitive.momentum()));
     auto flux = unrotated_euler_.GetFlux(primitive);
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
-  void GlobalToNormal(Vector* v) {
+  void GlobalToNormal(Vector* v) const {
     cartesian_.GlobalToNormal(v);
   }
-  void NormalToGlobal(Vector* v) {
+  void NormalToGlobal(Vector* v) const {
     cartesian_.NormalToGlobal(v);
-  }
-  static FluxMatrix GetFluxMatrix(Conservative const& conservative) {
-    return Gas::GetFluxMatrix(conservative);
   }
 
  private:

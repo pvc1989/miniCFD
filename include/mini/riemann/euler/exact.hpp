@@ -26,7 +26,7 @@ class Implementor {
   // Data:
   Speed star_u{0.0};
   // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
     Primitive result;
     if (left.rho() > 0) {
       if (right.rho() > 0) {
@@ -83,7 +83,7 @@ class Implementor {
       star.p() = FindRoot(f, f_prime, left.p());
       star.u() = 0.5 * (right.u() + u_change_right(star.p())
                         +left.u() - u_change__left(star.p()));
-      star_u = star.u();
+      const_cast<Implementor *>(this)->star_u = star.u();
       if (0 < star.u()) {  // Axis[t] <<< Wave[2]
         if (star.p() >= left.p()) {  // Wave[1] is a shock.
           result = PrimitiveNearShock<1>(left, &star);
@@ -310,12 +310,13 @@ class Exact<GasType, 1> : public Implementor<GasType, 1> {
     return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
     return GetFlux(PrimitiveOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
-    return Base::PrimitiveOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
+    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
+    return state;
   }
 };
 template <class GasType>
@@ -337,13 +338,13 @@ class Exact<GasType, 2> : public Implementor<GasType, 2> {
     return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
     auto state = PrimitiveOnTimeAxis(left, right);
     return GetFlux(state);
   }
   // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
-    auto state = Base::PrimitiveOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
+    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
     state.v() = this->star_u > 0 ? left.v() : right.v();
     return state;
   }
@@ -367,12 +368,12 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
     return Gas::PrimitiveToFlux(state);
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
     return GetFlux(PrimitiveOnTimeAxis(left, right));
   }
   // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
-    auto state = Base::PrimitiveOnTimeAxis(left, right);
+  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
+    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
     state.v() = this->star_u > 0 ? left.v() : right.v();
     state.w() = this->star_u > 0 ? left.w() : right.w();
     return state;
