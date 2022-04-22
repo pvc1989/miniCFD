@@ -45,11 +45,13 @@ class PassiveScalars<Primitive, 3> {
   }
 };
 
-template <class Gas, int D>
-class Implementor {
+template <class G, int D>
+class Exact {
  public:
   constexpr static int kDimensions = D;
+  constexpr static int kComponents = D + 2;
   // Types:
+  using Gas = G;
   using Scalar = typename Gas::Scalar;
   using Flux = FluxTuple<Scalar, kDimensions>;
   using Conservative = Conservatives<Scalar, kDimensions>;
@@ -58,8 +60,26 @@ class Implementor {
   using Speed = Scalar;
   // Data:
   Speed star_u{0.0};
+
+  // Get F from U
+  static Flux GetFlux(const Primitive& state) {
+    return Gas::PrimitiveToFlux(state);
+  }
   // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
+  Primitive GetPrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
+    auto *non_const_this = const_cast<Exact *>(this);
+    auto state = non_const_this->GetPrimitiveOnTimeAxis(left, right);
+    PassiveScalars<Primitive, kDimensions>::Set(&state, this->star_u, left, right);
+    return state;
+  }
+  // Get F on t-Axis
+  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
+    return GetFlux(GetPrimitiveOnTimeAxis(left, right));
+  }
+
+ private:
+  // Get U on t-Axis
+  Primitive GetPrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) {
     Primitive result;
     if (left.rho() > 0) {
       if (right.rho() > 0) {
@@ -116,7 +136,7 @@ class Implementor {
       star.p() = FindRoot(f, f_prime, left.p());
       star.u() = 0.5 * (right.u() + u_change_right(star.p())
                         +left.u() - u_change__left(star.p()));
-      const_cast<Implementor *>(this)->star_u = star.u();
+      star_u = star.u();
       if (0 < star.u()) {  // Axis[t] <<< Wave[2]
         if (star.p() >= left.p()) {  // Wave[1] is a shock.
           result = PrimitiveNearShock<1>(left, &star);
@@ -135,8 +155,6 @@ class Implementor {
     }
     return result;
   }
-
- private:
   // Helper method and class for the star region:
   template <class F, class Fprime>
   static double FindRoot(F&& f, Fprime&& f_prime, double x, double eps = 1e-8) {
@@ -318,97 +336,6 @@ class Implementor {
         }
       }
     }
-  }
-};
-
-template <class GasType, int kDimensions>
-class Exact;
-
-template <class GasType>
-class Exact<GasType, 1> : public Implementor<GasType, 1> {
-  using Base = Implementor<GasType, 1>;
-
- public:
-  constexpr static int kComponents = 3;
-  constexpr static int kDimensions = Base::kDimensions;
-  // Types:
-  using Gas = GasType;
-  using Scalar = typename Base::Scalar;
-  using Vector = typename Base::Vector;
-  using Flux = typename Base::Flux;
-  using Conservative = typename Base::Conservative;
-  using Primitive = typename Base::Primitive;
-  // Get F from U
-  static Flux GetFlux(const Primitive& state) {
-    return Gas::PrimitiveToFlux(state);
-  }
-  // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    return GetFlux(PrimitiveOnTimeAxis(left, right));
-  }
-  // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
-    return state;
-  }
-};
-template <class GasType>
-class Exact<GasType, 2> : public Implementor<GasType, 2> {
-  using Base = Implementor<GasType, 2>;
-
- public:
-  constexpr static int kComponents = 4;
-  constexpr static int kDimensions = Base::kDimensions;
-  // Types:
-  using Gas = GasType;
-  using Scalar = typename Base::Scalar;
-  using Vector = typename Base::Vector;
-  using Flux = typename Base::Flux;
-  using Conservative = typename Base::Conservative;
-  using Primitive = typename Base::Primitive;
-  // Get F from U
-  static Flux GetFlux(const Primitive& state) {
-    return Gas::PrimitiveToFlux(state);
-  }
-  // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    auto state = PrimitiveOnTimeAxis(left, right);
-    return GetFlux(state);
-  }
-  // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
-    state.v() = this->star_u > 0 ? left.v() : right.v();
-    return state;
-  }
-};
-template <class GasType>
-class Exact<GasType, 3> : public Implementor<GasType, 3> {
-  using Base = Implementor<GasType, 3>;
-
- public:
-  constexpr static int kComponents = 5;
-  constexpr static int kDimensions = Base::kDimensions;
-  // Types:
-  using Gas = GasType;
-  using Scalar = typename Base::Scalar;
-  using Vector = typename Base::Vector;
-  using Flux = typename Base::Flux;
-  using Conservative = typename Base::Conservative;
-  using Primitive = typename Base::Primitive;
-  // Get F from U
-  static Flux GetFlux(const Primitive& state) {
-    return Gas::PrimitiveToFlux(state);
-  }
-  // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    return GetFlux(PrimitiveOnTimeAxis(left, right));
-  }
-  // Get U on t-Axis
-  Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    auto state = this->Base::PrimitiveOnTimeAxis(left, right);
-    PassiveScalars<Primitive, kDimensions>::Set(&state, this->star_u, left, right);
-    return state;
   }
 };
 
