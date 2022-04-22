@@ -12,6 +12,39 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
+template <class Primitive, int kDimensions>
+class PassiveScalars;
+
+template <class Primitive>
+class PassiveScalars<Primitive, 1> {
+ public:
+  using Scalar = typename Primitive::Scalar;
+  static void Set(Primitive *state, Scalar star_u,
+      const Primitive &left, const Primitive &right) {
+  }
+};
+
+template <class Primitive>
+class PassiveScalars<Primitive, 2> {
+ public:
+  using Scalar = typename Primitive::Scalar;
+  static void Set(Primitive *state, Scalar star_u,
+      const Primitive &left, const Primitive &right) {
+    state->v() = star_u > 0 ? left.v() : right.v();
+  }
+};
+
+template <class Primitive>
+class PassiveScalars<Primitive, 3> {
+ public:
+  using Scalar = typename Primitive::Scalar;
+  static void Set(Primitive *state, Scalar star_u,
+      const Primitive &left, const Primitive &right) {
+    state->v() = star_u > 0 ? left.v() : right.v();
+    state->w() = star_u > 0 ? left.w() : right.w();
+  }
+};
+
 template <class Gas, int D>
 class Implementor {
  public:
@@ -374,8 +407,7 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
   // Get U on t-Axis
   Primitive PrimitiveOnTimeAxis(const Primitive& left, const Primitive& right) const {
     auto state = this->Base::PrimitiveOnTimeAxis(left, right);
-    state.v() = this->star_u > 0 ? left.v() : right.v();
-    state.w() = this->star_u > 0 ? left.w() : right.w();
+    PassiveScalars<Primitive, kDimensions>::Set(&state, this->star_u, left, right);
     return state;
   }
 };
