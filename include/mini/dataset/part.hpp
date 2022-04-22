@@ -84,10 +84,10 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, int kDegree, class R>
+template <typename Int, int kDegrees, class R>
 struct Cell;
 
-template <typename Int, int kDegree, class R>
+template <typename Int, int kDegrees, class R>
 struct Face {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
@@ -95,7 +95,7 @@ struct Face {
   constexpr static int kDimensions = Riemann::kDimensions;
   using Gauss = integrator::Face<Scalar, kDimensions>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Cell = cgns::Cell<Int, kDegree, Riemann>;
+  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
 
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
@@ -128,7 +128,7 @@ struct Face {
   }
 };
 
-template <typename Int, int kDegree, class R>
+template <typename Int, int kDegrees, class R>
 struct Cell {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
@@ -136,15 +136,15 @@ struct Cell {
   constexpr static int kDimensions = Riemann::kDimensions;
   using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegree>;
-  using Projection = polynomial::Projection<Scalar, kDimensions, kDegree, kComponents>;
+  using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegrees>;
+  using Projection = polynomial::Projection<Scalar, kDimensions, kDegrees, kComponents>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using Face = cgns::Face<Int, kDegree, R>;
+  using Face = cgns::Face<Int, kDegrees, R>;
 
   std::vector<Cell*> adj_cells_;
   std::vector<Face*> adj_faces_;
@@ -479,9 +479,9 @@ struct Cell {
   }
 };
 
-template <typename Int, int kDegree, class R>
+template <typename Int, int kDegrees, class R>
 class CellGroup {
-  using Cell = cgns::Cell<Int, kDegree, R>;
+  using Cell = cgns::Cell<Int, kDegrees, R>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
@@ -577,25 +577,25 @@ class CellGroup {
   }
 };
 
-template <typename Int, int kDegree, class R>
+template <typename Int, int kDegrees, class R>
 class Part {
  public:
-  using Face = cgns::Face<Int, kDegree, R>;
-  using Cell = cgns::Cell<Int, kDegree, R>;
+  using Face = cgns::Face<Int, kDegrees, R>;
+  using Cell = cgns::Cell<Int, kDegrees, R>;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDimensions = Riemann::kDimensions;
-  constexpr static int kAccuracyOrder = kDegree + 1;
+  constexpr static int kAccuracyOrder = kDegrees + 1;
 
  private:
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
   using NodeInfo = cgns::NodeInfo<Int>;
   using CellInfo = cgns::CellInfo<Int>;
   using NodeGroup = cgns::NodeGroup<Int, Scalar>;
-  using CellGroup = cgns::CellGroup<Int, kDegree, R>;
+  using CellGroup = cgns::CellGroup<Int, kDegrees, R>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
@@ -1439,7 +1439,7 @@ class Part {
 
   template <typename Callable>
   void Reconstruct(Callable&& limiter) {
-    if (kDegree == 0) {
+    if (kDegrees == 0) {
       return;
     }
     ShareGhostCellCoeffs();
@@ -1693,11 +1693,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, int kDegree, class R>
-MPI_Datatype const Part<Int, kDegree, R>::kMpiIntType
+template <typename Int, int kDegrees, class R>
+MPI_Datatype const Part<Int, kDegrees, R>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, int kDegree, class R>
-MPI_Datatype const Part<Int, kDegree, R>::kMpiRealType
+template <typename Int, int kDegrees, class R>
+MPI_Datatype const Part<Int, kDegrees, R>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns

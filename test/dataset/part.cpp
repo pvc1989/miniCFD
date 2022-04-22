@@ -36,9 +36,9 @@ int main(int argc, char* argv[]) {
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
       case_name.c_str(), i_core,
       i_core, n_cores, MPI_Wtime() - time_begin);
-  constexpr int kComponents{2}, kDimensions{3}, kDegree{2};
+  constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
   using Riemann = mini::riemann::rotated::Multiple<double, kComponents, kDimensions>;
-  using Part = mini::mesh::cgns::Part<cgsize_t, kDegree, Riemann>;
+  using Part = mini::mesh::cgns::Part<cgsize_t, kDegrees, Riemann>;
   auto part = Part(case_name, i_core);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;

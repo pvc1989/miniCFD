@@ -22,8 +22,8 @@ using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 using Primitive = typename Riemann::Primitive;
 using Conservative = typename Riemann::Conservative;
 
-constexpr int kDegree = 2;
-using Part = mini::mesh::cgns::Part<cgsize_t, kDegree, Riemann>;
+constexpr int kDegrees = 2;
+using Part = mini::mesh::cgns::Part<cgsize_t, kDegrees, Riemann>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
 using Coord = typename Cell::Coord;
@@ -40,7 +40,7 @@ using Frame = typename Blade::Frame;
 using Airfoil = typename Blade::Airfoil;
 
 /* Choose the time-stepping scheme. */
-constexpr int kSteps = std::min(3, kDegree + 1);
+constexpr int kSteps = std::min(3, kDegrees + 1);
 using Solver = RungeKutta<kSteps, Part, Limiter, Source>;
 
 using IC = Value(*)(const Coord &);

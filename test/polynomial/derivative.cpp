@@ -15,11 +15,11 @@ class DerivativeTest : public ::testing::Test {
  protected:
   void ExpectNearZero(double x) { EXPECT_NEAR(x, 0.0, 1e-12); }
   // Generic comparison:
-  template <int kDegree>
+  template <int kDegrees>
   constexpr bool Compare(double* v, double x) {
-    static_assert(kDegree >= 0);
-    ExpectNearZero(*v - Derivative<kDegree>::GetValue(x));
-    return kDegree > 0 ? Compare<kDegree-1>(v-1, x) : true;
+    static_assert(kDegrees >= 0);
+    ExpectNearZero(*v - Derivative<kDegrees>::GetValue(x));
+    return kDegrees > 0 ? Compare<kDegrees-1>(v-1, x) : true;
   }
   template <>
   constexpr bool Compare<0>(double* v, double x) {
@@ -85,9 +85,9 @@ TEST_F(DerivativeTest, GetAllValues) {
     x += 0.1;
   }
   for (auto x : x_array) {
-    constexpr int kDegree = 8;
-    auto values = Derivative<kDegree>::GetAllValues(x);
-    Compare<kDegree>(&values[kDegree], x);
+    constexpr int kDegrees = 8;
+    auto values = Derivative<kDegrees>::GetAllValues(x);
+    Compare<kDegrees>(&values[kDegrees], x);
   }
 }
 

@@ -6,19 +6,19 @@
 
 namespace mini {
 namespace projector {
-template <int kDegree> class Line;
+template <int kDegrees> class Line;
 }
 namespace polynomial {
 
-template <int kDegree>
+template <int kDegrees>
 class Line {
  public:
-  using Column = algebra::Column<double, kDegree+1>;
-  using Projector = projector::Line<kDegree>;
+  using Column = algebra::Column<double, kDegrees+1>;
+  using Projector = projector::Line<kDegrees>;
   Line(Projector* projector, Column coefficients)
       : projector_(projector), coefficients_(coefficients) {}
   double GetValueAtlocal(double x) const {
-    auto values = Legendre<kDegree>::GetAllValues(x);
+    auto values = Legendre<kDegrees>::GetAllValues(x);
     return values.Dot(coefficients_);
   }
   double GetValueAtGlobal(double x) const {

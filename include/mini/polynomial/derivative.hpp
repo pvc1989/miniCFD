@@ -8,25 +8,25 @@
 namespace mini {
 namespace polynomial {
 
-template <int kDegree>
+template <int kDegrees>
 struct Derivative {
  public:
   static double GetValue(double x) {
-    constexpr auto a_prev = (2.0 * kDegree - 1) / (kDegree - 1);
-    constexpr auto a_prev_prev = kDegree / (kDegree - 1.0);
-    return Derivative<kDegree-1>::GetValue(x) * a_prev * x
-         - Derivative<kDegree-2>::GetValue(x) * a_prev_prev;
+    constexpr auto a_prev = (2.0 * kDegrees - 1) / (kDegrees - 1);
+    constexpr auto a_prev_prev = kDegrees / (kDegrees - 1.0);
+    return Derivative<kDegrees-1>::GetValue(x) * a_prev * x
+         - Derivative<kDegrees-2>::GetValue(x) * a_prev_prev;
   }
-  using Vector = algebra::Column<double, kDegree+1>;
+  using Vector = algebra::Column<double, kDegrees+1>;
   static Vector GetAllValues(double x) {
     Vector result{0.0};
-    Derivative<kDegree>::FillAllValues(x, &result[kDegree]);
+    Derivative<kDegrees>::FillAllValues(x, &result[kDegrees]);
     return result;
   }
   static void FillAllValues(double x, double* result) {
-    constexpr auto a_prev = (2.0 * kDegree - 1) / (kDegree - 1);
-    constexpr auto a_prev_prev = kDegree / (kDegree - 1.0);
-    Derivative<kDegree-1>::FillAllValues(x, result-1);
+    constexpr auto a_prev = (2.0 * kDegrees - 1) / (kDegrees - 1);
+    constexpr auto a_prev_prev = kDegrees / (kDegrees - 1.0);
+    Derivative<kDegrees-1>::FillAllValues(x, result-1);
     *result = *(result-1) * a_prev * x
             - *(result-2) * a_prev_prev;
   }

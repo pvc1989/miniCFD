@@ -8,25 +8,25 @@
 namespace mini {
 namespace polynomial {
 
-template <int kDegree>
+template <int kDegrees>
 struct Legendre {
  public:
   static double GetValue(double x) {
-    constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
-    constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
-    return Legendre<kDegree-1>::GetValue(x) * a_prev * x
-         + Legendre<kDegree-2>::GetValue(x) * a_prev_prev;
+    constexpr auto a_prev = (2.0 * kDegrees - 1) / kDegrees;
+    constexpr auto a_prev_prev = (1.0 - kDegrees) / kDegrees;
+    return Legendre<kDegrees-1>::GetValue(x) * a_prev * x
+         + Legendre<kDegrees-2>::GetValue(x) * a_prev_prev;
   }
-  using Vector = algebra::Column<double, kDegree+1>;
+  using Vector = algebra::Column<double, kDegrees+1>;
   static Vector GetAllValues(double x) {
     Vector result{1.0};
-    Legendre<kDegree>::FillAllValues(x, &result[kDegree]);
+    Legendre<kDegrees>::FillAllValues(x, &result[kDegrees]);
     return result;
   }
   static void FillAllValues(double x, double* result) {
-    constexpr auto a_prev = (2.0 * kDegree - 1) / kDegree;
-    constexpr auto a_prev_prev = (1.0 - kDegree) / kDegree;
-    Legendre<kDegree-1>::FillAllValues(x, result-1);
+    constexpr auto a_prev = (2.0 * kDegrees - 1) / kDegrees;
+    constexpr auto a_prev_prev = (1.0 - kDegrees) / kDegrees;
+    Legendre<kDegrees-1>::FillAllValues(x, result-1);
     *result = *(result-1) * a_prev * x
             + *(result-2) * a_prev_prev;
   }
