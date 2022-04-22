@@ -14,7 +14,7 @@ class Burgers : public Simple<nonlinear::Burgers<S, D>> {
   using Base = Simple<nonlinear::Burgers<S, D>>;
 
  public:
-  constexpr static int kFunc = 1;
+  constexpr static int kComponents = 1;
   constexpr static int kDim = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;

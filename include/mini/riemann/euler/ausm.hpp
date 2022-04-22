@@ -19,7 +19,7 @@ class Ausm;
 template <class GasType>
 class Ausm<GasType, 1> {
  public:
-  constexpr static int kFunc = 3;
+  constexpr static int kComponents = 3;
   constexpr static int kDim = 1;
   // Types:
   using Gas = GasType;
@@ -84,7 +84,7 @@ class Ausm<GasType, 1> {
 template <class GasType>
 class Ausm<GasType, 2> {
  public:
-  constexpr static int kFunc = 4;
+  constexpr static int kComponents = 4;
   constexpr static int kDim = 2;
   // Types:
   using Gas = GasType;
@@ -152,7 +152,7 @@ class Ausm<GasType, 2> {
 template <class GasType>
 class Ausm<GasType, 3> {
  public:
-  constexpr static int kFunc = 5;
+  constexpr static int kComponents = 5;
   constexpr static int kDim = 3;
   // Types:
   using Gas = GasType;

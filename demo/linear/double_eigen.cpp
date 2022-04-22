@@ -59,9 +59,9 @@ int main(int argc, char* argv[]) {
   auto time_begin = MPI_Wtime();
 
   /* Define the Double-wave equation. */
-  constexpr int kFunc = 2;
+  constexpr int kComponents = 2;
   constexpr int kDim = 3;
-  using Riemann = mini::riemann::rotated::Multiple<double, kFunc, kDim>;
+  using Riemann = mini::riemann::rotated::Multiple<double, kComponents, kDim>;
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
   Riemann::global_coefficient[1].setZero();
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   Jacobi eig_cols = eig_rows.inverse();
   auto exact_solution = [&](const Coord& xyz, double t){
     Value value; value.setZero();
-    for (int i = 0; i < kFunc; ++i) {
+    for (int i = 0; i < kComponents; ++i) {
       value += eig_cols.col(i) * eig_rows.row(i).dot(
           (xyz[0] - x_0 > eig_vals[i] * t) ? value_right : value_left);
     }

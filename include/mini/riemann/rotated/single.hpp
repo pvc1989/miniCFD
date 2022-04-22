@@ -12,7 +12,7 @@ namespace rotated {
 template <typename S, int D>
 class Single : public Simple<linear::Single<S, D>> {
  public:
-  constexpr static int kFunc = 1;
+  constexpr static int kComponents = 1;
   constexpr static int kDim = D;
   using Scalar = S;
 };

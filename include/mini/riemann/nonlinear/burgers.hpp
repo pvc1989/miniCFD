@@ -16,7 +16,7 @@ template <typename S, int D>
 class Burgers {
  public:
   static constexpr int kDim = D;
-  static constexpr int kFunc = 1;
+  static constexpr int kComponents = 1;
   // Types:
   using Scalar = S;
   using Vector = algebra::Vector<Scalar, kDim>;
@@ -24,7 +24,7 @@ class Burgers {
   using Conservative = Scalar;
   using Flux = Scalar;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
-  using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
+  using MatKx1 = algebra::Matrix<Scalar, kComponents, 1>;
   // Constructor:
   Burgers() : k_(1) {}
   explicit Burgers(Scalar k) : k_(k) {}

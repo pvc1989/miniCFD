@@ -14,12 +14,12 @@ template <class UnrotatedSimple>
 class Simple {
  protected:
   using Base = UnrotatedSimple;
-  static constexpr int K = Base::kFunc;
+  static constexpr int K = Base::kComponents;
   static constexpr int D = Base::kDim;
   static constexpr int x{0}, y{1}, z{2};
 
  public:
-  static constexpr int kFunc = Base::kFunc;
+  static constexpr int kComponents = Base::kComponents;
   static constexpr int kDim = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;

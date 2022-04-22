@@ -15,7 +15,7 @@ namespace linear {
 template <typename S, int D>
 class Single {
  public:
-  static constexpr int kFunc = 1;
+  static constexpr int kComponents = 1;
   static constexpr int kDim = D;
   // Types:
   using Scalar = S;
@@ -25,7 +25,7 @@ class Single {
   using Conservative = Scalar;
   using Flux = Scalar;
   using Speed = Scalar;
-  using MatKx1 = algebra::Matrix<Scalar, kFunc, 1>;
+  using MatKx1 = algebra::Matrix<Scalar, kComponents, 1>;
   // Constructor:
   Single() : a_const_(1) {}
   explicit Single(Jacobi const& a_const) : a_const_(a_const) {}

@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   auto time_begin = MPI_Wtime();
 
   /* Define the Burgers equation. */
-  constexpr int kFunc = 1;
+  constexpr int kComponents = 1;
   constexpr int kDim = 3;
   using Riemann = mini::riemann::rotated::Burgers<double, kDim>;
   Riemann::global_coefficient = { 1, 0, 0 };

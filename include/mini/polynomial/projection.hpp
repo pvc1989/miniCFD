@@ -20,14 +20,14 @@ namespace polynomial {
  * @tparam Scalar the data type of scalar components
  * @tparam kDim the dimension of the underlying physical space
  * @tparam kDegree the degree of completeness
- * @tparam kFunc the number of function components
+ * @tparam kComponents the number of function components
  */
-template <typename Scalar, int kDim, int kDegree, int kFunc>
+template <typename Scalar, int kDim, int kDegree, int kComponents>
 class Projection {
  public:
   using Basis = OrthoNormal<Scalar, kDim, kDegree>;
   static constexpr int N = Basis::N;
-  static constexpr int K = kFunc;
+  static constexpr int K = kComponents;
   using Coord = typename Basis::Coord;
   using MatNx1 = typename Basis::MatNx1;
   using MatNxN = typename Basis::MatNxN;

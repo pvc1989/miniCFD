@@ -91,7 +91,7 @@ template <typename Int, int kDegree, class R>
 struct Face {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
-  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDim = Riemann::kDim;
   using Gauss = integrator::Face<Scalar, kDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
@@ -132,12 +132,12 @@ template <typename Int, int kDegree, class R>
 struct Cell {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
-  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDim = Riemann::kDim;
   using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Basis = polynomial::OrthoNormal<Scalar, kDim, kDegree>;
-  using Projection = polynomial::Projection<Scalar, kDim, kDegree, kFunc>;
+  using Projection = polynomial::Projection<Scalar, kDim, kDegree, kComponents>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
@@ -586,7 +586,7 @@ class Part {
   using Scalar = typename Riemann::Scalar;
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
-  constexpr static int kFunc = Riemann::kFunc;
+  constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDim = Riemann::kDim;
   constexpr static int kAccuracyOrder = kDegree + 1;
 
@@ -630,7 +630,7 @@ class Part {
     if (cgp_close(i_file))
       cgp_error_exit();
   }
-  void SetFieldNames(const std::array<std::string, kFunc>& names) {
+  void SetFieldNames(const std::array<std::string, kComponents>& names) {
     field_names_ = names;
   }
 
@@ -1287,7 +1287,7 @@ class Part {
           << "byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
       pvtu << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
       pvtu << "    <PPointData>\n";
-      for (int k = 0; k < kFunc; ++k) {
+      for (int k = 0; k < kComponents; ++k) {
         pvtu << "      <PDataArray type=\"Float64\" Name=\""
             << field_names_[k] << "\"/>\n";
       }
@@ -1569,7 +1569,7 @@ class Part {
   std::unordered_map<std::string, ShiftedVector<std::unique_ptr<Face>> *>
       name_to_faces_;
   std::vector<MPI_Request> requests_;
-  std::array<std::string, kFunc> field_names_;
+  std::array<std::string, kComponents> field_names_;
   const std::string directory_;
   const std::string cgns_file_;
   const std::string part_path_;

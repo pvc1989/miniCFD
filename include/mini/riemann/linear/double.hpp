@@ -15,11 +15,11 @@ template <typename S, int D>
 class Double {
  public:
   static constexpr int kDim = D;
-  static constexpr int kFunc = 2;
+  static constexpr int kComponents = 2;
   using Scalar = S;
   using Vector = algebra::Vector<Scalar, kDim>;
-  using Column = algebra::Vector<Scalar, kFunc>;
-  using Matrix = algebra::Matrix<Scalar, kFunc, kFunc>;
+  using Column = algebra::Vector<Scalar, kComponents>;
+  using Matrix = algebra::Matrix<Scalar, kComponents, kComponents>;
   using Jacobi = Matrix;
   using Coefficient = algebra::Vector<Jacobi, kDim>;
   using Conservative = Column;

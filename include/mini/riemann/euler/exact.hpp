@@ -296,7 +296,7 @@ class Exact<GasType, 1> : public Implementor<GasType, 1> {
   using Base = Implementor<GasType, 1>;
 
  public:
-  constexpr static int kFunc = 3;
+  constexpr static int kComponents = 3;
   constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasType;
@@ -323,7 +323,7 @@ class Exact<GasType, 2> : public Implementor<GasType, 2> {
   using Base = Implementor<GasType, 2>;
 
  public:
-  constexpr static int kFunc = 4;
+  constexpr static int kComponents = 4;
   constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasType;
@@ -353,7 +353,7 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
   using Base = Implementor<GasType, 3>;
 
  public:
-  constexpr static int kFunc = 5;
+  constexpr static int kComponents = 5;
   constexpr static int kDim = Base::kDim;
   // Types:
   using Gas = GasType;

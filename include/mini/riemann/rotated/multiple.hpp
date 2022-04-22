@@ -14,7 +14,7 @@ class Multiple : public Simple<linear::Multiple<S, K, D>> {
   using Base = Simple<linear::Multiple<S, K, D>>;
 
  public:
-  constexpr static int kFunc = K;
+  constexpr static int kComponents = K;
   constexpr static int kDim = D;
   using Scalar = S;
   using Jacobi = typename Base::Jacobi;

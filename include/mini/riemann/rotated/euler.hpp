@@ -108,7 +108,7 @@ class Euler {
   using Base = UnrotatedEuler;
 
  public:
-  constexpr static int kFunc = Base::kFunc;
+  constexpr static int kComponents = Base::kComponents;
   constexpr static int kDim = Base::kDim;
   using Gas = typename Base::Gas;
   using Scalar = typename Base::Scalar;

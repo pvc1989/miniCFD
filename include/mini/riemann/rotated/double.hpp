@@ -14,7 +14,7 @@ class Double : public Simple<linear::Double<S, D>> {
   using Base = Simple<linear::Double<S, D>>;
 
  public:
-  constexpr static int kFunc = 2;
+  constexpr static int kComponents = 2;
   constexpr static int kDim = D;
   using Scalar = S;
   using Jacobi = typename Base::Jacobi;
