@@ -15,7 +15,7 @@ class Burgers : public Simple<nonlinear::Burgers<S, D>> {
 
  public:
   constexpr static int kComponents = 1;
-  constexpr static int kDim = D;
+  constexpr static int kDimensions = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using Conservative = typename Base::Conservative;

@@ -15,15 +15,15 @@ namespace nonlinear {
 template <typename S, int D>
 class Burgers {
  public:
-  static constexpr int kDim = D;
+  static constexpr int kDimensions = D;
   static constexpr int kComponents = 1;
   // Types:
   using Scalar = S;
-  using Vector = algebra::Vector<Scalar, kDim>;
+  using Vector = algebra::Vector<Scalar, kDimensions>;
   using Jacobi = Scalar;
   using Conservative = Scalar;
   using Flux = Scalar;
-  using Coefficient = algebra::Vector<Jacobi, kDim>;
+  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
   using MatKx1 = algebra::Matrix<Scalar, kComponents, 1>;
   // Constructor:
   Burgers() : k_(1) {}

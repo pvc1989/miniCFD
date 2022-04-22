@@ -15,9 +15,9 @@
 #include "pcgnslib.h"
 
 /* Define the Euler system. */
-constexpr int kDim = 3;
+constexpr int kDimensions = 3;
 using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 using Primitive = typename Riemann::Primitive;
 using Conservative = typename Riemann::Conservative;

@@ -11,10 +11,10 @@
 namespace mini {
 namespace geometry {
 
-template <class Real, int kDim>
-class Rectangle : virtual public Surface<Real, kDim> {
+template <class Real, int kDimensions>
+class Rectangle : virtual public Surface<Real, kDimensions> {
  protected:
-  using Base = Surface<Real, kDim>;
+  using Base = Surface<Real, kDimensions>;
 
  public:
   // Types:

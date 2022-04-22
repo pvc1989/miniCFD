@@ -11,11 +11,11 @@
 namespace mini {
 namespace geometry {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Line {
  public:
   // Types:
-  using PointType = Point<Real, kDim>;
+  using PointType = Point<Real, kDimensions>;
 
  public:
   // Constructors:

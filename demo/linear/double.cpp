@@ -59,8 +59,8 @@ int main(int argc, char* argv[]) {
   auto time_begin = MPI_Wtime();
 
   /* Define the Double-wave equation. */
-  constexpr int kDim = 3;
-  using Riemann = mini::riemann::rotated::Double<double, kDim>;
+  constexpr int kDimensions = 3;
+  using Riemann = mini::riemann::rotated::Double<double, kDimensions>;
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
   Riemann::global_coefficient[1].setZero();

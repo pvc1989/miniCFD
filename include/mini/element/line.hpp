@@ -12,14 +12,14 @@
 namespace mini {
 namespace element {
 
-template <class Real, int kDim>
-class Line : public geometry::Line<Real, kDim> {
-  using Base = geometry::Line<Real, kDim>;
+template <class Real, int kDimensions>
+class Line : public geometry::Line<Real, kDimensions> {
+  using Base = geometry::Line<Real, kDimensions>;
 
  public:
   // Types:
   using IdType = std::size_t;
-  using PointType = Point<Real, kDim>;
+  using PointType = Point<Real, kDimensions>;
   // Constructors:
   Line(IdType i, const PointType& head, const PointType& tail)
       : i_(i), Base(head, tail) {}

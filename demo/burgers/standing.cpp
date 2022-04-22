@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
 
   /* Define the Burgers equation. */
   constexpr int kComponents = 1;
-  constexpr int kDim = 3;
-  using Riemann = mini::riemann::rotated::Burgers<double, kDim>;
+  constexpr int kDimensions = 3;
+  using Riemann = mini::riemann::rotated::Burgers<double, kDimensions>;
   Riemann::global_coefficient = { 1, 0, 0 };
 
   /* Partition the mesh. */

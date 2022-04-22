@@ -15,12 +15,12 @@ class Simple {
  protected:
   using Base = UnrotatedSimple;
   static constexpr int K = Base::kComponents;
-  static constexpr int D = Base::kDim;
+  static constexpr int D = Base::kDimensions;
   static constexpr int x{0}, y{1}, z{2};
 
  public:
   static constexpr int kComponents = Base::kComponents;
-  static constexpr int kDim = D;
+  static constexpr int kDimensions = D;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
   using MatKx1 = algebra::Matrix<Scalar, K, 1>;

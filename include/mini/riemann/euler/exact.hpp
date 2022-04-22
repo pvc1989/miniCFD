@@ -15,12 +15,12 @@ namespace euler {
 template <class Gas, int D>
 class Implementor {
  public:
-  constexpr static int kDim = D;
+  constexpr static int kDimensions = D;
   // Types:
   using Scalar = typename Gas::Scalar;
-  using Flux = FluxTuple<Scalar, kDim>;
-  using Conservative = Conservatives<Scalar, kDim>;
-  using Primitive = Primitives<Scalar, kDim>;
+  using Flux = FluxTuple<Scalar, kDimensions>;
+  using Conservative = Conservatives<Scalar, kDimensions>;
+  using Primitive = Primitives<Scalar, kDimensions>;
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Data:
@@ -288,7 +288,7 @@ class Implementor {
   }
 };
 
-template <class GasType, int kDim>
+template <class GasType, int kDimensions>
 class Exact;
 
 template <class GasType>
@@ -297,7 +297,7 @@ class Exact<GasType, 1> : public Implementor<GasType, 1> {
 
  public:
   constexpr static int kComponents = 3;
-  constexpr static int kDim = Base::kDim;
+  constexpr static int kDimensions = Base::kDimensions;
   // Types:
   using Gas = GasType;
   using Scalar = typename Base::Scalar;
@@ -324,7 +324,7 @@ class Exact<GasType, 2> : public Implementor<GasType, 2> {
 
  public:
   constexpr static int kComponents = 4;
-  constexpr static int kDim = Base::kDim;
+  constexpr static int kDimensions = Base::kDimensions;
   // Types:
   using Gas = GasType;
   using Scalar = typename Base::Scalar;
@@ -354,7 +354,7 @@ class Exact<GasType, 3> : public Implementor<GasType, 3> {
 
  public:
   constexpr static int kComponents = 5;
-  constexpr static int kDim = Base::kDim;
+  constexpr static int kDimensions = Base::kDimensions;
   // Types:
   using Gas = GasType;
   using Scalar = typename Base::Scalar;

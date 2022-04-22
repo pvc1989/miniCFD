@@ -16,12 +16,12 @@ template <typename S, int D>
 class Single {
  public:
   static constexpr int kComponents = 1;
-  static constexpr int kDim = D;
+  static constexpr int kDimensions = D;
   // Types:
   using Scalar = S;
-  using Vector = algebra::Vector<Scalar, kDim>;
+  using Vector = algebra::Vector<Scalar, kDimensions>;
   using Jacobi = Scalar;
-  using Coefficient = algebra::Vector<Jacobi, kDim>;
+  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
   using Conservative = Scalar;
   using Flux = Scalar;
   using Speed = Scalar;

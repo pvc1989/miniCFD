@@ -12,19 +12,19 @@
 namespace mini {
 namespace element {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Rectangle :
-    virtual public Surface<Real, kDim>,
-    public geometry::Rectangle<Real, kDim> {
+    virtual public Surface<Real, kDimensions>,
+    public geometry::Rectangle<Real, kDimensions> {
  public:
   // Types:
-  using IdType = typename Surface<Real, kDim>::IdType;
-  using PointType = typename Surface<Real, kDim>::PointType;
+  using IdType = typename Surface<Real, kDimensions>::IdType;
+  using PointType = typename Surface<Real, kDimensions>::PointType;
   // Constructors:
   Rectangle(IdType i,
             const PointType& a, const PointType& b,
             const PointType& c, const PointType& d)
-      : i_(i), geometry::Rectangle<Real, kDim>(a, b, c, d) {}
+      : i_(i), geometry::Rectangle<Real, kDimensions>(a, b, c, d) {}
   // Accessors:
   IdType I() const override { return i_; }
 

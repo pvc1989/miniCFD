@@ -15,7 +15,7 @@
 namespace mini {
 namespace polynomial {
 
-template <typename Scalar, int kDim, int kDegree>
+template <typename Scalar, int kDimensions, int kDegree>
 class Raw;
 
 template <typename Scalar>
@@ -421,19 +421,19 @@ class Raw<Scalar, 3, 3> {
  * @brief A basis of the linear space formed by polynomials less than or equal to a given degree.
  * 
  * @tparam Scalar the data type of scalar components
- * @tparam kDim the dimension of the underlying physical space
+ * @tparam kDimensions the dimension of the underlying physical space
  * @tparam kDegree the degree of completeness
  */
-template <typename Scalar, int kDim, int kDegree>
+template <typename Scalar, int kDimensions, int kDegree>
 class Linear {
-  using RB = Raw<Scalar, kDim, kDegree>;
+  using RB = Raw<Scalar, kDimensions, kDegree>;
 
  public:
   static constexpr int N = RB::N;
   using Coord = typename RB::Coord;
   using MatNx1 = typename RB::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
-  using Gauss = std::conditional_t<kDim == 2,
+  using Gauss = std::conditional_t<kDimensions == 2,
       integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
 
  public:
@@ -475,10 +475,10 @@ class Linear {
   MatNxN coeff_;
 };
 
-template <typename Scalar, int kDim, int kDegree>
+template <typename Scalar, int kDimensions, int kDegree>
 class OrthoNormal {
-  using RB = Raw<Scalar, kDim, kDegree>;
-  using LB = Linear<Scalar, kDim, kDegree>;
+  using RB = Raw<Scalar, kDimensions, kDegree>;
+  using LB = Linear<Scalar, kDimensions, kDegree>;
 
  public:
   static constexpr int N = LB::N;
@@ -486,12 +486,12 @@ class OrthoNormal {
   using Gauss = typename LB::Gauss;
   using MatNx1 = typename LB::MatNx1;
   using MatNxN = typename LB::MatNxN;
-  using MatNxD = algebra::Matrix<Scalar, N, kDim>;
+  using MatNxD = algebra::Matrix<Scalar, N, kDimensions>;
 
  public:
   explicit OrthoNormal(const Gauss& gauss)
       : gauss_ptr_(&gauss), basis_(gauss.center()) {
-    assert(gauss.PhysDim() == kDim);
+    assert(gauss.PhysDim() == kDimensions);
     OrthoNormalize(&basis_, gauss);
   }
   OrthoNormal() = default;
@@ -528,7 +528,7 @@ class OrthoNormal {
 
  private:
   Gauss const* gauss_ptr_;
-  Linear<Scalar, kDim, kDegree> basis_;
+  Linear<Scalar, kDimensions, kDegree> basis_;
 };
 
 }  // namespace polynomial

@@ -7,15 +7,15 @@
 namespace mini {
 namespace geometry {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Vector;
 
-template <class Real, int kDim>
-auto CrossProduct(Vector<Real, kDim> const& lhs, Vector<Real, kDim> const& rhs);
+template <class Real, int kDimensions>
+auto CrossProduct(Vector<Real, kDimensions> const& lhs, Vector<Real, kDimensions> const& rhs);
 
-template <class Real, int kDim>
-class Vector : public Point<Real, kDim> {
-  using Base = Point<Real, kDim>;
+template <class Real, int kDimensions>
+class Vector : public Point<Real, kDimensions> {
+  using Base = Point<Real, kDimensions>;
 
  public:
   // Constructors:
@@ -23,14 +23,14 @@ class Vector : public Point<Real, kDim> {
   explicit Vector(Base const& that) : Base(that) {}
   // Operators:
   auto Cross(Vector const& that) const {
-    static_assert(kDim == 2 || kDim == 3);
+    static_assert(kDimensions == 2 || kDimensions == 3);
     return CrossProduct<Real>(*this, that);
   }
 };
-template <class Real, int kDim>
-Vector<Real, kDim> operator+(
-    Vector<Real, kDim> const& lhs,
-    Vector<Real, kDim> const& rhs) {
+template <class Real, int kDimensions>
+Vector<Real, kDimensions> operator+(
+    Vector<Real, kDimensions> const& lhs,
+    Vector<Real, kDimensions> const& rhs) {
   auto v = lhs;
   v += rhs;
   return v;
@@ -49,11 +49,11 @@ auto CrossProduct(Vector<Real, 2> const& lhs, Vector<Real, 2> const& rhs) {
 }
 
 // Point Methods
-template <class Real, int kDim>
-Vector<Real, kDim> operator-(
-    Point<Real, kDim> const& lhs,
-    Point<Real, kDim> const& rhs) {
-  auto v = Vector<Real, kDim>(lhs);
+template <class Real, int kDimensions>
+Vector<Real, kDimensions> operator-(
+    Point<Real, kDimensions> const& lhs,
+    Point<Real, kDimensions> const& rhs) {
+  auto v = Vector<Real, kDimensions>(lhs);
   v -= rhs;
   return v;
 }

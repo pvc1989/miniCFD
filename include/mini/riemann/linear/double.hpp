@@ -14,14 +14,14 @@ namespace linear {
 template <typename S, int D>
 class Double {
  public:
-  static constexpr int kDim = D;
+  static constexpr int kDimensions = D;
   static constexpr int kComponents = 2;
   using Scalar = S;
-  using Vector = algebra::Vector<Scalar, kDim>;
+  using Vector = algebra::Vector<Scalar, kDimensions>;
   using Column = algebra::Vector<Scalar, kComponents>;
   using Matrix = algebra::Matrix<Scalar, kComponents, kComponents>;
   using Jacobi = Matrix;
-  using Coefficient = algebra::Vector<Jacobi, kDim>;
+  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
   using Conservative = Column;
   using Flux = Column;
   // Constructor:

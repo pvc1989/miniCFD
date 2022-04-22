@@ -7,17 +7,17 @@
 namespace mini {
 namespace geometry {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Vector;
 
-template <class Real, int kDim>
-class Point : public algebra::Column<Real, kDim> {
+template <class Real, int kDimensions>
+class Point : public algebra::Column<Real, kDimensions> {
  protected:
-  using Base = algebra::Column<Real, kDim>;
+  using Base = algebra::Column<Real, kDimensions>;
   // Accessors:
   template <int I>
   Real X() const {
-    return I < kDim ? this->at(I) : 0;
+    return I < kDimensions ? this->at(I) : 0;
   }
 
  public:
@@ -26,9 +26,9 @@ class Point : public algebra::Column<Real, kDim> {
   Point(std::initializer_list<Real> init) {
     auto target = this->begin();
     auto source = init.begin();
-    auto n = kDim < init.size() ? kDim : init.size();
+    auto n = kDimensions < init.size() ? kDimensions : init.size();
     for (int i = 0; i != n; ++i) { *target++ = *source++; }
-    while (n++ != kDim) { *target++ = 0; }
+    while (n++ != kDimensions) { *target++ = 0; }
   }
   // Accessors:
   Real X() const { return X<0>(); }
@@ -36,10 +36,10 @@ class Point : public algebra::Column<Real, kDim> {
   Real Z() const { return X<2>(); }
 };
 // Binary operators:
-template <class Real, int kDim>
-Point<Real, kDim> operator+(
-    Point<Real, kDim> const& lhs,
-    Point<Real, kDim> const& rhs) {
+template <class Real, int kDimensions>
+Point<Real, kDimensions> operator+(
+    Point<Real, kDimensions> const& lhs,
+    Point<Real, kDimensions> const& rhs) {
   auto v = lhs;
   v += rhs;
   return v;

@@ -19,9 +19,9 @@ namespace integrator {
  * @tparam Scalar 
  * @tparam kQuad 
  */
-template <typename Scalar, int kDim, int kQuad>
-class Tri : public Face<Scalar, kDim> {
-  static constexpr int D = kDim;
+template <typename Scalar, int kDimensions, int kQuad>
+class Tri : public Face<Scalar, kDimensions> {
+  static constexpr int D = kDimensions;
   using Arr1x3 = algebra::Array<Scalar, 1, 3>;
   using Arr3x1 = algebra::Array<Scalar, 3, 1>;
   using Arr3x2 = algebra::Array<Scalar, 3, 2>;
@@ -167,23 +167,23 @@ class Tri : public Face<Scalar, kDim> {
   virtual ~Tri() noexcept = default;
 };
 
-template <typename Scalar, int kDim, int kQuad>
+template <typename Scalar, int kDimensions, int kQuad>
 class TriBuilder;
 
-template <typename Scalar, int kDim, int kQuad>
-const std::array<typename Tri<Scalar, kDim, kQuad>::LocalCoord, kQuad>
-Tri<Scalar, kDim, kQuad>::local_coords_
-    = TriBuilder<Scalar, kDim, kQuad>::BuildLocalCoords();
+template <typename Scalar, int kDimensions, int kQuad>
+const std::array<typename Tri<Scalar, kDimensions, kQuad>::LocalCoord, kQuad>
+Tri<Scalar, kDimensions, kQuad>::local_coords_
+    = TriBuilder<Scalar, kDimensions, kQuad>::BuildLocalCoords();
 
-template <typename Scalar, int kDim, int kQuad>
+template <typename Scalar, int kDimensions, int kQuad>
 const std::array<Scalar, kQuad>
-Tri<Scalar, kDim, kQuad>::local_weights_
-    = TriBuilder<Scalar, kDim, kQuad>::BuildLocalWeights();
+Tri<Scalar, kDimensions, kQuad>::local_weights_
+    = TriBuilder<Scalar, kDimensions, kQuad>::BuildLocalWeights();
 
-template <typename Scalar, int kDim>
-class TriBuilder<Scalar, kDim, 16> {
+template <typename Scalar, int kDimensions>
+class TriBuilder<Scalar, kDimensions, 16> {
   static constexpr int kQuad = 16;
-  using LocalCoord = typename Tri<Scalar, kDim, kQuad>::LocalCoord;
+  using LocalCoord = typename Tri<Scalar, kDimensions, kQuad>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {

@@ -13,18 +13,18 @@
 namespace mini {
 namespace element {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Triangle :
-    virtual public Surface<Real, kDim>,
-    public geometry::Triangle<Real, kDim> {
+    virtual public Surface<Real, kDimensions>,
+    public geometry::Triangle<Real, kDimensions> {
  public:
   // Types:
-  using IdType = typename Surface<Real, kDim>::IdType;
-  using PointType = typename Surface<Real, kDim>::PointType;
+  using IdType = typename Surface<Real, kDimensions>::IdType;
+  using PointType = typename Surface<Real, kDimensions>::PointType;
   // Constructors:
   Triangle(IdType i,
            const PointType& a, const PointType& b, const PointType& c)
-      : i_(i), geometry::Triangle<Real, kDim>(a, b, c) {}
+      : i_(i), geometry::Triangle<Real, kDimensions>(a, b, c) {}
   // Accessors:
   IdType I() const override { return i_; }
 

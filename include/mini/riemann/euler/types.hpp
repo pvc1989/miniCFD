@@ -12,14 +12,14 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class ScalarType, int kDim>
-class Tuple : public algebra::Vector<ScalarType, kDim+2> {
-  using Base = algebra::Vector<ScalarType, kDim+2>;
+template <class ScalarType, int kDimensions>
+class Tuple : public algebra::Vector<ScalarType, kDimensions+2> {
+  using Base = algebra::Vector<ScalarType, kDimensions+2>;
 
  public:
   // Types:
   using Scalar = ScalarType;
-  using Vector = algebra::Vector<Scalar, kDim>;
+  using Vector = algebra::Vector<Scalar, kDimensions>;
   // Constructors:
   using Base::Base;
   // Accessors and Mutators:
@@ -33,15 +33,15 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
     return (*this)[1];
   }
   Scalar momentumY() const {
-    assert(kDim >= 2);
+    assert(kDimensions >= 2);
     return (*this)[2];
   }
   Scalar momentumZ() const {
-    assert(kDim == 3);
+    assert(kDimensions == 3);
     return (*this)[3];
   }
   Scalar energy() const {
-    return (*this)[kDim+1];
+    return (*this)[kDimensions+1];
   }
   Scalar& mass() {
     return (*this)[0];
@@ -53,19 +53,19 @@ class Tuple : public algebra::Vector<ScalarType, kDim+2> {
     return (*this)[1];
   }
   Scalar& momentumY() {
-    assert(kDim >= 2);
+    assert(kDimensions >= 2);
     return (*this)[2];
   }
   Scalar& momentumZ() {
-    assert(kDim == 3);
+    assert(kDimensions == 3);
     return (*this)[3];
   }
   Scalar& energy() {
-    return (*this)[kDim+1];
+    return (*this)[kDimensions+1];
   }
 };
 
-template <class Scalar, int kDim>
+template <class Scalar, int kDimensions>
 class Converter;
 
 template <class Scalar>
@@ -108,23 +108,23 @@ class Converter<Scalar, 3> {
 };
 
 
-template <class ScalarType, int kDim>
-class FluxTuple : public Tuple<ScalarType, kDim> {
-  using Base = Tuple<ScalarType, kDim>;
+template <class ScalarType, int kDimensions>
+class FluxTuple : public Tuple<ScalarType, kDimensions> {
+  using Base = Tuple<ScalarType, kDimensions>;
   using Mat5x1 = algebra::Matrix<ScalarType, 5, 1>;
 
  public:
   // Types:
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
-  using FluxMatrix = algebra::Matrix<Scalar, 5, kDim>;
+  using FluxMatrix = algebra::Matrix<Scalar, 5, kDimensions>;
   // Constructors:
   using Base::Base;
 };
 
-template <class ScalarType, int kDim>
-class Primitives : public Tuple<ScalarType, kDim> {
-  using Base = Tuple<ScalarType, kDim>;
+template <class ScalarType, int kDimensions>
+class Primitives : public Tuple<ScalarType, kDimensions> {
+  using Base = Tuple<ScalarType, kDimensions>;
 
  public:
   // Types:
@@ -164,15 +164,15 @@ class Primitives : public Tuple<ScalarType, kDim> {
     return this->energy();
   }
   Scalar GetDynamicPressure() const {
-    auto e_k = u()*u() + (kDim < 2 ? 0 : v()*v() + (kDim < 3 ? 0 : w()*w()));
+    auto e_k = u()*u() + (kDimensions < 2 ? 0 : v()*v() + (kDimensions < 3 ? 0 : w()*w()));
     e_k *= 0.5;
     return rho() * e_k;
   }
 };
 
-template <class ScalarType, int kDim>
-struct Conservatives : public Tuple<ScalarType, kDim> {
-  using Base = Tuple<ScalarType, kDim>;
+template <class ScalarType, int kDimensions>
+struct Conservatives : public Tuple<ScalarType, kDimensions> {
+  using Base = Tuple<ScalarType, kDimensions>;
 
   // Types:
   using Scalar = typename Base::Scalar;
@@ -234,40 +234,40 @@ class IdealGas {
     return 2 / GammaMinusOne();
   }
   // Converters:
-  template <int kDim>
-  static double GetSpeedOfSound(Primitives<Scalar, kDim> const& state) {
+  template <int kDimensions>
+  static double GetSpeedOfSound(Primitives<Scalar, kDimensions> const& state) {
     // SetZeroIfNegative(state);
     return state.rho() <= 0 || state.p() <= 0 ?
         0 : std::sqrt(Gamma() * state.p() / state.rho());
   }
-  template <int kDim>
-  static Primitives<Scalar, kDim> ConservativeToPrimitive(
-      Conservatives<Scalar, kDim> const &conservative) {
-    auto primitive = Primitives<Scalar, kDim>(conservative);
+  template <int kDimensions>
+  static Primitives<Scalar, kDimensions> ConservativeToPrimitive(
+      Conservatives<Scalar, kDimensions> const &conservative) {
+    auto primitive = Primitives<Scalar, kDimensions>(conservative);
     SetZeroIfNegative(&primitive);
     if (primitive.rho()) {
-      Converter<Scalar, kDim>::MomentumToVelocity(primitive.rho(), &primitive);
+      Converter<Scalar, kDimensions>::MomentumToVelocity(primitive.rho(), &primitive);
       primitive.energy() -= primitive.GetDynamicPressure();
       primitive.energy() *= GammaMinusOne();
       SetZeroIfNegative(&primitive);
     }
     return primitive;
   }
-  template <int kDim>
-  static Conservatives<Scalar, kDim> PrimitiveToConservative(
-      Primitives<Scalar, kDim> const &primitive) {
-    auto conservative = Conservatives<Scalar, kDim>(primitive);
-    Converter<Scalar, kDim>::VelocityToMomentum(primitive.rho(), &conservative);
+  template <int kDimensions>
+  static Conservatives<Scalar, kDimensions> PrimitiveToConservative(
+      Primitives<Scalar, kDimensions> const &primitive) {
+    auto conservative = Conservatives<Scalar, kDimensions>(primitive);
+    Converter<Scalar, kDimensions>::VelocityToMomentum(primitive.rho(), &conservative);
     conservative.energy() *= OneOverGammaMinusOne();  // p / (gamma - 1)
     conservative.energy() += primitive.GetDynamicPressure();
     return conservative;
   }
-  template <int kDim>
-  static FluxTuple<Scalar, kDim> PrimitiveToFlux(
-      const Primitives<Scalar, kDim> &primitive) {
+  template <int kDimensions>
+  static FluxTuple<Scalar, kDimensions> PrimitiveToFlux(
+      const Primitives<Scalar, kDimensions> &primitive) {
     auto conservative = PrimitiveToConservative(primitive);
     conservative *= primitive.u();
-    auto flux_x = FluxTuple<Scalar, kDim>(conservative);
+    auto flux_x = FluxTuple<Scalar, kDimensions>(conservative);
     flux_x.momentumX() += primitive.p();
     flux_x.energy() += primitive.p() * primitive.u();
     return flux_x;

@@ -13,14 +13,14 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class GasType, int kDim>
+template <class GasType, int kDimensions>
 class Ausm;
 
 template <class GasType>
 class Ausm<GasType, 1> {
  public:
   constexpr static int kComponents = 3;
-  constexpr static int kDim = 1;
+  constexpr static int kDimensions = 1;
   // Types:
   using Gas = GasType;
   using Scalar = typename Gas::Scalar;
@@ -85,7 +85,7 @@ template <class GasType>
 class Ausm<GasType, 2> {
  public:
   constexpr static int kComponents = 4;
-  constexpr static int kDim = 2;
+  constexpr static int kDimensions = 2;
   // Types:
   using Gas = GasType;
   using Scalar = typename Gas::Scalar;
@@ -153,7 +153,7 @@ template <class GasType>
 class Ausm<GasType, 3> {
  public:
   constexpr static int kComponents = 5;
-  constexpr static int kDim = 3;
+  constexpr static int kDimensions = 3;
   // Types:
   using Gas = GasType;
   using Scalar = typename Gas::Scalar;

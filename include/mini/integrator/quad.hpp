@@ -20,9 +20,9 @@ namespace integrator {
  * @tparam Qx 
  * @tparam Qy 
  */
-template <typename Scalar = double, int kDim = 2, int Qx = 4, int Qy = 4>
-class Quad : public Face<Scalar, kDim> {
-  static constexpr int D = kDim;
+template <typename Scalar = double, int kDimensions = 2, int Qx = 4, int Qy = 4>
+class Quad : public Face<Scalar, kDimensions> {
+  static constexpr int D = kDimensions;
 
   using Arr1x4 = algebra::Array<Scalar, 1, 4>;
   using Arr4x1 = algebra::Array<Scalar, 4, 1>;

@@ -92,8 +92,8 @@ struct Face {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDim = Riemann::kDim;
-  using Gauss = integrator::Face<Scalar, kDim>;
+  constexpr static int kDimensions = Riemann::kDimensions;
+  using Gauss = integrator::Face<Scalar, kDimensions>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Cell = cgns::Cell<Int, kDegree, Riemann>;
 
@@ -133,11 +133,11 @@ struct Cell {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDim = Riemann::kDim;
+  constexpr static int kDimensions = Riemann::kDimensions;
   using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Basis = polynomial::OrthoNormal<Scalar, kDim, kDegree>;
-  using Projection = polynomial::Projection<Scalar, kDim, kDegree, kComponents>;
+  using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegree>;
+  using Projection = polynomial::Projection<Scalar, kDimensions, kDegree, kComponents>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
@@ -587,7 +587,7 @@ class Part {
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDim = Riemann::kDim;
+  constexpr static int kDimensions = Riemann::kDimensions;
   constexpr static int kAccuracyOrder = kDegree + 1;
 
  private:
@@ -799,21 +799,21 @@ class Part {
     return gauss_uptr;
   }
   auto BuildTriUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Tri<Scalar, kDim, 16>>(
+    auto quad_uptr = std::make_unique<integrator::Tri<Scalar, kDimensions, 16>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
     quad_uptr->BuildNormalFrames();
     return quad_uptr;
   }
   auto BuildQuadUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Quad<Scalar, kDim, 4, 4>>(
+    auto quad_uptr = std::make_unique<integrator::Quad<Scalar, kDimensions, 4, 4>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
     quad_uptr->BuildNormalFrames();
     return quad_uptr;
   }
   auto BuildGaussForFace(int npe, int i_zone, const Int *i_node_list) const {
-    std::unique_ptr<integrator::Face<Scalar, kDim>> gauss_uptr;
+    std::unique_ptr<integrator::Face<Scalar, kDimensions>> gauss_uptr;
     switch (npe) {
       case 3:
         gauss_uptr = BuildTriUptr(i_zone, i_node_list); break;

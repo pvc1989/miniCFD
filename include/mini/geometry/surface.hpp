@@ -7,11 +7,11 @@
 namespace mini {
 namespace geometry {
 
-template <class Real, int kDim>
+template <class Real, int kDimensions>
 class Surface {
  public:
   // Types:
-  using PointType = Point<Real, kDim>;
+  using PointType = Point<Real, kDimensions>;
   // Accessors:
   virtual int CountVertices() const = 0;
   virtual const PointType& GetPoint(int i) const = 0;

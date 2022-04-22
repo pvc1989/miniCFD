@@ -11,17 +11,17 @@
 namespace mini {
 namespace element {
 
-template <class Real, int kDim>
-class Point : public geometry::Point<Real, kDim> {
+template <class Real, int kDimensions>
+class Point : public geometry::Point<Real, kDimensions> {
  public:
   // Types:
   using IdType = std::size_t;
   // Constructors:
   template<class... XYZ>
   explicit Point(IdType i, XYZ&&... xyz)
-      : i_(i), geometry::Point<Real, kDim>{std::forward<XYZ>(xyz)...} {}
+      : i_(i), geometry::Point<Real, kDimensions>{std::forward<XYZ>(xyz)...} {}
   Point(IdType i, std::initializer_list<Real> xyz)
-      : i_(i), geometry::Point<Real, kDim>(xyz) {}
+      : i_(i), geometry::Point<Real, kDimensions>(xyz) {}
   // Accessors:
   IdType I() const { return i_; }
 

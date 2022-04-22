@@ -13,7 +13,7 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <typename Scalar = double, int kDim = 3>
+template <typename Scalar = double, int kDimensions = 3>
 class Cartesian;
 
 template <typename Scalar>
@@ -109,7 +109,7 @@ class Euler {
 
  public:
   constexpr static int kComponents = Base::kComponents;
-  constexpr static int kDim = Base::kDim;
+  constexpr static int kDimensions = Base::kDimensions;
   using Gas = typename Base::Gas;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
@@ -173,7 +173,7 @@ class Euler {
   using EigenMatrices = riemann::euler::EigenMatrices<Gas>;
   EigenMatrices eigen_matrices_;
   UnrotatedEuler unrotated_euler_;
-  Cartesian<Scalar, kDim> cartesian_;
+  Cartesian<Scalar, kDimensions> cartesian_;
 
  public:
   using Matrix = typename EigenMatrices::Mat5x5;

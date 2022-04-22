@@ -15,7 +15,7 @@ class Multiple : public Simple<linear::Multiple<S, K, D>> {
 
  public:
   constexpr static int kComponents = K;
-  constexpr static int kDim = D;
+  constexpr static int kDimensions = D;
   using Scalar = S;
   using Jacobi = typename Base::Jacobi;
   using Conservative = typename Base::Conservative;

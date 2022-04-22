@@ -13,11 +13,11 @@
 #include "mini/stepper/explicit.hpp"
 
 /* Define the Euler system. */
-constexpr int kDim = 3;
-using Primitive = mini::riemann::euler::Primitives<double, kDim>;
-using Conservative = mini::riemann::euler::Conservatives<double, kDim>;
+constexpr int kDimensions = 3;
+using Primitive = mini::riemann::euler::Primitives<double, kDimensions>;
+using Conservative = mini::riemann::euler::Conservatives<double, kDimensions>;
 using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-using Unrotated = mini::riemann::euler::Exact<Gas, kDim>;
+using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
 constexpr int kDegree = 2;
