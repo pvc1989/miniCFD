@@ -60,12 +60,12 @@ auto given_state = [](const Coord& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetPrescribedBC("3_S_1", given_state);
-  solver->SetFreeOutletBC("3_S_2");
-  solver->SetSolidWallBC("3_S_3");
-  solver->SetSolidWallBC("3_S_4");
-  solver->SetSolidWallBC("3_S_5");
-  solver->SetSolidWallBC("3_S_6");
+  solver->SetSubsonicInlet("3_S_1", given_state);
+  solver->SetSubsonicOutlet("3_S_2", given_state);
+  solver->SetSubsonicOutlet("3_S_3", given_state);
+  solver->SetSubsonicOutlet("3_S_4", given_state);
+  solver->SetSubsonicOutlet("3_S_5", given_state);
+  solver->SetSubsonicOutlet("3_S_6", given_state);
 }
 
 int Main(int argc, char* argv[], IC ic, BC bc) {
