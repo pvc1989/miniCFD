@@ -161,6 +161,42 @@ class Euler {
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
+  Flux GetFluxOnSubsonicInlet(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    auto primitive_i = Gas::ConservativeToPrimitive(conservative_i);
+    auto primitive_o = Gas::ConservativeToPrimitive(conservative_o);
+    Primitive primitive_b = primitive_o;
+    Scalar u_nu_o = primitive_o.momentum().dot(cartesian_.nu());
+    Scalar u_nu_i = primitive_i.momentum().dot(cartesian_.nu());
+    Scalar u_nu_jump = u_nu_o - u_nu_i;
+    Scalar a_i = Gas::GetSpeedOfSound(primitive_i);
+    Scalar rho_a_i = primitive_i.rho() * (u_nu_o > 0 ? a_i : -a_i);
+    primitive_b.p() = 0.5 * (primitive_i.p() + primitive_o.p() + rho_a_i * u_nu_jump);
+    Scalar p_jump = primitive_o.p() - primitive_b.p();
+    primitive_b.rho() -= p_jump / (a_i * a_i);
+    primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
+    GlobalToNormal(&(primitive_b.momentum()));
+    auto flux = unrotated_euler_.GetFlux(primitive_b);
+    NormalToGlobal(&(flux.momentum()));
+    return flux;
+  }
+  Flux GetFluxOnSubsonicOutlet(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    auto primitive_i = Gas::ConservativeToPrimitive(conservative_i);
+    auto primitive_o = Gas::ConservativeToPrimitive(conservative_o);
+    Primitive primitive_b = primitive_i;
+    primitive_b.p() = primitive_o.p();
+    Scalar p_jump = primitive_i.p() - primitive_b.p();
+    Scalar a_i = Gas::GetSpeedOfSound(primitive_i);
+    primitive_b.rho() -= p_jump / (a_i * a_i);
+    Scalar u_nu_i = primitive_i.momentum().dot(cartesian_.nu());
+    Scalar rho_a_i = primitive_i.rho() * (u_nu_i > 0 ? a_i : -a_i);
+    primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
+    GlobalToNormal(&(primitive_b.momentum()));
+    auto flux = unrotated_euler_.GetFlux(primitive_b);
+    NormalToGlobal(&(flux.momentum()));
+    return flux;
+  }
   void GlobalToNormal(Vector* v) const {
     cartesian_.GlobalToNormal(v);
   }
