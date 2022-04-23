@@ -41,7 +41,7 @@ class RungeKuttaBase {
   std::vector<Coeff> residual_;
   std::vector<std::string> free_bc_, solid_bc_;
   using Function = std::function<Value(const Coord&, double)>;
-  std::unordered_map<std::string, Function> prescribed_bc_;
+  std::unordered_map<std::string, Function> prescribed_bc_, subsonic_inlet_, subsonic_outlet_;
   Limiter limiter_;
   Source source_;
   double dt_, t_curr_;
@@ -62,6 +62,14 @@ class RungeKuttaBase {
   template <typename Callable>
   void SetPrescribedBC(const std::string &name, Callable&& func) {
     prescribed_bc_[name] = func;
+  }
+  template <typename Callable>
+  void SetSubsonicInlet(const std::string &name, Callable&& func) {
+    subsonic_inlet_[name] = func;
+  }
+  template <typename Callable>
+  void SetSubsonicOutlet(const std::string &name, Callable&& func) {
+    subsonic_outlet_[name] = func;
   }
   void SetSolidWallBC(const std::string &name) {
     solid_bc_.emplace_back(name);
@@ -210,10 +218,54 @@ class RungeKuttaBase {
       part.ForEachConstBoundaryFace(visit, iter->first);
     }
   }
+  void ApplySubsonicInlet(const Part &part) {
+    for (auto iter = subsonic_inlet_.begin(); iter != subsonic_inlet_.end();
+        ++iter) {
+      auto visit = [this, iter](const Face &face){
+        const auto& gauss = *(face.gauss_ptr_);
+        assert(face.sharer_ == nullptr);
+        const auto& holder = *(face.holder_);
+        auto& riemann = const_cast<Riemann &>(face.riemann_);
+        for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+          const auto& coord = gauss.GetGlobalCoord(q);
+          Value u_inner = holder.projection_(coord);
+          Value u_given = iter->second(coord, this->t_curr_);
+          Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
+          flux *= gauss.GetGlobalWeight(q);
+          this->residual_.at(holder.id())
+              -= flux * holder.basis_(coord).transpose();
+        }
+      };
+      part.ForEachConstBoundaryFace(visit, iter->first);
+    }
+  }
+  void ApplySubsonicOutlet(const Part &part) {
+    for (auto iter = subsonic_outlet_.begin(); iter != subsonic_outlet_.end();
+        ++iter) {
+      auto visit = [this, iter](const Face &face){
+        const auto& gauss = *(face.gauss_ptr_);
+        assert(face.sharer_ == nullptr);
+        const auto& holder = *(face.holder_);
+        auto& riemann = const_cast<Riemann &>(face.riemann_);
+        for (int q = 0; q < gauss.CountQuadPoints(); ++q) {
+          const auto& coord = gauss.GetGlobalCoord(q);
+          Value u_inner = holder.projection_(coord);
+          Value u_given = iter->second(coord, this->t_curr_);
+          Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
+          flux *= gauss.GetGlobalWeight(q);
+          this->residual_.at(holder.id())
+              -= flux * holder.basis_(coord).transpose();
+        }
+      };
+      part.ForEachConstBoundaryFace(visit, iter->first);
+    }
+  }
   void UpdateBoundaryResidual(const Part &part) {
     ApplySolidWallBC(part);
     ApplyFreeOutletBC(part);
     ApplyPrescribedBC(part);
+    ApplySubsonicInlet(part);
+    ApplySubsonicOutlet(part);
   }
 };
 

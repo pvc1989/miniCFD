@@ -74,6 +74,14 @@ class Simple {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
+  Flux GetFluxOnSubsonicInlet(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    return {};
+  }
+  Flux GetFluxOnSubsonicOutlet(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    return {};
+  }
   static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
