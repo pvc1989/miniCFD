@@ -39,9 +39,10 @@ class RungeKuttaBase {
 
  protected:
   std::vector<Coeff> residual_;
-  std::vector<std::string> free_bc_, solid_bc_;
+  std::vector<std::string> supersonic_outlet_, solid_bc_;
   using Function = std::function<Value(const Coord&, double)>;
-  std::unordered_map<std::string, Function> prescribed_bc_, subsonic_inlet_, subsonic_outlet_;
+  std::unordered_map<std::string, Function> supersonic_inlet__,
+      subsonic_inlet_, subsonic_outlet_;
   Limiter limiter_;
   Source source_;
   double dt_, t_curr_;
@@ -60,8 +61,8 @@ class RungeKuttaBase {
 
  public:  // set BCs
   template <typename Callable>
-  void SetPrescribedBC(const std::string &name, Callable&& func) {
-    prescribed_bc_[name] = func;
+  void SetSupersonicInlet(const std::string &name, Callable&& func) {
+    supersonic_inlet__[name] = func;
   }
   template <typename Callable>
   void SetSubsonicInlet(const std::string &name, Callable&& func) {
@@ -74,8 +75,8 @@ class RungeKuttaBase {
   void SetSolidWallBC(const std::string &name) {
     solid_bc_.emplace_back(name);
   }
-  void SetFreeOutletBC(const std::string &name) {
-    free_bc_.emplace_back(name);
+  void SetSupersonicOutlet(const std::string &name) {
+    supersonic_outlet_.emplace_back(name);
   }
 
  public:
@@ -179,7 +180,7 @@ class RungeKuttaBase {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
-  void ApplyFreeOutletBC(const Part &part) {
+  void ApplySupersonicOutlet(const Part &part) {
     auto visit = [this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
@@ -194,12 +195,12 @@ class RungeKuttaBase {
             -= flux * holder.basis_(coord).transpose();
       }
     };
-    for (const auto& name : free_bc_) {
+    for (const auto& name : supersonic_outlet_) {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
-  void ApplyPrescribedBC(const Part &part) {
-    for (auto iter = prescribed_bc_.begin(); iter != prescribed_bc_.end();
+  void ApplySupersonicInlet(const Part &part) {
+    for (auto iter = supersonic_inlet__.begin(); iter != supersonic_inlet__.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
         const auto& gauss = *(face.gauss_ptr_);
@@ -262,8 +263,8 @@ class RungeKuttaBase {
   }
   void UpdateBoundaryResidual(const Part &part) {
     ApplySolidWallBC(part);
-    ApplyFreeOutletBC(part);
-    ApplyPrescribedBC(part);
+    ApplySupersonicInlet(part);
+    ApplySupersonicOutlet(part);
     ApplySubsonicInlet(part);
     ApplySubsonicOutlet(part);
   }

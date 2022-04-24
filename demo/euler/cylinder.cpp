@@ -19,8 +19,8 @@ void MyBC(const std::string &suffix, Solver *solver) {
   solver->SetSubsonicInlet("3_S_5", given_state);
   solver->SetSubsonicOutlet("3_S_3", given_state);
   solver->SetSubsonicOutlet("3_S_6", given_state);
-  // solver->SetFreeOutletBC("3_S_3");
-  // solver->SetFreeOutletBC("3_S_6");
+  // solver->SetSupersonicOutlet("3_S_3");
+  // solver->SetSupersonicOutlet("3_S_6");
   solver->SetSolidWallBC("3_S_2");
   solver->SetSolidWallBC("3_S_4");
   solver->SetSolidWallBC("3_S_7");

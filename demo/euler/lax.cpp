@@ -18,8 +18,8 @@ auto state_right = [](const Coord& xyz, double t) { return value_right; };
 
 void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {
-    solver->SetPrescribedBC("3_S_31", state_left);  // Left
-    solver->SetPrescribedBC("3_S_23", state_right);  // Right
+    solver->SetSupersonicInlet("3_S_31", state_left);  // Left
+    solver->SetSupersonicInlet("3_S_23", state_right);  // Right
     solver->SetSolidWallBC("3_S_27");  // Top
     solver->SetSolidWallBC("3_S_1");   // Back
     solver->SetSolidWallBC("3_S_32");  // Front
@@ -27,8 +27,8 @@ void MyBC(const std::string &suffix, Solver *solver) {
     solver->SetSolidWallBC("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    solver->SetPrescribedBC("4_S_31", state_left);  // Left
-    solver->SetPrescribedBC("4_S_23", state_right);  // Right
+    solver->SetSupersonicInlet("4_S_31", state_left);  // Left
+    solver->SetSupersonicInlet("4_S_23", state_right);  // Right
     solver->SetSolidWallBC("4_S_27");  // Top
     solver->SetSolidWallBC("4_S_1");   // Back
     solver->SetSolidWallBC("4_S_32");  // Front

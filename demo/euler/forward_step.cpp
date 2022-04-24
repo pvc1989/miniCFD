@@ -14,8 +14,8 @@ auto given_state = [](const Coord& xyz, double t){ return given_value; };
 
 void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {
-    solver->SetPrescribedBC("3_S_53", given_state);  // Left-Upper
-    solver->SetPrescribedBC("3_S_31", given_state);  // Left-Lower
+    solver->SetSupersonicInlet("3_S_53", given_state);  // Left-Upper
+    solver->SetSupersonicInlet("3_S_31", given_state);  // Left-Lower
     solver->SetSolidWallBC("3_S_49"); solver->SetSolidWallBC("3_S_71");  // Top
     solver->SetSolidWallBC("3_S_1"); solver->SetSolidWallBC("3_S_2");
     solver->SetSolidWallBC("3_S_3");  // Back
@@ -23,11 +23,11 @@ void MyBC(const std::string &suffix, Solver *solver) {
     solver->SetSolidWallBC("3_S_32");  // Front
     solver->SetSolidWallBC("3_S_19"); solver->SetSolidWallBC("3_S_23");
     solver->SetSolidWallBC("3_S_63");  // Step
-    solver->SetFreeOutletBC("3_S_67");  // Right
+    solver->SetSupersonicOutlet("3_S_67");  // Right
   } else {
     assert(suffix == "hexa");
-    solver->SetPrescribedBC("4_S_53", given_state);  // Left-Upper
-    solver->SetPrescribedBC("4_S_31", given_state);  // Left-Lower
+    solver->SetSupersonicInlet("4_S_53", given_state);  // Left-Upper
+    solver->SetSupersonicInlet("4_S_31", given_state);  // Left-Lower
     solver->SetSolidWallBC("4_S_49"); solver->SetSolidWallBC("4_S_71");  // Top
     solver->SetSolidWallBC("4_S_1"); solver->SetSolidWallBC("4_S_2");
     solver->SetSolidWallBC("4_S_3");  // Back
@@ -35,7 +35,7 @@ void MyBC(const std::string &suffix, Solver *solver) {
     solver->SetSolidWallBC("4_S_32");  // Front
     solver->SetSolidWallBC("4_S_19"); solver->SetSolidWallBC("4_S_23");
     solver->SetSolidWallBC("4_S_63");  // Step
-    solver->SetFreeOutletBC("4_S_67");  // Right
+    solver->SetSupersonicOutlet("4_S_67");  // Right
   }
 }
 

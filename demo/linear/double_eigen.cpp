@@ -161,8 +161,8 @@ int main(int argc, char* argv[]) {
     return value_left;
   };
   if (suffix == "tetra") {
-    rk.SetPrescribedBC("3_S_31", state_left);   // Left
-    rk.SetPrescribedBC("3_S_23", state_right);  // Right
+    rk.SetSupersonicInlet("3_S_31", state_left);   // Left
+    rk.SetSupersonicInlet("3_S_23", state_right);  // Right
     rk.SetSolidWallBC("3_S_27");  // Top
     rk.SetSolidWallBC("3_S_1");   // Back
     rk.SetSolidWallBC("3_S_32");  // Front
@@ -170,8 +170,8 @@ int main(int argc, char* argv[]) {
     rk.SetSolidWallBC("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    rk.SetPrescribedBC("4_S_31", state_left);   // Left
-    rk.SetPrescribedBC("4_S_23", state_right);  // Right
+    rk.SetSupersonicInlet("4_S_31", state_left);   // Left
+    rk.SetSupersonicInlet("4_S_23", state_right);  // Right
     rk.SetSolidWallBC("4_S_27");  // Top
     rk.SetSolidWallBC("4_S_1");   // Back
     rk.SetSolidWallBC("4_S_32");  // Front

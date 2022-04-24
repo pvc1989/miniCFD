@@ -15,8 +15,8 @@ auto given_state = [](const Coord& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetPrescribedBC("upstream", given_state);
-  solver->SetFreeOutletBC("downstream");
+  solver->SetSupersonicInlet("upstream", given_state);
+  solver->SetSupersonicOutlet("downstream");
   solver->SetSolidWallBC("intake");
   solver->SetSolidWallBC("exhaust");
   solver->SetSolidWallBC("intake ramp");

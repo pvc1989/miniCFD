@@ -32,22 +32,22 @@ auto moving_shock = [](const Coord& xyz, double t){
 
 void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {
-    solver->SetPrescribedBC("3_S_27", moving_shock);  // Top
-    solver->SetPrescribedBC("3_S_31", moving_shock);  // Left
+    solver->SetSupersonicInlet("3_S_27", moving_shock);  // Top
+    solver->SetSupersonicInlet("3_S_31", moving_shock);  // Left
     solver->SetSolidWallBC("3_S_1");   // Back
     solver->SetSolidWallBC("3_S_32");  // Front
     solver->SetSolidWallBC("3_S_19");  // Bottom
-    solver->SetFreeOutletBC("3_S_23");  // Right
-    solver->SetFreeOutletBC("3_S_15");  // Gap
+    solver->SetSupersonicOutlet("3_S_23");  // Right
+    solver->SetSupersonicOutlet("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    solver->SetPrescribedBC("4_S_27", moving_shock);  // Top
-    solver->SetPrescribedBC("4_S_31", moving_shock);  // Left
+    solver->SetSupersonicInlet("4_S_27", moving_shock);  // Top
+    solver->SetSupersonicInlet("4_S_31", moving_shock);  // Left
     solver->SetSolidWallBC("4_S_1");   // Back
     solver->SetSolidWallBC("4_S_32");  // Front
     solver->SetSolidWallBC("4_S_19");  // Bottom
-    solver->SetFreeOutletBC("4_S_23");  // Right
-    solver->SetFreeOutletBC("4_S_15");  // Gap
+    solver->SetSupersonicOutlet("4_S_23");  // Right
+    solver->SetSupersonicOutlet("4_S_15");  // Gap
   }
 }
 
