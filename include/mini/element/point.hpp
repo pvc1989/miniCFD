@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2019 PEI Weicheng and YANG Minghao
 #ifndef MINI_ELEMENT_POINT_HPP_
 #define MINI_ELEMENT_POINT_HPP_
 

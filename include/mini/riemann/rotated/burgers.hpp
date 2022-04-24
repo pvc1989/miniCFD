@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2019 PEI Weicheng and YANG Minghao
 #ifndef MINI_RIEMANN_ROTATED_BURGERS_HPP_
 #define MINI_RIEMANN_ROTATED_BURGERS_HPP_
 

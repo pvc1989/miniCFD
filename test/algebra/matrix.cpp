@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2019 PEI Weicheng and YANG Minghao
 
 #include "mini/algebra/matrix.hpp"
 #include "mini/algebra/column.hpp"

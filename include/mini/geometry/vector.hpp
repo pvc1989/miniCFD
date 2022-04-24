@@ -1,4 +1,4 @@
-// Copyright 2019 Weicheng Pei and Minghao Yang
+// Copyright 2019 PEI Weicheng and YANG Minghao
 #ifndef MINI_GEOMETRY_VECTOR_HPP_
 #define MINI_GEOMETRY_VECTOR_HPP_
 

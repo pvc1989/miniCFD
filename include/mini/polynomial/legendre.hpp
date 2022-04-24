@@ -1,4 +1,4 @@
-//  Copyright 2019 Weicheng Pei and Minghao Yang
+//  Copyright 2019 PEI Weicheng and YANG Minghao
 
 #ifndef MINI_POLYNOMIAL_LEGENDRE_HPP_
 #define MINI_POLYNOMIAL_LEGENDRE_HPP_

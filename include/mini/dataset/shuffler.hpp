@@ -1,4 +1,4 @@
-// Copyright 2020 Weicheng Pei and Minghao Yang
+// Copyright 2020 PEI Weicheng and YANG Minghao
 
 #ifndef MINI_DATASET_SHUFFLER_HPP_
 #define MINI_DATASET_SHUFFLER_HPP_
