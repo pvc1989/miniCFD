@@ -57,20 +57,21 @@ class Simple {
     const auto& nu = frame.col(0);
     Rotate(nu[x], nu[y], nu[z]);
   }
-  Flux GetFluxOnTimeAxis(const Conservative& left, const Conservative& right) {
+  Flux GetFluxOnTimeAxis(const Conservative& left,
+      const Conservative& right) const {
     auto raw_flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
     return ConvertToFlux(raw_flux);
   }
-  Flux GetFluxOnSolidWall(const Conservative& state) {
+  Flux GetFluxOnSolidWall(const Conservative& state) const {
     Flux flux;
     flux.setZero();
     return flux;
   }
-  Flux GetFluxOnFreeWall(const Conservative& state) {
+  Flux GetFluxOnFreeWall(const Conservative& state) const {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
-  Flux GetRotatedFlux(const Conservative& state) {
+  Flux GetRotatedFlux(const Conservative& state) const {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
