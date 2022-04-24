@@ -25,6 +25,7 @@ set (cases
   forward_step
   # three-dimensional problems:
   yf17
+  cylinder
 )
 foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
