@@ -153,8 +153,8 @@ void Shuffler<Int, Real>::FillFaceParts(
   auto& c_to_m_cells = mapper.cgns_to_metis_for_cells;
   auto& base = mesh.GetBase(1);
   auto n_zones = base.CountZones();
-  // For each node, find its users' part and append to the node's vector:
-  auto node_user_parts = std::vector<std::vector<Int>>(node_parts_.size());
+  // For each node, find its user cells and append them to its vector:
+  auto node_user_cells = std::vector<std::vector<Int>>(node_parts_.size());
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
     auto& zone = base.GetZone(i_zone);
     auto& i_node_to_m_node = c_to_m_nodes.at(i_zone);
@@ -172,11 +172,10 @@ void Shuffler<Int, Real>::FillFaceParts(
         auto* tail = head + n_cells * npe;
         for (int i_cell = i_cell_min; i_cell <= i_cell_max; ++i_cell) {
           auto m_cell = i_cell_to_m_cell.at(i_cell);
-          auto cell_part = cell_parts_.at(m_cell);
           for (int k = 0; k < npe; ++k) {
             assert(curr + k < tail);
             auto m_node = i_node_to_m_node.at(curr[k]);
-            node_user_parts[m_node].emplace_back(cell_part);
+            node_user_cells[m_node].emplace_back(m_cell);
           }
           curr += npe;
         }
@@ -184,12 +183,7 @@ void Shuffler<Int, Real>::FillFaceParts(
       }
     }
   }
-  for (auto& user_parts : node_user_parts) {
-    std::sort(user_parts.begin(), user_parts.end());
-    auto last = std::unique(user_parts.begin(), user_parts.end());
-    user_parts.erase(last, user_parts.end());
-  }
-  // For each face, determine its part by its nodes:
+  // For each face, determine its part by its user cells:
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
     auto& zone = base.GetZone(i_zone);
     auto& i_node_to_m_node = c_to_m_nodes.at(i_zone);
@@ -206,29 +200,32 @@ void Shuffler<Int, Real>::FillFaceParts(
         auto* head = sect.GetNodeIdList();
         auto* curr = head;
         auto* tail = head + n_faces * npe;
-        // For each face, count the parts using its nodes:
+        // For each face, count the user cells:
         for (int i_face = i_face_min; i_face <= i_face_max; ++i_face) {
-          auto face_part_cnts = std::unordered_map<Int, Int>();
+          auto face_user_cell_cnts = std::unordered_map<Int, Int>();
           for (int k = 0; k < npe; ++k) {
             assert(curr + k < tail);
             auto i_node = curr[k];
             auto m_node = i_node_to_m_node.at(i_node);
-            for (Int part : node_user_parts[m_node]) {
-              face_part_cnts[part]++;
+            for (Int m_cell : node_user_cells[m_node]) {
+              face_user_cell_cnts[m_cell]++;
             }
           }
-          std::vector<int> npe_parts;
-          for (auto [part, cnt] : face_part_cnts) {
+          std::vector<int> npe_cells;
+          // Find the cell that uses this face npe times:
+          for (auto [m_cell, cnt] : face_user_cell_cnts) {
             assert(cnt <= npe);
             if (cnt == npe) {
-              i_face_to_part.at(i_face) = part;
-              npe_parts.emplace_back(part);
+              i_face_to_part.at(i_face) = cell_parts_.at(m_cell);
+              npe_cells.emplace_back(m_cell);
             }
           }
-          if (npe_parts.size() > 1) {
-            for (auto p : npe_parts)
-              std::printf("face[%d] is owned by part[%d] for %d times.\n",
-                  int(i_face), int(p), int(npe));
+          // There should be one and only one such user:
+          assert(npe_cells.size() == 1);
+          if (npe_cells.size() > 1) {
+            for (auto m_cell : npe_cells)
+              std::printf("face[%d] is owned by cell[%d] for %d times.\n",
+                  int(i_face), int(m_cell), int(npe));
           }
           curr += npe;
         }
