@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <set>
@@ -205,6 +206,7 @@ void Shuffler<Int, Real>::FillFaceParts(
         auto* head = sect.GetNodeIdList();
         auto* curr = head;
         auto* tail = head + n_faces * npe;
+        // For each face, count the parts using its nodes:
         for (int i_face = i_face_min; i_face <= i_face_max; ++i_face) {
           auto face_part_cnts = std::unordered_map<Int, Int>();
           for (int k = 0; k < npe; ++k) {
@@ -215,12 +217,18 @@ void Shuffler<Int, Real>::FillFaceParts(
               face_part_cnts[part]++;
             }
           }
+          std::vector<int> npe_parts;
           for (auto [part, cnt] : face_part_cnts) {
             assert(cnt <= npe);
             if (cnt == npe) {
               i_face_to_part.at(i_face) = part;
-              break;
+              npe_parts.emplace_back(part);
             }
+          }
+          if (npe_parts.size() > 1) {
+            for (auto p : npe_parts)
+              std::printf("face[%d] is owned by part[%d] for %d times.\n",
+                  int(i_face), int(p), int(npe));
           }
           curr += npe;
         }
