@@ -2,23 +2,26 @@
 #include "main.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.4, 2.0, 0.0, 0.0, 1.0);
-Value given_value = Gas::PrimitiveToConservative(primitive);
-
+Value upstream_value = Gas::PrimitiveToConservative(
+    Primitive(1.4, 2.0, 0.0, 0.0, 1.0));
 Value MyIC(const Coord &xyz) {
-  return given_value;
+  return upstream_value;
 }
 
 /* Set boundary conditions. */
-auto given_state = [](const Coord& xyz, double t){
-  return given_value;
+Value exhaust_value = Gas::PrimitiveToConservative(
+    Primitive(1.4, 3.6, 0.0, 0.0, 1.44));
+auto exhaust = [](const Coord& xyz, double t){
+  return exhaust_value;
 };
-
+auto upstream = [](const Coord& xyz, double t){
+  return upstream_value;
+};
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSupersonicInlet("upstream", given_state);
+  solver->SetSupersonicInlet("upstream", upstream);
+  solver->SetSupersonicInlet("exhaust", exhaust);
   solver->SetSupersonicOutlet("downstream");
-  solver->SetSolidWallBC("intake");
-  solver->SetSolidWallBC("exhaust");
+  solver->SetSupersonicOutlet("intake");
   solver->SetSolidWallBC("intake ramp");
   solver->SetSolidWallBC("lower");
   solver->SetSolidWallBC("upper");
