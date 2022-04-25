@@ -19,15 +19,15 @@ cmake -S ../repo -B . -G Ninja -D CMAKE_BUILD_TYPE=Release -D BUILD_TESTING=OFF 
 cmake --build .
 cpack -C Release CPackConfig.cmake
 cd ../install
-../build/HDF5-1.13.1.1-Linux.sh
+../build/HDF5-*-Linux.sh
 ```
 
 After accepting the license, the script will prompt:
 
 ```shell
 By default the HDF5 will be installed in:
-  "<current directory>/HDF5-1.13.X-Linux"
-Do you want to include the subdirectory HDF5-1.13.X-Linux?
+  "<current directory>/HDF5-1.13.2.1-Linux"
+Do you want to include the subdirectory HDF5-1.13.2.1-Linux?
 Saying no will install in: "<current directory>" [Yn]:
 ```
 
@@ -37,15 +37,15 @@ Type `n` will get the following directory structure relative to `<current direct
 install
 └── HDF_Group
     └── HDF5
-        └── 1.13.X
+        └── 1.13.2.1
             ├── bin
+            ├── cmake
             ├── include
             ├── lib
             └── share
-                └── cmake
 ```
 
-Set `MY_HDF5_DIR` to the `share/cmake` directory, which contains some `*.cmake` files.
+Set `MY_HDF5_DIR` to the `cmake` directory, which contains some `*.cmake` files.
 
 ### Build miniCFD
 
