@@ -8,7 +8,7 @@ add_test(NAME TestGeometryVector COMMAND vector)
 
 add_executable(test_geometry_line line.cpp)
 set_target_properties(test_geometry_line PROPERTIES OUTPUT_NAME line)
-add_test(NAME TestGeometryLine COMMAND Line)
+add_test(NAME TestGeometryLine COMMAND line)
 
 add_executable(test_geometry_surface surface.cpp)
 set_target_properties(test_geometry_surface PROPERTIES OUTPUT_NAME surface)
