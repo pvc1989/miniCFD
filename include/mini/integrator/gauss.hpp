@@ -38,7 +38,7 @@ struct GaussLegendre<Scalar, 2> {
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
-    return { -std::sqrt(1.0/3.0), +std::sqrt(1.0/3.0) };
+    return { -std::sqrt(Scalar(1.0/3.0)), +std::sqrt(Scalar(1.0/3.0)) };
   }
   static Array BuildWeights() {
     return { 1.0, 1.0 };
@@ -59,7 +59,7 @@ struct GaussLegendre<Scalar, 3> {
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
-    return { -std::sqrt(0.6), 0.0, +std::sqrt(0.6) };
+    return { -std::sqrt(Scalar(0.6)), 0.0, +std::sqrt(Scalar(0.6)) };
   }
   static Array BuildWeights() {
     return { 5.0/9.0, 8.0/9.0, 5.0/9.0 };
@@ -81,18 +81,18 @@ struct GaussLegendre<Scalar, 4> {
   static const Array weights;
   static Array BuildPoints() {
     return {
-        -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
-        -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
-        +std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
-        +std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
+        -std::sqrt((3 + 2 * std::sqrt(Scalar(1.2))) / 7),
+        -std::sqrt((3 - 2 * std::sqrt(Scalar(1.2))) / 7),
+        +std::sqrt((3 - 2 * std::sqrt(Scalar(1.2))) / 7),
+        +std::sqrt((3 + 2 * std::sqrt(Scalar(1.2))) / 7),
     };
   }
   static Array BuildWeights() {
     return {
-        (18 - std::sqrt(30)) / 36,
-        (18 + std::sqrt(30)) / 36,
-        (18 + std::sqrt(30)) / 36,
-        (18 - std::sqrt(30)) / 36,
+        (18 - std::sqrt(Scalar(30.0))) / 36,
+        (18 + std::sqrt(Scalar(30.0))) / 36,
+        (18 + std::sqrt(Scalar(30.0))) / 36,
+        (18 - std::sqrt(Scalar(30.0))) / 36,
     };
   }
 };
@@ -112,20 +112,20 @@ struct GaussLegendre<Scalar, 5> {
   static const Array weights;
   static Array BuildPoints() {
     return {
-        -std::sqrt((5 + std::sqrt(40 / 7.0)) / 9),
-        -std::sqrt((5 - std::sqrt(40 / 7.0)) / 9),
+        -std::sqrt((5 + std::sqrt(Scalar(40 / 7.0))) / 9),
+        -std::sqrt((5 - std::sqrt(Scalar(40 / 7.0))) / 9),
         0,
-        +std::sqrt((5 - std::sqrt(40 / 7.0)) / 9),
-        +std::sqrt((5 + std::sqrt(40 / 7.0)) / 9),
+        +std::sqrt((5 - std::sqrt(Scalar(40 / 7.0))) / 9),
+        +std::sqrt((5 + std::sqrt(Scalar(40 / 7.0))) / 9),
     };
   }
   static Array BuildWeights() {
     return {
-        (322 - 13 * std::sqrt(70.0)) / 900,
-        (322 + 13 * std::sqrt(70.0)) / 900,
+        (322 - 13 * std::sqrt(Scalar(70.0))) / 900,
+        (322 + 13 * std::sqrt(Scalar(70.0))) / 900,
         128.0 / 225.0,
-        (322 + 13 * std::sqrt(70.0)) / 900,
-        (322 - 13 * std::sqrt(70.0)) / 900,
+        (322 + 13 * std::sqrt(Scalar(70.0))) / 900,
+        (322 - 13 * std::sqrt(Scalar(70.0))) / 900,
     };
   }
 };

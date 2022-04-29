@@ -188,10 +188,10 @@ class IdealGas {
 
  private:
   static_assert(kInteger >= 1 && kDecimal >= 0);
-  static constexpr double Shift(double x) {
+  static constexpr Scalar Shift(Scalar x) {
     return x < 1.0 ? x : Shift(x / 10.0);
   }
-  static constexpr double gamma_ = kInteger + Shift(kDecimal);
+  static constexpr Scalar gamma_ = kInteger + Shift(kDecimal);
 
   template <typename Primitive>
   static void SetZeroIfNegative(Primitive *primitive) {
@@ -205,37 +205,37 @@ class IdealGas {
 
  public:
   // Constants:
-  static constexpr double Gamma() { return gamma_; }
-  static constexpr double OneOverGamma() {
+  static constexpr Scalar Gamma() { return gamma_; }
+  static constexpr Scalar OneOverGamma() {
     return 1 / Gamma();
   }
-  static constexpr double GammaPlusOne() {
+  static constexpr Scalar GammaPlusOne() {
     return Gamma() + 1;
   }
-  static constexpr double GammaPlusOneOverTwo() {
+  static constexpr Scalar GammaPlusOneOverTwo() {
     return GammaPlusOne() / 2;
   }
-  static constexpr double GammaPlusOneOverFour() {
+  static constexpr Scalar GammaPlusOneOverFour() {
     return GammaPlusOne() / 4;
   }
-  static constexpr double GammaMinusOne() {
+  static constexpr Scalar GammaMinusOne() {
     return Gamma() - 1;
   }
-  static constexpr double OneOverGammaMinusOne() {
+  static constexpr Scalar OneOverGammaMinusOne() {
     return 1 / GammaMinusOne();
   }
-  static constexpr double GammaOverGammaMinusOne() {
+  static constexpr Scalar GammaOverGammaMinusOne() {
     return Gamma() / GammaMinusOne();
   }
-  static constexpr double GammaMinusOneOverTwo() {
+  static constexpr Scalar GammaMinusOneOverTwo() {
     return GammaMinusOne() / 2;
   }
-  static constexpr double GammaMinusOneUnderTwo() {
+  static constexpr Scalar GammaMinusOneUnderTwo() {
     return 2 / GammaMinusOne();
   }
   // Converters:
   template <int kDimensions>
-  static double GetSpeedOfSound(Primitives<Scalar, kDimensions> const& state) {
+  static Scalar GetSpeedOfSound(Primitives<Scalar, kDimensions> const& state) {
     // SetZeroIfNegative(state);
     return state.rho() <= 0 || state.p() <= 0 ?
         0 : std::sqrt(Gamma() * state.p() / state.rho());
