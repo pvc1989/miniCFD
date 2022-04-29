@@ -5,8 +5,6 @@
 #include <array>
 #include <cmath>
 
-#include "mini/algebra/eigen.hpp"
-
 namespace mini {
 namespace integrator {
 
@@ -15,13 +13,13 @@ struct GaussLegendre;
 
 template <typename Scalar>
 struct GaussLegendre<Scalar, 1> {
-  using Mat1x1 = algebra::Matrix<Scalar, 1, 1>;
-  static const Mat1x1 points;
-  static const Mat1x1 weights;
-  static Mat1x1 BuildPoints() {
+  using Array = std::array<Scalar, 1>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
     return { 0.0 };
   }
-  static Mat1x1 BuildWeights() {
+  static Array BuildWeights() {
     return { 2.0 };
   }
 };
@@ -36,52 +34,52 @@ GaussLegendre<Scalar, 1>::weights =
 
 template <typename Scalar>
 struct GaussLegendre<Scalar, 2> {
-  using Mat1x2 = algebra::Matrix<Scalar, 1, 2>;
-  static const Mat1x2 points;
-  static const Mat1x2 weights;
-  static Mat1x2 BuildPoints() {
+  using Array = std::array<Scalar, 2>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
     return { -std::sqrt(1.0/3.0), +std::sqrt(1.0/3.0) };
   }
-  static Mat1x2 BuildWeights() {
+  static Array BuildWeights() {
     return { 1.0, 1.0 };
   }
 };
 template <typename Scalar>
-typename GaussLegendre<Scalar, 2>::Mat1x2 const
+typename GaussLegendre<Scalar, 2>::Array const
 GaussLegendre<Scalar, 2>::points =
     GaussLegendre<Scalar, 2>::BuildPoints();
 template <typename Scalar>
-typename GaussLegendre<Scalar, 2>::Mat1x2 const
+typename GaussLegendre<Scalar, 2>::Array const
 GaussLegendre<Scalar, 2>::weights =
     GaussLegendre<Scalar, 2>::BuildWeights();
 
 template <typename Scalar>
 struct GaussLegendre<Scalar, 3> {
-  using Mat1x3 = algebra::Matrix<Scalar, 1, 3>;
-  static const Mat1x3 points;
-  static const Mat1x3 weights;
-  static Mat1x3 BuildPoints() {
+  using Array = std::array<Scalar, 3>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
     return { -std::sqrt(0.6), 0.0, +std::sqrt(0.6) };
   }
-  static Mat1x3 BuildWeights() {
+  static Array BuildWeights() {
     return { 5.0/9.0, 8.0/9.0, 5.0/9.0 };
   }
 };
 template <typename Scalar>
-typename GaussLegendre<Scalar, 3>::Mat1x3 const
+typename GaussLegendre<Scalar, 3>::Array const
 GaussLegendre<Scalar, 3>::points =
     GaussLegendre<Scalar, 3>::BuildPoints();
 template <typename Scalar>
-typename GaussLegendre<Scalar, 3>::Mat1x3 const
+typename GaussLegendre<Scalar, 3>::Array const
 GaussLegendre<Scalar, 3>::weights =
     GaussLegendre<Scalar, 3>::BuildWeights();
 
 template <typename Scalar>
 struct GaussLegendre<Scalar, 4> {
-  using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
-  static const Mat1x4 points;
-  static const Mat1x4 weights;
-  static Mat1x4 BuildPoints() {
+  using Array = std::array<Scalar, 4>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
     return {
         -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
         -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7),
@@ -89,7 +87,7 @@ struct GaussLegendre<Scalar, 4> {
         +std::sqrt((3 + 2 * std::sqrt(1.2)) / 7),
     };
   }
-  static Mat1x4 BuildWeights() {
+  static Array BuildWeights() {
     return {
         (18 - std::sqrt(30)) / 36,
         (18 + std::sqrt(30)) / 36,
@@ -99,20 +97,20 @@ struct GaussLegendre<Scalar, 4> {
   }
 };
 template <typename Scalar>
-typename GaussLegendre<Scalar, 4>::Mat1x4 const
+typename GaussLegendre<Scalar, 4>::Array const
 GaussLegendre<Scalar, 4>::points =
     GaussLegendre<Scalar, 4>::BuildPoints();
 template <typename Scalar>
-typename GaussLegendre<Scalar, 4>::Mat1x4 const
+typename GaussLegendre<Scalar, 4>::Array const
 GaussLegendre<Scalar, 4>::weights =
     GaussLegendre<Scalar, 4>::BuildWeights();
 
 template <typename Scalar>
 struct GaussLegendre<Scalar, 5> {
-  using Mat1x5 = algebra::Matrix<Scalar, 1, 5>;
-  static const Mat1x5 points;
-  static const Mat1x5 weights;
-  static Mat1x5 BuildPoints() {
+  using Array = std::array<Scalar, 5>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
     return {
         -std::sqrt((5 + std::sqrt(40 / 7.0)) / 9),
         -std::sqrt((5 - std::sqrt(40 / 7.0)) / 9),
@@ -121,7 +119,7 @@ struct GaussLegendre<Scalar, 5> {
         +std::sqrt((5 + std::sqrt(40 / 7.0)) / 9),
     };
   }
-  static Mat1x5 BuildWeights() {
+  static Array BuildWeights() {
     return {
         (322 - 13 * std::sqrt(70.0)) / 900,
         (322 + 13 * std::sqrt(70.0)) / 900,
@@ -132,11 +130,11 @@ struct GaussLegendre<Scalar, 5> {
   }
 };
 template <typename Scalar>
-typename GaussLegendre<Scalar, 5>::Mat1x5 const
+typename GaussLegendre<Scalar, 5>::Array const
 GaussLegendre<Scalar, 5>::points =
     GaussLegendre<Scalar, 5>::BuildPoints();
 template <typename Scalar>
-typename GaussLegendre<Scalar, 5>::Mat1x5 const
+typename GaussLegendre<Scalar, 5>::Array const
 GaussLegendre<Scalar, 5>::weights =
     GaussLegendre<Scalar, 5>::BuildWeights();
 
