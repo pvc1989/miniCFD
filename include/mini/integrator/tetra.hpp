@@ -51,7 +51,7 @@ class Tetra : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountQuadPoints() const override {
+  int CountQuadraturePoints() const override {
     return kQuad;
   }
   template <typename T, typename U>
@@ -76,7 +76,7 @@ class Tetra : public Cell<Scalar> {
 
  private:
   void BuildQuadPoints() {
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int q = 0; q < n; ++q) {
       auto det_j = Jacobian(GetLocalCoord(q)).determinant();

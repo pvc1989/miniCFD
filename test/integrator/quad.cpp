@@ -26,7 +26,7 @@ TEST_F(TestQuad4x4, VirtualMethods) {
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
   auto quad = Quad2D4x4(xyz_global_i);
-  EXPECT_EQ(quad.CountQuadPoints(), 16);
+  EXPECT_EQ(quad.CountQuadraturePoints(), 16);
   auto p0 = quad.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
@@ -77,7 +77,7 @@ TEST_F(TestQuad4x4, In3dSpace) {
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
   // test normal frames
   quad.BuildNormalFrames();
-  for (int q = 0; q < quad.CountQuadPoints(); ++q) {
+  for (int q = 0; q < quad.CountQuadraturePoints(); ++q) {
     auto& frame = quad.GetNormalFrame(q);
     auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
     EXPECT_NEAR((nu - sigma.cross(pi)).cwiseAbs().maxCoeff(), 0.0, 1e-15);

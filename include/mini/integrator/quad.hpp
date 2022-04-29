@@ -62,12 +62,12 @@ class Quad : public Face<Scalar, kDimensions> {
   GlobalCoord GetVertex(int i) const override {
     return xyz_global_Dx4_.col(i);
   }
-  int CountQuadPoints() const override {
+  int CountQuadraturePoints() const override {
     return Qx * Qy;
   }
   void BuildNormalFrames() {
     static_assert(D == 3);
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     for (int i = 0; i < n; ++i) {
       auto& local = GetLocalCoord(i);
       auto dn = diff_shape_local_4x2(local[0], local[1]);
@@ -81,7 +81,7 @@ class Quad : public Face<Scalar, kDimensions> {
 
  private:
   void BuildQuadPoints() {
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     area_ = 0.0;
     for (int i = 0; i < n; ++i) {
       auto mat_j = Jacobian(GetLocalCoord(i));

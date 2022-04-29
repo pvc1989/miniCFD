@@ -28,7 +28,7 @@ TEST_F(TestHexa4x4x4, VirtualMethods) {
   static_assert(hexa.CellDim() == 3);
   static_assert(hexa.PhysDim() == 3);
   EXPECT_NEAR(hexa.volume(), 8.0, 1e-14);
-  EXPECT_EQ(hexa.CountQuadPoints(), 64);
+  EXPECT_EQ(hexa.CountQuadraturePoints(), 64);
   auto p0 = hexa.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));

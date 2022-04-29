@@ -55,12 +55,12 @@ class Tri : public Face<Scalar, kDimensions> {
   GlobalCoord GetVertex(int i) const override {
     return xyz_global_Dx3_.col(i);
   }
-  int CountQuadPoints() const override {
+  int CountQuadraturePoints() const override {
     return kQuad;
   }
   void BuildNormalFrames() {
     static_assert(D == 3);
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     for (int q = 0; q < n; ++q) {
       auto& local = GetLocalCoord(q);
       auto dn = diff_shape_local_3x2(local[0], local[1]);
@@ -74,7 +74,7 @@ class Tri : public Face<Scalar, kDimensions> {
 
  private:
   void BuildQuadPoints() {
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     area_ = 0.0;
     for (int q = 0; q < n; ++q) {
       auto mat_j = Jacobian(GetLocalCoord(q));

@@ -26,7 +26,7 @@ TEST_F(TestTri16, VirtualMethods) {
   xy_global_i.row(0) << 0, 2, 2;
   xy_global_i.row(1) << 0, 0, 2;
   auto tri = Tri2D16(xy_global_i);
-  EXPECT_EQ(tri.CountQuadPoints(), 16);
+  EXPECT_EQ(tri.CountQuadraturePoints(), 16);
 }
 TEST_F(TestTri16, In2dSpace) {
   Mat2x3 xy_global_i;
@@ -74,7 +74,7 @@ TEST_F(TestTri16, In3dSpace) {
   EXPECT_DOUBLE_EQ(Norm(g, tri), sqrt(Innerprod(g, g, tri)));
   // test normal frames
   tri.BuildNormalFrames();
-  for (int q = 0; q < tri.CountQuadPoints(); ++q) {
+  for (int q = 0; q < tri.CountQuadraturePoints(); ++q) {
     auto& frame = tri.GetNormalFrame(q);
     auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
     EXPECT_EQ(nu, sigma.cross(pi));

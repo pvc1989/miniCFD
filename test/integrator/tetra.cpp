@@ -30,7 +30,7 @@ TEST_F(TestTetra, VirtualMethods) {
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
-  EXPECT_EQ(tetra.CountQuadPoints(), kQuad);
+  EXPECT_EQ(tetra.CountQuadraturePoints(), kQuad);
 }
 TEST_F(TestTetra, CommonMethods) {
   Mat3x4 xyz_global_i;

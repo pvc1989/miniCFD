@@ -60,7 +60,7 @@ class Hexa : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountQuadPoints() const override {
+  int CountQuadraturePoints() const override {
     return Qx * Qy * Qz;
   }
   template <typename T, typename U>
@@ -101,7 +101,7 @@ class Hexa : public Cell<Scalar> {
 
  private:
   void BuildQuadPoints() {
-    int n = CountQuadPoints();
+    int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
       auto det_j = Jacobian(GetLocalCoord(i)).determinant();

@@ -19,7 +19,7 @@ class Cell {
 
   virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
   virtual Mat3x3 Jacobian(const LocalCoord&) const = 0;
-  virtual int CountQuadPoints() const = 0;
+  virtual int CountQuadraturePoints() const = 0;
   virtual const LocalCoord& GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
   virtual const Real& GetLocalWeight(int i) const = 0;
