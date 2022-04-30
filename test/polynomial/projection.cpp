@@ -27,8 +27,8 @@ TEST_F(TestProjection, ScalarFunction) {
   auto projection = ProjFunc(func, basis);
   static_assert(ProjFunc::K == 1);
   static_assert(ProjFunc::N == 10);
-  EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-15);
-  EXPECT_DOUBLE_EQ(projection({0.3, 0.4, 0.5})[0], 0.5);
+  EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-14);
+  EXPECT_NEAR(projection({0.3, 0.4, 0.5})[0], 0.5, 1e-15);
   auto integral_f = mini::integrator::Integrate(func, gauss_);
   auto integral_1 = mini::integrator::Integrate([](auto const &){
     return 1.0;
@@ -54,7 +54,7 @@ TEST_F(TestProjection, VectorFunction) {
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
   EXPECT_NEAR(v_actual[2], v_expect[2], 1e-15);
   EXPECT_DOUBLE_EQ(v_actual[3], v_expect[3]);
-  EXPECT_NEAR(v_actual[4], v_expect[4], 1e-16);
+  EXPECT_NEAR(v_actual[4], v_expect[4], 1e-15);
   EXPECT_NEAR(v_actual[5], v_expect[5], 1e-16);
   EXPECT_DOUBLE_EQ(v_actual[6], v_expect[6]);
   EXPECT_NEAR(v_actual[7], v_expect[7], 1e-15);
@@ -137,8 +137,8 @@ TEST_F(TestProjection, Smoothness) {
   EXPECT_NEAR(s_actual[2], 4.0, 1e-14);
   EXPECT_NEAR(s_actual[3], 4.0, 1e-14);
   EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-13);
-  EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-14);
-  EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-14);
+  EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-13);
+  EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-13);
   EXPECT_NEAR(s_actual[7], 16./3 + 64, 1e-12);
   EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-14);
   EXPECT_NEAR(s_actual[9], 16./3 + 64, 1e-12);

@@ -38,7 +38,7 @@ TEST_F(TestQuad4x4, OrthoNormal) {
     A prod = col * col.transpose();
     return prod;
   }, quad) - A::Identity()).cwiseAbs().maxCoeff();
-  EXPECT_NEAR(residual, 0.0, 1e-15);
+  EXPECT_NEAR(residual, 0.0, 1e-14);
   auto x = left[0], y = left[1];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1;

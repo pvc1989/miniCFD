@@ -30,10 +30,10 @@ TEST_F(TestHexa4x4x4, VirtualMethods) {
   EXPECT_NEAR(hexa.volume(), 8.0, 1e-14);
   EXPECT_EQ(hexa.CountQuadraturePoints(), 64);
   auto p0 = hexa.GetLocalCoord(0);
-  EXPECT_EQ(p0[0], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
-  EXPECT_EQ(p0[1], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
-  EXPECT_EQ(p0[2], -std::sqrt((3 - 2 * std::sqrt(1.2)) / 7));
-  auto w1d = (18 + std::sqrt(30)) / 36.0;
+  EXPECT_EQ(p0[0], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
+  EXPECT_EQ(p0[1], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
+  EXPECT_EQ(p0[2], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
+  auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
 TEST_F(TestHexa4x4x4, CommonMethods) {
