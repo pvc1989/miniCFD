@@ -6,7 +6,7 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/integrator/line.hpp"
+#include "mini/integrator/gauss.hpp"
 #include "mini/integrator/face.hpp"
 
 namespace mini {

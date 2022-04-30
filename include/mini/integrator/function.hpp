@@ -3,18 +3,12 @@
 #define MINI_INTEGRATOR_FUNCTION_HPP_
 
 #include <cmath>
-#include <iostream>
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace integrator {
-
-template <class Object>
-void print(Object&& obj) {
-  std::cout << obj << '\n' << std::endl;
-}
 
 /**
  * @brief Set the value of a scalar to be 0.
