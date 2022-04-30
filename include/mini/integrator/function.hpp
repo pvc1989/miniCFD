@@ -56,7 +56,8 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
   using LocalCoord = typename E::LocalCoord;
   decltype(f_in_local(LocalCoord())) sum{};
   SetZero(&sum);
-  for (int i = 0; i < element.CountQuadraturePoints(); ++i) {
+  auto n = element.CountQuadraturePoints();
+  for (int i = 0; i < n; ++i) {
     auto f_val = f_in_local(element.GetLocalCoord(i));
     f_val *= element.GetLocalWeight(i);
     sum += f_val;
@@ -79,7 +80,8 @@ auto Integrate(Callable&& f_in_global, Element&& element) {
   using GlobalCoord = typename E::GlobalCoord;
   decltype(f_in_global(GlobalCoord())) sum{};
   SetZero(&sum);
-  for (int i = 0; i < element.CountQuadraturePoints(); ++i) {
+  auto n = element.CountQuadraturePoints();
+  for (int i = 0; i < n; ++i) {
     auto f_val = f_in_global(element.GetGlobalCoord(i));
     f_val *= element.GetGlobalWeight(i);
     sum += f_val;
