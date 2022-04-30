@@ -2,11 +2,6 @@ add_executable(test_integrator_gauss gauss.cpp)
 set_target_properties(test_integrator_gauss PROPERTIES OUTPUT_NAME gauss)
 add_test(NAME TestIntegratorGauss COMMAND gauss)
 
-add_executable(test_integrator_line line.cpp)
-target_include_directories(test_integrator_line PRIVATE ${EIGEN_INC})
-set_target_properties(test_integrator_line PROPERTIES OUTPUT_NAME line)
-add_test(NAME TestIntegratorLine COMMAND line)
-
 add_executable(test_integrator_tri tri.cpp)
 target_include_directories(test_integrator_tri PRIVATE ${EIGEN_INC})
 set_target_properties(test_integrator_tri PROPERTIES OUTPUT_NAME tri)

@@ -67,12 +67,9 @@ class RotorSource : public Rotor<Scalar> {
         if (r_ratio > t_ratio) {
           std::swap(r_ratio, t_ratio);
         }
-        auto r = blade.GetPoint(r_ratio);
-        auto t = blade.GetPoint(t_ratio);
-        auto line = mini::integrator::Line<Scalar, 4, 1>({r_ratio, t_ratio});
-        using Ratio = mini::algebra::Matrix<Scalar, 1, 1>;
-        auto func = [&cell, &blade](const Ratio &ratio){
-          auto section = blade.GetSection(ratio[0]);
+        auto line = mini::integrator::Line<Scalar, 1, 4>(r_ratio, t_ratio);
+        auto func = [&cell, &blade](Scalar ratio){
+          auto section = blade.GetSection(ratio);
           auto xyz = section.GetOrigin();
           const auto &proj = cell.projection_;
           auto value = proj(xyz);  // conservative variable
@@ -83,7 +80,7 @@ class RotorSource : public Rotor<Scalar> {
           Mat3xN prod = force * cell.basis_(xyz).transpose();
           return prod;
         };
-        auto integral = line.integrate(func);
+        auto integral = mini::integrator::Integrate(func, line);
         integral *= blade.GetSpan();
         coeff->row(1) += integral.row(0);
         coeff->row(2) += integral.row(1);
