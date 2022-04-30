@@ -54,8 +54,7 @@ template <typename Callable, typename Element>
 auto Quadrature(Callable&& f_in_local, Element&& element) {
   using E = std::remove_reference_t<Element>;
   using LocalCoord = typename E::LocalCoord;
-  decltype(f_in_local(LocalCoord())) sum{};
-  SetZero(&sum);
+  decltype(f_in_local(LocalCoord())) sum; SetZero(&sum);
   auto n = element.CountQuadraturePoints();
   for (int i = 0; i < n; ++i) {
     auto f_val = f_in_local(element.GetLocalCoord(i));
@@ -78,8 +77,7 @@ template <typename Callable, typename Element>
 auto Integrate(Callable&& f_in_global, Element&& element) {
   using E = std::remove_reference_t<Element>;
   using GlobalCoord = typename E::GlobalCoord;
-  decltype(f_in_global(GlobalCoord())) sum{};
-  SetZero(&sum);
+  decltype(f_in_global(GlobalCoord())) sum; SetZero(&sum);
   auto n = element.CountQuadraturePoints();
   for (int i = 0; i < n; ++i) {
     auto f_val = f_in_global(element.GetGlobalCoord(i));
