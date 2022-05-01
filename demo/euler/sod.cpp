@@ -20,20 +20,20 @@ void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {
     solver->SetSupersonicOutlet("3_S_31");  // Left
     solver->SetSupersonicOutlet("3_S_23");  // Right
-    solver->SetSolidWallBC("3_S_27");  // Top
-    solver->SetSolidWallBC("3_S_1");   // Back
-    solver->SetSolidWallBC("3_S_32");  // Front
-    solver->SetSolidWallBC("3_S_19");  // Bottom
-    solver->SetSolidWallBC("3_S_15");  // Gap
+    solver->SetSolidWall("3_S_27");  // Top
+    solver->SetSolidWall("3_S_1");   // Back
+    solver->SetSolidWall("3_S_32");  // Front
+    solver->SetSolidWall("3_S_19");  // Bottom
+    solver->SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
     solver->SetSupersonicOutlet("4_S_31");  // Left
     solver->SetSupersonicOutlet("4_S_23");  // Right
-    solver->SetSolidWallBC("4_S_27");  // Top
-    solver->SetSolidWallBC("4_S_1");   // Back
-    solver->SetSolidWallBC("4_S_32");  // Front
-    solver->SetSolidWallBC("4_S_19");  // Bottom
-    solver->SetSolidWallBC("4_S_15");  // Gap
+    solver->SetSolidWall("4_S_27");  // Top
+    solver->SetSolidWall("4_S_1");   // Back
+    solver->SetSolidWall("4_S_32");  // Front
+    solver->SetSolidWall("4_S_19");  // Bottom
+    solver->SetSolidWall("4_S_15");  // Gap
   }
 }
 

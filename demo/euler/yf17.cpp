@@ -22,16 +22,16 @@ void MyBC(const std::string &suffix, Solver *solver) {
   solver->SetSupersonicInlet("exhaust", exhaust);
   solver->SetSupersonicOutlet("downstream");
   solver->SetSupersonicOutlet("intake");
-  solver->SetSolidWallBC("intake ramp");
-  solver->SetSolidWallBC("lower");
-  solver->SetSolidWallBC("upper");
-  solver->SetSolidWallBC("strake");
-  solver->SetSolidWallBC("vertical tail");
-  solver->SetSolidWallBC("horizontal tail");
-  solver->SetSolidWallBC("side");
-  solver->SetSolidWallBC("wing");
-  solver->SetSolidWallBC("fuselage");
-  solver->SetSolidWallBC("symmetry");
+  solver->SetSolidWall("intake ramp");
+  solver->SetSolidWall("lower");
+  solver->SetSolidWall("upper");
+  solver->SetSolidWall("strake");
+  solver->SetSolidWall("vertical tail");
+  solver->SetSolidWall("horizontal tail");
+  solver->SetSolidWall("side");
+  solver->SetSolidWall("wing");
+  solver->SetSolidWall("fuselage");
+  solver->SetSolidWall("symmetry");
 }
 
 int main(int argc, char* argv[]) {

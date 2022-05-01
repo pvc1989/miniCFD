@@ -21,9 +21,9 @@ void MyBC(const std::string &suffix, Solver *solver) {
   solver->SetSubsonicOutlet("3_S_6", given_state);
   // solver->SetSupersonicOutlet("3_S_3");
   // solver->SetSupersonicOutlet("3_S_6");
-  solver->SetSolidWallBC("3_S_2");
-  solver->SetSolidWallBC("3_S_4");
-  solver->SetSolidWallBC("3_S_7");
+  solver->SetSolidWall("3_S_2");
+  solver->SetSolidWall("3_S_4");
+  solver->SetSolidWall("3_S_7");
 }
 
 int main(int argc, char* argv[]) {

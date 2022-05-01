@@ -150,20 +150,20 @@ int main(int argc, char* argv[]) {
   if (suffix == "tetra") {
     rk.SetSupersonicInlet("3_S_31", state_left);   // Left
     rk.SetSupersonicInlet("3_S_23", state_right);  // Right
-    rk.SetSolidWallBC("3_S_27");  // Top
-    rk.SetSolidWallBC("3_S_1");   // Back
-    rk.SetSolidWallBC("3_S_32");  // Front
-    rk.SetSolidWallBC("3_S_19");  // Bottom
-    rk.SetSolidWallBC("3_S_15");  // Gap
+    rk.SetSolidWall("3_S_27");  // Top
+    rk.SetSolidWall("3_S_1");   // Back
+    rk.SetSolidWall("3_S_32");  // Front
+    rk.SetSolidWall("3_S_19");  // Bottom
+    rk.SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
     rk.SetSupersonicInlet("4_S_31", state_left);   // Left
     rk.SetSupersonicInlet("4_S_23", state_right);  // Right
-    rk.SetSolidWallBC("4_S_27");  // Top
-    rk.SetSolidWallBC("4_S_1");   // Back
-    rk.SetSolidWallBC("4_S_32");  // Front
-    rk.SetSolidWallBC("4_S_19");  // Bottom
-    rk.SetSolidWallBC("4_S_15");  // Gap
+    rk.SetSolidWall("4_S_27");  // Top
+    rk.SetSolidWall("4_S_1");   // Back
+    rk.SetSolidWall("4_S_32");  // Front
+    rk.SetSolidWall("4_S_19");  // Bottom
+    rk.SetSolidWall("4_S_15");  // Gap
   }
 
   /* Main Loop */

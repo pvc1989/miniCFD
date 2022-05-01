@@ -39,7 +39,7 @@ class RungeKuttaBase {
 
  protected:
   std::vector<Coeff> residual_;
-  std::vector<std::string> supersonic_outlet_, solid_bc_;
+  std::vector<std::string> supersonic_outlet_, solid_wall_;
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> supersonic_inlet__,
       subsonic_inlet_, subsonic_outlet_;
@@ -72,8 +72,8 @@ class RungeKuttaBase {
   void SetSubsonicOutlet(const std::string &name, Callable&& func) {
     subsonic_outlet_[name] = func;
   }
-  void SetSolidWallBC(const std::string &name) {
-    solid_bc_.emplace_back(name);
+  void SetSolidWall(const std::string &name) {
+    solid_wall_.emplace_back(name);
   }
   void SetSupersonicOutlet(const std::string &name) {
     supersonic_outlet_.emplace_back(name);
@@ -164,7 +164,7 @@ class RungeKuttaBase {
       }
     });
   }
-  void ApplySolidWallBC(const Part &part) {
+  void ApplySolidWall(const Part &part) {
     auto visit = [this](const Face &face){
       const auto& gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
@@ -180,7 +180,7 @@ class RungeKuttaBase {
             -= flux * holder.basis_(coord).transpose();
       }
     };
-    for (const auto& name : solid_bc_) {
+    for (const auto& name : solid_wall_) {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
@@ -270,7 +270,7 @@ class RungeKuttaBase {
     }
   }
   void UpdateBoundaryResidual(const Part &part) {
-    ApplySolidWallBC(part);
+    ApplySolidWall(part);
     ApplySupersonicInlet(part);
     ApplySupersonicOutlet(part);
     ApplySubsonicInlet(part);
