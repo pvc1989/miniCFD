@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/tri.hpp"
+#include "mini/integrator/triangle.hpp"
 
 #include "gtest/gtest.h"
 

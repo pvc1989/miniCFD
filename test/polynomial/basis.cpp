@@ -5,8 +5,8 @@
 #include "mini/integrator/function.hpp"
 #include "mini/integrator/tetra.hpp"
 #include "mini/integrator/hexa.hpp"
-#include "mini/integrator/quad.hpp"
-#include "mini/integrator/tri.hpp"
+#include "mini/integrator/triangle.hpp"
+#include "mini/integrator/quadrangle.hpp"
 #include "mini/polynomial/basis.hpp"
 
 #include "gtest/gtest.h"
