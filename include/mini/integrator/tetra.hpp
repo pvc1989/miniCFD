@@ -18,9 +18,9 @@ namespace integrator {
  * @brief 
  * 
  * @tparam Scalar 
- * @tparam kQuad 
+ * @tparam kPoints 
  */
-template <typename Scalar, int kQuad>
+template <typename Scalar, int kPoints>
 class Tetra : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
@@ -42,17 +42,17 @@ class Tetra : public Cell<Scalar> {
   using typename Base::GlobalCoord;
 
  private:
-  static const std::array<LocalCoord, kQuad> local_coords_;
-  static const std::array<Scalar, kQuad> local_weights_;
+  static const std::array<LocalCoord, kPoints> local_coords_;
+  static const std::array<Scalar, kPoints> local_weights_;
   static const std::array<std::array<int, 3>, 4> faces_;
   Mat3x4 xyz_global_3x4_;
-  std::array<GlobalCoord, kQuad> global_coords_;
-  std::array<Scalar, kQuad> global_weights_;
+  std::array<GlobalCoord, kPoints> global_coords_;
+  std::array<Scalar, kPoints> global_weights_;
   Scalar volume_;
 
  public:
   int CountQuadraturePoints() const override {
-    return kQuad;
+    return kPoints;
   }
   template <typename T, typename U>
   static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
@@ -75,7 +75,7 @@ class Tetra : public Cell<Scalar> {
   }
 
  private:
-  void BuildQuadPoints() {
+  void BuildQuadraturePoints() {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int q = 0; q < n; ++q) {
@@ -140,13 +140,13 @@ class Tetra : public Cell<Scalar> {
  public:
   explicit Tetra(Mat3x4 const& xyz_global) {
     xyz_global_3x4_ = xyz_global;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Tetra(Mat3x1 const& p0, Mat3x1 const& p1, Mat3x1 const& p2,
       Mat3x1 const& p3) {
     xyz_global_3x4_.col(0) = p0; xyz_global_3x4_.col(1) = p1;
     xyz_global_3x4_.col(2) = p2; xyz_global_3x4_.col(3) = p3;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Tetra(std::initializer_list<Mat3x1> il) {
     assert(il.size() == 4);
@@ -154,14 +154,14 @@ class Tetra : public Cell<Scalar> {
     for (int i = 0; i < 4; ++i) {
       xyz_global_3x4_[i] = p[i];
     }
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Tetra() {
     xyz_global_3x4_.col(0) << 0, 0, 0;
     xyz_global_3x4_.col(1) << 1, 0, 0;
     xyz_global_3x4_.col(2) << 0, 1, 0;
     xyz_global_3x4_.col(3) << 0, 0, 1;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Tetra(const Tetra&) = default;
   Tetra& operator=(const Tetra&) = default;
@@ -207,32 +207,32 @@ class Tetra : public Cell<Scalar> {
   }
 };
 
-template <typename Scalar, int kQuad>
+template <typename Scalar, int kPoints>
 class TetraBuilder;
 
-template <typename Scalar, int kQuad>
-const std::array<typename Tetra<Scalar, kQuad>::LocalCoord, kQuad>
-Tetra<Scalar, kQuad>::local_coords_
-    = TetraBuilder<Scalar, kQuad>::BuildLocalCoords();
+template <typename Scalar, int kPoints>
+const std::array<typename Tetra<Scalar, kPoints>::LocalCoord, kPoints>
+Tetra<Scalar, kPoints>::local_coords_
+    = TetraBuilder<Scalar, kPoints>::BuildLocalCoords();
 
-template <typename Scalar, int kQuad>
-const std::array<Scalar, kQuad>
-Tetra<Scalar, kQuad>::local_weights_
-    = TetraBuilder<Scalar, kQuad>::BuildLocalWeights();
+template <typename Scalar, int kPoints>
+const std::array<Scalar, kPoints>
+Tetra<Scalar, kPoints>::local_weights_
+    = TetraBuilder<Scalar, kPoints>::BuildLocalWeights();
 
-template <typename Scalar, int kQuad>
+template <typename Scalar, int kPoints>
 const std::array<std::array<int, 3>, 4>
-Tetra<Scalar, kQuad>::faces_
-    = Tetra<Scalar, kQuad>::BuildFaces();
+Tetra<Scalar, kPoints>::faces_
+    = Tetra<Scalar, kPoints>::BuildFaces();
 
 template <typename Scalar>
 class TetraBuilder<Scalar, 24> {
-  static constexpr int kQuad = 24;
-  using LocalCoord = typename Tetra<Scalar, kQuad>::LocalCoord;
+  static constexpr int kPoints = 24;
+  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kQuad> points;
+    std::array<LocalCoord, kPoints> points;
     int q = 0;
     // the three S31 orbits
     Scalar a_s31[] = {
@@ -262,11 +262,11 @@ class TetraBuilder<Scalar, 24> {
       points[q++] = { c, a, b };
       points[q++] = { c, b, a };
     }
-    assert(q == kQuad);
+    assert(q == kPoints);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
-    std::array<Scalar, kQuad> weights;
+    std::array<Scalar, kPoints> weights;
     for (int q = 0; q < 4; ++q)
       weights[q] = 0.03992275025816749;
     for (int q = 4; q < 8; ++q)
@@ -283,12 +283,12 @@ class TetraBuilder<Scalar, 24> {
 
 template <typename Scalar>
 class TetraBuilder<Scalar, 46> {
-  static constexpr int kQuad = 46;
-  using LocalCoord = typename Tetra<Scalar, kQuad>::LocalCoord;
+  static constexpr int kPoints = 46;
+  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kQuad> points;
+    std::array<LocalCoord, kPoints> points;
     int q = 0;
     // the four S31 orbits
     Scalar a_s31[] = {
@@ -334,11 +334,11 @@ class TetraBuilder<Scalar, 46> {
       points[q++] = { c, a, b };
       points[q++] = { c, b, a };
     }
-    assert(q == kQuad);
+    assert(q == kPoints);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
-    std::array<Scalar, kQuad> weights;
+    std::array<Scalar, kPoints> weights;
     for (int q = 0; q < 4; ++q)
       weights[q] = .0063971477799023213214514203351730;
     for (int q = 4; q < 8; ++q)

@@ -11,10 +11,10 @@
 
 using std::sqrt;
 
-class TestQuad4x4 : public ::testing::Test {
+class TestQuadrangle4x4 : public ::testing::Test {
  protected:
-  using Quad2D4x4 = mini::integrator::Quad<double, 2, 4, 4>;
-  using Quad3D4x4 = mini::integrator::Quad<double, 3, 4, 4>;
+  using Quadrangle2D4x4 = mini::integrator::Quadrangle<double, 2, 4, 4>;
+  using Quadrangle3D4x4 = mini::integrator::Quadrangle<double, 3, 4, 4>;
   using Mat2x4 = mini::algebra::Matrix<double, 2, 4>;
   using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
@@ -26,12 +26,12 @@ class TestQuad4x4 : public ::testing::Test {
   using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
   using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
 };
-TEST_F(TestQuad4x4, OrthoNormal) {
+TEST_F(TestQuadrangle4x4, OrthoNormal) {
   Mat2x1 origin = {0, 0}, left = {-1, 2}, right = {1, 3};
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad2D4x4(xyz_global_i);
+  auto quad = Quadrangle2D4x4(xyz_global_i);
   auto basis = Basis(quad);
   double residual = (Integrate([&basis](const Mat2x1& xy) {
     auto col = basis(xy);
@@ -42,7 +42,7 @@ TEST_F(TestQuad4x4, OrthoNormal) {
   auto x = left[0], y = left[1];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
-  quad = Quad2D4x4(xyz_global_i);
+  quad = Quadrangle2D4x4(xyz_global_i);
   basis = Basis(quad);
   residual = (Integrate([&basis](Mat2x1 const& xy) {
     auto col = basis(xy);
@@ -51,11 +51,11 @@ TEST_F(TestQuad4x4, OrthoNormal) {
   }, quad) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
 }
-TEST_F(TestQuad4x4, Projection) {
+TEST_F(TestQuadrangle4x4, Projection) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad2D4x4(xyz_global_i);
+  auto quad = Quadrangle2D4x4(xyz_global_i);
   auto basis = Basis(quad);
   auto scalar_f = [](Mat2x1 const& xy){
     return xy[0] * xy[1];

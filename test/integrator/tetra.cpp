@@ -14,8 +14,8 @@ namespace integrator {
 
 class TestTetra : public ::testing::Test {
  protected:
-  static constexpr int kQuad = 24;
-  using Tetra = integrator::Tetra<double, kQuad>;
+  static constexpr int kPoints = 24;
+  using Tetra = integrator::Tetra<double, kPoints>;
   using Mat1x4 = algebra::Matrix<double, 1, 4>;
   using Mat3x4 = algebra::Matrix<double, 3, 4>;
   using Mat3x1 = algebra::Matrix<double, 3, 1>;
@@ -30,7 +30,7 @@ TEST_F(TestTetra, VirtualMethods) {
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
-  EXPECT_EQ(tetra.CountQuadraturePoints(), kQuad);
+  EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
 }
 TEST_F(TestTetra, CommonMethods) {
   Mat3x4 xyz_global_i;

@@ -141,7 +141,7 @@ TEST_F(TestOrthoNormal, OnTriangle) {
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
 }
 TEST_F(TestOrthoNormal, OnQuadrangle) {
-  using Gauss = mini::integrator::Quad<double, 2, 4, 4>;
+  using Gauss = mini::integrator::Quadrangle<double, 2, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
   auto gauss = Gauss(p0, p1, p2, p3);

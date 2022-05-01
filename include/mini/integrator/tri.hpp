@@ -17,9 +17,9 @@ namespace integrator {
  * @brief 
  * 
  * @tparam Scalar 
- * @tparam kQuad 
+ * @tparam kPoints 
  */
-template <typename Scalar, int kDimensions, int kQuad>
+template <typename Scalar, int kDimensions, int kPoints>
 class Triangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
   using Arr1x3 = algebra::Array<Scalar, 1, 3>;
@@ -40,12 +40,12 @@ class Triangle : public Face<Scalar, kDimensions> {
   using GlobalCoord = MatDx1;
 
  private:
-  static const std::array<Scalar, kQuad> local_weights_;
-  static const std::array<LocalCoord, kQuad> local_coords_;
+  static const std::array<Scalar, kPoints> local_weights_;
+  static const std::array<LocalCoord, kPoints> local_coords_;
   MatDx3 xyz_global_Dx3_;
-  std::array<Scalar, kQuad> global_weights_;
-  std::array<GlobalCoord, kQuad> global_coords_;
-  std::array<MatDxD, kQuad> normal_frames_;
+  std::array<Scalar, kPoints> global_weights_;
+  std::array<GlobalCoord, kPoints> global_coords_;
+  std::array<MatDxD, kPoints> normal_frames_;
   Scalar area_;
 
  public:
@@ -56,7 +56,7 @@ class Triangle : public Face<Scalar, kDimensions> {
     return xyz_global_Dx3_.col(i);
   }
   int CountQuadraturePoints() const override {
-    return kQuad;
+    return kPoints;
   }
   void BuildNormalFrames() {
     static_assert(D == 3);
@@ -73,7 +73,7 @@ class Triangle : public Face<Scalar, kDimensions> {
   }
 
  private:
-  void BuildQuadPoints() {
+  void BuildQuadraturePoints() {
     int n = CountQuadraturePoints();
     area_ = 0.0;
     for (int q = 0; q < n; ++q) {
@@ -144,13 +144,13 @@ class Triangle : public Face<Scalar, kDimensions> {
  public:
   explicit Triangle(MatDx3 const& xyz_global) {
     xyz_global_Dx3_ = xyz_global;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Triangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2) {
     xyz_global_Dx3_.col(0) = p0;
     xyz_global_Dx3_.col(1) = p1;
     xyz_global_Dx3_.col(2) = p2;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Triangle(std::initializer_list<MatDx1> il) {
     assert(il.size() == 3);
@@ -158,7 +158,7 @@ class Triangle : public Face<Scalar, kDimensions> {
     for (int i = 0; i < 3; ++i) {
       xyz_global_Dx3_[i] = p[i];
     }
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Triangle(const Triangle&) = default;
   Triangle& operator=(const Triangle&) = default;
@@ -167,27 +167,27 @@ class Triangle : public Face<Scalar, kDimensions> {
   virtual ~Triangle() noexcept = default;
 };
 
-template <typename Scalar, int kDimensions, int kQuad>
+template <typename Scalar, int kDimensions, int kPoints>
 class TriangleBuilder;
 
-template <typename Scalar, int kDimensions, int kQuad>
-const std::array<typename Triangle<Scalar, kDimensions, kQuad>::LocalCoord, kQuad>
-Triangle<Scalar, kDimensions, kQuad>::local_coords_
-    = TriangleBuilder<Scalar, kDimensions, kQuad>::BuildLocalCoords();
+template <typename Scalar, int kDimensions, int kPoints>
+const std::array<typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord, kPoints>
+Triangle<Scalar, kDimensions, kPoints>::local_coords_
+    = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalCoords();
 
-template <typename Scalar, int kDimensions, int kQuad>
-const std::array<Scalar, kQuad>
-Triangle<Scalar, kDimensions, kQuad>::local_weights_
-    = TriangleBuilder<Scalar, kDimensions, kQuad>::BuildLocalWeights();
+template <typename Scalar, int kDimensions, int kPoints>
+const std::array<Scalar, kPoints>
+Triangle<Scalar, kDimensions, kPoints>::local_weights_
+    = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalWeights();
 
 template <typename Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
-  static constexpr int kQuad = 16;
-  using LocalCoord = typename Triangle<Scalar, kDimensions, kQuad>::LocalCoord;
+  static constexpr int kPoints = 16;
+  using LocalCoord = typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kQuad> points;
+    std::array<LocalCoord, kPoints> points;
     int q = 0;
     {  // the only S3 orbit
       Scalar a = .3333333333333333333333333333333333;
@@ -215,11 +215,11 @@ class TriangleBuilder<Scalar, kDimensions, 16> {
       points[q++] = { c, a };
       points[q++] = { c, b };
     }
-    assert(q == kQuad);
+    assert(q == kPoints);
     return points;
   }
   static constexpr auto BuildLocalWeights() {
-    std::array<Scalar, kQuad> weights;
+    std::array<Scalar, kPoints> weights;
     for (int q = 0; q < 1; ++q)
       weights[q] = .1443156076777871682510911104890646;
     for (int q = 1; q < 4; ++q)

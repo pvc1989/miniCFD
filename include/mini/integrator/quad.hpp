@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_QUAD_HPP_
-#define MINI_INTEGRATOR_QUAD_HPP_
+#ifndef MINI_INTEGRATOR_QUADRANGLE_HPP_
+#define MINI_INTEGRATOR_QUADRANGLE_HPP_
 
 #include <cmath>
 
@@ -21,7 +21,7 @@ namespace integrator {
  * @tparam Qy 
  */
 template <typename Scalar = double, int kDimensions = 2, int Qx = 4, int Qy = 4>
-class Quad : public Face<Scalar, kDimensions> {
+class Quadrangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
 
   using Arr1x4 = algebra::Array<Scalar, 1, 4>;
@@ -80,7 +80,7 @@ class Quad : public Face<Scalar, kDimensions> {
   }
 
  private:
-  void BuildQuadPoints() {
+  void BuildQuadraturePoints() {
     int n = CountQuadraturePoints();
     area_ = 0.0;
     for (int i = 0; i < n; ++i) {
@@ -179,44 +179,44 @@ class Quad : public Face<Scalar, kDimensions> {
   }
 
  public:
-  explicit Quad(MatDx4 const& xyz_global) {
+  explicit Quadrangle(MatDx4 const& xyz_global) {
     xyz_global_Dx4_ = xyz_global;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
-  Quad(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2, MatDx1 const& p3) {
+  Quadrangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2, MatDx1 const& p3) {
     xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
     xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
-  Quad(std::initializer_list<MatDx1> il) {
+  Quadrangle(std::initializer_list<MatDx1> il) {
     assert(il.size() == 4);
     auto p = il.begin();
     for (int i = 0; i < 4; ++i) {
       xyz_global_Dx4_[i] = p[i];
     }
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
 };
 
 template <typename Scalar, int D, int Qx, int Qy>
-typename Quad<Scalar, D, Qx, Qy>::Arr1x4 const
-Quad<Scalar, D, Qx, Qy>::x_local_i_ = {-1, +1, +1, -1};
+typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
+Quadrangle<Scalar, D, Qx, Qy>::x_local_i_ = {-1, +1, +1, -1};
 
 template <typename Scalar, int D, int Qx, int Qy>
-typename Quad<Scalar, D, Qx, Qy>::Arr1x4 const
-Quad<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
+typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
+Quadrangle<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
 template <typename Scalar, int D, int Qx, int Qy>
-std::array<typename Quad<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::local_coords_
-    = Quad<Scalar, D, Qx, Qy>::BuildLocalCoords();
+std::array<typename Quadrangle<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
+Quadrangle<Scalar, D, Qx, Qy>::local_coords_
+    = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalCoords();
 
 template <typename Scalar, int D, int Qx, int Qy>
 std::array<Scalar, Qx * Qy> const
-Quad<Scalar, D, Qx, Qy>::local_weights_
-    = Quad<Scalar, D, Qx, Qy>::BuildLocalWeights();
+Quadrangle<Scalar, D, Qx, Qy>::local_weights_
+    = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalWeights();
 
 }  // namespace integrator
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_QUAD_HPP_
+#endif  // MINI_INTEGRATOR_QUADRANGLE_HPP_

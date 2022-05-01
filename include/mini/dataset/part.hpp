@@ -805,8 +805,8 @@ class Part {
     quad_uptr->BuildNormalFrames();
     return quad_uptr;
   }
-  auto BuildQuadUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Quad<Scalar, kDimensions, 4, 4>>(
+  auto BuildQuadrangleUptr(int i_zone, const Int *i_node_list) const {
+    auto quad_uptr = std::make_unique<integrator::Quadrangle<Scalar, kDimensions, 4, 4>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
     quad_uptr->BuildNormalFrames();
@@ -818,7 +818,7 @@ class Part {
       case 3:
         gauss_uptr = BuildTriangleUptr(i_zone, i_node_list); break;
       case 4:
-        gauss_uptr = BuildQuadUptr(i_zone, i_node_list); break;
+        gauss_uptr = BuildQuadrangleUptr(i_zone, i_node_list); break;
       default:
         assert(false);
         break;

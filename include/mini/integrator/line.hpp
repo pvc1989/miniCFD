@@ -51,7 +51,7 @@ class Line {
   static Scalar Norm(MatDx1 const &v) {
     return v.norm();
   }
-  void BuildQuadPoints() {
+  void BuildQuadraturePoints() {
     GlobalCoord pq = pq_[0] - pq_[1];
     auto det_j = Norm(pq) * 0.5;
     int n = CountQuadraturePoints();
@@ -74,7 +74,7 @@ class Line {
  public:
   Line(GlobalCoord const &p0, GlobalCoord const &p1) {
     pq_[0] = p0; pq_[1] = p1;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   GlobalCoord const &GetGlobalCoord(int i) const {
     return global_coords_[i];

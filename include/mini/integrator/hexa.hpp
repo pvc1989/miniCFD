@@ -100,7 +100,7 @@ class Hexa : public Cell<Scalar> {
   }
 
  private:
-  void BuildQuadPoints() {
+  void BuildQuadraturePoints() {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
@@ -205,7 +205,7 @@ class Hexa : public Cell<Scalar> {
  public:
   explicit Hexa(Mat3x8 const& xyz_global) {
     xyz_global_3x8_ = xyz_global;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Hexa(Mat3x1 const& p0, Mat3x1 const& p1, Mat3x1 const& p2, Mat3x1 const& p3,
        Mat3x1 const& p4, Mat3x1 const& p5, Mat3x1 const& p6, Mat3x1 const& p7) {
@@ -213,7 +213,7 @@ class Hexa : public Cell<Scalar> {
     xyz_global_3x8_.col(2) = p2; xyz_global_3x8_.col(3) = p3;
     xyz_global_3x8_.col(4) = p4; xyz_global_3x8_.col(5) = p5;
     xyz_global_3x8_.col(6) = p6; xyz_global_3x8_.col(7) = p7;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Hexa(std::initializer_list<Mat3x1> il) {
     assert(il.size() == 8);
@@ -221,7 +221,7 @@ class Hexa : public Cell<Scalar> {
     for (int i = 0; i < 8; ++i) {
       xyz_global_3x8_[i] = p[i];
     }
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Hexa() {
     xyz_global_3x8_.col(0) << -1, -1, -1;
@@ -232,7 +232,7 @@ class Hexa : public Cell<Scalar> {
     xyz_global_3x8_.col(5) << +1, -1, +1;
     xyz_global_3x8_.col(6) << +1, +1, +1;
     xyz_global_3x8_.col(7) << -1, +1, +1;
-    BuildQuadPoints();
+    BuildQuadraturePoints();
   }
   Hexa(const Hexa&) = default;
   Hexa& operator=(const Hexa&) = default;

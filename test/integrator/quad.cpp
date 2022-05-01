@@ -12,20 +12,20 @@ using std::sqrt;
 namespace mini {
 namespace integrator {
 
-class TestQuad4x4 : public ::testing::Test {
+class TestQuadrangle4x4 : public ::testing::Test {
  protected:
-  using Quad2D4x4 = Quad<double, 2, 4, 4>;
-  using Quad3D4x4 = Quad<double, 3, 4, 4>;
+  using Quadrangle2D4x4 = Quadrangle<double, 2, 4, 4>;
+  using Quadrangle3D4x4 = Quadrangle<double, 3, 4, 4>;
   using Mat2x4 = algebra::Matrix<double, 2, 4>;
   using Mat2x1 = algebra::Matrix<double, 2, 1>;
   using Mat3x4 = algebra::Matrix<double, 3, 4>;
   using Mat3x1 = algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestQuad4x4, VirtualMethods) {
+TEST_F(TestQuadrangle4x4, VirtualMethods) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad2D4x4(xyz_global_i);
+  auto quad = Quadrangle2D4x4(xyz_global_i);
   EXPECT_EQ(quad.CountQuadraturePoints(), 16);
   auto p0 = quad.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
@@ -33,11 +33,11 @@ TEST_F(TestQuad4x4, VirtualMethods) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(quad.GetLocalWeight(0), w1d * w1d);
 }
-TEST_F(TestQuad4x4, In2dSpace) {
+TEST_F(TestQuadrangle4x4, In2dSpace) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quad2D4x4(xyz_global_i);
+  auto quad = Quadrangle2D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 2);
   EXPECT_NEAR(quad.area(), 4.0, 1e-15);
@@ -53,12 +53,12 @@ TEST_F(TestQuad4x4, In2dSpace) {
   EXPECT_DOUBLE_EQ(Norm(f, quad), sqrt(Innerprod(f, f, quad)));
   EXPECT_DOUBLE_EQ(Norm(g, quad), sqrt(Innerprod(g, g, quad)));
 }
-TEST_F(TestQuad4x4, In3dSpace) {
+TEST_F(TestQuadrangle4x4, In3dSpace) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 4, 4, 0;
   xyz_global_i.row(1) << 0, 0, 4, 4;
   xyz_global_i.row(2) << 0, 0, 4, 4;
-  auto quad = Quad3D4x4(xyz_global_i);
+  auto quad = Quadrangle3D4x4(xyz_global_i);
   static_assert(quad.CellDim() == 2);
   static_assert(quad.PhysDim() == 3);
   EXPECT_NEAR(quad.area(), sqrt(2) * 16.0, 1e-14);
