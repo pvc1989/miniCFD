@@ -798,8 +798,8 @@ class Part {
     }
     return gauss_uptr;
   }
-  auto BuildTriUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Tri<Scalar, kDimensions, 16>>(
+  auto BuildTriangleUptr(int i_zone, const Int *i_node_list) const {
+    auto quad_uptr = std::make_unique<integrator::Triangle<Scalar, kDimensions, 16>>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
     quad_uptr->BuildNormalFrames();
@@ -816,7 +816,7 @@ class Part {
     std::unique_ptr<integrator::Face<Scalar, kDimensions>> gauss_uptr;
     switch (npe) {
       case 3:
-        gauss_uptr = BuildTriUptr(i_zone, i_node_list); break;
+        gauss_uptr = BuildTriangleUptr(i_zone, i_node_list); break;
       case 4:
         gauss_uptr = BuildQuadUptr(i_zone, i_node_list); break;
       default:

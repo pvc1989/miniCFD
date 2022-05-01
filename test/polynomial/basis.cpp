@@ -122,7 +122,7 @@ TEST_F(TestLinear, In3dSpace) {
 class TestOrthoNormal : public ::testing::Test {
 };
 TEST_F(TestOrthoNormal, OnTriangle) {
-  using Gauss = mini::integrator::Tri<double, 2, 16>;
+  using Gauss = mini::integrator::Triangle<double, 2, 16>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
   auto gauss = Gauss(p0, p1, p2);

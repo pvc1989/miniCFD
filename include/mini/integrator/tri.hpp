@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_TRI_HPP_
-#define MINI_INTEGRATOR_TRI_HPP_
+#ifndef MINI_INTEGRATOR_TRIANGLE_HPP_
+#define MINI_INTEGRATOR_TRIANGLE_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -20,7 +20,7 @@ namespace integrator {
  * @tparam kQuad 
  */
 template <typename Scalar, int kDimensions, int kQuad>
-class Tri : public Face<Scalar, kDimensions> {
+class Triangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
   using Arr1x3 = algebra::Array<Scalar, 1, 3>;
   using Arr3x1 = algebra::Array<Scalar, 3, 1>;
@@ -142,17 +142,17 @@ class Tri : public Face<Scalar, kDimensions> {
   }
 
  public:
-  explicit Tri(MatDx3 const& xyz_global) {
+  explicit Triangle(MatDx3 const& xyz_global) {
     xyz_global_Dx3_ = xyz_global;
     BuildQuadPoints();
   }
-  Tri(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2) {
+  Triangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2) {
     xyz_global_Dx3_.col(0) = p0;
     xyz_global_Dx3_.col(1) = p1;
     xyz_global_Dx3_.col(2) = p2;
     BuildQuadPoints();
   }
-  Tri(std::initializer_list<MatDx1> il) {
+  Triangle(std::initializer_list<MatDx1> il) {
     assert(il.size() == 3);
     auto p = il.begin();
     for (int i = 0; i < 3; ++i) {
@@ -160,30 +160,30 @@ class Tri : public Face<Scalar, kDimensions> {
     }
     BuildQuadPoints();
   }
-  Tri(const Tri&) = default;
-  Tri& operator=(const Tri&) = default;
-  Tri(Tri&&) noexcept = default;
-  Tri& operator=(Tri&&) noexcept = default;
-  virtual ~Tri() noexcept = default;
+  Triangle(const Triangle&) = default;
+  Triangle& operator=(const Triangle&) = default;
+  Triangle(Triangle&&) noexcept = default;
+  Triangle& operator=(Triangle&&) noexcept = default;
+  virtual ~Triangle() noexcept = default;
 };
 
 template <typename Scalar, int kDimensions, int kQuad>
-class TriBuilder;
+class TriangleBuilder;
 
 template <typename Scalar, int kDimensions, int kQuad>
-const std::array<typename Tri<Scalar, kDimensions, kQuad>::LocalCoord, kQuad>
-Tri<Scalar, kDimensions, kQuad>::local_coords_
-    = TriBuilder<Scalar, kDimensions, kQuad>::BuildLocalCoords();
+const std::array<typename Triangle<Scalar, kDimensions, kQuad>::LocalCoord, kQuad>
+Triangle<Scalar, kDimensions, kQuad>::local_coords_
+    = TriangleBuilder<Scalar, kDimensions, kQuad>::BuildLocalCoords();
 
 template <typename Scalar, int kDimensions, int kQuad>
 const std::array<Scalar, kQuad>
-Tri<Scalar, kDimensions, kQuad>::local_weights_
-    = TriBuilder<Scalar, kDimensions, kQuad>::BuildLocalWeights();
+Triangle<Scalar, kDimensions, kQuad>::local_weights_
+    = TriangleBuilder<Scalar, kDimensions, kQuad>::BuildLocalWeights();
 
 template <typename Scalar, int kDimensions>
-class TriBuilder<Scalar, kDimensions, 16> {
+class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kQuad = 16;
-  using LocalCoord = typename Tri<Scalar, kDimensions, kQuad>::LocalCoord;
+  using LocalCoord = typename Triangle<Scalar, kDimensions, kQuad>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -239,4 +239,4 @@ class TriBuilder<Scalar, kDimensions, 16> {
 }  // namespace integrator
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_TRI_HPP_
+#endif  // MINI_INTEGRATOR_TRIANGLE_HPP_
