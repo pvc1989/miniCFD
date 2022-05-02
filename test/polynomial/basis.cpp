@@ -11,9 +11,9 @@
 
 #include "gtest/gtest.h"
 
-class TestRaw : public ::testing::Test {
+class TestRawBasis : public ::testing::Test {
 };
-TEST_F(TestRaw, In2dSpace) {
+TEST_F(TestRawBasis, In2dSpace) {
   using Basis = mini::polynomial::Raw<double, 2, 2>;
   static_assert(Basis::N == 6);
   double x, y;
@@ -34,7 +34,7 @@ TEST_F(TestRaw, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestRaw, In3dSpace) {
+TEST_F(TestRawBasis, In3dSpace) {
   using Basis = mini::polynomial::Raw<double, 3, 2>;
   static_assert(Basis::N == 10);
   double x, y, z;
@@ -64,9 +64,9 @@ TEST_F(TestRaw, In3dSpace) {
   EXPECT_EQ(res[9], z * z);
 }
 
-class TestLinear : public ::testing::Test {
+class TestLinearBasis : public ::testing::Test {
 };
-TEST_F(TestLinear, In2dSpace) {
+TEST_F(TestLinearBasis, In2dSpace) {
   using Basis = mini::polynomial::Linear<double, 2, 2>;
   auto basis = Basis({0, 0});
   static_assert(Basis::N == 6);
@@ -88,7 +88,7 @@ TEST_F(TestLinear, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestLinear, In3dSpace) {
+TEST_F(TestLinearBasis, In3dSpace) {
   using Basis = mini::polynomial::Linear<double, 3, 2>;
   auto basis = Basis({0, 0, 0});
   static_assert(Basis::N == 10);
@@ -119,9 +119,9 @@ TEST_F(TestLinear, In3dSpace) {
   EXPECT_EQ(res[9], z * z);
 }
 
-class TestOrthoNormal : public ::testing::Test {
+class TestOrthoNormalBasis : public ::testing::Test {
 };
-TEST_F(TestOrthoNormal, OnTriangle) {
+TEST_F(TestOrthoNormalBasis, OnTriangle) {
   using Gauss = mini::integrator::Triangle<double, 2, 16>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
@@ -140,7 +140,7 @@ TEST_F(TestOrthoNormal, OnTriangle) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
 }
-TEST_F(TestOrthoNormal, OnQuadrangle) {
+TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
   using Gauss = mini::integrator::Quadrangle<double, 2, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
@@ -159,7 +159,7 @@ TEST_F(TestOrthoNormal, OnQuadrangle) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormal, OnTetrahedron) {
+TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
   using Gauss = mini::integrator::Tetra<double, 24>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
@@ -178,7 +178,7 @@ TEST_F(TestOrthoNormal, OnTetrahedron) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormal, OnHexahedron) {
+TEST_F(TestOrthoNormalBasis, OnHexahedron) {
   using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
