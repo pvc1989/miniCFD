@@ -7,7 +7,7 @@
 #include "mini/polynomial/limiter.hpp"
 #include "mini/dataset/part.hpp"
 #include "mini/dataset/shuffler.hpp"
-#include "mini/stepper/explicit.hpp"
+#include "mini/solver/rkdg.hpp"
 
 namespace mini {
 

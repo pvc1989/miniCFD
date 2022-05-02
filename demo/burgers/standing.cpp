@@ -10,7 +10,7 @@
 #include "mini/dataset/shuffler.hpp"
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/stepper/explicit.hpp"
+#include "mini/solver/rkdg.hpp"
 #include "rkdg.hpp"
 
 int main(int argc, char* argv[]) {

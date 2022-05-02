@@ -10,7 +10,7 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/stepper/explicit.hpp"
+#include "mini/solver/rkdg.hpp"
 
 /* Define the Euler system. */
 constexpr int kDimensions = 3;
