@@ -1,7 +1,3 @@
-add_executable(test_polynomial_legendre legendre.cpp)
-set_target_properties(test_polynomial_legendre PROPERTIES OUTPUT_NAME legendre)
-add_test(NAME TestPolynomialLegendre COMMAND legendre)
-
 add_executable(test_polynomial_quadrangle quadrangle.cpp)
 target_include_directories(test_polynomial_quadrangle PRIVATE ${EIGEN_INC})
 set_target_properties(test_polynomial_quadrangle PROPERTIES OUTPUT_NAME quadrangle)

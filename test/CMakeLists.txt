@@ -1,10 +1,9 @@
 link_libraries(gtest_main)
 
-add_subdirectory(algebra)
 add_subdirectory(geometry)
-add_subdirectory(element)
 add_subdirectory(dataset)
 add_subdirectory(integrator)
 add_subdirectory(polynomial)
 add_subdirectory(riemann)
 add_subdirectory(aircraft)
+

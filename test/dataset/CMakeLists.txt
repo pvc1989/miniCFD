@@ -1,23 +1,3 @@
-add_executable(test_dataset_dim1 dim1.cpp)
-set_target_properties(test_dataset_dim1 PROPERTIES OUTPUT_NAME dim1)
-add_test(NAME TestDatasetDim1 COMMAND dim1)
-
-add_executable(test_dataset_dim2 dim2.cpp)
-set_target_properties(test_dataset_dim2 PROPERTIES OUTPUT_NAME dim2)
-add_test(NAME TestDatasetDim2 COMMAND dim2)
-
-if (${PROJECT_NAME}_ENABLE_VTK)
-  link_libraries(${VTK_LIBRARIES})
-
-  add_executable(test_dataset_vtk1d vtk1d.cpp)
-  set_target_properties(test_dataset_vtk1d PROPERTIES OUTPUT_NAME vtk1d)
-  add_test(NAME TestDatasetVtk1d COMMAND vtk1d)
-
-  add_executable(test_dataset_vtk2d vtk2d.cpp)
-  set_target_properties(test_dataset_vtk2d PROPERTIES OUTPUT_NAME vtk2d)
-  add_test(NAME TestDatasetVtk2d COMMAND vtk2d)
-endif (${PROJECT_NAME}_ENABLE_VTK)
-
 add_executable(test_dataset_cgns cgns.cpp)
 target_include_directories(test_dataset_cgns PRIVATE ${CGNS_INC})
 target_link_libraries(test_dataset_cgns ${CGNS_LIB})
