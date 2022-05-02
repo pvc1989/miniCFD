@@ -30,11 +30,6 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-template <class Object>
-void print(Object&& obj) {
-  std::cout << obj << '\n' << std::endl;
-}
-
 template <class Int>
 struct NodeInfo {
   NodeInfo() = default;
