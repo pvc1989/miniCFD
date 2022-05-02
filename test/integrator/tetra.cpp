@@ -7,20 +7,15 @@
 
 #include "gtest/gtest.h"
 
-using std::sqrt;
-
-namespace mini {
-namespace integrator {
-
-class TestTetra : public ::testing::Test {
+class TestTetraIntegrator : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
-  using Tetra = integrator::Tetra<double, kPoints>;
-  using Mat1x4 = algebra::Matrix<double, 1, 4>;
-  using Mat3x4 = algebra::Matrix<double, 3, 4>;
-  using Mat3x1 = algebra::Matrix<double, 3, 1>;
+  using Tetra = mini::integrator::Tetra<double, kPoints>;
+  using Mat1x4 = mini::algebra::Matrix<double, 1, 4>;
+  using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestTetra, VirtualMethods) {
+TEST_F(TestTetraIntegrator, VirtualMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
@@ -32,7 +27,7 @@ TEST_F(TestTetra, VirtualMethods) {
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
 }
-TEST_F(TestTetra, CommonMethods) {
+TEST_F(TestTetraIntegrator, CommonMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
@@ -52,12 +47,9 @@ TEST_F(TestTetra, CommonMethods) {
   auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
   auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, tetra), Integrate(h, tetra));
-  EXPECT_DOUBLE_EQ(Norm(f, tetra), sqrt(Innerprod(f, f, tetra)));
-  EXPECT_DOUBLE_EQ(Norm(g, tetra), sqrt(Innerprod(g, g, tetra)));
+  EXPECT_DOUBLE_EQ(Norm(f, tetra), std::sqrt(Innerprod(f, f, tetra)));
+  EXPECT_DOUBLE_EQ(Norm(g, tetra), std::sqrt(Innerprod(g, g, tetra)));
 }
-
-}  // namespace integrator
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

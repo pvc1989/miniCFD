@@ -7,24 +7,19 @@
 
 #include "gtest/gtest.h"
 
-using std::sqrt;
-
-namespace mini {
-namespace integrator {
-
-class TestHexa4x4x4 : public ::testing::Test {
+class TestHexaIntegrator : public ::testing::Test {
  protected:
-  using Hexa4x4x4 = Hexa<double, 4, 4, 4>;
-  using Mat1x8 = algebra::Matrix<double, 1, 8>;
-  using Mat3x8 = algebra::Matrix<double, 3, 8>;
-  using Mat3x1 = algebra::Matrix<double, 3, 1>;
+  using Hexa = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
+  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestHexa4x4x4, VirtualMethods) {
+TEST_F(TestHexaIntegrator, VirtualMethods) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
-  auto hexa = Hexa4x4x4(xyz_global_i);
+  auto hexa = Hexa(xyz_global_i);
   static_assert(hexa.CellDim() == 3);
   static_assert(hexa.PhysDim() == 3);
   EXPECT_NEAR(hexa.volume(), 8.0, 1e-14);
@@ -36,13 +31,13 @@ TEST_F(TestHexa4x4x4, VirtualMethods) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
-TEST_F(TestHexa4x4x4, CommonMethods) {
+TEST_F(TestHexaIntegrator, CommonMethods) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
   xyz_global_i.array() *= 10.0;
-  auto hexa = Hexa4x4x4(xyz_global_i);
+  auto hexa = Hexa(xyz_global_i);
   EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Mat3x1(10, 10, 10));
   EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Mat3x1(15, 15, 15));
   EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Mat3x1(30, 40, 50));
@@ -55,12 +50,9 @@ TEST_F(TestHexa4x4x4, CommonMethods) {
   auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
   auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, hexa), Integrate(h, hexa));
-  EXPECT_DOUBLE_EQ(Norm(f, hexa), sqrt(Innerprod(f, f, hexa)));
-  EXPECT_DOUBLE_EQ(Norm(g, hexa), sqrt(Innerprod(g, g, hexa)));
+  EXPECT_DOUBLE_EQ(Norm(f, hexa), std::sqrt(Innerprod(f, f, hexa)));
+  EXPECT_DOUBLE_EQ(Norm(g, hexa), std::sqrt(Innerprod(g, g, hexa)));
 }
-
-}  // namespace integrator
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

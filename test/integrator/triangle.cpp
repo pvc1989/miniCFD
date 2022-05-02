@@ -7,32 +7,27 @@
 
 #include "gtest/gtest.h"
 
-using std::sqrt;
-
-namespace mini {
-namespace integrator {
-
-class TestTriangle16 : public ::testing::Test {
+class TestTriangleIntegrator : public ::testing::Test {
  protected:
-  using Triangle2D16 = Triangle<double, 2, 16>;
-  using Triangle3D16 = Triangle<double, 3, 16>;
-  using Mat2x3 = algebra::Matrix<double, 2, 3>;
-  using Mat2x1 = algebra::Matrix<double, 2, 1>;
-  using Mat3x3 = algebra::Matrix<double, 3, 3>;
-  using Mat3x1 = algebra::Matrix<double, 3, 1>;
+  using Triangle2D = mini::integrator::Triangle<double, 2, 16>;
+  using Triangle3D = mini::integrator::Triangle<double, 3, 16>;
+  using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
+  using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
+  using Mat3x3 = mini::algebra::Matrix<double, 3, 3>;
+  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestTriangle16, VirtualMethods) {
+TEST_F(TestTriangleIntegrator, VirtualMethods) {
   Mat2x3 xy_global_i;
   xy_global_i.row(0) << 0, 2, 2;
   xy_global_i.row(1) << 0, 0, 2;
-  auto tri = Triangle2D16(xy_global_i);
+  auto tri = Triangle2D(xy_global_i);
   EXPECT_EQ(tri.CountQuadraturePoints(), 16);
 }
-TEST_F(TestTriangle16, In2dSpace) {
+TEST_F(TestTriangleIntegrator, In2dSpace) {
   Mat2x3 xy_global_i;
   xy_global_i.row(0) << 0, 2, 2;
   xy_global_i.row(1) << 0, 0, 2;
-  auto tri = Triangle2D16(xy_global_i);
+  auto tri = Triangle2D(xy_global_i);
   static_assert(tri.CellDim() == 2);
   static_assert(tri.PhysDim() == 2);
   EXPECT_DOUBLE_EQ(tri.area(), 2.0);
@@ -46,15 +41,15 @@ TEST_F(TestTriangle16, In2dSpace) {
   auto g = [](Mat2x1 const& xy){ return xy[1]; };
   auto h = [](Mat2x1 const& xy){ return xy[0] * xy[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, tri), Integrate(h, tri));
-  EXPECT_DOUBLE_EQ(Norm(f, tri), sqrt(Innerprod(f, f, tri)));
-  EXPECT_DOUBLE_EQ(Norm(g, tri), sqrt(Innerprod(g, g, tri)));
+  EXPECT_DOUBLE_EQ(Norm(f, tri), std::sqrt(Innerprod(f, f, tri)));
+  EXPECT_DOUBLE_EQ(Norm(g, tri), std::sqrt(Innerprod(g, g, tri)));
 }
-TEST_F(TestTriangle16, In3dSpace) {
+TEST_F(TestTriangleIntegrator, In3dSpace) {
   Mat3x3 xyz_global_i;
   xyz_global_i.row(0) << 0, 2, 2;
   xyz_global_i.row(1) << 0, 0, 2;
   xyz_global_i.row(2) << 2, 2, 2;
-  auto tri = Triangle3D16(xyz_global_i);
+  auto tri = Triangle3D(xyz_global_i);
   static_assert(tri.CellDim() == 2);
   static_assert(tri.PhysDim() == 3);
   EXPECT_DOUBLE_EQ(tri.area(), 2.0);
@@ -70,8 +65,8 @@ TEST_F(TestTriangle16, In3dSpace) {
   auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
   auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, tri), Integrate(h, tri));
-  EXPECT_DOUBLE_EQ(Norm(f, tri), sqrt(Innerprod(f, f, tri)));
-  EXPECT_DOUBLE_EQ(Norm(g, tri), sqrt(Innerprod(g, g, tri)));
+  EXPECT_DOUBLE_EQ(Norm(f, tri), std::sqrt(Innerprod(f, f, tri)));
+  EXPECT_DOUBLE_EQ(Norm(g, tri), std::sqrt(Innerprod(g, g, tri)));
   // test normal frames
   tri.BuildNormalFrames();
   for (int q = 0; q < tri.CountQuadraturePoints(); ++q) {
@@ -83,9 +78,6 @@ TEST_F(TestTriangle16, In3dSpace) {
     EXPECT_EQ(nu, Mat3x1(0, 0, 1));
   }
 }
-
-}  // namespace integrator
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
