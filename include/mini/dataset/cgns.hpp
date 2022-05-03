@@ -605,7 +605,7 @@ class Zone {
     throw std::invalid_argument("There is no solution named \"" + name + "\".");
     return *(solutions_.back());
   }
-  void Write(int min_dim = 0) const {
+  void Write(int min_dim, int max_dim) const {
     int i_zone;
     cgsize_t zone_size[3] = {CountNodes(), CountCells(), 0};
     cg_zone_write(file().id(), base().id(), name_.c_str(), zone_size,
@@ -614,7 +614,7 @@ class Zone {
     coordinates_.Write();
     zone_bc_.Write();
     for (auto& section : sections_) {
-      if (section->dim() >= min_dim)
+      if (min_dim <= section->dim() && section->dim() <= max_dim)
         section->Write();
     }
     for (auto& solution : solutions_) {
@@ -798,12 +798,12 @@ class Base {
   const Zone<Real>& GetZone(int id) const {
     return *(zones_.at(id-1));
   }
-  void Write(int min_dim = 0) const {
+  void Write(int min_dim, int max_dim) const {
     int i_base;
     cg_base_write(file_->id(), name_.c_str(), cell_dim_, phys_dim_, &i_base);
     assert(i_base == i_base_);
     for (auto& zone : zones_) {
-      zone->Write(min_dim);
+      zone->Write(min_dim, max_dim);
     }
   }
 
@@ -924,13 +924,13 @@ class File {
     }
     cg_close(i_file_);
   }
-  void Write(const std::string& file_name, int min_dim = 0) {
+  void Write(const std::string& file_name, int min_dim = 0, int max_dim = 3) {
     name_ = file_name;
     if (cg_open(file_name.c_str(), CG_MODE_WRITE, &i_file_)) {
       cg_error_exit();
     }
     for (auto& base : bases_) {
-      base->Write(min_dim);
+      base->Write(min_dim, max_dim);
     }
     cg_close(i_file_);
   }
