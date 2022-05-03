@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_STEPPER_EXPLICIT_HPP_
-#define MINI_STEPPER_EXPLICIT_HPP_
+#ifndef MINI_SOLVER_RKDG_HPP_
+#define MINI_SOLVER_RKDG_HPP_
 
 #include <cassert>
 #include <functional>
@@ -205,8 +205,8 @@ class RungeKuttaBase {
     }
   }
   void ApplySupersonicInlet(const Part &part) {
-    for (auto iter = supersonic_inlet__.begin(); iter != supersonic_inlet__.end();
-        ++iter) {
+    for (auto iter = supersonic_inlet__.begin();
+        iter != supersonic_inlet__.end(); ++iter) {
       auto visit = [this, iter](const Face &face){
         const auto& gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
@@ -526,4 +526,4 @@ struct RungeKutta<3, P, L, S>
   }
 };
 
-#endif  // MINI_STEPPER_EXPLICIT_HPP_
+#endif  // MINI_SOLVER_RKDG_HPP_
