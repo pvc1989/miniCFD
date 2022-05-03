@@ -128,8 +128,8 @@ int main(int argc, char* argv[]) {
   }
 
   /* Choose the time-stepping scheme. */
-  constexpr int kSteps = std::min(3, kDegrees + 1);
-  auto rk = RungeKutta<kSteps, Part, Limiter>(dt, limiter);
+  constexpr int kOrders = std::min(3, kDegrees + 1);
+  auto rk = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */
   if (suffix == "tetra") {

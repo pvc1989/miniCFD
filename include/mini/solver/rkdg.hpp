@@ -107,7 +107,7 @@ class RungeKuttaBase {
       });
     }
     // Integrate the dot-product of flux and gradient, if there is any.
-    if (Part::kAccuracyOrder > 1) {
+    if (Part::kDegrees > 0) {
       part.ForEachConstLocalCell([this](const Cell &cell){
         auto& coeff = this->residual_.at(cell.id());
         const auto& gauss = *(cell.gauss_ptr_);
@@ -278,7 +278,7 @@ class RungeKuttaBase {
   }
 };
 
-template <int kOrder, typename Part, typename Limiter,
+template <int kOrders, typename Part, typename Limiter,
     typename Source = DummySource<Part>
 > struct RungeKutta;
 

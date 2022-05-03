@@ -40,8 +40,8 @@ using Frame = typename Blade::Frame;
 using Airfoil = typename Blade::Airfoil;
 
 /* Choose the time-stepping scheme. */
-constexpr int kSteps = std::min(3, kDegrees + 1);
-using Solver = RungeKutta<kSteps, Part, Limiter, Source>;
+constexpr int kOrders = std::min(3, kDegrees + 1);
+using Solver = RungeKutta<kOrders, Part, Limiter, Source>;
 
 using IC = Value(*)(const Coord &);
 using BC = void(*)(const std::string &, Solver *);

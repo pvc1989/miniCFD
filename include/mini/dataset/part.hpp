@@ -41,6 +41,7 @@ struct NodeInfo {
   ~NodeInfo() noexcept = default;
   Int i_zone{0}, i_node{0};
 };
+
 template <class Int>
 struct CellInfo {
   CellInfo() = default;
@@ -79,11 +80,12 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, int kDegrees, class R>
+template <typename Int, int kDegrees, class Riemann>
 struct Cell;
 
-template <typename Int, int kDegrees, class R>
+template <typename Int, int D, class R>
 struct Face {
+  constexpr static int kDegrees = D;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
@@ -123,8 +125,9 @@ struct Face {
   }
 };
 
-template <typename Int, int kDegrees, class R>
+template <typename Int, int D, class R>
 struct Cell {
+  constexpr static int kDegrees = D;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
@@ -474,9 +477,9 @@ struct Cell {
   }
 };
 
-template <typename Int, int kDegrees, class R>
+template <typename Int, int kDegrees, class Riemann>
 class CellGroup {
-  using Cell = cgns::Cell<Int, kDegrees, R>;
+  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
@@ -572,18 +575,18 @@ class CellGroup {
   }
 };
 
-template <typename Int, int kDegrees, class R>
+template <typename Int, int D, class R>
 class Part {
  public:
-  using Face = cgns::Face<Int, kDegrees, R>;
-  using Cell = cgns::Cell<Int, kDegrees, R>;
+  constexpr static int kDegrees = D;
   using Riemann = R;
+  using Face = cgns::Face<Int, kDegrees, Riemann>;
+  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Riemann::Scalar;
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDimensions = Riemann::kDimensions;
-  constexpr static int kAccuracyOrder = kDegrees + 1;
 
  private:
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
@@ -1688,11 +1691,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, int kDegrees, class R>
-MPI_Datatype const Part<Int, kDegrees, R>::kMpiIntType
+template <typename Int, int kDegrees, class Riemann>
+MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, int kDegrees, class R>
-MPI_Datatype const Part<Int, kDegrees, R>::kMpiRealType
+template <typename Int, int kDegrees, class Riemann>
+MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace cgns
