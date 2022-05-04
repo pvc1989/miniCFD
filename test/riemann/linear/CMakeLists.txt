@@ -1,11 +1,10 @@
-add_executable(test_riemann_linear_single single.cpp)
-set_target_properties(test_riemann_linear_single PROPERTIES OUTPUT_NAME single)
-add_test(NAME test_riemann_linear_single COMMAND single)
-
-add_executable(test_riemann_linear_double double.cpp)
-set_target_properties(test_riemann_linear_double PROPERTIES OUTPUT_NAME double)
-add_test(NAME test_riemann_linear_double COMMAND double)
-
-add_executable(test_riemann_linear_multiple multiple.cpp)
-set_target_properties(test_riemann_linear_multiple PROPERTIES OUTPUT_NAME multiple)
-add_test(NAME test_riemann_linear_multiple COMMAND multiple)
+set (cases
+  single
+  double
+  multiple
+)
+foreach (case ${cases})
+add_executable(test_riemann_linear_${case} ${case}.cpp)
+set_target_properties(test_riemann_linear_${case} PROPERTIES OUTPUT_NAME ${case})
+add_test(NAME test_riemann_linear_${case} COMMAND ${case})
+endforeach (case ${cases})

@@ -1,22 +1,15 @@
-add_executable(test_riemann_euler_types types.cpp)
-set_target_properties(test_riemann_euler_types PROPERTIES OUTPUT_NAME types)
-add_test(NAME test_riemann_euler_types COMMAND types)
-
-add_executable(test_riemann_euler_exact exact.cpp)
-set_target_properties(test_riemann_euler_exact PROPERTIES OUTPUT_NAME exact)
-add_test(NAME test_riemann_euler_exact COMMAND exact)
-
-add_executable(test_riemann_euler_hllc hllc.cpp)
-set_target_properties(test_riemann_euler_hllc PROPERTIES OUTPUT_NAME hllc)
-add_test(NAME test_riemann_euler_hllc COMMAND hllc)
-
-add_executable(test_riemann_euler_ausm ausm.cpp)
-set_target_properties(test_riemann_euler_ausm PROPERTIES OUTPUT_NAME ausm)
-add_test(NAME test_riemann_euler_ausm COMMAND ausm)
-
-add_executable(test_riemann_euler_performance performance.cpp)
-set_target_properties(test_riemann_euler_performance PROPERTIES OUTPUT_NAME performance)
-add_test(NAME test_riemann_euler_performance COMMAND performance)
+set (cases
+  types
+  exact
+  hllc
+  ausm
+  performance
+)
+foreach (case ${cases})
+  add_executable(test_riemann_euler_${case} ${case}.cpp)
+  set_target_properties(test_riemann_euler_${case} PROPERTIES OUTPUT_NAME ${case})
+  add_test(NAME test_riemann_euler_${case} COMMAND ${case})
+endforeach (case ${cases})
 
 add_executable(test_riemann_euler_eigen eigen.cpp)
 target_include_directories(test_riemann_euler_eigen PRIVATE ${EIGEN_INC})
