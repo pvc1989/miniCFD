@@ -1,7 +1,7 @@
 set (cases
   single
   double
-  double_eigen
+  multiple
 )
 foreach (case ${cases})
   add_executable(demo_linear_${case} ${case}.cpp)
