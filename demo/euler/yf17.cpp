@@ -3,16 +3,16 @@
 #include "mini/geometry/pi.hpp"
 
 /* Set initial conditions. */
-auto [c, s] = mini::geometry::CosSin(10.0);
+auto [c, s] = mini::geometry::CosSin(20.0);
 Value upstream_value = Gas::PrimitiveToConservative(
-    Primitive(1.4, 2.0 * c, 0.0, 2.0 * s, 1.0));
+    Primitive(1.4, 0.3 * c, 0.0, 0.3 * s, 1.0));
 Value MyIC(const Coord &xyz) {
   return upstream_value;
 }
 
 /* Set boundary conditions. */
 Value exhaust_value = Gas::PrimitiveToConservative(
-    Primitive(1.4, 3.6, 0.0, 0.0, 1.44));
+    Primitive(1.4, 2.4, 0.0, 0.0, 1.44));
 auto exhaust = [](const Coord& xyz, double t){
   return exhaust_value;
 };
@@ -20,10 +20,10 @@ auto upstream = [](const Coord& xyz, double t){
   return upstream_value;
 };
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSupersonicInlet("upstream", upstream);
+  solver->SetSubsonicInlet("upstream", upstream);
   solver->SetSupersonicInlet("exhaust", exhaust);
-  solver->SetSupersonicOutlet("downstream");
-  solver->SetSupersonicOutlet("intake");
+  solver->SetSubsonicOutlet("downstream", upstream);
+  solver->SetSubsonicOutlet("intake", upstream);
   solver->SetSolidWall("intake ramp");
   solver->SetSubsonicInlet("lower", upstream);
   solver->SetSubsonicOutlet("upper", upstream);
