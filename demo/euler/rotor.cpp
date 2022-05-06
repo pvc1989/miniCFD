@@ -174,7 +174,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   // build a blade
   std::vector<double> y_values{0.0, 1.1, 2.2}, chords{0.1, 0.3, 0.1},
       twists{-5.0, -5.0, -5.0};
-  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<double>>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Linear<double>>();
   auto c_lift = mini::geometry::deg2rad(2 * mini::geometry::pi());
   airfoils.emplace_back(c_lift, 0.0);
   airfoils.emplace_back(c_lift, 0.0);

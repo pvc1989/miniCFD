@@ -28,7 +28,7 @@ TEST_F(TestRotaryWing, Constructors) {
   rotor.SetFrame(frame);
   // build a blade
   auto blade = mini::aircraft::Blade<Scalar>();
-  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Linear<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
@@ -59,7 +59,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   rotor.SetFrame(frame);
   // build a blade
   auto blade = mini::aircraft::Blade<Scalar>();
-  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Linear<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
@@ -106,7 +106,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   rotor.SetFrame(frame);
   // build a blade
   auto blade = mini::aircraft::Blade<Scalar>();
-  auto airfoils = std::vector<mini::aircraft::airfoil::Simple<Scalar>>();
+  auto airfoils = std::vector<mini::aircraft::airfoil::Linear<Scalar>>();
   airfoils.emplace_back(6.0, 0.0);
   airfoils.emplace_back(5.0, 0.2);
   std::vector<Scalar> y_values{0.0, 2.0}, chords{0.3, 0.1}, twists{0.0, -5.0};
