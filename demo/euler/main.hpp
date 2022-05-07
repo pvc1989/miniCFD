@@ -28,9 +28,7 @@ using Coord = typename Cell::Coord;
 using Value = typename Cell::Value;
 using Coeff = typename Cell::Coeff;
 
-// using Limiter = mini::polynomial::LazyWeno<Cell>;
-// using Limiter = mini::polynomial::EigenWeno<Cell>;
-using Limiter = mini::polynomial::DummyWeno<Cell>;
+using Limiter = mini::polynomial::EigenWeno<Cell>;
 
 /* Choose the time-stepping scheme. */
 constexpr int kOrders = std::min(3, kDegrees + 1);

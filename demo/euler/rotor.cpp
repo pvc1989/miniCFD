@@ -30,7 +30,6 @@ using Coord = typename Cell::Coord;
 using Value = typename Cell::Value;
 using Coeff = typename Cell::Coeff;
 
-// using Limiter = mini::polynomial::LazyWeno<Cell>;
 using Limiter = mini::polynomial::EigenWeno<Cell>;
 
 using Source = mini::aircraft::RotorSource<Part, double>;
