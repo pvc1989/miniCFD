@@ -215,6 +215,21 @@ class EigenWeno {
   }
 };
 
+template <typename Cell>
+class DummyWeno {
+  using Scalar = typename Cell::Scalar;
+  using Projection = typename Cell::Projection;
+
+ public:
+  DummyWeno(const Scalar &w0, const Scalar &eps, bool verbose = false) {
+  }
+  Projection operator()(const Cell& cell) {
+    return cell.projection_;
+  }
+  void operator()(Cell* cell_ptr) {
+  }
+};
+
 }  // namespace polynomial
 }  // namespace mini
 
