@@ -171,7 +171,8 @@ class Euler {
     Scalar u_nu_jump = u_nu_o - u_nu_i;
     Scalar a_i = Gas::GetSpeedOfSound(primitive_i);
     Scalar rho_a_i = primitive_i.rho() * (u_nu_o > 0 ? a_i : -a_i);
-    primitive_b.p() = 0.5 * (primitive_i.p() + primitive_o.p() + rho_a_i * u_nu_jump);
+    primitive_b.p() = (primitive_i.p() + primitive_o.p()
+        + rho_a_i * u_nu_jump) * 0.5;
     Scalar p_jump = primitive_o.p() - primitive_b.p();
     primitive_b.rho() -= p_jump / (a_i * a_i);
     primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();

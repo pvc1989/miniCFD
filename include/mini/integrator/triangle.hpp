@@ -171,7 +171,8 @@ template <typename Scalar, int kDimensions, int kPoints>
 class TriangleBuilder;
 
 template <typename Scalar, int kDimensions, int kPoints>
-const std::array<typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord, kPoints>
+std::array<typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord,
+    kPoints> const
 Triangle<Scalar, kDimensions, kPoints>::local_coords_
     = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalCoords();
 
@@ -183,7 +184,8 @@ Triangle<Scalar, kDimensions, kPoints>::local_weights_
 template <typename Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kPoints = 16;
-  using LocalCoord = typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+  using LocalCoord =
+      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {

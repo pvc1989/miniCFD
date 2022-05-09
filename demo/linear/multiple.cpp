@@ -61,7 +61,8 @@ int main(int argc, char* argv[]) {
   /* Define the Double-wave equation. */
   constexpr int kComponents = 2;
   constexpr int kDimensions = 3;
-  using Riemann = mini::riemann::rotated::Multiple<double, kComponents, kDimensions>;
+  using Riemann = mini::
+      riemann::rotated::Multiple<double, kComponents, kDimensions>;
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
   Riemann::global_coefficient[1].setZero();

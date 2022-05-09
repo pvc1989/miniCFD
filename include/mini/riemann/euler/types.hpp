@@ -164,7 +164,8 @@ class Primitives : public Tuple<ScalarType, kDimensions> {
     return this->energy();
   }
   Scalar GetDynamicPressure() const {
-    auto e_k = u()*u() + (kDimensions < 2 ? 0 : v()*v() + (kDimensions < 3 ? 0 : w()*w()));
+    auto e_k = u()*u() + (kDimensions < 2 ? 0 : v()*v()
+        + (kDimensions < 3 ? 0 : w()*w()));
     e_k *= 0.5;
     return rho() * e_k;
   }
@@ -246,7 +247,8 @@ class IdealGas {
     auto primitive = Primitives<Scalar, kDimensions>(conservative);
     SetZeroIfNegative(&primitive);
     if (primitive.rho()) {
-      Converter<Scalar, kDimensions>::MomentumToVelocity(primitive.rho(), &primitive);
+      Converter<Scalar, kDimensions>::MomentumToVelocity(
+          primitive.rho(), &primitive);
       primitive.energy() -= primitive.GetDynamicPressure();
       primitive.energy() *= GammaMinusOne();
       SetZeroIfNegative(&primitive);
@@ -257,7 +259,8 @@ class IdealGas {
   static Conservatives<Scalar, kDimensions> PrimitiveToConservative(
       Primitives<Scalar, kDimensions> const &primitive) {
     auto conservative = Conservatives<Scalar, kDimensions>(primitive);
-    Converter<Scalar, kDimensions>::VelocityToMomentum(primitive.rho(), &conservative);
+    Converter<Scalar, kDimensions>::VelocityToMomentum(
+        primitive.rho(), &conservative);
     conservative.energy() *= OneOverGammaMinusOne();  // p / (gamma - 1)
     conservative.energy() += primitive.GetDynamicPressure();
     return conservative;

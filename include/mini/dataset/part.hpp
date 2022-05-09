@@ -135,7 +135,8 @@ struct Cell {
   using Gauss = integrator::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegrees>;
-  using Projection = polynomial::Projection<Scalar, kDimensions, kDegrees, kComponents>;
+  using Projection = polynomial::
+      Projection<Scalar, kDimensions, kDegrees, kComponents>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
@@ -797,18 +798,20 @@ class Part {
     return gauss_uptr;
   }
   auto BuildTriangleUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Triangle<Scalar, kDimensions, 16>>(
+    using Gauss = integrator::Triangle<Scalar, kDimensions, 16>;
+    auto gauss_uptr = std::make_unique<Gauss>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
-    quad_uptr->BuildNormalFrames();
-    return quad_uptr;
+    gauss_uptr->BuildNormalFrames();
+    return gauss_uptr;
   }
   auto BuildQuadrangleUptr(int i_zone, const Int *i_node_list) const {
-    auto quad_uptr = std::make_unique<integrator::Quadrangle<Scalar, kDimensions, 4, 4>>(
+    using Gauss = integrator::Quadrangle<Scalar, kDimensions, 4, 4>;
+    auto gauss_uptr = std::make_unique<Gauss>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
-    quad_uptr->BuildNormalFrames();
-    return quad_uptr;
+    gauss_uptr->BuildNormalFrames();
+    return gauss_uptr;
   }
   auto BuildGaussForFace(int npe, int i_zone, const Int *i_node_list) const {
     std::unique_ptr<integrator::Face<Scalar, kDimensions>> gauss_uptr;

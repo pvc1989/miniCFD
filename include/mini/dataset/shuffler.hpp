@@ -225,7 +225,7 @@ void Shuffler<Int, Real>::FillFaceParts(
           if (npe_cells.size() > 1) {
             for (auto m_cell : npe_cells)
               std::printf("face[%d] is owned by cell[%d] for %d times.\n",
-                  int(i_face), int(m_cell), int(npe));
+                  i_face, static_cast<int>(m_cell), npe);
           }
           curr += npe;
         }

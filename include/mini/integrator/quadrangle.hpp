@@ -164,8 +164,8 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   MatDx2 Jacobian(const LocalCoord& xy_local) const override {
     return Jacobian(xy_local[0], xy_local[1]);
   }
-  MatDx1 center() const override {
-    MatDx1 c = xyz_global_Dx4_.col(0);
+  GlobalCoord center() const override {
+    GlobalCoord c = xyz_global_Dx4_.col(0);
     for (int i = 1; i < 4; ++i)
       c += xyz_global_Dx4_.col(i);
     c /= 4;
@@ -183,12 +183,13 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     xyz_global_Dx4_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Quadrangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2, MatDx1 const& p3) {
+  Quadrangle(GlobalCoord const &p0, GlobalCoord const &p1,
+      GlobalCoord const &p2, GlobalCoord const &p3) {
     xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
     xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
     BuildQuadraturePoints();
   }
-  Quadrangle(std::initializer_list<MatDx1> il) {
+  Quadrangle(std::initializer_list<GlobalCoord> il) {
     assert(il.size() == 4);
     auto p = il.begin();
     for (int i = 0; i < 4; ++i) {
