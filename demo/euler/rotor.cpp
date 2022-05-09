@@ -173,11 +173,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   // build a blade
   std::vector<double> y_values{0.0, 1.1, 2.2}, chords{0.1, 0.3, 0.1},
       twists{-5.0, -5.0, -5.0};
-  auto airfoils = std::vector<mini::aircraft::airfoil::Linear<double>>();
-  auto c_lift = mini::geometry::deg2rad(2 * mini::geometry::pi());
-  airfoils.emplace_back(c_lift, 0.0);
-  airfoils.emplace_back(c_lift, 0.0);
-  airfoils.emplace_back(c_lift, 0.0);
+  auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(3);
   auto blade = Blade();
   blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
   blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
