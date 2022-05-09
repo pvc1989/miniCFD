@@ -1145,7 +1145,7 @@ class Part {
   }
 
   template <class Callable>
-  Value MeasureL1Error(Callable&& exact_solution, const Scalar &t_next) const {
+  Value MeasureL1Error(Callable&& exact_solution, Scalar t_next) const {
     Value l1_error; l1_error.setZero();
     auto visitor = [&t_next, &exact_solution, &l1_error](const Cell&cell){
       auto func = [&t_next, &exact_solution, &cell](const Coord &xyz){

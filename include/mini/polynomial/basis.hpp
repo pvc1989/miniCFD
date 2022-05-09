@@ -60,7 +60,7 @@ class Raw<Scalar, 3, 0> {
 
   template <int K>
   static auto GetSmoothness(
-      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+      const algebra::Matrix<Scalar, K, N> &integral, Scalar volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     MatKx1 smoothness; smoothness.setZero();
     return smoothness;
@@ -102,7 +102,7 @@ class Raw<Scalar, 3, 1> {
 
   template <int K>
   static auto GetSmoothness(
-      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+      const algebra::Matrix<Scalar, K, N> &integral, Scalar volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     MatKx1 smoothness = integral.col(1);
     smoothness += integral.col(2);
@@ -187,7 +187,7 @@ class Raw<Scalar, 3, 2> {
 
   template <int K>
   static auto GetSmoothness(
-      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+      const algebra::Matrix<Scalar, K, N> &integral, Scalar volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     auto w1  // weight of 1st-order partial derivatives
         = std::pow(volume, 2./3-1);
@@ -385,7 +385,7 @@ class Raw<Scalar, 3, 3> {
 
   template <int K>
   static auto GetSmoothness(
-      const algebra::Matrix<Scalar, K, N> &integral, const Scalar &volume) {
+      const algebra::Matrix<Scalar, K, N> &integral, Scalar volume) {
     using MatKx1 = algebra::Matrix<Scalar, K, 1>;
     auto w1  // weight of 1st-order partial derivatives
         = std::pow(volume, 2./3-1);

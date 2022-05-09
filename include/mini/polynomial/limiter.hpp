@@ -29,7 +29,7 @@ class LazyWeno {
   bool verbose_;
 
  public:
-  LazyWeno(const Scalar &w0, const Scalar &eps, bool verbose = false)
+  LazyWeno(Scalar w0, Scalar eps, bool verbose = false)
       : eps_(eps), verbose_(verbose) {
     weights_.setOnes();
     weights_ *= w0;
@@ -122,7 +122,7 @@ class EigenWeno {
   Scalar total_volume_;
 
  public:
-  EigenWeno(const Scalar &w0, const Scalar &eps)
+  EigenWeno(Scalar w0, Scalar eps)
       : eps_(eps) {
     weights_.setOnes();
     weights_ *= w0;
@@ -221,7 +221,7 @@ class DummyWeno {
   using Projection = typename Cell::Projection;
 
  public:
-  DummyWeno(const Scalar &w0, const Scalar &eps, bool verbose = false) {
+  DummyWeno(Scalar w0, Scalar eps, bool verbose = false) {
   }
   Projection operator()(const Cell& cell) {
     return cell.projection_;

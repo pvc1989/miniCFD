@@ -40,13 +40,13 @@ class Simple {
   }
 
  public:
-  void Rotate(const Scalar& n_x, const Scalar& n_y) {
+  void Rotate(Scalar n_x, Scalar n_y) {
     static_assert(D == 2);
     auto a_normal = global_coefficient[x] * n_x;
     a_normal += global_coefficient[y] * n_y;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
-  void Rotate(const Scalar& n_x, const Scalar& n_y,  const Scalar& n_z) {
+  void Rotate(Scalar n_x, Scalar n_y,  Scalar n_z) {
     static_assert(D == 3);
     Jacobi a_normal = global_coefficient[x] * n_x;
     a_normal += global_coefficient[y] * n_y;

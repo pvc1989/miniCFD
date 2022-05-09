@@ -124,11 +124,11 @@ class Projection {
     coeff_ = temp;
     return *this;
   }
-  Projection& operator*=(const Scalar& ratio) {
+  Projection& operator*=(Scalar ratio) {
     coeff_ *= ratio;
     return *this;
   }
-  Projection& operator/=(const Scalar& ratio) {
+  Projection& operator/=(Scalar ratio) {
     coeff_ /= ratio;
     return *this;
   }

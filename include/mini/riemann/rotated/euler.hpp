@@ -26,7 +26,7 @@ class Cartesian<Scalar, 2> {
   void Rotate(const Vector& nu) {
     nu_ = nu;
   }
-  void Rotate(const Scalar& nu_x, const Scalar& nu_y) {
+  void Rotate(Scalar nu_x, Scalar nu_y) {
     nu_[x] = nu_x;
     nu_[y] = nu_y;
   }
