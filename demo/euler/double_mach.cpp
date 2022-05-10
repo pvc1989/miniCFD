@@ -1,5 +1,5 @@
 //  Copyright 2022 PEI Weicheng
-#include "main.hpp"
+#include "sourceless.hpp"
 
 /* Set initial conditions. */
 constexpr double kGammaPlus = 2.4, kGamma = 1.4, kGammaMinus = 0.4;

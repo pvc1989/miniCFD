@@ -10,7 +10,7 @@
 
 #include "mini/dataset/shuffler.hpp"
 
-#include "main.hpp"
+#include "sourceless.hpp"
 
 int Main(int argc, char* argv[], IC ic, BC bc) {
   MPI_Init(NULL, NULL);

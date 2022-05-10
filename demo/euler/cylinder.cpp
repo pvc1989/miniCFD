@@ -1,5 +1,5 @@
 //  Copyright 2022 PEI Weicheng
-#include "main.hpp"
+#include "sourceless.hpp"
 
 /* Set initial conditions. */
 auto primitive = Primitive(1.4, 0.04, 0.0, 0.03, 1.0);
