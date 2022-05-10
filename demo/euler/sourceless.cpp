@@ -110,16 +110,16 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   }
 
   /* Choose the time-stepping scheme. */
-  auto rk = Solver(dt, limiter);
+  auto solver = Solver(dt, limiter);
 
   /* Set boundary conditions. */
-  bc(suffix, &rk);
+  bc(suffix, &solver);
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
-    rk.Update(&part, t_curr);
+    solver.Update(&part, t_curr);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);

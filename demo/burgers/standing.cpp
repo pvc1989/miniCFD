@@ -129,33 +129,33 @@ int main(int argc, char* argv[]) {
 
   /* Choose the time-stepping scheme. */
   constexpr int kOrders = std::min(3, kDegrees + 1);
-  auto rk = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
+  auto solver = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */
   if (suffix == "tetra") {
-    rk.SetSolidWall("3_S_27");  // Top
-    rk.SetSolidWall("3_S_31");  // Left
-    rk.SetSolidWall("3_S_1");   // Back
-    rk.SetSolidWall("3_S_32");  // Front
-    rk.SetSolidWall("3_S_19");  // Bottom
-    rk.SetSolidWall("3_S_23");  // Right
-    rk.SetSolidWall("3_S_15");  // Gap
+    solver.SetSolidWall("3_S_27");  // Top
+    solver.SetSolidWall("3_S_31");  // Left
+    solver.SetSolidWall("3_S_1");   // Back
+    solver.SetSolidWall("3_S_32");  // Front
+    solver.SetSolidWall("3_S_19");  // Bottom
+    solver.SetSolidWall("3_S_23");  // Right
+    solver.SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    rk.SetSolidWall("4_S_27");  // Top
-    rk.SetSolidWall("4_S_31");  // Left
-    rk.SetSolidWall("4_S_1");   // Back
-    rk.SetSolidWall("4_S_32");  // Front
-    rk.SetSolidWall("4_S_19");  // Bottom
-    rk.SetSolidWall("4_S_23");  // Right
-    rk.SetSolidWall("4_S_15");  // Gap
+    solver.SetSolidWall("4_S_27");  // Top
+    solver.SetSolidWall("4_S_31");  // Left
+    solver.SetSolidWall("4_S_1");   // Back
+    solver.SetSolidWall("4_S_32");  // Front
+    solver.SetSolidWall("4_S_19");  // Bottom
+    solver.SetSolidWall("4_S_23");  // Right
+    solver.SetSolidWall("4_S_15");  // Gap
   }
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
-    rk.Update(&part, t_curr);
+    solver.Update(&part, t_curr);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
