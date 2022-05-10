@@ -1,7 +1,13 @@
-add_library(demo_euler_sourceless sourceless.cpp)
-set_target_properties(demo_euler_sourceless PROPERTIES OUTPUT_NAME sourceless)
-target_include_directories(demo_euler_sourceless PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-target_link_libraries(demo_euler_sourceless ${CGNS_LIB} metis ${MPI_LIBRARY})
+set (libs
+  sourceless
+  rotor_source
+)
+foreach(lib ${libs})
+  add_library(demo_euler_${lib} ${lib}.cpp)
+  set_target_properties(demo_euler_${lib} PROPERTIES OUTPUT_NAME ${lib})
+  target_include_directories(demo_euler_${lib} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+  target_link_libraries(demo_euler_${lib} ${CGNS_LIB} metis ${MPI_LIBRARY})
+endforeach(lib ${libs})
 
 set (cases
   # shock tube problems:
@@ -21,8 +27,3 @@ foreach (case ${cases})
   target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
   target_link_libraries(demo_euler_${case} demo_euler_sourceless)
 endforeach (case ${cases})
-
-add_executable(demo_euler_rotor rotor.cpp)
-set_target_properties(demo_euler_rotor PROPERTIES OUTPUT_NAME rotor)
-target_include_directories(demo_euler_rotor PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-target_link_libraries(demo_euler_rotor ${CGNS_LIB} metis ${MPI_LIBRARY})

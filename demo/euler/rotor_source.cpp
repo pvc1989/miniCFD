@@ -1,73 +1,18 @@
 //  Copyright 2022 PEI Weicheng
-#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
 #include <string>
-#include <vector>
-
-#include "mini/riemann/euler/types.hpp"
-#include "mini/riemann/euler/exact.hpp"
-#include "mini/riemann/rotated/euler.hpp"
-#include "mini/polynomial/limiter.hpp"
-#include "mini/solver/rkdg.hpp"
-#include "mini/aircraft/source.hpp"
-#include "mini/dataset/shuffler.hpp"
 
 #include "mpi.h"
 #include "pcgnslib.h"
 
-/* Define the Euler system. */
-constexpr int kDimensions = 3;
-using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
-using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
-using Riemann = mini::riemann::rotated::Euler<Unrotated>;
-using Primitive = typename Riemann::Primitive;
-using Conservative = typename Riemann::Conservative;
+#include "mini/dataset/shuffler.hpp"
 
-constexpr int kDegrees = 2;
-using Part = mini::mesh::cgns::Part<cgsize_t, kDegrees, Riemann>;
-using Cell = typename Part::Cell;
-using Face = typename Part::Face;
-using Coord = typename Cell::Coord;
-using Value = typename Cell::Value;
-using Coeff = typename Cell::Coeff;
+#include "rotor_source.hpp"
 
-using Limiter = mini::polynomial::EigenWeno<Cell>;
-
-using Source = mini::aircraft::RotorSource<Part, double>;
-using Rotor = mini::aircraft::Rotor<double>;
-using Blade = typename Rotor::Blade;
-using Frame = typename Blade::Frame;
-using Airfoil = typename Blade::Airfoil;
-
-/* Choose the time-stepping scheme. */
-constexpr int kOrders = std::min(3, kDegrees + 1);
-using Solver = RungeKutta<kOrders, Part, Limiter, Source>;
-
-using IC = Value(*)(const Coord &);
-using BC = void(*)(const std::string &, Solver *);
-
-/* Set initial conditions. */
-auto primitive = Primitive(1.4, 0.5, 0.0, 0.0, 1.0);
-Value given_value = Gas::PrimitiveToConservative(primitive);
-
-Value MyIC(const Coord &xyz) {
-  return given_value;
-}
-
-/* Set boundary conditions. */
-auto given_state = [](const Coord& xyz, double t){
-  return given_value;
-};
-
-void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSubsonicInlet("3_S_1", given_state);
-  solver->SetSubsonicOutlet("3_S_2", given_state);
-  solver->SetSolidWall("3_S_3");
-  solver->SetSolidWall("3_S_4");
-  solver->SetSubsonicOutlet("3_S_5", given_state);
-  solver->SetSubsonicOutlet("3_S_6", given_state);
-}
-
-int Main(int argc, char* argv[], IC ic, BC bc) {
+int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
   MPI_Init(NULL, NULL);
   int n_cores, i_core;
   MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
@@ -164,24 +109,6 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
     }
   }
 
-  auto rotor = Source();
-  rotor.SetRevolutionsPerSecond(0.0);
-  rotor.SetOrigin(0.0, -1.2, 0.0);
-  auto frame = Frame();
-  frame.RotateY(+10.0/* deg */);
-  rotor.SetFrame(frame);
-  // build a blade
-  std::vector<double> y_values{0.0, 1.1, 2.2}, chords{0.1, 0.3, 0.1},
-      twists{-5.0, -5.0, -5.0};
-  auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(3);
-  auto blade = Blade();
-  blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
-  blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
-  blade.InstallSection(y_values[2], chords[2], twists[2], airfoils[2]);
-  double root{0.1};
-  rotor.InstallBlade(root, blade);
-  rotor.SetAzimuth(0.0);
-
   /* Choose the time-stepping scheme. */
   auto rk = Solver(dt, limiter, rotor);
 
@@ -222,8 +149,4 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   }
   MPI_Finalize();
   return 0;
-}
-
-int main(int argc, char* argv[]) {
-  return Main(argc, argv, MyIC, MyBC);
 }
