@@ -80,7 +80,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
       cell_ptr->Project(ic);
     });
     if (i_core == 0) {
-      std::printf("[Done] `Project()` on %d cores at %f sec\n",
+      std::printf("[Done] Project() on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
 
@@ -89,7 +89,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
       part.Reconstruct(limiter);
     }
     if (i_core == 0) {
-      std::printf("[Done] `Reconstruct()` on %d cores at %f sec\n",
+      std::printf("[Done] Reconstruct() on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
 
@@ -97,14 +97,14 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
     part.WriteSolutions("Frame0");
     part.WriteSolutionsOnCellCenters("Frame0");
     if (i_core == 0) {
-      std::printf("[Done] `WriteSolutions(Frame0)` on %d cores at %f sec\n",
+      std::printf("[Done] WriteSolutions(Frame0) on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
   } else {
     part.ReadSolutions("Frame" + std::to_string(i_frame));
     part.ScatterSolutions();
     if (i_core == 0) {
-      std::printf("[Done] `ReadSolutions(Frame%d)` on %d cores at %f sec\n",
+      std::printf("[Done] ReadSolutions(Frame%d) on %d cores at %f sec\n",
           i_frame, n_cores, MPI_Wtime() - time_begin);
     }
   }
@@ -124,7 +124,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
     if (i_core == 0) {
-      std::printf("[Done] `Update(Step%d/%d)` on %d cores at %fs (%fs to go)\n",
+      std::printf("[Done] Update(Step%d/%d) on %d cores at %f sec (%f sec to go)\n",
           i_step, n_steps, n_cores, wtime_curr, wtime_left);
     }
 
@@ -135,7 +135,7 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
       part.WriteSolutions(frame_name);
       part.WriteSolutionsOnCellCenters(frame_name);
       if (i_core == 0) {
-        std::printf("[Done] `WriteSolutions(Frame%d)` on %d cores at %f sec\n",
+        std::printf("[Done] WriteSolutions(Frame%d) on %d cores at %f sec\n",
             i_frame, n_cores, MPI_Wtime() - wtime_start);
       }
     }

@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 
   if (argc == 7) {
     if (i_core == 0) {
-      std::printf("[Start] `Project()` on %d cores at %f sec\n",
+      std::printf("[Start] Project() on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
     part.ForEachLocalCell([&](Cell *cell_ptr){
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     });
 
     if (i_core == 0) {
-      std::printf("[Start] `Reconstruct()` on %d cores at %f sec\n",
+      std::printf("[Start] Reconstruct() on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
     if (kDegrees > 0) {
@@ -136,14 +136,14 @@ int main(int argc, char* argv[]) {
 
     part.GatherSolutions();
     if (i_core == 0) {
-      std::printf("[Start] `WriteSolutions(Frame0)` on %d cores at %f sec\n",
+      std::printf("[Start] WriteSolutions(Frame0) on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
     part.WriteSolutions("Frame0");
     part.WriteSolutionsOnCellCenters("Frame0");
   } else {
     if (i_core == 0) {
-      std::printf("[Start] `ReadSolutions(Frame%d)` on %d cores at %f sec\n",
+      std::printf("[Start] ReadSolutions(Frame%d) on %d cores at %f sec\n",
           i_frame, n_cores, MPI_Wtime() - time_begin);
     }
     part.ReadSolutions("Frame" + std::to_string(i_frame));
@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
     if (i_core == 0) {
-      std::printf("[Done] `Update(Step%d/%d)` on %d cores at %fs (%fs to go)\n",
+      std::printf("[Done] Update(Step%d/%d) on %d cores at %f sec (%f sec to go)\n",
           i_step, n_steps, n_cores, wtime_curr, wtime_left);
     }
 
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
       ++i_frame;
       part.GatherSolutions();
       if (i_core == 0) {
-        std::printf("[Start] `WriteSolutions(Frame%d)` on %d cores at %f sec\n",
+        std::printf("[Start] WriteSolutions(Frame%d) on %d cores at %f sec\n",
             i_frame, n_cores, MPI_Wtime() - wtime_start);
       }
       auto frame_name = "Frame" + std::to_string(i_frame);
