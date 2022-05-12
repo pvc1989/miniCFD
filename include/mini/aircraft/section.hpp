@@ -28,6 +28,25 @@ class Section {
   std::pair<const Airfoil *, Scalar> left_, right_;
   Scalar y_ratio_, chord_, twist_/* deg */;
 
+  Scalar GetAngleOfAttack(Scalar u, Scalar w) const {
+    auto deg = mini::geometry::rad2deg(std::atan(w / u));  // [-90, 90]
+    if (u < 0) {
+      if (w > 0) {
+        deg += 180/* [-90, 0] -> [90, 180] */;
+      } else {
+        deg -= 180/* [0, 90] -> [-180, -90] */;
+      }
+    }
+    // deg := angle of inflow
+    deg += GetTwist();
+    // deg := angle of attack
+    if (deg < -180 || 180 < deg) {
+      deg += (deg < 0 ? 360 : -360);
+    }
+    // deg in [-180, 180]
+    return deg;
+  }
+
  public:
   Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist,
       const Airfoil *a_0, Scalar w_0, const Airfoil *a_1, Scalar w_1)
@@ -65,16 +84,13 @@ class Section {
     velocity -= GetVelocity();
     auto u = velocity.dot(GetFrame().X());
     auto w = velocity.dot(GetFrame().Z());
-    auto deg = mini::geometry::rad2deg(std::atan(w / u));  // [-90, 90]
-    if (u < 0) {
-      if (w > 0) {
-        deg += 180/* [-90, 0] -> [90, 180] */;
-      } else {
-        deg -= 180/* [0, 90] -> [-180, -90] */;
-      }
-    }
-    assert(-180 <= deg && deg <= 180);
-    Vector force = Lift(deg) * GetFrame().Z() + Drag(deg) * GetFrame().X();
+    auto deg = GetAngleOfAttack(u, w);
+    Scalar c_lift = Lift(deg), c_drag = Drag(deg);
+    deg -= GetTwist();  // angle of inflow
+    auto [cos, sin] = mini::geometry::CosSin(deg);
+    Scalar c_z = c_lift * cos + c_drag * sin;
+    Scalar c_x = c_drag * cos - c_lift * sin;
+    Vector force = c_z * GetFrame().Z() + c_x * GetFrame().X();
     force *= -0.5 * rho * (u * u + w * w) * GetChord();
     return force;
   }
