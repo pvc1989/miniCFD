@@ -70,7 +70,14 @@ class Section {
     velocity -= GetVelocity();
     auto u = velocity.dot(frame_.X());
     auto w = velocity.dot(frame_.Z());
-    auto deg = mini::geometry::rad2deg(std::atan(w / u));
+    auto deg = mini::geometry::rad2deg(std::atan(w / u));  // [-90, 90]
+    if (u < 0) {
+      if (w > 0) {
+        deg += 180/* [-90, 0] -> [90, 180] */;
+      } else {
+        deg -= 180/* [0, 90] -> [-180, -90] */;
+      }
+    }
     Vector force = Lift(deg) * frame_.Z() + Drag(deg) * frame_.X();
     force *= -0.5 * rho * (u * u + w * w) * GetChord();
     return force;
