@@ -2,6 +2,7 @@
 #ifndef MINI_AIRCRAFT_SECTION_HPP_
 #define MINI_AIRCRAFT_SECTION_HPP_
 
+#include <cassert>
 #include <iostream>
 #include <utility>
 
@@ -78,6 +79,7 @@ class Section {
         deg -= 180/* [0, 90] -> [-180, -90] */;
       }
     }
+    assert(-180 <= deg && deg <= 180);
     Vector force = Lift(deg) * frame_.Z() + Drag(deg) * frame_.X();
     force *= -0.5 * rho * (u * u + w * w) * GetChord();
     return force;

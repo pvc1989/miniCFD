@@ -3,7 +3,6 @@
 #define MINI_AIRCRAFT_AIRFOIL_HPP_
 
 #include <array>
-#include <cassert>
 #include <cmath>
 
 namespace mini {
@@ -116,12 +115,10 @@ class SC1095 : public Abstract<Scalar> {
 
  public:
   Scalar Lift(Scalar deg) const override {
-    assert(-180 <= deg && deg <= 180);
-    return lift_[(deg + 180) / 2];
+    return lift_.at((deg + 180) / 2);
   }
   Scalar Drag(Scalar deg) const override {
-    assert(-180 <= deg && deg <= 180);
-    return drag_[(deg + 180) / 2];
+    return drag_.at((deg + 180) / 2);
   }
 };
 
