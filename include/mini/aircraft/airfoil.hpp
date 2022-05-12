@@ -115,10 +115,10 @@ class SC1095 : public Abstract<Scalar> {
 
  public:
   Scalar Lift(Scalar deg) const override {
-    return lift_.at((deg + 180) / 2);
+    return lift_[(deg + 180) / 2];
   }
   Scalar Drag(Scalar deg) const override {
-    return drag_.at((deg + 180) / 2);
+    return drag_[(deg + 180) / 2];
   }
 };
 
