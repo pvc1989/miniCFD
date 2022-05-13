@@ -43,12 +43,33 @@ class RotorSource : public Rotor<Scalar> {
         mat.col(0) = a - p;
         mat.col(1) = b - p;
         mat.col(2) = c - p;
-        assert(mat.determinant());  // may fail when p is in the surface of abc
+        bool swap_pq = false;
+        if (mat.determinant() == 0) {
+          mat.col(0) -= pq;  // qa
+          mat.col(1) -= pq;  // qb
+          mat.col(2) -= pq;  // qc
+          if (mat.determinant() == 0) {
+            // TODO(PVC): pq on surface abc
+            continue;
+          } else {
+            swap_pq = true;
+          }
+        }
         Coord lambda = mat.fullPivLu().solve(pq);
+        if (swap_pq) {
+          lambda = -lambda;
+        }
         if (lambda.minCoeff() >= 0) {
+          // The intersection of line PQ and triangle ABC
+          // is inside triangle ABC.
           auto ratio = lambda.sum();
           if (1.0 <= ratio) {
+            // The intersection of line PQ and triangle ABC
+            // is on segment PQ.
             ratio = 1.0 / ratio;
+            if (swap_pq) {
+              ratio = 1.0 - ratio;
+            }
             if (!r_found) {
               r_ratio = ratio;
               r_found = true;
