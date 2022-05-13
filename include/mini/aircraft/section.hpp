@@ -28,6 +28,7 @@ class Section {
   std::pair<const Airfoil *, Scalar> left_, right_;
   Scalar y_ratio_, chord_, twist_/* deg */;
 
+ public:
   Scalar GetAngleOfAttack(Scalar u, Scalar w) const {
     auto deg = mini::geometry::rad2deg(std::atan(w / u));  // [-90, 90]
     if (u < 0) {
