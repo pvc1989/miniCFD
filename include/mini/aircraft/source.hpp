@@ -8,6 +8,7 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
+#include "mini/geometry/intersect.hpp"
 #include "mini/integrator/line.hpp"
 #include "mini/aircraft/rotor.hpp"
 
@@ -36,50 +37,21 @@ class RotorSource : public Rotor<Scalar> {
         const auto &gauss = face->gauss();
         // Currently, only triangle is supported.
         assert(gauss.CountVertices() == 3);
-        const auto &a = gauss.GetVertex(0);
-        const auto &b = gauss.GetVertex(1);
-        const auto &c = gauss.GetVertex(2);
-        mini::algebra::Matrix<Scalar, 3, 3> mat;
-        mat.col(0) = a - p;
-        mat.col(1) = b - p;
-        mat.col(2) = c - p;
-        bool swap_pq = false;
-        if (mat.determinant() == 0) {
-          mat.col(0) -= pq;  // qa
-          mat.col(1) -= pq;  // qb
-          mat.col(2) -= pq;  // qc
-          if (mat.determinant() == 0) {
-            // TODO(PVC): pq on surface abc
-            continue;
+        Coord pa = gauss.GetVertex(0) - p;
+        Coord pb = gauss.GetVertex(1) - p;
+        Coord pc = gauss.GetVertex(2) - p;
+        Scalar ratio = -1.0;
+        mini::geometry::Intersect(pa, pb, pc, pq, &ratio);
+        if (0 <= ratio && ratio <= 1) {
+          if (!r_found) {
+            r_ratio = ratio;
+            r_found = true;
+          } else if (!t_found) {
+            t_ratio = ratio;
+            t_found = true;
           } else {
-            swap_pq = true;
-          }
-        }
-        Coord lambda = mat.fullPivLu().solve(pq);
-        if (swap_pq) {
-          lambda = -lambda;
-        }
-        if (lambda.minCoeff() >= 0) {
-          // The intersection of line PQ and triangle ABC
-          // is inside triangle ABC.
-          auto ratio = lambda.sum();
-          if (1.0 <= ratio) {
-            // The intersection of line PQ and triangle ABC
-            // is on segment PQ.
-            ratio = 1.0 / ratio;
-            if (swap_pq) {
-              ratio = 1.0 - ratio;
-            }
-            if (!r_found) {
-              r_ratio = ratio;
-              r_found = true;
-            } else if (!t_found) {
-              t_ratio = ratio;
-              t_found = true;
-            } else {
-              // More than two common points are found.
-              assert(false);
-            }
+            // More than two common points are found.
+            assert(false);
           }
         }
       }
