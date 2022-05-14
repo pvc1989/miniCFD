@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "mini/geometry/pi.hpp"
 #include "mini/aircraft/blade.hpp"
 
 namespace mini {
@@ -21,6 +22,7 @@ class Rotor {
   std::vector<Blade> blades_;
   Frame frame_;
   Vector origin_;
+  Scalar initial_azimuth_{0}/* deg */;
   Scalar azimuth_/* deg */, omega_/* rad / s */;
 
  public:
@@ -57,6 +59,17 @@ class Rotor {
       blade.SetAzimuth(deg);
       deg += psi;
     }
+    return *this;
+  }
+  Rotor& SetInitialAzimuth(Scalar deg) {
+    initial_azimuth_ = deg;
+    SetAzimuth(deg);
+    return *this;
+  }
+  Rotor& UpdateAzimuth(Scalar sec) {
+    auto deg = initial_azimuth_;
+    deg += sec * mini::geometry::rad2deg(GetOmega());
+    SetAzimuth(deg);
     return *this;
   }
 

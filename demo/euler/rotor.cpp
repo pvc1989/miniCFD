@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
   double root{0.1};
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
-  rotor.SetAzimuth(0.0);
+  rotor.SetInitialAzimuth(0.0);
 
   return Main(argc, argv, MyIC, MyBC, rotor);
 }

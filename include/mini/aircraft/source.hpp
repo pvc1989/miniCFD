@@ -27,6 +27,7 @@ class RotorSource : public Rotor<Scalar> {
 
   // TODO(PVC): apply to Part, rather than Cell
   void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
+    this->UpdateAzimuth(t_curr);
     for (auto &blade : this->blades_) {
       Coord p = blade.GetPoint(0.0);
       Coord q = blade.GetPoint(1.0);
