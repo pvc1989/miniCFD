@@ -2,7 +2,7 @@
 #include "rotor_source.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.4, 0.02, 0.0, 0.0, 1.0);
+auto primitive = Primitive(1.29, 5.0, 0.0, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -28,7 +28,7 @@ void MyBC(const std::string &suffix, Solver *solver) {
 
 int main(int argc, char* argv[]) {
   auto rotor = Source();
-  rotor.SetRevolutionsPerSecond(10.0);
+  rotor.SetRevolutionsPerSecond(40.0);
   rotor.SetOrigin(0.0, 0.0, 0.5);
   auto frame = Frame();
   frame.RotateY(+0.0/* deg */);
