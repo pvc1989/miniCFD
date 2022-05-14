@@ -30,6 +30,7 @@ endforeach (case ${cases})
 
 set (cases
   wing
+  rotor
 )
 foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
