@@ -23,22 +23,17 @@ class Rotor {
   Frame frame_;
   Vector origin_;
   Scalar initial_azimuth_{0}/* deg */;
-  Scalar azimuth_/* deg */, omega_/* rad / s */;
+  Scalar azimuth_/* deg */, omega_/* deg / s */;
 
  public:
   /**
    * @brief Set the rotating speed of this `Rotor`.
    * 
-   * @param omega The rotating speed in radian per second.
+   * @param rps The rotating speed in revolutions per second.
    * @return Rotor& The reference to this `Rotor`.
    */
-  Rotor& SetOmega(Scalar omega) {
-    omega_ = omega;
-    return *this;
-  }
-
   Rotor& SetRevolutionsPerSecond(Scalar rps) {
-    omega_ = rps * mini::geometry::pi() * 2;
+    omega_ = rps * 360.0;
     return *this;
   }
 
@@ -68,7 +63,7 @@ class Rotor {
   }
   Rotor& UpdateAzimuth(Scalar sec) {
     auto deg = initial_azimuth_;
-    deg += sec * mini::geometry::rad2deg(GetOmega());
+    deg += sec * GetDegreesPerSecond();
     SetAzimuth(deg);
     return *this;
   }
@@ -87,10 +82,18 @@ class Rotor {
   /**
    * @brief Get the rotating speed of this `Rotor`.
    * 
-   * @return Scalar The rotating speed in radian per second.
+   * @return Scalar The rotating speed in degrees per second.
    */
-  Scalar GetOmega() const {
+  Scalar GetDegreesPerSecond() const {
     return omega_;
+  }
+  /**
+   * @brief Get the rotating speed of this `Rotor`.
+   * 
+   * @return Scalar The rotating speed in radians per second.
+   */
+  Scalar GetRadiansPerSecond() const {
+    return mini::geometry::deg2rad(omega_);
   }
 
   /**

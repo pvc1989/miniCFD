@@ -76,7 +76,7 @@ class Section {
     return blade_->GetPoint(y_ratio_);
   }
   Vector GetVelocity() const {
-    auto omega = blade_->GetRotor().GetOmega();
+    auto omega = blade_->GetRotor().GetRadiansPerSecond();
     Vector v = -GetFrame().X();
     v *= omega * (blade_->GetRoot() + blade_->GetSpan() * y_ratio_);
     return v;

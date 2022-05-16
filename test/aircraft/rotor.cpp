@@ -17,11 +17,12 @@ class TestRotaryWing : public ::testing::Test {
 };
 TEST_F(TestRotaryWing, Constructors) {
   auto rotor = mini::aircraft::Rotor<Scalar>();
+  Scalar rps = 20.0;
   rotor.SetRevolutionsPerSecond(20.0);
-  auto omega = mini::geometry::pi() * 40;
-  EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
-  rotor.SetOmega(omega);
-  EXPECT_DOUBLE_EQ(rotor.GetOmega(), omega);
+  auto omega = rps * 360;
+  EXPECT_DOUBLE_EQ(rotor.GetDegreesPerSecond(), omega);
+  omega = mini::geometry::deg2rad(omega);
+  EXPECT_DOUBLE_EQ(rotor.GetRadiansPerSecond(), omega);
   rotor.SetOrigin(0.1, 0.2, 0.3);
   auto frame = mini::geometry::Frame<Scalar>();
   frame.RotateY(-5/* deg */);
@@ -91,7 +92,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   EXPECT_DOUBLE_EQ(section.Lift(+12), 0.09 * 12);
   EXPECT_DOUBLE_EQ(section.Drag(-12), 0.03 * 12);
   EXPECT_EQ(section.GetOrigin(), blade_1.GetPoint(0.5));
-  auto v_norm = rotor.GetOmega() * (root + tip) / 2;
+  auto v_norm = rotor.GetRadiansPerSecond() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_1.GetFrame().X();
   EXPECT_NEAR(veclocity.dot(rotor.GetFrame().X()), 0.0, 1e-13);
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
@@ -138,7 +139,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   EXPECT_DOUBLE_EQ(section.Lift(+12), 0.09 * 12);
   EXPECT_DOUBLE_EQ(section.Drag(-12), 0.03 * 12);
   EXPECT_EQ(section.GetOrigin(), blade_0.GetPoint(0.5));
-  auto v_norm = rotor.GetOmega() * (root + tip) / 2;
+  auto v_norm = rotor.GetRadiansPerSecond() * (root + tip) / 2;
   auto veclocity = -v_norm * blade_0.GetFrame().X();
   EXPECT_NEAR(veclocity.dot(rotor.GetFrame().Y()), 0.0, 1e-13);
   EXPECT_NEAR((section.GetVelocity() - veclocity).norm(), 0, 1e-13);
