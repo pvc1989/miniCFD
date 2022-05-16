@@ -35,6 +35,9 @@ class RotorSource : public Rotor<Scalar> {
       Scalar r_ratio; bool r_found = false;
       Scalar t_ratio; bool t_found = false;
       for (const Face *face : cell.adj_faces_) {
+        if (r_found && t_found) {
+          break;
+        }
         const auto &gauss = face->gauss();
         // Currently, only triangle is supported.
         assert(gauss.CountVertices() == 3);
@@ -55,6 +58,15 @@ class RotorSource : public Rotor<Scalar> {
             assert(false);
           }
         }
+      }
+      // If only one common point is found, then either p or q is inside.
+      if (r_found && !t_found) {
+        t_found = true;
+        t_ratio = r_ratio < 0.5 ? 0 : 1;
+      }
+      if (!r_found && t_found) {
+        r_found = true;
+        r_ratio = t_ratio < 0.5 ? 0 : 1;
       }
       if (r_found && t_found) {
         // Integrate along (r)---(t);
