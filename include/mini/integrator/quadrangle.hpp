@@ -49,7 +49,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   static const Arr1x4 y_local_i_;
   static const std::array<Scalar, Qx * Qy> local_weights_;
   static const std::array<LocalCoord, Qx * Qy> local_coords_;
-  MatDx4 xyz_global_Dx4_;
+  std::array<GlobalCoord, 4> xyz_global_Dx4_;
   std::array<Scalar, Qx * Qy> global_weights_;
   std::array<GlobalCoord, Qx * Qy> global_coords_;
   std::array<MatDxD, Qx * Qy> normal_frames_;
@@ -59,8 +59,8 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   int CountVertices() const override {
     return 4;
   }
-  GlobalCoord GetVertex(int i) const override {
-    return xyz_global_Dx4_.col(i);
+  const GlobalCoord& GetVertex(int i) const override {
+    return xyz_global_Dx4_[i];
   }
   int CountQuadraturePoints() const override {
     return Qx * Qy;
@@ -68,11 +68,9 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   void BuildNormalFrames() {
     static_assert(D == 3);
     int n = CountQuadraturePoints();
-    for (int i = 0; i < n; ++i) {
-      auto& local = GetLocalCoord(i);
-      auto dn = diff_shape_local_4x2(local[0], local[1]);
-      MatDx2 dr = xyz_global_Dx4_ * dn;
-      auto& frame = normal_frames_[i];
+    for (int q = 0; q < n; ++q) {
+      MatDx2 dr = Jacobian(GetLocalCoord(q));
+      auto& frame = normal_frames_[q];
       frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
       frame.col(2) = dr.col(1).normalized();
       frame.col(1) = frame.col(2).cross(frame.col(0));
@@ -139,7 +137,12 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     return dn;
   }
   MatDx2 Jacobian(Scalar x_local, Scalar y_local) const {
-    return xyz_global_Dx4_ * diff_shape_local_4x2(x_local, y_local);
+    auto dn = diff_shape_local_4x2(x_local, y_local);
+    MatDx2 dr = xyz_global_Dx4_[0] * dn.row(0);
+    dr +=  xyz_global_Dx4_[1] * dn.row(1);
+    dr +=  xyz_global_Dx4_[2] * dn.row(2);
+    dr +=  xyz_global_Dx4_[3] * dn.row(3);
+    return dr;
   }
 
  public:
@@ -156,18 +159,24 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     return local_weights_[i];
   }
   GlobalCoord LocalToGlobal(const Mat2x1& xy_local) const override {
-    return xyz_global_Dx4_ * shape_4x1(xy_local);
+    return LocalToGlobal(xy_local[0], xy_local[1]);
   }
-  GlobalCoord LocalToGlobal(Scalar x, Scalar y) const {
-    return xyz_global_Dx4_ * shape_4x1(x, y);
+  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
+    auto shape = shape_4x1(x_local, y_local);
+    GlobalCoord product = xyz_global_Dx4_[0] * shape[0];
+    product += xyz_global_Dx4_[1] * shape[1];
+    product += xyz_global_Dx4_[2] * shape[2];
+    product += xyz_global_Dx4_[3] * shape[3];
+    return product;
   }
   MatDx2 Jacobian(const LocalCoord& xy_local) const override {
     return Jacobian(xy_local[0], xy_local[1]);
   }
   GlobalCoord center() const override {
-    GlobalCoord c = xyz_global_Dx4_.col(0);
-    for (int i = 1; i < 4; ++i)
-      c += xyz_global_Dx4_.col(i);
+    GlobalCoord c = xyz_global_Dx4_[0];
+    c += xyz_global_Dx4_[1];
+    c += xyz_global_Dx4_[2];
+    c += xyz_global_Dx4_[3];
     c /= 4;
     return c;
   }
@@ -180,21 +189,27 @@ class Quadrangle : public Face<Scalar, kDimensions> {
 
  public:
   explicit Quadrangle(MatDx4 const& xyz_global) {
-    xyz_global_Dx4_ = xyz_global;
+    xyz_global_Dx4_[0] = xyz_global.col(0);
+    xyz_global_Dx4_[1] = xyz_global.col(1);
+    xyz_global_Dx4_[2] = xyz_global.col(2);
+    xyz_global_Dx4_[3] = xyz_global.col(3);
     BuildQuadraturePoints();
   }
   Quadrangle(GlobalCoord const &p0, GlobalCoord const &p1,
       GlobalCoord const &p2, GlobalCoord const &p3) {
-    xyz_global_Dx4_.col(0) = p0; xyz_global_Dx4_.col(1) = p1;
-    xyz_global_Dx4_.col(2) = p2; xyz_global_Dx4_.col(3) = p3;
+    xyz_global_Dx4_[0] = p0;
+    xyz_global_Dx4_[1] = p1;
+    xyz_global_Dx4_[2] = p2;
+    xyz_global_Dx4_[3] = p3;
     BuildQuadraturePoints();
   }
   Quadrangle(std::initializer_list<GlobalCoord> il) {
     assert(il.size() == 4);
     auto p = il.begin();
-    for (int i = 0; i < 4; ++i) {
-      xyz_global_Dx4_[i] = p[i];
-    }
+    xyz_global_Dx4_[0] = p[0];
+    xyz_global_Dx4_[1] = p[1];
+    xyz_global_Dx4_[2] = p[2];
+    xyz_global_Dx4_[3] = p[3];
     BuildQuadraturePoints();
   }
 };

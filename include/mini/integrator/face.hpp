@@ -24,7 +24,7 @@ class Face {
   virtual MatDx2 Jacobian(const LocalCoord&) const = 0;
   virtual int CountQuadraturePoints() const = 0;
   virtual int CountVertices() const = 0;
-  virtual GlobalCoord GetVertex(int i) const = 0;  // TODO(PVC): return ref
+  virtual const GlobalCoord& GetVertex(int i) const = 0;
   virtual const LocalCoord& GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
   virtual const Real& GetLocalWeight(int i) const = 0;

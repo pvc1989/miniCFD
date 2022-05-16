@@ -42,7 +42,7 @@ class Triangle : public Face<Scalar, kDimensions> {
  private:
   static const std::array<Scalar, kPoints> local_weights_;
   static const std::array<LocalCoord, kPoints> local_coords_;
-  MatDx3 xyz_global_Dx3_;
+  std::array<GlobalCoord, 3> xyz_global_Dx3_;
   std::array<Scalar, kPoints> global_weights_;
   std::array<GlobalCoord, kPoints> global_coords_;
   std::array<MatDxD, kPoints> normal_frames_;
@@ -52,8 +52,8 @@ class Triangle : public Face<Scalar, kDimensions> {
   int CountVertices() const override {
     return 3;
   }
-  GlobalCoord GetVertex(int i) const override {
-    return xyz_global_Dx3_.col(i);
+  const GlobalCoord& GetVertex(int i) const override {
+    return xyz_global_Dx3_[i];
   }
   int CountQuadraturePoints() const override {
     return kPoints;
@@ -62,9 +62,7 @@ class Triangle : public Face<Scalar, kDimensions> {
     static_assert(D == 3);
     int n = CountQuadraturePoints();
     for (int q = 0; q < n; ++q) {
-      auto& local = GetLocalCoord(q);
-      auto dn = diff_shape_local_3x2(local[0], local[1]);
-      MatDx2 dr = xyz_global_Dx3_ * dn;
+      MatDx2 dr = Jacobian(GetLocalCoord(q));
       auto& frame = normal_frames_[q];
       frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
       frame.col(2) = dr.col(1).normalized();
@@ -102,7 +100,11 @@ class Triangle : public Face<Scalar, kDimensions> {
     return dn;
   }
   MatDx2 Jacobian(Scalar x_local, Scalar y_local) const {
-    return xyz_global_Dx3_ * diff_shape_local_3x2(x_local, y_local);
+    auto dn = diff_shape_local_3x2(x_local, y_local);
+    MatDx2 dr = xyz_global_Dx3_[0] * dn.row(0);
+    dr +=  xyz_global_Dx3_[1] * dn.row(1);
+    dr +=  xyz_global_Dx3_[2] * dn.row(2);
+    return dr;
   }
 
  public:
@@ -119,18 +121,22 @@ class Triangle : public Face<Scalar, kDimensions> {
     return local_weights_[q];
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
-    return xyz_global_Dx3_ * shape_3x1(x_local, y_local);
+    auto shape = shape_3x1(x_local, y_local);
+    GlobalCoord product = xyz_global_Dx3_[0] * shape[0];
+    product += xyz_global_Dx3_[1] * shape[1];
+    product += xyz_global_Dx3_[2] * shape[2];
+    return product;
   }
   GlobalCoord LocalToGlobal(LocalCoord const& xy_local) const override {
-    return xyz_global_Dx3_ * shape_3x1(xy_local);
+    return LocalToGlobal(xy_local[0], xy_local[1]);
   }
   MatDx2 Jacobian(const LocalCoord& xy_local) const override {
     return Jacobian(xy_local[0], xy_local[1]);
   }
-  MatDx1 center() const override {
-    MatDx1 c = xyz_global_Dx3_.col(0);
-    for (int i = 1; i < 3; ++i)
-      c += xyz_global_Dx3_.col(i);
+  GlobalCoord center() const override {
+    GlobalCoord c = xyz_global_Dx3_[0];
+    c += xyz_global_Dx3_[1];
+    c += xyz_global_Dx3_[2];
     c /= 3;
     return c;
   }
@@ -143,21 +149,23 @@ class Triangle : public Face<Scalar, kDimensions> {
 
  public:
   explicit Triangle(MatDx3 const& xyz_global) {
-    xyz_global_Dx3_ = xyz_global;
+    xyz_global_Dx3_[0] = xyz_global.col(0);
+    xyz_global_Dx3_[1] = xyz_global.col(1);
+    xyz_global_Dx3_[2] = xyz_global.col(2);
     BuildQuadraturePoints();
   }
   Triangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2) {
-    xyz_global_Dx3_.col(0) = p0;
-    xyz_global_Dx3_.col(1) = p1;
-    xyz_global_Dx3_.col(2) = p2;
+    xyz_global_Dx3_[0] = p0;
+    xyz_global_Dx3_[1] = p1;
+    xyz_global_Dx3_[2] = p2;
     BuildQuadraturePoints();
   }
   Triangle(std::initializer_list<MatDx1> il) {
     assert(il.size() == 3);
     auto p = il.begin();
-    for (int i = 0; i < 3; ++i) {
-      xyz_global_Dx3_[i] = p[i];
-    }
+    xyz_global_Dx3_[0] = p[0];
+    xyz_global_Dx3_[1] = p[1];
+    xyz_global_Dx3_[2] = p[2];
     BuildQuadraturePoints();
   }
   Triangle(const Triangle&) = default;
