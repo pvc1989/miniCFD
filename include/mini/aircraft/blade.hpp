@@ -26,6 +26,7 @@ class Blade {
  private:
   std::vector<Scalar> y_values_, chords_, twists_;
   std::vector<const Airfoil *> airfoils_;
+  Vector p_, q_, pq_;
   Frame frame_;  // absolute
   Scalar root_, azimuth_;
   const Rotor* rotor_;
@@ -43,6 +44,9 @@ class Blade {
     azimuth_ = deg;
     frame_ = GetRotor().GetFrame();
     frame_.RotateZ(deg);
+    p_ = GetPoint(0);
+    q_ = GetPoint(1);
+    pq_ = q_ - p_;
     return *this;
   }
   Blade& InstallSection(Scalar y_value, Scalar chord, Scalar twist,
@@ -111,6 +115,16 @@ class Blade {
     point += GetOrigin();
     return point;
   }
+  const Vector& P() const {
+    return p_;
+  }
+  const Vector& Q() const {
+    return q_;
+  }
+  const Vector& PQ() const {
+    return pq_;
+  }
+
   Section GetSection(Scalar y_ratio) const {
     assert(0 <= y_ratio && y_ratio <= 1);
     auto y_value = y_ratio * GetSpan();

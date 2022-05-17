@@ -29,9 +29,9 @@ class RotorSource : public Rotor<Scalar> {
   void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
     this->UpdateAzimuth(t_curr);
     for (auto &blade : this->blades_) {
-      Coord p = blade.GetPoint(0.0);
-      Coord q = blade.GetPoint(1.0);
-      Coord pq = q - p;
+      const Coord &p = blade.P();
+      const Coord &q = blade.Q();
+      const Coord &pq = blade.PQ();
       Scalar r_ratio; bool r_found = false;
       Scalar t_ratio; bool t_found = false;
       for (const Face *face : cell.adj_faces_) {
