@@ -24,6 +24,7 @@ class Rotor {
   Vector origin_;
   Scalar initial_azimuth_{0}/* deg */;
   Scalar azimuth_/* deg */, omega_/* deg / s */;
+  Scalar time_;
 
  public:
   /**
@@ -61,10 +62,13 @@ class Rotor {
     SetAzimuth(deg);
     return *this;
   }
-  Rotor& UpdateAzimuth(Scalar sec) {
-    auto deg = initial_azimuth_;
-    deg += sec * GetDegreesPerSecond();
-    SetAzimuth(deg);
+  Rotor& UpdateAzimuth(Scalar time) {
+    if (time_ != time) {
+      time_ = time;
+      auto deg = initial_azimuth_;
+      deg += time * GetDegreesPerSecond();
+      SetAzimuth(deg);
+    }
     return *this;
   }
 
