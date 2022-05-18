@@ -37,15 +37,15 @@ int main(int argc, char* argv[]) {
   frame.RotateY(+10.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  std::vector<double> y_values{0.0, 1.0}, chords{0.1, 0.1},
-      twists{+5.0, +5.0};
+  std::vector<double> y_values{0.0, 1.5}, chords{0.3, 0.1},
+      twists{+10.0, +10.0};
   auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(3);
   auto blade = Blade();
   blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
   blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
-  double root{0.7};  // y_root = -0.5, y_tip = 0.5
+  double root{0.2};  // y_root = -1.0, y_tip = 0.5
   rotor.InstallBlade(root, blade);
-  rotor.SetAzimuth(0.0);
+  rotor.SetInitialAzimuth(0.0);
 
   return Main(argc, argv, MyIC, MyBC, rotor);
 }
