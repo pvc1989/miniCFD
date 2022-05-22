@@ -2,7 +2,7 @@
 #include "rotor_source.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.29, 5.0, 0.0, 0.0, 101325.0);
+auto primitive = Primitive(1.29, 0.0, 0.0, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -15,27 +15,24 @@ auto given_state = [](const Coord& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Solver *solver) {
-  // Left & Top
-  solver->SetSubsonicInlet("3_S_10", given_state);
-  solver->SetSubsonicInlet("3_S_12", given_state);
-  // Front & Back
-  solver->SetSubsonicOutlet("3_S_11", given_state);
-  solver->SetSubsonicOutlet("3_S_13", given_state);
-  // Bottom & Right
-  solver->SetSubsonicOutlet("3_S_14", given_state);
-  solver->SetSubsonicOutlet("3_S_15", given_state);
+  solver->SetSubsonicInlet("3_S_13"/* Left */, given_state);
+  solver->SetSolidWall("3_S_14"/* Bottom */);
+  solver->SetSolidWall("3_S_15"/* Front */);
+  solver->SetSolidWall("3_S_16"/* Top */);
+  solver->SetSolidWall("3_S_17"/* Back */);
+  solver->SetSubsonicOutlet("3_S_18"/* Right */, given_state);
 }
 
 int main(int argc, char* argv[]) {
   auto rotor = Source();
   rotor.SetRevolutionsPerSecond(40.0);
-  rotor.SetOrigin(0.0, 0.0, 0.5);
+  rotor.SetOrigin(0.0, 0.0, 0.0);
   auto frame = Frame();
-  frame.RotateY(+0.0/* deg */);
+  frame.RotateY(-90.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
   std::vector<double> y_values{0.0, 0.9}, chords{0.1, 0.1},
-      twists{+5.0, +0.0};
+      twists{+10.0, +10.0};
   auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(2);
   auto blade = Blade();
   blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
