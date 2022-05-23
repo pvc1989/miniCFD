@@ -19,6 +19,7 @@ set (cases
   forward_step
   # three-dimensional problems:
   yf17
+  mach_disk
   cylinder
 )
 foreach (case ${cases})
