@@ -16,30 +16,39 @@ auto given_state = [](const Coord& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSubsonicInlet("3_S_30"/* Front */, given_state);
-  solver->SetSubsonicInlet("3_S_33"/* Left */, given_state);
-  solver->SetSubsonicOutlet("3_S_31"/* Right */, given_state);
-  solver->SetSubsonicOutlet("3_S_32"/* Top */, given_state);
-  solver->SetSubsonicOutlet("3_S_35"/* Back */, given_state);
-  solver->SetSolidWall("3_S_34"/* Bottom */);
-  // ship surface
-  solver->SetSolidWall("3_S_36");
-  solver->SetSolidWall("3_S_37");
-  solver->SetSolidWall("3_S_38");
-  solver->SetSolidWall("3_S_39");
-  solver->SetSolidWall("3_S_40");
-  solver->SetSolidWall("3_S_41");
+  // bounding box
+  solver->SetSubsonicInlet("3_S_37"/* Front */, given_state);
+  solver->SetSubsonicInlet("3_S_36"/* Left */, given_state);
+  solver->SetSubsonicOutlet("3_S_41"/* Right */, given_state);
+  solver->SetSubsonicOutlet("3_S_38"/* Top */, given_state);
+  solver->SetSubsonicOutlet("3_S_39"/* Back */, given_state);
+  // bottom
+  solver->SetSolidWall("3_S_27"/* fine */);
+  solver->SetSolidWall("3_S_40"/* coarse */);
+  // tower
+  solver->SetSolidWall("3_S_13");
+  solver->SetSolidWall("3_S_14");
+  solver->SetSolidWall("3_S_15");
+  solver->SetSolidWall("3_S_16");
+  solver->SetSolidWall("3_S_18");
+  // nose
+  solver->SetSolidWall("3_S_21");
+  solver->SetSolidWall("3_S_22");
+  solver->SetSolidWall("3_S_23");
+  // body
+  solver->SetSolidWall("3_S_28");
+  solver->SetSolidWall("3_S_29");
+  solver->SetSolidWall("3_S_30");
+  solver->SetSolidWall("3_S_35");
   solver->SetSolidWall("3_S_42");
   solver->SetSolidWall("3_S_43");
   solver->SetSolidWall("3_S_44");
   solver->SetSolidWall("3_S_45");
-  solver->SetSolidWall("3_S_46");
-  solver->SetSolidWall("3_S_47");
-  solver->SetSolidWall("3_S_48");
-  solver->SetSolidWall("3_S_49");
-  solver->SetSolidWall("3_S_50");
-  solver->SetSolidWall("3_S_51");
-  solver->SetSolidWall("3_S_52");
+  // deck
+  solver->SetSolidWall("3_S_2");
+  solver->SetSolidWall("3_S_6");
+  solver->SetSolidWall("3_S_33");
+  solver->SetSolidWall("3_S_34");
 }
 
 int main(int argc, char* argv[]) {
