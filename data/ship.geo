@@ -35,4 +35,12 @@ Characteristic Length{ PointsOf{ Volume{6};} } = lc * 1;  // wake
 
 Recursive Delete { Volume{1, 2, 3, 4}; }
 
+Physical Surface("Bounding Box") = { 36, 37, 38, 39, 41 };
+Physical Surface("Bottom") = { 27, 40 };
+Physical Surface("Tower") = { 13, 14, 15, 16, 18 };
+Physical Surface("Nose") = { 21, 22, 23 };
+Physical Surface("Body") = { 28, 29, 30, 35, 42, 43, 44, 45 };
+Physical Surface("Deck") = { 2, 6, 33, 34 };
+Physical Volume("Fluid") = { 6, 8 };
+
 Mesh 3;
