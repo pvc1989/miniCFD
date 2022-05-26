@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   auto ft = 0.3048;
   rotor.SetOrigin(-45 * ft, 22.5 * ft, 40 * ft);
   auto frame = Frame();
-  frame.RotateY(-90.0/* deg */);
+  frame.RotateY(0.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
   std::vector<double> y_values{0.0, 9.9}, chords{0.1, 0.1},
