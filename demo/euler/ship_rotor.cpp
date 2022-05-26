@@ -3,7 +3,7 @@
 
 /* Set initial conditions. */
 auto [c, s] = mini::geometry::CosSin(15.0);
-auto primitive = Primitive(1.29, 5.0 * s, -5.0 * c, 0.0, 101325.0);
+auto primitive = Primitive(1.29, 5.0 * c, 5.0 * s, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -53,8 +53,9 @@ void MyBC(const std::string &suffix, Solver *solver) {
 
 int main(int argc, char* argv[]) {
   auto rotor = Source();
-  rotor.SetRevolutionsPerSecond(40.0);
-  rotor.SetOrigin(6.858/* 22.5 ft */, 13.716/* 45 ft */, 12.192/* 40 ft */);
+  rotor.SetRevolutionsPerSecond(4.0);
+  auto ft = 0.3048;
+  rotor.SetOrigin(-45 * ft, 22.5 * ft, 40 * ft);
   auto frame = Frame();
   frame.RotateY(-90.0/* deg */);
   rotor.SetFrame(frame);
