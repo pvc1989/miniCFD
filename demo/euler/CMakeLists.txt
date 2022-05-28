@@ -31,8 +31,8 @@ endforeach (case ${cases})
 
 set (cases
   wing
-  rotor
-  ship_rotor
+  rotor_in_tunnel
+  rotor_over_ship
 )
 foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
