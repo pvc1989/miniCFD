@@ -1,6 +1,6 @@
 set (libs
   sourceless
-  rotor_source
+  rotarywing
 )
 foreach(lib ${libs})
   add_library(demo_euler_${lib} ${lib}.cpp)
@@ -38,5 +38,5 @@ foreach (case ${cases})
   add_executable(demo_euler_${case} ${case}.cpp)
   set_target_properties(demo_euler_${case} PROPERTIES OUTPUT_NAME ${case})
   target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-  target_link_libraries(demo_euler_${case} demo_euler_rotor_source)
+  target_link_libraries(demo_euler_${case} demo_euler_rotarywing)
 endforeach (case ${cases})

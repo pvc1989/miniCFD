@@ -1,5 +1,5 @@
 //  Copyright 2022 PEI Weicheng
-#include "rotor_source.hpp"
+#include "rotarywing.hpp"
 
 /* Set initial conditions. */
 auto primitive = Primitive(1.29, 0.0, 0.0, 0.0, 101325.0);
