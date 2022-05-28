@@ -20,7 +20,7 @@ void MyBC(const std::string &suffix, Solver *solver) {
   solver->SetSubsonicInlet("3_S_37"/* Front */, given_state);
   solver->SetSubsonicInlet("3_S_36"/* Left */, given_state);
   solver->SetSubsonicOutlet("3_S_41"/* Right */, given_state);
-  solver->SetSubsonicOutlet("3_S_38"/* Top */, given_state);
+  solver->SetSupersonicOutlet("3_S_38"/* Top */);
   solver->SetSubsonicOutlet("3_S_39"/* Back */, given_state);
   // bottom
   solver->SetSolidWall("3_S_27"/* fine */);
