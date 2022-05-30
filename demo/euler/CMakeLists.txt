@@ -11,9 +11,9 @@ endforeach(lib ${libs})
 
 set (cases
   # shock tube problems:
-  sod
-  lax
-  vacuum
+  shock_tube_sod
+  shock_tube_lax
+  shock_tube_vacuum
   # two-dimensional problems:
   double_mach
   forward_step
