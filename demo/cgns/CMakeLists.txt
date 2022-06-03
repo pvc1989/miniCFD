@@ -1,0 +1,4 @@
+add_executable(demo_cgns_add_iterative_data add_iterative_data.cpp)
+target_include_directories(demo_cgns_add_iterative_data PRIVATE ${CGNS_INC})
+target_link_libraries(demo_cgns_add_iterative_data ${CGNS_LIB})
+set_target_properties(demo_cgns_add_iterative_data PROPERTIES OUTPUT_NAME add_iterative_data)
