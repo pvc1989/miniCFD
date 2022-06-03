@@ -3,10 +3,11 @@ set (libs
   rotarywing
 )
 foreach(lib ${libs})
-  add_library(demo_euler_${lib} ${lib}.cpp)
-  set_target_properties(demo_euler_${lib} PROPERTIES OUTPUT_NAME ${lib})
-  target_include_directories(demo_euler_${lib} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-  target_link_libraries(demo_euler_${lib} ${CGNS_LIB} metis ${MPI_LIBRARY})
+  set(target demo_euler_${lib})
+  add_library(${target} ${lib}.cpp)
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME ${lib})
+  target_include_directories(${target} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+  target_link_libraries(${target} ${CGNS_LIB} metis ${MPI_LIBRARY})
 endforeach(lib ${libs})
 
 set (cases
@@ -23,10 +24,11 @@ set (cases
   cylinder
 )
 foreach (case ${cases})
-  add_executable(demo_euler_${case} ${case}.cpp)
-  set_target_properties(demo_euler_${case} PROPERTIES OUTPUT_NAME ${case})
-  target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-  target_link_libraries(demo_euler_${case} demo_euler_sourceless)
+  set(target demo_euler_${case})
+  add_executable(${target} ${case}.cpp)
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME ${case})
+  target_include_directories(${target} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+  target_link_libraries(${target} demo_euler_sourceless)
 endforeach (case ${cases})
 
 set (cases
@@ -35,8 +37,9 @@ set (cases
   rotor_over_ship
 )
 foreach (case ${cases})
-  add_executable(demo_euler_${case} ${case}.cpp)
-  set_target_properties(demo_euler_${case} PROPERTIES OUTPUT_NAME ${case})
-  target_include_directories(demo_euler_${case} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-  target_link_libraries(demo_euler_${case} demo_euler_rotarywing)
+  set(target demo_euler_${case})
+  add_executable(${target} ${case}.cpp)
+  set_target_properties(${target} PROPERTIES OUTPUT_NAME ${case})
+  target_include_directories(${target} PRIVATE ${CGNS_INC} ${METIS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
+  target_link_libraries(${target} demo_euler_rotarywing)
 endforeach (case ${cases})
