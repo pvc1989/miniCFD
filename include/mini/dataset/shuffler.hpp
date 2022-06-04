@@ -9,6 +9,7 @@
 #include <cstring>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -509,7 +510,7 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str());
   if (std::system(cmd))
-    exit(0);
+    throw std::runtime_error(cmd + std::string(" failed."));
   std::printf("[Done] %s\n", cmd);
   auto cgns_mesh = cgns::File<Real>(old_cgns_name);
   cgns_mesh.ReadBases();

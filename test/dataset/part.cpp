@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <stdexcept>
 
 #include "mpi.h"
 #include "pcgnslib.h"
@@ -29,7 +30,8 @@ int main(int argc, char* argv[]) {
         n_cores, case_name.c_str(),
         i_core, n_cores, MPI_Wtime() - time_begin);
     auto cmd = "./shuffler " + std::to_string(n_cores) + ' ' + case_name;
-    std::system(cmd.c_str());
+    if (std::system(cmd.c_str()))
+      throw std::runtime_error(cmd + std::string(" failed."));
   }
   MPI_Barrier(MPI_COMM_WORLD);
 

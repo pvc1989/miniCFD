@@ -8,6 +8,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -40,11 +41,15 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   constexpr int kCommandLength = 1024;
   char cmd[kCommandLength];
   std::snprintf(cmd, kCommandLength, "mkdir -p %s/scalar", case_name.c_str());
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/scalar/original.cgns";
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   using CgnsMesh = mini::mesh::cgns::File<double>;
   auto cgns_mesh = CgnsMesh(old_file_name);
   cgns_mesh.ReadBases();
@@ -148,11 +153,15 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   constexpr int kCommandLength = 1024;
   char cmd[kCommandLength];
   std::snprintf(cmd, kCommandLength, "mkdir -p %s/partition", case_name);
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + std::string("/original.cgns");
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name, old_file_name.c_str());
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   // build a `Part` from the cgns file
   MPI_Init(NULL, NULL);
   int n_cores, i_core;

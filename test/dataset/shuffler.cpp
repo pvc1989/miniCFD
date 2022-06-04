@@ -68,12 +68,16 @@ TEST_F(ShufflerTest, ShuffleConnectivity) {
 TEST_F(ShufflerTest, ParitionAndShuffle) {
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition", case_name);
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + std::string("/original.cgns");
   /* Generate the original cgns file: */
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
       test_data_dir_.c_str(), case_name, old_file_name.c_str());
-  std::system(cmd); std::cout << "[Done] " << cmd << std::endl;
+  if (std::system(cmd))
+    throw std::runtime_error(cmd + std::string(" failed."));
+  std::cout << "[Done] " << cmd << std::endl;
   Shuffler::PartitionAndShuffle(case_name, old_file_name, n_parts);
 }
 
