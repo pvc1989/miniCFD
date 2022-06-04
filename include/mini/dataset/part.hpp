@@ -1685,7 +1685,8 @@ class Part {
     if (rank_ == 0) {
       std::snprintf(temp, sizeof(temp), "mkdir -p %s/%s",
           directory_.c_str(), soln_name.c_str());
-      std::system(temp);
+      if (std::system(temp))
+        exit(0);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     std::snprintf(temp, sizeof(temp), "%s/%s/%d.%s",

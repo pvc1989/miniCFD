@@ -508,7 +508,8 @@ void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str());
-  std::system(cmd);
+  if (std::system(cmd))
+    exit(0);
   std::printf("[Done] %s\n", cmd);
   auto cgns_mesh = cgns::File<Real>(old_cgns_name);
   cgns_mesh.ReadBases();
