@@ -194,7 +194,7 @@ class RungeKuttaBase {
       for (int q = 0; q < n; ++q) {
         const auto& coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
-        Value flux = riemann.GetFluxOnFreeWall(u_holder);
+        Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
             -= flux * holder.basis_(coord).transpose();
@@ -216,7 +216,7 @@ class RungeKuttaBase {
         for (int q = 0; q < n; ++q) {
           const auto& coord = gauss.GetGlobalCoord(q);
           Value u_given = iter->second(coord, this->t_curr_);
-          Value flux = riemann.GetRotatedFlux(u_given);
+          Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
               -= flux * holder.basis_(coord).transpose();

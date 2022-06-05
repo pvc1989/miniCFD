@@ -129,7 +129,7 @@ class Euler {
   static FluxMatrix GetFluxMatrix(Conservative const& conservative) {
     return Gas::GetFluxMatrix(conservative);
   }
-  Flux GetRotatedFlux(Conservative const& conservative) const {
+  Flux GetFluxOnSupersonicInlet(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     GlobalToNormal(&(primitive.momentum()));
     auto flux = unrotated_euler_.GetFlux(primitive);
@@ -154,7 +154,7 @@ class Euler {
     cartesian_.NormalToGlobal(&(flux.momentum()));
     return flux;
   }
-  Flux GetFluxOnFreeWall(Conservative const& conservative) const {
+  Flux GetFluxOnSupersonicOutlet(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     cartesian_.GlobalToNormal(&(primitive.momentum()));
     auto flux = unrotated_euler_.GetFlux(primitive);

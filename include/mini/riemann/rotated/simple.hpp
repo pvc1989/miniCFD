@@ -67,11 +67,11 @@ class Simple {
     flux.setZero();
     return flux;
   }
-  Flux GetFluxOnFreeWall(const Conservative& state) const {
+  Flux GetFluxOnSupersonicOutlet(const Conservative& state) const {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
-  Flux GetRotatedFlux(const Conservative& state) const {
+  Flux GetFluxOnSupersonicInlet(const Conservative& state) const {
     auto raw_flux = unrotated_simple_.GetFlux(state);
     return ConvertToFlux(raw_flux);
   }
