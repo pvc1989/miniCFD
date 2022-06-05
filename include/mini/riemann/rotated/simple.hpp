@@ -83,6 +83,11 @@ class Simple {
       Conservative const& conservative_o) const {
     return {};
   }
+  Flux GetFluxOnSmartBoundary(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    // TODO(PVC): provide physical implementation
+    return {};
+  }
   static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {

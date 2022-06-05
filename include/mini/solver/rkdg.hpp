@@ -42,7 +42,7 @@ class RungeKuttaBase {
   std::vector<std::string> supersonic_outlet_, solid_wall_;
   using Function = std::function<Value(const Coord&, double)>;
   std::unordered_map<std::string, Function> supersonic_inlet__,
-      subsonic_inlet_, subsonic_outlet_;
+      subsonic_inlet_, subsonic_outlet_, smart_boundary_;
   Limiter limiter_;
   Source source_;
   double dt_, t_curr_;
@@ -60,6 +60,10 @@ class RungeKuttaBase {
   ~RungeKuttaBase() noexcept = default;
 
  public:  // set BCs
+  template <typename Callable>
+  void SetSmartBoundary(const std::string &name, Callable&& func) {
+    smart_boundary_[name] = func;
+  }
   template <typename Callable>
   void SetSupersonicInlet(const std::string &name, Callable&& func) {
     supersonic_inlet__[name] = func;
@@ -269,12 +273,35 @@ class RungeKuttaBase {
       part.ForEachConstBoundaryFace(visit, iter->first);
     }
   }
+  void ApplySmartBoundary(const Part &part) {
+    for (auto iter = smart_boundary_.begin(); iter != smart_boundary_.end();
+        ++iter) {
+      auto visit = [this, iter](const Face &face){
+        const auto& gauss = *(face.gauss_ptr_);
+        assert(face.sharer_ == nullptr);
+        const auto& holder = *(face.holder_);
+        const auto& riemann = (face.riemann_);
+        auto n = gauss.CountQuadraturePoints();
+        for (int q = 0; q < n; ++q) {
+          const auto& coord = gauss.GetGlobalCoord(q);
+          Value u_inner = holder.projection_(coord);
+          Value u_given = iter->second(coord, this->t_curr_);
+          Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
+          flux *= gauss.GetGlobalWeight(q);
+          this->residual_.at(holder.id())
+              -= flux * holder.basis_(coord).transpose();
+        }
+      };
+      part.ForEachConstBoundaryFace(visit, iter->first);
+    }
+  }
   void UpdateBoundaryResidual(const Part &part) {
     ApplySolidWall(part);
     ApplySupersonicInlet(part);
     ApplySupersonicOutlet(part);
     ApplySubsonicInlet(part);
     ApplySubsonicOutlet(part);
+    ApplySmartBoundary(part);
   }
 };
 

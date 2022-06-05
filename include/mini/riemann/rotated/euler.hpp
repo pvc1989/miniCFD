@@ -198,6 +198,28 @@ class Euler {
     NormalToGlobal(&(flux.momentum()));
     return flux;
   }
+  Flux GetFluxOnSmartBoundary(Conservative const& conservative_i,
+      Conservative const& conservative_o) const {
+    auto primitive_i = Gas::ConservativeToPrimitive(conservative_i);
+    auto primitive_o = Gas::ConservativeToPrimitive(conservative_o);
+    Scalar a = Gas::GetSpeedOfSound(primitive_i);
+    Scalar u_nu = primitive_i.momentum().dot(cartesian_.nu());
+    Flux flux;
+    if (u_nu < 0) {  // inlet
+      if (u_nu + a < 0) {
+        flux = GetFluxOnSupersonicInlet(conservative_o);
+      } else {
+        flux = GetFluxOnSubsonicInlet(conservative_i, conservative_o);
+      }
+    } else {  // outlet
+      if (u_nu - a > 0) {
+        flux = GetFluxOnSupersonicOutlet(conservative_i);
+      } else {
+        flux = GetFluxOnSubsonicOutlet(conservative_i, conservative_o);
+      }
+    }
+    return flux;
+  }
   void GlobalToNormal(Vector* v) const {
     cartesian_.GlobalToNormal(v);
   }
