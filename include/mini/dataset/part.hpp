@@ -1579,6 +1579,7 @@ class Part {
 
   void BuildBoundaryFaces(const ZoneSectToConn &cell_conn,
       std::ifstream& istrm, int i_file) {
+    // build a map from (i_zone, i_node) to cells using it
     std::unordered_map<Int, std::unordered_map<Int, std::vector<Int>>>
         z_n_to_m_cells;  // [i_zone][i_node] -> vector of `m_cell`s
     for (auto& [i_zone, zone] : local_cells_) {
@@ -1656,6 +1657,9 @@ class Part {
         auto gauss_uptr = BuildGaussForFace(npe, i_zone, i_node_list);
         auto face_uptr = std::make_unique<Face>(
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
+        // the face's normal vector always point from holder to the exterior
+        assert((face_uptr->center() - holder_ptr->center()).dot(
+            face_uptr->GetNormalFrame(0).col(0)) > 0);
         // holder_ptr->adj_faces_.emplace_back(face_uptr.get());
         faces.emplace_back(std::move(face_uptr));
       }
