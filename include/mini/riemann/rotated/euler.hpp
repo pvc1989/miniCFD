@@ -200,10 +200,9 @@ class Euler {
   }
   Flux GetFluxOnSmartBoundary(Conservative const& conservative_i,
       Conservative const& conservative_o) const {
-    auto primitive_i = Gas::ConservativeToPrimitive(conservative_i);
-    auto primitive_o = Gas::ConservativeToPrimitive(conservative_o);
-    Scalar a = Gas::GetSpeedOfSound(primitive_i);
-    Scalar u_nu = primitive_i.momentum().dot(cartesian_.nu());
+    auto primitive = Gas::ConservativeToPrimitive(conservative_i);
+    Scalar a = Gas::GetSpeedOfSound(primitive);
+    Scalar u_nu = primitive.momentum().dot(cartesian_.nu());
     Flux flux;
     if (u_nu < 0) {  // inlet
       if (u_nu + a < 0) {
