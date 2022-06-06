@@ -12,6 +12,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <unordered_map>
@@ -606,6 +607,20 @@ class Part {
   static const MPI_Datatype kMpiIntType;
   static const MPI_Datatype kMpiRealType;
 
+ private:
+  using GaussOnTriangle = std::conditional_t<kDegrees == 0,
+    integrator::Triangle<Scalar, kDimensions, 1>,
+    integrator::Triangle<Scalar, kDimensions, 16>>;
+  using GaussOnQuadrangle = std::conditional_t<kDegrees == 0,
+    integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
+    integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
+  using GaussOnTetra = std::conditional_t<kDegrees == 0,
+    integrator::Tetra<Scalar, 1>,
+    integrator::Tetra<Scalar, 24>>;
+  using GaussOnHexa = std::conditional_t<kDegrees == 0,
+    integrator::Hexa<Scalar, 1, 1, 1>,
+    integrator::Hexa<Scalar, 4, 4, 4>>;
+
  public:
   Part(std::string const& directory, int rank)
       : directory_(directory), cgns_file_(directory + "/shuffled.cgns"),
@@ -774,12 +789,12 @@ class Part {
     }
   }
   auto BuildTetraUptr(int i_zone, const Int *i_node_list) const {
-    return std::make_unique<integrator::Tetra<Scalar, 24>>(
+    return std::make_unique<GaussOnTetra>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
   }
   auto BuildHexaUptr(int i_zone, const Int *i_node_list) const {
-    return std::make_unique<integrator::Hexa<Scalar, 4, 4, 4>>(
+    return std::make_unique<GaussOnHexa>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
@@ -799,16 +814,14 @@ class Part {
     return gauss_uptr;
   }
   auto BuildTriangleUptr(int i_zone, const Int *i_node_list) const {
-    using Gauss = integrator::Triangle<Scalar, kDimensions, 16>;
-    auto gauss_uptr = std::make_unique<Gauss>(
+    auto gauss_uptr = std::make_unique<GaussOnTriangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
     gauss_uptr->BuildNormalFrames();
     return gauss_uptr;
   }
   auto BuildQuadrangleUptr(int i_zone, const Int *i_node_list) const {
-    using Gauss = integrator::Quadrangle<Scalar, kDimensions, 4, 4>;
-    auto gauss_uptr = std::make_unique<Gauss>(
+    auto gauss_uptr = std::make_unique<GaussOnQuadrangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
     gauss_uptr->BuildNormalFrames();
@@ -830,10 +843,10 @@ class Part {
   static void SortNodesOnFace(int npe, const Int *cell, Int *face) {
     switch (npe) {
       case 4:
-        integrator::Tetra<Scalar, 24>::SortNodesOnFace(cell, face);
+        GaussOnTetra::SortNodesOnFace(cell, face);
         break;
       case 8:
-        integrator::Hexa<Scalar, 4, 4, 4>::SortNodesOnFace(cell, face);
+        GaussOnHexa::SortNodesOnFace(cell, face);
         break;
       default:
         assert(false);
