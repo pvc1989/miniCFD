@@ -226,6 +226,24 @@ Tetra<Scalar, kPoints>::faces_
     = Tetra<Scalar, kPoints>::BuildFaces();
 
 template <typename Scalar>
+class TetraBuilder<Scalar, 1> {
+  static constexpr int kPoints = 1;
+  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    Scalar a = 0.25;
+    std::array<LocalCoord, kPoints> points;
+    points[0] = { a, a, a };
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights{ 1.0 / 6.0 };
+    return weights;
+  }
+};
+
+template <typename Scalar>
 class TetraBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
   using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;

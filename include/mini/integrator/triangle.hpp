@@ -190,6 +190,25 @@ Triangle<Scalar, kDimensions, kPoints>::local_weights_
     = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalWeights();
 
 template <typename Scalar, int kDimensions>
+class TriangleBuilder<Scalar, kDimensions, 1> {
+  static constexpr int kPoints = 1;
+  using LocalCoord =
+      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    Scalar a = .3333333333333333333333333333333333;
+    std::array<LocalCoord, kPoints> points;
+    points[0] = { a, a };
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights{ 1.0 / 2.0 };
+    return weights;
+  }
+};
+
+template <typename Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kPoints = 16;
   using LocalCoord =
