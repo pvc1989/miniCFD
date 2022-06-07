@@ -1,5 +1,6 @@
 set (tools
   add_iterative_data
+  delete_node
 )
 
 foreach(tool ${tools})
