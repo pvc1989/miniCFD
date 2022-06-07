@@ -117,10 +117,18 @@ class Euler {
   using FluxMatrix = typename Flux::FluxMatrix;
   using Conservative = typename Base::Conservative;
   using Primitive = typename Base::Primitive;
+  using Value = typename Flux::Base;
 
   template <typename... Args>
   void Rotate(Args&&... args) {
     cartesian_.Rotate(std::forward<Args>(args)...);
+  }
+
+  void GlobalToNormal(Value* v) const {
+    cartesian_.GlobalToNormal(&(v->momentum()));
+  }
+  void NormalToGlobal(Value* v) const {
+    cartesian_.NormalToGlobal(&(v->momentum()));
   }
 
   static Flux GetFlux(const Primitive& state) {
@@ -131,34 +139,34 @@ class Euler {
   }
   Flux GetFluxOnSupersonicInlet(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
-    GlobalToNormal(&(primitive.momentum()));
+    GlobalToNormal(&primitive);
     auto flux = unrotated_euler_.GetFlux(primitive);
-    cartesian_.NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnTimeAxis(Conservative const& left,
       Conservative const& right) const {
     auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
-    GlobalToNormal(&(left__primitive.momentum()));
-    GlobalToNormal(&(right_primitive.momentum()));
+    GlobalToNormal(&left__primitive);
+    GlobalToNormal(&right_primitive);
     auto flux = unrotated_euler_.GetFluxOnTimeAxis(
         left__primitive, right_primitive);
-    cartesian_.NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnSolidWall(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
     Flux flux; flux.setZero();
     flux.momentumX() = primitive.p();
-    cartesian_.NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnSupersonicOutlet(Conservative const& conservative) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative);
-    cartesian_.GlobalToNormal(&(primitive.momentum()));
+    GlobalToNormal(&primitive);
     auto flux = unrotated_euler_.GetFlux(primitive);
-    cartesian_.NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnSubsonicInlet(Conservative const& conservative_i,
@@ -176,9 +184,9 @@ class Euler {
     Scalar p_jump = primitive_o.p() - primitive_b.p();
     primitive_b.rho() -= p_jump / (a_i * a_i);
     primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
-    GlobalToNormal(&(primitive_b.momentum()));
+    GlobalToNormal(&primitive_b);
     auto flux = unrotated_euler_.GetFlux(primitive_b);
-    NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnSubsonicOutlet(Conservative const& conservative_i,
@@ -193,9 +201,9 @@ class Euler {
     Scalar u_nu_i = primitive_i.momentum().dot(cartesian_.nu());
     Scalar rho_a_i = primitive_i.rho() * (u_nu_i > 0 ? a_i : -a_i);
     primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
-    GlobalToNormal(&(primitive_b.momentum()));
+    GlobalToNormal(&primitive_b);
     auto flux = unrotated_euler_.GetFlux(primitive_b);
-    NormalToGlobal(&(flux.momentum()));
+    NormalToGlobal(&flux);
     return flux;
   }
   Flux GetFluxOnSmartBoundary(Conservative const& conservative_i,
@@ -218,12 +226,6 @@ class Euler {
       }
     }
     return flux;
-  }
-  void GlobalToNormal(Vector* v) const {
-    cartesian_.GlobalToNormal(v);
-  }
-  void NormalToGlobal(Vector* v) const {
-    cartesian_.NormalToGlobal(v);
   }
 
  private:
