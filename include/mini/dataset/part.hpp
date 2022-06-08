@@ -28,6 +28,25 @@
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
+namespace std{
+// 通用版本，禁止实例化
+template<unsigned N, typename... Cases>
+struct select;
+// 特化版本 (N > 0)：
+template <unsigned N, typename T, typename... Cases>
+struct select<N, T, Cases...> {
+  using type = typename select<N-1, Cases...>::type;
+};
+// 特化版本 (N == 0)：
+template <typename T, typename... Cases>
+struct select<0, T, Cases...> {
+  using type = T; 
+};
+// 标准库风格的类型别名:
+template<unsigned N, typename... Cases>
+using select_t = typename select<N, Cases...>::type;
+}  // namespace std
+
 namespace mini {
 namespace mesh {
 namespace cgns {
@@ -611,14 +630,18 @@ class Part {
   using GaussOnTriangle = std::conditional_t<kDegrees == 0,
     integrator::Triangle<Scalar, kDimensions, 1>,
     integrator::Triangle<Scalar, kDimensions, 16>>;
-  using GaussOnQuadrangle = std::conditional_t<kDegrees == 0,
+  using GaussOnQuadrangle = std::select_t<kDegrees,
     integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
+    integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
+    integrator::Quadrangle<Scalar, kDimensions, 3, 3>,
     integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
   using GaussOnTetra = std::conditional_t<kDegrees == 0,
     integrator::Tetra<Scalar, 1>,
     integrator::Tetra<Scalar, 24>>;
-  using GaussOnHexa = std::conditional_t<kDegrees == 0,
+  using GaussOnHexa = std::select_t<kDegrees,
     integrator::Hexa<Scalar, 1, 1, 1>,
+    integrator::Hexa<Scalar, 2, 2, 2>,
+    integrator::Hexa<Scalar, 3, 3, 3>,
     integrator::Hexa<Scalar, 4, 4, 4>>;
 
  public:
