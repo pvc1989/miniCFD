@@ -209,6 +209,72 @@ class TriangleBuilder<Scalar, kDimensions, 1> {
 };
 
 template <typename Scalar, int kDimensions>
+class TriangleBuilder<Scalar, kDimensions, 3> {
+  static constexpr int kPoints = 3;
+  using LocalCoord =
+      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, kPoints> points;
+    int q = 0;
+    // the only S21 orbits
+    Scalar a_s21[] = { 1./6. };
+    for (auto a : a_s21) {
+      auto b = 1 - a - a;
+      points[q++] = { a, a };
+      points[q++] = { a, b };
+      points[q++] = { b, a };
+    }
+    assert(q == kPoints);
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights;
+    for (int q = 0; q < 3; ++q)
+      weights[q] = 1./3.;
+    for (int q = 0; q < kPoints; ++q)
+      weights[q] /= 2.0;
+    return weights;
+  }
+};
+
+template <typename Scalar, int kDimensions>
+class TriangleBuilder<Scalar, kDimensions, 6> {
+  static constexpr int kPoints = 6;
+  using LocalCoord =
+      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, kPoints> points;
+    int q = 0;
+    // the two S21 orbits
+    Scalar a_s21[] = {
+        .44594849091596488631832925388305199,
+        .09157621350977074345957146340220151 };
+    for (auto a : a_s21) {
+      auto b = 1 - a - a;
+      points[q++] = { a, a };
+      points[q++] = { a, b };
+      points[q++] = { b, a };
+    }
+    assert(q == kPoints);
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights;
+    for (int q = 0; q < 3; ++q)
+      weights[q] = .22338158967801146569500700843312280;
+    for (int q = 3; q < 6; ++q)
+      weights[q] = .10995174365532186763832632490021053;
+    for (int q = 0; q < kPoints; ++q)
+      weights[q] /= 2.0;
+    return weights;
+  }
+};
+
+template <typename Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kPoints = 16;
   using LocalCoord =

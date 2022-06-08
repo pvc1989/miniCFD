@@ -627,8 +627,10 @@ class Part {
   static const MPI_Datatype kMpiRealType;
 
  private:
-  using GaussOnTriangle = std::conditional_t<kDegrees == 0,
+  using GaussOnTriangle = std::select_t<kDegrees,
     integrator::Triangle<Scalar, kDimensions, 1>,
+    integrator::Triangle<Scalar, kDimensions, 3>,
+    integrator::Triangle<Scalar, kDimensions, 6>,
     integrator::Triangle<Scalar, kDimensions, 16>>;
   using GaussOnQuadrangle = std::select_t<kDegrees,
     integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
