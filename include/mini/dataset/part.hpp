@@ -635,8 +635,10 @@ class Part {
     integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
     integrator::Quadrangle<Scalar, kDimensions, 3, 3>,
     integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
-  using GaussOnTetra = std::conditional_t<kDegrees == 0,
+  using GaussOnTetra = std::select_t<kDegrees,
     integrator::Tetra<Scalar, 1>,
+    integrator::Tetra<Scalar, 4>,
+    integrator::Tetra<Scalar, 14>,
     integrator::Tetra<Scalar, 24>>;
   using GaussOnHexa = std::select_t<kDegrees,
     integrator::Hexa<Scalar, 1, 1, 1>,
