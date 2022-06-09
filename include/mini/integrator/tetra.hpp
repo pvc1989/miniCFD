@@ -318,6 +318,59 @@ class TetraBuilder<Scalar, 14> {
 };
 
 template <typename Scalar>
+class TetraBuilder<Scalar, 15> {
+  static constexpr int kPoints = 15;
+  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, kPoints> points;
+    int q = 0;
+    {  // the only S4 orbit
+      Scalar a = 0.25;
+      points[q++] = { a, a, a };
+    }
+    // the two S31 orbits
+    Scalar a_s31[] = {
+        0.09197107805272303,
+        0.31979362782962991 };
+    for (auto a : a_s31) {
+      auto c = 1 - 3 * a;
+      points[q++] = { a, a, a };
+      points[q++] = { a, a, c };
+      points[q++] = { a, c, a };
+      points[q++] = { c, a, a };
+    }
+    {  // the only S22 orbit
+      Scalar a = 0.05635083268962916;
+      auto c = 1 - 2 * a;
+      points[q++] = { a, a, c };
+      points[q++] = { a, c, a };
+      points[q++] = { a, c, c };
+      points[q++] = { c, a, a };
+      points[q++] = { c, a, c };
+      points[q++] = { c, c, a };
+    }
+    assert(q == kPoints);
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights;
+    for (int q = 0; q < 1; ++q)
+      weights[q] = 16.0 / 135.0;
+    for (int q = 1; q < 5; ++q)
+      weights[q] = 0.07193708377901862;
+    for (int q = 5; q < 9; ++q)
+      weights[q] = 0.06906820722627239;
+    for (int q = 9; q < kPoints; ++q)
+      weights[q] = 20.0 / 378.0;
+    for (int q = 0; q < kPoints; ++q)
+      weights[q] /= 6.0;
+    return weights;
+  }
+};
+
+template <typename Scalar>
 class TetraBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
   using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
