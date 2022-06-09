@@ -19,6 +19,19 @@ template <typename Scalar, int kDimensions, int kDegrees>
 class Raw;
 
 template <typename Scalar>
+class Raw<Scalar, 2, 1> {
+ public:
+  static constexpr int N = 3;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Coord = algebra::Matrix<Scalar, 2, 1>;
+
+  static MatNx1 CallAt(const Coord &xy) {
+    MatNx1 col = { 1, xy[0], xy[1] };
+    return col;
+  }
+};
+
+template <typename Scalar>
 class Raw<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;  // the number of components
@@ -28,6 +41,22 @@ class Raw<Scalar, 2, 2> {
   static MatNx1 CallAt(const Coord &xy) {
     auto x = xy[0], y = xy[1];
     MatNx1 col = { 1, x, y, x * x, x * y, y * y };
+    return col;
+  }
+};
+
+template <typename Scalar>
+class Raw<Scalar, 2, 3> {
+ public:
+  static constexpr int N = 10;  // the number of components
+  using MatNx1 = algebra::Matrix<Scalar, N, 1>;
+  using Coord = algebra::Matrix<Scalar, 2, 1>;
+
+  static MatNx1 CallAt(const Coord &xy) {
+    auto x = xy[0], y = xy[1];
+    auto x_x = x * x, x_y = x * y, y_y = y * y;
+    MatNx1 col = { 1, x, y, x_x, x_y, y_y,
+        x_x * x, x_x * y, x * y_y, y * y_y };
     return col;
   }
 };
