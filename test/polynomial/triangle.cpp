@@ -35,7 +35,7 @@ TEST_F(TestTriangle, OrthoNormal) {
   }, triangle) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another triangle-integrator
-  Coord shift = {-10, 20};
+  Coord shift = {10, 20};
   xy_global_i.col(0) += shift;
   xy_global_i.col(1) += shift;
   triangle = Triangle(xy_global_i);

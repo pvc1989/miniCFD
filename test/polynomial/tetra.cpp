@@ -13,18 +13,18 @@ using std::sqrt;
 
 class TestTetra : public ::testing::Test {
  protected:
-  using Tetra = mini::integrator::Tetra<double, 24>;
+  using Tetra = mini::integrator::Tetra<double, 14>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
-  using Coord = mini::algebra::Matrix<double, 3, 1>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Coord = typename Basis::Coord;
   using A = typename Basis::MatNxN;
 };
 TEST_F(TestTetra, OrthoNormal) {
   // build a tetra-integrator
   Mat3x4 xyz_global_i;
-  xyz_global_i.row(0) << 1, 0, 1, 1;
-  xyz_global_i.row(1) << 1, 1, 0, 1;
-  xyz_global_i.row(2) << 0, 1, 1, 1;
+  xyz_global_i.row(0) << 10, 0, 10, 10;
+  xyz_global_i.row(1) << 10, 10, 0, 10;
+  xyz_global_i.row(2) << 0, 10, 10, 10;
   auto tetra = Tetra(xyz_global_i);
   // build an orthonormal basis on it
   auto basis = Basis(tetra);
@@ -36,7 +36,7 @@ TEST_F(TestTetra, OrthoNormal) {
   }, tetra) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another tetra-integrator
-  Coord shift = {-1, 2, 3};
+  Coord shift = {10, 20, 30};
   xyz_global_i.col(0) += shift;
   xyz_global_i.col(1) += shift;
   xyz_global_i.col(2) += shift;
