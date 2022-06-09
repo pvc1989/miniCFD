@@ -1,17 +1,15 @@
-add_executable(test_polynomial_quadrangle quadrangle.cpp)
-target_include_directories(test_polynomial_quadrangle PRIVATE ${EIGEN_INC})
-set_target_properties(test_polynomial_quadrangle PROPERTIES OUTPUT_NAME quadrangle)
-add_test(NAME test_polynomial_quadrangle COMMAND quadrangle)
-
-add_executable(test_polynomial_hexa hexa.cpp)
-target_include_directories(test_polynomial_hexa PRIVATE ${EIGEN_INC})
-set_target_properties(test_polynomial_hexa PROPERTIES OUTPUT_NAME hexa)
-add_test(NAME test_polynomial_hexa COMMAND hexa)
-
-add_executable(test_polynomial_basis basis.cpp)
-target_include_directories(test_polynomial_basis PRIVATE ${EIGEN_INC})
-set_target_properties(test_polynomial_basis PROPERTIES OUTPUT_NAME basis)
-add_test(NAME test_polynomial_basis COMMAND basis)
+set (cases
+  basis
+  quadrangle
+  hexa
+  tetra
+)
+foreach(case ${cases})
+  add_executable(test_polynomial_${case} ${case}.cpp)
+  target_include_directories(test_polynomial_${case} PRIVATE ${EIGEN_INC})
+  set_target_properties(test_polynomial_${case} PROPERTIES OUTPUT_NAME ${case})
+  add_test(NAME test_polynomial_${case} COMMAND ${case})
+endforeach(case ${cases})
 
 add_executable(test_polynomial_projection projection.cpp)
 target_include_directories(test_polynomial_projection PRIVATE ${EIGEN_INC} ${CGNS_INC} ${METIS_INC} ${MPI_CXX_HEADER_DIR})
