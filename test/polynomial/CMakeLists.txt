@@ -1,5 +1,6 @@
 set (cases
   basis
+  triangle
   quadrangle
   hexa
   tetra
