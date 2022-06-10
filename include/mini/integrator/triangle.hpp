@@ -275,6 +275,54 @@ class TriangleBuilder<Scalar, kDimensions, 6> {
 };
 
 template <typename Scalar, int kDimensions>
+class TriangleBuilder<Scalar, kDimensions, 12> {
+  static constexpr int kPoints = 12;
+  using LocalCoord =
+      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+
+ public:
+  static constexpr auto BuildLocalCoords() {
+    std::array<LocalCoord, kPoints> points;
+    int q = 0;
+    // the two S21 orbits
+    Scalar a_s21[] = {
+        .06308901449150222834033160287081916,
+        .24928674517091042129163855310701908 };
+    for (auto a : a_s21) {
+      auto b = 1 - a - a;
+      points[q++] = { a, a };
+      points[q++] = { a, b };
+      points[q++] = { b, a };
+    }
+    {  // the only S111 orbit
+      Scalar a = .05314504984481694735324967163139815;
+      Scalar b = .31035245103378440541660773395655215;
+      Scalar c = 1 - a - b;
+      points[q++] = { a, b };
+      points[q++] = { a, c };
+      points[q++] = { b, a };
+      points[q++] = { b, c };
+      points[q++] = { c, a };
+      points[q++] = { c, b };
+    }
+    assert(q == kPoints);
+    return points;
+  }
+  static constexpr auto BuildLocalWeights() {
+    std::array<Scalar, kPoints> weights;
+    for (int q = 0; q < 3; ++q)
+      weights[q] = .05084490637020681692093680910686898;
+    for (int q = 3; q < 6; ++q)
+      weights[q] = .11678627572637936602528961138557944;
+    for (int q = 6; q < 12; ++q)
+      weights[q] = .08285107561837357519355345642044245;
+    for (int q = 0; q < kPoints; ++q)
+      weights[q] /= 2.0;
+    return weights;
+  }
+};
+
+template <typename Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kPoints = 16;
   using LocalCoord =

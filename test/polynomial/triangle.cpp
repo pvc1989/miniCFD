@@ -13,7 +13,7 @@ using std::sqrt;
 
 class TestTriangle : public ::testing::Test {
  protected:
-  using Triangle = mini::integrator::Triangle<double, 2, 16>;
+  using Triangle = mini::integrator::Triangle<double, 2, 12>;
   using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   using Coord = typename Basis::Coord;
