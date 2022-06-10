@@ -292,7 +292,7 @@ class TetraBuilder<Scalar, 14> {
     }
     {  // the only S22 orbit
       Scalar a = 0.04550370412564964949188052627933943;
-      auto c = 1 - 2 * a;
+      auto c = (1 - 2 * a) * .5;
       points[q++] = { a, a, c };
       points[q++] = { a, c, a };
       points[q++] = { a, c, c };
@@ -343,7 +343,7 @@ class TetraBuilder<Scalar, 15> {
     }
     {  // the only S22 orbit
       Scalar a = 0.05635083268962916;
-      auto c = 1 - 2 * a;
+      auto c = (1 - 2 * a) * .5;
       points[q++] = { a, a, c };
       points[q++] = { a, c, a };
       points[q++] = { a, c, c };
@@ -450,7 +450,7 @@ class TetraBuilder<Scalar, 46> {
     }
     {  // the only S22 orbit
       Scalar a = .0634362877545398924051412387018983;
-      auto c = 1 - 2 * a;
+      auto c = (1 - 2 * a) * .5;
       points[q++] = { a, a, c };
       points[q++] = { a, c, a };
       points[q++] = { a, c, c };
