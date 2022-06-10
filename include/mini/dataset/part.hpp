@@ -220,44 +220,44 @@ struct Cell {
   }
 
  public:  // VTK related types and methods
-  enum class VtkCellType {
+  enum class CellType {
     kTetra = 10,
     kHexahedron = 12,
     kQuadraticTetra = 24,
     kQuadraticHexahedron = 25,
     kCubicHexahedron = 72,
   };
-  static VtkCellType GetVtkType(int n_corners) {
-    VtkCellType type;
+  static CellType GetCellType(int n_corners) {
+    CellType cell_type;
     switch (n_corners) {
       case 4:
-        type = VtkCellType::kQuadraticTetra;
+        cell_type = CellType::kQuadraticTetra;
         break;
       case 8:
-        type = VtkCellType::kCubicHexahedron;
+        cell_type = CellType::kCubicHexahedron;
         break;
       default:
         assert(false);
         break;
     }
-    return type;
+    return cell_type;
   }
-  static int CountNodes(VtkCellType vtk_type) {
+  static int CountNodes(CellType cell_type) {
     int n_nodes;
-    switch (vtk_type) {
-      case VtkCellType::kTetra:
+    switch (cell_type) {
+      case CellType::kTetra:
         n_nodes = 4;
         break;
-      case VtkCellType::kHexahedron:
+      case CellType::kHexahedron:
         n_nodes = 8;
         break;
-      case VtkCellType::kQuadraticTetra:
+      case CellType::kQuadraticTetra:
         n_nodes = 10;
         break;
-      case VtkCellType::kQuadraticHexahedron:
+      case CellType::kQuadraticHexahedron:
         n_nodes = 20;
         break;
-      case VtkCellType::kCubicHexahedron:
+      case CellType::kCubicHexahedron:
         n_nodes = 64;
         break;
       default:
@@ -266,22 +266,22 @@ struct Cell {
     }
     return n_nodes;
   }
-  void WriteSolutions(VtkCellType vtk_type, std::vector<Coord> *coords,
+  void WriteSolutions(CellType cell_type, std::vector<Coord> *coords,
       std::vector<Value> *fields) const {
-    switch (vtk_type) {
-      case VtkCellType::kTetra:
+    switch (cell_type) {
+      case CellType::kTetra:
         WriteSolutionsOnTetra4(coords, fields);
         break;
-      case VtkCellType::kHexahedron:
+      case CellType::kHexahedron:
         WriteSolutionsOnHexa8(coords, fields);
         break;
-      case VtkCellType::kQuadraticTetra:
+      case CellType::kQuadraticTetra:
         WriteSolutionsOnTetra10(coords, fields);
         break;
-      case VtkCellType::kQuadraticHexahedron:
+      case CellType::kQuadraticHexahedron:
         WriteSolutionsOnHexa20(coords, fields);
         break;
-      case VtkCellType::kCubicHexahedron:
+      case CellType::kCubicHexahedron:
         WriteSolutionsOnHexa64(coords, fields);
         break;
       default:
@@ -631,7 +631,7 @@ class Part {
     integrator::Triangle<Scalar, kDimensions, 1>,
     integrator::Triangle<Scalar, kDimensions, 3>,
     integrator::Triangle<Scalar, kDimensions, 6>,
-    integrator::Triangle<Scalar, kDimensions, 16>>;
+    integrator::Triangle<Scalar, kDimensions, 12>>;
   using GaussOnQuadrangle = std::select_t<kDegrees,
     integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
     integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
@@ -1313,9 +1313,9 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        auto type = Cell::GetVtkType(sect.npe());
+        auto cell_type = Cell::GetCellType(sect.npe());
         while (i_cell < i_cell_tail) {
-          sect[i_cell].WriteSolutions(type, &coords, &fields);
+          sect[i_cell].WriteSolutions(cell_type, &coords, &fields);
           ++i_cell; ++n_cells;
         }
       }
@@ -1392,7 +1392,7 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        int n_nodes = Cell::CountNodes(Cell::GetVtkType(sect.npe()));
+        int n_nodes = Cell::CountNodes(Cell::GetCellType(sect.npe()));
         while (i_cell < i_cell_tail) {
           offset += n_nodes;
           vtu << offset << ' ';
@@ -1407,9 +1407,9 @@ class Part {
       for (auto& [i_sect, sect] : zone) {
         int i_cell = sect.head();
         int i_cell_tail = sect.tail();
-        auto type = Cell::GetVtkType(sect.npe());
+        auto cell_type = Cell::GetCellType(sect.npe());
         while (i_cell < i_cell_tail) {
-          vtu << static_cast<int>(type) << ' ';
+          vtu << static_cast<int>(cell_type) << ' ';
           ++i_cell;
         }
       }
