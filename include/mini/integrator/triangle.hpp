@@ -333,14 +333,14 @@ class TriangleBuilder<Scalar, kDimensions, 16> {
     std::array<LocalCoord, kPoints> points;
     int q = 0;
     {  // the only S3 orbit
-      Scalar a = .3333333333333333333333333333333333;
+      Scalar a = .33333333333333333333333333333333333;
       points[q++] = { a, a };
     }
     // the three S21 orbits
     Scalar a_s21[] = {
-        .1705693077517602066222935014914645,
-        .0505472283170309754584235505965989,
-        .4592925882927231560288155144941693 };
+        .17056930775176020662229350149146450,
+        .05054722831703097545842355059659895,
+        .45929258829272315602881551449416932 };
     for (auto a : a_s21) {
       auto b = 1 - a - a;
       points[q++] = { a, a };
@@ -348,8 +348,8 @@ class TriangleBuilder<Scalar, kDimensions, 16> {
       points[q++] = { b, a };
     }
     {  // the six S111 orbits
-      Scalar a = .2631128296346381134217857862846436;
-      Scalar b = .0083947774099576053372138345392944;
+      Scalar a = .26311282963463811342178578628464359;
+      Scalar b = .00839477740995760533721383453929445;
       Scalar c = 1 - a - b;
       points[q++] = { a, b };
       points[q++] = { a, c };
@@ -364,15 +364,15 @@ class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr auto BuildLocalWeights() {
     std::array<Scalar, kPoints> weights;
     for (int q = 0; q < 1; ++q)
-      weights[q] = .1443156076777871682510911104890646;
+      weights[q] = .14431560767778716825109111048906462;
     for (int q = 1; q < 4; ++q)
-      weights[q] = .1032173705347182502817915502921290;
+      weights[q] = .10321737053471825028179155029212903;
     for (int q = 4; q < 7; ++q)
-      weights[q] = .0324584976231980803109259283417806;
+      weights[q] = .03245849762319808031092592834178060;
     for (int q = 7; q < 10; ++q)
-      weights[q] = .0950916342672846247938961043885843;
+      weights[q] = .09509163426728462479389610438858432;
     for (int q = 10; q < 16; ++q)
-      weights[q] = .0272303141744349942648446900739089;
+      weights[q] = .02723031417443499426484469007390892;
     for (int q = 0; q < 16; ++q)
       weights[q] /= 2.0;
     return weights;
