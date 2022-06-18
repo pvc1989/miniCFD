@@ -2,7 +2,7 @@
 #include "rotarywing.hpp"
 
 /* Set initial conditions. */
-auto [c, s] = mini::geometry::CosSin(15.0);
+auto [c, s] = mini::geometry::CosSin(45.0);
 auto primitive = Primitive(1.29, 5.0 * c, 5.0 * s, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
@@ -17,11 +17,11 @@ auto given_state = [](const Coord& xyz, double t){
 
 void MyBC(const std::string &suffix, Solver *solver) {
   // bounding box
-  solver->SetSubsonicInlet("3_S_37"/* Front */, given_state);
-  solver->SetSubsonicInlet("3_S_36"/* Left */, given_state);
-  solver->SetSubsonicOutlet("3_S_41"/* Right */, given_state);
-  solver->SetSupersonicOutlet("3_S_38"/* Top */);
-  solver->SetSubsonicOutlet("3_S_39"/* Back */, given_state);
+  solver->SetSmartBoundary("3_S_37"/* Front */, given_state);
+  solver->SetSmartBoundary("3_S_36"/* Left */, given_state);
+  solver->SetSmartBoundary("3_S_41"/* Right */, given_state);
+  solver->SetSmartBoundary("3_S_38"/* Top */, given_state);
+  solver->SetSmartBoundary("3_S_39"/* Back */, given_state);
   // bottom
   solver->SetSolidWall("3_S_27"/* fine */);
   solver->SetSolidWall("3_S_40"/* coarse */);
