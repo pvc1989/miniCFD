@@ -21,7 +21,7 @@ Extrude {0, 0, 15 * ft} { Surface{19}; }
 Box(5) = {100 * ft, -52.5 * ft, 0, -300 * ft, 150 * ft, 85 * ft};
 BooleanDifference(6) = { Volume{5}; Delete; }{ Volume{1, 2, 3, 4}; };
 // bounding box
-Box(7) = {900 * ft, -280 * ft, 0, -2000 * ft, 600 * ft, 500 * ft};
+Box(7) = {900 * ft, -980 * ft, 0, -2000 * ft, 2000 * ft, 1000 * ft};
 BooleanDifference(8) = { Volume{7}; Delete; }{ Volume{1, 2, 3, 4, 6}; };
 // mesh size
 lc = 5 * ft;
