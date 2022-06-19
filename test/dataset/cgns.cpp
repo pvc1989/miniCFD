@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 #include "mini/dataset/cgns.hpp"
-#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
+#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
 namespace mini {
 namespace mesh {
@@ -47,7 +47,7 @@ class TestTypes : public ::testing::Test {
     }
   };
   // common data
-  std::string const abs_path_{std::string(TEST_DATA_DIR) + "/ugrid_2d.cgns"};
+  std::string const abs_path_{std::string(TEST_INPUT_DIR) + "/ugrid_2d.cgns"};
   double const eps_ = 0.00001;
 };
 TEST_F(TestTypes, Constructors) {
@@ -55,8 +55,8 @@ TEST_F(TestTypes, Constructors) {
   // the absolute path version
   files.emplace_back(abs_path_);
   // the dir (with or without '/') + name version
-  files.emplace_back(std::string(TEST_DATA_DIR) + "/", "ugrid_2d.cgns");
-  files.emplace_back(TEST_DATA_DIR, "ugrid_2d.cgns");
+  files.emplace_back(std::string(TEST_INPUT_DIR) + "/", "ugrid_2d.cgns");
+  files.emplace_back(TEST_INPUT_DIR, "ugrid_2d.cgns");
 }
 TEST_F(TestTypes, ReadBase) {
   // read by mini::mesh::cgns

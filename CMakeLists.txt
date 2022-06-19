@@ -110,8 +110,8 @@ include_directories(${EIGEN_INC})
 include_directories("${PROJECT_SOURCE_DIR}/include")
 # Additional headers that depends on ${PROJECT_BINARY_DIR}
 configure_file(
-  "${PROJECT_SOURCE_DIR}/data/path.hpp.in"
-  "${PROJECT_BINARY_DIR}/include/mini/data/path.hpp"
+  "${PROJECT_SOURCE_DIR}/input/path.hpp.in"
+  "${PROJECT_BINARY_DIR}/include/mini/input/path.hpp"
 )
 include_directories("${PROJECT_BINARY_DIR}/include")
 

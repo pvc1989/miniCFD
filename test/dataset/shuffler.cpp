@@ -17,7 +17,7 @@
 #include "mini/dataset/shuffler.hpp"
 #include "mini/dataset/cgns.hpp"
 #include "mini/dataset/metis.hpp"
-#include "mini/data/path.hpp"  // defines TEST_DATA_DIR
+#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
 namespace mini {
 namespace mesh {
@@ -28,7 +28,7 @@ char case_name[33] = "double_mach";
 class ShufflerTest : public ::testing::Test {
  protected:
   using Shuffler = mesh::Shuffler<idx_t, double>;
-  std::string const test_data_dir_{TEST_DATA_DIR};
+  std::string const test_input_dir_{TEST_INPUT_DIR};
 };
 TEST_F(ShufflerTest, GetNewOrder) {
   // Reorder the indices by parts
@@ -74,7 +74,7 @@ TEST_F(ShufflerTest, ParitionAndShuffle) {
   auto old_file_name = case_name + std::string("/original.cgns");
   /* Generate the original cgns file: */
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
-      test_data_dir_.c_str(), case_name, old_file_name.c_str());
+      test_input_dir_.c_str(), case_name, old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;
