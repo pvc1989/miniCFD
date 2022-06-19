@@ -15,4 +15,4 @@ Physical Surface("Top") = { 12 };
 Physical Surface("Bottom") = { 14 };
 Physical Volume("Fluid") = { 3, 4 };
 
-Mesh 3;
+Mesh 2;

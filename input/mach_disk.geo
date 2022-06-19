@@ -15,4 +15,4 @@ Physical Surface("Right") = { 7 };
 Physical Surface("Inlet") = { 8 };
 Physical Volume("Fluid") = { 3 };
 
-Mesh 3;
+Mesh 2;

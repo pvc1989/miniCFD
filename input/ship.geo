@@ -43,4 +43,4 @@ Physical Surface("Body") = { 28, 29, 30, 35, 42, 43, 44, 45 };
 Physical Surface("Deck") = { 2, 6, 33, 34 };
 Physical Volume("Fluid") = { 6, 8 };
 
-Mesh 3;
+Mesh 2;

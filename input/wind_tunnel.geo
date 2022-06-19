@@ -11,4 +11,4 @@ Physical Volume("Fluid") = { 1 };
 
 LC = 0.4;
 Characteristic Length{ PointsOf{ Volume{1};} } = LC;
-Mesh 3;
+Mesh 2;
