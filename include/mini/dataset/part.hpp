@@ -28,7 +28,7 @@
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
-namespace std{
+namespace std {
 // 通用版本，禁止实例化
 template<unsigned N, typename... Cases>
 struct select;
@@ -40,7 +40,7 @@ struct select<N, T, Cases...> {
 // 特化版本 (N == 0)：
 template <typename T, typename... Cases>
 struct select<0, T, Cases...> {
-  using type = T; 
+  using type = T;
 };
 // 标准库风格的类型别名:
 template<unsigned N, typename... Cases>

@@ -1,6 +1,6 @@
 //  Copyright 2022 PEI Weicheng
-#ifndef DEMO_EULER_ROTOR_SOURCE_HPP_
-#define DEMO_EULER_ROTOR_SOURCE_HPP_
+#ifndef DEMO_EULER_ROTARYWING_HPP_
+#define DEMO_EULER_ROTARYWING_HPP_
 
 #include <algorithm>
 #include <string>
@@ -46,4 +46,4 @@ using BC = void(*)(const std::string &, Solver *);
 
 int Main(int argc, char* argv[], IC ic, BC bc, Source source);
 
-#endif  // DEMO_EULER_ROTOR_SOURCE_HPP_
+#endif  // DEMO_EULER_ROTARYWING_HPP_

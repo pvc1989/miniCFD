@@ -172,10 +172,10 @@ int main(int argc, char* argv[]) {
     solver.Update(&part, t_curr);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
-    auto wtime_left = wtime_curr * (n_steps - i_step) / (i_step);
+    auto wtime_total = wtime_curr * n_steps / i_step;
     if (i_core == 0) {
-      std::printf("[Done] Update(Step%d/%d) on %d cores at %f sec (%f sec to go)\n",
-          i_step, n_steps, n_cores, wtime_curr, wtime_left);
+      std::printf("[Done] Update(Step%d/%d) on %d cores at %f/%f sec\n",
+          i_step, n_steps, n_cores, wtime_curr, wtime_total);
     }
 
     if (i_step % n_steps_per_frame == 0) {

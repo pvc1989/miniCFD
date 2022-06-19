@@ -31,7 +31,8 @@ int main(int argc, char* argv[]) {
   cg_delete_node("ZoneIterativeData");
   if (cg_ziter_write(i_file, i_base, i_zone, "ZoneIterativeData"))
     cg_error_exit();
-  if (cg_goto(i_file, i_base, "Zone_t", i_zone, "ZoneIterativeData_t", 1, "end"))
+  if (cg_goto(i_file, i_base, "Zone_t", i_zone,
+      "ZoneIterativeData_t", 1, "end"))
     cg_error_exit();
 
   constexpr int kNameLength = 32;
@@ -44,9 +45,8 @@ int main(int argc, char* argv[]) {
     head += kNameLength;
   }
   cgsize_t n_dims[2] = {kNameLength, frame_cnt};
-  if (cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character),
-      2, n_dims, names.c_str()/* the head of a 2d array,
-      whose type is char[frame_cnt][kNameLength] */))
+  if (cg_array_write("FlowSolutionPointers", CGNS_ENUMV(Character), 2, n_dims,
+      names.c_str()/* the head of a char[frame_cnt][kNameLength] 2d array */))
     cg_error_exit();
   return cg_close(i_file);
 }
