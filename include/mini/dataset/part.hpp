@@ -28,24 +28,25 @@
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
-namespace std {
-// 通用版本，禁止实例化
-template<unsigned N, typename... Cases>
+/* Provide a K-way type selection mechanism. */
+namespace mini {
+// generic version, no instantiation:
+template<unsigned N, typename... Types>
 struct select;
-// 特化版本 (N > 0)：
-template <unsigned N, typename T, typename... Cases>
-struct select<N, T, Cases...> {
-  using type = typename select<N-1, Cases...>::type;
+// specialization for N > 0:
+template <unsigned N, typename T, typename... Types>
+struct select<N, T, Types...> {
+  using type = typename select<N-1, Types...>::type;
 };
-// 特化版本 (N == 0)：
-template <typename T, typename... Cases>
-struct select<0, T, Cases...> {
+// specialization for N == 0:
+template <typename T, typename... Types>
+struct select<0, T, Types...> {
   using type = T;
 };
-// 标准库风格的类型别名:
-template<unsigned N, typename... Cases>
-using select_t = typename select<N, Cases...>::type;
-}  // namespace std
+// STL-style type aliasing:
+template<unsigned N, typename... Types>
+using select_t = typename select<N, Types...>::type;
+}  // namespace mini
 
 namespace mini {
 namespace mesh {
@@ -627,22 +628,22 @@ class Part {
   static const MPI_Datatype kMpiRealType;
 
  private:
-  using GaussOnTriangle = std::select_t<kDegrees,
+  using GaussOnTriangle = mini::select_t<kDegrees,
     integrator::Triangle<Scalar, kDimensions, 1>,
     integrator::Triangle<Scalar, kDimensions, 3>,
     integrator::Triangle<Scalar, kDimensions, 6>,
     integrator::Triangle<Scalar, kDimensions, 12>>;
-  using GaussOnQuadrangle = std::select_t<kDegrees,
+  using GaussOnQuadrangle = mini::select_t<kDegrees,
     integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
     integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
     integrator::Quadrangle<Scalar, kDimensions, 3, 3>,
     integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
-  using GaussOnTetra = std::select_t<kDegrees,
+  using GaussOnTetra = mini::select_t<kDegrees,
     integrator::Tetra<Scalar, 1>,
     integrator::Tetra<Scalar, 4>,
     integrator::Tetra<Scalar, 14>,
     integrator::Tetra<Scalar, 24>>;
-  using GaussOnHexa = std::select_t<kDegrees,
+  using GaussOnHexa = mini::select_t<kDegrees,
     integrator::Hexa<Scalar, 1, 1, 1>,
     integrator::Hexa<Scalar, 2, 2, 2>,
     integrator::Hexa<Scalar, 3, 3, 3>,
