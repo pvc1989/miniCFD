@@ -44,3 +44,5 @@ Physical Surface("Deck") = { 2, 6, 33, 34 };
 Physical Volume("Fluid") = { 6, 8 };
 
 Mesh 2;
+
+// Disk(46) = {-13.716, 6.858, 12.192, 10, 10}; // the rotor
