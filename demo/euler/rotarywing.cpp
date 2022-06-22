@@ -124,7 +124,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_total = wtime_curr * n_steps / i_step;
     if (i_core == 0) {
-      std::printf("[Done] Update(Step%d/%d) on %d cores at %f/%f sec\n",
+      std::printf("[Done] Update(Step%d/%d) on %d cores at %f / %f sec\n",
           i_step, n_steps, n_cores, wtime_curr, wtime_total);
     }
 
