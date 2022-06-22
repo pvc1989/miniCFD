@@ -75,12 +75,24 @@ class Section {
   Vector GetOrigin() const {
     return blade_->GetPoint(y_ratio_);
   }
+  /**
+   * @brief Get the velocity vector of the section's origin
+   * 
+   * @return Vector the velocity vector of the section's origin
+   */
   Vector GetVelocity() const {
     auto omega = blade_->GetRotor().GetRadiansPerSecond();
     Vector v = -GetFrame().X();
     v *= omega * (blade_->GetRoot() + blade_->GetSpan() * y_ratio_);
     return v;
   }
+  /**
+   * @brief Get the force vector at the section's origin
+   * 
+   * @param rho the density of the air
+   * @param velocity the velocity vector of the air
+   * @return Vector the aerodynamic force vector at the section's origin
+   */
   Vector GetForce(Scalar rho, Vector velocity) const {
     velocity -= GetVelocity();
     auto u = velocity.dot(GetFrame().X());
