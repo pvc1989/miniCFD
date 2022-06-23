@@ -652,11 +652,11 @@ class Part {
  public:
   Part(std::string const& directory, int rank)
       : directory_(directory), cgns_file_(directory + "/shuffled.cgns"),
-        part_path_(directory + "/partition/"), rank_(rank) {
+        rank_(rank) {
     int i_file;
     if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
       cgp_error_exit();
-    auto txt_file = part_path_ + std::to_string(rank) + ".txt";
+    auto txt_file = directory + "/partition/" + std::to_string(rank) + ".txt";
     auto istrm = std::ifstream(txt_file);
     BuildLocalNodes(istrm, i_file);
     auto [recv_nodes, recv_coords] = ShareGhostNodes(istrm);
@@ -1615,7 +1615,6 @@ class Part {
   std::array<std::string, kComponents> field_names_;
   const std::string directory_;
   const std::string cgns_file_;
-  const std::string part_path_;
   int rank_;
 
   void BuildBoundaryFaces(const ZoneSectToConn &cell_conn,
