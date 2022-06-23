@@ -109,15 +109,15 @@ class Coordinates {
    * Write coordinates to a given `(file, base, zone)` tuple.
    */
   void Write() const {
-    int coordi_coord;
+    int i_coord;
     auto data_type = std::is_same_v<Real, double> ?
         CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
     cg_coord_write(file().id(), base().id(), zone_->id(),
-                   data_type, "CoordinateX", x_.data(), &coordi_coord);
+                   data_type, "CoordinateX", x_.data(), &i_coord);
     cg_coord_write(file().id(), base().id(), zone_->id(),
-                   data_type, "CoordinateY", y_.data(), &coordi_coord);
+                   data_type, "CoordinateY", y_.data(), &i_coord);
     cg_coord_write(file().id(), base().id(), zone_->id(),
-                   data_type, "CoordinateZ", z_.data(), &coordi_coord);
+                   data_type, "CoordinateZ", z_.data(), &i_coord);
   }
 
  public:  // Mutators:
