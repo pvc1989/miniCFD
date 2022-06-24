@@ -1256,16 +1256,76 @@ class Part {
   }
   void WriteSolutions(const std::string &soln_name = "0") const {
     int n_zones = local_nodes_.size();
-    int i_file;
-    if (cgp_open(cgns_file_.c_str(), CG_MODE_MODIFY, &i_file))
+    int i_file, i;
+    auto cgns_file = directory_ + "/" + soln_name + ".cgns";
+    if (rank_ == 0) {
+      if (cg_open(cgns_file.c_str(), CG_MODE_WRITE, &i_file)) {
+        cgp_error_exit();
+      }
+      if (cg_base_write(i_file, base_name_, cell_dim_, phys_dim_, &i)) {
+        cgp_error_exit(); 
+      }
+      for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+        auto& node_group = local_nodes_.at(i_zone);
+        if (cg_zone_write(i_file, i_base, node_group.zone_name_,
+            node_group.zone_size_[0], CGNS_ENUMV(Unstructured), &i)) {
+          cgp_error_exit();
+        }
+        if (cg_grid_write(i_file, i_base, i_zone, "GridCoordinates", &i)) {
+          cgp_error_exit();
+        }
+      }
+      if (cg_close(i_file)) {
+        cgp_error_exit();
+      }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (cgp_open(cgns_file.c_str(), CG_MODE_MODIFY, &i_file)) {
       cgp_error_exit();
+    }
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
+      // write node coordinates
+      auto& node_group = local_nodes_.at(i_zone);
+      cgsize_t range_min[] = { node_group.head() };
+      cgsize_t range_max[] = { node_group.tail() - 1 };
+      auto data_type = std::is_same_v<Scalar, double> ?
+          CGNS_ENUMV(RealDouble) : CGNS_ENUMV(RealSingle);
+      int i_coord;
+      if (cgp_coord_write(i_file, i_base, i_zone, data_type, "CoordinateX",
+          &i_coord) || cgp_coord_write_data(i_file, i_base, i_zone, i_coord,
+          range_min, range_max, node_group.x_.data())) {
+        cgp_error_exit();
+      }
+      if (cgp_coord_write(i_file, i_base, i_zone, data_type, "CoordinateY",
+          &i_coord) || cgp_coord_write_data(i_file, i_base, i_zone, i_coord,
+          range_min, range_max, node_group.y_.data())) {
+        cgp_error_exit();
+      }
+      if (cgp_coord_write(i_file, i_base, i_zone, data_type, "CoordinateZ",
+          &i_coord) || cgp_coord_write_data(i_file, i_base, i_zone, i_coord,
+          range_min, range_max, node_group.z_.data())) {
+        cgp_error_exit();
+      }
       auto& zone = local_cells_.at(i_zone);
+      int n_sects = zone.size();
+      for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
+        auto& section = zone.at(i_sect);
+        cgsize_t first = { section.head() };
+        cgsize_t last = { section.tail() - 1 };
+        if (cgp_section_write(i_file, i_base, i_zone, section.sect_name_,
+            section.cell_type_, section.first_, section.last_, 0/* n_boundary */, &i)) {
+          cgp_error_exit();
+        }
+        if (cgp_elements_write_data(i_file, i_base, i_zone, i_sect,
+            first, last, section.nodes_.data())) {
+          cgp_error_exit();
+        }
+      }
       int n_solns;
       if (cg_nsols(i_file, i_base, i_zone, &n_solns))
         cgp_error_exit();
       int i_soln;
-      if (cg_sol_write(i_file, i_base, i_zone, soln_name.c_str(),
+      if (cg_sol_write(i_file, i_base, i_zone, "DataOnCells",
           CellCenter, &i_soln))
         cgp_error_exit();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
