@@ -82,6 +82,8 @@ struct NodeGroup {
   Int head_, size_;
   ShiftedVector<Int> metis_id_;
   ShiftedVector<Scalar> x_, y_, z_;
+  cgsize_t zone_size_[3][1];
+  char zone_name_[33];
 
   NodeGroup(int head, int size)
       : head_(head), size_(size), metis_id_(size, head),
@@ -96,6 +98,12 @@ struct NodeGroup {
 
   Int size() const {
     return size_;
+  }
+  Int head() const {
+    return head_;
+  }
+  Int tail() const {
+    return head_ + size_;
   }
   bool has(int i_node) const {
     return head_ <= i_node && i_node < size_ + head_;
@@ -511,6 +519,12 @@ class CellGroup {
   int npe_;
 
  public:
+  std::vector<Int> nodes_;
+  ElementType_t cell_type_;
+  cgsize_t first_, last_;
+  char sect_name_[33];
+
+ public:
   static constexpr int kFields = Cell::kFields;
 
   CellGroup(int head, int size, int npe)
@@ -714,13 +728,21 @@ class Part {
     return i_field;
   }
   void BuildLocalNodes(std::ifstream& istrm, int i_file) {
+    if (cg_base_read(i_file, i_base, base_name_, &cell_dim_, &phys_dim_)) {
+      cgp_error_exit();
+    }
     char line[kLineWidth];
     istrm.getline(line, kLineWidth); assert(line[0] == '#');
     // node coordinates
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, head, tail;
       std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
-      local_nodes_[i_zone] = NodeGroup(head, tail - head);
+      auto node_group = NodeGroup(head, tail - head);
+      if (cg_zone_read(i_file, i_base, i_zone,
+          node_group.zone_name_, node_group.zone_size_[0])) {
+        cgp_error_exit();
+      }
+      local_nodes_[i_zone] = std::move(node_group);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
       auto& x = local_nodes_[i_zone].x_;
@@ -928,7 +950,13 @@ class Part {
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
           range_min[0], range_max[0], nodes.data()))
         cgp_error_exit();
-      local_cells_[i_zone][i_sect] = CellGroup(head, tail - head, npe);
+      auto cell_group = CellGroup(head, tail - head, npe);
+      cell_group.nodes_ = nodes;
+      cell_group.cell_type_ = type;
+      cell_group.first_ = u;
+      cell_group.last_ = v;
+      std::strcpy(cell_group.sect_name_, name);
+      local_cells_[i_zone][i_sect] = std::move(cell_group);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto* i_node_list = &nodes[(i_cell - head) * npe];
         auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
@@ -1615,7 +1643,8 @@ class Part {
   std::array<std::string, kComponents> field_names_;
   const std::string directory_;
   const std::string cgns_file_;
-  int rank_;
+  int rank_, cell_dim_, phys_dim_;
+  char base_name_[33];
 
   void BuildBoundaryFaces(const ZoneSectToConn &cell_conn,
       std::ifstream& istrm, int i_file) {
