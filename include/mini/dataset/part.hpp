@@ -1352,22 +1352,15 @@ class Part {
   void ReadSolutions(const std::string &soln_name) {
     int n_zones = local_nodes_.size();
     int i_file;
-    if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
+    auto cgns_file = directory_ + "/" + soln_name + ".cgns";
+    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &i_file))
       cgp_error_exit();
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
       auto& zone = local_cells_.at(i_zone);
       int n_solns;
       if (cg_nsols(i_file, i_base, i_zone, &n_solns))
         cgp_error_exit();
-      int i_soln;
-      char name[33];
-      GridLocation_t lc;
-      for (i_soln = 1; i_soln <= n_solns; ++i_soln) {
-        if (cg_sol_info(i_file, i_base, i_zone, i_soln, name, &lc))
-          cgp_error_exit();
-        if (name == soln_name)
-          break;
-      }
+      int i_soln = SolnNameToId(i_file, i_base, i_zone, "DataOnCells");
       int n_fields;
       if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields)) {
         cgp_error_exit();
