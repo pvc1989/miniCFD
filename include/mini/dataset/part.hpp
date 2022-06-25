@@ -634,6 +634,7 @@ class Part {
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
+  static constexpr int i_grid = 1;
   static constexpr auto kIntType
       = sizeof(Int) == 8 ? CGNS_ENUMV(LongInteger) : CGNS_ENUMV(Integer);
   static constexpr auto kRealType
@@ -1275,16 +1276,19 @@ class Part {
       if (cg_open(cgns_file.c_str(), CG_MODE_WRITE, &i_file)) {
         cgp_error_exit();
       }
-      if (cg_base_write(i_file, base_name_, cell_dim_, phys_dim_, &i)) {
-        cgp_error_exit(); 
+      if (cg_base_write(i_file, base_name_, cell_dim_, phys_dim_, &i)
+          || i != i_base) {
+        cgp_error_exit();
       }
       for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
         auto& node_group = local_nodes_.at(i_zone);
         if (cg_zone_write(i_file, i_base, node_group.zone_name_,
-            node_group.zone_size_[0], CGNS_ENUMV(Unstructured), &i)) {
+            node_group.zone_size_[0], CGNS_ENUMV(Unstructured), &i)
+            || i != i_zone) {
           cgp_error_exit();
         }
-        if (cg_grid_write(i_file, i_base, i_zone, "GridCoordinates", &i)) {
+        if (cg_grid_write(i_file, i_base, i_zone, "GridCoordinates", &i)
+            || i != i_grid) {
           cgp_error_exit();
         }
       }
@@ -1322,15 +1326,16 @@ class Part {
       auto& zone = local_cells_.at(i_zone);
       int n_sects = zone.size();
       for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
-        auto& section = zone.at(i_sect);
-        cgsize_t first = { section.head() };
-        cgsize_t last = { section.tail() - 1 };
-        if (cgp_section_write(i_file, i_base, i_zone, section.sect_name_,
-            section.cell_type_, section.first_, section.last_, 0/* n_boundary */, &i)) {
+        auto& sect = zone.at(i_sect);
+        cgsize_t first = { sect.head() };
+        cgsize_t last = { sect.tail() - 1 };
+        if (cgp_section_write(i_file, i_base, i_zone, sect.sect_name_,
+            sect.cell_type_, sect.first_, sect.last_, 0/* n_boundary */, &i)
+            || i != i_sect) {
           cgp_error_exit();
         }
         if (cgp_elements_write_data(i_file, i_base, i_zone, i_sect,
-            first, last, section.nodes_.data())) {
+            first, last, sect.nodes_.data())) {
           cgp_error_exit();
         }
       }
@@ -1340,7 +1345,7 @@ class Part {
       }
       int i_soln;
       if (cg_sol_write(i_file, i_base, i_zone, "DataOnCells",
-          CellCenter, &i_soln)) {
+          CGNS_ENUMV(CellCenter), &i_soln)) {
         cgp_error_exit();
       }
       for (int i_field = 1; i_field <= kFields; ++i_field) {
