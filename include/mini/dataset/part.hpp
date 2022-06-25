@@ -668,8 +668,9 @@ class Part {
       : directory_(directory), cgns_file_(directory + "/shuffled.cgns"),
         rank_(rank) {
     int i_file;
-    if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file))
+    if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file)) {
       cgp_error_exit();
+    }
     auto txt_file = directory + "/partition/" + std::to_string(rank) + ".txt";
     auto istrm = std::ifstream(txt_file);
     BuildLocalNodes(istrm, i_file);
@@ -684,8 +685,9 @@ class Part {
     BuildLocalFaces(cell_conn);
     BuildGhostFaces(ghost_adj, cell_conn, recv_cells, m_to_recv_cells);
     BuildBoundaryFaces(cell_conn, istrm, i_file);
-    if (cgp_close(i_file))
+    if (cgp_close(i_file)) {
       cgp_error_exit();
+    }
   }
   void SetFieldNames(const std::array<std::string, kComponents>& names) {
     field_names_ = names;
@@ -695,16 +697,19 @@ class Part {
   int SolnNameToId(int i_file, int i_base, int i_zone,
       const std::string &name) {
     int n_solns;
-    if (cg_nsols(i_file, i_base, i_zone, &n_solns))
+    if (cg_nsols(i_file, i_base, i_zone, &n_solns)) {
       cgp_error_exit();
+    }
     int i_soln;
     for (i_soln = 1; i_soln <= n_solns; ++i_soln) {
       char soln_name[33];
       GridLocation_t loc;
-      if (cg_sol_info(i_file, i_base, i_zone, i_soln, soln_name, &loc))
+      if (cg_sol_info(i_file, i_base, i_zone, i_soln, soln_name, &loc)) {
         cgp_error_exit();
-      if (soln_name == name)
+      }
+      if (soln_name == name) {
         break;
+      }
     }
     assert(i_soln <= n_solns);
     return i_soln;
@@ -712,17 +717,20 @@ class Part {
   int FieldNameToId(int i_file, int i_base, int i_zone, int i_soln,
       const std::string &name) {
     int n_fields;
-    if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields))
+    if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields)) {
       cgp_error_exit();
+    }
     int i_field;
     for (i_field = 1; i_field <= n_fields; ++i_field) {
       char field_name[33];
       DataType_t data_t;
       if (cg_field_info(i_file, i_base, i_zone, i_soln, i_field,
-          &data_t, field_name))
+          &data_t, field_name)) {
         cgp_error_exit();
-      if (field_name == name)
+      }
+      if (field_name == name) {
         break;
+      }
     }
     assert(i_field <= n_fields);
     return i_field;
@@ -753,8 +761,9 @@ class Part {
           cgp_coord_read_data(i_file, i_base, i_zone, 2,
           range_min, range_max, y.data()) ||
           cgp_coord_read_data(i_file, i_base, i_zone, 3,
-          range_min, range_max, z.data()))
+          range_min, range_max, z.data())) {
         cgp_error_exit();
+      }
       auto& metis_id = local_nodes_[i_zone].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
@@ -763,8 +772,9 @@ class Part {
       int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
-          1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data()))
+          1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data())) {
         cgp_error_exit();
+      }
       for (int i_node = head; i_node < tail; ++i_node) {
         auto m_node = metis_id[i_node];
         m_to_node_info_[m_node] = NodeInfo(i_zone, i_node);
@@ -925,8 +935,9 @@ class Part {
       int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
-          1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data()))
+          1, mem_dimensions, mem_range_min, mem_range_max, metis_ids.data())) {
         cgp_error_exit();
+      }
       char name[33];
       ElementType_t type;
       cgsize_t u, v;
@@ -936,8 +947,9 @@ class Part {
       auto& nodes = conn.nodes;
       index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
-          &u, &v, &x, &y))
+          &u, &v, &x, &y)) {
         cgp_error_exit();
+      }
       int npe; cg_npe(type, &npe);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
@@ -948,8 +960,9 @@ class Part {
         index.at(head + i) = npe * i;
       }
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
-          range_min[0], range_max[0], nodes.data()))
+          range_min[0], range_max[0], nodes.data())) {
         cgp_error_exit();
+      }
       auto cell_group = CellGroup(head, tail - head, npe);
       cell_group.nodes_ = nodes;
       cell_group.cell_type_ = type;
@@ -1322,12 +1335,14 @@ class Part {
         }
       }
       int n_solns;
-      if (cg_nsols(i_file, i_base, i_zone, &n_solns))
+      if (cg_nsols(i_file, i_base, i_zone, &n_solns)) {
         cgp_error_exit();
+      }
       int i_soln;
       if (cg_sol_write(i_file, i_base, i_zone, "DataOnCells",
-          CellCenter, &i_soln))
+          CellCenter, &i_soln)) {
         cgp_error_exit();
+      }
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         int n_sects = zone.size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
@@ -1335,31 +1350,36 @@ class Part {
           auto field_name = "Field" + std::to_string(i_field);
           int field_id;
           if (cgp_field_write(i_file, i_base, i_zone, i_soln, kRealType,
-              field_name.c_str(),  &field_id))
+              field_name.c_str(),  &field_id)) {
             cgp_error_exit();
+          }
           assert(field_id == i_field);
           cgsize_t first[] = { section.head() };
           cgsize_t last[] = { section.tail() - 1 };
           if (cgp_field_write_data(i_file, i_base, i_zone, i_soln, i_field,
-              first, last, section.GetField(i_field).data()))
+              first, last, section.GetField(i_field).data())) {
             cgp_error_exit();
+          }
         }
       }
     }
-    if (cgp_close(i_file))
+    if (cgp_close(i_file)) {
       cgp_error_exit();
+    }
   }
   void ReadSolutions(const std::string &soln_name) {
     int n_zones = local_nodes_.size();
     int i_file;
     auto cgns_file = directory_ + "/" + soln_name + ".cgns";
-    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &i_file))
+    if (cgp_open(cgns_file.c_str(), CG_MODE_READ, &i_file)) {
       cgp_error_exit();
+    }
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
       auto& zone = local_cells_.at(i_zone);
       int n_solns;
-      if (cg_nsols(i_file, i_base, i_zone, &n_solns))
+      if (cg_nsols(i_file, i_base, i_zone, &n_solns)) {
         cgp_error_exit();
+      }
       int i_soln = SolnNameToId(i_file, i_base, i_zone, "DataOnCells");
       int n_fields;
       if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields)) {
@@ -1373,18 +1393,21 @@ class Part {
           char field_name[33];
           DataType_t data_type;
           if (cg_field_info(i_file, i_base, i_zone, i_soln, i_field,
-              &data_type, field_name))
+              &data_type, field_name)) {
             cgp_error_exit();
+          }
           cgsize_t first[] = { section.head() };
           cgsize_t last[] = { section.tail() - 1 };
           if (cgp_field_read_data(i_file, i_base, i_zone, i_soln, i_field,
-              first, last, section.GetField(i_field).data()))
+              first, last, section.GetField(i_field).data())) {
             cgp_error_exit();
+          }
         }
       }
     }
-    if (cgp_close(i_file))
+    if (cgp_close(i_file)) {
       cgp_error_exit();
+    }
   }
   void WriteSolutionsOnCellCenters(const std::string &soln_name = "0") const {
     // prepare data to be written
@@ -1740,8 +1763,9 @@ class Part {
       auto& index = conn.index;
       auto& nodes = conn.nodes;
       if (cg_section_read(i_file, i_base, i_zone, i_sect, name, &type,
-          &u, &v, &x, &y))
+          &u, &v, &x, &y)) {
         cgp_error_exit();
+      }
       name_to_z_s[name] = { i_zone, i_sect };
       int npe; cg_npe(type, &npe);
       nodes.resize(npe * mem_dimensions[0]);
@@ -1751,8 +1775,9 @@ class Part {
         index.at(head + i) = npe * i;
       }
       if (cgp_elements_read_data(i_file, i_base, i_zone, i_sect,
-          range_min[0], range_max[0], nodes.data()))
+          range_min[0], range_max[0], nodes.data())) {
         cgp_error_exit();
+      }
       auto& n_to_m_cells = z_n_to_m_cells.at(i_zone);
       for (int i_face = head; i_face < tail; ++i_face) {
         auto* i_node_list = &nodes[(i_face - head) * npe];
