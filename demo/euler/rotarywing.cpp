@@ -101,7 +101,9 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
           n_cores, MPI_Wtime() - time_begin);
     }
   } else {
-    part.ReadSolutions("Frame" + std::to_string(i_frame));
+    std::string soln_name = (n_parts_prev != n_cores)
+        ? "shuffled" : "Frame" + std::to_string(i_frame);
+    part.ReadSolutions(soln_name);
     part.ScatterSolutions();
     if (i_core == 0) {
       std::printf("[Done] ReadSolutions(Frame%d) on %d cores at %f sec\n",

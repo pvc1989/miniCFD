@@ -587,10 +587,10 @@ class CellGroup {
     return cells_.cend();
   }
   const ShiftedVector<Scalar>& GetField(Int i_field) const {
-    return fields_[i_field];
+    return fields_.at(i_field);
   }
   ShiftedVector<Scalar>& GetField(Int i_field) {
-    return fields_[i_field];
+    return fields_.at(i_field);
   }
   void GatherFields() {
     for (int i_cell = head(); i_cell < tail(); ++i_cell) {
@@ -1386,12 +1386,7 @@ class Part {
         cgp_error_exit();
       }
       int i_soln = SolnNameToId(i_file, i_base, i_zone, "DataOnCells");
-      int n_fields;
-      if (cg_nfields(i_file, i_base, i_zone, i_soln, &n_fields)) {
-        cgp_error_exit();
-      }
-      assert(n_fields == kFields);
-      for (int i_field = 1; i_field <= n_fields; ++i_field) {
+      for (int i_field = 1; i_field <= kFields; ++i_field) {
         int n_sects = zone.size();
         for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
           auto& section = zone.at(i_sect);

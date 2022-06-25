@@ -123,7 +123,9 @@ int main(int argc, char* argv[]) {
       std::printf("[Start] ReadSolutions(Frame%d) on %d cores at %f sec\n",
           i_frame, n_cores, MPI_Wtime() - time_begin);
     }
-    part.ReadSolutions("Frame" + std::to_string(i_frame));
+    std::string soln_name = (n_parts_prev != n_cores)
+        ? "shuffled" : "Frame" + std::to_string(i_frame);
+    part.ReadSolutions(soln_name);
     part.ScatterSolutions();
   }
 
