@@ -19,6 +19,7 @@ set (cases
   double_mach
   forward_step
   # three-dimensional problems:
+  ship
   yf17
   mach_disk
   cylinder
