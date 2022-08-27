@@ -1468,7 +1468,7 @@ class Part {
     vtu << "\n        </DataArray>\n";
     vtu << "      </Points>\n";
     vtu << "      <Cells>\n";
-    vtu << "        <DataArray type=\"Int32\" Name=\"conn\" "
+    vtu << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
         << "format=\"ascii\">\n";
     for (int i_node = 0; i_node < coords.size(); ++i_node) {
       vtu << i_node << ' ';
