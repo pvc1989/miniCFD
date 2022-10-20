@@ -14,6 +14,7 @@ namespace aircraft {
 template <typename Scalar>
 class Rotor;
 
+// TODO(PVC): Support swept blades.
 template <typename Scalar>
 class Blade {
  public:

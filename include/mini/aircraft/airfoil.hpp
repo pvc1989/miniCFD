@@ -9,6 +9,7 @@ namespace mini {
 namespace aircraft {
 namespace airfoil {
 
+// TODO(PVC): Interpolate by (AoA, Mach) in a C81 table.
 template <typename Scalar>
 class Abstract {
  public:
