@@ -16,7 +16,7 @@ namespace mini {
 namespace aircraft {
 
 template <typename P, typename Scalar>
-class RotorSource : public Rotor<Scalar> {
+class SingleRotor : public Rotor<Scalar> {
  public:
   using Part = P;
   using Cell = typename Part::Cell;
