@@ -12,7 +12,7 @@
 
 #include "rotorcraft.hpp"
 
-int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
+int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   MPI_Init(NULL, NULL);
   int n_cores, i_core;
   MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
@@ -112,7 +112,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
   }
 
   /* Choose the time-stepping scheme. */
-  auto solver = Solver(dt, limiter, rotor);
+  auto solver = Solver(dt, limiter, source);
 
   /* Set boundary conditions. */
   bc(suffix, &solver);

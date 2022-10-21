@@ -24,7 +24,8 @@ void MyBC(const std::string &suffix, Solver *solver) {
 }
 
 int main(int argc, char* argv[]) {
-  auto rotor = Source();
+  auto source = Source();
+  auto rotor = Rotor();
   rotor.SetRevolutionsPerSecond(40.0);
   rotor.SetOrigin(0.0, 0.0, 0.0);
   auto frame = Frame();
@@ -41,6 +42,7 @@ int main(int argc, char* argv[]) {
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   rotor.SetInitialAzimuth(0.0);
+  source.InstallRotor(rotor);
 
-  return Main(argc, argv, MyIC, MyBC, rotor);
+  return Main(argc, argv, MyIC, MyBC, source);
 }

@@ -31,7 +31,7 @@ using Coeff = typename Cell::Coeff;
 
 using Limiter = mini::polynomial::EigenWeno<Cell>;
 
-using Source = mini::aircraft::SingleRotor<Part, double>;
+using Source = mini::aircraft::Rotorcraft<Part, double>;
 using Rotor = mini::aircraft::Rotor<double>;
 using Blade = typename Rotor::Blade;
 using Frame = typename Blade::Frame;
