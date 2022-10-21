@@ -15,8 +15,14 @@
 namespace mini {
 namespace aircraft {
 
+/**
+ * @brief A rotorcraft is an aircraft that has multiple rotors.
+ * 
+ * @tparam P 
+ * @tparam Scalar 
+ */
 template <typename P, typename Scalar>
-class SingleRotor : public Rotor<Scalar> {
+class Rotorcraft {
  public:
   using Part = P;
   using Cell = typename Part::Cell;
@@ -24,11 +30,13 @@ class SingleRotor : public Rotor<Scalar> {
   using Coord = typename Cell::Coord;
   using Coeff = typename Cell::Projection::Coeff;
   using Conservative = typename Part::Riemann::Conservative;
+  using Rotor = mini::aircraft::Rotor<Scalar>;
 
+ private:
   // TODO(PVC): apply to Part, rather than Cell
-  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
-    this->UpdateAzimuth(t_curr);
-    for (auto &blade : this->blades_) {
+  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff, Rotor *rotor) {
+    rotor->UpdateAzimuth(t_curr);
+    for (auto &blade : rotor->blades_) {
       const Coord &p = blade.P();
       const Coord &q = blade.Q();
       const Coord &pq = blade.PQ();
@@ -94,25 +102,8 @@ class SingleRotor : public Rotor<Scalar> {
       }
     }
   }
-};
 
-/**
- * @brief A rotorcraft is an aircraft that has multiple rotors.
- * 
- * @tparam P 
- * @tparam Scalar 
- */
-template <typename P, typename Scalar>
-class Rotorcraft {
  public:
-  using Part = P;
-  using Cell = typename Part::Cell;
-  using Face = typename Cell::Face;
-  using Coord = typename Cell::Coord;
-  using Coeff = typename Cell::Projection::Coeff;
-  using Conservative = typename Part::Riemann::Conservative;
-  using Rotor = mini::aircraft::Rotor<Scalar>;
-
   void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
   }
 
