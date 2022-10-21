@@ -10,7 +10,7 @@
 
 #include "mini/dataset/shuffler.hpp"
 
-#include "rotarywing.hpp"
+#include "rotorcraft.hpp"
 
 int Main(int argc, char* argv[], IC ic, BC bc, Source rotor) {
   MPI_Init(NULL, NULL);

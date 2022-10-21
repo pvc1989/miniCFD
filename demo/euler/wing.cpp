@@ -1,5 +1,5 @@
 //  Copyright 2022 PEI Weicheng
-#include "rotarywing.hpp"
+#include "rotorcraft.hpp"
 
 /* Set initial conditions. */
 auto primitive = Primitive(1.4, 0.3, 0.0, 0.0, 1.0);

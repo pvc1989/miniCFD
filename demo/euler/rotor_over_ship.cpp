@@ -1,5 +1,5 @@
 //  Copyright 2022 PEI Weicheng
-#include "rotarywing.hpp"
+#include "rotorcraft.hpp"
 
 /* Set initial conditions. */
 auto [c, s] = mini::geometry::CosSin(45.0);
