@@ -96,6 +96,35 @@ class SingleRotor : public Rotor<Scalar> {
   }
 };
 
+/**
+ * @brief A rotorcraft is an aircraft that has multiple rotors.
+ * 
+ * @tparam P 
+ * @tparam Scalar 
+ */
+template <typename P, typename Scalar>
+class Rotorcraft {
+ public:
+  using Part = P;
+  using Cell = typename Part::Cell;
+  using Face = typename Cell::Face;
+  using Coord = typename Cell::Coord;
+  using Coeff = typename Cell::Projection::Coeff;
+  using Conservative = typename Part::Riemann::Conservative;
+  using Rotor = mini::aircraft::Rotor<Scalar>;
+
+  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
+  }
+
+  Rotorcraft& InstallRotor(const Rotor& rotor) {
+    rotors_.emplace_back(rotor);
+    return *this;
+  }
+
+ protected:
+  std::vector<Rotor> rotors_;
+};
+
 }  // namespace aircraft
 }  // namespace mini
 
