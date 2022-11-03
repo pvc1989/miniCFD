@@ -25,6 +25,7 @@ class Section {
 
  private:
   const Blade* blade_;
+  // pointers for polymorphism; resources managed by some higher object:
   std::pair<const Airfoil *, Scalar> left_, right_;
   Scalar y_ratio_, chord_, twist_/* deg */;
 

@@ -26,6 +26,7 @@ class Blade {
 
  private:
   std::vector<Scalar> y_values_, chords_, twists_;
+  // pointers for polymorphism; resources managed by some higher object:
   std::vector<const Airfoil *> airfoils_;
   Vector p_, q_, pq_;
   Frame frame_;  // absolute
