@@ -34,11 +34,10 @@ class Rotorcraft {
 
  private:
   // TODO(PVC): apply to Part, rather than Cell
-  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff, Rotor *rotor) {
-    rotor->UpdateAzimuth(t_curr);
-    int n = rotor->CountBlades();
+  void UpdateCoeff(const Cell &cell, const Rotor &rotor, Coeff *coeff) {
+    int n = rotor.CountBlades();
     for (int i = 0; i != n; ++i) {
-      auto &blade = rotor->GetBlade(i);
+      auto &blade = rotor.GetBlade(i);
       const Coord &p = blade.P();
       const Coord &q = blade.Q();
       const Coord &pq = blade.PQ();
@@ -108,7 +107,8 @@ class Rotorcraft {
  public:
   void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
     for (auto &rotor : rotors_) {
-      UpdateCoeff(cell, t_curr, coeff, &rotor);
+      rotor.UpdateAzimuth(t_curr);
+      UpdateCoeff(cell, rotor, coeff);
     }
   }
 
