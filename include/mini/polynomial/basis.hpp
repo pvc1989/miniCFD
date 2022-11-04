@@ -482,7 +482,7 @@ class Linear {
 
   MatNx1 operator()(Coord const& point) const {
     MatNx1 col = RB::CallAt(point - center_);
-    MatNx1 res = coeff_ * col;
+    MatNx1 res = coeff_.template triangularView<Eigen::Lower>() * col;
     return res;
   }
   Coord const& center() const {
@@ -494,6 +494,11 @@ class Linear {
   void Transform(MatNxN const& a) {
     MatNxN temp = a * coeff_;
     coeff_ = temp;
+  }
+  void Transform(Eigen::TriangularView<MatNxN, Eigen::Lower> const& a) {
+    MatNxN temp;
+    temp.template triangularView<Eigen::Lower>() = a * coeff_;
+    coeff_.template triangularView<Eigen::Lower>() = temp;
   }
   void Shift(const Coord& new_center) {
     center_ = new_center;
