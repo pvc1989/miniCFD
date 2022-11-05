@@ -466,7 +466,7 @@ class Linear {
       integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
 
  public:
-  explicit Linear(Coord const& center)
+  explicit Linear(Coord const &center)
       : center_(center) {
     coeff_.setIdentity();
   }
@@ -474,33 +474,33 @@ class Linear {
     center_.setZero();
     coeff_.setIdentity();
   }
-  Linear(const Linear&) = default;
-  Linear(Linear&&) noexcept = default;
-  Linear& operator=(const Linear&) = default;
-  Linear& operator=(Linear&&) noexcept = default;
+  Linear(const Linear &) = default;
+  Linear(Linear &&) noexcept = default;
+  Linear &operator=(const Linear &) = default;
+  Linear &operator=(Linear &&) noexcept = default;
   ~Linear() noexcept = default;
 
-  MatNx1 operator()(Coord const& point) const {
+  MatNx1 operator()(Coord const &point) const {
     MatNx1 col = RB::CallAt(point - center_);
     MatNx1 res = coeff_.template triangularView<Eigen::Lower>() * col;
     return res;
   }
-  Coord const& center() const {
+  Coord const &center() const {
     return center_;
   }
-  MatNxN const& coeff() const {
+  MatNxN const &coeff() const {
     return coeff_;
   }
-  void Transform(MatNxN const& a) {
+  void Transform(MatNxN const &a) {
     MatNxN temp = a * coeff_;
     coeff_ = temp;
   }
-  void Transform(Eigen::TriangularView<MatNxN, Eigen::Lower> const& a) {
+  void Transform(Eigen::TriangularView<MatNxN, Eigen::Lower> const &a) {
     MatNxN temp;
     temp.template triangularView<Eigen::Lower>() = a * coeff_;
     coeff_.template triangularView<Eigen::Lower>() = temp;
   }
-  void Shift(const Coord& new_center) {
+  void Shift(const Coord &new_center) {
     center_ = new_center;
   }
 
@@ -523,28 +523,28 @@ class OrthoNormal {
   using MatNxD = algebra::Matrix<Scalar, N, kDimensions>;
 
  public:
-  explicit OrthoNormal(const Gauss& gauss)
+  explicit OrthoNormal(const Gauss &gauss)
       : gauss_ptr_(&gauss), basis_(gauss.center()) {
     assert(gauss.PhysDim() == kDimensions);
     OrthoNormalize(&basis_, gauss);
   }
   OrthoNormal() = default;
-  OrthoNormal(const OrthoNormal&) = default;
-  OrthoNormal(OrthoNormal&&) noexcept = default;
-  OrthoNormal& operator=(const OrthoNormal&) = default;
-  OrthoNormal& operator=(OrthoNormal&&) noexcept = default;
+  OrthoNormal(const OrthoNormal &) = default;
+  OrthoNormal(OrthoNormal &&) noexcept = default;
+  OrthoNormal &operator=(const OrthoNormal &) = default;
+  OrthoNormal &operator=(OrthoNormal &&) noexcept = default;
   ~OrthoNormal() noexcept = default;
 
-  Coord const& center() const {
+  Coord const &center() const {
     return basis_.center();
   }
-  MatNxN const& coeff() const {
+  MatNxN const &coeff() const {
     return basis_.coeff();
   }
-  Gauss const& GetGauss() const {
+  Gauss const &GetGauss() const {
     return *gauss_ptr_;
   }
-  MatNx1 operator()(const Coord& global) const {
+  MatNx1 operator()(const Coord &global) const {
     auto local = global;
     local -= center();
     MatNx1 col = RB::CallAt(local);
@@ -561,7 +561,7 @@ class OrthoNormal {
   }
 
  private:
-  Gauss const* gauss_ptr_;
+  Gauss const *gauss_ptr_;
   Linear<Scalar, kDimensions, kDegrees> basis_;
 };
 

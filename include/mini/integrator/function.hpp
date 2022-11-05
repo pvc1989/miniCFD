@@ -17,7 +17,7 @@ namespace integrator {
  * @param s the address of the scalar
  */
 template <class Scalar>
-inline void SetZero(Scalar* s) {
+inline void SetZero(Scalar *s) {
   static_assert(std::is_scalar_v<Scalar>);
   *s = 0;
 }
@@ -45,7 +45,7 @@ inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
  * @return auto the value of the integral
  */
 template <typename Callable, typename Element>
-auto Quadrature(Callable&& f_in_local, Element&& element) {
+auto Quadrature(Callable &&f_in_local, Element &&element) {
   using E = std::remove_reference_t<Element>;
   using LocalCoord = typename E::LocalCoord;
   decltype(f_in_local(LocalCoord())) sum; SetZero(&sum);
@@ -68,7 +68,7 @@ auto Quadrature(Callable&& f_in_local, Element&& element) {
  * @return auto the value of the integral
  */
 template <typename Callable, typename Element>
-auto Integrate(Callable&& f_in_global, Element&& element) {
+auto Integrate(Callable &&f_in_global, Element &&element) {
   using E = std::remove_reference_t<Element>;
   using GlobalCoord = typename E::GlobalCoord;
   decltype(f_in_global(GlobalCoord())) sum; SetZero(&sum);
@@ -93,10 +93,10 @@ auto Integrate(Callable&& f_in_global, Element&& element) {
  * @return auto the value of the innerproduct
  */
 template <typename Func1, typename Func2, typename Element>
-auto Innerprod(Func1&& f1, Func2&& f2, Element&& element) {
+auto Innerprod(Func1 &&f1, Func2 &&f2, Element &&element) {
   using E = std::remove_reference_t<Element>;
   using GlobalCoord = typename E::GlobalCoord;
-  return Integrate([&f1, &f2](const GlobalCoord& xyz_global){
+  return Integrate([&f1, &f2](const GlobalCoord &xyz_global){
     return f1(xyz_global) * f2(xyz_global);
   }, element);
 }
@@ -111,7 +111,7 @@ auto Innerprod(Func1&& f1, Func2&& f2, Element&& element) {
  * @return auto the value of the norm
  */
 template <typename Callable, typename Element>
-auto Norm(Callable&& f, Element&& element) {
+auto Norm(Callable &&f, Element &&element) {
   return std::sqrt(Innerprod(f, f, element));
 }
 
@@ -124,13 +124,13 @@ auto Norm(Callable&& f, Element&& element) {
  * @param elem the integrator
  */
 template <class Basis, class Element>
-void OrthoNormalize(Basis* basis, const Element& elem) {
+void OrthoNormalize(Basis *basis, const Element &elem) {
   constexpr int N = Basis::N;
   using MatNxN = typename Basis::MatNxN;
   using MatDx1 = typename Element::GlobalCoord;
   using Scalar = typename Element::Real;
   MatNxN S; S.setIdentity();
-  auto A = Integrate([basis](const MatDx1& xyz){
+  auto A = Integrate([basis](const MatDx1 &xyz){
     auto col = (*basis)(xyz);
     MatNxN result = col * col.transpose();
     return result;
