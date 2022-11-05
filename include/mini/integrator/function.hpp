@@ -120,18 +120,18 @@ auto Norm(Callable&& f, Element&& element) {
  * 
  * @tparam Basis the type of the basis
  * @tparam Element the type of the integrator
- * @param raw_basis the raw basis whose components are linearly independent from each other
+ * @param basis the basis to be orthonormalized, whose components are linearly independent from each other
  * @param elem the integrator
  */
 template <class Basis, class Element>
-void OrthoNormalize(Basis* raw_basis, const Element& elem) {
+void OrthoNormalize(Basis* basis, const Element& elem) {
   constexpr int N = Basis::N;
   using MatNxN = typename Basis::MatNxN;
   using MatDx1 = typename Element::GlobalCoord;
   using Scalar = typename Element::Real;
   MatNxN S; S.setIdentity();
-  auto A = Integrate([raw_basis](const MatDx1& xyz){
-    auto col = (*raw_basis)(xyz);
+  auto A = Integrate([basis](const MatDx1& xyz){
+    auto col = (*basis)(xyz);
     MatNxN result = col * col.transpose();
     return result;
   }, elem);
@@ -156,7 +156,7 @@ void OrthoNormalize(Basis* raw_basis, const Element& elem) {
     }
     S.row(i) /= std::sqrt(norm_sq);
   }
-  raw_basis->Transform(S.template triangularView<Eigen::Lower>());
+  basis->Transform(S.template triangularView<Eigen::Lower>());
 }
 
 }  // namespace integrator
