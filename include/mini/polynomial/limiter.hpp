@@ -22,8 +22,8 @@ class LazyWeno {
   using Value = typename Projection::Value;
 
   std::vector<Projection> old_projections_;
-  Projection* new_projection_ptr_ = nullptr;
-  const Cell* my_cell_ = nullptr;
+  Projection *new_projection_ptr_ = nullptr;
+  const Cell *my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
   bool verbose_;
@@ -34,14 +34,14 @@ class LazyWeno {
     weights_.setOnes();
     weights_ *= w0;
   }
-  Projection operator()(const Cell& cell) {
+  Projection operator()(const Cell &cell) {
     my_cell_ = &cell;
     Borrow();
     Reconstruct();
     assert(new_projection_ptr_);
     return *new_projection_ptr_;
   }
-  void operator()(Cell* cell_ptr) {
+  void operator()(Cell *cell_ptr) {
     assert(cell_ptr);
     cell_ptr->projection_ = operator()(*cell_ptr);
   }
@@ -55,10 +55,10 @@ class LazyWeno {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
     auto my_average = my_cell_->projection_.GetAverage();
-    for (auto* adj_cell : my_cell_->adj_cells_) {
+    for (auto *adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
       old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto& adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
       if (verbose_) {
         std::printf("\n  adj smoothness[%2d] = ", adj_cell->metis_id);
@@ -82,7 +82,7 @@ class LazyWeno {
     weights.back().array() += 1.0;
     // modify weights by smoothness
     for (int i = 0; i <= adj_cnt; ++i) {
-      auto& projection_i = old_projections_[i];
+      auto &projection_i = old_projections_[i];
       auto beta = projection_i.GetSmoothness();
       beta.array() += eps_;
       beta.array() *= beta.array();
@@ -92,11 +92,11 @@ class LazyWeno {
     Value sum; sum.setZero();
     sum = std::accumulate(weights.begin(), weights.end(), sum);
     assert(weights.size() == adj_cnt + 1);
-    for (auto& weight : weights) {
+    for (auto &weight : weights) {
       weight.array() /= sum.array();
     }
     // build the new (weighted) projection
-    auto& new_projection = old_projections_.back();
+    auto &new_projection = old_projections_.back();
     new_projection *= weights.back();
     for (int i = 0; i < adj_cnt; ++i) {
       old_projections_[i] *= weights[i];
@@ -116,7 +116,7 @@ class EigenWeno {
 
   Projection new_projection_;
   std::vector<Projection> old_projections_;
-  const Cell* my_cell_ = nullptr;
+  const Cell *my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
   Scalar total_volume_;
@@ -127,13 +127,13 @@ class EigenWeno {
     weights_.setOnes();
     weights_ *= w0;
   }
-  Projection operator()(const Cell& cell) {
+  Projection operator()(const Cell &cell) {
     my_cell_ = &cell;
     Borrow();
     Reconstruct();
     return new_projection_;
   }
-  void operator()(Cell* cell_ptr) {
+  void operator()(Cell *cell_ptr) {
     assert(cell_ptr);
     cell_ptr->projection_ = operator()(*cell_ptr);
   }
@@ -147,9 +147,9 @@ class EigenWeno {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
     auto my_average = my_cell_->projection_.GetAverage();
-    for (auto* adj_cell : my_cell_->adj_cells_) {
+    for (auto *adj_cell : my_cell_->adj_cells_) {
       old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto& adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
     }
     old_projections_.emplace_back(my_cell_->projection_);
@@ -172,7 +172,7 @@ class EigenWeno {
     // modify weights by smoothness
     auto rotated_projections = old_projections_;
     for (int i = 0; i <= adj_cnt; ++i) {
-      auto& projection_i = rotated_projections[i];
+      auto &projection_i = rotated_projections[i];
       projection_i.LeftMultiply(riemann->L());
       auto beta = projection_i.GetSmoothness();
       beta.array() += eps_;
@@ -183,11 +183,11 @@ class EigenWeno {
     Value sum; sum.setZero();
     sum = std::accumulate(weights.begin(), weights.end(), sum);
     assert(weights.size() == adj_cnt + 1);
-    for (auto& weight : weights) {
+    for (auto &weight : weights) {
       weight.array() /= sum.array();
     }
     // build the new (weighted) projection
-    auto& new_projection = rotated_projections.back();
+    auto &new_projection = rotated_projections.back();
     new_projection *= weights.back();
     for (int i = 0; i < adj_cnt; ++i) {
       rotated_projections[i] *= weights[i];
@@ -208,7 +208,7 @@ class EigenWeno {
   void Reconstruct() {
     new_projection_ = Projection(my_cell_->basis_);
     total_volume_ = 0.0;
-    for (auto* adj_face : my_cell_->adj_faces_) {
+    for (auto *adj_face : my_cell_->adj_faces_) {
       ReconstructOnFace(*adj_face);
     }
     new_projection_ /= total_volume_;
@@ -223,10 +223,10 @@ class DummyWeno {
  public:
   DummyWeno(Scalar w0, Scalar eps, bool verbose = false) {
   }
-  Projection operator()(const Cell& cell) {
+  Projection operator()(const Cell &cell) {
     return cell.projection_;
   }
-  void operator()(Cell* cell_ptr) {
+  void operator()(Cell *cell_ptr) {
   }
 };
 

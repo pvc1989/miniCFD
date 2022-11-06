@@ -40,11 +40,11 @@ class Projection {
 
  public:
   template <typename Callable>
-  Projection(Callable&& func, const Basis& basis)
+  Projection(Callable &&func, const Basis &basis)
       : basis_ptr_(&basis) {
     using Return = decltype(func(basis.center()));
     static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
-    coeff_ = integrator::Integrate([&](Coord const& xyz) {
+    coeff_ = integrator::Integrate([&](Coord const &xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
@@ -53,7 +53,7 @@ class Projection {
     Coeff temp = coeff_ * basis.coeff();
     coeff_ = temp;
   }
-  explicit Projection(const Basis& basis)
+  explicit Projection(const Basis &basis)
       : basis_ptr_(&basis) {
     coeff_.setZero();
   }
@@ -61,19 +61,19 @@ class Projection {
       : basis_ptr_(nullptr) {
     coeff_.setZero();
   }
-  Projection(const Projection&) = default;
-  Projection(Projection&&) noexcept = default;
-  Projection& operator=(const Projection&) = default;
-  Projection& operator=(Projection&&) noexcept = default;
+  Projection(const Projection &) = default;
+  Projection(Projection &&) noexcept = default;
+  Projection &operator=(const Projection &) = default;
+  Projection &operator=(Projection &&) noexcept = default;
   ~Projection() noexcept = default;
 
-  MatKx1 operator()(Coord const& global) const {
+  MatKx1 operator()(Coord const &global) const {
     Coord local = global; local -= center();
     MatNx1 col = Raw<Scalar, kDimensions, kDegrees>::CallAt(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
-    const auto& mat_a = basis_ptr_->coeff();
+    auto const &mat_a = basis_ptr_->coeff();
     MatKxN mat_x = coeff_;
     for (int i = N-1; i >= 0; --i) {
       for (int j = i+1; j < N; ++j) {
@@ -83,30 +83,30 @@ class Projection {
     }
     return mat_x;
   }
-  const MatKxN& GetCoeffOnRawBasis() const {
+  MatKxN const &GetCoeffOnRawBasis() const {
     return coeff_;
   }
-  const Coord& center() const {
+  Coord const &center() const {
     return basis_ptr_->center();
   }
-  const MatKxN& coeff() const {
+  MatKxN const &coeff() const {
     return coeff_;
   }
-  MatKxN& coeff() {
+  MatKxN &coeff() {
     return coeff_;
   }
-  MatKxN GetPdvValue(Coord const& global) const {
+  MatKxN GetPdvValue(Coord const &global) const {
     auto local = global; local -= center();
     return Raw<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
   }
   MatKx1 GetAverage() const {
-    const auto& mat_a = basis_ptr_->coeff();
+    auto const &mat_a = basis_ptr_->coeff();
     MatKxN mat_x = GetCoeffOnOrthoNormalBasis();
     mat_x.col(0) *= mat_a(0, 0);
     return mat_x.col(0);
   }
   MatKx1 GetSmoothness() const {
-    auto mat_pdv_func = [&](Coord const& xyz) {
+    auto mat_pdv_func = [&](Coord const &xyz) {
       auto mat_pdv = GetPdvValue(xyz);
       mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
       return mat_pdv;
@@ -116,39 +116,39 @@ class Projection {
     return Raw<Scalar, kDimensions, kDegrees>::GetSmoothness(integral, volume);
   }
   template <typename Callable>
-  void Project(Callable&& func, const Basis& basis) {
+  void Project(Callable &&func, const Basis &basis) {
     *this = Projection(std::forward<Callable>(func), basis);
   }
-  Projection& LeftMultiply(const MatKxK& left) {
+  Projection &LeftMultiply(const MatKxK &left) {
     Coeff temp = left * coeff_;
     coeff_ = temp;
     return *this;
   }
-  Projection& operator*=(Scalar ratio) {
+  Projection &operator*=(Scalar ratio) {
     coeff_ *= ratio;
     return *this;
   }
-  Projection& operator/=(Scalar ratio) {
+  Projection &operator/=(Scalar ratio) {
     coeff_ /= ratio;
     return *this;
   }
-  Projection& operator*=(const MatKx1& ratio) {
+  Projection &operator*=(const MatKx1& ratio) {
     for (int i = 0; i < K; ++i) {
       coeff_.row(i) *= ratio[i];
     }
     return *this;
   }
-  Projection& operator+=(const MatKx1& offset) {
+  Projection &operator+=(const MatKx1& offset) {
     coeff_.col(0) += offset;
     return *this;
   }
-  Projection& operator+=(const Projection& that) {
+  Projection &operator+=(const Projection &that) {
     assert(this->basis_ptr_ == that.basis_ptr_);
     coeff_ += that.coeff_;
     return *this;
   }
   template <class T>
-  void UpdateCoeffs(const T* new_coeffs) {
+  void UpdateCoeffs(const T *new_coeffs) {
     for (int c = 0; c < N; ++c) {
       for (int r = 0; r < K; ++r) {
         coeff_(r, c) = *new_coeffs++;
@@ -161,7 +161,7 @@ class Projection {
 
  public:
   MatKxN coeff_;
-  const Basis* basis_ptr_;
+  const Basis *basis_ptr_;
 };
 
 }  // namespace polynomial
