@@ -24,7 +24,7 @@ class Section {
   using Vector = typename Frame::Vector;
 
  private:
-  const Blade* blade_;
+  const Blade *blade_;
   // pointers for polymorphism; resources managed by some higher object:
   std::pair<const Airfoil *, Scalar> left_, right_;
   Scalar y_ratio_, chord_, twist_/* deg */;
@@ -50,13 +50,13 @@ class Section {
   }
 
  public:
-  Section(const Blade& blade, Scalar y_ratio, Scalar chord, Scalar twist,
+  Section(const Blade &blade, Scalar y_ratio, Scalar chord, Scalar twist,
       const Airfoil *a_0, Scalar w_0, const Airfoil *a_1, Scalar w_1)
       : blade_(&blade), y_ratio_(y_ratio), chord_(chord), twist_(twist),
         left_(a_0, w_0), right_(a_1, w_1) {
   }
 
-  const Frame& GetFrame() const {
+  const Frame &GetFrame() const {
     return blade_->GetFrame();
   }
   Scalar GetChord() const {
@@ -111,7 +111,7 @@ class Section {
 };
 
 template <typename Scalar>
-std::ostream& operator<<(std::ostream &out, const Section<Scalar> &section) {
+std::ostream &operator<<(std::ostream &out, const Section<Scalar> &section) {
   out << "frame = " << section.GetFrame() << "\n";
   out << "origin = " << section.GetOrigin().transpose() << "\n";
   out << "velocity = " << section.GetVelocity().transpose() << "\n";

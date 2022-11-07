@@ -31,18 +31,18 @@ class Blade {
   Vector p_, q_, pq_;
   Frame frame_;  // absolute
   Scalar root_, azimuth_;
-  const Rotor* rotor_;
+  const Rotor *rotor_;
 
  public:
-  Blade& SetRotor(const Rotor& rotor) {
+  Blade &SetRotor(const Rotor &rotor) {
     rotor_ = &rotor;
     return *this;
   }
-  Blade& SetRoot(Scalar root) {
+  Blade &SetRoot(Scalar root) {
     root_ = root;
     return *this;
   }
-  Blade& SetAzimuth(Scalar deg) {
+  Blade &SetAzimuth(Scalar deg) {
     azimuth_ = deg;
     frame_ = GetRotor().GetFrame();
     frame_.RotateZ(deg);
@@ -51,8 +51,8 @@ class Blade {
     pq_ = q_ - p_;
     return *this;
   }
-  Blade& InstallSection(Scalar y_value, Scalar chord, Scalar twist,
-      const Airfoil& airfoil) {
+  Blade &InstallSection(Scalar y_value, Scalar chord, Scalar twist,
+      const Airfoil &airfoil) {
     if (CountSections() == 0 && y_value) {
       throw std::invalid_argument("First position must be 0.");
     }
@@ -76,12 +76,12 @@ class Blade {
   /**
    * @brief Get the `Frame` of a `Blade`.
    * 
-   * @return const Frame& The absolute orientation of a `Frame`.
+   * @return const Frame & The absolute orientation of a `Frame`.
    */
-  const Frame& GetFrame() const {
+  const Frame &GetFrame() const {
     return frame_;
   }
-  const Rotor& GetRotor() const {
+  const Rotor &GetRotor() const {
     return *rotor_;
   }
 
@@ -117,13 +117,13 @@ class Blade {
     point += GetOrigin();
     return point;
   }
-  const Vector& P() const {
+  const Vector &P() const {
     return p_;
   }
-  const Vector& Q() const {
+  const Vector &Q() const {
     return q_;
   }
-  const Vector& PQ() const {
+  const Vector &PQ() const {
     return pq_;
   }
 

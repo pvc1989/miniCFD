@@ -31,24 +31,24 @@ class Rotor {
    * @brief Set the rotating speed of this `Rotor`.
    * 
    * @param rps The rotating speed in revolutions per second.
-   * @return Rotor& The reference to this `Rotor`.
+   * @return Rotor & The reference to this `Rotor`.
    */
-  Rotor& SetRevolutionsPerSecond(Scalar rps) {
+  Rotor &SetRevolutionsPerSecond(Scalar rps) {
     omega_ = rps * 360.0;
     return *this;
   }
 
-  Rotor& SetOrigin(Scalar x, Scalar y, Scalar z) {
+  Rotor &SetOrigin(Scalar x, Scalar y, Scalar z) {
     origin_ << x, y, z;
     return *this;
   }
 
-  Rotor& SetFrame(const Frame& frame) {
+  Rotor &SetFrame(const Frame &frame) {
     frame_ = frame;
     return *this;
   }
 
-  Rotor& SetAzimuth(Scalar deg) {
+  Rotor &SetAzimuth(Scalar deg) {
     azimuth_ = deg;
     auto psi = 360.0 / CountBlades();
     for (auto &blade : blades_) {
@@ -57,12 +57,12 @@ class Rotor {
     }
     return *this;
   }
-  Rotor& SetInitialAzimuth(Scalar deg) {
+  Rotor &SetInitialAzimuth(Scalar deg) {
     initial_azimuth_ = deg;
     SetAzimuth(deg);
     return *this;
   }
-  Rotor& UpdateAzimuth(Scalar time) {
+  Rotor &UpdateAzimuth(Scalar time) {
     if (time_ != time) {
       time_ = time;
       auto deg = initial_azimuth_;
@@ -72,7 +72,7 @@ class Rotor {
     return *this;
   }
 
-  Rotor& InstallBlade(Scalar root, const Blade& blade) {
+  Rotor &InstallBlade(Scalar root, const Blade &blade) {
     blades_.emplace_back(blade);
     blades_.back().SetRoot(root).SetRotor(*this);
     return *this;
@@ -109,15 +109,15 @@ class Rotor {
     return azimuth_;
   }
 
-  const Vector& GetOrigin() const {
+  const Vector &GetOrigin() const {
     return origin_;
   }
 
-  const Frame& GetFrame() const {
+  const Frame &GetFrame() const {
     return frame_;
   }
 
-  const Blade& GetBlade(int i) const {
+  const Blade &GetBlade(int i) const {
     return blades_.at(i);
   }
 };

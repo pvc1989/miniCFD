@@ -112,7 +112,7 @@ class Rotorcraft {
     }
   }
 
-  Rotorcraft& InstallRotor(const Rotor& rotor) {
+  Rotorcraft &InstallRotor(const Rotor &rotor) {
     rotors_.emplace_back(rotor);
     return *this;
   }
