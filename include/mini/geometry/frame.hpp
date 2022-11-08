@@ -15,18 +15,18 @@ template <typename Scalar>
 class Frame {
  public:
   using Vector = mini::algebra::Matrix<Scalar, 3, 1>;
-  const Vector& X() const {
+  const Vector &X() const {
     return x_;
   }
-  const Vector& Y() const {
+  const Vector &Y() const {
     return y_;
   }
-  const Vector& Z() const {
+  const Vector &Z() const {
     return z_;
   }
 
  public:
-  Frame& RotateX(Scalar deg) {
+  Frame &RotateX(Scalar deg) {
     auto [cos, sin] = CosSin(deg);
     Vector new_y = Y() * cos + Z() * sin;
     Vector new_z = Z() * cos - Y() * sin;
@@ -34,7 +34,7 @@ class Frame {
     z_ = new_z;
     return *this;
   }
-  Frame& RotateY(Scalar deg) {
+  Frame &RotateY(Scalar deg) {
     auto [cos, sin] = CosSin(deg);
     Vector new_x = X() * cos - Z() * sin;
     Vector new_z = Z() * cos + X() * sin;
@@ -42,7 +42,7 @@ class Frame {
     z_ = new_z;
     return *this;
   }
-  Frame& RotateZ(Scalar deg) {
+  Frame &RotateZ(Scalar deg) {
     auto [cos, sin] = CosSin(deg);
     Vector new_x = X() * cos + Y() * sin;
     Vector new_y = Y() * cos - X() * sin;
@@ -56,7 +56,7 @@ class Frame {
 };
 
 template <typename Scalar>
-std::ostream& operator<<(std::ostream &out, const Frame<Scalar> &frame) {
+std::ostream &operator<<(std::ostream &out, const Frame<Scalar> &frame) {
   out << "[" << frame.X().transpose() << "] ";
   out << "[" << frame.Y().transpose() << "] ";
   out << "[" << frame.Z().transpose() << "] ";
