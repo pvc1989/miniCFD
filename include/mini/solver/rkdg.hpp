@@ -40,7 +40,7 @@ class RungeKuttaBase {
  protected:
   std::vector<Coeff> residual_;
   std::vector<std::string> supersonic_outlet_, solid_wall_;
-  using Function = std::function<Value(const Coord&, double)>;
+  using Function = std::function<Value(const Coord &, double)>;
   std::unordered_map<std::string, Function> supersonic_inlet__,
       subsonic_inlet_, subsonic_outlet_, smart_boundary_;
   Limiter limiter_;
@@ -54,26 +54,26 @@ class RungeKuttaBase {
     assert(dt > 0.0);
   }
   RungeKuttaBase(const RungeKuttaBase &) = default;
-  RungeKuttaBase& operator=(const RungeKuttaBase &) = default;
+  RungeKuttaBase &operator=(const RungeKuttaBase &) = default;
   RungeKuttaBase(RungeKuttaBase &&) noexcept = default;
-  RungeKuttaBase& operator=(RungeKuttaBase &&) noexcept = default;
+  RungeKuttaBase &operator=(RungeKuttaBase &&) noexcept = default;
   ~RungeKuttaBase() noexcept = default;
 
  public:  // set BCs
   template <typename Callable>
-  void SetSmartBoundary(const std::string &name, Callable&& func) {
+  void SetSmartBoundary(const std::string &name, Callable &&func) {
     smart_boundary_[name] = func;
   }
   template <typename Callable>
-  void SetSupersonicInlet(const std::string &name, Callable&& func) {
+  void SetSupersonicInlet(const std::string &name, Callable &&func) {
     supersonic_inlet__[name] = func;
   }
   template <typename Callable>
-  void SetSubsonicInlet(const std::string &name, Callable&& func) {
+  void SetSubsonicInlet(const std::string &name, Callable &&func) {
     subsonic_inlet_[name] = func;
   }
   template <typename Callable>
-  void SetSubsonicOutlet(const std::string &name, Callable&& func) {
+  void SetSubsonicOutlet(const std::string &name, Callable &&func) {
     subsonic_outlet_[name] = func;
   }
   void SetSolidWall(const std::string &name) {
@@ -100,24 +100,24 @@ class RungeKuttaBase {
   }
   void InitializeResidual(const Part &part) {
     residual_.resize(part.CountLocalCells());
-    for (auto& coeff : residual_) {
+    for (auto &coeff : residual_) {
       coeff.setZero();
     }
     // Integrate the source term, if there is any.
     if (!std::is_same_v<Source, DummySource<Part>>) {
       part.ForEachConstLocalCell([this](const Cell &cell){
-        auto& coeff = this->residual_.at(cell.id());
+        auto &coeff = this->residual_.at(cell.id());
         source_.UpdateCoeff(cell, this->t_curr_, &coeff);
       });
     }
     // Integrate the dot-product of flux and gradient, if there is any.
     if (Part::kDegrees > 0) {
       part.ForEachConstLocalCell([this](const Cell &cell){
-        auto& coeff = this->residual_.at(cell.id());
-        const auto& gauss = *(cell.gauss_ptr_);
+        auto &coeff = this->residual_.at(cell.id());
+        const auto &gauss = *(cell.gauss_ptr_);
         auto n = gauss.CountQuadraturePoints();
         for (int q = 0; q < n; ++q) {
-          const auto& xyz = gauss.GetGlobalCoord(q);
+          const auto &xyz = gauss.GetGlobalCoord(q);
           Value cv = cell.projection_(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
           auto grad = cell.basis_.GetGradValue(xyz);
@@ -131,13 +131,13 @@ class RungeKuttaBase {
   void UpdateLocalResidual(const Part &part) {
     assert(residual_.size() == part.CountLocalCells());
     part.ForEachConstLocalFace([this](const Face &face){
-      const auto& gauss = *(face.gauss_ptr_);
-      const auto& holder = *(face.holder_);
-      const auto& sharer = *(face.sharer_);
-      const auto& riemann = (face.riemann_);
+      const auto &gauss = *(face.gauss_ptr_);
+      const auto &holder = *(face.holder_);
+      const auto &sharer = *(face.sharer_);
+      const auto &riemann = (face.riemann_);
       auto n = gauss.CountQuadraturePoints();
       for (int q = 0; q < n; ++q) {
-        const auto& coord = gauss.GetGlobalCoord(q);
+        const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
@@ -152,13 +152,13 @@ class RungeKuttaBase {
   void UpdateGhostResidual(const Part &part) {
     assert(residual_.size() == part.CountLocalCells());
     part.ForEachConstGhostFace([this](const Face &face){
-      const auto& gauss = *(face.gauss_ptr_);
-      const auto& holder = *(face.holder_);
-      const auto& sharer = *(face.sharer_);
-      const auto& riemann = (face.riemann_);
+      const auto &gauss = *(face.gauss_ptr_);
+      const auto &holder = *(face.holder_);
+      const auto &sharer = *(face.sharer_);
+      const auto &riemann = (face.riemann_);
       auto n = gauss.CountQuadraturePoints();
       for (int q = 0; q < n; ++q) {
-        const auto& coord = gauss.GetGlobalCoord(q);
+        const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
         Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
@@ -170,13 +170,13 @@ class RungeKuttaBase {
   }
   void ApplySolidWall(const Part &part) {
     auto visit = [this](const Face &face){
-      const auto& gauss = *(face.gauss_ptr_);
+      const auto &gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
-      const auto& holder = *(face.holder_);
-      const auto& riemann = (face.riemann_);
+      const auto &holder = *(face.holder_);
+      const auto &riemann = (face.riemann_);
       auto n = gauss.CountQuadraturePoints();
       for (int q = 0; q < n; ++q) {
-        const auto& coord = gauss.GetGlobalCoord(q);
+        const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
@@ -184,19 +184,19 @@ class RungeKuttaBase {
             -= flux * holder.basis_(coord).transpose();
       }
     };
-    for (const auto& name : solid_wall_) {
+    for (const auto &name : solid_wall_) {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
   void ApplySupersonicOutlet(const Part &part) {
     auto visit = [this](const Face &face){
-      const auto& gauss = *(face.gauss_ptr_);
+      const auto &gauss = *(face.gauss_ptr_);
       assert(face.sharer_ == nullptr);
-      const auto& holder = *(face.holder_);
-      const auto& riemann = (face.riemann_);
+      const auto &holder = *(face.holder_);
+      const auto &riemann = (face.riemann_);
       auto n = gauss.CountQuadraturePoints();
       for (int q = 0; q < n; ++q) {
-        const auto& coord = gauss.GetGlobalCoord(q);
+        const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
         flux *= gauss.GetGlobalWeight(q);
@@ -204,7 +204,7 @@ class RungeKuttaBase {
             -= flux * holder.basis_(coord).transpose();
       }
     };
-    for (const auto& name : supersonic_outlet_) {
+    for (const auto &name : supersonic_outlet_) {
       part.ForEachConstBoundaryFace(visit, name);
     }
   }
@@ -212,13 +212,13 @@ class RungeKuttaBase {
     for (auto iter = supersonic_inlet__.begin();
         iter != supersonic_inlet__.end(); ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto& gauss = *(face.gauss_ptr_);
+        const auto &gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
-        const auto& holder = *(face.holder_);
-        const auto& riemann = (face.riemann_);
+        const auto &holder = *(face.holder_);
+        const auto &riemann = (face.riemann_);
         auto n = gauss.CountQuadraturePoints();
         for (int q = 0; q < n; ++q) {
-          const auto& coord = gauss.GetGlobalCoord(q);
+          const auto &coord = gauss.GetGlobalCoord(q);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
@@ -233,13 +233,13 @@ class RungeKuttaBase {
     for (auto iter = subsonic_inlet_.begin(); iter != subsonic_inlet_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto& gauss = *(face.gauss_ptr_);
+        const auto &gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
-        const auto& holder = *(face.holder_);
-        const auto& riemann = (face.riemann_);
+        const auto &holder = *(face.holder_);
+        const auto &riemann = (face.riemann_);
         auto n = gauss.CountQuadraturePoints();
         for (int q = 0; q < n; ++q) {
-          const auto& coord = gauss.GetGlobalCoord(q);
+          const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.projection_(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
@@ -255,13 +255,13 @@ class RungeKuttaBase {
     for (auto iter = subsonic_outlet_.begin(); iter != subsonic_outlet_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto& gauss = *(face.gauss_ptr_);
+        const auto &gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
-        const auto& holder = *(face.holder_);
-        const auto& riemann = (face.riemann_);
+        const auto &holder = *(face.holder_);
+        const auto &riemann = (face.riemann_);
         auto n = gauss.CountQuadraturePoints();
         for (int q = 0; q < n; ++q) {
-          const auto& coord = gauss.GetGlobalCoord(q);
+          const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.projection_(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
@@ -277,13 +277,13 @@ class RungeKuttaBase {
     for (auto iter = smart_boundary_.begin(); iter != smart_boundary_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto& gauss = *(face.gauss_ptr_);
+        const auto &gauss = *(face.gauss_ptr_);
         assert(face.sharer_ == nullptr);
-        const auto& holder = *(face.holder_);
-        const auto& riemann = (face.riemann_);
+        const auto &holder = *(face.holder_);
+        const auto &riemann = (face.riemann_);
         auto n = gauss.CountQuadraturePoints();
         for (int q = 0; q < n; ++q) {
-          const auto& coord = gauss.GetGlobalCoord(q);
+          const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.projection_(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
@@ -332,9 +332,9 @@ struct RungeKutta<1, P, L, S>
  public:
   using Base::Base;
   RungeKutta(const RungeKutta &) = default;
-  RungeKutta& operator=(const RungeKutta &) = default;
+  RungeKutta &operator=(const RungeKutta &) = default;
   RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta& operator=(RungeKutta &&) noexcept = default;
+  RungeKutta &operator=(RungeKutta &&) noexcept = default;
   ~RungeKutta() noexcept = default;
 
  public:
@@ -389,9 +389,9 @@ struct RungeKutta<2, P, L, S>
  public:
   using Base::Base;
   RungeKutta(const RungeKutta &) = default;
-  RungeKutta& operator=(const RungeKutta &) = default;
+  RungeKutta &operator=(const RungeKutta &) = default;
   RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta& operator=(RungeKutta &&) noexcept = default;
+  RungeKutta &operator=(RungeKutta &&) noexcept = default;
   ~RungeKutta() noexcept = default;
 
  public:
@@ -469,9 +469,9 @@ struct RungeKutta<3, P, L, S>
  public:
   using Base::Base;
   RungeKutta(const RungeKutta &) = default;
-  RungeKutta& operator=(const RungeKutta &) = default;
+  RungeKutta &operator=(const RungeKutta &) = default;
   RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta& operator=(RungeKutta &&) noexcept = default;
+  RungeKutta &operator=(RungeKutta &&) noexcept = default;
   ~RungeKutta() noexcept = default;
 
  public:
