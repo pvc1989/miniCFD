@@ -92,7 +92,7 @@ class Tetra : public Cell<Scalar> {
     };
     return faces;
   }
-  static Mat4x1 shape_4x1(Mat3x1 const& xyz_local) {
+  static Mat4x1 shape_4x1(Mat3x1 const &xyz_local) {
     return shape_4x1(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
   static Mat4x1 shape_4x1(Scalar x_local, Scalar y_local, Scalar z_local) {
@@ -114,7 +114,7 @@ class Tetra : public Cell<Scalar> {
   }
   template <typename Callable, typename MatJ>
   static Mat3x1 root(
-      Callable&& func, Mat3x1 x, MatJ&& matj, Scalar xtol = 1e-5) {
+      Callable &&func, Mat3x1 x, MatJ &&matj, Scalar xtol = 1e-5) {
     Mat3x1 res;
     do {
       res = matj(x).partialPivLu().solve(func(x));
@@ -124,26 +124,26 @@ class Tetra : public Cell<Scalar> {
   }
 
  public:
-  GlobalCoord const& GetGlobalCoord(int q) const override {
+  GlobalCoord const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  Scalar const& GetGlobalWeight(int q) const override {
+  Scalar const &GetGlobalWeight(int q) const override {
     return global_weights_[q];
   }
-  LocalCoord const& GetLocalCoord(int q) const override {
+  LocalCoord const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
-  Scalar const& GetLocalWeight(int q) const override {
+  Scalar const &GetLocalWeight(int q) const override {
     return local_weights_[q];
   }
 
  public:
-  explicit Tetra(Mat3x4 const& xyz_global) {
+  explicit Tetra(Mat3x4 const &xyz_global) {
     xyz_global_3x4_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Tetra(Mat3x1 const& p0, Mat3x1 const& p1, Mat3x1 const& p2,
-      Mat3x1 const& p3) {
+  Tetra(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2,
+      Mat3x1 const &p3) {
     xyz_global_3x4_.col(0) = p0; xyz_global_3x4_.col(1) = p1;
     xyz_global_3x4_.col(2) = p2; xyz_global_3x4_.col(3) = p3;
     BuildQuadraturePoints();
@@ -163,10 +163,10 @@ class Tetra : public Cell<Scalar> {
     xyz_global_3x4_.col(3) << 0, 0, 1;
     BuildQuadraturePoints();
   }
-  Tetra(const Tetra&) = default;
-  Tetra& operator=(const Tetra&) = default;
-  Tetra(Tetra&&) noexcept = default;
-  Tetra& operator=(Tetra&&) noexcept = default;
+  Tetra(const Tetra &) = default;
+  Tetra &operator=(const Tetra &) = default;
+  Tetra(Tetra &&) noexcept = default;
+  Tetra &operator=(Tetra &&) noexcept = default;
   virtual ~Tetra() noexcept = default;
 
   Mat3x1 center() const override {
@@ -183,26 +183,26 @@ class Tetra : public Cell<Scalar> {
       Scalar z_local) const {
     return xyz_global_3x4_ * shape_4x1(x_local, y_local, z_local);
   }
-  GlobalCoord LocalToGlobal(LocalCoord const& xyz_local) const override {
+  GlobalCoord LocalToGlobal(LocalCoord const &xyz_local) const override {
     return xyz_global_3x4_ * shape_4x1(xyz_local);
   }
-  Mat3x3 Jacobian(const LocalCoord& xyz_local) const override {
+  Mat3x3 Jacobian(const LocalCoord &xyz_local) const override {
     return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
   LocalCoord global_to_local_3x1(Scalar x_global, Scalar y_global,
       Scalar z_global) const {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
-    auto func = [this, &xyz_global](Mat3x1 const& xyz_local) {
+    auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
       return res -= xyz_global;
     };
-    auto jac = [this](LocalCoord const& xyz_local) {
+    auto jac = [this](LocalCoord const &xyz_local) {
       return Jacobian(xyz_local);
     };
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord global_to_local_3x1(GlobalCoord const& xyz_global) const {
+  LocalCoord global_to_local_3x1(GlobalCoord const &xyz_global) const {
     return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };

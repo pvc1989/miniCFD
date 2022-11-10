@@ -20,17 +20,17 @@ class Face {
   using LocalCoord = Mat2x1;
   using GlobalCoord = MatDx1;
 
-  virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
-  virtual MatDx2 Jacobian(const LocalCoord&) const = 0;
+  virtual GlobalCoord LocalToGlobal(const LocalCoord &) const = 0;
+  virtual MatDx2 Jacobian(const LocalCoord &) const = 0;
   virtual int CountQuadraturePoints() const = 0;
   virtual int CountVertices() const = 0;
-  virtual const GlobalCoord& GetVertex(int i) const = 0;
-  virtual const LocalCoord& GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
-  virtual const Real& GetLocalWeight(int i) const = 0;
-  virtual const Real& GetGlobalWeight(int i) const = 0;
+  virtual const GlobalCoord &GetVertex(int i) const = 0;
+  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
+  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
+  virtual const Real &GetLocalWeight(int i) const = 0;
+  virtual const Real &GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord center() const = 0;
-  virtual const MatDxD& GetNormalFrame(int i) const = 0;
+  virtual const MatDxD &GetNormalFrame(int i) const = 0;
   virtual Scalar area() const = 0;
 
   static constexpr int CellDim() {

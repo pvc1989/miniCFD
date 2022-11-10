@@ -17,13 +17,13 @@ class Cell {
   using LocalCoord = Mat3x1;
   using GlobalCoord = Mat3x1;
 
-  virtual GlobalCoord LocalToGlobal(const LocalCoord&) const = 0;
-  virtual Mat3x3 Jacobian(const LocalCoord&) const = 0;
+  virtual GlobalCoord LocalToGlobal(const LocalCoord &) const = 0;
+  virtual Mat3x3 Jacobian(const LocalCoord &) const = 0;
   virtual int CountQuadraturePoints() const = 0;
-  virtual const LocalCoord& GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord& GetGlobalCoord(int i) const = 0;
-  virtual const Real& GetLocalWeight(int i) const = 0;
-  virtual const Real& GetGlobalWeight(int i) const = 0;
+  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
+  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
+  virtual const Real &GetLocalWeight(int i) const = 0;
+  virtual const Real &GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord center() const = 0;
   virtual Real volume() const = 0;
 

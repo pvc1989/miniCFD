@@ -59,7 +59,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   int CountVertices() const override {
     return 4;
   }
-  const GlobalCoord& GetVertex(int i) const override {
+  const GlobalCoord &GetVertex(int i) const override {
     return xyz_global_Dx4_[i];
   }
   int CountQuadraturePoints() const override {
@@ -70,7 +70,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     int n = CountQuadraturePoints();
     for (int q = 0; q < n; ++q) {
       MatDx2 dr = Jacobian(GetLocalCoord(q));
-      auto& frame = normal_frames_[q];
+      auto &frame = normal_frames_[q];
       frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
       frame.col(2) = dr.col(1).normalized();
       frame.col(1) = frame.col(2).cross(frame.col(0));
@@ -146,19 +146,19 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   }
 
  public:
-  GlobalCoord const& GetGlobalCoord(int i) const override {
+  GlobalCoord const &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
-  Scalar const& GetGlobalWeight(int i) const override {
+  Scalar const &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  LocalCoord const& GetLocalCoord(int i) const override {
+  LocalCoord const &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
-  Scalar const& GetLocalWeight(int i) const override {
+  Scalar const &GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
-  GlobalCoord LocalToGlobal(const Mat2x1& xy_local) const override {
+  GlobalCoord LocalToGlobal(const Mat2x1 &xy_local) const override {
     return LocalToGlobal(xy_local[0], xy_local[1]);
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
@@ -169,7 +169,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     product += xyz_global_Dx4_[3] * shape[3];
     return product;
   }
-  MatDx2 Jacobian(const LocalCoord& xy_local) const override {
+  MatDx2 Jacobian(const LocalCoord &xy_local) const override {
     return Jacobian(xy_local[0], xy_local[1]);
   }
   GlobalCoord center() const override {
@@ -183,12 +183,12 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   Scalar area() const override {
     return area_;
   }
-  const MatDxD& GetNormalFrame(int i) const override {
+  const MatDxD &GetNormalFrame(int i) const override {
     return normal_frames_[i];
   }
 
  public:
-  explicit Quadrangle(MatDx4 const& xyz_global) {
+  explicit Quadrangle(MatDx4 const &xyz_global) {
     xyz_global_Dx4_[0] = xyz_global.col(0);
     xyz_global_Dx4_[1] = xyz_global.col(1);
     xyz_global_Dx4_[2] = xyz_global.col(2);

@@ -52,7 +52,7 @@ class Triangle : public Face<Scalar, kDimensions> {
   int CountVertices() const override {
     return 3;
   }
-  const GlobalCoord& GetVertex(int i) const override {
+  const GlobalCoord &GetVertex(int i) const override {
     return xyz_global_Dx3_[i];
   }
   int CountQuadraturePoints() const override {
@@ -63,7 +63,7 @@ class Triangle : public Face<Scalar, kDimensions> {
     int n = CountQuadraturePoints();
     for (int q = 0; q < n; ++q) {
       MatDx2 dr = Jacobian(GetLocalCoord(q));
-      auto& frame = normal_frames_[q];
+      auto &frame = normal_frames_[q];
       frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
       frame.col(2) = dr.col(1).normalized();
       frame.col(1) = frame.col(2).cross(frame.col(0));
@@ -84,7 +84,7 @@ class Triangle : public Face<Scalar, kDimensions> {
       global_coords_[q] = LocalToGlobal(GetLocalCoord(q));
     }
   }
-  static Mat3x1 shape_3x1(Mat2x1 const& xy_local) {
+  static Mat3x1 shape_3x1(Mat2x1 const &xy_local) {
     return shape_3x1(xy_local[0], xy_local[1]);
   }
   static Mat3x1 shape_3x1(Scalar x_local, Scalar y_local) {
@@ -108,16 +108,16 @@ class Triangle : public Face<Scalar, kDimensions> {
   }
 
  public:
-  GlobalCoord const& GetGlobalCoord(int q) const override {
+  GlobalCoord const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  Scalar const& GetGlobalWeight(int q) const override {
+  Scalar const &GetGlobalWeight(int q) const override {
     return global_weights_[q];
   }
-  LocalCoord const& GetLocalCoord(int q) const override {
+  LocalCoord const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
-  Scalar const& GetLocalWeight(int q) const override {
+  Scalar const &GetLocalWeight(int q) const override {
     return local_weights_[q];
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
@@ -127,10 +127,10 @@ class Triangle : public Face<Scalar, kDimensions> {
     product += xyz_global_Dx3_[2] * shape[2];
     return product;
   }
-  GlobalCoord LocalToGlobal(LocalCoord const& xy_local) const override {
+  GlobalCoord LocalToGlobal(LocalCoord const &xy_local) const override {
     return LocalToGlobal(xy_local[0], xy_local[1]);
   }
-  MatDx2 Jacobian(const LocalCoord& xy_local) const override {
+  MatDx2 Jacobian(const LocalCoord &xy_local) const override {
     return Jacobian(xy_local[0], xy_local[1]);
   }
   GlobalCoord center() const override {
@@ -143,18 +143,18 @@ class Triangle : public Face<Scalar, kDimensions> {
   Scalar area() const override {
     return area_;
   }
-  const MatDxD& GetNormalFrame(int q) const override {
+  const MatDxD &GetNormalFrame(int q) const override {
     return normal_frames_[q];
   }
 
  public:
-  explicit Triangle(MatDx3 const& xyz_global) {
+  explicit Triangle(MatDx3 const &xyz_global) {
     xyz_global_Dx3_[0] = xyz_global.col(0);
     xyz_global_Dx3_[1] = xyz_global.col(1);
     xyz_global_Dx3_[2] = xyz_global.col(2);
     BuildQuadraturePoints();
   }
-  Triangle(MatDx1 const& p0, MatDx1 const& p1, MatDx1 const& p2) {
+  Triangle(MatDx1 const &p0, MatDx1 const &p1, MatDx1 const &p2) {
     xyz_global_Dx3_[0] = p0;
     xyz_global_Dx3_[1] = p1;
     xyz_global_Dx3_[2] = p2;
@@ -168,10 +168,10 @@ class Triangle : public Face<Scalar, kDimensions> {
     xyz_global_Dx3_[2] = p[2];
     BuildQuadraturePoints();
   }
-  Triangle(const Triangle&) = default;
-  Triangle& operator=(const Triangle&) = default;
-  Triangle(Triangle&&) noexcept = default;
-  Triangle& operator=(Triangle&&) noexcept = default;
+  Triangle(const Triangle &) = default;
+  Triangle &operator=(const Triangle &) = default;
+  Triangle(Triangle &&) noexcept = default;
+  Triangle &operator=(Triangle &&) noexcept = default;
   virtual ~Triangle() noexcept = default;
 };
 

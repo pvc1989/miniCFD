@@ -79,13 +79,13 @@ class Line {
   GlobalCoord const &GetGlobalCoord(int i) const {
     return global_coords_[i];
   }
-  Scalar const& GetGlobalWeight(int i) const {
+  Scalar const &GetGlobalWeight(int i) const {
     return global_weights_[i];
   }
-  LocalCoord const& GetLocalCoord(int i) const {
+  LocalCoord const &GetLocalCoord(int i) const {
     return local_coords_[i];
   }
-  Scalar const& GetLocalWeight(int i) const {
+  Scalar const &GetLocalWeight(int i) const {
     return local_weights_[i];
   }
   GlobalCoord LocalToGlobal(Scalar x) const {
