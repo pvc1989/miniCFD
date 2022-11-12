@@ -31,15 +31,15 @@ class SparseMatrix {
 
  public:
   SparseMatrix() = default;
-  SparseMatrix(std::vector<Int> const& range, std::vector<Int> const& index)
+  SparseMatrix(std::vector<Int> const &range, std::vector<Int> const &index)
       : range_(range), index_(index) {
   }
 
  public:
-  const Int& range(Int i) const {
+  Int const &range(Int i) const {
     return range_[i];
   }
-  const Int& index(Int i) const {
+  Int const &index(Int i) const {
     return index_[i];
   }
   Int CountVertices() const {
@@ -48,10 +48,10 @@ class SparseMatrix {
   Int CountEdges() const {
     return index_.size();
   }
-  Int& range(Int i) {
+  Int &range(Int i) {
     return range_[i];
   }
-  Int& index(Int i) {
+  Int &index(Int i) {
     return index_[i];
   }
   /**
@@ -79,17 +79,17 @@ class Mesh : private SparseMatrix<Int> {
 
  public:
   Mesh() = default;
-  Mesh(std::vector<Int> const& range,
-       std::vector<Int> const& index, Int n_nodes)
+  Mesh(std::vector<Int> const &range,
+       std::vector<Int> const &index, Int n_nodes)
       : Base(range, index), n_nodes_(n_nodes) {
     assert(n_nodes > *(std::max_element(index.begin(), index.end())));
   }
 
  public:
-  const Int& range(Int i) const {
+  Int const &range(Int i) const {
     return this->Base::range(i);
   }
-  const Int& nodes(Int i) const {
+  Int const &nodes(Int i) const {
     return this->index(i);
   }
   Int CountCells() const {
@@ -98,10 +98,10 @@ class Mesh : private SparseMatrix<Int> {
   Int CountNodes() const {
     return n_nodes_;
   }
-  Int& range(Int i) {
+  Int &range(Int i) {
     return this->Base::range(i);
   }
-  Int& nodes(Int i) {
+  Int &nodes(Int i) {
     return this->index(i);
   }
   /**
@@ -138,7 +138,7 @@ class SparseGraphWithDeleter {
    * @param range the address of the explicitly allocated range array
    * @param index the address of the explicitly allocated index array
    */
-  SparseGraphWithDeleter(Int size, Int* range, Int* index)
+  SparseGraphWithDeleter(Int size, Int *range, Int *index)
       : size_(size), range_(range), index_(index) {
   }
   /**
@@ -151,10 +151,10 @@ class SparseGraphWithDeleter {
                + (METIS_Free(index_) != METIS_OK);
     assert(errors == 0);
   }
-  const Int& range(Int i) const {
+  Int const &range(Int i) const {
     return range_[i];
   }
-  const Int& index(Int i) const {
+  Int const &index(Int i) const {
     return index_[i];
   }
   Int CountVertices() const {
@@ -163,16 +163,16 @@ class SparseGraphWithDeleter {
   Int CountEdges() const {
     return range_[size_];
   }
-  Int& range(Int i) {
+  Int &range(Int i) {
     return range_[i];
   }
-  Int& index(Int i) {
+  Int &index(Int i) {
     return index_[i];
   }
 };
 
 template <class Container>
-static inline bool valid(Container&& c, std::size_t size) {
+static inline bool valid(Container &&c, std::size_t size) {
   return c.size() == 0 || c.size() == size;
 }
 
@@ -217,15 +217,15 @@ std::vector<Int> PartGraph(
   Int objective_value;
   auto error_code = METIS_PartGraphKway(
       &n_vertices, &n_constraints,
-      const_cast<Int*>(&(graph.range(0))),
-      const_cast<Int*>(&(graph.index(0))),
-      const_cast<Int*>(cost_of_each_vertex.data()),
-      const_cast<Int*>(size_of_each_vertex.data()),
-      const_cast<Int*>(cost_of_each_edge.data()),
-      const_cast<Int*>(&n_parts),
-      const_cast<real_t*>(weight_of_each_part.data()),
-      const_cast<real_t*>(unbalances.data()),
-      const_cast<Int*>(options.data()),
+      const_cast<Int *>(&(graph.range(0))),
+      const_cast<Int *>(&(graph.index(0))),
+      const_cast<Int *>(cost_of_each_vertex.data()),
+      const_cast<Int *>(size_of_each_vertex.data()),
+      const_cast<Int *>(cost_of_each_edge.data()),
+      const_cast<Int *>(&n_parts),
+      const_cast<real_t *>(weight_of_each_part.data()),
+      const_cast<real_t *>(unbalances.data()),
+      const_cast<Int *>(options.data()),
       &objective_value, vertex_parts.data());
   assert(error_code == METIS_OK);
   return vertex_parts;
@@ -265,13 +265,13 @@ std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
   Int objective_value;
   auto error_code = METIS_PartMeshDual(
       &n_cells, &n_nodes,
-      const_cast<Int*>(&(mesh.range(0))),
-      const_cast<Int*>(&(mesh.nodes(0))),
-      const_cast<Int*>(cost_of_each_cell.data()),
-      const_cast<Int*>(size_of_each_cell.data()),
+      const_cast<Int *>(&(mesh.range(0))),
+      const_cast<Int *>(&(mesh.nodes(0))),
+      const_cast<Int *>(cost_of_each_cell.data()),
+      const_cast<Int *>(size_of_each_cell.data()),
       &n_common_nodes, &n_parts,
-      const_cast<real_t*>(weight_of_each_part.data()),
-      const_cast<Int*>(options.data()),
+      const_cast<real_t *>(weight_of_each_part.data()),
+      const_cast<Int *>(options.data()),
       &objective_value, cell_parts.data(), node_parts.data());
   assert(error_code == METIS_OK);
   return {cell_parts, node_parts};
@@ -293,8 +293,8 @@ SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
   Int *range, *neighbors;
   auto error_code = METIS_MeshToDual(
       &n_cells, &n_nodes,
-      const_cast<Int*>(&(mesh.range(0))),
-      const_cast<Int*>(&(mesh.nodes(0))),
+      const_cast<Int *>(&(mesh.range(0))),
+      const_cast<Int *>(&(mesh.nodes(0))),
       &n_common_nodes, &index_base,
       &range, &neighbors);
   assert(error_code == METIS_OK);
