@@ -32,7 +32,7 @@ namespace mesh {
  */
 template <typename T>
 std::pair<std::vector<int>, std::vector<int>>
-GetNewOrder(const T* parts, int n) {
+GetNewOrder(T const *parts, int n) {
   auto new_to_old = std::vector<int>(n);
   auto old_to_new = std::vector<int>(n);
   std::iota(new_to_old.begin(), new_to_old.end(), 0);
@@ -52,7 +52,7 @@ GetNewOrder(const T* parts, int n) {
  * @param old_data 
  */
 template <typename T>
-void ShuffleData(const std::vector<int>& new_to_old, T* old_data) {
+void ShuffleData(std::vector<int> const &new_to_old, T *old_data) {
   int n = new_to_old.size();
   std::vector<T> new_data(n);
   for (int i = 0; i < n; ++i)
@@ -60,10 +60,10 @@ void ShuffleData(const std::vector<int>& new_to_old, T* old_data) {
   std::memcpy(old_data, new_data.data(), n * sizeof(T));
 }
 // template <typename T>
-// void UpdateNodeIdList(const std::vector<int>& old_to_new_for_nodes,
-//                       int list_length, T* node_id_list) {
-//   auto* tail = node_id_list + list_length;
-//   auto* curr = node_id_list;
+// void UpdateNodeIdList(std::vector<int> const &old_to_new_for_nodes,
+//                       int list_length, T *node_id_list) {
+//   auto *tail = node_id_list + list_length;
+//   auto *curr = node_id_list;
 //   while (curr != tail) {
 //     auto i_node_old = *curr;
 //     auto i_node_new = old_to_new_for_nodes[i_node_old];
@@ -80,9 +80,9 @@ void ShuffleData(const std::vector<int>& new_to_old, T* old_data) {
  * @param old_cid_old_nid 
  */
 template <typename T>
-void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
-                         const std::vector<int>& new_to_old_for_cells,
-                         int npe, T* old_cid_old_nid) {
+void ShuffleConnectivity(std::vector<int> const &old_to_new_for_nodes,
+                         std::vector<int> const &new_to_old_for_cells,
+                         int npe, T *old_cid_old_nid) {
   int n_cells = new_to_old_for_cells.size();
   int i_node_list_size = n_cells * npe;
   auto old_cid_new_nid = std::vector<T>(i_node_list_size);
@@ -91,7 +91,7 @@ void ShuffleConnectivity(const std::vector<int>& old_to_new_for_nodes,
     auto new_nid = old_to_new_for_nodes.at(old_nid - 1) + 1;
     old_cid_new_nid[i] = new_nid;
   }
-  auto* new_cid_new_nid = old_cid_old_nid;
+  auto *new_cid_new_nid = old_cid_old_nid;
   for (int new_cid = 0; new_cid < n_cells; ++new_cid) {
     int range_min = npe * new_to_old_for_cells[new_cid];
     auto old_ptr = old_cid_new_nid.data() + range_min;
@@ -118,59 +118,59 @@ class Shuffler {
   using Solution = mini::mesh::cgns::Solution<Real>;
   using Field = mini::mesh::cgns::Field<Real>;
 
-  Shuffler(Int n_parts, std::vector<Int> const& cell_parts,
-           std::vector<Int> const& node_parts,
-           const Graph& graph, const MetisMesh& metis_mesh,
-           CgnsMesh* cgns_mesh, Mapper* mapper)
+  Shuffler(Int n_parts, std::vector<Int> const &cell_parts,
+           std::vector<Int> const &node_parts,
+           Graph const &graph, MetisMesh const &metis_mesh,
+           CgnsMesh *cgns_mesh, Mapper *mapper)
       : n_parts_{n_parts}, cell_parts_{cell_parts}, node_parts_{node_parts},
         graph_(graph), metis_mesh_(metis_mesh), cgns_mesh_(cgns_mesh),
         mapper_(mapper) {
   }
 
   void Shuffle();
-  void WritePartitionInfo(const std::string& case_name);
-  static void PartitionAndShuffle(const std::string &case_name,
-      const std::string &old_cgns_name, Int n_parts);
+  void WritePartitionInfo(std::string const &case_name);
+  static void PartitionAndShuffle(std::string const &case_name,
+      std::string const &old_cgns_name, Int n_parts);
 
  private:
-  std::vector<Int> const& cell_parts_;
-  std::vector<Int> const& node_parts_;
+  std::vector<Int> const &cell_parts_;
+  std::vector<Int> const &node_parts_;
   std::map<Int, std::map<Int, cgns::ShiftedVector<Int>>> face_parts_;
-  CgnsMesh* cgns_mesh_;
-  Mapper* mapper_;
-  Graph const& graph_;
-  MetisMesh const& metis_mesh_;
+  CgnsMesh *cgns_mesh_;
+  Mapper *mapper_;
+  Graph const &graph_;
+  MetisMesh const &metis_mesh_;
   Int n_parts_;
 
-  void FillFaceParts(const CgnsMesh& mesh, const Mapper& mapper);
+  void FillFaceParts(CgnsMesh const &mesh, Mapper const &mapper);
 };
 
 template <typename Int, class Real>
 void Shuffler<Int, Real>::FillFaceParts(
-    const CgnsMesh& mesh, const Mapper& mapper) {
-  auto& m_to_c_nodes = mapper.metis_to_cgns_for_nodes;
-  auto& m_to_c_cells = mapper.metis_to_cgns_for_cells;
-  auto& c_to_m_nodes = mapper.cgns_to_metis_for_nodes;
-  auto& c_to_m_cells = mapper.cgns_to_metis_for_cells;
-  auto& base = mesh.GetBase(1);
+    CgnsMesh const &mesh, Mapper const &mapper) {
+  auto &m_to_c_nodes = mapper.metis_to_cgns_for_nodes;
+  auto &m_to_c_cells = mapper.metis_to_cgns_for_cells;
+  auto &c_to_m_nodes = mapper.cgns_to_metis_for_nodes;
+  auto &c_to_m_cells = mapper.cgns_to_metis_for_cells;
+  auto &base = mesh.GetBase(1);
   auto n_zones = base.CountZones();
   // For each node, find its user cells and append them to its vector:
   auto node_user_cells = std::vector<std::vector<Int>>(node_parts_.size());
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-    auto& zone = base.GetZone(i_zone);
-    auto& i_node_to_m_node = c_to_m_nodes.at(i_zone);
+    auto &zone = base.GetZone(i_zone);
+    auto &i_node_to_m_node = c_to_m_nodes.at(i_zone);
     auto n_sects = zone.CountSections();
     for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
-      auto& sect = zone.GetSection(i_sect);
+      auto &sect = zone.GetSection(i_sect);
       if (sect.dim() == base.GetCellDim()) {
         auto npe = sect.CountNodesByType();
         auto n_cells = sect.CountCells();
         auto i_cell_min = sect.CellIdMin();
         auto i_cell_max = sect.CellIdMax();
-        auto& i_cell_to_m_cell = c_to_m_cells.at(i_zone).at(i_sect);
-        auto* head = sect.GetNodeIdList();
-        auto* curr = head;
-        auto* tail = head + n_cells * npe;
+        auto &i_cell_to_m_cell = c_to_m_cells.at(i_zone).at(i_sect);
+        auto *head = sect.GetNodeIdList();
+        auto *curr = head;
+        auto *tail = head + n_cells * npe;
         for (int i_cell = i_cell_min; i_cell <= i_cell_max; ++i_cell) {
           auto m_cell = i_cell_to_m_cell.at(i_cell);
           for (int k = 0; k < npe; ++k) {
@@ -186,21 +186,21 @@ void Shuffler<Int, Real>::FillFaceParts(
   }
   // For each face, determine its part by its user cells:
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-    auto& zone = base.GetZone(i_zone);
-    auto& i_node_to_m_node = c_to_m_nodes.at(i_zone);
+    auto &zone = base.GetZone(i_zone);
+    auto &i_node_to_m_node = c_to_m_nodes.at(i_zone);
     auto n_sects = zone.CountSections();
     for (int i_sect = 1; i_sect <= n_sects; ++i_sect) {
-      auto& sect = zone.GetSection(i_sect);
+      auto &sect = zone.GetSection(i_sect);
       if (sect.dim() + 1 == base.GetCellDim()) {
         auto npe = sect.CountNodesByType();
         auto n_faces = sect.CountCells();
         auto i_face_min = sect.CellIdMin();
         auto i_face_max = sect.CellIdMax();
-        auto& i_face_to_part = (face_parts_[i_zone][i_sect]
+        auto &i_face_to_part = (face_parts_[i_zone][i_sect]
             = cgns::ShiftedVector<Int>(n_faces, i_face_min));
-        auto* head = sect.GetNodeIdList();
-        auto* curr = head;
-        auto* tail = head + n_faces * npe;
+        auto *head = sect.GetNodeIdList();
+        auto *curr = head;
+        auto *tail = head + n_faces * npe;
         // For each face, count the user cells:
         for (int i_face = i_face_min; i_face <= i_face_max; ++i_face) {
           auto face_user_cell_cnts = std::unordered_map<Int, Int>();
@@ -239,20 +239,20 @@ void Shuffler<Int, Real>::FillFaceParts(
 template <typename Int, class Real>
 void Shuffler<Int, Real>::Shuffle() {
   FillFaceParts(*cgns_mesh_, *mapper_);
-  auto& m_to_c_nodes = mapper_->metis_to_cgns_for_nodes;
-  auto& m_to_c_cells = mapper_->metis_to_cgns_for_cells;
-  auto& c_to_m_nodes = mapper_->cgns_to_metis_for_nodes;
-  auto& c_to_m_cells = mapper_->cgns_to_metis_for_cells;
-  auto& base = cgns_mesh_->GetBase(1);
+  auto &m_to_c_nodes = mapper_->metis_to_cgns_for_nodes;
+  auto &m_to_c_cells = mapper_->metis_to_cgns_for_cells;
+  auto &c_to_m_nodes = mapper_->cgns_to_metis_for_nodes;
+  auto &c_to_m_cells = mapper_->cgns_to_metis_for_cells;
+  auto &base = cgns_mesh_->GetBase(1);
   auto n_zones = base.CountZones();
   // shuffle nodes, cells and data on them
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-    auto& zone = base.GetZone(i_zone);
+    auto &zone = base.GetZone(i_zone);
     // shuffle node coordinates
     auto metis_nid_offset = c_to_m_nodes[i_zone][1];
     auto [new_to_old_for_nodes, old_to_new_for_nodes] = GetNewOrder(
         &(node_parts_[metis_nid_offset]), zone.CountNodes());
-    auto& coord = zone.GetCoordinates();
+    auto &coord = zone.GetCoordinates();
     ShuffleData(new_to_old_for_nodes, coord.x().data());
     ShuffleData(new_to_old_for_nodes, coord.y().data());
     ShuffleData(new_to_old_for_nodes, coord.z().data());
@@ -261,22 +261,22 @@ void Shuffler<Int, Real>::Shuffle() {
     // shuffle data on nodes
     auto n_solns = zone.CountSolutions();
     for (auto i_soln = 1; i_soln <= n_solns; i_soln++) {
-      auto& solution = zone.GetSolution(i_soln);
+      auto &solution = zone.GetSolution(i_soln);
       if (!solution.OnNodes())
         continue;
       for (auto i = 1; i <= solution.CountFields(); ++i) {
-        auto& field = solution.GetField(i);
+        auto &field = solution.GetField(i);
         ShuffleData(new_to_old_for_nodes, field.data());
       }
     }
     // shuffle cells and data on cells
     auto n_sects = zone.CountSections();
     for (auto i_sect = 1; i_sect <= n_sects; ++i_sect) {
-      auto& section = zone.GetSection(i_sect);
+      auto &section = zone.GetSection(i_sect);
       /* Shuffle Connectivity */
       auto npe = section.CountNodesByType();
       auto n_cells = section.CountCells();
-      auto* i_node_list = section.GetNodeIdList();
+      auto *i_node_list = section.GetNodeIdList();
       if (section.dim() != base.GetCellDim()) {
         // For a lower-dim section, get each face's partition
         auto [new_to_old_for_faces, old_to_new_for_faces] = GetNewOrder(
@@ -297,12 +297,12 @@ void Shuffler<Int, Real>::Shuffle() {
       /* Shuffle Data on Cells */
       auto n_solns = zone.CountSolutions();
       for (auto i_soln = 1; i_soln <= n_solns; i_soln++) {
-        auto& solution = zone.GetSolution(i_soln);
+        auto &solution = zone.GetSolution(i_soln);
         if (!solution.OnCells())
           continue;
         for (auto i = 1; i <= solution.CountFields(); ++i) {
-          auto& field = solution.GetField(i);
-          auto* field_ptr = &(field.at(range_min));
+          auto &field = solution.GetField(i);
+          auto *field_ptr = &(field.at(range_min));
           ShuffleData(new_to_old_for_cells, field_ptr);
         }
       }
@@ -312,8 +312,8 @@ void Shuffler<Int, Real>::Shuffle() {
 }
 
 template <typename Int, class Real>
-void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
-  auto& base = cgns_mesh_->GetBase(1);
+void Shuffler<Int, Real>::WritePartitionInfo(std::string const &case_name) {
+  auto &base = cgns_mesh_->GetBase(1);
   int n_zones = base.CountZones();
   /* Prepare to-be-written info for each part: */
   // auto [i_node_min, i_node_max] = part_to_nodes[i_part][i_zone];
@@ -333,15 +333,15 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
       part_to_faces[p][z].resize(base.GetZone(z).CountSections() + 1);
     }
   }
-  for (auto& [i_zone, zone] : face_parts_) {
-    for (auto& [i_sect, parts] : zone) {
+  for (auto &[i_zone, zone] : face_parts_) {
+    for (auto &[i_sect, parts] : zone) {
       std::sort(parts.begin(), parts.end());
     }
   }
   /* Get index range of each zone's nodes, cells and faces: */
   for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-    auto& zone = base.GetZone(i_zone);
-    auto& node_field = zone.GetSolution("DataOnNodes").GetField("PartIndex");
+    auto &zone = base.GetZone(i_zone);
+    auto &node_field = zone.GetSolution("DataOnNodes").GetField("PartIndex");
     // slice node lists by i_part
     int prev_nid = 1, prev_part = node_field.at(prev_nid);
     int n_nodes = zone.CountNodes();
@@ -356,9 +356,9 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     part_to_nodes[prev_part][i_zone] = { prev_nid, n_nodes + 1 };
     // slice cell lists by i_part
     int n_cells = zone.CountCells();
-    auto& cell_field = zone.GetSolution("DataOnCells").GetField("PartIndex");
+    auto &cell_field = zone.GetSolution("DataOnCells").GetField("PartIndex");
     for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
-      auto& sect = zone.GetSection(i_sect);
+      auto &sect = zone.GetSection(i_sect);
       if (sect.dim() != base.GetCellDim())
         continue;
       int cid_min = sect.CellIdMin(), cid_max = sect.CellIdMax();
@@ -375,8 +375,8 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     }  // for each sect of cells
     // slice face lists by i_part
     for (int i_sect = 1; i_sect <= zone.CountSections(); ++i_sect) {
-      auto& sect = zone.GetSection(i_sect);
-      auto& face_field = face_parts_[i_zone][i_sect];
+      auto &sect = zone.GetSection(i_sect);
+      auto &face_field = face_parts_[i_zone][i_sect];
       if (sect.dim() + 1 != base.GetCellDim())
         continue;
       int fid_min = sect.CellIdMin(), fid_max = sect.CellIdMax();
@@ -444,16 +444,16 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     }
     // send nodes info
     ostrm << "# i_part i_node_metis\n";
-    for (auto& [recv_pid, nodes] : sendp_recvp_nodes[p]) {
+    for (auto &[recv_pid, nodes] : sendp_recvp_nodes[p]) {
       for (auto i : nodes) {
         ostrm << recv_pid << ' ' << i << '\n';
       }
     }
     // adjacent nodes
     ostrm << "# i_part i_node_metis i_zone i_node\n";
-    for (auto& [i_part, nodes] : part_adj_nodes[p]) {
+    for (auto &[i_part, nodes] : part_adj_nodes[p]) {
       for (auto mid : nodes) {
-        auto& info = mapper_->metis_to_cgns_for_nodes[mid];
+        auto &info = mapper_->metis_to_cgns_for_nodes[mid];
         int zid = info.i_zone, nid = info.i_node;
         ostrm << i_part << ' ' << mid << ' ' << zid << ' ' << nid << '\n';
       }
@@ -476,10 +476,10 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
     }
     // interpart adjacency
     ostrm << "# i_part i_cell_metis j_cell_metis i_node_npe j_node_npe\n";
-    for (auto& [i_part, pairs] : part_interpart_adjs[p]) {
+    for (auto &[i_part, pairs] : part_interpart_adjs[p]) {
       for (auto [i, j] : pairs) {
-        auto& info_i = mapper_->metis_to_cgns_for_cells[i];
-        auto& info_j = mapper_->metis_to_cgns_for_cells[j];
+        auto &info_i = mapper_->metis_to_cgns_for_cells[i];
+        auto &info_j = mapper_->metis_to_cgns_for_cells[j];
         int npe_i = base.GetZone(info_i.i_zone).GetSection(info_i.i_sect).
             CountNodesByType();
         int npe_j = base.GetZone(info_j.i_zone).GetSection(info_j.i_sect).
@@ -504,8 +504,8 @@ void Shuffler<Int, Real>::WritePartitionInfo(const std::string& case_name) {
 }
 
 template <typename Int, class Real>
-void Shuffler<Int, Real>::PartitionAndShuffle(const std::string &case_name,
-    const std::string &old_cgns_name, Int n_parts) {
+void Shuffler<Int, Real>::PartitionAndShuffle(std::string const &case_name,
+    std::string const &old_cgns_name, Int n_parts) {
   char cmd[1024];
   std::snprintf(cmd, sizeof(cmd), "mkdir -p %s/partition",
       case_name.c_str());
