@@ -49,10 +49,10 @@ class ShiftedVector : public std::vector<Int> {
   ShiftedVector &operator=(ShiftedVector &&) noexcept = default;
   ~ShiftedVector() noexcept = default;
 
-  const Int &operator[](size_type i) const {
+  Int const &operator[](size_type i) const {
     return this->Base::operator[](i - shift_);
   }
-  const Int &at(size_type i) const {
+  Int const &at(size_type i) const {
     return this->Base::at(i - shift_);
   }
   Int &operator[](size_type i) {

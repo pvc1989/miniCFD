@@ -22,8 +22,8 @@ class Cell {
   virtual int CountQuadraturePoints() const = 0;
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
-  virtual const Real &GetLocalWeight(int i) const = 0;
-  virtual const Real &GetGlobalWeight(int i) const = 0;
+  virtual Real const &GetLocalWeight(int i) const = 0;
+  virtual Real const &GetGlobalWeight(int i) const = 0;
   virtual GlobalCoord center() const = 0;
   virtual Real volume() const = 0;
 
