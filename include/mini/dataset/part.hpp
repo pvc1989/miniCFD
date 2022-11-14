@@ -850,19 +850,19 @@ class Part {
       }
     }
   }
-  auto BuildTetraUptr(int i_zone, const Int *i_node_list) const {
+  auto BuildTetraUptr(int i_zone, Int const *i_node_list) const {
     return std::make_unique<GaussOnTetra>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
   }
-  auto BuildHexaUptr(int i_zone, const Int *i_node_list) const {
+  auto BuildHexaUptr(int i_zone, Int const *i_node_list) const {
     return std::make_unique<GaussOnHexa>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
         GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
   }
-  auto BuildGaussForCell(int npe, int i_zone, const Int *i_node_list) const {
+  auto BuildGaussForCell(int npe, int i_zone, Int const *i_node_list) const {
     std::unique_ptr<integrator::Cell<Scalar>> gauss_uptr;
     switch (npe) {
       case 4:
@@ -875,21 +875,21 @@ class Part {
     }
     return gauss_uptr;
   }
-  auto BuildTriangleUptr(int i_zone, const Int *i_node_list) const {
+  auto BuildTriangleUptr(int i_zone, Int const *i_node_list) const {
     auto gauss_uptr = std::make_unique<GaussOnTriangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
     gauss_uptr->BuildNormalFrames();
     return gauss_uptr;
   }
-  auto BuildQuadrangleUptr(int i_zone, const Int *i_node_list) const {
+  auto BuildQuadrangleUptr(int i_zone, Int const *i_node_list) const {
     auto gauss_uptr = std::make_unique<GaussOnQuadrangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
     gauss_uptr->BuildNormalFrames();
     return gauss_uptr;
   }
-  auto BuildGaussForFace(int npe, int i_zone, const Int *i_node_list) const {
+  auto BuildGaussForFace(int npe, int i_zone, Int const *i_node_list) const {
     std::unique_ptr<integrator::Face<Scalar, kDimensions>> gauss_uptr;
     switch (npe) {
       case 3:
@@ -902,7 +902,7 @@ class Part {
     }
     return gauss_uptr;
   }
-  static void SortNodesOnFace(int npe, const Int *cell, Int *face) {
+  static void SortNodesOnFace(int npe, Int const *cell, Int *face) {
     switch (npe) {
       case 4:
         GaussOnTetra::SortNodesOnFace(cell, face);
@@ -1512,7 +1512,7 @@ class Part {
   template <class V>
   static void WriteInBigEndian(V const &v, std::ofstream &ostrm) {
     char a[sizeof(v)];
-    auto *pv = reinterpret_cast<const char *>(&v);
+    auto *pv = reinterpret_cast<char const *>(&v);
     for (int i = 0; i < sizeof(v); ++i) {
       a[i] = pv[sizeof(v) - 1 - i];
     }
