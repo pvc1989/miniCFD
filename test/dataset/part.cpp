@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     volume += cell.volume();
     n_cells += 1;
     n_faces += cell.adj_faces_.size();
-    for (auto* face_ptr : cell.adj_faces_) {
+    for (auto *face_ptr : cell.adj_faces_) {
       assert(face_ptr);
       area += face_ptr->area();
     }

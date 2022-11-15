@@ -73,7 +73,7 @@ TEST_F(TestQuadrangleIntegrator, In3dSpace) {
   // test normal frames
   quad.BuildNormalFrames();
   for (int q = 0; q < quad.CountQuadraturePoints(); ++q) {
-    auto& frame = quad.GetNormalFrame(q);
+    auto &frame = quad.GetNormalFrame(q);
     auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
     EXPECT_NEAR((nu - sigma.cross(pi)).cwiseAbs().maxCoeff(), 0.0, 1e-15);
     EXPECT_NEAR((sigma - pi.cross(nu)).cwiseAbs().maxCoeff(), 0.0, 1e-15);

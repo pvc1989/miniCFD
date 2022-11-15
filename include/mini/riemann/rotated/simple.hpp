@@ -54,7 +54,7 @@ class Simple {
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
   void Rotate(const Frame3d &frame) {
-    const auto& nu = frame.col(0);
+    const auto &nu = frame.col(0);
     Rotate(nu[x], nu[y], nu[z]);
   }
   Flux GetFluxOnTimeAxis(const Conservative& left,

@@ -16,9 +16,9 @@ TEST_F(TestEigenMatrices, OrthoNormality) {
   using Matrices = EigenMatrices<IdealGas<double, 1, 4>>;
   typename Matrices::Mat3x1 nu{ 0, 0, 1 }, sigma{ 1, 0, 0 }, pi{ 0, 1, 0 };
   auto eigen_matrices = Matrices(state, nu, sigma, pi);
-  auto& L = eigen_matrices.L;
-  auto& R = eigen_matrices.R;
-  auto& I = decltype(eigen_matrices.L)::Identity();
+  auto &L = eigen_matrices.L;
+  auto &R = eigen_matrices.R;
+  auto &I = decltype(eigen_matrices.L)::Identity();
   EXPECT_NEAR((R * L - I).cwiseAbs().maxCoeff(), 0, 1e-15);
   EXPECT_NEAR((L * R - I).cwiseAbs().maxCoeff(), 0, 1e-15);
 }

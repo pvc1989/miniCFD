@@ -73,12 +73,12 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   using Cell = mini::mesh::cgns::Cell<cgsize_t, 2, Riemann>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
-  auto& zone = cgns_mesh.GetBase(1).GetZone(1);
-  auto& coordinates = zone.GetCoordinates();
-  auto& x = coordinates.x();
-  auto& y = coordinates.y();
-  auto& z = coordinates.z();
-  auto& sect = zone.GetSection(1);
+  auto &zone = cgns_mesh.GetBase(1).GetZone(1);
+  auto &coordinates = zone.GetCoordinates();
+  auto &x = coordinates.x();
+  auto &y = coordinates.y();
+  auto &z = coordinates.z();
+  auto &sect = zone.GetSection(1);
   auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     return (x-1.5)*(x-1.5) + (y-1.5)*(y-1.5) + 10*(x < y ? 2. : 0.);
@@ -104,14 +104,14 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   using Mat1x1 = mini::algebra::Matrix<double, 1, 1>;
   auto adj_smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-    auto& cell_i = cells[i_cell];
+    auto &cell_i = cells[i_cell];
     adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].projection_(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      auto& adj_projection = adj_projections[i_cell].back();
+      auto &adj_projection = adj_projections[i_cell].back();
       Mat1x1 diff = cell_i.projection_.GetAverage()
           - adj_projection.GetAverage();
       adj_projection += diff;
@@ -133,7 +133,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
       weights[j_cell] /= sum;
     }
-    auto& projection_i = cells[i_cell].projection_;
+    auto &projection_i = cells[i_cell].projection_;
     projection_i *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
       projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell];

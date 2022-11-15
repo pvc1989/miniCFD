@@ -82,8 +82,8 @@ TEST_F(TestTypes, ReadBase) {
   cg_close(i_file);
   // compare result
   EXPECT_EQ(file.CountBases(), n_bases);
-  for (auto& base : base_info) {
-    auto& my_base = file.GetBase(base.id);
+  for (auto &base : base_info) {
+    auto &my_base = file.GetBase(base.id);
     EXPECT_STREQ(my_base.name().c_str(), base.name.c_str());
     EXPECT_EQ(my_base.GetCellDim(), base.cell_dim);
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
@@ -95,18 +95,18 @@ TEST_F(TestTypes, ReadCoordinates) {
   file.ReadBases();
   {
     // check coordinates in zones[1]
-    auto& coordinates = file.GetBase(1).GetZone(1).GetCoordinates();
-    auto& x = coordinates.x();
+    auto &coordinates = file.GetBase(1).GetZone(1).GetCoordinates();
+    auto &x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), -2.0);
     EXPECT_DOUBLE_EQ(x.at(1), -2.0);
     EXPECT_NEAR(x.at(371), -1.926790, eps_);
     EXPECT_NEAR(x.at(372), -1.926790, eps_);
-    auto& y = coordinates.y();
+    auto &y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), +1.0);
     EXPECT_DOUBLE_EQ(y.at(1), -1.0);
     EXPECT_NEAR(y.at(371), -0.926795, eps_);
     EXPECT_NEAR(y.at(372), +0.926795, eps_);
-    auto& z = coordinates.z();
+    auto &z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
     EXPECT_DOUBLE_EQ(z.at(371), 0.0);
@@ -114,18 +114,18 @@ TEST_F(TestTypes, ReadCoordinates) {
   }
   {
     // check coordinates in zones[2]
-    auto& coordinates = file.GetBase(1).GetZone(2).GetCoordinates();
-    auto& x = coordinates.x();
+    auto &coordinates = file.GetBase(1).GetZone(2).GetCoordinates();
+    auto &x = coordinates.x();
     EXPECT_DOUBLE_EQ(x.at(0), 2.0);
     EXPECT_DOUBLE_EQ(x.at(1), 0.0);
     EXPECT_NEAR(x.at(582), -0.072475, eps_);
     EXPECT_NEAR(x.at(583), -0.163400, eps_);
-    auto& y = coordinates.y();
+    auto &y = coordinates.y();
     EXPECT_DOUBLE_EQ(y.at(0), -1.0);
     EXPECT_DOUBLE_EQ(y.at(1), +1.0);
     EXPECT_NEAR(y.at(582), +0.927525, eps_);
     EXPECT_NEAR(y.at(583), -0.375511, eps_);
-    auto& z = coordinates.z();
+    auto &z = coordinates.z();
     EXPECT_DOUBLE_EQ(z.at(0), 0.0);
     EXPECT_DOUBLE_EQ(z.at(1), 0.0);
     EXPECT_DOUBLE_EQ(z.at(582), 0.0);
@@ -137,7 +137,7 @@ TEST_F(TestTypes, ReadSections) {
   auto file = myFile(abs_path_);
   file.ReadBases();
   {
-    auto& section = file.GetBase(1).GetZone(1).GetSection(1);
+    auto &section = file.GetBase(1).GetZone(1).GetSection(1);
     EXPECT_EQ(section.CellIdMin(), 1);
     EXPECT_EQ(section.CellIdMax(), 673);
     EXPECT_EQ(section.name(), "3_S_5_10");
@@ -156,7 +156,7 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[2], 98);
   }
   {
-    auto& section = file.GetBase(1).GetZone(2).GetSection(1);
+    auto &section = file.GetBase(1).GetZone(2).GetSection(1);
     EXPECT_EQ(section.CellIdMin(), 1);
     EXPECT_EQ(section.CellIdMax(), 271);
     EXPECT_EQ(section.name(), "3_S_5_11");
@@ -175,7 +175,7 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[2], 492);
   }
   {
-    auto& section = file.GetBase(1).GetZone(2).GetSection(2);
+    auto &section = file.GetBase(1).GetZone(2).GetSection(2);
     EXPECT_EQ(section.CellIdMin(), 272);
     EXPECT_EQ(section.CellIdMax(), 671);
     EXPECT_EQ(section.name(), "4_S_9_12");
@@ -222,13 +222,13 @@ TEST_F(TestTypes, ReadZone) {
   EXPECT_EQ(file.CountBases(), n_bases);
   int index = 0;
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
-    auto& my_base = file.GetBase(base_id);
+    auto &my_base = file.GetBase(base_id);
     int n_zones{0};
     cg_nzones(i_file, base_id, &n_zones);
     EXPECT_EQ(my_base.CountZones(), n_zones);
     for (int i_zone = 1; i_zone <= n_zones; ++i_zone) {
-      auto& my_zone = my_base.GetZone(i_zone);
-      auto& cg_zone = zone_info[index++];
+      auto &my_zone = my_base.GetZone(i_zone);
+      auto &cg_zone = zone_info[index++];
       EXPECT_STREQ(my_zone.name().c_str(), cg_zone.name.c_str());
       EXPECT_EQ(my_zone.id(), cg_zone.id);
       EXPECT_EQ(my_zone.CountNodes(), cg_zone.x.size());
@@ -255,7 +255,7 @@ TEST_F(TestTypes, ReadSolution) {
     char sol_name[33];
     CGNS_ENUMT(GridLocation_t) location;
     cg_sol_info(i_file, base_id, i_zone, sol_id, sol_name, &location);
-    auto& cg_solution = cg_zone.solutions.emplace_back(
+    auto &cg_solution = cg_zone.solutions.emplace_back(
         sol_name, sol_id, location);
     // read field
     int n_fields;
@@ -279,15 +279,15 @@ TEST_F(TestTypes, ReadSolution) {
   }
   cg_close(i_file);
   // compara flow solutions
-  auto& my_zone = file.GetBase(base_id).GetZone(i_zone);
+  auto &my_zone = file.GetBase(base_id).GetZone(i_zone);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
-    auto& my_sol = my_zone.GetSolution(sol_id);
-    auto& cg_sol = cg_zone.solutions.at(sol_id-1);
+    auto &my_sol = my_zone.GetSolution(sol_id);
+    auto &cg_sol = cg_zone.solutions.at(sol_id-1);
     EXPECT_EQ(my_sol.id(), cg_sol.id);
     EXPECT_STREQ(my_sol.name().c_str(), cg_sol.name.c_str());
     EXPECT_EQ(my_sol.CountFields(), cg_sol.fields.size());
     for (int i = 0; i < my_sol.CountFields(); ++i) {
-      auto& field = my_sol.GetField(i);
+      auto &field = my_sol.GetField(i);
       auto name = field.name();
       for (int index = 0; index < field.size(); ++index) {
         EXPECT_DOUBLE_EQ(field.at(index), cg_sol.fields[name].at(index));

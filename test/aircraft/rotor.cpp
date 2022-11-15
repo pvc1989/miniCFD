@@ -76,7 +76,7 @@ TEST_F(TestRotaryWing, NightyDegree) {
   rotor.SetAzimuth(deg);
   EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
   // test y_value query
-  auto& blade_1 = rotor.GetBlade(1);  // blade_y == rotor_x
+  auto &blade_1 = rotor.GetBlade(1);  // blade_y == rotor_x
   EXPECT_DOUBLE_EQ(blade_1.GetAzimuth(), deg + 180);
   auto rotor_x = rotor.GetFrame().X();
   auto rotor_o = rotor.GetOrigin();
@@ -123,7 +123,7 @@ TEST_F(TestRotaryWing, HalfCycle) {
   rotor.SetAzimuth(deg);
   EXPECT_DOUBLE_EQ(rotor.GetAzimuth(), deg);
   // test y_value query
-  auto& blade_0 = rotor.GetBlade(0);  // blade_y == -rotor_y
+  auto &blade_0 = rotor.GetBlade(0);  // blade_y == -rotor_y
   EXPECT_DOUBLE_EQ(blade_0.GetAzimuth(), deg);
   auto rotor_y = rotor.GetFrame().Y();
   auto rotor_o = rotor.GetOrigin();

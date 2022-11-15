@@ -70,7 +70,7 @@ TEST_F(TestTriangleIntegrator, In3dSpace) {
   // test normal frames
   tri.BuildNormalFrames();
   for (int q = 0; q < tri.CountQuadraturePoints(); ++q) {
-    auto& frame = tri.GetNormalFrame(q);
+    auto &frame = tri.GetNormalFrame(q);
     auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
     EXPECT_EQ(nu, sigma.cross(pi));
     EXPECT_EQ(sigma, pi.cross(nu));

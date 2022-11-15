@@ -69,7 +69,7 @@ void Partitioner::WritePartitionedMesh(
     }
   }
   ostrm << "CELLS " << n_cells << " " << n_cells * 5 << "\n";
-  auto* curr_node = &(mesh.nodes(0));
+  auto *curr_node = &(mesh.nodes(0));
   for (int i = 0; i < mesh.CountNodes(); ++i) {
     ostrm << "4 " << curr_node[0] << " " << curr_node[1] << " "
                   << curr_node[2] << " " << curr_node[3] << "\n";
