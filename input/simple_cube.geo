@@ -25,4 +25,4 @@ out[] = Extrude{ 0, 0, LZ }{
   Surface{ 1 }; Layers{ LZ/LC + 0.01 }; Recombine;
 };
 Physical Volume("Volume") = { 1 };
-Mesh 2;
+Mesh 3;
