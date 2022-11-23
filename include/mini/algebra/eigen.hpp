@@ -14,6 +14,18 @@ using Eigen::Array;
 using Eigen::Matrix;
 using Eigen::Vector;
 
+template <class MatrixType>
+using LowerTriangularView = Eigen::TriangularView<MatrixType, Eigen::Lower>;
+
+template <class MatrixType>
+auto GetLowerTriangularView(MatrixType const &matrix) {
+  return matrix.template triangularView<Eigen::Lower>();
+}
+template <class MatrixType>
+auto GetLowerTriangularView(MatrixType *matrix) {
+  return matrix->template triangularView<Eigen::Lower>();
+}
+
 }  // namespace algebra
 }  // namespace mini
 

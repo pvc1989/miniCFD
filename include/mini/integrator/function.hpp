@@ -156,7 +156,7 @@ void OrthoNormalize(Basis *basis, const Element &elem) {
     }
     S.row(i) /= std::sqrt(norm_sq);
   }
-  basis->Transform(S.template triangularView<Eigen::Lower>());
+  basis->Transform(algebra::GetLowerTriangularView(S));
 }
 
 }  // namespace integrator
