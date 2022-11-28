@@ -3,6 +3,7 @@
 #define MINI_AIRCRAFT_ROTOR_HPP_
 
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "mini/geometry/pi.hpp"
@@ -25,6 +26,46 @@ class Rotor {
   Scalar initial_azimuth_{0}/* deg */;
   Scalar azimuth_/* deg */, omega_/* deg / s */;
   Scalar time_;
+
+ public:  // copy control
+  Rotor() = default;
+  ~Rotor() noexcept = default;
+  Rotor& operator=(const Rotor &that) {
+    if (this != &that) {
+      blades_ = that.blades_;
+      frame_ = that.frame_;
+      origin_ = that.origin_;
+      initial_azimuth_ = that.initial_azimuth_;
+      azimuth_ = that.azimuth_;
+      omega_ = that.omega_;
+      time_ = time_;
+      for (auto &blade : blades_) {
+        blade.SetRotor(*this);
+      }
+    }
+    return *this;
+  }
+  Rotor(const Rotor &that) {
+    *this = that;
+  }
+  Rotor& operator=(Rotor &&that) noexcept {
+    if (this != &that) {
+      blades_ = std::move(that.blades_);
+      frame_ = std::move(that.frame_);
+      origin_ = std::move(that.origin_);
+      initial_azimuth_ = that.initial_azimuth_;
+      azimuth_ = that.azimuth_;
+      omega_ = that.omega_;
+      time_ = time_;
+      for (auto &blade : blades_) {
+        blade.SetRotor(*this);
+      }
+    }
+    return *this;
+  }
+  Rotor(Rotor &&that) noexcept {
+    *this = std::move(that);
+  }
 
  public:
   /**
