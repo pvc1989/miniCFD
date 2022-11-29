@@ -48,7 +48,7 @@ TEST_F(TestProjection, VectorFunction) {
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
-  auto v_expect = Raw::CallAt({0.3, 0.4, 0.5});
+  auto v_expect = Raw::GetValue({0.3, 0.4, 0.5});
   MatKx1 res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
@@ -88,7 +88,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   using Raw = mini::polynomial::Raw<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
-    return Raw::CallAt(point);
+    return Raw::GetValue(point);
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
@@ -127,7 +127,7 @@ TEST_F(TestProjection, Smoothness) {
   using Raw = mini::polynomial::Raw<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
-    return Raw::CallAt(point);
+    return Raw::GetValue(point);
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);

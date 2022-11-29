@@ -25,7 +25,7 @@ class Raw<Scalar, 2, 1> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 2, 1>;
 
-  static MatNx1 CallAt(const Coord &xy) {
+  static MatNx1 GetValue(const Coord &xy) {
     MatNx1 col = { 1, xy[0], xy[1] };
     return col;
   }
@@ -38,7 +38,7 @@ class Raw<Scalar, 2, 2> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 2, 1>;
 
-  static MatNx1 CallAt(const Coord &xy) {
+  static MatNx1 GetValue(const Coord &xy) {
     auto x = xy[0], y = xy[1];
     MatNx1 col = { 1, x, y, x * x, x * y, y * y };
     return col;
@@ -52,7 +52,7 @@ class Raw<Scalar, 2, 3> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 2, 1>;
 
-  static MatNx1 CallAt(const Coord &xy) {
+  static MatNx1 GetValue(const Coord &xy) {
     auto x = xy[0], y = xy[1];
     auto x_x = x * x, x_y = x * y, y_y = y * y;
     MatNx1 col = { 1, x, y, x_x, x_y, y_y,
@@ -68,8 +68,7 @@ class Raw<Scalar, 3, 0> {
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
-  // TODO(PVC): CallAt -> GetValue
-  static MatNx1 CallAt(const Coord &xyz) {
+  static MatNx1 GetValue(const Coord &xyz) {
     MatNx1 col; col(0, 0) = 1;
     return col;
   }
@@ -104,8 +103,7 @@ class Raw<Scalar, 3, 1> {
   using MatNx3 = algebra::Matrix<Scalar, N, 3>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
-  // TODO(PVC): CallAt -> GetValue
-  static MatNx1 CallAt(const Coord &xyz) {
+  static MatNx1 GetValue(const Coord &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatNx1 col = { 1, x, y, z };
     return col;
@@ -148,8 +146,7 @@ class Raw<Scalar, 3, 2> {
   using MatNx3 = algebra::Matrix<Scalar, N, 3>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
-  // TODO(PVC): CallAt -> GetValue
-  static MatNx1 CallAt(const Coord &xyz) {
+  static MatNx1 GetValue(const Coord &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     MatNx1 col = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return col;
@@ -249,8 +246,7 @@ class Raw<Scalar, 3, 3> {
   using MatNx3 = algebra::Matrix<Scalar, N, 3>;
   using Coord = algebra::Matrix<Scalar, 3, 1>;
 
-  // TODO(PVC): CallAt -> GetValue
-  static MatNx1 CallAt(const Coord &xyz) {
+  static MatNx1 GetValue(const Coord &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     auto xx{x * x}, xy{x * y}, xz{x * z}, yy{y * y}, yz{y * z}, zz{z * z};
     MatNx1 col = { 1, x, y, z, xx, xy, xz, yy, yz, zz,
@@ -481,7 +477,7 @@ class Linear {
   ~Linear() noexcept = default;
 
   MatNx1 operator()(Coord const &point) const {
-    MatNx1 col = RB::CallAt(point - center_);
+    MatNx1 col = RB::GetValue(point - center_);
     MatNx1 res = algebra::GetLowerTriangularView(coeff_) * col;
     return res;
   }
@@ -547,7 +543,7 @@ class OrthoNormal {
   MatNx1 operator()(const Coord &global) const {
     auto local = global;
     local -= center();
-    MatNx1 col = RB::CallAt(local);
+    MatNx1 col = RB::GetValue(local);
     return coeff() * col;
   }
   Scalar Measure() const {

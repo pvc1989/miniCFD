@@ -69,7 +69,7 @@ class Projection {
 
   MatKx1 operator()(Coord const &global) const {
     Coord local = global; local -= center();
-    MatNx1 col = Raw<Scalar, kDimensions, kDegrees>::CallAt(local);
+    MatNx1 col = Raw<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
