@@ -61,14 +61,14 @@ class LazyWeno {
       auto &adj_proj = old_projections_.back();
       adj_proj += my_average - adj_proj.GetAverage();
       if (verbose_) {
-        std::printf("\n  adj smoothness[%2d] = ", adj_cell->metis_id);
+        std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
         std::cout << std::scientific << std::setprecision(3) <<
             adj_proj.GetSmoothness().transpose();
       }
     }
     old_projections_.emplace_back(my_cell_->projection_);
     if (verbose_) {
-      std::printf("\n  old smoothness[%2d] = ", my_cell_->metis_id);
+      std::cout << "\n  old smoothness[" << my_cell_->metis_id << "] = ";
       std::cout << std::scientific << std::setprecision(3) <<
           old_projections_.back().GetSmoothness().transpose();
     }
