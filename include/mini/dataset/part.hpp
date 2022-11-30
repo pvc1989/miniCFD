@@ -90,10 +90,24 @@ struct NodeGroup {
         x_(size, head), y_(size, head), z_(size, head) {
   }
   NodeGroup() = default;
-  NodeGroup(NodeGroup const &) = default;
-  NodeGroup(NodeGroup &&) noexcept = default;
-  NodeGroup &operator=(NodeGroup const &) = default;
-  NodeGroup &operator=(NodeGroup &&) noexcept = default;
+  NodeGroup(NodeGroup const &) = delete;
+  NodeGroup &operator=(NodeGroup const &) = delete;
+  NodeGroup(NodeGroup &&that) noexcept {
+    *this = std::move(that);
+  }
+  NodeGroup &operator=(NodeGroup &&that) noexcept {
+    if (this != &that) {
+      head_ = that.head_;
+      size_ = that.size_;
+      metis_id_ = std::move(that.metis_id_);
+      x_ = std::move(that.x_);
+      y_ = std::move(that.y_);
+      z_ = std::move(that.z_);
+      std::memcpy(zone_size_, that.zone_size_, 3 * sizeof(cgsize_t));
+      std::memcpy(zone_name_, that.zone_name_, 33);
+    }
+    return *this;
+  }
   ~NodeGroup() noexcept = default;
 
   Int size() const {
@@ -752,21 +766,16 @@ class Part {
           node_group.zone_name_, node_group.zone_size_[0])) {
         cgp_error_exit();
       }
-      local_nodes_[i_zone] = std::move(node_group);
       cgsize_t range_min[] = { head };
       cgsize_t range_max[] = { tail - 1 };
-      auto &x = local_nodes_[i_zone].x_;
-      auto &y = local_nodes_[i_zone].y_;
-      auto &z = local_nodes_[i_zone].z_;
       if (cgp_coord_read_data(i_file, i_base, i_zone, 1,
-          range_min, range_max, x.data()) ||
+          range_min, range_max, node_group.x_.data()) ||
           cgp_coord_read_data(i_file, i_base, i_zone, 2,
-          range_min, range_max, y.data()) ||
+          range_min, range_max, node_group.y_.data()) ||
           cgp_coord_read_data(i_file, i_base, i_zone, 3,
-          range_min, range_max, z.data())) {
+          range_min, range_max, node_group.z_.data())) {
         cgp_error_exit();
       }
-      auto &metis_id = local_nodes_[i_zone].metis_id_;
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
@@ -774,13 +783,15 @@ class Part {
       int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
           range_min, range_max, kIntType,
-          1, mem_dimensions, mem_range_min, mem_range_max, metis_id.data())) {
+          1, mem_dimensions, mem_range_min, mem_range_max,
+          node_group.metis_id_.data())) {
         cgp_error_exit();
       }
       for (int i_node = head; i_node < tail; ++i_node) {
-        auto m_node = metis_id[i_node];
+        auto m_node = node_group.metis_id_[i_node];
         m_to_node_info_[m_node] = NodeInfo(i_zone, i_node);
       }
+      local_nodes_[i_zone] = std::move(node_group);
     }
   }
   std::pair<
