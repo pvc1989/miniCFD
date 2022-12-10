@@ -39,7 +39,7 @@ class RiemannSolver(abc.ABC):
   def F(self, U):
     pass
 
-  def F_on_t_axis(self, U_L, U_R):
+  def F_upwind(self, U_L, U_R):
     self.set_initial(U_L=U_L, U_R=U_R)
     U_on_t_axis = self.U(x=0, t=1)
     # Actually, U(x=0, t=1) returns either U(x=-0, t=1) or U(x=+0, t=1).
