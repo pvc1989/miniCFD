@@ -144,13 +144,13 @@ class Euler {
     NormalToGlobal(&flux);
     return flux;
   }
-  Flux GetFluxOnTimeAxis(Conservative const& left,
+  Flux GetFluxUpwind(Conservative const& left,
       Conservative const& right) const {
     auto left__primitive = Gas::ConservativeToPrimitive(left);
     auto right_primitive = Gas::ConservativeToPrimitive(right);
     GlobalToNormal(&left__primitive);
     GlobalToNormal(&right_primitive);
-    auto flux = unrotated_euler_.GetFluxOnTimeAxis(
+    auto flux = unrotated_euler_.GetFluxUpwind(
         left__primitive, right_primitive);
     NormalToGlobal(&flux);
     return flux;

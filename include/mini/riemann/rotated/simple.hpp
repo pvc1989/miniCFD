@@ -57,9 +57,9 @@ class Simple {
     const auto &nu = frame.col(0);
     Rotate(nu[x], nu[y], nu[z]);
   }
-  Flux GetFluxOnTimeAxis(const Conservative& left,
+  Flux GetFluxUpwind(const Conservative& left,
       const Conservative& right) const {
-    auto raw_flux = unrotated_simple_.GetFluxOnTimeAxis(left, right);
+    auto raw_flux = unrotated_simple_.GetFluxUpwind(left, right);
     return ConvertToFlux(raw_flux);
   }
   Flux GetFluxOnSolidWall(const Conservative& state) const {

@@ -28,7 +28,7 @@ class Double {
   Double() : a_const_{{1, 0}, {0, -1}} { Decompose(); }
   explicit Double(const Matrix &a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Conservative &left, const Conservative &right)
+  Flux GetFluxUpwind(const Conservative &left, const Conservative &right)
       const {
     Flux flux;
     if (0 <= eigen_values_[0]) {

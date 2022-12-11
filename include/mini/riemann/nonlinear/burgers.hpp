@@ -29,7 +29,7 @@ class Burgers {
   Burgers() : k_(1) {}
   explicit Burgers(Scalar k) : k_(k) {}
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(Conservative const& left, Conservative const& right)
+  Flux GetFluxUpwind(Conservative const& left, Conservative const& right)
       const {
     if (k_ == 0.0) { return 0.0; }
     Conservative left_ = k_ * left;
@@ -46,8 +46,8 @@ class Burgers {
       return GetFlux(0 / k_);
     }
   }
-  Flux GetFluxOnTimeAxis(const MatKx1& left, const MatKx1& right) const {
-    return GetFluxOnTimeAxis(left[0], right[0]);
+  Flux GetFluxUpwind(const MatKx1& left, const MatKx1& right) const {
+    return GetFluxUpwind(left[0], right[0]);
   }
   // Get F of U
   Flux GetFlux(Conservative const& state) const {

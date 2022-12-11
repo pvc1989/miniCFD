@@ -90,18 +90,18 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
   Primitive right{0.125, 0.0, v_right, w_right, 0.1};
   auto left_c  = Gas::PrimitiveToConservative(left);
   auto right_c = Gas::PrimitiveToConservative(right);
-  CompareFlux(solver.GetFluxOnTimeAxis(left_c, right_c),
+  CompareFlux(solver.GetFluxUpwind(left_c, right_c),
       solver.GetFlux({0.426319, +0.927453, v__left, w__left, 0.303130}));
-  CompareFlux(solver.GetFluxOnTimeAxis(right_c, left_c),
+  CompareFlux(solver.GetFluxUpwind(right_c, left_c),
       solver.GetFlux({0.426319, -0.927453, v__left, w__left, 0.303130}));
 
   frame.col(0) << 1, 0, 0;
   frame.col(1) << 0, -1, 0;
   frame.col(2) << 0, 0, -1;
   solver.Rotate(frame);
-  CompareFlux(solver.GetFluxOnTimeAxis(left_c, right_c),
+  CompareFlux(solver.GetFluxUpwind(left_c, right_c),
       solver.GetFlux({0.426319, +0.927453, v__left, w__left, 0.303130}));
-  CompareFlux(solver.GetFluxOnTimeAxis(right_c, left_c),
+  CompareFlux(solver.GetFluxUpwind(right_c, left_c),
       solver.GetFlux({0.426319, -0.927453, v__left, w__left, 0.303130}));
 }
 

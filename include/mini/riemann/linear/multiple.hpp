@@ -29,7 +29,7 @@ class Multiple {
   Multiple() = default;
   explicit Multiple(const Matrix &a_const) : a_const_(a_const) { Decompose(); }
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Conservative &left, const Conservative &right)
+  Flux GetFluxUpwind(const Conservative &left, const Conservative &right)
       const {
     Flux flux; flux.setZero();
     for (int k = 0; k < K; ++k) {

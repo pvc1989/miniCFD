@@ -23,23 +23,23 @@ auto run() {
   Flux flux{};
   {
   Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
-  flux += solver.GetFluxOnTimeAxis(left, right);
-  flux += solver.GetFluxOnTimeAxis(right, left);
+  flux += solver.GetFluxUpwind(left, right);
+  flux += solver.GetFluxUpwind(right, left);
   } {
   Primitive left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
-  flux += solver.GetFluxOnTimeAxis(left, right);
+  flux += solver.GetFluxUpwind(left, right);
   } {
   Primitive left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
-  flux += solver.GetFluxOnTimeAxis(left, right);
+  flux += solver.GetFluxUpwind(left, right);
   } {
   Primitive left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
-  flux += solver.GetFluxOnTimeAxis(left, right);
+  flux += solver.GetFluxUpwind(left, right);
   } {
   Primitive left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
-  flux += solver.GetFluxOnTimeAxis(left, right);
+  flux += solver.GetFluxUpwind(left, right);
   } {
   Primitive left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
-  flux += solver.GetFluxOnTimeAxis(left, right);
+  flux += solver.GetFluxUpwind(left, right);
   }
   return flux;
 }

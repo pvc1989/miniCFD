@@ -21,13 +21,13 @@ TEST_F(TestSingleWaveTest, TestFlux) {
   Conservative u_l{2.0}, u_r{1.0};
   // right running wave
   auto solver = Solver(/* speed = */1.0);
-  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  EXPECT_EQ(solver.GetFluxUpwind(u_l, u_r), solver.GetFlux(u_l));
   // left running wave
   solver = Solver(-1.0);
-  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_r));
+  EXPECT_EQ(solver.GetFluxUpwind(u_l, u_r), solver.GetFlux(u_r));
   // standing wave
   solver = Solver(0.0);
-  EXPECT_EQ(solver.GetFluxOnTimeAxis(u_l, u_r), solver.GetFlux(u_l));
+  EXPECT_EQ(solver.GetFluxUpwind(u_l, u_r), solver.GetFlux(u_l));
 }
 
 }  // namespace linear

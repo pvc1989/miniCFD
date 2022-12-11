@@ -140,7 +140,7 @@ class RungeKuttaBase {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
+        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
             -= flux * holder.basis_(coord).transpose();
@@ -161,7 +161,7 @@ class RungeKuttaBase {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.projection_(coord);
         Value u_sharer = sharer.projection_(coord);
-        Value flux = riemann.GetFluxOnTimeAxis(u_holder, u_sharer);
+        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff temp = flux * holder.basis_(coord).transpose();
         this->residual_.at(holder.id()) -= temp;

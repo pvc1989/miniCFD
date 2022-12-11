@@ -66,22 +66,22 @@ class Exact {
     return Gas::PrimitiveToFlux(state);
   }
   // Get U on t-Axis
-  Primitive GetPrimitiveOnTimeAxis(const Primitive& left,
+  Primitive GetPrimitiveUpwind(const Primitive& left,
       const Primitive& right) const {
     auto *non_const_this = const_cast<Exact *>(this);
-    auto state = non_const_this->GetPrimitiveOnTimeAxis(left, right);
+    auto state = non_const_this->GetPrimitiveUpwind(left, right);
     PassiveScalars<Primitive, kDimensions>::Set(&state,
         this->star_u, left, right);
     return state;
   }
   // Get F on t-Axis
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) const {
-    return GetFlux(GetPrimitiveOnTimeAxis(left, right));
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) const {
+    return GetFlux(GetPrimitiveUpwind(left, right));
   }
 
  private:
   // Get U on t-Axis
-  Primitive GetPrimitiveOnTimeAxis(const Primitive& left,
+  Primitive GetPrimitiveUpwind(const Primitive& left,
       const Primitive& right) {
     Primitive result;
     if (left.rho() > 0) {

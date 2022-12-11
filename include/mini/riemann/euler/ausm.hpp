@@ -30,7 +30,7 @@ class Ausm<GasType, 1> {
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) {
     Flux flux_positive = GetPositiveFlux(left);
     Flux flux_negative = GetNegativeFlux(right);
     flux_positive += flux_negative;
@@ -95,7 +95,7 @@ class Ausm<GasType, 2> {
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) {
     Flux flux_positive = GetPositiveFlux(left);
     Flux flux_negative = GetNegativeFlux(right);
     flux_positive += flux_negative;
@@ -163,7 +163,7 @@ class Ausm<GasType, 3> {
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) {
     Flux flux_positive = GetPositiveFlux(left);
     Flux flux_negative = GetNegativeFlux(right);
     flux_positive += flux_negative;

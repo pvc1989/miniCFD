@@ -32,34 +32,34 @@ TEST_F(TestAusm, TestFlux) {
 }
 TEST_F(TestAusm, TestSod) {
   Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.426319, +0.927453, 0.303130}));
-  CompareFlux(solver.GetFluxOnTimeAxis(right, left),
+  CompareFlux(solver.GetFluxUpwind(right, left),
               solver.GetFlux({0.426319, -0.927453, 0.303130}));
 }
 TEST_F(TestAusm, TestShockCollision) {
   Primitive left{5.99924, 19.5975, 460.894}, right{5.99242, 6.19633, 46.0950};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({5.99924, 19.5975, 460.894}));
 }
 TEST_F(TestAusm, TestBlastFromLeft) {
   Primitive left{1.0, 0.0, 1000}, right{1.0, 0.0, 0.01};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575062, 19.59745, 460.8938}));
 }
 TEST_F(TestAusm, TestBlastFromRight) {
   Primitive left{1.0, 0.0, 0.01}, right{1.0, 0.0, 100};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575113, -6.196328, 46.09504}));
 }
 TEST_F(TestAusm, TestAlmostVaccumed) {
   Primitive left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.21852, 0.0, 0.001894}));
 }
 TEST_F(TestAusm, TestVaccumed) {
   Primitive left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.0, 0.0, 0.0}));
 }
 
@@ -81,43 +81,43 @@ class Ausm2dTest : public ::testing::Test {
 TEST_F(Ausm2dTest, TestSod) {
   Primitive  left{1.000, 0.0, v__left, 1.0};
   Primitive right{0.125, 0.0, v_right, 0.1};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.426319, +0.927453, v__left, 0.303130}));
-  CompareFlux(solver.GetFluxOnTimeAxis(right, left),
+  CompareFlux(solver.GetFluxUpwind(right, left),
               solver.GetFlux({0.426319, -0.927453, v__left, 0.303130}));
 }
 TEST_F(Ausm2dTest, TestShockCollision) {
   Primitive  left{5.99924, 19.5975, v__left, 460.894};
   Primitive right{5.99242, 6.19633, v_right, 46.0950};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({5.99924, 19.5975, v__left, 460.894}));
 }
 TEST_F(Ausm2dTest, TestBlastFromLeft) {
   Primitive  left{1.0, 0.0, v__left, 1e+3};
   Primitive right{1.0, 0.0, v_right, 1e-2};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575062, 19.59745, v__left, 460.8938}));
 }
 TEST_F(Ausm2dTest, TestBlastFromRight) {
   Primitive  left{1.0, 0.0, v__left, 1e-2};
   Primitive right{1.0, 0.0, v_right, 1e+2};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
 }
 TEST_F(Ausm2dTest, TestAlmostVaccumed) {
   Primitive  left{1.0, -2.0, v__left, 0.4};
   Primitive right{1.0, +2.0, v_right, 0.4};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.21852, 0.0, v__left, 0.001894}));
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
 }
 TEST_F(Ausm2dTest, TestVaccumed) {
   Primitive  left{1.0, -4.0, v__left, 0.4};
   Primitive right{1.0, +4.0, v_right, 0.4};
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.0, 0.0, v__left, 0.0}));
-  CompareFlux(solver.GetFluxOnTimeAxis(left, right),
+  CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.0, 0.0, v_right, 0.0}));
 }
 

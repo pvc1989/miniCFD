@@ -30,7 +30,7 @@ class Hllc<GasType, 1> {
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) {
     Initialize(left, right);
     Flux flux;
     if (0.0 <= wave_left_) {
@@ -111,7 +111,7 @@ class Hllc<GasType, 2> {
   using Vector = typename Primitive::Vector;
   using Speed = Scalar;
   // Get F on T Axia
-  Flux GetFluxOnTimeAxis(const Primitive& left, const Primitive& right) {
+  Flux GetFluxUpwind(const Primitive& left, const Primitive& right) {
     Initialize(left, right);
     Flux flux;
     if (0.0 <= wave_left_) {
