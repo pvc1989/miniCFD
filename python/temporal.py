@@ -1,13 +1,4 @@
-import abc
-
-
-class TemporalScheme(abc.ABC):
-  # Interface to solve an ODE system M \dv{U}{t} = R, in which
-  # M (the mass matrix) and R (the residual) are provided by a SemiDiscreteSystem object.
-
-  @abc.abstractmethod
-  def update(self, semi_discrete_system, delta_t):
-    pass
+from concept import TemporalScheme
 
 
 class ExplicitEuler(TemporalScheme):
@@ -18,7 +9,7 @@ class ExplicitEuler(TemporalScheme):
 
   def update(self, semi_discrete_system, delta_t):
     u_curr = semi_discrete_system.get_unknown()
-    residual = semi_discrete_system.get_redisual()
+    residual = semi_discrete_system.get_residual()
     u_next = u_curr
     u_next += residual * delta_t
     semi_discrete_system.set_unknown(u_next)
@@ -26,8 +17,8 @@ class ExplicitEuler(TemporalScheme):
 
 class SspRungeKutta(TemporalScheme):
 
-  def __init__(self, order):
-    assert isinstance(order, int) and 1 <= order <= 3
+  def __init__(self, order: int):
+    assert 1 <= order <= 3
     self._order = order
     self._euler = ExplicitEuler()
 
