@@ -46,6 +46,9 @@ class TestExplicitEuler(unittest.TestCase):
 
 class TestSspRungeKutta(unittest.TestCase):
 
+  def euler(self, u, a, dt):
+    return u + a.dot(u) * dt
+
   def test_rk1_update(self):
     n = 10
     a = np.random.rand(n, n)
@@ -56,7 +59,7 @@ class TestSspRungeKutta(unittest.TestCase):
     delta_t = 0.01
     scheme.update(sds, delta_t)
     u_actual = sds.get_unknown()
-    u_expect = u_curr + a.dot(u_curr) * delta_t
+    u_expect = self.euler(u_curr, a, delta_t)
     self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
   def test_rk2_update(self):
@@ -69,9 +72,8 @@ class TestSspRungeKutta(unittest.TestCase):
     delta_t = 0.01
     scheme.update(sds, delta_t)
     u_actual = sds.get_unknown()
-    u_frac12 = u_curr + a.dot(u_curr) * delta_t
-    euler_u_frac12 = u_frac12 + a.dot(u_frac12) * delta_t
-    u_expect = (u_curr + euler_u_frac12) / 2
+    u_frac12 = self.euler(u_curr, a, delta_t)
+    u_expect = (u_curr + self.euler(u_frac12, a, delta_t)) / 2
     self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
   def test_rk3_update(self):
@@ -80,15 +82,13 @@ class TestSspRungeKutta(unittest.TestCase):
     sds = Constant(a)
     u_curr = np.random.rand(n)
     sds.set_unknown(u_curr)
-    scheme = SspRungeKutta(order=2)
+    scheme = SspRungeKutta(order=3)
     delta_t = 0.01
     scheme.update(sds, delta_t)
     u_actual = sds.get_unknown()
-    u_frac13 = u_curr + a.dot(u_curr) * delta_t
-    euler_u_frac13 = u_frac13 + a.dot(u_frac13) * delta_t
-    u_frac23 = (u_curr * 3 + euler_u_frac13) / 4
-    euler_u_frac23 = u_frac23 + a.dot(u_frac23) * delta_t
-    u_expect = (u_curr + euler_u_frac23 * 2) / 3
+    u_frac13 = self.euler(u_curr, a, delta_t)
+    u_frac23 = (u_curr * 3 + self.euler(u_frac13, a, delta_t)) / 4
+    u_expect = (u_curr + self.euler(u_frac23, a, delta_t) * 2) / 3
     self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
 
