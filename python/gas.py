@@ -20,7 +20,7 @@ class Ideal(object):
 
     def gamma_minus_1(self):
         return self._gamma_minus_1
-        
+
     def gamma_minus_1_over_gamma_plus_1(self):
         return self._gamma_minus_1_over_gamma_plus_1
 

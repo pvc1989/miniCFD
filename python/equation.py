@@ -7,31 +7,31 @@ import gas
 
 class ConservationLaw(abc.ABC):
     # \pdv{U}{t} + \pdv{F}{x} = 0
-    
+
     @abc.abstractmethod
     def F(self, U):
-        pass 
+        pass
 
     @abc.abstractmethod
     def A(self, U):
         # A := \pdv{F}{U}
-        pass 
+        pass
 
 
 class LinearAdvection(ConservationLaw):
-    
+
     def __init__(self, a_const):
         self._a = a_const
 
     def F(self, U):
-        return self._a * U 
+        return self._a * U
 
     def A(self, U):
         return self._a
 
 
 class InviscidBurgers(ConservationLaw):
-    
+
     def __init__(self):
         pass
 
@@ -43,20 +43,20 @@ class InviscidBurgers(ConservationLaw):
 
 
 class LinearSystem(ConservationLaw):
-    
+
     def __init__(self, A_const):
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
 
     def F(self, U):
-        return self._A.dot(U) 
+        return self._A.dot(U)
 
     def A(self, U):
         return self._A
 
 
 class Euler1d(ConservationLaw):
-    
+
     def __init__(self, gamma=1.4):
         self._gas = gas.Ideal(gamma)
 

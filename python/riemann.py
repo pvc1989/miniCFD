@@ -13,7 +13,7 @@ class RiemannSolver(abc.ABC):
         self._U_L = U_L
         self._U_R = U_R
         self._determine_wave_structure()
-    
+
     @abc.abstractmethod
     def _determine_wave_structure(self):
         # Determine boundaries of constant regions and elementary waves,
@@ -105,7 +105,7 @@ class Euler(RiemannSolver):
 
     def F(self, U):
         return self._equation.F(U)
-         
+
     def _determine_wave_structure(self):
         # set states in unaffected regions
         u_L, p_L, rho_L = self._equation.U_to_u_p_rho(self._U_L)
@@ -240,7 +240,7 @@ class Euler(RiemannSolver):
     @staticmethod
     def _shock(u_2, p_2, u_1, p_1, rho_1):
         assert u_2 != u_1
-        v = u_1 + (p_2-p_1)/(u_2-u_1)/rho_1        
+        v = u_1 + (p_2-p_1)/(u_2-u_1)/rho_1
         assert u_2 != v
         rho_2 = rho_1 * (u_1 - v) / (u_2 - v)
         return rho_2, v, v
@@ -249,7 +249,7 @@ class Euler(RiemannSolver):
         u, p, rho = 0, 0, 0
         if v < self._v_2:
             if v <= self._v_1_L:
-                u, p, rho = self._u_L, self._p_L, self._rho_L 
+                u, p, rho = self._u_L, self._p_L, self._rho_L
             elif v > self._v_1_R:
                 u, p, rho = self._u_2, self._p_2, self._rho_2_L
                 # print(p, rho)
@@ -281,7 +281,7 @@ class Euler(RiemannSolver):
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
 
-    euler = equation.Euler1d(gamma=1.4)  
+    euler = equation.Euler1d(gamma=1.4)
     solver = Euler(gamma=1.4)
 
     problems = dict()
@@ -292,7 +292,7 @@ if __name__ == '__main__':
     problems['Lax'] = (0.15,
         euler.u_p_rho_to_U(u=0.698, p=3.528, rho=0.445),
         euler.u_p_rho_to_U(u=0.0, p=0.571, rho=0.5))
-    problems['ShockCollision'] = (0.035, 
+    problems['ShockCollision'] = (0.035,
         euler.u_p_rho_to_U(u=19.5975,    p=460.894, rho=5.99924),
         euler.u_p_rho_to_U(u=-6.19633, p=46.0950, rho=5.99242))
     problems['BlastFromLeft'] = (0.012,
