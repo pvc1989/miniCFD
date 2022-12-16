@@ -233,7 +233,7 @@ class Euler(RiemannSolver):
                         p_2 * self._gas.gamma_plus_1()) / 2
 
     def _guess(self, p, func):
-        while (func(p) > 0):
+        while func(p) > 0:
             p *= 0.5
         return p
 

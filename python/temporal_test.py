@@ -8,7 +8,7 @@ from temporal import ExplicitEuler, SspRungeKutta
 class Constant(SemiDiscreteSystem):
     def __init__(self, a_mat) -> None:
         m, n = a_mat.shape
-        assert(m == n)
+        assert m == n
         self._n = n
         self._a = a_mat.copy()
         self._u = np.zeros(n)

@@ -17,13 +17,13 @@ def scan_and_replace(sys_argv):
         prefix = old_name[0:old_str_pos]
         suffix = old_name[old_str_pos + len(old_str):]
         dot_pos = suffix.find('.')
-        if (dot_pos == -1):
+        if dot_pos == -1:
             dot_pos = len(suffix)
         old_short_name = old_str + suffix[0:dot_pos]
         new_short_name = new_str + str(int(suffix[0:dot_pos]) // n_steps_per_frames)
         suffix = suffix[dot_pos:]
         new_name = prefix + new_short_name + suffix
-        if (len(suffix)):
+        if len(suffix):
             print(old_short_name, '->', new_short_name)
             with path.open() as old_file:
                 with open(new_name, 'w') as new_file:
@@ -34,7 +34,7 @@ def scan_and_replace(sys_argv):
     pathlib.Path(root.name + '/CHECK_CGNS.txt').touch()
 
 if __name__ == '__main__':
-    if (len(sys.argv) != 5):
+    if len(sys.argv) != 5:
         print('Usage:')
         print('    python3 rename.py <root> <n_steps_per_frames> <old_str> <new_str>')
     else:
