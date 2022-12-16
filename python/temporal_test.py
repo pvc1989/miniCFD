@@ -11,16 +11,16 @@ class Constant(SemiDiscreteSystem):
     """The simplest implementation of SemiDiscreteSystem.
     """
     def __init__(self, a_mat) -> None:
-        m, n = a_mat.shape
-        assert m == n
-        self._n = n
+        n_row, n_col = a_mat.shape
+        assert n_row == n_col
+        self._n = n_col
         self._a = a_mat.copy()
-        self._u = np.zeros(n)
+        self._u = np.zeros(n_col)
 
 
-    def set_unknown(self, unknown_vec):
+    def set_unknown(self, unknown):
         for i in range(self._n):
-            self._u[i] = unknown_vec[i]
+            self._u[i] = unknown[i]
 
 
     def get_unknown(self):
@@ -39,15 +39,15 @@ class TestExplicitEuler(unittest.TestCase):
     def test_update(self):
         """Test the update() method.
         """
-        n = 10
-        a = np.random.rand(n, n)
-        sds = Constant(a)
-        u_curr = np.random.rand(n)
+        n_row = 10
+        df_du = np.random.rand(n_row, n_row)
+        sds = Constant(df_du)
+        u_curr = np.random.rand(n_row)
         sds.set_unknown(u_curr)
         scheme = ExplicitEuler()
         delta_t = 0.01
         scheme.update(sds, delta_t)
-        u_expect = u_curr + a.dot(u_curr) * delta_t
+        u_expect = u_curr + df_du.dot(u_curr) * delta_t
         u_actual = sds.get_unknown()
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
@@ -56,57 +56,57 @@ class TestSspRungeKutta(unittest.TestCase):
     """Test the SspRungeKutta class.
     """
 
-    def euler(self, u, a, dt):
+    def euler(self, unknown, df_du, delta_t):
         """Wrap the computation of the explicit Euler method.
         """
-        return u + a.dot(u) * dt
+        return unknown + df_du.dot(unknown) * delta_t
 
     def test_rk1_update(self):
         """Test RK1's update() method.
         """
-        n = 10
-        a = np.random.rand(n, n)
-        sds = Constant(a)
-        u_curr = np.random.rand(n)
+        n_row = 10
+        df_du = np.random.rand(n_row, n_row)
+        sds = Constant(df_du)
+        u_curr = np.random.rand(n_row)
         sds.set_unknown(u_curr)
         scheme = SspRungeKutta(order=1)
         delta_t = 0.01
         scheme.update(sds, delta_t)
         u_actual = sds.get_unknown()
-        u_expect = self.euler(u_curr, a, delta_t)
+        u_expect = self.euler(u_curr, df_du, delta_t)
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
     def test_rk2_update(self):
         """Test RK2's update() method.
         """
-        n = 10
-        a = np.random.rand(n, n)
-        sds = Constant(a)
-        u_curr = np.random.rand(n)
+        n_row = 10
+        df_du = np.random.rand(n_row, n_row)
+        sds = Constant(df_du)
+        u_curr = np.random.rand(n_row)
         sds.set_unknown(u_curr)
         scheme = SspRungeKutta(order=2)
         delta_t = 0.01
         scheme.update(sds, delta_t)
         u_actual = sds.get_unknown()
-        u_frac12 = self.euler(u_curr, a, delta_t)
-        u_expect = (u_curr + self.euler(u_frac12, a, delta_t)) / 2
+        u_frac12 = self.euler(u_curr, df_du, delta_t)
+        u_expect = (u_curr + self.euler(u_frac12, df_du, delta_t)) / 2
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
     def test_rk3_update(self):
         """Test RK3's update() method.
         """
-        n = 10
-        a = np.random.rand(n, n)
-        sds = Constant(a)
-        u_curr = np.random.rand(n)
+        n_row = 10
+        df_du = np.random.rand(n_row, n_row)
+        sds = Constant(df_du)
+        u_curr = np.random.rand(n_row)
         sds.set_unknown(u_curr)
         scheme = SspRungeKutta(order=3)
         delta_t = 0.01
         scheme.update(sds, delta_t)
         u_actual = sds.get_unknown()
-        u_frac13 = self.euler(u_curr, a, delta_t)
-        u_frac23 = (u_curr * 3 + self.euler(u_frac13, a, delta_t)) / 4
-        u_expect = (u_curr + self.euler(u_frac23, a, delta_t) * 2) / 3
+        u_frac13 = self.euler(u_curr, df_du, delta_t)
+        u_frac23 = (u_curr * 3 + self.euler(u_frac13, df_du, delta_t)) / 4
+        u_expect = (u_curr + self.euler(u_frac23, df_du, delta_t) * 2) / 3
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
 
