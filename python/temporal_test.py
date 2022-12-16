@@ -1,3 +1,5 @@
+"""Tests for some temporal schemes.
+"""
 import unittest
 import numpy as np
 
@@ -6,6 +8,8 @@ from temporal import ExplicitEuler, SspRungeKutta
 
 
 class Constant(SemiDiscreteSystem):
+    """The simplest implementation of SemiDiscreteSystem.
+    """
     def __init__(self, a_mat) -> None:
         m, n = a_mat.shape
         assert m == n
@@ -29,8 +33,12 @@ class Constant(SemiDiscreteSystem):
 
 
 class TestExplicitEuler(unittest.TestCase):
+    """Test the ExplicitEuler class.
+    """
 
     def test_update(self):
+        """Test the update() method.
+        """
         n = 10
         a = np.random.rand(n, n)
         sds = Constant(a)
@@ -45,11 +53,17 @@ class TestExplicitEuler(unittest.TestCase):
 
 
 class TestSspRungeKutta(unittest.TestCase):
+    """Test the SspRungeKutta class.
+    """
 
     def euler(self, u, a, dt):
+        """Wrap the computation of the explicit Euler method.
+        """
         return u + a.dot(u) * dt
 
     def test_rk1_update(self):
+        """Test RK1's update() method.
+        """
         n = 10
         a = np.random.rand(n, n)
         sds = Constant(a)
@@ -63,6 +77,8 @@ class TestSspRungeKutta(unittest.TestCase):
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
     def test_rk2_update(self):
+        """Test RK2's update() method.
+        """
         n = 10
         a = np.random.rand(n, n)
         sds = Constant(a)
@@ -77,6 +93,8 @@ class TestSspRungeKutta(unittest.TestCase):
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
     def test_rk3_update(self):
+        """Test RK3's update() method.
+        """
         n = 10
         a = np.random.rand(n, n)
         sds = Constant(a)

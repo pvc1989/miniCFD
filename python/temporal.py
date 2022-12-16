@@ -1,11 +1,14 @@
+"""Concrete implementations of temporal schemes.
+"""
 from concept import TemporalScheme
 
 
 class ExplicitEuler(TemporalScheme):
+    """The explicit Euler method.
+    """
 
     def __init__(self):
         pass
-
 
     def update(self, semi_discrete_system, delta_t):
         u_curr = semi_discrete_system.get_unknown().copy()
@@ -16,6 +19,8 @@ class ExplicitEuler(TemporalScheme):
 
 
 class SspRungeKutta(TemporalScheme):
+    """The explicit Runge--Kutta methods.
+    """
 
     def __init__(self, order: int):
         assert 1 <= order <= 3
@@ -31,7 +36,7 @@ class SspRungeKutta(TemporalScheme):
         elif self._order == 3:
             self._rk3_update(semi_discrete_system, delta_t)
         else:
-            raise "unsupported order"
+            raise NotImplementedError("Only 1st-, 2nd- and 3rd-order are implemented.")
 
 
     def _rk1_update(self, semi_discrete_system, delta_t):
