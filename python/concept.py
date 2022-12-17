@@ -3,6 +3,26 @@
 import abc
 
 
+class Polynomial(abc.ABC):
+    """The polynomial approximation of a general function.
+    """
+
+    @abc.abstractmethod
+    def approximate(self, function: callable):
+        """Approximation a general function.
+        """
+
+    @abc.abstractmethod
+    def get_function_value(self, x_global):
+        """Evaluate the approximation and return-by-value the result.
+        """
+
+    @abc.abstractmethod
+    def get_gradient_value(self, x_global):
+        """Evaluate the gradient of the approximation and return-by-value the result.
+        """
+
+
 class SemiDiscreteSystem(abc.ABC):
     """The ODE system given by some spatial discretization.
     """
