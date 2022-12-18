@@ -29,13 +29,11 @@ class Lagrange(Polynomial):
         values = np.zeros(self._n_point)
         for i in range(self._n_point):
             product = 1.0
-            dividend = 1.0
-            divisor = 1.0
             for j in range(self._n_point):
                 if j == i:
                     continue
-                dividend *= x_local - self._local_coords[j]
-                divisor *= self._local_coords[i] - self._local_coords[j]
+                dividend = x_local - self._local_coords[j]
+                divisor = self._local_coords[i] - self._local_coords[j]
                 product *= (dividend / divisor)
             values[i] = product
         return values

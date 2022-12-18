@@ -29,7 +29,7 @@ class TestLagrange(unittest.TestCase):
     def test_plot(self):
         """Plot the curves of a function and its approximation."""
         def my_function(point):
-            return np.cos(point / 10.0)
+            return (point-5.0)**5
         self._lagrange.approximate(my_function)
         n_plot = 201
         x_plot = np.linspace(0.0, 10.0, n_plot)
