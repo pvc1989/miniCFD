@@ -2,6 +2,7 @@
 """
 import unittest
 import numpy as np
+from matplotlib import pyplot as plt
 
 from polynomial import Lagrange
 
@@ -21,13 +22,14 @@ class TestLagrange(unittest.TestCase):
         """
         points = np.linspace(0.0, 10.0, 20)
         for x_global in points:
-          x_local = self._lagrange._global_to_local(x_global)
-          self.assertAlmostEqual(x_global,
-              self._lagrange._local_to_global(x_local))
+            x_local = self._lagrange._global_to_local(x_global)
+            self.assertAlmostEqual(x_global,
+                self._lagrange._local_to_global(x_local))
 
     def test_plot(self):
         """Plot the curves of a function and its approximation."""
-        my_function = lambda x: np.exp(np.log(x**2 + 1))
+        def my_function(point):
+            return np.cos(point / 10.0)
         self._lagrange.approximate(my_function)
         n_plot = 201
         x_plot = np.linspace(0.0, 10.0, n_plot)
@@ -36,11 +38,10 @@ class TestLagrange(unittest.TestCase):
         for i in range(n_plot):
             point_i = x_plot[i]
             u_approx[i] = self._lagrange.get_function_value(point_i)
-        from matplotlib import pyplot as plt
         plt.plot(x_plot, u_exact, 'r--', label='Exact')
         plt.plot(x_plot, u_approx, 'b-', label= 'Lagrange')
         plt.legend()
-        plt.show()
+        # plt.show()
         plt.savefig("lagrange.pdf")
 
     def test_values_at_sample_points(self):
@@ -48,8 +49,8 @@ class TestLagrange(unittest.TestCase):
         """
         my_function = np.sin
         self._lagrange.approximate(my_function)
-        for x in self._sample_points:
-            self.assertEqual(my_function(x), self._lagrange.get_function_value(x))
+        for point in self._sample_points:
+            self.assertEqual(my_function(point), self._lagrange.get_function_value(point))
 
 
 if __name__ == '__main__':
