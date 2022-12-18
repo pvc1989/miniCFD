@@ -12,26 +12,43 @@ class Lagrange(Polynomial):
     def __init__(self, points) -> None:
         super().__init__()
         n_point = len(points)
+        assert n_point >= 2
         self._n_point = n_point
+        self._jacobian = (points[-1] - points[0]) / 2.0  # linear coordinate transform
         self._local_coords = np.linspace(-1.0, 1.0, n_point)
         self._global_coords = points.copy()
         self._sample_values = np.zeros(n_point)
 
     def _local_to_global(self, x_local):
-        pass
+        return self._global_coords[0] + (self._jacobian * (x_local + 1.0))
 
     def _global_to_local(self, x_global):
-        pass
+        return (x_global - self._global_coords[0]) / self._jacobian - 1.0
 
-    def _get_basis_value(self, x_local):
-        return np.random.rand(self._n_point)
+    def _get_basis_values(self, x_local):
+        values = np.zeros(self._n_point)
+        for i in range(self._n_point):
+            product = 1.0
+            dividend = 1.0
+            divisor = 1.0
+            for j in range(self._n_point):
+                if j == i:
+                    continue
+                dividend *= x_local - self._local_coords[j]
+                divisor *= self._local_coords[i] - self._local_coords[j]
+                product *= (dividend / divisor)
+            values[i] = product
+        return values
 
     def approximate(self, function):
-        pass
+        for i in range(self._n_point):
+            self._sample_values[i] = function(self._global_coords[i])
 
     def get_function_value(self, x_global):
         x_local = self._global_to_local(x_global)
-        return self._get_basis_value(x_local).dot(self._sample_values)
+        values = self._get_basis_values(x_local)
+        value = values.dot(self._sample_values)
+        return value
 
     def get_gradient_value(self, x_global):
         pass
