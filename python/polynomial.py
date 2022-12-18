@@ -38,6 +38,22 @@ class Lagrange(Polynomial):
             values[i] = product
         return values
 
+    def _get_basis_gradients(self, x_local):
+        values = np.zeros(self._n_point)
+        for i in range(self._n_point):
+            for j in range(self._n_point):
+                if j == i:
+                    continue
+                dividend = 1.0
+                divisor = self._local_coords[i] - self._local_coords[j]
+                for k in range(self._n_point):
+                    if k in (i, j):
+                        continue
+                    dividend *= x_local - self._local_coords[k]
+                    divisor *= self._local_coords[i] - self._local_coords[k]
+                values[i] += dividend / divisor
+        return values
+
     def approximate(self, function):
         for i in range(self._n_point):
             self._sample_values[i] = function(self._global_coords[i])
@@ -49,7 +65,11 @@ class Lagrange(Polynomial):
         return value
 
     def get_gradient_value(self, x_global):
-        pass
+        x_local = self._global_to_local(x_global)
+        values = self._get_basis_gradients(x_local)
+        values /= self._jacobian
+        value = values.dot(self._sample_values)
+        return value
 
 
 if __name__ == '__main__':

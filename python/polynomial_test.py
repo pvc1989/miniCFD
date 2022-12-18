@@ -52,6 +52,20 @@ class TestLagrange(unittest.TestCase):
         for point in self._sample_points:
             self.assertEqual(my_function(point), self._lagrange.get_function_value(point))
 
+    def test_get_gradient_value(self):
+        """Test the method for getting gradient values.
+        """
+        def my_function(point):
+            return (point-5.0)**4 + (point-4.0)**3
+        def my_function_gradient(point):
+            return 4 * (point-5.0)**3 + 3 * (point-4.0)**2
+        self._lagrange.approximate(my_function)
+        n_test = 20
+        x_test = np.linspace(0.0, 10.0, n_test)
+        for point in x_test:
+            self.assertAlmostEqual(my_function_gradient(point),
+                self._lagrange.get_gradient_value(point))
+
 
 if __name__ == '__main__':
     unittest.main()
