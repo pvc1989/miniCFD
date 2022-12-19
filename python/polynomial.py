@@ -30,10 +30,10 @@ class Radau(Polynomial):
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         for k in range(1, self._k + 1):
-            legendre_derivative_next = k * self._legendres[k-1](x_lobal)
-            legendre_derivative_next += x_lobal * legendre_derivative_prev
             legendre_derivative_prev = legendre_derivative_curr
-            legendre_derivative_curr = legendre_derivative_next
+            # prev == k - 1, curr == k
+            legendre_derivative_curr = k * self._legendres[k-1](x_lobal)
+            legendre_derivative_curr += x_lobal * legendre_derivative_prev
         left = (legendre_derivative_curr + legendre_derivative_prev) / 2
         right = legendre_derivative_curr - legendre_derivative_prev
         right *= (-1)**self._k / 2
