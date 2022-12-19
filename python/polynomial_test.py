@@ -4,31 +4,38 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from polynomial import RightRadau, Lagrange
+from polynomial import Radau, Lagrange
 
 
-class TestRightRadau(unittest.TestCase):
-    """Test the RightRadau class.
+class TestRadau(unittest.TestCase):
+    """Test the Radau class.
     """
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._degree = 5
-        self._radau = RightRadau(self._degree)
+        self._radau = Radau(self._degree)
 
     def test_plot(self):
-        """Plot the curves of the polynomial and its derivative."""
+        """Plot the curves of the two Radau polynomials and their derivatives."""
         n_plot = 201
-        x_plot = np.linspace(-1.0, 1.0, n_plot)
-        values = np.zeros(n_plot)
-        derivatives = np.zeros(n_plot)
+        points = np.linspace(-1.0, 1.0, n_plot)
+        left_values = np.zeros(n_plot)
+        left_derivatives = np.zeros(n_plot)
+        right_values = np.zeros(n_plot)
+        right_derivatives = np.zeros(n_plot)
         for i in range(n_plot):
-            point_i = x_plot[i]
-            values[i] = self._radau.get_function_value(point_i)
-            derivatives[i] = self._radau.get_gradient_value(point_i)
+            point_i = points[i]
+            left_values[i], right_values[i] = self._radau.get_function_value(point_i)
+            left_derivatives[i], right_derivatives[i] = self._radau.get_gradient_value(point_i)
         plt.figure()
-        plt.plot(x_plot, values, 'r--', label=r'$R(\xi)$')
-        plt.plot(x_plot, derivatives, 'b-', label= r'$dR/d\xi$')
+        plt.subplot(2, 1, 1)
+        plt.plot(points, left_values, 'r--', label=r'$R_{-1}(\xi)$')
+        plt.plot(points, right_values, 'b--', label=r'$R_{+1}(\xi)$')
+        plt.legend()
+        plt.subplot(2, 1, 2)
+        plt.plot(points, left_derivatives, 'r-', label= r'$dR_{-1}/d\xi$')
+        plt.plot(points, right_derivatives, 'b-', label= r'$dR_{+1}/d\xi$')
         plt.legend()
         plt.show()
         plt.savefig("radau.pdf")

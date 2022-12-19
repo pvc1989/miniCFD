@@ -6,8 +6,8 @@ from scipy.special import legendre
 from concept import Polynomial, PolynomialApproximation
 
 
-class RightRadau(Polynomial):
-    """The right Radau polynomial.
+class Radau(Polynomial):
+    """The left- and right- Radau polynomials.
     """
 
     def __init__(self, degree: int) -> None:
@@ -19,10 +19,12 @@ class RightRadau(Polynomial):
             self._legendres.append(legendre(k))
 
     def get_function_value(self, x_lobal):
-        value = self._legendres[self._k](x_lobal)
-        value -= self._legendres[self._k - 1](x_lobal)
-        value *= (-1)**self._k / 2
-        return value
+        legendre_value_curr = self._legendres[self._k](x_lobal)
+        legendre_value_prev = self._legendres[self._k - 1](x_lobal)
+        left = (legendre_value_curr + legendre_value_prev) / 2
+        right = legendre_value_curr - legendre_value_prev
+        right *= (-1)**self._k / 2
+        return (left, right)
 
     def get_gradient_value(self, x_lobal):
         legendre_derivative_prev = 0.0
@@ -32,9 +34,10 @@ class RightRadau(Polynomial):
             legendre_derivative_next += x_lobal * legendre_derivative_prev
             legendre_derivative_prev = legendre_derivative_curr
             legendre_derivative_curr = legendre_derivative_next
-        value = legendre_derivative_curr - legendre_derivative_prev
-        value *= (-1)**self._k / 2
-        return value
+        left = (legendre_derivative_curr + legendre_derivative_prev) / 2
+        right = legendre_derivative_curr - legendre_derivative_prev
+        right *= (-1)**self._k / 2
+        return (left, right)
 
 
 class Lagrange(PolynomialApproximation):
