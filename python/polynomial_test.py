@@ -4,7 +4,34 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from polynomial import Lagrange
+from polynomial import RightRadau, Lagrange
+
+
+class TestRightRadau(unittest.TestCase):
+    """Test the RightRadau class.
+    """
+
+    def __init__(self, method_name: str = "") -> None:
+        super().__init__(method_name)
+        self._degree = 5
+        self._radau = RightRadau(self._degree)
+
+    def test_plot(self):
+        """Plot the curves of the polynomial and its derivative."""
+        n_plot = 201
+        x_plot = np.linspace(-1.0, 1.0, n_plot)
+        values = np.zeros(n_plot)
+        derivatives = np.zeros(n_plot)
+        for i in range(n_plot):
+            point_i = x_plot[i]
+            values[i] = self._radau.get_function_value(point_i)
+            derivatives[i] = self._radau.get_gradient_value(point_i)
+        plt.figure()
+        plt.plot(x_plot, values, 'r--', label=r'$R(\xi)$')
+        plt.plot(x_plot, derivatives, 'b-', label= r'$dR/d\xi$')
+        plt.legend()
+        plt.show()
+        plt.savefig("radau.pdf")
 
 
 class TestLagrange(unittest.TestCase):
@@ -38,6 +65,7 @@ class TestLagrange(unittest.TestCase):
         for i in range(n_plot):
             point_i = x_plot[i]
             u_approx[i] = self._lagrange.get_function_value(point_i)
+        plt.figure()
         plt.plot(x_plot, u_exact, 'r--', label='Exact')
         plt.plot(x_plot, u_approx, 'b-', label= 'Lagrange')
         plt.legend()

@@ -4,6 +4,21 @@ import abc
 
 
 class Polynomial(abc.ABC):
+    """Polynomial special functions.
+    """
+
+    @abc.abstractmethod
+    def get_function_value(self, x_lobal):
+        """Evaluate the polynomial and return-by-value the result.
+        """
+
+    @abc.abstractmethod
+    def get_gradient_value(self, x_lobal):
+        """Evaluate the gradient of the polynomial and return-by-value the result.
+        """
+
+
+class PolynomialApproximation(Polynomial):
     """The polynomial approximation of a general function.
     """
 

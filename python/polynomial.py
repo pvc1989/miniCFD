@@ -1,11 +1,43 @@
 """Implement some polynomial approximations for general functions.
 """
 import numpy as np
+from scipy.special import legendre
 
-from concept import Polynomial
+from concept import Polynomial, PolynomialApproximation
 
 
-class Lagrange(Polynomial):
+class RightRadau(Polynomial):
+    """The right Radau polynomial.
+    """
+
+    def __init__(self, degree: int) -> None:
+        super().__init__()
+        assert degree >= 1
+        self._k = degree
+        self._legendres = list()
+        for k in range(degree + 1):
+            self._legendres.append(legendre(k))
+
+    def get_function_value(self, x_lobal):
+        value = self._legendres[self._k](x_lobal)
+        value -= self._legendres[self._k - 1](x_lobal)
+        value *= (-1)**self._k / 2
+        return value
+
+    def get_gradient_value(self, x_lobal):
+        legendre_derivative_prev = 0.0
+        legendre_derivative_curr = 0.0
+        for k in range(1, self._k + 1):
+            legendre_derivative_next = k * self._legendres[k-1](x_lobal)
+            legendre_derivative_next += x_lobal * legendre_derivative_prev
+            legendre_derivative_prev = legendre_derivative_curr
+            legendre_derivative_curr = legendre_derivative_next
+        value = legendre_derivative_curr - legendre_derivative_prev
+        value *= (-1)**self._k / 2
+        return value
+
+
+class Lagrange(PolynomialApproximation):
     """The Lagrange interpolation of a general function.
     """
 
