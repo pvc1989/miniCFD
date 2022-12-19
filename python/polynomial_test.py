@@ -18,13 +18,13 @@ class TestRadau(unittest.TestCase):
 
     def test_plot(self):
         """Plot the curves of the two Radau polynomials and their derivatives."""
-        n_plot = 201
-        points = np.linspace(-1.0, 1.0, n_plot)
-        left_values = np.zeros(n_plot)
-        left_derivatives = np.zeros(n_plot)
-        right_values = np.zeros(n_plot)
-        right_derivatives = np.zeros(n_plot)
-        for i in range(n_plot):
+        n_point = 201
+        points = np.linspace(-1.0, 1.0, n_point)
+        left_values = np.zeros(n_point)
+        left_derivatives = np.zeros(n_point)
+        right_values = np.zeros(n_point)
+        right_derivatives = np.zeros(n_point)
+        for i in range(n_point):
             point_i = points[i]
             left_values[i], right_values[i] = self._radau.get_function_value(point_i)
             left_derivatives[i], right_derivatives[i] = self._radau.get_gradient_value(point_i)
@@ -65,16 +65,16 @@ class TestLagrange(unittest.TestCase):
         def my_function(point):
             return (point-5.0)**5
         self._lagrange.approximate(my_function)
-        n_plot = 201
-        x_plot = np.linspace(0.0, 10.0, n_plot)
-        u_exact = my_function(x_plot)
-        u_approx = np.zeros(n_plot)
-        for i in range(n_plot):
-            point_i = x_plot[i]
-            u_approx[i] = self._lagrange.get_function_value(point_i)
+        n_point = 201
+        points = np.linspace(0.0, 10.0, n_point)
+        exact_values = my_function(points)
+        approx_values = np.zeros(n_point)
+        for i in range(n_point):
+            point_i = points[i]
+            approx_values[i] = self._lagrange.get_function_value(point_i)
         plt.figure()
-        plt.plot(x_plot, u_exact, 'r--', label='Exact')
-        plt.plot(x_plot, u_approx, 'b-', label= 'Lagrange')
+        plt.plot(points, exact_values, 'r--', label='Exact')
+        plt.plot(points, approx_values, 'b-', label= 'Lagrange')
         plt.legend()
         # plt.show()
         plt.savefig("lagrange.pdf")
@@ -95,9 +95,9 @@ class TestLagrange(unittest.TestCase):
         def my_function_gradient(point):
             return 4 * (point-5.0)**3 + 3 * (point-4.0)**2
         self._lagrange.approximate(my_function)
-        n_test = 20
-        x_test = np.linspace(0.0, 10.0, n_test)
-        for point in x_test:
+        n_point = 20
+        points = np.linspace(0.0, 10.0, n_point)
+        for point in points:
             self.assertAlmostEqual(my_function_gradient(point),
                 self._lagrange.get_gradient_value(point))
 
