@@ -2,6 +2,7 @@
 """
 import unittest
 import numpy as np
+from scipy import integrate
 from matplotlib import pyplot as plt
 
 from polynomial import Radau, Lagrange
@@ -15,6 +16,25 @@ class TestRadau(unittest.TestCase):
         super().__init__(method_name)
         self._degree = 5
         self._radau = Radau(self._degree)
+
+    def test_values_at_ends(self):
+        """Test values and -1 and +1.
+        """
+        self.assertEqual((0.0, 1.0), self._radau.get_function_value(-1.0))
+        self.assertEqual((1.0, 0.0), self._radau.get_function_value(+1.0))
+
+    def test_orthogonality(self):
+        """Test Radau_{k} ⟂ Polynpmial_{k-2}.
+        """
+        for k in range(self._degree - 1):
+            # build products with monomials
+            left_prod = lambda x: x**k * self._radau.get_function_value(x)[0]
+            right_prod = lambda x: x**k * self._radau.get_function_value(x)[1]
+            # test integrals
+            integral, _ = integrate.quad(left_prod, -1.0, 1.0)
+            self.assertAlmostEqual(0.0, integral)
+            integral, _ = integrate.quad(right_prod, -1.0, 1.0)
+            self.assertAlmostEqual(0.0, integral)
 
     def test_plot(self):
         """Plot the curves of the two Radau polynomials and their derivatives."""
@@ -37,7 +57,7 @@ class TestRadau(unittest.TestCase):
         plt.plot(points, left_derivatives, 'r--', label= r'$dR_{-1}/d\xi$')
         plt.plot(points, right_derivatives, 'b-', label= r'$dR_{+1}/d\xi$')
         plt.legend()
-        plt.show()
+        # plt.show()
         plt.savefig("radau.pdf")
 
 
