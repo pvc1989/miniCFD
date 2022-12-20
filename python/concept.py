@@ -4,7 +4,7 @@ import abc
 
 
 class Polynomial(abc.ABC):
-    """Polynomial special functions.
+    """Polynomial functions defined on [-1, 1].
     """
 
     @abc.abstractmethod
@@ -18,13 +18,13 @@ class Polynomial(abc.ABC):
         """
 
 
-class PolynomialApproximation(Polynomial):
+class Interpolation(abc.ABC):
     """The polynomial approximation of a general function.
     """
 
     @abc.abstractmethod
     def approximate(self, function: callable):
-        """Approximation a general function.
+        """Approximate a general function.
         """
 
     @abc.abstractmethod
