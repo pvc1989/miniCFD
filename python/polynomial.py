@@ -14,26 +14,26 @@ class Radau(Polynomial):
         super().__init__()
         assert degree >= 1
         self._k = degree
-        self._legendres = list()
+        self._legendres = []
         for k in range(degree + 1):
             self._legendres.append(legendre(k))
 
-    def get_function_value(self, x_lobal):
-        legendre_value_curr = self._legendres[self._k](x_lobal)
-        legendre_value_prev = self._legendres[self._k - 1](x_lobal)
+    def get_function_value(self, x_local):
+        legendre_value_curr = self._legendres[self._k](x_local)
+        legendre_value_prev = self._legendres[self._k - 1](x_local)
         left = (legendre_value_curr + legendre_value_prev) / 2
         right = legendre_value_curr - legendre_value_prev
         right *= (-1)**self._k / 2
         return (left, right)
 
-    def get_gradient_value(self, x_lobal):
+    def get_gradient_value(self, x_local):
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         for k in range(1, self._k + 1):
             legendre_derivative_prev = legendre_derivative_curr
             # prev == k - 1, curr == k
-            legendre_derivative_curr = k * self._legendres[k-1](x_lobal)
-            legendre_derivative_curr += x_lobal * legendre_derivative_prev
+            legendre_derivative_curr = k * self._legendres[k-1](x_local)
+            legendre_derivative_curr += x_local * legendre_derivative_prev
         left = (legendre_derivative_curr + legendre_derivative_prev) / 2
         right = legendre_derivative_curr - legendre_derivative_prev
         right *= (-1)**self._k / 2

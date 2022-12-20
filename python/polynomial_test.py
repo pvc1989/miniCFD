@@ -27,13 +27,11 @@ class TestRadau(unittest.TestCase):
         """Test Radau_{k} ⟂ Polynpmial_{k-2}.
         """
         for k in range(self._degree - 1):
-            # build products with monomials
-            left_prod = lambda x: x**k * self._radau.get_function_value(x)[0]
-            right_prod = lambda x: x**k * self._radau.get_function_value(x)[1]
-            # test integrals
-            integral, _ = integrate.quad(left_prod, -1.0, 1.0)
+            integral, _ = integrate.quad(lambda x: x**k * self._radau.get_function_value(x)[0],
+                -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
-            integral, _ = integrate.quad(right_prod, -1.0, 1.0)
+            integral, _ = integrate.quad(lambda x: x**k * self._radau.get_function_value(x)[1],
+                -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
 
     def test_plot(self):
@@ -81,7 +79,7 @@ class TestLagrange(unittest.TestCase):
             values[i] = self._lagrange.get_function_value(point_i)
         plt.figure()
         for i in range(self._n_point):
-            plt.plot(points, values[:, i], label=r'$L_{0}$'.format(i))
+            plt.plot(points, values[:, i], label=f'$L_{i}$')
         plt.legend()
         # plt.show()
         plt.savefig("lagrange.pdf")
