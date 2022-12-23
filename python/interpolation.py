@@ -20,10 +20,14 @@ class Lagrange(Interpolation):
         self._global_coords = points.copy()
         self._sample_values = np.zeros(n_point)
 
-    def _local_to_global(self, x_local):
+    def local_to_global(self, x_local):
+        """Coordinate transform from local to global.
+        """
         return self._global_coords[0] + (self._jacobian * (x_local + 1.0))
 
-    def _global_to_local(self, x_global):
+    def global_to_local(self, x_global):
+        """Coordinate transform from global to local.
+        """
         return (x_global - self._global_coords[0]) / self._jacobian - 1.0
 
     def approximate(self, function):
@@ -31,13 +35,13 @@ class Lagrange(Interpolation):
             self._sample_values[i] = function(self._global_coords[i])
 
     def get_function_value(self, x_global):
-        x_local = self._global_to_local(x_global)
+        x_local = self.global_to_local(x_global)
         values = self._basis.get_function_value(x_local)
         value = values.dot(self._sample_values)
         return value
 
     def get_gradient_value(self, x_global):
-        x_local = self._global_to_local(x_global)
+        x_local = self.global_to_local(x_global)
         values = self._basis.get_gradient_value(x_local)
         values /= self._jacobian
         value = values.dot(self._sample_values)

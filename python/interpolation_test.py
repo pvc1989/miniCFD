@@ -22,9 +22,9 @@ class TestLagrange(unittest.TestCase):
         """
         points = np.linspace(0.0, 10.0, 20)
         for x_global in points:
-            x_local = self._lagrange._global_to_local(x_global)
+            x_local = self._lagrange.global_to_local(x_global)
             self.assertAlmostEqual(x_global,
-                self._lagrange._local_to_global(x_local))
+                self._lagrange.local_to_global(x_local))
 
     def test_plot(self):
         """Plot the curves of a function and its approximation."""

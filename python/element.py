@@ -1,15 +1,21 @@
 """Implement some element for spatial discretization.
 """
+import numpy as np
+
+from interpolation import Lagrange
+from polynomial import Radau
 
 
 class FluxReconstruction(object):
     """Element for implement flux reconstruction schemes.
     """
 
-    def __init__(self, degree: int, x_min, x_max) -> None:
+    def __init__(self, equation, degree: int, x_min, x_max) -> None:
+        self._equation = equation
         self._degree = degree
-        self._x_min = x_min
-        self._x_max = x_max
+        self._solution_points = np.linspace(x_min, x_max, degree + 1)
+        self._lagrange = Lagrange(self._solution_points)
+        self._radau = Radau(degree + 1)
 
     def approximate(self, function):
         """

@@ -18,9 +18,9 @@ class TestFluxReconstruction(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
-        self._element = FluxReconstruction(self._degree, self._x_left, self._x_right)
+        self._element = FluxReconstruction(self._equation, self._degree, self._x_left, self._x_right)
         self._element.approximate(np.sin)
-        self._radau = Radau(self._degree)
+        self._radau = Radau(self._degree + 1)
         self._lagrange = Lagrange(np.linspace(self._x_left, self._x_right, self._degree + 1))
 
     def test_get_unknown_values(self):
@@ -49,7 +49,7 @@ class TestFluxReconstruction(unittest.TestCase):
             flux_actual = self._element.get_continuous_flux(x_global, upwind_flux_left, upwind_flux_right)
             # continuous_flux = discontinuous_flux + correction
             flux_expect = self.get_discontinuous_flux(x_global)
-            x_local = self._lagrange._global_to_local(x_global)
+            x_local = self._lagrange.global_to_local(x_global)
             radau_left, radau_right = self._radau.get_function_value(x_local)
             flux_expect += radau_left * (upwind_flux_left
                 - self._element.get_discontinuous_flux(self._x_left))
