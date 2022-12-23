@@ -66,7 +66,7 @@ class TestFluxReconstruction(unittest.TestCase):
         for x_global in points:
             gradient_actual = self._element.get_flux_gradient(x_global, upwind_flux_left, upwind_flux_right)
             # 2nd-order finite difference approximation
-            delta_x = 0.001
+            delta_x = 0.0001
             gradient_approx = (
                 self._element.get_continuous_flux(x_global + delta_x, upwind_flux_left, upwind_flux_right) -
                 self._element.get_continuous_flux(x_global - delta_x, upwind_flux_left, upwind_flux_right)) / (delta_x + delta_x)

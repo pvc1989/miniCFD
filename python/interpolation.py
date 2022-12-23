@@ -20,6 +20,12 @@ class Lagrange(Interpolation):
         self._global_coords = points.copy()
         self._sample_values = np.zeros(n_point)
 
+    def jacobian(self, x_global):
+        """Get the Jacobian value at a given point.
+        """
+        assert isinstance(x_global, float)
+        return self._jacobian
+
     def local_to_global(self, x_local):
         """Coordinate transform from local to global.
         """

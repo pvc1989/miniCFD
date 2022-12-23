@@ -61,9 +61,18 @@ class FluxReconstruction(object):
         return flux
 
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
+        """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        """
-        return 0.0
+        gradient = self._flux_lagrange.get_gradient_value(x_global)
+        x_local = self._solution_lagrange.global_to_local(x_global)
+        radau_left, radau_right = self._radau.get_gradient_value(x_local)
+        radau_left /= self._solution_lagrange.jacobian(x_global)
+        radau_right /= self._solution_lagrange.jacobian(x_global)
+        gradient += radau_right * (upwind_flux_left
+            - self.get_discontinuous_flux(self._x_left))
+        gradient += radau_left * (upwind_flux_right
+            - self.get_discontinuous_flux(self._x_right))
+        return gradient
 
 
 if __name__ == '__main__':
