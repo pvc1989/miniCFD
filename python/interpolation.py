@@ -30,6 +30,15 @@ class Lagrange(Interpolation):
         """
         return (x_global - self._global_coords[0]) / self._jacobian - 1.0
 
+    def set_sample_values(self, values):
+        """Set sample values.
+
+        Users are responsible to ensure (for each i) values[i] is sampled at self._global_coords[i].
+        """
+        assert len(values) == self._n_point
+        for i in range(self._n_point):
+            self._sample_values[i] = values[i]
+
     def approximate(self, function):
         for i in range(self._n_point):
             self._sample_values[i] = function(self._global_coords[i])

@@ -23,7 +23,7 @@ class TestFluxReconstruction(unittest.TestCase):
         self._radau = Radau(self._degree + 1)
         self._lagrange = Lagrange(np.linspace(self._x_left, self._x_right, self._degree + 1))
 
-    def test_get_unknown_values(self):
+    def get_solution_value(self):
         """Test the values of the approximated unknown function.
         """
 
@@ -33,7 +33,7 @@ class TestFluxReconstruction(unittest.TestCase):
         for x_global in self._test_points:
             flux_actual = self._element.get_discontinuous_flux(x_global)
             # discontinuous_flux = a * u
-            flux_expect = self._equation.F(self._element.get_unknown_values(x_global))
+            flux_expect = self._equation.F(self._element.get_solution_value(x_global))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
     def test_get_continuous_flux(self):
@@ -41,19 +41,19 @@ class TestFluxReconstruction(unittest.TestCase):
         """
         upwind_flux_left = np.random.rand()
         upwind_flux_right = np.random.rand()
-        self.assertEqual(upwind_flux_left,
+        self.assertAlmostEqual(upwind_flux_left,
             self._element.get_continuous_flux(self._x_left, upwind_flux_left, upwind_flux_right))
-        self.assertEqual(upwind_flux_right,
+        self.assertAlmostEqual(upwind_flux_right,
             self._element.get_continuous_flux(self._x_right, upwind_flux_left, upwind_flux_right))
         for x_global in self._test_points:
             flux_actual = self._element.get_continuous_flux(x_global, upwind_flux_left, upwind_flux_right)
             # continuous_flux = discontinuous_flux + correction
-            flux_expect = self.get_discontinuous_flux(x_global)
+            flux_expect = self._element.get_discontinuous_flux(x_global)
             x_local = self._lagrange.global_to_local(x_global)
             radau_left, radau_right = self._radau.get_function_value(x_local)
-            flux_expect += radau_left * (upwind_flux_left
+            flux_expect += radau_right * (upwind_flux_left
                 - self._element.get_discontinuous_flux(self._x_left))
-            flux_expect += radau_right * (upwind_flux_right
+            flux_expect += radau_left * (upwind_flux_right
                 - self._element.get_discontinuous_flux(self._x_right))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
