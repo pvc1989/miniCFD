@@ -34,8 +34,20 @@ class FluxReconstruction(Element):
             solution_values[i] = lagrange.get_function_value(
                 self._solution_points[i])
             flux_values[i] = self._equation.F(solution_values[i])
-        self._solution_lagrange.set_sample_values(solution_values)
-        self._flux_lagrange.set_sample_values(flux_values)
+        self._solution_lagrange.set_coeff(solution_values)
+        self._flux_lagrange.set_coeff(flux_values)
+
+    def set_solution_coeff(self, coeff):
+        self._solution_lagrange.set_coeff(coeff)
+        # update the corresponding fluxes
+        n_point = self._degree + 1
+        flux_values = np.zeros(n_point)
+        for i in range(n_point):
+            flux_values[i] = self._equation.F(coeff[i])
+        self._flux_lagrange.set_coeff(flux_values)
+
+    def get_solution_coeff(self):
+        return self._solution_lagrange.get_coeff()
 
     def get_solution_value(self, x_global):
         return self._solution_lagrange.get_function_value(x_global)

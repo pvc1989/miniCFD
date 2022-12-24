@@ -37,6 +37,16 @@ class Interpolation(abc.ABC):
         """Evaluate the gradient of the approximation and return-by-value the result.
         """
 
+    @abc.abstractmethod
+    def set_coeff(self, coeff):
+        """Set the coefficient for each basis.
+        """
+
+    @abc.abstractmethod
+    def get_coeff(self):
+        """Get the coefficient for each basis.
+        """
+
 
 class Element(abc.ABC):
     """One-dimensional Element for spatial discretization.
@@ -50,6 +60,16 @@ class Element(abc.ABC):
     @abc.abstractmethod
     def get_solution_value(self, x_global: float):
         """Get the value of U at a given point.
+        """
+
+    @abc.abstractmethod
+    def set_solution_coeff(self, coeff):
+        """Set coefficients of the solution's interpolation.
+        """
+
+    @abc.abstractmethod
+    def get_solution_coeff(self):
+        """Get coefficients of the solution's interpolation.
         """
 
 
