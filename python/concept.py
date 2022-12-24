@@ -38,6 +38,21 @@ class Interpolation(abc.ABC):
         """
 
 
+class Element(abc.ABC):
+    """One-dimensional Element for spatial discretization.
+    """
+
+    @abc.abstractmethod
+    def approximate(self, function: callable):
+        """Approximate a general function as U_h.
+        """
+
+    @abc.abstractmethod
+    def get_solution_value(self, x_global: float):
+        """Get the value of U at a given point.
+        """
+
+
 class SemiDiscreteSystem(abc.ABC):
     """The ODE system given by some spatial discretization.
     """

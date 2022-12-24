@@ -1,12 +1,13 @@
-"""Implement some element for spatial discretization.
+"""Implement elements for spatial discretization.
 """
 import numpy as np
 
+from concept import Element
 from interpolation import Lagrange
 from polynomial import Radau
 
 
-class FluxReconstruction(object):
+class FluxReconstruction(Element):
     """Element for implement flux reconstruction schemes.
     """
 
@@ -21,8 +22,6 @@ class FluxReconstruction(object):
         self._radau = Radau(degree + 1)
 
     def approximate(self, function):
-        """Approximate a general function.
-        """
         n_point = self._degree + 1
         # Sample points strictly inside the element to avoid continuous at boundaries.
         delta = (self._x_right - self._x_left) / 10
@@ -39,8 +38,6 @@ class FluxReconstruction(object):
         self._flux_lagrange.set_sample_values(flux_values)
 
     def get_solution_value(self, x_global):
-        """Get the value of U at a given point.
-        """
         return self._solution_lagrange.get_function_value(x_global)
 
     def get_discontinuous_flux(self, x_global):
