@@ -53,7 +53,7 @@ class Element(abc.ABC):
         """
 
 
-class SemiDiscreteSystem(abc.ABC):
+class OdeSystem(abc.ABC):
     """The ODE system given by some spatial discretization.
     """
 
@@ -76,12 +76,12 @@ class SemiDiscreteSystem(abc.ABC):
 class TemporalScheme(abc.ABC):
     """A solver for the standard ODE system dU/dt = R.
 
-    The matrix of unknowns U and the residual matrix R is provided by a SemiDiscreteSystem object.
+    The matrix of unknowns U and the residual matrix R is provided by a OdeSystem object.
     """
 
     @abc.abstractmethod
-    def update(self, semi_discrete_system: SemiDiscreteSystem, delta_t: float):
-        """Update the given SemiDiscreteSystem object to the next time step.
+    def update(self, ode_system: OdeSystem, delta_t: float):
+        """Update the given OdeSystem object to the next time step.
         """
 
 

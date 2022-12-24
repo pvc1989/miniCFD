@@ -3,12 +3,12 @@
 import unittest
 import numpy as np
 
-from concept import SemiDiscreteSystem
+from concept import OdeSystem
 from temporal import ExplicitEuler, SspRungeKutta
 
 
-class Constant(SemiDiscreteSystem):
-    """The simplest implementation of SemiDiscreteSystem.
+class Constant(OdeSystem):
+    """The simplest implementation of OdeSystem.
     """
     def __init__(self, a_mat) -> None:
         n_row, n_col = a_mat.shape
@@ -41,14 +41,14 @@ class TestExplicitEuler(unittest.TestCase):
         """
         n_row = 10
         df_du = np.random.rand(n_row, n_row)
-        sds = Constant(df_du)
+        ode_system = Constant(df_du)
         u_curr = np.random.rand(n_row)
-        sds.set_unknown(u_curr)
+        ode_system.set_unknown(u_curr)
         scheme = ExplicitEuler()
         delta_t = 0.01
-        scheme.update(sds, delta_t)
+        scheme.update(ode_system, delta_t)
         u_expect = u_curr + df_du.dot(u_curr) * delta_t
-        u_actual = sds.get_unknown()
+        u_actual = ode_system.get_unknown()
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
 
@@ -66,13 +66,13 @@ class TestSspRungeKutta(unittest.TestCase):
         """
         n_row = 10
         df_du = np.random.rand(n_row, n_row)
-        sds = Constant(df_du)
+        ode_system = Constant(df_du)
         u_curr = np.random.rand(n_row)
-        sds.set_unknown(u_curr)
+        ode_system.set_unknown(u_curr)
         scheme = SspRungeKutta(order=1)
         delta_t = 0.01
-        scheme.update(sds, delta_t)
-        u_actual = sds.get_unknown()
+        scheme.update(ode_system, delta_t)
+        u_actual = ode_system.get_unknown()
         u_expect = self.euler(u_curr, df_du, delta_t)
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
@@ -81,13 +81,13 @@ class TestSspRungeKutta(unittest.TestCase):
         """
         n_row = 10
         df_du = np.random.rand(n_row, n_row)
-        sds = Constant(df_du)
+        ode_system = Constant(df_du)
         u_curr = np.random.rand(n_row)
-        sds.set_unknown(u_curr)
+        ode_system.set_unknown(u_curr)
         scheme = SspRungeKutta(order=2)
         delta_t = 0.01
-        scheme.update(sds, delta_t)
-        u_actual = sds.get_unknown()
+        scheme.update(ode_system, delta_t)
+        u_actual = ode_system.get_unknown()
         u_frac12 = self.euler(u_curr, df_du, delta_t)
         u_expect = (u_curr + self.euler(u_frac12, df_du, delta_t)) / 2
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
@@ -97,13 +97,13 @@ class TestSspRungeKutta(unittest.TestCase):
         """
         n_row = 10
         df_du = np.random.rand(n_row, n_row)
-        sds = Constant(df_du)
+        ode_system = Constant(df_du)
         u_curr = np.random.rand(n_row)
-        sds.set_unknown(u_curr)
+        ode_system.set_unknown(u_curr)
         scheme = SspRungeKutta(order=3)
         delta_t = 0.01
-        scheme.update(sds, delta_t)
-        u_actual = sds.get_unknown()
+        scheme.update(ode_system, delta_t)
+        u_actual = ode_system.get_unknown()
         u_frac13 = self.euler(u_curr, df_du, delta_t)
         u_frac23 = (u_curr * 3 + self.euler(u_frac13, df_du, delta_t)) / 4
         u_expect = (u_curr + self.euler(u_frac23, df_du, delta_t) * 2) / 3
