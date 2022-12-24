@@ -9,14 +9,14 @@ from concept import Polynomial
 class Radau(Polynomial):
     """The left- and right- Radau polynomials.
     """
+    _legendres = []
+    for k in range(10):
+        _legendres.append(legendre(k))
 
     def __init__(self, degree: int) -> None:
         super().__init__()
-        assert degree >= 1
+        assert 1 <= degree <= 9
         self._k = degree
-        self._legendres = []
-        for k in range(degree + 1):
-            self._legendres.append(legendre(k))
 
     def get_function_value(self, x_local):
         legendre_value_curr = self._legendres[self._k](x_local)
