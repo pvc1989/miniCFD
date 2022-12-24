@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from matplotlib import pyplot as plt
 
 from element import FluxReconstruction
 from equation import LinearAdvection
@@ -23,9 +24,27 @@ class TestFluxReconstruction(unittest.TestCase):
         self._radau = Radau(self._degree + 1)
         self._lagrange = Lagrange(np.linspace(self._x_left, self._x_right, self._degree + 1))
 
-    def get_solution_value(self):
-        """Test the values of the approximated unknown function.
+    def test_plot(self):
+        """Plot the curves of F^{discontinous} and F^{continous}.
         """
+        upwind_flux_left = np.random.rand()
+        upwind_flux_right = np.random.rand()
+        n_point = 201
+        points = np.linspace(self._x_left, self._x_right, n_point)
+        discontinuous_flux = np.zeros(n_point)
+        continuous_flux = np.zeros(n_point)
+        for i in range(n_point):
+            point_i = points[i]
+            discontinuous_flux[i] = self._element.get_discontinuous_flux(point_i)
+            continuous_flux[i] = self._element.get_continuous_flux(point_i, upwind_flux_left, upwind_flux_right)
+        plt.figure()
+        plt.plot(points, discontinuous_flux, 'r--', label='Discontinuous FLux')
+        plt.plot(points, continuous_flux, 'b-', label='Continuous FLux')
+        plt.plot(self._x_left, upwind_flux_left, 'k<', label='Upwind Flux At Left')
+        plt.plot(self._x_right, upwind_flux_right, 'k>', label='Upwind Flux At Right')
+        plt.legend()
+        plt.show()
+        plt.savefig("fr_by_radau.pdf")
 
     def test_get_discontinuous_flux(self):
         """Test the values of the discontinuous flux.
