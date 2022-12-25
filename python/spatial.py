@@ -76,10 +76,10 @@ class FluxReconstruction(OdeSystem):
             element = self._elements[i]
             upwind_flux_left = interface_flux[i]
             upwind_flux_right = interface_flux[i+1]
-            for point in element.get_solution_points():
-                column[i_dof] = -element.get_flux_gradient(point,
-                    upwind_flux_left, upwind_flux_right)
-                i_dof += 1
+            values = element.get_flux_gradients(
+                upwind_flux_left, upwind_flux_right)
+            column[i_dof:i_dof+len(values)] = values
+            i_dof += len(values)
         assert i_dof == self.n_dof()
         return column
 

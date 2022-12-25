@@ -55,9 +55,6 @@ class FluxReconstruction(Element):
         # In current case (scalar problem), no conversion is needed.
         return self._solution_lagrange.get_coeff()
 
-    def get_solution_points(self):
-        return self._solution_points
-
     def get_solution_value(self, x_global):
         return self._solution_lagrange.get_function_value(x_global)
 
@@ -91,6 +88,16 @@ class FluxReconstruction(Element):
         gradient += radau_left * (upwind_flux_right
             - self.get_discontinuous_flux(self.x_right()))
         return gradient
+
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
+        """Get the gradients of the continuous flux at allsolution points.
+        """
+        values = np.ndarray(len(self._solution_points))
+        for i in range(len(values)):
+            point_i = self._solution_points[i]
+            values[i] = self.get_flux_gradient(point_i,
+                upwind_flux_left, upwind_flux_right)
+        return values
 
 
 if __name__ == '__main__':
