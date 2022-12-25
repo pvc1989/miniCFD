@@ -22,6 +22,7 @@ class FluxReconstruction(OdeSystem):
         self._n_point_per_element = degree + 1
         self._elements = []
         delta_x = (x_max - x_min) / n_element
+        self._delta_x = delta_x
         x_left = x_min
         for i_element in range(n_element):
             assert x_left == x_min + i_element * delta_x
@@ -30,6 +31,9 @@ class FluxReconstruction(OdeSystem):
                   equation, degree, x_left, x_right))
             x_left = x_right
         assert x_left == x_max
+
+    def x_left(self):
+        return self._elements[0].x_left()
 
     def n_dof(self):
         return self._n_element * self._n_point_per_element
@@ -82,6 +86,16 @@ class FluxReconstruction(OdeSystem):
             i_dof += len(values)
         assert i_dof == self.n_dof()
         return column
+
+    def get_solution_value(self, point):
+        i_element = int((point - self.x_left()) / self._delta_x)
+        if i_element == self._n_element:
+            i_element -= 1
+        return self._elements[i_element].get_solution_value(point)
+
+    def initialize(self, function: callable):
+        for element in self._elements:
+            element.approximate(function)
 
 
 if __name__ == '__main__':

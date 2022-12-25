@@ -82,6 +82,11 @@ class OdeSystem(abc.ABC):
     """
 
     @abc.abstractmethod
+    def initialize(self, function: callable):
+        """Set the initial condition.
+        """
+
+    @abc.abstractmethod
     def set_solution_column(self, column):
         """Overwrite the values in the solution column.
         """
