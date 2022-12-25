@@ -34,7 +34,7 @@ class FluxReconstruction(OdeSystem):
     def n_dof(self):
         return self._n_element * self._n_point_per_element
 
-    def set_unknown(self, column):
+    def set_solution_column(self, column):
         assert len(column) == self.n_dof()
         first = 0
         for element in self._elements:
@@ -43,7 +43,7 @@ class FluxReconstruction(OdeSystem):
             first = last
         assert first == self.n_dof()
 
-    def get_unknown(self):
+    def get_solution_column(self):
         column = np.zeros(self.n_dof())
         first = 0
         for element in self._elements:
@@ -53,7 +53,7 @@ class FluxReconstruction(OdeSystem):
         assert first == self.n_dof()
         return column
 
-    def get_residual(self):
+    def get_residual_column(self):
         column = np.zeros(self.n_dof())
         interface_flux = np.ndarray(self._n_element + 1)
         # interface_flux[i] := flux on interface(element[i-1], element[i])

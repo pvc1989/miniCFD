@@ -11,11 +11,11 @@ class ExplicitEuler(TemporalScheme):
         pass
 
     def update(self, ode_system, delta_t):
-        u_curr = ode_system.get_unknown().copy()
-        residual = ode_system.get_residual()
+        u_curr = ode_system.get_solution_column()
+        residual = ode_system.get_residual_column()
         u_next = u_curr
         u_next += residual * delta_t
-        ode_system.set_unknown(u_next)
+        ode_system.set_solution_column(u_next)
 
 
 class SspRungeKutta(TemporalScheme):
@@ -44,37 +44,37 @@ class SspRungeKutta(TemporalScheme):
 
 
     def _rk2_update(self, ode_system, delta_t):
-        u_curr = ode_system.get_unknown().copy()  # u_curr == U_{n}
+        u_curr = ode_system.get_solution_column()  # u_curr == U_{n}
         self._euler.update(ode_system, delta_t)
         # Now, ode_system holds U_{n + 1/2}
         self._euler.update(ode_system, delta_t)
-        u_next = ode_system.get_unknown().copy()
+        u_next = ode_system.get_solution_column()
         # Now, u_next == U_{n + 1/2} + R_{n + 1/2} * delta_t
         u_next += u_curr
         u_next /= 2
         # Now, u_next == U_{n + 1}
-        ode_system.set_unknown(u_next)
+        ode_system.set_solution_column(u_next)
 
 
     def _rk3_update(self, ode_system, delta_t):
-        u_curr = ode_system.get_unknown().copy()  # u_curr == U_{n}
+        u_curr = ode_system.get_solution_column()  # u_curr == U_{n}
         self._euler.update(ode_system, delta_t)
         # Now, ode_system holds U_{n + 1/3}
         self._euler.update(ode_system, delta_t)
-        u_next = ode_system.get_unknown().copy()
+        u_next = ode_system.get_solution_column()
         # Now, u_next == U_{n + 1/3} + R_{n + 1/3} * dt
         u_next += u_curr * 3
         u_next /= 4
         # Now, u_next == U_{n + 2/3}.
-        ode_system.set_unknown(u_next)
+        ode_system.set_solution_column(u_next)
         self._euler.update(ode_system, delta_t)
-        u_next = ode_system.get_unknown().copy()
+        u_next = ode_system.get_solution_column()
         # Now, u_next == U_{n + 2/3} + R_{n + 2/3} * dt
         u_next *= 2
         u_next += u_curr
         u_next /= 3
         # Now, u_next == U_{n + 1}.
-        ode_system.set_unknown(u_next)
+        ode_system.set_solution_column(u_next)
 
 
 if __name__ == '__main__':

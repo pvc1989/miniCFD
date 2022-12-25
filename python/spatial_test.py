@@ -28,9 +28,9 @@ class TestFluxReconstruction(unittest.TestCase):
         """
         n_dof = self._n_element * (self._degree + 1)
         self.assertEqual(n_dof, self._spatial.n_dof())
-        column = self._spatial.get_unknown()
+        column = self._spatial.get_solution_column()
         self.assertEqual(n_dof, len(column))
-        column = self._spatial.get_residual()
+        column = self._spatial.get_residual_column()
         self.assertEqual(n_dof, len(column))
 
 

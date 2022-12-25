@@ -78,25 +78,25 @@ class OdeSystem(abc.ABC):
     """
 
     @abc.abstractmethod
-    def set_unknown(self, unknown):
-        """Overwrite the values in the matrix of unknowns.
+    def set_solution_column(self, column):
+        """Overwrite the values in the solution column.
         """
 
     @abc.abstractmethod
-    def get_unknown(self):
-        """Get a reference to the matrix of unknowns.
+    def get_solution_column(self):
+        """Get a copy of the solution column.
         """
 
     @abc.abstractmethod
-    def get_residual(self):
-        """Get a reference to the residual matrix.
+    def get_residual_column(self):
+        """Get a copy of the residual column.
         """
 
 
 class TemporalScheme(abc.ABC):
     """A solver for the standard ODE system dU/dt = R.
 
-    The matrix of unknowns U and the residual matrix R is provided by a OdeSystem object.
+    The solution column U and the residual column R is provided by a OdeSystem object.
     """
 
     @abc.abstractmethod
