@@ -41,8 +41,8 @@ class TestFluxReconstruction(unittest.TestCase):
             continuous_flux[i] = self._element.get_continuous_flux(
                 point_i, upwind_flux_left, upwind_flux_right)
         plt.figure()
-        plt.plot(points, discontinuous_flux, 'r--', label='Discontinuous FLux')
-        plt.plot(points, continuous_flux, 'b-', label='Continuous FLux')
+        plt.plot(points, discontinuous_flux, 'r--', label='Discontinuous Flux')
+        plt.plot(points, continuous_flux, 'b-', label='Continuous Flux')
         plt.plot(self._x_left, upwind_flux_left, 'k<',
             label='Upwind Flux At Left')
         plt.plot(self._x_right, upwind_flux_right, 'k>',

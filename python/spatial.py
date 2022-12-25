@@ -69,7 +69,7 @@ class FluxReconstruction(OdeSystem):
             interface_flux[i] = self._riemann.F_upwind(u_left, u_right)
         # periodic boundary condtion
         x_right = self._elements[0].x_left()
-        u_right= self._elements[0].get_solution_value(x_right)
+        u_right = self._elements[0].get_solution_value(x_right)
         x_left = self._elements[-1].x_right()
         u_left = self._elements[-1].get_solution_value(x_left)
         interface_flux[0] = self._riemann.F_upwind(u_left, u_right)
@@ -87,11 +87,41 @@ class FluxReconstruction(OdeSystem):
         assert i_dof == self.n_dof()
         return column
 
-    def get_solution_value(self, point):
+    def get_element_index(self, point):
         i_element = int((point - self.x_left()) / self._delta_x)
         if i_element == self._n_element:
             i_element -= 1
-        return self._elements[i_element].get_solution_value(point)
+        return i_element
+
+    def get_element(self, point):
+        return self._elements[self.get_element_index(point)]
+
+    def get_solution_value(self, point):
+        element = self.get_element(point)
+        return element.get_solution_value(point)
+
+    def get_discontinuous_flux(self, point):
+        element = self.get_element(point)
+        return element.get_discontinuous_flux(point)
+
+    def get_continuous_flux(self, point):
+        curr = self.get_element_index(point)
+        # solve riemann problem at the left end of curr element
+        x_right = self._elements[curr].x_left()
+        u_right = self._elements[curr].get_solution_value(x_right)
+        prev = curr - 1
+        x_left = self._elements[prev].x_right()
+        u_left = self._elements[prev].get_solution_value(x_left)
+        upwind_flux_left = self._riemann.F_upwind(u_left, u_right)
+        # solve riemann problem at the right end of curr element
+        x_left = self._elements[curr].x_right()
+        u_left = self._elements[curr].get_solution_value(x_left)
+        next = (curr + 1) % self._n_element
+        x_right = self._elements[next].x_left()
+        u_right = self._elements[next].get_solution_value(x_right)
+        upwind_flux_right = self._riemann.F_upwind(u_left, u_right)
+        return self._elements[curr].get_continuous_flux(point,
+            upwind_flux_left, upwind_flux_right)
 
     def initialize(self, function: callable):
         for element in self._elements:
