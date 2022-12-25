@@ -48,7 +48,7 @@ class FluxReconstruction(OdeSystem):
         first = 0
         for element in self._elements:
             last = first + self._n_point_per_element
-            column[first:last] = element.get_solution_coeff()
+            column[first:last] = element.get_solution_column()
             first = last
         assert first == self.n_dof()
         return column

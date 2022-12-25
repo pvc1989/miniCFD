@@ -63,13 +63,17 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
-    def set_solution_coeff(self, coeff):
+    def set_solution_coeff(self, column):
         """Set coefficients of the solution's interpolation.
+
+        The element is responsible for the column-to-coeff conversion.
         """
 
     @abc.abstractmethod
-    def get_solution_coeff(self):
+    def get_solution_column(self):
         """Get coefficients of the solution's interpolation.
+
+        The element is responsible for the coeff-to-column conversion.
         """
 
 

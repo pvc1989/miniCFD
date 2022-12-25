@@ -51,7 +51,8 @@ class FluxReconstruction(Element):
             flux_values[i] = self._equation.F(coeff[i])
         self._flux_lagrange.set_coeff(flux_values)
 
-    def get_solution_coeff(self):
+    def get_solution_column(self):
+        # In current case (scalar problem), no conversion is needed.
         return self._solution_lagrange.get_coeff()
 
     def get_solution_points(self):
