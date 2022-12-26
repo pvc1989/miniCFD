@@ -20,6 +20,7 @@ class TestFluxReconstruction(unittest.TestCase):
         self._degree = 4
         self._x_left = 0.0
         self._x_right = np.pi * 2
+        self._length = self._x_right - self._x_left
         self._test_points = np.linspace(self._x_left, self._x_right)
         self._element = FluxReconstruction(self._equation, self._degree,
             self._x_left, self._x_right)
@@ -74,7 +75,7 @@ class TestFluxReconstruction(unittest.TestCase):
                 upwind_flux_left, upwind_flux_right))
         radau = Radau(self._degree + 1)
         lagrange = Lagrange(np.linspace(self._x_left, self._x_right,
-            self._degree + 1))
+            self._degree + 1), self._length)
         for x_global in self._test_points:
             flux_actual = self._element.get_continuous_flux(x_global,
                 upwind_flux_left, upwind_flux_right)

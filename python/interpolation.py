@@ -10,21 +10,27 @@ class Lagrange(Interpolation):
     """The Lagrange interpolation of a general function.
     """
 
-    def __init__(self, points) -> None:
+    def __init__(self, points, length: float) -> None:
         super().__init__()
         n_point = len(points)
-        assert n_point >= 2
+        assert n_point >= 1
         self._n_point = n_point
-        self._jacobian = (points[-1] - points[0]) / 2.0  # linear coordinate transform
+        if n_point > 1:
+            assert length == points[-1] - points[0]
+        assert length > 0
+        self._jacobian = length / 2.0  # linear coordinate transform
         self._basis = polynomial.Lagrange(n_point)
         self._global_coords = points.copy()
         self._sample_values = np.zeros(n_point)
 
-    def jacobian(self, x_global):
+    def jacobian(self, x_global: float):
         """Get the Jacobian value at a given point.
         """
-        assert isinstance(x_global, float)
         return self._jacobian
+
+    def get_sample_points(self):
+        """Get the global coordinates of all sample points."""
+        return self._global_coords
 
     def local_to_global(self, x_local):
         """Coordinate transform from local to global.

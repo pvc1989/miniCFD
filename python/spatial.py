@@ -15,7 +15,7 @@ class FluxReconstruction(OdeSystem):
         super().__init__()
         assert x_min < x_max
         assert n_element > 1
-        assert degree >= 1
+        assert degree >= 0
         self._equation = equation
         self._riemann = riemann
         self._n_element = n_element

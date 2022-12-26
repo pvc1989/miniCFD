@@ -13,9 +13,9 @@ class TestLagrange(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
-        self._n_point = 5
-        self._sample_points = np.linspace(0.0, 10.0, self._n_point)
-        self._lagrange = Lagrange(self._sample_points)
+        length = 10.0
+        sample_points = np.linspace(0.0, length, 5)
+        self._lagrange = Lagrange(sample_points, length)
 
     def test_coordinate_transforms(self):
         """Test coordinate transforms.
@@ -50,7 +50,7 @@ class TestLagrange(unittest.TestCase):
         """
         my_function = np.sin
         self._lagrange.approximate(my_function)
-        for point in self._sample_points:
+        for point in self._lagrange.get_sample_points():
             self.assertEqual(my_function(point), self._lagrange.get_function_value(point))
 
     def test_get_gradient_value(self):

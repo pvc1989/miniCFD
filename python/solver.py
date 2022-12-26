@@ -15,7 +15,7 @@ class RungeKuttaFluxReconstruction:
         self._spatial = spatial.FluxReconstruction(
             equation.LinearAdvection(self._a_const),
             riemann.LinearAdvection(self._a_const),
-            degree=1, n_element=self._n_element,
+            degree=0, n_element=self._n_element,
             x_min=0.0, x_max=np.pi*2)
         self._temporal = temporal.SspRungeKutta(3)
         self._delta_x = self._spatial.length() / self._n_element

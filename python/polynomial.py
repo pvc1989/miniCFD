@@ -46,9 +46,11 @@ class Lagrange(Polynomial):
 
     def __init__(self, n_point: int) -> None:
         super().__init__()
-        assert n_point >= 2
+        assert n_point >= 1
         self._n_point = n_point
         self._local_coords = np.linspace(-1.0, 1.0, n_point)
+        if n_point == 1:  # use the centroid rather than the left end
+            self._local_coords[0] = 0.0
 
     def get_function_value(self, x_local):
         values = np.zeros(self._n_point)
