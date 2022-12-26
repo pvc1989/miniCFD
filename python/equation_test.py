@@ -1,43 +1,50 @@
+"""Test various partial differential equations.
+"""
 import unittest
-
-import numpy as np
+from numpy.random import rand
 
 import equation
 
 
 class TestEquations(unittest.TestCase):
+    """Test methods for getting fluxes and Jacobians of various PDEs.
+    """
 
     def test_linear_advection(self):
-        a = 0.618
-        advection = equation.LinearAdvection(a_const=a)
-        U = 0.618
-        self.assertEqual(advection.F(U), a*U)
-        self.assertEqual(advection.A(U), a)
+        """Test methods of a LinearAdvection object."""
+        a_const = rand()
+        advection = equation.LinearAdvection(a_const)
+        unknown = rand()
+        self.assertEqual(advection.F(unknown), a_const*unknown)
+        self.assertEqual(advection.A(unknown), a_const)
 
     def test_inviscid_burgers(self):
+        """Test methods of an InviscidBurgers object."""
         burgers = equation.InviscidBurgers()
-        U = 0.618
-        self.assertEqual(burgers.F(U), U**2/2)
-        self.assertEqual(burgers.A(U), U)
+        unknown = rand()
+        self.assertEqual(burgers.F(unknown), unknown**2/2)
+        self.assertEqual(burgers.A(unknown), unknown)
 
     def test_linear_system(self):
-        A = np.eye(3)
-        system = equation.LinearSystem(A_const=A)
-        U = np.random.rand(3, 1)
-        self.assertEqual(system.F(U).all(), A.dot(U).all())
-        self.assertEqual(system.A(U).all(), A.all())
+        """Test methods of a LinearSystem object."""
+        a_const = rand(3, 3)
+        system = equation.LinearSystem(a_const)
+        unknown = rand(3, 1)
+        self.assertEqual(system.F(unknown).all(), a_const.dot(unknown).all())
+        self.assertEqual(system.A(unknown).all(), a_const.all())
 
     def test_euler_1d(self):
+        """Test methods of an Euler1d object."""
         euler = equation.Euler1d(gamma=1.4)
-        # If U is an array of ints, small number will be rounded to 0.
-        u_given, p_given, rho_given = 0, 0.01, 1
-        U = euler.u_p_rho_to_U(u=u_given, p=p_given, rho=rho_given)
-        u, p, rho = euler.U_to_u_p_rho(U)
-        self.assertEqual(u, u_given)
-        self.assertEqual(p, p_given)
-        self.assertEqual(rho, rho_given)
-        # test U-property
-        self.assertEqual(euler.A(U).dot(U).all(), euler.F(U).all())
+        # If unknown is an array of ints, small number will be rounded to 0.
+        u_given, p_given, rho_given = rand(), rand(), rand()
+        unknown = euler.u_p_rho_to_U(u_given, p_given, rho_given)
+        u_actual, p_actual, rho_actual = euler.U_to_u_p_rho(unknown)
+        self.assertEqual(u_actual, u_given)
+        self.assertEqual(p_actual, p_given)
+        self.assertEqual(rho_actual, rho_given)
+        # test unknown-property
+        self.assertEqual(euler.A(unknown).dot(unknown).all(), euler.F(unknown).all())
 
 
 if __name__ == '__main__':

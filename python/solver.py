@@ -1,7 +1,10 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-import equation, riemann, spatial, temporal
+import equation
+import riemann
+import spatial
+import temporal
 
 
 class RungeKuttaFluxReconstruction:

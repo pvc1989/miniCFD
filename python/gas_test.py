@@ -1,11 +1,17 @@
+"""Test various gas models.
+"""
 import unittest
 
 import gas
 
 
 class TestIdealGas(unittest.TestCase):
+    """Test the IdealGas class.
+    """
 
     def test_gamma(self):
+        """Test constants related to gamma.
+        """
         gamma = 1.4
         ideal = gas.Ideal(gamma=1.4)
         self.assertEqual(ideal.gamma(), gamma)

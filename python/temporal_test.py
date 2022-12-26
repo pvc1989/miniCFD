@@ -30,7 +30,7 @@ class Constant(OdeSystem):
 
     def initialize(self, function):
         pass
-        
+
 
 class TestExplicitEuler(unittest.TestCase):
     """Test the ExplicitEuler class.

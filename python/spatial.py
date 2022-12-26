@@ -80,7 +80,7 @@ class FluxReconstruction(OdeSystem):
             element = self._elements[i]
             upwind_flux_left = interface_flux[i]
             upwind_flux_right = interface_flux[i+1]
-            values = element.get_flux_gradients(
+            values = -element.get_flux_gradients(
                 upwind_flux_left, upwind_flux_right)
             column[i_dof:i_dof+len(values)] = values
             i_dof += len(values)

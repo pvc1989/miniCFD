@@ -5,7 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from spatial import FluxReconstruction
-import equation, riemann
+import equation
+import riemann
 
 class TestFluxReconstruction(unittest.TestCase):
     """Test the element for implement flux reconstruction schemes.
