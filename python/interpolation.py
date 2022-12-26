@@ -1,6 +1,7 @@
 """Implement some polynomial approximations for general functions.
 """
 import numpy as np
+from numpy.testing import assert_almost_equal
 
 from concept import Interpolation
 import polynomial
@@ -16,7 +17,7 @@ class Lagrange(Interpolation):
         assert n_point >= 1
         self._n_point = n_point
         if n_point > 1:
-            assert length == points[-1] - points[0]
+            assert_almost_equal(length, points[-1] - points[0])
         assert length > 0
         self._jacobian = length / 2.0  # linear coordinate transform
         self._basis = polynomial.Lagrange(n_point)

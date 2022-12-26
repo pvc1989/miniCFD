@@ -40,11 +40,11 @@ class TestEquations(unittest.TestCase):
         u_given, p_given, rho_given = rand(), rand(), rand()
         unknown = euler.u_p_rho_to_U(u_given, p_given, rho_given)
         u_actual, p_actual, rho_actual = euler.U_to_u_p_rho(unknown)
-        self.assertEqual(u_actual, u_given)
-        self.assertEqual(p_actual, p_given)
-        self.assertEqual(rho_actual, rho_given)
+        self.assertAlmostEqual(u_actual, u_given)
+        self.assertAlmostEqual(p_actual, p_given)
+        self.assertAlmostEqual(rho_actual, rho_given)
         # test unknown-property
-        self.assertEqual(euler.A(unknown).dot(unknown).all(), euler.F(unknown).all())
+        self.assertAlmostEqual(euler.A(unknown).dot(unknown).all(), euler.F(unknown).all())
 
 
 if __name__ == '__main__':
