@@ -10,8 +10,8 @@ class FluxReconstruction(OdeSystem):
     """The ODE system given by the FR spatial discretization.
     """
 
-    def __init__(self, x_min: float, x_max: float, n_element: int,
-            degree: int, equation, riemann) -> None:
+    def __init__(self, equation, riemann, degree: int,
+            n_element: int, x_min: float, x_max: float) -> None:
         super().__init__()
         assert x_min < x_max
         assert n_element > 1
@@ -34,6 +34,15 @@ class FluxReconstruction(OdeSystem):
 
     def x_left(self):
         return self._elements[0].x_left()
+
+    def x_right(self):
+        return self._elements[-1].x_right()
+
+    def length(self):
+        return self.x_right() - self.x_left()
+
+    def n_element(self):
+        return self._n_element
 
     def n_dof(self):
         return self._n_element * self._n_point_per_element

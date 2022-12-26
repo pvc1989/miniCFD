@@ -19,11 +19,10 @@ class TestFluxReconstruction(unittest.TestCase):
         self._n_element = 3
         self._degree = 1
         a_const = np.pi
-        self._spatial = FluxReconstruction(self._x_left, self._x_right,
-              self._n_element, self._degree,
-              equation.LinearAdvection(a_const),
-              riemann.LinearAdvection(a_const))
-
+        self._spatial = FluxReconstruction(
+            equation.LinearAdvection(a_const),
+            riemann.LinearAdvection(a_const),
+            self._degree, self._n_element, self._x_left, self._x_right)
 
     def test_plot(self):
         """Plot the curves of the approximate solution and the two fluxes.
