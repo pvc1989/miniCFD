@@ -25,14 +25,14 @@ class TestLinearAdvection(unittest.TestCase):
         U_L, U_R = rand(), rand()  # for any U_L, U_R
         # right running wave
         solver = riemann.LinearAdvection(a_const=+1)
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_L))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_L))
         # left running wave
         solver = riemann.LinearAdvection(a_const=-1)
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_R))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_R))
         # standing wave
         solver = riemann.LinearAdvection(a_const=0)
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_L))
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_R))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_L))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_R))
 
 
 class TestInviscidBurgers(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestInviscidBurgers(unittest.TestCase):
         self.assertIn(solver.U(x=1, t=1), (U_L, U_R))
         self.assertIn(solver.U(x=2, t=2), (U_L, U_R))
         # on t-axis
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_L))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_L))
 
     def test_left_running_shock(self):
         U_L, U_R = 0, -2
@@ -69,7 +69,7 @@ class TestInviscidBurgers(unittest.TestCase):
         self.assertIn(solver.U(x=-1, t=1), (U_L, U_R))
         self.assertIn(solver.U(x=-2, t=2), (U_L, U_R))
         # on t-axis
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_R))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_R))
 
     def test_standing_shock(self):
         U_L, U_R = +1, -1
@@ -86,8 +86,8 @@ class TestInviscidBurgers(unittest.TestCase):
         # on shock, where x == 0
         self.assertIn(solver.U(x=0, t=1), (U_L, U_R))
         self.assertIn(solver.U(x=0, t=2), (U_L, U_R))
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_L))
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_R))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_L))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_R))
 
     def test_rarefaction(self):
         U_L, U_R = -1, +1
@@ -106,13 +106,13 @@ class TestInviscidBurgers(unittest.TestCase):
         self.assertEqual(solver.U(x=+1, t=1), U_R)
         x, t = rand(), 1
         self.assertEqual(solver.U(x, t), x/t)
-        self.assertEqual(solver.F_upwind(U_L, U_R), 0)
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), 0)
 
     def test_smooth_initial_condition(self):
         U_L = rand()
         U_R = U_L
         solver = riemann.InviscidBurgers()
-        self.assertEqual(solver.F_upwind(U_L, U_R), solver.F(U_L))
+        self.assertEqual(solver.get_upwind_flux(U_L, U_R), solver.F(U_L))
         solver.set_initial(U_L, U_R)
         self.assertEqual(solver.U(x=-1, t=1), U_L)
         self.assertEqual(solver.U(x=+1, t=1), U_R)

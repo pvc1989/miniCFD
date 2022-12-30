@@ -75,13 +75,13 @@ class FluxReconstruction(OdeSystem):
             u_right= self._elements[i].get_solution_value(x_right)
             x_left = self._elements[i-1].x_right()
             u_left = self._elements[i-1].get_solution_value(x_left)
-            interface_flux[i] = self._riemann.F_upwind(u_left, u_right)
+            interface_flux[i] = self._riemann.get_upwind_flux(u_left, u_right)
         # periodic boundary condtion
         x_right = self._elements[0].x_left()
         u_right = self._elements[0].get_solution_value(x_right)
         x_left = self._elements[-1].x_right()
         u_left = self._elements[-1].get_solution_value(x_left)
-        interface_flux[0] = self._riemann.F_upwind(u_left, u_right)
+        interface_flux[0] = self._riemann.get_upwind_flux(u_left, u_right)
         interface_flux[-1] = interface_flux[0]
         # evaluate flux gradients
         i_dof = 0
@@ -121,14 +121,14 @@ class FluxReconstruction(OdeSystem):
         prev = curr - 1
         x_left = self._elements[prev].x_right()
         u_left = self._elements[prev].get_solution_value(x_left)
-        upwind_flux_left = self._riemann.F_upwind(u_left, u_right)
+        upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
         # solve riemann problem at the right end of curr element
         x_left = self._elements[curr].x_right()
         u_left = self._elements[curr].get_solution_value(x_left)
         next = (curr + 1) % self._n_element
         x_right = self._elements[next].x_left()
         u_right = self._elements[next].get_solution_value(x_right)
-        upwind_flux_right = self._riemann.F_upwind(u_left, u_right)
+        upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
         return self._elements[curr].get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
 
