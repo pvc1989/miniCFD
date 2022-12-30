@@ -10,7 +10,7 @@ import temporal
 class RungeKuttaFluxReconstruction:
 
     def __init__(self) -> None:
-        self._n_element = 5
+        self._n_element = 4
         self._a_const = 10.0
         self._spatial = spatial.FluxReconstruction(
             equation.LinearAdvection(self._a_const),
@@ -27,7 +27,7 @@ class RungeKuttaFluxReconstruction:
         for i in range(n_point):
             point_i = points[i]
             approx_solution[i] = self._spatial.get_solution_value(point_i)
-            expect_solution[i] = exact(point_i)
+            expect_solution[i] = exact(point_i, t_curr)
         plt.clf()
         plt.plot(points, expect_solution, 'r--', label='Exact Solution')
         plt.plot(points, approx_solution, 'b.', label='Approximate Solution')
@@ -40,7 +40,7 @@ class RungeKuttaFluxReconstruction:
         plt.show()
 
     def run(self):
-        cfl_number = 0.05  # a * dt / dx
+        cfl_number = 0.1  # a * dt / dx
         t_start = 0.0
         t_stop = 1.0
         delta_t = cfl_number * self._delta_x / self._a_const
@@ -49,20 +49,14 @@ class RungeKuttaFluxReconstruction:
         delta_t = (t_stop - t_start) / n_step
         print(f"delta_t == {delta_t}")
         def u_init(x_global):
-            return np.sin(x_global * np.pi * 2 / self._spatial.length())
+            value = np.sin(x_global * np.pi * 2 / self._spatial.length())
+            return value  # np.sign(value)
+        def u_exact(x_global, t_curr):
+            return u_init(x_global - self._a_const * t_curr)
+        def plot(t_curr):
+            self.plot(u_exact, t_curr, n_point=101)
         self._spatial.initialize(u_init)
-        plt.figure()
-        self.plot(exact=u_init, t_curr=0.0, n_point=101)
-        plot_steps = range(0, n_step+1, n_step//4)
-        for i_step in range(1, n_step + 1):
-            t_curr = t_start + i_step * delta_t
-            self._temporal.update(self._spatial, delta_t)
-            if i_step not in plot_steps:
-                continue
-            print(f'step {i_step}, t = {t_curr}')
-            def u_exact(point):
-                return u_init(point - self._a_const * t_curr)
-            self.plot(u_exact, t_curr, 101)
+        self._temporal.solve(self._spatial, plot, t_start, t_stop, delta_t)
 
 
 if __name__ == '__main__':

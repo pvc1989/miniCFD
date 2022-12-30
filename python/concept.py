@@ -1,6 +1,7 @@
 """Define the abstract interfaces that must be defined in concrete implementations.
 """
 import abc
+import numpy as np
 
 
 class Polynomial(abc.ABC):
@@ -112,6 +113,21 @@ class TemporalScheme(abc.ABC):
     def update(self, ode_system: OdeSystem, delta_t: float):
         """Update the given OdeSystem object to the next time step.
         """
+
+    def solve(self, ode_system: OdeSystem, plot: callable,
+            t_start: float, t_stop: float, delta_t: float):
+        """Solve the OdeSystem in a given time range.
+        """
+        n_step = int(np.ceil((t_stop - t_start) / delta_t))
+        delta_t = (t_stop - t_start) / n_step
+        plot_steps = n_step // 4
+        for i_step in range(n_step + 1):
+            t_curr = t_start + i_step * delta_t
+            if i_step % plot_steps == 0:
+                print(f'step {i_step}, t = {t_curr}')
+                plot(t_curr)
+            if i_step < n_step:
+                self.update(ode_system, delta_t)
 
 
 if __name__ == '__main__':
