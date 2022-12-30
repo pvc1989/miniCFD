@@ -59,7 +59,7 @@ class TestFluxReconstruction(unittest.TestCase):
             flux_actual = self._element.get_discontinuous_flux(x_global)
             # discontinuous_flux = a * u
             u_approx = self._element.get_solution_value(x_global)
-            flux_expect = self._equation.F(u_approx)
+            flux_expect = self._equation.get_convective_flux(u_approx)
             self.assertAlmostEqual(flux_expect, flux_actual)
 
     def test_get_continuous_flux(self):

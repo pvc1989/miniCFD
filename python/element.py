@@ -46,7 +46,7 @@ class FluxReconstruction(Element):
         n_point = self._degree + 1
         flux_values = np.zeros(n_point)
         for i in range(n_point):
-            flux_values[i] = self._equation.F(coeff[i])
+            flux_values[i] = self._equation.get_convective_flux(coeff[i])
         self._flux_lagrange.set_coeff(flux_values)
 
     def get_solution_column(self):

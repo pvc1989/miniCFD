@@ -9,11 +9,11 @@ class ConservationLaw(abc.ABC):
     # \pdv{U}{t} + \pdv{F}{x} = 0
 
     @abc.abstractmethod
-    def F(self, U):
+    def get_convective_flux(self, U):
         pass
 
     @abc.abstractmethod
-    def A(self, U):
+    def get_convective_jacobian(self, U):
         # A := \pdv{F}{U}
         pass
 
@@ -23,10 +23,10 @@ class LinearAdvection(ConservationLaw):
     def __init__(self, a_const):
         self._a = a_const
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         return self._a * U
 
-    def A(self, U):
+    def get_convective_jacobian(self, U):
         return self._a
 
 
@@ -35,10 +35,10 @@ class InviscidBurgers(ConservationLaw):
     def __init__(self):
         pass
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         return U**2 / 2
 
-    def A(self, U):
+    def get_convective_jacobian(self, U):
         return U
 
 
@@ -48,10 +48,10 @@ class LinearSystem(ConservationLaw):
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         return self._A.dot(U)
 
-    def A(self, U):
+    def get_convective_jacobian(self, U):
         return self._A
 
 
@@ -77,14 +77,14 @@ class Euler1d(ConservationLaw):
         # print(U, '->', u, p, rho)
         return u, p, rho
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         u, p, rho = self.U_to_u_p_rho(U)
         F = U * u
         F[1] += p
         F[2] += p*u
         return F
 
-    def A(self, U):
+    def get_convective_jacobian(self, U):
         A = np.zeros((3, 3))
         A[0][1] = 1.0
         u = U[1] / U[0]

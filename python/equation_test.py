@@ -15,23 +15,23 @@ class TestEquations(unittest.TestCase):
         a_const = rand()
         advection = equation.LinearAdvection(a_const)
         unknown = rand()
-        self.assertEqual(advection.F(unknown), a_const*unknown)
-        self.assertEqual(advection.A(unknown), a_const)
+        self.assertEqual(advection.get_convective_flux(unknown), a_const*unknown)
+        self.assertEqual(advection.get_convective_jacobian(unknown), a_const)
 
     def test_inviscid_burgers(self):
         """Test methods of an InviscidBurgers object."""
         burgers = equation.InviscidBurgers()
         unknown = rand()
-        self.assertEqual(burgers.F(unknown), unknown**2/2)
-        self.assertEqual(burgers.A(unknown), unknown)
+        self.assertEqual(burgers.get_convective_flux(unknown), unknown**2/2)
+        self.assertEqual(burgers.get_convective_jacobian(unknown), unknown)
 
     def test_linear_system(self):
         """Test methods of a LinearSystem object."""
         a_const = rand(3, 3)
         system = equation.LinearSystem(a_const)
         unknown = rand(3, 1)
-        self.assertEqual(system.F(unknown).all(), a_const.dot(unknown).all())
-        self.assertEqual(system.A(unknown).all(), a_const.all())
+        self.assertEqual(system.get_convective_flux(unknown).all(), a_const.dot(unknown).all())
+        self.assertEqual(system.get_convective_jacobian(unknown).all(), a_const.all())
 
     def test_euler_1d(self):
         """Test methods of an Euler1d object."""
@@ -44,7 +44,8 @@ class TestEquations(unittest.TestCase):
         self.assertAlmostEqual(p_actual, p_given)
         self.assertAlmostEqual(rho_actual, rho_given)
         # test unknown-property
-        self.assertAlmostEqual(euler.A(unknown).dot(unknown).all(), euler.F(unknown).all())
+        self.assertAlmostEqual(euler.get_convective_flux(unknown).all(),
+            euler.get_convective_jacobian(unknown).dot(unknown).all())
 
 
 if __name__ == '__main__':

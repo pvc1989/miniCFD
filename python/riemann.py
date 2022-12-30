@@ -38,7 +38,7 @@ class RiemannSolver(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def F(self, U):
+    def get_convective_flux(self, U):
         pass
 
     def get_upwind_flux(self, U_L, U_R):
@@ -47,7 +47,7 @@ class RiemannSolver(abc.ABC):
         # Actually, U(x=0, t=1) returns either U(x=-0, t=1) or U(x=+0, t=1).
         # If the speed of a shock is 0, then U(x=-0, t=1) != U(x=+0, t=1).
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
-        return self.F(U_on_t_axis)
+        return self.get_convective_flux(U_on_t_axis)
 
 
 class LinearAdvection(RiemannSolver):
@@ -66,7 +66,7 @@ class LinearAdvection(RiemannSolver):
             U = self._U_R
         return U
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         return U * self._a
 
 
@@ -93,7 +93,7 @@ class InviscidBurgers(RiemannSolver):
         else:  # v_L < v < v_R
             return v
 
-    def F(self, U):
+    def get_convective_flux(self, U):
         return U**2 / 2
 
 
@@ -103,8 +103,8 @@ class Euler(RiemannSolver):
         self._gas = gas.Ideal(gamma)
         self._equation = equation.Euler1d(gamma)
 
-    def F(self, U):
-        return self._equation.F(U)
+    def get_convective_flux(self, U):
+        return self._equation.get_convective_flux(U)
 
     def _determine_wave_structure(self):
         # set states in unaffected regions
