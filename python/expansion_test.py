@@ -1,10 +1,10 @@
-"""Tests for some interpolations.
+"""Tests for some expansions.
 """
 import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from interpolation import Lagrange
+from expansion import Lagrange
 
 
 class TestLagrange(unittest.TestCase):
@@ -43,7 +43,7 @@ class TestLagrange(unittest.TestCase):
         plt.plot(points, approx_values, 'b-', label= 'Lagrange')
         plt.legend()
         # plt.show()
-        plt.savefig("lagrange_interpolation.pdf")
+        plt.savefig("lagrange_expansion.pdf")
 
     def test_values_at_sample_points(self):
         """Test values at sample points.

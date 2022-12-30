@@ -3,12 +3,12 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from concept import Interpolation
+from concept import Expansion
 import polynomial
 
 
-class Lagrange(Interpolation):
-    """The Lagrange interpolation of a general function.
+class Lagrange(Expansion):
+    """The Lagrange expansion of a general function.
     """
 
     def __init__(self, points, length: float) -> None:

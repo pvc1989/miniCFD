@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from element import FluxReconstruction
 from equation import LinearAdvection
 from polynomial import Radau
-from interpolation import Lagrange
+from expansion import Lagrange
 
 
 class TestFluxReconstruction(unittest.TestCase):

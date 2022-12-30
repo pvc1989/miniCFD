@@ -3,7 +3,7 @@
 import numpy as np
 
 from concept import Element
-from interpolation import Lagrange
+from expansion import Lagrange
 from polynomial import Radau
 
 
