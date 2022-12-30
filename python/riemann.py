@@ -185,8 +185,7 @@ class Euler(RiemannSolver):
             self._rho_2_R = rho_2
             self._v_3_L = v_L
             self._v_3_R = v_R
-        print('p2 = {0:5f}, u2 = {1:5f}, rho2L = {2:5f}, rho2R = {3:5f}'.format(
-            self._p_2, self._u_2, self._rho_2_L, self._rho_2_R))
+        print(f'p2 = {self._p_2:5f}, u2 = {self._u_2:5f}, rho2L = {self._rho_2_L:5f}, rho2R = {self._rho_2_R:5f}')
 
     def _exist_vacuum(self):
         exist = False

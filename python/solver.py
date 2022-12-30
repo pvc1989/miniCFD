@@ -32,7 +32,7 @@ class RungeKuttaFluxReconstruction:
         plt.plot(points, expect_solution, 'r--', label='Exact Solution')
         plt.plot(points, approx_solution, 'b.', label='Approximate Solution')
         plt.ylim([-1.1, 1.1])
-        plt.title('t = {0:.2f}'.format(t_curr))
+        plt.title(f't = {t_curr:.2f}')
         plt.legend()
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._n_element + 1))
