@@ -2,35 +2,21 @@
 """
 import numpy as np
 
-from concept import SpatialDiscretization, Equation, RiemannSolver
+from concept import SpatialDiscretization, Element, Equation, RiemannSolver
 import element
 
 
-class FluxReconstruction(SpatialDiscretization):
-    """The ODE system given by the FR spatial discretization.
+class PiecewiseContinuous(SpatialDiscretization):
+    """The base of all piecewise continuous schemes.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_min: float, x_max: float) -> None:
+    def __init__(self, n_element: int, x_min: float, x_max: float) -> None:
         super().__init__()
         assert x_min < x_max
         assert n_element > 1
-        assert degree >= 0
-        self._equation = equation
-        self._riemann = riemann
         self._n_element = n_element
-        self._n_point_per_element = degree + 1
-        self._elements = []
-        delta_x = (x_max - x_min) / n_element
-        self._delta_x = delta_x
-        x_left = x_min
-        for i_element in range(n_element):
-            assert x_left == x_min + i_element * delta_x
-            x_right = x_left + delta_x
-            self._elements.append(element.FluxReconstruction(
-                  equation, degree, x_left, x_right))
-            x_left = x_right
-        assert x_left == x_max
+        self._delta_x = (x_max - x_min) / n_element
+        self._elements = np.ndarray(n_element, Element)
 
     def x_left(self):
         return self._elements[0].x_left()
@@ -45,13 +31,26 @@ class FluxReconstruction(SpatialDiscretization):
         return self._n_element
 
     def n_dof(self):
-        return self._n_element * self._n_point_per_element
+        return self.n_element() * self._elements[0].n_dof()
+
+    def get_element_index(self, point):
+        i_element = int((point - self.x_left()) / self._delta_x)
+        if i_element == self._n_element:
+            i_element -= 1
+        return i_element
+
+    def get_element(self, point):
+        return self._elements[self.get_element_index(point)]
+
+    def get_solution_value(self, point):
+        element = self.get_element(point)
+        return element.get_solution_value(point)
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
         first = 0
         for element in self._elements:
-            last = first + self._n_point_per_element
+            last = first + element.n_dof()
             element.set_solution_coeff(column[first:last])
             first = last
         assert first == self.n_dof()
@@ -60,11 +59,35 @@ class FluxReconstruction(SpatialDiscretization):
         column = np.zeros(self.n_dof())
         first = 0
         for element in self._elements:
-            last = first + self._n_point_per_element
+            last = first + element.n_dof()
             column[first:last] = element.get_solution_column()
             first = last
         assert first == self.n_dof()
         return column
+
+    def initialize(self, function: callable):
+        for element in self._elements:
+            element.approximate(function)
+
+
+class FluxReconstruction(PiecewiseContinuous):
+    """The ODE system given by the FR spatial discretization.
+    """
+
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
+            degree: int, n_element: int, x_min: float, x_max: float) -> None:
+        super().__init__(n_element, x_min, x_max)
+        assert degree >= 0
+        self._equation = equation
+        self._riemann = riemann
+        x_left = x_min
+        for i_element in range(n_element):
+            assert x_left == x_min + i_element * self._delta_x
+            x_right = x_left + self._delta_x
+            self._elements[i_element] = element.FluxReconstruction(
+                  equation, degree, x_left, x_right)
+            x_left = x_right
+        assert x_left == x_max
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
@@ -96,19 +119,6 @@ class FluxReconstruction(SpatialDiscretization):
         assert i_dof == self.n_dof()
         return column
 
-    def get_element_index(self, point):
-        i_element = int((point - self.x_left()) / self._delta_x)
-        if i_element == self._n_element:
-            i_element -= 1
-        return i_element
-
-    def get_element(self, point):
-        return self._elements[self.get_element_index(point)]
-
-    def get_solution_value(self, point):
-        element = self.get_element(point)
-        return element.get_solution_value(point)
-
     def get_discontinuous_flux(self, point):
         element = self.get_element(point)
         return element.get_discontinuous_flux(point)
@@ -131,10 +141,6 @@ class FluxReconstruction(SpatialDiscretization):
         upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
         return self._elements[curr].get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
-
-    def initialize(self, function: callable):
-        for element in self._elements:
-            element.approximate(function)
 
 
 if __name__ == '__main__':

@@ -54,6 +54,11 @@ class Element(abc.ABC):
     """
 
     @abc.abstractmethod
+    def n_dof(self):
+        """Count degrees of freedom in current object.
+        """
+
+    @abc.abstractmethod
     def approximate(self, function: callable):
         """Approximate a general function as U_h.
         """
@@ -163,6 +168,11 @@ class TemporalScheme(abc.ABC):
 class SpatialDiscretization(OdeSystem):
     """An ODE system given by some spatial discretization.
     """
+
+    @abc.abstractmethod
+    def n_dof(self):
+        """Count degrees of freedom in current object.
+        """
 
     @abc.abstractmethod
     def initialize(self, function: callable):

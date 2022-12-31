@@ -14,19 +14,22 @@ class FluxReconstruction(Element):
     def __init__(self, equation: Equation, degree: int,
             x_min: float, x_max: float) -> None:
         self._equation = equation
-        self._degree = degree
+        self._n_point = degree + 1
         self._boundaries = (x_min, x_max)
         length = x_max - x_min
         self._coord_lagrange = Lagrange(np.linspace(x_min, x_max, degree + 1), length)
         # Sample points evenly distributed in the element.
         delta = (self.x_right() - self.x_left()) / 10
         length -= delta * 2
-        self._solution_points = np.linspace(x_min + delta, x_max - delta, degree + 1)
+        self._solution_points = np.linspace(x_min + delta, x_max - delta, self._n_point)
         if degree == 0:
             self._solution_points[0] = (x_min + x_max) / 2
         self._solution_lagrange = Lagrange(self._solution_points, length)
         self._flux_lagrange = Lagrange(self._solution_points, length)
         self._radau = Radau(degree + 1)
+
+    def n_dof(self):
+        return self._n_point
 
     def x_left(self):
         return self._boundaries[0]
@@ -35,18 +38,16 @@ class FluxReconstruction(Element):
         return self._boundaries[-1]
 
     def approximate(self, function):
-        n_point = self._degree + 1
-        coeff = np.ndarray(n_point)
-        for i in range(n_point):
+        coeff = np.ndarray(self._n_point)
+        for i in range(self._n_point):
             coeff[i] = function(self._solution_points[i])
         self.set_solution_coeff(coeff)
 
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)
         # update the corresponding fluxes
-        n_point = self._degree + 1
-        flux_values = np.zeros(n_point)
-        for i in range(n_point):
+        flux_values = np.zeros(self._n_point)
+        for i in range(self._n_point):
             flux_values[i] = self._equation.get_convective_flux(coeff[i])
         self._flux_lagrange.set_coeff(flux_values)
 
