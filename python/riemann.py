@@ -3,11 +3,12 @@ import abc
 import numpy as np
 from scipy.optimize import fsolve
 
+import concept
 import equation
 import gas
 
 
-class RiemannSolver(abc.ABC):
+class Solver(concept.RiemannSolver):
 
     def set_initial(self, U_L, U_R):
         self._U_L = U_L
@@ -37,10 +38,6 @@ class RiemannSolver(abc.ABC):
         # return the self-similar solution
         pass
 
-    @abc.abstractmethod
-    def get_convective_flux(self, U):
-        pass
-
     def get_upwind_flux(self, U_L, U_R):
         self.set_initial(U_L=U_L, U_R=U_R)
         U_on_t_axis = self.U(x=0, t=1)
@@ -50,7 +47,7 @@ class RiemannSolver(abc.ABC):
         return self.get_convective_flux(U_on_t_axis)
 
 
-class LinearAdvection(RiemannSolver):
+class LinearAdvection(Solver):
 
     def __init__(self, a_const):
         self._a = a_const
@@ -70,7 +67,7 @@ class LinearAdvection(RiemannSolver):
         return U * self._a
 
 
-class InviscidBurgers(RiemannSolver):
+class InviscidBurgers(Solver):
 
     def __init__(self):
         self._equation = equation.InviscidBurgers()
@@ -97,7 +94,7 @@ class InviscidBurgers(RiemannSolver):
         return U**2 / 2
 
 
-class Euler(RiemannSolver):
+class Euler(Solver):
 
     def __init__(self, gamma=1.4):
         self._gas = gas.Ideal(gamma)

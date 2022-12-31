@@ -2,20 +2,18 @@ import abc
 
 import numpy as np
 
+import concept
 import gas
 
 
-class ConservationLaw(abc.ABC):
+class ConservationLaw(concept.Equation):
     # \pdv{U}{t} + \pdv{F}{x} = 0
 
-    @abc.abstractmethod
-    def get_convective_flux(self, U):
-        pass
+    def get_diffusive_flux(self, u):
+        return u * 0
 
-    @abc.abstractmethod
-    def get_convective_jacobian(self, U):
-        # A := \pdv{F}{U}
-        pass
+    def get_source(self, u):
+        return u * 0
 
 
 class LinearAdvection(ConservationLaw):

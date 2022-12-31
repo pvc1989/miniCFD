@@ -78,6 +78,41 @@ class Element(abc.ABC):
         """
 
 
+class Equation(abc.ABC):
+    """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
+    """
+
+    @abc.abstractmethod
+    def get_convective_flux(self, u_given):
+        """Get the value of F(U) for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_convective_jacobian(self, u_given):
+        """Get the value of ∂F(U)/∂U for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_diffusive_flux(self, u_given):
+        """Get the value of G(U) for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_source(self, u_given):
+        """Get the value of H(U) for a given U.
+        """
+
+
+class RiemannSolver(abc.ABC):
+    """An exact or approximate solver for the Riemann problem of a conservation law.
+    """
+
+    @abc.abstractmethod
+    def get_upwind_flux(self, u_left, u_right):
+        """Get the solution of a Riemann problem.
+        """
+
+
 class OdeSystem(abc.ABC):
     """The ODE system given by some spatial discretization.
     """

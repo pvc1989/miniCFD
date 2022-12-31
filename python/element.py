@@ -2,7 +2,7 @@
 """
 import numpy as np
 
-from concept import Element
+from concept import Element, Equation
 from expansion import Lagrange
 from polynomial import Radau
 
@@ -11,7 +11,8 @@ class FluxReconstruction(Element):
     """Element for implement flux reconstruction schemes.
     """
 
-    def __init__(self, equation, degree: int, x_min: float, x_max: float) -> None:
+    def __init__(self, equation: Equation, degree: int,
+            x_min: float, x_max: float) -> None:
         self._equation = equation
         self._degree = degree
         self._boundaries = (x_min, x_max)

@@ -2,7 +2,7 @@
 """
 import numpy as np
 
-from concept import OdeSystem
+from concept import OdeSystem, Equation, RiemannSolver
 import element
 
 
@@ -10,8 +10,8 @@ class FluxReconstruction(OdeSystem):
     """The ODE system given by the FR spatial discretization.
     """
 
-    def __init__(self, equation, riemann, degree: int,
-            n_element: int, x_min: float, x_max: float) -> None:
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
+            degree: int, n_element: int, x_min: float, x_max: float) -> None:
         super().__init__()
         assert x_min < x_max
         assert n_element > 1
