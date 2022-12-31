@@ -114,13 +114,8 @@ class RiemannSolver(abc.ABC):
 
 
 class OdeSystem(abc.ABC):
-    """The ODE system given by some spatial discretization.
+    """A system of ordinary differential equations.
     """
-
-    @abc.abstractmethod
-    def initialize(self, function: callable):
-        """Set the initial condition.
-        """
 
     @abc.abstractmethod
     def set_solution_column(self, column):
@@ -163,6 +158,16 @@ class TemporalScheme(abc.ABC):
                 plot(t_curr)
             if i_step < n_step:
                 self.update(ode_system, delta_t)
+
+
+class SpatialDiscretization(OdeSystem):
+    """An ODE system given by some spatial discretization.
+    """
+
+    @abc.abstractmethod
+    def initialize(self, function: callable):
+        """Set the initial condition.
+        """
 
 
 if __name__ == '__main__':

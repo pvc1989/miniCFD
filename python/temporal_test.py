@@ -28,9 +28,6 @@ class Constant(OdeSystem):
         residual = self._a.dot(self._u)
         return residual
 
-    def initialize(self, function):
-        pass
-
 
 class TestExplicitEuler(unittest.TestCase):
     """Test the ExplicitEuler class.

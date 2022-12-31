@@ -2,11 +2,11 @@
 """
 import numpy as np
 
-from concept import OdeSystem, Equation, RiemannSolver
+from concept import SpatialDiscretization, Equation, RiemannSolver
 import element
 
 
-class FluxReconstruction(OdeSystem):
+class FluxReconstruction(SpatialDiscretization):
     """The ODE system given by the FR spatial discretization.
     """
 
