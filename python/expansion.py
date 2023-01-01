@@ -59,9 +59,13 @@ class Lagrange(Expansion):
         for i in range(self._n_point):
             self._sample_values[i] = function(self._global_coords[i])
 
-    def get_function_value(self, x_global):
+    def get_basis_values(self, x_global):
         x_local = self.global_to_local(x_global)
         values = self._basis.get_function_value(x_local)
+        return values
+
+    def get_function_value(self, x_global):
+        values = self.get_basis_values(x_global)
         value = values.dot(self._sample_values)
         return value
 

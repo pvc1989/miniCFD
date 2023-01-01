@@ -29,12 +29,17 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_function_value(self, x_global):
+    def get_basis_values(self, x_global: float):
+        """Get the values of basis at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_function_value(self, x_global: float):
         """Evaluate the approximation and return-by-value the result.
         """
 
     @abc.abstractmethod
-    def get_gradient_value(self, x_global):
+    def get_gradient_value(self, x_global: float):
         """Evaluate the gradient of the approximation and return-by-value the result.
         """
 
@@ -61,6 +66,11 @@ class Element(abc.ABC):
     @abc.abstractmethod
     def approximate(self, function: callable):
         """Approximate a general function as U_h.
+        """
+
+    @abc.abstractmethod
+    def get_basis_values(self, x_global: float):
+        """Get the values of basis at a given point.
         """
 
     @abc.abstractmethod

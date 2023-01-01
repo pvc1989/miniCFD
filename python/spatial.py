@@ -89,8 +89,7 @@ class LagrangeFR(PiecewiseContinuous):
             x_left = x_right
         assert x_left == x_max
 
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof())
+    def _get_interface_flux(self):
         interface_flux = np.ndarray(self._n_element + 1)
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self._n_element):
@@ -106,6 +105,11 @@ class LagrangeFR(PiecewiseContinuous):
         u_left = self._elements[-1].get_solution_value(x_left)
         interface_flux[0] = self._riemann.get_upwind_flux(u_left, u_right)
         interface_flux[-1] = interface_flux[0]
+        return interface_flux
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof())
+        interface_flux = self._get_interface_flux()
         # evaluate flux gradients
         i_dof = 0
         for i in range(self._n_element):

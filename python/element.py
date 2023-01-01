@@ -43,6 +43,9 @@ class LagrangeFR(Element):
             coeff[i] = function(self._solution_points[i])
         self.set_solution_coeff(coeff)
 
+    def get_basis_values(self, x_global):
+        return self._solution_lagrange.get_basis_values(x_global)
+
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)
         # update the corresponding fluxes
