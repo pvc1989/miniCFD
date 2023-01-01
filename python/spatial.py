@@ -1,6 +1,7 @@
 """Concrete implementations of spatial schemes.
 """
 import numpy as np
+from scipy import integrate
 
 from concept import SpatialDiscretization, Element, Equation, RiemannSolver
 import element
@@ -145,6 +146,59 @@ class LagrangeFR(PiecewiseContinuous):
         upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
         return self._elements[curr].get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
+
+
+class DGwithLagrangeFR(LagrangeFR):
+    """A DG scheme built upon LagrangeFR.
+    """
+
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
+            degree: int, n_element: int, x_min: float, x_max: float) -> None:
+        super().__init__(equation, riemann, degree, n_element, x_min, x_max)
+        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
+        for i in range(n_element):
+            element = self._elements[i]
+            n_dof = element.n_dof()
+            def integrand(points):
+                n_row = n_dof**2
+                n_col = len(points)
+                values = np.ndarray((n_row, n_col))
+                for c in range(n_col):
+                    column = element.get_basis_values(points[c])
+                    matrix = np.tensordot(column, column, axes=0)
+                    values[:,c] = matrix.reshape(n_row)
+                return values
+            local_mass_matrix, _ = integrate.fixed_quad(
+                integrand, element.x_left(), element.x_right(), n=5)
+            self._local_mass_matrices[i] = local_mass_matrix.reshape(n_dof, n_dof)
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof())
+        interface_flux = self._get_interface_flux()
+        i_dof = 0
+        for i in range(self._n_element):
+            element = self._elements[i]
+            n_dof = element.n_dof()
+            # build element_i's residual column
+            upwind_flux_left = interface_flux[i]
+            upwind_flux_right = interface_flux[i+1]
+            def integrand(points):
+                n_row = n_dof
+                n_col = len(points)
+                values = np.ndarray((n_row, n_col))
+                for c in range(n_col):
+                    column = element.get_basis_values(points[c])
+                    gradient = element.get_flux_gradient(points[c],
+                        upwind_flux_left, upwind_flux_right)
+                    values[:,c] = -column * gradient
+                return values
+            values, _ = integrate.fixed_quad(
+                integrand, element.x_left(), element.x_right())
+            values = np.linalg.solve(self._local_mass_matrices[i], values)
+            column[i_dof:i_dof+n_dof] = values
+            i_dof += n_dof
+        assert i_dof == self.n_dof()
+        return column
 
 
 if __name__ == '__main__':

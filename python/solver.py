@@ -7,12 +7,12 @@ import spatial
 import temporal
 
 
-class RungeKuttaLagrangeFR:
+class Solver:
 
     def __init__(self) -> None:
         self._n_element = 4
         self._a_const = 10.0
-        self._spatial = spatial.LagrangeFR(
+        self._spatial = spatial.DGwithLagrangeFR(
             equation.LinearAdvection(self._a_const),
             riemann.LinearAdvection(self._a_const),
             degree=2, n_element=self._n_element,
@@ -60,5 +60,5 @@ class RungeKuttaLagrangeFR:
 
 
 if __name__ == '__main__':
-    solver = RungeKuttaLagrangeFR()
+    solver = Solver()
     solver.run()
