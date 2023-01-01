@@ -7,7 +7,7 @@ from expansion import Lagrange
 from polynomial import Radau
 
 
-class FluxReconstruction(Element):
+class LagrangeFR(Element):
     """Element for implement flux reconstruction schemes.
     """
 

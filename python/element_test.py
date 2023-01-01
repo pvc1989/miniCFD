@@ -4,13 +4,13 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from element import FluxReconstruction
+from element import LagrangeFR
 from equation import LinearAdvection
 from polynomial import Radau
 from expansion import Lagrange
 
 
-class TestFluxReconstruction(unittest.TestCase):
+class TestLagrangeFR(unittest.TestCase):
     """Test the element for implement flux reconstruction schemes.
     """
 
@@ -22,7 +22,7 @@ class TestFluxReconstruction(unittest.TestCase):
         self._x_right = np.pi * 2
         self._length = self._x_right - self._x_left
         self._test_points = np.linspace(self._x_left, self._x_right)
-        self._element = FluxReconstruction(self._equation, self._degree,
+        self._element = LagrangeFR(self._equation, self._degree,
             self._x_left, self._x_right)
         self._element.approximate(np.sin)
 

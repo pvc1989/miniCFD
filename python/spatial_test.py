@@ -4,11 +4,11 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from spatial import FluxReconstruction
+from spatial import LagrangeFR
 import equation
 import riemann
 
-class TestFluxReconstruction(unittest.TestCase):
+class TestLagrangeFR(unittest.TestCase):
     """Test the element for implement flux reconstruction schemes.
     """
 
@@ -19,7 +19,7 @@ class TestFluxReconstruction(unittest.TestCase):
         self._n_element = 3
         self._degree = 1
         a_const = np.pi
-        self._spatial = FluxReconstruction(
+        self._spatial = LagrangeFR(
             equation.LinearAdvection(a_const),
             riemann.LinearAdvection(a_const),
             self._degree, self._n_element, self._x_left, self._x_right)

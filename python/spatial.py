@@ -70,8 +70,8 @@ class PiecewiseContinuous(SpatialDiscretization):
             element.approximate(function)
 
 
-class FluxReconstruction(PiecewiseContinuous):
-    """The ODE system given by the FR spatial discretization.
+class LagrangeFR(PiecewiseContinuous):
+    """The ODE system given by Huyhn's FR method.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
@@ -84,7 +84,7 @@ class FluxReconstruction(PiecewiseContinuous):
         for i_element in range(n_element):
             assert x_left == x_min + i_element * self._delta_x
             x_right = x_left + self._delta_x
-            self._elements[i_element] = element.FluxReconstruction(
+            self._elements[i_element] = element.LagrangeFR(
                   equation, degree, x_left, x_right)
             x_left = x_right
         assert x_left == x_max

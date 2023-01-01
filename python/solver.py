@@ -7,12 +7,12 @@ import spatial
 import temporal
 
 
-class RungeKuttaFluxReconstruction:
+class RungeKuttaLagrangeFR:
 
     def __init__(self) -> None:
         self._n_element = 4
         self._a_const = 10.0
-        self._spatial = spatial.FluxReconstruction(
+        self._spatial = spatial.LagrangeFR(
             equation.LinearAdvection(self._a_const),
             riemann.LinearAdvection(self._a_const),
             degree=2, n_element=self._n_element,
@@ -60,5 +60,5 @@ class RungeKuttaFluxReconstruction:
 
 
 if __name__ == '__main__':
-    solver = RungeKuttaFluxReconstruction()
+    solver = RungeKuttaLagrangeFR()
     solver.run()
