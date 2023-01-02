@@ -63,6 +63,19 @@ class Element(abc.ABC):
     """One-dimensional Element for spatial discretization.
     """
 
+    def __init__(self, x_left: float, x_right: float) -> None:
+        self._boundaries = (x_left, x_right)
+
+    def x_left(self):
+        """Get the coordinate of this eleement's left boundary.
+        """
+        return self._boundaries[0]
+
+    def x_right(self):
+        """Get the coordinate of this eleement's right boundary.
+        """
+        return self._boundaries[1]
+
     @abc.abstractmethod
     def degree(self):
         """The highest degree of the approximated solution.
@@ -188,6 +201,40 @@ class TemporalScheme(abc.ABC):
 class SpatialDiscretization(OdeSystem):
     """An ODE system given by some spatial discretization.
     """
+
+    def __init__(self, n_element: int, x_left: float, x_right: float) -> None:
+        assert x_left < x_right
+        assert n_element > 1
+        self._n_element = n_element
+        self._delta_x = (x_right - x_left) / n_element
+        self._elements = np.ndarray(n_element, Element)
+
+    def x_left(self):
+        """Get the coordinate of this object's left boundary.
+        """
+        return self._elements[0].x_left()
+
+    def x_right(self):
+        """Get the coordinate of this object's right boundary.
+        """
+        return self._elements[-1].x_right()
+
+    def length(self):
+        """Get the length of this object.
+        """
+        return self.x_right() - self.x_left()
+
+    def n_element(self):
+        """Count elements in this object.
+        """
+        return self._n_element
+
+    def delta_x(self):
+        """Get the length of each element.
+
+        Currently, only uniform meshing is supported.
+        """
+        return self._delta_x
 
     @abc.abstractmethod
     def n_dof(self):

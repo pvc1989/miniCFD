@@ -13,9 +13,9 @@ class LagrangeFR(Element):
 
     def __init__(self, equation: Equation, degree: int,
             x_left: float, x_right: float) -> None:
+        super().__init__(x_left, x_right)
         self._equation = equation
         self._n_point = degree + 1
-        self._boundaries = (x_left, x_right)
         length = x_right - x_left
         self._coord_lagrange = Lagrange(np.linspace(x_left, x_right, degree + 1), length)
         # Sample points evenly distributed in the element.
@@ -33,12 +33,6 @@ class LagrangeFR(Element):
 
     def n_dof(self):
         return self._n_point
-
-    def x_left(self):
-        return self._boundaries[0]
-
-    def x_right(self):
-        return self._boundaries[-1]
 
     def approximate(self, function):
         coeff = np.ndarray(self._n_point)
