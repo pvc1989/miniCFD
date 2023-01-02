@@ -24,6 +24,9 @@ class Lagrange(Expansion):
         self._global_coords = points.copy()
         self._sample_values = np.zeros(n_point)
 
+    def degree(self):
+        return self._n_point - 1
+
     def jacobian(self, x_global: float):
         """Get the Jacobian value at a given point.
         """

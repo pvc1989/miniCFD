@@ -28,6 +28,9 @@ class LagrangeFR(Element):
         self._flux_lagrange = Lagrange(self._solution_points, length)
         self._radau = Radau(degree + 1)
 
+    def degree(self):
+        return self._solution_lagrange.degree()
+
     def n_dof(self):
         return self._n_point
 

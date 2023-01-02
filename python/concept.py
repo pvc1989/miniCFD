@@ -24,6 +24,11 @@ class Expansion(abc.ABC):
     """
 
     @abc.abstractmethod
+    def degree(self):
+        """The highest degree of the approximated function.
+        """
+
+    @abc.abstractmethod
     def approximate(self, function: callable):
         """Approximate a general function.
         """
@@ -57,6 +62,11 @@ class Expansion(abc.ABC):
 class Element(abc.ABC):
     """One-dimensional Element for spatial discretization.
     """
+
+    @abc.abstractmethod
+    def degree(self):
+        """The highest degree of the approximated solution.
+        """
 
     @abc.abstractmethod
     def n_dof(self):
