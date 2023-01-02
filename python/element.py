@@ -12,18 +12,18 @@ class LagrangeFR(Element):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_min: float, x_max: float) -> None:
+            x_left: float, x_right: float) -> None:
         self._equation = equation
         self._n_point = degree + 1
-        self._boundaries = (x_min, x_max)
-        length = x_max - x_min
-        self._coord_lagrange = Lagrange(np.linspace(x_min, x_max, degree + 1), length)
+        self._boundaries = (x_left, x_right)
+        length = x_right - x_left
+        self._coord_lagrange = Lagrange(np.linspace(x_left, x_right, degree + 1), length)
         # Sample points evenly distributed in the element.
         delta = (self.x_right() - self.x_left()) / 10
         length -= delta * 2
-        self._solution_points = np.linspace(x_min + delta, x_max - delta, self._n_point)
+        self._solution_points = np.linspace(x_left + delta, x_right - delta, self._n_point)
         if degree == 0:
-            self._solution_points[0] = (x_min + x_max) / 2
+            self._solution_points[0] = (x_left + x_right) / 2
         self._solution_lagrange = Lagrange(self._solution_points, length)
         self._flux_lagrange = Lagrange(self._solution_points, length)
         self._radau = Radau(degree + 1)

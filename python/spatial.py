@@ -11,12 +11,12 @@ class PiecewiseContinuous(SpatialDiscretization):
     """The base of all piecewise continuous schemes.
     """
 
-    def __init__(self, n_element: int, x_min: float, x_max: float) -> None:
+    def __init__(self, n_element: int, x_left: float, x_right: float) -> None:
         super().__init__()
-        assert x_min < x_max
+        assert x_left < x_right
         assert n_element > 1
         self._n_element = n_element
-        self._delta_x = (x_max - x_min) / n_element
+        self._delta_x = (x_right - x_left) / n_element
         self._elements = np.ndarray(n_element, Element)
 
     def x_left(self):
@@ -79,19 +79,19 @@ class LagrangeFR(PiecewiseContinuous):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_min: float, x_max: float) -> None:
-        super().__init__(n_element, x_min, x_max)
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        super().__init__(n_element, x_left, x_right)
         assert degree >= 0
         self._equation = equation
         self._riemann = riemann
-        x_left = x_min
+        x_left_i = x_left
         for i_element in range(n_element):
-            assert x_left == x_min + i_element * self._delta_x
-            x_right = x_left + self._delta_x
+            assert x_left_i == x_left + i_element * self._delta_x
+            x_right_i = x_left_i + self._delta_x
             self._elements[i_element] = element.LagrangeFR(
-                  equation, degree, x_left, x_right)
-            x_left = x_right
-        assert x_left == x_max
+                  equation, degree, x_left_i, x_right_i)
+            x_left_i = x_right_i
+        assert x_left_i == x_right
 
     def _get_interface_flux(self):
         interface_flux = np.ndarray(self._n_element + 1)
@@ -156,8 +156,8 @@ class DGwithLagrangeFR(LagrangeFR):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_min: float, x_max: float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_min, x_max)
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        super().__init__(equation, riemann, degree, n_element, x_left, x_right)
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         for i in range(n_element):
             element = self._elements[i]
