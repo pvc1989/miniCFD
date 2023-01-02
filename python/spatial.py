@@ -31,6 +31,9 @@ class PiecewiseContinuous(SpatialDiscretization):
     def n_element(self):
         return self._n_element
 
+    def delta_x(self):
+        return self._delta_x
+
     def n_dof(self):
         return self.n_element() * self._elements[0].n_dof()
 
