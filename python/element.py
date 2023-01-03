@@ -1,6 +1,7 @@
 """Implement elements for spatial discretization.
 """
 import numpy as np
+from scipy import integrate
 
 from concept import Element, Equation
 from expansion import Lagrange
@@ -45,6 +46,22 @@ class LagrangeDG(Element):
 
     def get_basis_gradients(self, x_global):
         return self._solution_lagrange.get_basis_gradients(x_global)
+
+    def build_mass_matrix(self):
+        def integrand(points):
+            n_row = self._n_point**2
+            n_col = len(points)
+            values = np.ndarray((n_row, n_col))
+            for c in range(n_col):
+                column = self.get_basis_values(points[c])
+                matrix = np.tensordot(column, column, axes=0)
+                values[:,c] = matrix.reshape(n_row)
+            return values
+        mass_matrix, _ = integrate.fixed_quad(
+            integrand, self.x_left(), self.x_right(), n=5)
+        assert self._n_point == self.n_dof()
+        # Otherwise, it should be spanned to a block diagonal matrix.
+        return mass_matrix.reshape(self.n_dof(), self.n_dof())
 
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)

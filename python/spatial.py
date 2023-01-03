@@ -88,31 +88,17 @@ class LagrangeDG(PiecewiseContinuous):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         super().__init__(equation, riemann, n_element, x_left, x_right)
+        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         x_left_i = x_left
         for i_element in range(n_element):
             assert x_left_i == x_left + i_element * self.delta_x()
             x_right_i = x_left_i + self.delta_x()
-            self._elements[i_element] = element.LagrangeDG(
+            element_i = element.LagrangeDG(
                   equation, degree, x_left_i, x_right_i)
+            self._elements[i_element] = element_i
+            self._local_mass_matrices[i_element] = element_i.build_mass_matrix()
             x_left_i = x_right_i
         assert x_left_i == x_right
-        # build mass matrices
-        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
-        for i in range(n_element):
-            element_i = self._elements[i]
-            n_dof = element_i.n_dof()
-            def integrand(points):
-                n_row = n_dof**2
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element_i.get_basis_values(points[c])
-                    matrix = np.tensordot(column, column, axes=0)
-                    values[:,c] = matrix.reshape(n_row)
-                return values
-            local_mass_matrix, _ = integrate.fixed_quad(
-                integrand, element_i.x_left(), element_i.x_right(), n=5)
-            self._local_mass_matrices[i] = local_mass_matrix.reshape(n_dof, n_dof)
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
@@ -208,22 +194,11 @@ class DGwithLagrangeFR(LagrangeFR):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         super().__init__(equation, riemann, degree, n_element, x_left, x_right)
+        # Most work has been delegated to LagrangeFR.__init__(),
+        # but mass matrices should be built here:
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         for i in range(n_element):
-            element = self._elements[i]
-            n_dof = element.n_dof()
-            def integrand(points):
-                n_row = n_dof**2
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element.get_basis_values(points[c])
-                    matrix = np.tensordot(column, column, axes=0)
-                    values[:,c] = matrix.reshape(n_row)
-                return values
-            local_mass_matrix, _ = integrate.fixed_quad(
-                integrand, element.x_left(), element.x_right(), n=5)
-            self._local_mass_matrices[i] = local_mass_matrix.reshape(n_dof, n_dof)
+            self._local_mass_matrices[i] = self._elements[i].build_mass_matrix()
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
