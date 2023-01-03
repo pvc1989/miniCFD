@@ -53,6 +53,10 @@ class PiecewiseContinuous(SpatialDiscretization):
         element = self.get_element(point)
         return element.get_solution_value(point)
 
+    def get_discontinuous_flux(self, point):
+        element = self.get_element(point)
+        return element.get_discontinuous_flux(point)
+
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
         first = 0
@@ -75,6 +79,28 @@ class PiecewiseContinuous(SpatialDiscretization):
     def initialize(self, function: callable):
         for element in self._elements:
             element.approximate(function)
+
+
+class LagrangeDG(PiecewiseContinuous):
+    """The ODE system given by the DG method using a Lagrange expansion.
+    """
+
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        super().__init__(equation, riemann, n_element, x_left, x_right)
+        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
+        x_left_i = x_left
+        for i_element in range(n_element):
+            assert x_left_i == x_left + i_element * self.delta_x()
+            x_right_i = x_left_i + self.delta_x()
+            self._elements[i_element] = element.LagrangeDG(
+                  equation, degree, x_left_i, x_right_i)
+            x_left_i = x_right_i
+        assert x_left_i == x_right
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof())
+        return column
 
 
 class LagrangeFR(PiecewiseContinuous):
@@ -109,10 +135,6 @@ class LagrangeFR(PiecewiseContinuous):
             i_dof += len(values)
         assert i_dof == self.n_dof()
         return column
-
-    def get_discontinuous_flux(self, point):
-        element = self.get_element(point)
-        return element.get_discontinuous_flux(point)
 
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)

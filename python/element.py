@@ -7,8 +7,8 @@ from expansion import Lagrange
 from polynomial import Radau
 
 
-class LagrangeFR(Element):
-    """Element for implement flux reconstruction schemes.
+class LagrangeDG(Element):
+    """Element for implement the DG scheme using a Lagrange expansion.
     """
 
     def __init__(self, equation: Equation, degree: int,
@@ -19,7 +19,7 @@ class LagrangeFR(Element):
         length = x_right - x_left
         self._coord_lagrange = Lagrange(np.linspace(x_left, x_right, degree + 1), length)
         # Sample points evenly distributed in the element.
-        delta = (self.x_right() - self.x_left()) / 10
+        delta = length / 10
         length -= delta * 2
         self._solution_points = np.linspace(x_left + delta, x_right - delta, self._n_point)
         if degree == 0:
@@ -32,7 +32,7 @@ class LagrangeFR(Element):
         return self._solution_lagrange.degree()
 
     def n_dof(self):
-        return self._n_point
+        return self._n_point  # * self_equation.n_component()
 
     def approximate(self, function):
         coeff = np.ndarray(self._n_point)
@@ -62,6 +62,20 @@ class LagrangeFR(Element):
         """Get the value of the discontinuous flux at a given point.
         """
         return self._flux_lagrange.get_function_value(x_global)
+
+
+class LagrangeFR(LagrangeDG):
+    """Element for implement the FR scheme using a Lagrange expansion.
+    """
+
+    def __init__(self, equation: Equation, degree: int,
+            x_left: float, x_right: float) -> None:
+        super().__init__(equation, degree, x_left, x_right)
+        length = x_right - x_left
+        self._coord_lagrange = Lagrange(np.linspace(x_left, x_right, degree + 1), length)
+        length = self._solution_points[-1] - self._solution_points[0]
+        self._flux_lagrange = Lagrange(self._solution_points, length)
+        self._radau = Radau(degree + 1)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the value of the reconstructed continuous flux at a given point.

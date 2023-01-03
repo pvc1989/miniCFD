@@ -61,7 +61,7 @@ if __name__ == '__main__':
         exit(-1)
     a_const = 10.0
     solver = LinearAdvection(a_const,
-        spatial_discretization=spatial.DGwithLagrangeFR(
+        spatial_discretization=spatial.LagrangeDG(
             equation.LinearAdvection(a_const),
             riemann.LinearAdvection(a_const),
             degree=int(argv[1]), n_element=int(argv[2]),
