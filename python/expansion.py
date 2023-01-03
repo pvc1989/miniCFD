@@ -67,6 +67,11 @@ class Lagrange(Expansion):
         values = self._basis.get_function_value(x_local)
         return values
 
+    def get_basis_gradients(self, x_global):
+        x_local = self.global_to_local(x_global)
+        values = self._basis.get_gradient_value(x_local)
+        return values
+
     def get_function_value(self, x_global):
         values = self.get_basis_values(x_global)
         value = values.dot(self._sample_values)

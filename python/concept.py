@@ -35,7 +35,12 @@ class Expansion(abc.ABC):
 
     @abc.abstractmethod
     def get_basis_values(self, x_global: float):
-        """Get the values of basis at a given point.
+        """Get the values of all basis functions at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_basis_gradients(self, x_global: float):
+        """Get the gradients of all basis functions at a given point.
         """
 
     @abc.abstractmethod
