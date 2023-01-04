@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from element import LagrangeFR
 from equation import LinearAdvection
 from polynomial import Radau
-from expansion import Lagrange
+import expansion
 
 
 class TestLagrangeFR(unittest.TestCase):
@@ -20,7 +20,6 @@ class TestLagrangeFR(unittest.TestCase):
         self._degree = 4
         self._x_left = 0.0
         self._x_right = np.pi * 2
-        self._length = self._x_right - self._x_left
         self._test_points = np.linspace(self._x_left, self._x_right)
         self._element = LagrangeFR(self._equation, self._degree,
             self._x_left, self._x_right)
@@ -74,8 +73,9 @@ class TestLagrangeFR(unittest.TestCase):
             self._element.get_continuous_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
         radau = Radau(self._degree + 1)
-        lagrange = Lagrange(np.linspace(self._x_left, self._x_right,
-            self._degree + 1), self._length)
+        lagrange = expansion.Lagrange(
+            np.linspace(self._x_left, self._x_right, self._degree + 1),
+            self._x_left, self._x_right)
         for x_global in self._test_points:
             flux_actual = self._element.get_continuous_flux(x_global,
                 upwind_flux_left, upwind_flux_right)
