@@ -12,11 +12,11 @@ import temporal
 class LinearAdvection:
 
     def __init__(self, a_const: float,
-            spatial_discretization: concept.SpatialDiscretization,
-            temporal_scheme: concept.TemporalScheme) -> None:
+            spatial_scheme: concept.SpatialScheme,
+            ode_solver: concept.OdeSolver) -> None:
         self._a_const = a_const
-        self._spatial = spatial_discretization
-        self._temporal = temporal_scheme
+        self._spatial = spatial_scheme
+        self._ode_solver = ode_solver
 
     def u_init(self, x_global):
         value = np.sin(x_global * np.pi * 2 / self._spatial.length())
@@ -51,7 +51,7 @@ class LinearAdvection:
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         def plot(t_curr):
             self.plot(t_curr, n_point=101)
-        self._temporal.solve(self._spatial, plot, t_start, t_stop, delta_t)
+        self._ode_solver.solve(self._spatial, plot, t_start, t_stop, delta_t)
 
 
 if __name__ == '__main__':
@@ -61,11 +61,11 @@ if __name__ == '__main__':
         exit(-1)
     a_const = 10.0
     solver = LinearAdvection(a_const,
-        spatial_discretization=spatial.LagrangeDG(
+        spatial_scheme=spatial.LagrangeDG(
             equation.LinearAdvection(a_const),
             riemann.LinearAdvection(a_const),
             degree=int(argv[1]), n_element=int(argv[2]),
             x_left=float(argv[3]), x_right=float(argv[4])),
-        temporal_scheme = temporal.SspRungeKutta(order=int(argv[5])))
+        ode_solver = temporal.SspRungeKutta(order=int(argv[5])))
     solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))

@@ -3,11 +3,11 @@
 import numpy as np
 from scipy import integrate
 
-from concept import SpatialDiscretization, Element, Equation, RiemannSolver
+from concept import SpatialScheme, Equation, RiemannSolver
 import element
 
 
-class PiecewiseContinuous(SpatialDiscretization):
+class PiecewiseContinuous(SpatialScheme):
     """The base of all piecewise continuous schemes.
     """
 

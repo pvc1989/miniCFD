@@ -1,4 +1,4 @@
-"""Test elements for spatial discretization.
+"""Test elements for spatial scheme.
 """
 import unittest
 import numpy as np

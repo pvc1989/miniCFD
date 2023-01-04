@@ -1,4 +1,4 @@
-"""Test ODE systems from spatial discretizations.
+"""Test ODE systems from spatial schemes.
 """
 import unittest
 import numpy as np

@@ -1,4 +1,4 @@
-"""Implement elements for spatial discretization.
+"""Implement elements for spatial scheme.
 """
 import numpy as np
 from scipy import integrate

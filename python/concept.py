@@ -65,7 +65,7 @@ class Expansion(abc.ABC):
 
 
 class Element(abc.ABC):
-    """One-dimensional Element for spatial discretization.
+    """A subdomain that carries some expansion of the solution.
     """
 
     def __init__(self, x_left: float, x_right: float) -> None:
@@ -157,7 +157,7 @@ class RiemannSolver(abc.ABC):
 
 
 class OdeSystem(abc.ABC):
-    """A system of ordinary differential equations.
+    """A system of ODEs in the form of dU/∂t = R.
     """
 
     @abc.abstractmethod
@@ -176,7 +176,7 @@ class OdeSystem(abc.ABC):
         """
 
 
-class TemporalScheme(abc.ABC):
+class OdeSolver(abc.ABC):
     """A solver for the standard ODE system dU/dt = R.
 
     The solution column U and the residual column R is provided by a OdeSystem object.
@@ -203,8 +203,8 @@ class TemporalScheme(abc.ABC):
                 self.update(ode_system, delta_t)
 
 
-class SpatialDiscretization(OdeSystem):
-    """An ODE system given by some spatial discretization.
+class SpatialScheme(OdeSystem):
+    """An ODE system given by some spatial scheme.
     """
 
     def __init__(self, n_element: int, x_left: float, x_right: float) -> None:

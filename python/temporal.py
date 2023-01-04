@@ -1,9 +1,9 @@
 """Concrete implementations of temporal schemes.
 """
-from concept import TemporalScheme
+from concept import OdeSolver
 
 
-class ExplicitEuler(TemporalScheme):
+class ExplicitEuler(OdeSolver):
     """The explicit Euler method.
     """
 
@@ -15,7 +15,7 @@ class ExplicitEuler(TemporalScheme):
         ode_system.set_solution_column(u_next)
 
 
-class SspRungeKutta(TemporalScheme):
+class SspRungeKutta(OdeSolver):
     """The explicit Runge--Kutta methods.
     """
 
