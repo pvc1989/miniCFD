@@ -5,7 +5,7 @@ import numpy as np
 from scipy import integrate
 from matplotlib import pyplot as plt
 
-from polynomial import Radau, Lagrange
+from polynomial import Radau, LagrangeBasis
 
 
 class TestRadau(unittest.TestCase):
@@ -59,14 +59,15 @@ class TestRadau(unittest.TestCase):
         plt.savefig("radau.pdf")
 
 
-class TestLagrange(unittest.TestCase):
-    """Test the Lagrange class.
+class TestLagrangeBasis(unittest.TestCase):
+    """Test the LagrangeBasis class.
     """
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._n_point = 5
-        self._lagrange = Lagrange(self._n_point)
+        points = np.linspace(-1.0, 1.0, self._n_point)
+        self._lagrange = LagrangeBasis(points)
 
     def test_plot(self):
         """Plot the curves of each Lagrange polynomial.

@@ -40,45 +40,69 @@ class Radau(Polynomial):
         return (left, right)
 
 
-class Lagrange(Polynomial):
-    """Lagrange polynomials defined on [-1, 1].
+class IthLagrange(Polynomial):
+    """The Ith Lagrange polynomial for N given points.
     """
 
-    def __init__(self, n_point: int) -> None:
+    def __init__(self, index: int, points: np.ndarray) -> None:
+        self._i = index
+        assert 0 <= index < len(points)
+        self._points = points
+
+    def n_point(self):
+        return len(self._points)
+
+    def get_function_value(self, point: float):
+        value = 1.0
+        for j in range(self.n_point()):
+            if j == self._i:
+                continue
+            dividend = point - self._points[j]
+            divisor = self._points[self._i] - self._points[j]
+            value *= (dividend / divisor)
+        return value
+
+    def get_gradient_value(self, point: float):
+        value = 0.0
+        for j in range(self.n_point()):
+            if j == self._i:
+                continue
+            dividend = 1.0
+            divisor = self._points[self._i] - self._points[j]
+            for k in range(self.n_point()):
+                if k in (self._i, j):
+                    continue
+                dividend *= point - self._points[k]
+                divisor *= self._points[self._i] - self._points[k]
+            value += dividend / divisor
+        return value
+
+
+class LagrangeBasis(Polynomial):
+    """All Lagrange polynomials, which form a basis.
+    """
+
+    def __init__(self, points: np.ndarray) -> None:
         super().__init__()
-        assert n_point >= 1
-        self._n_point = n_point
-        self._local_coords = np.linspace(-1.0, 1.0, n_point)
-        if n_point == 1:  # use the centroid rather than the left end
-            self._local_coords[0] = 0.0
+        n_point = len(points)
+        self._points = points
+        self._lagranges = np.ndarray(n_point, IthLagrange)
+        for i in range(n_point):
+            self._lagranges[i] = IthLagrange(i, self._points)
+
+    def n_basis(self):
+        return len(self._points)
 
     def get_function_value(self, x_local):
-        values = np.zeros(self._n_point)
-        for i in range(self._n_point):
-            product = 1.0
-            for j in range(self._n_point):
-                if j == i:
-                    continue
-                dividend = x_local - self._local_coords[j]
-                divisor = self._local_coords[i] - self._local_coords[j]
-                product *= (dividend / divisor)
-            values[i] = product
+        values = np.ndarray(self.n_basis())
+        for i in range(self.n_basis()):
+            values[i] = self._lagranges[i].get_function_value(x_local)
         return values
 
     def get_gradient_value(self, x_local):
-        values = np.zeros(self._n_point)
-        for i in range(self._n_point):
-            for j in range(self._n_point):
-                if j == i:
-                    continue
-                dividend = 1.0
-                divisor = self._local_coords[i] - self._local_coords[j]
-                for k in range(self._n_point):
-                    if k in (i, j):
-                        continue
-                    dividend *= x_local - self._local_coords[k]
-                    divisor *= self._local_coords[i] - self._local_coords[k]
-                values[i] += dividend / divisor
+        values = np.ndarray(self.n_basis())
+        for i in range(self.n_basis()):
+            values[i] = self._lagranges[i].get_gradient_value(x_local)
         return values
 
 
