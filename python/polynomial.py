@@ -90,18 +90,18 @@ class LagrangeBasis(Polynomial):
         for i in range(n_point):
             self._lagranges[i] = IthLagrange(i, self._points)
 
-    def n_basis(self):
+    def n_term(self):
         return len(self._points)
 
     def get_function_value(self, x_local):
-        values = np.ndarray(self.n_basis())
-        for i in range(self.n_basis()):
+        values = np.ndarray(self.n_term())
+        for i in range(self.n_term()):
             values[i] = self._lagranges[i].get_function_value(x_local)
         return values
 
     def get_gradient_value(self, x_local):
-        values = np.ndarray(self.n_basis())
-        for i in range(self.n_basis()):
+        values = np.ndarray(self.n_term())
+        for i in range(self.n_term()):
             values[i] = self._lagranges[i].get_gradient_value(x_local)
         return values
 

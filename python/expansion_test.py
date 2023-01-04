@@ -13,9 +13,10 @@ class TestLagrange(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
-        length = 10.0
-        sample_points = np.linspace(0.0, length, 5)
-        self._lagrange = Lagrange(sample_points, length)
+        x_left = 0.0
+        x_right = 10.0
+        points = np.linspace(x_left + 0.5, x_right - 0.5, 5)
+        self._lagrange = Lagrange(points, x_left, x_right)
 
     def test_coordinate_transforms(self):
         """Test coordinate transforms.
@@ -27,20 +28,23 @@ class TestLagrange(unittest.TestCase):
                 self._lagrange.local_to_global(x_local))
 
     def test_plot(self):
-        """Plot the curves of a function and its approximation."""
-        def my_function(point):
-            return (point-5.0)**5
-        self._lagrange.approximate(my_function)
+        """Plot the curves of a function and its approximations."""
+        x_left = 0.0
+        x_right = np.pi
         n_point = 201
-        points = np.linspace(0.0, 10.0, n_point)
+        points = np.linspace(x_left, x_right, n_point)
+        def my_function(point):
+            return np.sin(point)
         exact_values = my_function(points)
-        approx_values = np.zeros(n_point)
-        for i in range(n_point):
-            point_i = points[i]
-            approx_values[i] = self._lagrange.get_function_value(point_i)
-        plt.figure()
-        plt.plot(points, exact_values, 'r--', label='Exact')
-        plt.plot(points, approx_values, 'b-', label= 'Lagrange')
+        plt.plot(points, exact_values, '^', label='Exact')
+        for degree in range(5):
+            sample_points = np.linspace(x_left, x_right, degree+1)
+            lagrange = Lagrange(sample_points, x_left, x_right)
+            lagrange.approximate(my_function)
+            approx_values = np.ndarray(n_point)
+            for i in range(n_point):
+                approx_values[i] = lagrange.get_function_value(points[i])
+            plt.plot(points, approx_values, label= f'{degree}-degree Lagrange')
         plt.legend()
         # plt.show()
         plt.savefig("lagrange_expansion.pdf")
