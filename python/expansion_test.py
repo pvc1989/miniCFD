@@ -57,6 +57,21 @@ class TestLagrange(unittest.TestCase):
         for point in self._lagrange.get_sample_points():
             self.assertEqual(my_function(point), self._lagrange.get_function_value(point))
 
+    def test_get_basis_values_and_gradients(self):
+        """Test methods for getting values and gradients of basis.
+        """
+        n_point = 20
+        points = np.linspace(0.0, 10.0, n_point)
+        for point in points:
+            # 2nd-order finite difference approximation
+            delta = 0.0001
+            values_right = self._lagrange.get_basis_values(point + delta)
+            values_left = self._lagrange.get_basis_values(point - delta)
+            gradients_approx = (values_right - values_left) / (delta * 2)
+            gradients_actual = self._lagrange.get_basis_gradients(point)
+            norm = np.linalg.norm(gradients_actual - gradients_approx)
+            self.assertAlmostEqual(norm, 0.0)
+
     def test_get_gradient_value(self):
         """Test the method for getting gradient values.
         """

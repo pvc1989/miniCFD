@@ -76,6 +76,7 @@ class Lagrange(Expansion):
     def get_basis_gradients(self, x_global):
         x_local = self.global_to_local(x_global)
         values = self._basis.get_gradient_value(x_local)
+        values /= self._jacobian
         return values
 
     def get_function_value(self, x_global):
@@ -84,10 +85,8 @@ class Lagrange(Expansion):
         return value
 
     def get_gradient_value(self, x_global):
-        x_local = self.global_to_local(x_global)
-        values = self._basis.get_gradient_value(x_local)
-        values /= self._jacobian
-        value = values.dot(self._sample_values)
+        basis_grad = self.get_basis_gradients(x_global)
+        value = basis_grad.dot(self._sample_values)
         return value
 
 
