@@ -1,6 +1,7 @@
 """Test various partial differential equations.
 """
 import unittest
+import numpy as np
 from numpy.random import rand
 
 import equation
@@ -30,8 +31,11 @@ class TestEquations(unittest.TestCase):
         a_const = rand(3, 3)
         system = equation.LinearSystem(a_const)
         unknown = rand(3, 1)
-        self.assertEqual(system.get_convective_flux(unknown).all(), a_const.dot(unknown).all())
-        self.assertEqual(system.get_convective_jacobian(unknown).all(), a_const.all())
+        norm = np.linalg.norm(system.get_convective_flux(unknown)
+            - a_const.dot(unknown))
+        self.assertEqual(norm, 0.0)
+        norm = np.linalg.norm(system.get_convective_jacobian(unknown) - a_const)
+        self.assertEqual(norm, 0.0)
 
     def test_euler_1d(self):
         """Test methods of an Euler1d object."""
@@ -44,8 +48,9 @@ class TestEquations(unittest.TestCase):
         self.assertAlmostEqual(p_actual, p_given)
         self.assertAlmostEqual(rho_actual, rho_given)
         # test unknown-property
-        self.assertAlmostEqual(euler.get_convective_flux(unknown).all(),
-            euler.get_convective_jacobian(unknown).dot(unknown).all())
+        norm = np.linalg.norm(euler.get_convective_flux(unknown)
+            - euler.get_convective_jacobian(unknown).dot(unknown))
+        self.assertAlmostEqual(norm, 0.0)
 
 
 if __name__ == '__main__':
