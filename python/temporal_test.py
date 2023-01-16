@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from concept import OdeSystem
-from temporal import ExplicitEuler, SspRungeKutta
+from temporal import ExplicitEuler, RungeKutta
 
 
 class Constant(OdeSystem):
@@ -49,8 +49,8 @@ class TestExplicitEuler(unittest.TestCase):
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
 
 
-class TestSspRungeKutta(unittest.TestCase):
-    """Test the SspRungeKutta class.
+class TestRungeKutta(unittest.TestCase):
+    """Test the RungeKutta class.
     """
 
     def euler(self, solution, a_const, delta_t):
@@ -66,7 +66,7 @@ class TestSspRungeKutta(unittest.TestCase):
         ode_system = Constant(a_const)
         u_curr = np.random.rand(n_row)
         ode_system.set_solution_column(u_curr)
-        scheme = SspRungeKutta(order=1)
+        scheme = RungeKutta(order=1)
         delta_t = 0.01
         scheme.update(ode_system, delta_t)
         u_actual = ode_system.get_solution_column()
@@ -81,7 +81,7 @@ class TestSspRungeKutta(unittest.TestCase):
         ode_system = Constant(a_const)
         u_curr = np.random.rand(n_row)
         ode_system.set_solution_column(u_curr)
-        scheme = SspRungeKutta(order=2)
+        scheme = RungeKutta(order=2)
         delta_t = 0.01
         scheme.update(ode_system, delta_t)
         u_actual = ode_system.get_solution_column()
@@ -97,7 +97,7 @@ class TestSspRungeKutta(unittest.TestCase):
         ode_system = Constant(a_const)
         u_curr = np.random.rand(n_row)
         ode_system.set_solution_column(u_curr)
-        scheme = SspRungeKutta(order=3)
+        scheme = RungeKutta(order=3)
         delta_t = 0.01
         scheme.update(ode_system, delta_t)
         u_actual = ode_system.get_solution_column()

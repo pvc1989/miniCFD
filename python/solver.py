@@ -66,6 +66,6 @@ if __name__ == '__main__':
             riemann.LinearAdvection(a_const),
             degree=int(argv[1]), n_element=int(argv[2]),
             x_left=float(argv[3]), x_right=float(argv[4])),
-        ode_solver = temporal.SspRungeKutta(order=int(argv[5])))
+        ode_solver = temporal.RungeKutta(order=int(argv[5])))
     solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))
