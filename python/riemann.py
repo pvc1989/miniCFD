@@ -134,18 +134,17 @@ class Euler(Solver):
         else:  # no vacuum
             # 2-field: always a contact
             du = u_right - u_left
-            func = lambda p: (self._f(p, p_left, rho_left) +
-                                                                    self._f(p, p_right, rho_right) + du)
-            roots, infodict, ierror, message = fsolve(
-                func,
-                fprime=lambda p: (self._f_prime(p, p_left, rho_left) +
-                                                    self._f_prime(p, p_right, rho_right)),
+            func = lambda p: (self._f(p, p_left, rho_left)
+                + self._f(p, p_right, rho_right) + du)
+            roots, infodict, ierror, message = fsolve(func,
+                fprime=lambda p: (self._f_prime(p, p_left, rho_left)
+                    + self._f_prime(p, p_right, rho_right)),
                 x0=self._guess(p_left, func),
                 full_output=True)
             assert ierror == 1, message
             p_2 = roots[0]
-            u_2 = (u_left - self._f(p_2, p_left, rho_left) +
-                         u_right + self._f(p_2, p_right, rho_right)) / 2
+            u_2 = (u_left - self._f(p_2, p_left, rho_left)
+                + u_right + self._f(p_2, p_right, rho_right)) / 2
             self._p_2 = p_2
             self._u_2 = u_2
             self._slope_2 = u_2
