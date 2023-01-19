@@ -29,12 +29,12 @@ class Solver(concept.RiemannSolver):
             else:
                 U = self._U_R
         else:  # t > 0
-            U = self._U(v=x/t)
+            U = self._U(slope=x/t)
         return U
 
     @abc.abstractmethod
-    def _U(self, v):
-        # v = x / t
+    def _U(self, slope):
+        # slope = x / t
         # return the self-similar solution
         pass
 
@@ -55,9 +55,9 @@ class LinearAdvection(Solver):
     def _determine_wave_structure(self):
         pass
 
-    def _U(self, v):
+    def _U(self, slope):
         U = 0.0
-        if v <= self._a:
+        if slope <= self._a:
             U = self._U_L
         else:
             U = self._U_R
@@ -74,23 +74,23 @@ class InviscidBurgers(Solver):
         self._k = k
 
     def _determine_wave_structure(self):
-        self._v_L, self._v_R = 0, 0
+        self._slope_L, self._slope_R = 0, 0
         if self._U_L <= self._U_R:
             # rarefaction
-            self._v_L = self._k * self._U_L
-            self._v_R = self._k * self._U_R
+            self._slope_L = self._k * self._U_L
+            self._slope_R = self._k * self._U_R
         else:
             # shock
-            v = self._k * (self._U_L + self._U_R) / 2
-            self._v_L, self._v_R = v, v
+            slope = self._k * (self._U_L + self._U_R) / 2
+            self._slope_L, self._slope_R = slope, slope
 
-    def _U(self, v):
-        if v <= self._v_L:
+    def _U(self, slope):
+        if slope <= self._slope_L:
             return self._U_L
-        elif v >= self._v_R:
+        elif slope >= self._slope_R:
             return self._U_R
-        else:  # v_L < v < v_R, u = a^{-1}(v)
-            return v / self._k
+        else:  # slope_L < slope < slope_R, u = a^{-1}(slope)
+            return slope / self._k
 
     def get_convective_flux(self, U):
         return self._k * U**2 / 2
@@ -124,12 +124,12 @@ class Euler(Solver):
         # determine wave heads and tails and states between 1-wave and 3-wave
         if self._exist_vacuum():
             self._p_2 = self._rho_2_L = self._rho_2_R = self._u_2 = np.nan
-            self._v_1_L = u_L - a_L
-            self._v_3_R = u_R + a_R
-            self._v_1_R = self._riemann_invariants_L[1]
-            self._v_3_L = self._riemann_invariants_R[1]
-            self._v_2 = (self._v_1_R + self._v_3_L) / 2
-            assert self._v_1_L < self._v_1_R <= self._v_2 <= self._v_3_L < self._v_3_R
+            self._slope_1_L = u_L - a_L
+            self._slope_3_R = u_R + a_R
+            self._slope_1_R = self._riemann_invariants_L[1]
+            self._slope_3_L = self._riemann_invariants_R[1]
+            self._slope_2 = (self._slope_1_R + self._slope_3_L) / 2
+            assert self._slope_1_L < self._slope_1_R <= self._slope_2 <= self._slope_3_L < self._slope_3_R
         else:  # no vacuum
             # 2-field: always a contact
             du = u_R - u_L
@@ -147,43 +147,43 @@ class Euler(Solver):
                          u_R + self._f(p_2, p_R, rho_R)) / 2
             self._p_2 = p_2
             self._u_2 = u_2
-            self._v_2 = u_2
+            self._slope_2 = u_2
             # 1-field: a left running wave
-            rho_2, v_L, v_R = rho_L, u_L, u_L
+            rho_2, slope_L, slope_R = rho_L, u_L, u_L
             if p_2 > p_L:  # shock
-                rho_2, v_L, v_R = self._shock(u_2, p_2, u_L, p_L, rho_L)
+                rho_2, slope_L, slope_R = self._shock(u_2, p_2, u_L, p_L, rho_L)
             elif p_2 < p_L:  # rarefraction
                 # riemann-invariant = u + 2*a/(gamma-1)
                 a_2 = a_L + (u_L-u_2)/2*self._gas.gamma_minus_1()
                 assert a_2 >= 0, a_2
                 rho_2 = p_2 / a_2**2 * self._gas.gamma()
                 # eigenvalue = u - a
-                v_L = u_L - a_L
-                v_R = u_2 - a_2
+                slope_L = u_L - a_L
+                slope_R = u_2 - a_2
             else:
                 pass
-            assert v_L <= v_R <= u_2, (p_2, p_L, v_L, v_R, u_2)
+            assert slope_L <= slope_R <= u_2, (p_2, p_L, slope_L, slope_R, u_2)
             self._rho_2_L = rho_2
-            self._v_1_L = v_L
-            self._v_1_R = v_R
+            self._slope_1_L = slope_L
+            self._slope_1_R = slope_R
             # 3-field: a right running wave
-            rho_2, v_L, v_R = rho_R, u_R, u_R
+            rho_2, slope_L, slope_R = rho_R, u_R, u_R
             if p_2 > p_R:  # shock
-                rho_2, v_L, v_R = self._shock(u_2, p_2, u_R, p_R, rho_R)
+                rho_2, slope_L, slope_R = self._shock(u_2, p_2, u_R, p_R, rho_R)
             elif p_2 < p_R:  # rarefraction
                 # riemann-invariant = u - 2*a/(gamma-1)
                 a_2 = a_R - (u_R-u_2)/2*self._gas.gamma_minus_1()
                 assert a_2 >= 0, a_2
                 rho_2 = p_2 / a_2**2 * self._gas.gamma()
                 # eigenvalue = u + a
-                v_L = u_2 + a_2
-                v_R = u_R + a_R
+                slope_L = u_2 + a_2
+                slope_R = u_R + a_R
             else:
                 pass
-            assert u_2 <= v_L <= v_R, (p_2, p_R, u_2, v_L, v_R)
+            assert u_2 <= slope_L <= slope_R, (p_2, p_R, u_2, slope_L, slope_R)
             self._rho_2_R = rho_2
-            self._v_3_L = v_L
-            self._v_3_R = v_R
+            self._slope_3_L = slope_L
+            self._slope_3_R = slope_R
         print(f'p2 = {self._p_2:5f}, u2 = {self._u_2:5f}, rho2L = {self._rho_2_L:5f}, rho2R = {self._rho_2_R:5f}')
 
     def _exist_vacuum(self):
@@ -238,38 +238,38 @@ class Euler(Solver):
     @staticmethod
     def _shock(u_2, p_2, u_1, p_1, rho_1):
         assert u_2 != u_1
-        v = u_1 + (p_2-p_1)/(u_2-u_1)/rho_1
-        assert u_2 != v
-        rho_2 = rho_1 * (u_1 - v) / (u_2 - v)
-        return rho_2, v, v
+        slope = u_1 + (p_2-p_1)/(u_2-u_1)/rho_1
+        assert u_2 != slope
+        rho_2 = rho_1 * (u_1 - slope) / (u_2 - slope)
+        return rho_2, slope, slope
 
-    def _U(self, v):
+    def _U(self, slope):
         u, p, rho = 0, 0, 0
-        if v < self._v_2:
-            if v <= self._v_1_L:
+        if slope < self._slope_2:
+            if slope <= self._slope_1_L:
                 u, p, rho = self._u_L, self._p_L, self._rho_L
-            elif v > self._v_1_R:
+            elif slope > self._slope_1_R:
                 u, p, rho = self._u_2, self._p_2, self._rho_2_L
                 # print(p, rho)
-            else:  # v_1_L < v < v_2_R
-                a = self._riemann_invariants_L[1] - v
+            else:  # slope_1_L < slope < slope_2_R
+                a = self._riemann_invariants_L[1] - slope
                 a *= self._gas.gamma_minus_1_over_gamma_plus_1()
                 assert a >= 0, a
-                u = v + a
+                u = slope + a
                 rho = a**2 / self._gas.gamma() / self._riemann_invariants_L[0]
                 rho = rho**self._gas.one_over_gamma_minus_1()
                 p = a**2 * rho / self._gas.gamma()
-        else:  # v > v_2
-            if v >= self._v_3_R:
+        else:  # slope > slope_2
+            if slope >= self._slope_3_R:
                 u, p, rho = self._u_R, self._p_R, self._rho_R
-            elif v <= self._v_3_L:
+            elif slope <= self._slope_3_L:
                 u, p, rho = self._u_2, self._p_2, self._rho_2_R
                 # print(p, rho)
-            else:  # v_3_L < v < v_3_R
-                a = v - self._riemann_invariants_R[1]
+            else:  # slope_3_L < slope < slope_3_R
+                a = slope - self._riemann_invariants_R[1]
                 a *= self._gas.gamma_minus_1_over_gamma_plus_1()
                 assert a >= 0, a
-                u = v - a
+                u = slope - a
                 rho = a**2 / self._gas.gamma() / self._riemann_invariants_R[0]
                 rho = rho**self._gas.one_over_gamma_minus_1()
                 p = a**2 * rho / self._gas.gamma()
