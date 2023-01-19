@@ -85,27 +85,31 @@ class InviscidBurgers(SolverBase):
 
 
 if __name__ == '__main__':
-    if len(argv) < 9:
+    if len(argv) < 11:
         print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
-            "<x_right> <rk_order> <t_start> <t_stop> <delta_t>")
+            "<x_right> <rk_order> <t_start> <t_stop> <delta_t>",
+            "<method> <problem>\nin which, <method> in (DG, FR, DGFR),",
+            "<problem> in (Linear, Burgers).")
         exit(-1)
-    solver = InviscidBurgers(
-        spatial_scheme=spatial.LagrangeDG(
-            equation.InviscidBurgers(),
-            riemann.InviscidBurgers(),
-            degree=int(argv[1]), n_element=int(argv[2]),
-            x_left=float(argv[3]), x_right=float(argv[4])),
-        ode_solver = temporal.RungeKutta(order=int(argv[5])))
-    solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
-        n_step=int(argv[8]))
-    exit(0)
-    a_const = 10.0
-    solver = LinearAdvection(a_const,
-        spatial_scheme=spatial.LagrangeDG(
-            equation.LinearAdvection(a_const),
-            riemann.LinearAdvection(a_const),
-            degree=int(argv[1]), n_element=int(argv[2]),
-            x_left=float(argv[3]), x_right=float(argv[4])),
-        ode_solver = temporal.RungeKutta(order=int(argv[5])))
+    problem = argv[10]
+    if problem == 'Linear':
+        a_const = 5.0
+        solver = LinearAdvection(a_const,
+            spatial_scheme=spatial.LagrangeDG(
+                equation.LinearAdvection(a_const),
+                riemann.LinearAdvection(a_const),
+                degree=int(argv[1]), n_element=int(argv[2]),
+                x_left=float(argv[3]), x_right=float(argv[4])),
+            ode_solver = temporal.RungeKutta(order=int(argv[5])))
+    elif problem == 'Burgers':
+      solver = InviscidBurgers(
+          spatial_scheme=spatial.LagrangeDG(
+              equation.InviscidBurgers(),
+              riemann.InviscidBurgers(),
+              degree=int(argv[1]), n_element=int(argv[2]),
+              x_left=float(argv[3]), x_right=float(argv[4])),
+          ode_solver = temporal.RungeKutta(order=int(argv[5])))
+    else:
+        assert False
     solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))
