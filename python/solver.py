@@ -68,23 +68,24 @@ class LinearAdvection(SolverBase):
 
 class InviscidBurgers(SolverBase):
 
-    def __init__(self,
+    def __init__(self, k: float,
             spatial_scheme: concept.SpatialScheme,
             ode_solver: concept.OdeSolver) -> None:
+        self._k = k
         self._spatial = spatial_scheme
         self._ode_solver = ode_solver
 
     def a_max(self):
-        return 1.0
+        return self._k
 
     def u_init(self, x_global):
         value = np.sin(x_global * np.pi * 2 / self._spatial.length())
         return value  # np.sign(value)
 
     def u_exact(self, x_global, t_curr):
-        # Solve u from u_curr = u_init(x - u_curr * t_curr).
+        # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
         def func(u_curr):
-            return u_curr - self.u_init(x_global - u_curr * t_curr)
+            return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
         u_guess = np.sign(self.u_init(x_global)) * 0.5
         roots = fsolve(func, u_guess)
         return roots[0]
@@ -108,10 +109,11 @@ if __name__ == '__main__':
                 x_left=float(argv[3]), x_right=float(argv[4])),
             ode_solver = temporal.RungeKutta(order=int(argv[5])))
     elif problem == 'Burgers':
-      solver = InviscidBurgers(
+      k = 0.5
+      solver = InviscidBurgers(k,
           spatial_scheme=spatial.LagrangeDG(
-              equation.InviscidBurgers(),
-              riemann.InviscidBurgers(),
+              equation.InviscidBurgers(k),
+              riemann.InviscidBurgers(k),
               degree=int(argv[1]), n_element=int(argv[2]),
               x_left=float(argv[3]), x_right=float(argv[4])),
           ode_solver = temporal.RungeKutta(order=int(argv[5])))

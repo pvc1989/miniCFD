@@ -69,17 +69,19 @@ class LinearAdvection(Solver):
 
 class InviscidBurgers(Solver):
 
-    def __init__(self):
-        self._equation = equation.InviscidBurgers()
+    def __init__(self, k=1.0):
+        assert k > 0.0
+        self._k = k
 
     def _determine_wave_structure(self):
         self._v_L, self._v_R = 0, 0
         if self._U_L <= self._U_R:
             # rarefaction
-            self._v_L, self._v_R = self._U_L, self._U_R
+            self._v_L = self._k * self._U_L
+            self._v_R = self._k * self._U_R
         else:
             # shock
-            v = (self._U_L + self._U_R) / 2
+            v = self._k * (self._U_L + self._U_R) / 2
             self._v_L, self._v_R = v, v
 
     def _U(self, v):
@@ -87,11 +89,11 @@ class InviscidBurgers(Solver):
             return self._U_L
         elif v >= self._v_R:
             return self._U_R
-        else:  # v_L < v < v_R
-            return v
+        else:  # v_L < v < v_R, u = a^{-1}(v)
+            return v / self._k
 
     def get_convective_flux(self, U):
-        return U**2 / 2
+        return self._k * U**2 / 2
 
 
 class Euler(Solver):

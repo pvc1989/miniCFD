@@ -30,14 +30,15 @@ class LinearAdvection(ConservationLaw):
 
 class InviscidBurgers(ConservationLaw):
 
-    def __init__(self):
-        pass
+    def __init__(self, k=1.0):
+        assert k > 0.0
+        self._k = k
 
     def get_convective_flux(self, U):
-        return U**2 / 2
+        return self._k * U**2 / 2
 
     def get_convective_jacobian(self, U):
-        return U
+        return self._k * U
 
 
 class LinearSystem(ConservationLaw):
