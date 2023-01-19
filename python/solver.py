@@ -1,6 +1,7 @@
 import abc
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.optimize import fsolve
 from sys import argv
 
 import concept
@@ -81,7 +82,12 @@ class InviscidBurgers(SolverBase):
         return value  # np.sign(value)
 
     def u_exact(self, x_global, t_curr):
-        return self.u_init(x_global - 0 * t_curr)
+        # Solve u from u_curr = u_init(x - u_curr * t_curr).
+        def func(u_curr):
+            return u_curr - self.u_init(x_global - u_curr * t_curr)
+        u_guess = np.sign(self.u_init(x_global)) * 0.5
+        roots = fsolve(func, u_guess)
+        return roots[0]
 
 
 if __name__ == '__main__':
