@@ -1,6 +1,7 @@
 """Concrete implementations of spatial schemes.
 """
 import numpy as np
+from numpy.testing import assert_almost_equal
 from scipy import integrate
 
 from concept import SpatialScheme, Equation, RiemannSolver
@@ -91,14 +92,14 @@ class LagrangeDG(PiecewiseContinuous):
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         x_left_i = x_left
         for i_element in range(n_element):
-            assert x_left_i == x_left + i_element * self.delta_x()
+            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
             x_right_i = x_left_i + self.delta_x()
             element_i = element.LagrangeDG(
                   equation, degree, x_left_i, x_right_i)
             self._elements[i_element] = element_i
             self._local_mass_matrices[i_element] = element_i.build_mass_matrix()
             x_left_i = x_right_i
-        assert x_left_i == x_right
+        assert_almost_equal(x_left_i, x_right)
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
