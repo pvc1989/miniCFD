@@ -75,24 +75,30 @@ class InviscidBurgers(SolverBase):
         self._spatial = spatial_scheme
         self._ode_solver = ode_solver
         self._u_prev = 0.0
+        self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
 
     def a_max(self):
         return self._k
 
     def u_init(self, x_global):
+        x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * np.pi * 2 / self._spatial.length())
-        return value  # np.sign(value)
+        return value
 
     def u_exact(self, x_global, t_curr):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
         def func(u_curr):
             return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
-        if x_global > 5 and self._u_prev > 0:
-            self._u_prev = -self._u_prev
-        a = self._u_prev - 0.1
-        b = self._u_prev + 0.1
-        root = optimize.bisect(func, a, b)
-        self._u_prev = root
+        if np.abs(x_global - self._x_mid) < 1e-6:
+            root = 0.0
+        else:
+            if x_global > self._x_mid and self._u_prev > 0:
+                self._u_prev = -self._u_prev
+            a = self._u_prev - 0.1
+            b = self._u_prev + 0.1
+            # print(x_global, self._x_mid, self._u_prev, func(a), func(b))
+            root = optimize.bisect(func, a, b)
+            self._u_prev = root
         return root
 
 
