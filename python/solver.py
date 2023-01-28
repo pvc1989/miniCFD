@@ -1,7 +1,7 @@
 import abc
 import numpy as np
 from matplotlib import pyplot as plt
-from scipy.optimize import fsolve
+from scipy import optimize
 from sys import argv
 
 import concept
@@ -74,6 +74,7 @@ class InviscidBurgers(SolverBase):
         self._k = k
         self._spatial = spatial_scheme
         self._ode_solver = ode_solver
+        self._u_prev = 0.0
 
     def a_max(self):
         return self._k
@@ -86,9 +87,13 @@ class InviscidBurgers(SolverBase):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
         def func(u_curr):
             return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
-        u_guess = np.sign(self.u_init(x_global)) * 0.5
-        roots = fsolve(func, u_guess)
-        return roots[0]
+        if x_global > 5 and self._u_prev > 0:
+            self._u_prev = -self._u_prev
+        a = self._u_prev - 0.1
+        b = self._u_prev + 0.1
+        root = optimize.bisect(func, a, b)
+        self._u_prev = root
+        return root
 
 
 if __name__ == '__main__':
@@ -109,7 +114,7 @@ if __name__ == '__main__':
                 x_left=float(argv[3]), x_right=float(argv[4])),
             ode_solver = temporal.RungeKutta(order=int(argv[5])))
     elif problem == 'Burgers':
-      k = 0.5
+      k = 5.0
       solver = InviscidBurgers(k,
           spatial_scheme=spatial.LagrangeDG(
               equation.InviscidBurgers(k),
