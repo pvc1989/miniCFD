@@ -21,7 +21,7 @@ class SolverBase(abc.ABC):
             point_i = points[i]
             approx_solution[i] = self._spatial.get_solution_value(point_i)
             expect_solution[i] = self.u_exact(point_i, t_curr)
-        plt.clf()
+        plt.figure(figsize=(6, 3))
         plt.plot(points, approx_solution, 'b+', label='Approximate Solution')
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
         plt.ylim([-1.1, 1.1])
@@ -30,7 +30,8 @@ class SolverBase(abc.ABC):
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1))
         plt.grid()
-        plt.show()
+        # plt.show()
+        plt.savefig(f't={t_curr:.2f}.pdf')
 
     @abc.abstractmethod
     def a_max(self):
@@ -59,6 +60,7 @@ class LinearAdvection(SolverBase):
         return np.abs(self._a_const)
 
     def u_init(self, x_global):
+        x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * np.pi * 2 / self._spatial.length())
         return value  # np.sign(value)
 
@@ -113,7 +115,7 @@ if __name__ == '__main__':
     if problem == 'Linear':
         a_const = 5.0
         solver = LinearAdvection(a_const,
-            spatial_scheme=spatial.LagrangeDG(
+            spatial_scheme=spatial.DGwithLagrangeFR(
                 equation.LinearAdvection(a_const),
                 riemann.LinearAdvection(a_const),
                 degree=int(argv[1]), n_element=int(argv[2]),
@@ -122,7 +124,7 @@ if __name__ == '__main__':
     elif problem == 'Burgers':
       k = 5.0
       solver = InviscidBurgers(k,
-          spatial_scheme=spatial.LagrangeDG(
+          spatial_scheme=spatial.DGwithLagrangeFR(
               equation.InviscidBurgers(k),
               riemann.InviscidBurgers(k),
               degree=int(argv[1]), n_element=int(argv[2]),

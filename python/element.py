@@ -58,7 +58,7 @@ class LagrangeDG(Element):
                 values[:,c] = matrix.reshape(n_row)
             return values
         mass_matrix, _ = integrate.fixed_quad(
-            integrand, self.x_left(), self.x_right(), n=5)
+            integrand, self.x_left(), self.x_right(), n=8)
         assert self.n_term() == self.n_dof()
         # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix.reshape(self.n_dof(), self.n_dof())
