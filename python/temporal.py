@@ -93,7 +93,7 @@ class RungeKutta(OdeSolver):
         r_frac34 = ode_system.get_residual_column()
         # delta_U = (R_{n} + 2 * R_{n+1/4} + 2 * R_{n+2/4} + R_{n+3/4}) * dt / 6
         delta_u = r_frac04 + r_frac34
-        delta_u += (r_frac14 + r_frac24) / 2
+        delta_u += (r_frac14 + r_frac24) * 2
         delta_u *= (delta_t / 6)
         # U_{n+1} == U_{n} + delta_U
         ode_system.set_solution_column(u_frac04 + delta_u)
