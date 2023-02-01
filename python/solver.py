@@ -24,7 +24,7 @@ class SolverBase(abc.ABC):
         plt.figure(figsize=(6, 3))
         plt.plot(points, approx_solution, 'b+', label='Approximate Solution')
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
-        plt.ylim([-1.1, 1.1])
+        plt.ylim([-1.4, 1.4])
         plt.title(f't = {t_curr:.2f}')
         plt.legend()
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
@@ -96,8 +96,8 @@ class InviscidBurgers(SolverBase):
         else:
             if x_global > self._x_mid and self._u_prev > 0:
                 self._u_prev = -self._u_prev
-            a = self._u_prev - 0.1
-            b = self._u_prev + 0.1
+            a = self._u_prev - 0.2
+            b = self._u_prev + 0.2
             # print(x_global, self._x_mid, self._u_prev, func(a), func(b))
             root = optimize.bisect(func, a, b)
             self._u_prev = root
