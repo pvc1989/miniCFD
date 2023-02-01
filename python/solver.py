@@ -111,11 +111,20 @@ if __name__ == '__main__':
             "<method> <problem>\nin which, <method> in (DG, FR, DGFR),",
             "<problem> in (Linear, Burgers).")
         exit(-1)
+    method = argv[9]
+    if method == 'DG':
+        spatial_class = spatial.LagrangeDG
+    elif method == 'FR':
+        spatial_class = spatial.LagrangeFR
+    elif method == 'DGFR':
+        spatial_class = spatial.DGwithLagrangeFR
+    else:
+        assert False
     problem = argv[10]
     if problem == 'Linear':
         a_const = 5.0
         solver = LinearAdvection(a_const,
-            spatial_scheme=spatial.DGwithLagrangeFR(
+            spatial_scheme=spatial_class(
                 equation.LinearAdvection(a_const),
                 riemann.LinearAdvection(a_const),
                 degree=int(argv[1]), n_element=int(argv[2]),
@@ -124,7 +133,7 @@ if __name__ == '__main__':
     elif problem == 'Burgers':
       k = 5.0
       solver = InviscidBurgers(k,
-          spatial_scheme=spatial.DGwithLagrangeFR(
+          spatial_scheme=spatial_class(
               equation.InviscidBurgers(k),
               riemann.InviscidBurgers(k),
               degree=int(argv[1]), n_element=int(argv[2]),
