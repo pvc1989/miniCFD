@@ -122,24 +122,21 @@ if __name__ == '__main__':
         assert False
     problem = argv[10]
     if problem == 'Linear':
-        a_const = 5.0
-        solver = LinearAdvection(a_const,
-            spatial_scheme=spatial_class(
-                equation.LinearAdvection(a_const),
-                riemann.LinearAdvection(a_const),
-                degree=int(argv[1]), n_element=int(argv[2]),
-                x_left=float(argv[3]), x_right=float(argv[4])),
-            ode_solver = temporal.RungeKutta(order=int(argv[5])))
+        solver_class = LinearAdvection
+        equation_class = equation.LinearAdvection
+        riemann_class = riemann.LinearAdvection
     elif problem == 'Burgers':
-      k = 5.0
-      solver = InviscidBurgers(k,
-          spatial_scheme=spatial_class(
-              equation.InviscidBurgers(k),
-              riemann.InviscidBurgers(k),
-              degree=int(argv[1]), n_element=int(argv[2]),
-              x_left=float(argv[3]), x_right=float(argv[4])),
-          ode_solver = temporal.RungeKutta(order=int(argv[5])))
+        solver_class = InviscidBurgers
+        equation_class = equation.InviscidBurgers
+        riemann_class = riemann.InviscidBurgers
     else:
         assert False
+    a_const = 1.0
+    solver = solver_class(a_const,
+        spatial_scheme=spatial_class(
+            equation_class(a_const), riemann_class(a_const),
+            degree=int(argv[1]), n_element=int(argv[2]),
+            x_left=float(argv[3]), x_right=float(argv[4])),
+        ode_solver = temporal.RungeKutta(order=int(argv[5])))
     solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))
