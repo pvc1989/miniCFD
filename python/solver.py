@@ -1,6 +1,7 @@
 import abc
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.animation as mpla
 from scipy import optimize
 from sys import argv
 
@@ -45,6 +46,48 @@ class SolverBase(abc.ABC):
         def plot(t_curr):
             self.plot(t_curr, n_point=101)
         self._ode_solver.solve(self._spatial, plot, t_start, t_stop, delta_t)
+
+    def get_ydata(self, t_curr, points):
+        n_point = len(points)
+        expect_solution = np.ndarray(n_point)
+        approx_solution = np.ndarray(n_point)
+        for i in range(n_point):
+            point_i = points[i]
+            approx_solution[i] = self._spatial.get_solution_value(point_i)
+            expect_solution[i] = self.u_exact(point_i, t_curr)
+        return expect_solution, approx_solution
+
+    def animate(self, t_start: float, t_stop: float,  n_step: int):
+        delta_t = (t_stop - t_start) / n_step
+        cfl = self.a_max() * delta_t / self._spatial.delta_x()
+        print(f"n_step = {n_step}, delta_t = {delta_t}, cfl = {cfl}")
+        # general plot setting
+        plt.figure(figsize=(6, 3))
+        plt.ylim([-1.4, 1.4])
+        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            self._spatial.n_element() + 1))
+        plt.grid()
+        # initialize line-plot objects
+        approx_line, = plt.plot([], [], 'b+', label='Approximate Solution')
+        expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
+        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 101)
+        # initialize animation
+        def init_func():
+            self._spatial.initialize(lambda x_global: self.u_init(x_global))
+            expect_line.set_xdata(points)
+            approx_line.set_xdata(points)
+        # update data for the next frame
+        def func(t_curr):
+            expect_solution, approx_solution = self.get_ydata(t_curr, points)
+            expect_line.set_ydata(expect_solution)
+            approx_line.set_ydata(approx_solution)
+            plt.title(f't = {t_curr:.2f}')
+            plt.legend()
+            self._ode_solver.update(self._spatial, delta_t)
+        frames = np.linspace(t_start, t_stop, n_step)
+        anim = mpla.FuncAnimation(
+            plt.gcf(), func, frames, init_func, interval=5)
+        plt.show()
 
 
 class LinearAdvection(SolverBase):
@@ -138,5 +181,5 @@ if __name__ == '__main__':
             degree=int(argv[1]), n_element=int(argv[2]),
             x_left=float(argv[3]), x_right=float(argv[4])),
         ode_solver = temporal.RungeKutta(order=int(argv[5])))
-    solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
+    solver.animate(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))
