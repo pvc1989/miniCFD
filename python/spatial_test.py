@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from spatial import LagrangeFR
+from spatial import LagrangeFR, LagrangeDG, DGwithLagrangeFR
 import equation
 import riemann
 
@@ -52,6 +52,55 @@ class TestLagrangeFR(unittest.TestCase):
         plt.legend()
         # plt.show()
         plt.savefig("fr_approx.pdf")
+
+
+class PlotModifiedWavenumbers(unittest.TestCase):
+    """Plot modified-wavenumbers for various spatial schemes.
+    """
+
+    def __init__(self, method_name: str = ...) -> None:
+        super().__init__(method_name)
+        self._spatial = LagrangeFR(
+            equation.LinearAdvection(1.0),
+            riemann.LinearAdvection(1.0),
+            degree=5, n_element=50,
+            x_left=0.0, x_right=10.0, value_type=complex)
+        self._n_point = self._spatial.n_element() + 1
+
+    def test_plot(self):
+        """.
+        """
+        l = self._spatial.length() / 2
+        i = 1j
+        n = self._n_point - 1
+        w = np.exp(i * 2 * np.pi / n)
+        h = self._spatial.length() / n
+        kappa_h = np.ndarray(self._n_point // 2)
+        kappa_tilde_h = np.ndarray(self._n_point // 2, complex)
+        for k in range(1, 1 + self._n_point // 2):
+            kappa = k * np.pi / l
+            kappa_h[k-1] = kappa * h
+            def u_init(x):
+                return np.exp(i * kappa * x)
+            self._spatial.initialize(u_init)
+            gradients = np.ndarray(self._spatial.n_element(), complex)
+            v_k = 0.0
+            for r in range(self._spatial.n_element()):
+                x_r = self._spatial.x_left() + r * h + h * 0.5
+                # finite-difference approximation
+                dx = 0.0001
+                gradients[r] = (self._spatial.get_continuous_flux(x_r+dx)
+                    - self._spatial.get_continuous_flux(x_r-dx)) / (2*dx)
+                v_k += gradients[r] * w**(-r * k)
+            kappa_tilde_h[k-1] = v_k * h / (i * n)
+        plt.subplot(2,1,1)
+        plt.plot(kappa_h, kappa_tilde_h.real, 'b+')
+        plt.plot([0, np.pi], [0, np.pi], 'r-')
+        plt.subplot(2,1,2)
+        plt.plot(kappa_h, kappa_tilde_h.imag, 'b+')
+        plt.plot([0, np.pi], [0, 0], 'r-')
+        # plt.show()
+        plt.savefig('modified_wave_numbers.pdf')
 
 
 if __name__ == '__main__':
