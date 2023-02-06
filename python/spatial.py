@@ -87,7 +87,8 @@ class LagrangeDG(PiecewiseContinuous):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float,
+            value_type=float) -> None:
         super().__init__(equation, riemann, n_element, x_left, x_right)
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         x_left_i = x_left
@@ -95,7 +96,7 @@ class LagrangeDG(PiecewiseContinuous):
             assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
             x_right_i = x_left_i + self.delta_x()
             element_i = element.LagrangeDG(
-                  equation, degree, x_left_i, x_right_i)
+                  equation, degree, x_left_i, x_right_i, value_type)
             self._elements[i_element] = element_i
             self._local_mass_matrices[i_element] = element_i.build_mass_matrix()
             x_left_i = x_right_i
@@ -140,7 +141,8 @@ class LagrangeFR(PiecewiseContinuous):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float,
+            value_type=float) -> None:
         super().__init__(equation, riemann, n_element, x_left, x_right)
         assert degree >= 0
         x_left_i = x_left
@@ -148,7 +150,7 @@ class LagrangeFR(PiecewiseContinuous):
             assert x_left_i == x_left + i_element * self.delta_x()
             x_right_i = x_left_i + self.delta_x()
             self._elements[i_element] = element.LagrangeFR(
-                  equation, degree, x_left_i, x_right_i)
+                  equation, degree, x_left_i, x_right_i, value_type)
             x_left_i = x_right_i
         assert x_left_i == x_right
 
@@ -193,8 +195,10 @@ class DGwithLagrangeFR(LagrangeFR):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right)
+            degree: int, n_element: int, x_left: float, x_right: float,
+            value_type=float) -> None:
+        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
+            value_type)
         # Most work has been delegated to LagrangeFR.__init__(),
         # but mass matrices should be built here:
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)

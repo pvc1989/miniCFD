@@ -13,7 +13,7 @@ class LagrangeDG(Element):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float) -> None:
+            x_left: float, x_right: float, value_type=float) -> None:
         super().__init__(x_left, x_right)
         self._equation = equation
         # Sample points evenly distributed in the element.
@@ -22,9 +22,10 @@ class LagrangeDG(Element):
         self._solution_points = np.linspace(x_left + delta, x_right - delta,
             degree + 1)
         self._solution_lagrange = expansion.Lagrange(self._solution_points,
-            x_left, x_right)
+            x_left, x_right, value_type)
         self._flux_lagrange = expansion.Lagrange(self._solution_points,
-            x_left, x_right)  # TODO: use self._solution_lagrange
+            x_left, x_right, value_type)  # TODO: use self._solution_lagrange
+        self._value_type = value_type
 
     def degree(self):
         return self._solution_lagrange.degree()
@@ -36,7 +37,7 @@ class LagrangeDG(Element):
         return self.n_term()  # * self_equation.n_component()
 
     def approximate(self, function):
-        coeff = np.ndarray(self.n_term())
+        coeff = np.ndarray(self.n_term(), self._value_type)
         for i in range(self.n_term()):
             coeff[i] = function(self._solution_points[i])
         self.set_solution_coeff(coeff)
@@ -66,7 +67,7 @@ class LagrangeDG(Element):
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)
         # update the corresponding fluxes
-        flux_values = np.zeros(self.n_term())
+        flux_values = np.ndarray(self.n_term(), self._value_type)
         for i in range(self.n_term()):
             flux_values[i] = self._equation.get_convective_flux(coeff[i])
         self._flux_lagrange.set_coeff(flux_values)
@@ -89,8 +90,8 @@ class LagrangeFR(LagrangeDG):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float) -> None:
-        super().__init__(equation, degree, x_left, x_right)
+            x_left: float, x_right: float, value_type=float) -> None:
+        super().__init__(equation, degree, x_left, x_right, value_type)
         self._radau = Radau(degree + 1)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):

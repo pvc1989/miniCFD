@@ -10,12 +10,13 @@ class Lagrange(Expansion):
     """The Lagrange expansion of a general function.
     """
 
-    def __init__(self, points: np.ndarray, x_left: float, x_right: float) -> None:
+    def __init__(self, points: np.ndarray, x_left: float, x_right: float,
+            value_type=float) -> None:
         super().__init__()
         n_point = len(points)
         assert n_point >= 1
         assert x_left <= points[0] <= points[-1] <= x_right
-        self._sample_values = np.zeros(n_point)
+        self._sample_values = np.ndarray(n_point, value_type)
         self._sample_points = points
         if n_point == 1:  # use the centroid rather than the left end
             self._sample_points[0] = (x_left + x_right) / 2.0
