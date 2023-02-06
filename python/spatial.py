@@ -147,12 +147,12 @@ class LagrangeFR(PiecewiseContinuous):
         assert degree >= 0
         x_left_i = x_left
         for i_element in range(n_element):
-            assert x_left_i == x_left + i_element * self.delta_x()
+            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
             x_right_i = x_left_i + self.delta_x()
             self._elements[i_element] = element.LagrangeFR(
                   equation, degree, x_left_i, x_right_i, value_type)
             x_left_i = x_right_i
-        assert x_left_i == x_right
+        assert_almost_equal(x_left_i, x_right)
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
