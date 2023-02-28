@@ -122,9 +122,9 @@ class LinearAdvection(object):
 
 
 if __name__ == '__main__':
-    if len(argv) < 11:
+    if len(argv) < 9:
         print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
-            "<x_right> <rk_order> <t_start> <t_stop> <delta_t>")
+            "<x_right> <rk_order> <t_start> <t_stop> <n_step>")
         exit(-1)
     solver = LinearAdvection(a_const=1.0,
         degree=int(argv[1]), n_element=int(argv[2]),

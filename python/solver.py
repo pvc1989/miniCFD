@@ -150,7 +150,7 @@ class InviscidBurgers(SolverBase):
 if __name__ == '__main__':
     if len(argv) < 11:
         print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
-            "<x_right> <rk_order> <t_start> <t_stop> <delta_t>",
+            "<x_right> <rk_order> <t_start> <t_stop> <n_step>",
             "<method> <problem>\nin which, <method> in (DG, FR, DGFR),",
             "<problem> in (Linear, Burgers).")
         exit(-1)
