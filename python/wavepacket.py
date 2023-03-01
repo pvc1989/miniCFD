@@ -62,11 +62,13 @@ class LinearAdvection(object):
         cfl = self.a_max() * delta_t / self._delta_x
         print(f"n_step = {n_step}, delta_t = {delta_t}, cfl = {cfl}")
         # general plot setting
-        plt.figure(figsize=(6, 3))
+        plt.figure(figsize=(6, 4))
         plt.ylim([-1.4, 1.4])
         plt.xticks(np.linspace(self._x_left, self._x_right,
-            self._n_element + 1))
-        plt.grid()
+            self._n_element + 1), minor=True)
+        plt.xticks(np.linspace(self._x_left, self._x_right,
+            3), minor=False)
+        plt.grid(which='both')
         # initialize line-plot objects
         exact_points = np.linspace(self._x_left, self._x_right, 1001)
         approx_points = np.linspace(self._x_left, self._x_right, 101)

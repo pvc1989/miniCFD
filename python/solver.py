@@ -27,10 +27,12 @@ class SolverBase(abc.ABC):
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
         plt.ylim([-1.4, 1.4])
         plt.title(f't = {t_curr:.2f}')
-        plt.legend()
+        plt.legend(loc='upper right')
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            self._spatial.n_element() + 1))
-        plt.grid()
+            self._spatial.n_element() + 1), minor=True)
+        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            3), minor=False)
+        plt.grid(which='both')
         # plt.show()
         plt.savefig(f't={t_curr:.2f}.pdf')
 
@@ -65,8 +67,10 @@ class SolverBase(abc.ABC):
         plt.figure(figsize=(6, 3))
         plt.ylim([-1.4, 1.4])
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            self._spatial.n_element() + 1))
-        plt.grid()
+            self._spatial.n_element() + 1), minor=True)
+        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            3), minor=False)
+        plt.grid(which='both')
         # initialize line-plot objects
         approx_line, = plt.plot([], [], 'b+', label='Approximate Solution')
         expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
@@ -82,7 +86,7 @@ class SolverBase(abc.ABC):
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
             plt.title(f't = {t_curr:.2f}')
-            plt.legend()
+            plt.legend(loc='upper right')
             self._ode_solver.update(self._spatial, delta_t)
         frames = np.linspace(t_start, t_stop, n_step)
         anim = mpla.FuncAnimation(
