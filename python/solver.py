@@ -152,13 +152,13 @@ class InviscidBurgers(SolverBase):
 
 
 if __name__ == '__main__':
-    if len(argv) < 11:
+    if len(argv) < 12:
         print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
             "<x_right> <rk_order> <t_start> <t_stop> <n_step>",
-            "<method> <problem>\nin which, <method> in (DG, FR, DGFR),",
+            "<method> <problem> <a>\nin which, <method> in (DG, FR, DGFR),",
             "<problem> in (Linear, Burgers).")
         exit(-1)
-    method = argv[9]
+    method = argv[10]
     if method == 'DG':
         spatial_class = spatial.LagrangeDG
     elif method == 'FR':
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         spatial_class = spatial.DGwithLagrangeFR
     else:
         assert False
-    problem = argv[10]
+    problem = argv[11]
     if problem == 'Linear':
         solver_class = LinearAdvection
         equation_class = equation.LinearAdvection
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         riemann_class = riemann.InviscidBurgers
     else:
         assert False
-    a_const = 1.0
+    a_const = float(argv[9])
     solver = solver_class(a_const,
         spatial_scheme=spatial_class(
             equation_class(a_const), riemann_class(a_const),
