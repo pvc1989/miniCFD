@@ -1,3 +1,5 @@
+"""Put separated modules together.
+"""
 import abc
 import argparse
 import numpy as np
@@ -13,8 +15,26 @@ import temporal
 
 
 class SolverBase(abc.ABC):
+    """Define common methods for all solvers.
+    """
+
+    def __init__(self, spatial_scheme: concept.SpatialScheme,
+            ode_solver: concept.OdeSolver):
+        self._spatial = spatial_scheme
+        self._ode_solver = ode_solver
+        self._animation = None
+
+    @abc.abstractmethod
+    def u_init(self, x_global):
+        """Initial condition of the problem."""
+
+    @abc.abstractmethod
+    def u_exact(self, x_global, t_curr):
+        """Exact solution of the problem."""
 
     def plot(self, t_curr, n_point: int):
+        """Plot solution curves at a given moment.
+        """
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), n_point)
         expect_solution = np.ndarray(n_point)
         approx_solution = np.ndarray(n_point)
@@ -38,9 +58,12 @@ class SolverBase(abc.ABC):
 
     @abc.abstractmethod
     def a_max(self):
-        pass
+        """The maximum phase speed.
+        """
 
     def run(self, t_start: float, t_stop: float,  n_step: int):
+        """Solve the problem in a given time range and plot the results.
+        """
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / self._spatial.delta_x()
         print(f"n_step = {n_step}, delta_t = {delta_t}, cfl = {cfl}")
@@ -50,6 +73,8 @@ class SolverBase(abc.ABC):
         self._ode_solver.solve(self._spatial, plot, t_start, t_stop, delta_t)
 
     def get_ydata(self, t_curr, points):
+        """Get the y-data for updating the solution curvess.
+        """
         n_point = len(points)
         expect_solution = np.ndarray(n_point)
         approx_solution = np.ndarray(n_point)
@@ -60,6 +85,8 @@ class SolverBase(abc.ABC):
         return expect_solution, approx_solution
 
     def animate(self, t_start: float, t_stop: float,  n_step: int):
+        """Solve the problem in a given time range and animate the results.
+        """
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / self._spatial.delta_x()
         print(f"n_step = {n_step}, delta_t = {delta_t}, cfl = {cfl}")
@@ -89,20 +116,21 @@ class SolverBase(abc.ABC):
             plt.legend(loc='upper right')
             self._ode_solver.update(self._spatial, delta_t)
         frames = np.linspace(t_start, t_stop, n_step)
-        anim = mpla.FuncAnimation(
+        self._animation = mpla.FuncAnimation(
             plt.gcf(), func, frames, init_func, interval=5)
         plt.show()
 
 
 class LinearAdvection(SolverBase):
+    """Demo the usage of LinearAdvection related classes.
+    """
 
     def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
             ode_solver: concept.OdeSolver) -> None:
+        super().__init__(spatial_scheme, ode_solver)
         self._a_const = a_const
-        self._spatial = spatial_scheme
         self._wave_number = k_const * np.pi * 2 / self._spatial.length()
-        self._ode_solver = ode_solver
 
     def a_max(self):
         return np.abs(self._a_const)
@@ -117,13 +145,15 @@ class LinearAdvection(SolverBase):
 
 
 class InviscidBurgers(SolverBase):
+    """Demo the usage of InviscidBurgers related classes.
+    """
 
     def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
             ode_solver: concept.OdeSolver) -> None:
+        super().__init__(spatial_scheme, ode_solver)
         self._k = a_const
-        self._spatial = spatial_scheme
-        self._ode_solver = ode_solver
+        self._wave_number = k_const * np.pi * 2 / self._spatial.length()
         self._u_prev = 0.0
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
 
@@ -132,7 +162,7 @@ class InviscidBurgers(SolverBase):
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
-        value = np.sin(x_global * np.pi * 2 / self._spatial.length())
+        value = np.sin(x_global * self._wave_number)
         return value
 
     def u_exact(self, x_global, t_curr):
@@ -198,27 +228,27 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     if args.method == 'DG':
-        spatial_class = spatial.LagrangeDG
+        SpatialClass = spatial.LagrangeDG
     elif args.method == 'FR':
-        spatial_class = spatial.LagrangeFR
+        SpatialClass = spatial.LagrangeFR
     elif args.method == 'DGFR':
-        spatial_class = spatial.DGwithLagrangeFR
+        SpatialClass = spatial.DGwithLagrangeFR
     else:
         assert False
     if args.problem == 'Linear':
-        solver_class = LinearAdvection
-        equation_class = equation.LinearAdvection
-        riemann_class = riemann.LinearAdvection
+        SolverClass = LinearAdvection
+        EquationClass = equation.LinearAdvection
+        RiemannClass = riemann.LinearAdvection
     elif args.problem == 'Burgers':
-        solver_class = InviscidBurgers
-        equation_class = equation.InviscidBurgers
-        riemann_class = riemann.InviscidBurgers
+        SolverClass = InviscidBurgers
+        EquationClass = equation.InviscidBurgers
+        RiemannClass = riemann.InviscidBurgers
     else:
         assert False
-    solver = solver_class(args.phase_speed, args.wave_number,
-        spatial_scheme=spatial_class(
-            equation_class(args.phase_speed),
-            riemann_class(args.phase_speed),
+    solver = SolverClass(args.phase_speed, args.wave_number,
+        spatial_scheme=SpatialClass(
+            EquationClass(args.phase_speed),
+            RiemannClass(args.phase_speed),
             args.degree, args.n_element,
             args.x_left, args.x_right),
         ode_solver = temporal.RungeKutta(args.rk_order))
