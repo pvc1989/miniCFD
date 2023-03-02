@@ -58,9 +58,10 @@ class LinearAdvection(object):
         return dg_solution, fr_solution, dgfr_solution
 
     def animate(self, t_start: float, t_stop: float,  n_step: int):
+        delta_x = self._delta_x
         delta_t = (t_stop - t_start) / n_step
-        cfl = self.a_max() * delta_t / self._delta_x
-        print(f"n_step = {n_step}, delta_t = {delta_t}, cfl = {cfl}")
+        cfl = self.a_max() * delta_t / delta_x
+        print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
         # general plot setting
         plt.figure(figsize=(6, 4))
         plt.ylim([-1.4, 1.4])
