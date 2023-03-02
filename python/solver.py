@@ -96,11 +96,12 @@ class SolverBase(abc.ABC):
 
 class LinearAdvection(SolverBase):
 
-    def __init__(self, a_const: float,
+    def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
             ode_solver: concept.OdeSolver) -> None:
         self._a_const = a_const
         self._spatial = spatial_scheme
+        self._wave_number = k_const * np.pi * 2 / self._spatial.length()
         self._ode_solver = ode_solver
 
     def a_max(self):
@@ -108,7 +109,7 @@ class LinearAdvection(SolverBase):
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
-        value = np.sin(x_global * np.pi * 2 / self._spatial.length())
+        value = np.sin(x_global * self._wave_number)
         return value  # np.sign(value)
 
     def u_exact(self, x_global, t_curr):
@@ -117,10 +118,10 @@ class LinearAdvection(SolverBase):
 
 class InviscidBurgers(SolverBase):
 
-    def __init__(self, k: float,
+    def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
             ode_solver: concept.OdeSolver) -> None:
-        self._k = k
+        self._k = a_const
         self._spatial = spatial_scheme
         self._ode_solver = ode_solver
         self._u_prev = 0.0
@@ -152,13 +153,15 @@ class InviscidBurgers(SolverBase):
 
 
 if __name__ == '__main__':
-    if len(argv) < 12:
+    if len(argv) < 13:
         print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
             "<x_right> <rk_order> <t_start> <t_stop> <n_step>",
-            "<method> <problem> <a>\nin which, <method> in (DG, FR, DGFR),",
-            "<problem> in (Linear, Burgers).")
+            "<method> <problem> <a> <k>\nin which,\n",
+            " <method> in (DG, FR, DGFR), <problem> in (Linear, Burgers),\n",
+            " <a> is the phase speed,",
+            "<k> is the number of waves in the domain.")
         exit(-1)
-    method = argv[10]
+    method = argv[9]
     if method == 'DG':
         spatial_class = spatial.LagrangeDG
     elif method == 'FR':
@@ -167,7 +170,7 @@ if __name__ == '__main__':
         spatial_class = spatial.DGwithLagrangeFR
     else:
         assert False
-    problem = argv[11]
+    problem = argv[10]
     if problem == 'Linear':
         solver_class = LinearAdvection
         equation_class = equation.LinearAdvection
@@ -178,12 +181,13 @@ if __name__ == '__main__':
         riemann_class = riemann.InviscidBurgers
     else:
         assert False
-    a_const = float(argv[9])
-    solver = solver_class(a_const,
+    a_const = float(argv[11])
+    k_const = float(argv[12])
+    solver = solver_class(a_const, k_const,
         spatial_scheme=spatial_class(
             equation_class(a_const), riemann_class(a_const),
             degree=int(argv[1]), n_element=int(argv[2]),
             x_left=float(argv[3]), x_right=float(argv[4])),
         ode_solver = temporal.RungeKutta(order=int(argv[5])))
-    solver.animate(t_start=float(argv[6]), t_stop=float(argv[7]),
+    solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
         n_step=int(argv[8]))
