@@ -1,7 +1,7 @@
+import argparse
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as mpla
-from sys import argv
 
 import concept
 import equation
@@ -13,9 +13,8 @@ import temporal
 
 class LinearAdvection(object):
 
-    def __init__(self, a_const: float,
-            degree: int, n_element: int,
-            x_left: float, x_right: float,
+    def __init__(self, a_const: float, k_low: float, k_high: float,
+            degree: int, n_element: int, x_left: float, x_right: float,
             ode_solver: concept.OdeSolver) -> None:
         self._a_const = a_const
         self._degree = degree
@@ -32,6 +31,8 @@ class LinearAdvection(object):
             degree, n_element, x_left, x_right)
         self._length = self._dg.length()
         self._delta_x = self._dg.delta_x()
+        self._kappa_low = k_low * np.pi / self._delta_x
+        self._kappa_high = k_high * np.pi / self._delta_x
         self._ode_solver = ode_solver
 
     def a_max(self):
@@ -73,10 +74,10 @@ class LinearAdvection(object):
         # initialize line-plot objects
         exact_points = np.linspace(self._x_left, self._x_right, 1001)
         approx_points = np.linspace(self._x_left, self._x_right, 101)
-        expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
-        dg_line, = plt.plot([], [], '1', label='DG Solution')
-        fr_line, = plt.plot([], [], '2', label='FR Solution')
-        dgfr_line, = plt.plot([], [], '3', label='DGFR Solution')
+        expect_line, = plt.plot([], [], 'r-', label='Exact')
+        dg_line, = plt.plot([], [], '1', label='DG')
+        fr_line, = plt.plot([], [], '2', label='FR')
+        dgfr_line, = plt.plot([], [], '3', label='DGFR')
         # initialize animation
         def init_func():
             u_init = lambda x_global: self.u_init(x_global)
@@ -112,12 +113,12 @@ class LinearAdvection(object):
             x_global -= self._length
         while x_global < self._x_left:
             x_global += self._length
-        k1 = 1 * np.pi / self._delta_x
-        k2 = k1 * 4
         quad_length = self._length / 4
         gauss_width = self._delta_x / 2
-        value =  np.exp(-((x_global - quad_length) / gauss_width)**2 / 2) * np.sin(k1 * x_global)
-        value += np.exp(-((x_global + quad_length) / gauss_width)**2 / 2) * np.sin(k2 * x_global)
+        value = (np.exp(-((x_global - quad_length) / gauss_width)**2 / 2)
+            * np.sin(self._kappa_low * x_global))
+        value += (np.exp(-((x_global + quad_length) / gauss_width)**2 / 2)
+            * np.sin(self._kappa_high * x_global))
         return value
 
     def u_exact(self, x_global, t_curr):
@@ -125,13 +126,46 @@ class LinearAdvection(object):
 
 
 if __name__ == '__main__':
-    if len(argv) < 9:
-        print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
-            "<x_right> <rk_order> <t_start> <t_stop> <n_step>")
-        exit(-1)
-    solver = LinearAdvection(a_const=1.0,
-        degree=int(argv[1]), n_element=int(argv[2]),
-        x_left=float(argv[3]), x_right=float(argv[4]),
-        ode_solver=temporal.RungeKutta(order=int(argv[5])))
-    solver.animate(t_start=float(argv[6]), t_stop=float(argv[7]),
-        n_step=int(argv[8]))
+    parser = argparse.ArgumentParser(
+        prog = 'python3 wavepacket.py',
+        description = 'What the program does',
+        epilog = 'Text at the bottom of help')
+    parser.add_argument('-n', '--n_element',
+        default=10, type=int,
+        help='number of elements')
+    parser.add_argument('-l', '--x_left',
+        default=-10.0, type=float,
+        help='coordinate of the left end of the domain')
+    parser.add_argument('-r', '--x_right',
+        default=+10.0, type=float,
+        help='coordinate of the right end of the domain')
+    parser.add_argument('-o', '--rk_order',
+        default=3, type=int,
+        help='order of Runge--Kutta scheme')
+    parser.add_argument('-b', '--t_begin',
+        default=0.0, type=float,
+        help='time to start')
+    parser.add_argument('-e', '--t_end',
+        default=10.0, type=float,
+        help='time to stop')
+    parser.add_argument('-s', '--n_step',
+        default=100, type=int,
+        help='number of time steps')
+    parser.add_argument('-d', '--degree',
+        default=2, type=int,
+        help='degree of polynomials for approximation')
+    parser.add_argument('-a', '--phase_speed',
+        default=1.0, type=float,
+        help='phase speed of the wave')
+    parser.add_argument('--k_low',
+        default=1.0, type=float,
+        help='the lower wave number')
+    parser.add_argument('--k_high',
+        default=4.0, type=float,
+        help='the higher wave number')
+    args = parser.parse_args()
+    print(args)
+    solver = LinearAdvection(args.phase_speed, args.k_low, args.k_high,
+        args.degree, args.n_element, args.x_left, args.x_right,
+        ode_solver=temporal.RungeKutta(args.rk_order))
+    solver.animate(args.t_begin, args.t_end, args.n_step)
