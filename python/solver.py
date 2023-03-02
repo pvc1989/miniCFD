@@ -1,9 +1,9 @@
 import abc
+import argparse
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as mpla
 from scipy import optimize
-from sys import argv
 
 import concept
 import equation
@@ -153,41 +153,73 @@ class InviscidBurgers(SolverBase):
 
 
 if __name__ == '__main__':
-    if len(argv) < 13:
-        print("Usage: \n  python3 solver.py <degree> <n_element> <x_left>",
-            "<x_right> <rk_order> <t_start> <t_stop> <n_step>",
-            "<method> <problem> <a> <k>\nin which,\n",
-            " <method> in (DG, FR, DGFR), <problem> in (Linear, Burgers),\n",
-            " <a> is the phase speed,",
-            "<k> is the number of waves in the domain.")
-        exit(-1)
-    method = argv[9]
-    if method == 'DG':
+    parser = argparse.ArgumentParser(
+        prog = 'python3 solver.py',
+        description = 'What the program does',
+        epilog = 'Text at the bottom of help')
+    parser.add_argument('-n', '--n_element',
+        default=10, type=int,
+        help='number of elements')
+    parser.add_argument('-l', '--x_left',
+        default=0.0, type=float,
+        help='coordinate of the left end of the domain')
+    parser.add_argument('-r', '--x_right',
+        default=10.0, type=float,
+        help='coordinate of the right end of the domain')
+    parser.add_argument('-o', '--rk_order',
+        default=3, type=int,
+        help='order of Runge--Kutta scheme')
+    parser.add_argument('-b', '--t_begin',
+        default=0.0, type=float,
+        help='time to start')
+    parser.add_argument('-e', '--t_end',
+        default=10.0, type=float,
+        help='time to stop')
+    parser.add_argument('-s', '--n_step',
+        default=100, type=int,
+        help='number of time steps')
+    parser.add_argument('-m', '--method',
+        choices=['DG', 'FR', 'DGFR'],
+        default='FR',
+        help='method for spatial discretization')
+    parser.add_argument('-d', '--degree',
+        default=2, type=int,
+        help='degree of polynomials for approximation')
+    parser.add_argument('-p', '--problem',
+        choices=['Linear', 'Burgers'],
+        default='Linear',
+        help='problem to be solved')
+    parser.add_argument('-a', '--phase_speed',
+        default=1.0, type=float,
+        help='phase speed of the wave')
+    parser.add_argument('-k', '--wave_number',
+        default=1.0, type=float,
+        help='number of waves in the domain')
+    args = parser.parse_args()
+    print(args)
+    if args.method == 'DG':
         spatial_class = spatial.LagrangeDG
-    elif method == 'FR':
+    elif args.method == 'FR':
         spatial_class = spatial.LagrangeFR
-    elif method == 'DGFR':
+    elif args.method == 'DGFR':
         spatial_class = spatial.DGwithLagrangeFR
     else:
         assert False
-    problem = argv[10]
-    if problem == 'Linear':
+    if args.problem == 'Linear':
         solver_class = LinearAdvection
         equation_class = equation.LinearAdvection
         riemann_class = riemann.LinearAdvection
-    elif problem == 'Burgers':
+    elif args.problem == 'Burgers':
         solver_class = InviscidBurgers
         equation_class = equation.InviscidBurgers
         riemann_class = riemann.InviscidBurgers
     else:
         assert False
-    a_const = float(argv[11])
-    k_const = float(argv[12])
-    solver = solver_class(a_const, k_const,
+    solver = solver_class(args.phase_speed, args.wave_number,
         spatial_scheme=spatial_class(
-            equation_class(a_const), riemann_class(a_const),
-            degree=int(argv[1]), n_element=int(argv[2]),
-            x_left=float(argv[3]), x_right=float(argv[4])),
-        ode_solver = temporal.RungeKutta(order=int(argv[5])))
-    solver.run(t_start=float(argv[6]), t_stop=float(argv[7]),
-        n_step=int(argv[8]))
+            equation_class(args.phase_speed),
+            riemann_class(args.phase_speed),
+            args.degree, args.n_element,
+            args.x_left, args.x_right),
+        ode_solver = temporal.RungeKutta(args.rk_order))
+    solver.run(args.t_begin, args.t_end, args.n_step)
