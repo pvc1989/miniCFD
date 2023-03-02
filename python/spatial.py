@@ -120,8 +120,8 @@ class LagrangeDG(PiecewiseContinuous):
                     gradient = element.get_discontinuous_flux(points[c])
                     values[:,c] = +column * gradient
                 return values
-            values, _ = integrate.fixed_quad(
-                integrand, element.x_left(), element.x_right())
+            values, _ = integrate.fixed_quad(integrand,
+                element.x_left(), element.x_right(), n=element.degree())
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
@@ -225,8 +225,8 @@ class DGwithLagrangeFR(LagrangeFR):
                         upwind_flux_left, upwind_flux_right)
                     values[:,c] = -column * gradient
                 return values
-            values, _ = integrate.fixed_quad(
-                integrand, element.x_left(), element.x_right())
+            values, _ = integrate.fixed_quad(integrand,
+                element.x_left(), element.x_right(), n=element.degree()+1)
             values = np.linalg.solve(self._local_mass_matrices[i], values)
             column[i_dof:i_dof+n_dof] = values
             i_dof += n_dof
