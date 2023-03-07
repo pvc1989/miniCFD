@@ -75,7 +75,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         tau = 0.0001
         l = self._spatial.length() / 2
         i = 1.0j
-        npe = 5
+        npe = self._spatial.degree() + 1
         n = self._spatial.n_element() * npe
         w = np.exp(i * 2 * np.pi / n)
         h = self._spatial.length() / self._spatial.n_element()

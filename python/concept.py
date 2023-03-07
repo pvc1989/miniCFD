@@ -214,6 +214,11 @@ class SpatialScheme(OdeSystem):
         self._delta_x = (x_right - x_left) / n_element
         self._elements = np.ndarray(n_element, Element)
 
+    def degree(self):
+        """Get the degree of the polynomial approximation.
+        """
+        return self._elements[0].degree()
+
     def x_left(self):
         """Get the coordinate of this object's left boundary.
         """
