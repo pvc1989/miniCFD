@@ -40,6 +40,50 @@ class Radau(Polynomial):
         return (left, right)
 
 
+class Vincent(Polynomial):
+    """The left- and right- g(ξ) in Vincent's ESFR schemes.
+    """
+    _legendres = []
+    for k in range(10):
+        _legendres.append(legendre(k))
+
+    def __init__(self, degree: int, c_vincent: callable) -> None:
+        super().__init__()
+        assert 0 <= degree <= 9
+        self._k = degree  # degree of solution, not the polynomial
+        c_minus = 2 / (2*degree + 1)
+        eta = c_vincent(degree) / c_minus
+        self._eta_prev = eta / (eta + 1)
+        self._eta_next = 1 / (eta + 1)
+
+    def get_function_value(self, x_local):
+        def right(xi):
+            val = self._legendres[self._k](xi)
+            val += self._eta_prev * self._legendres[self._k - 1](xi)
+            val += self._eta_next * self._legendres[self._k + 1](xi)
+            return val / 2
+        return (right(-x_local), right(x_local))
+
+    def get_gradient_value(self, x_local):
+        left_prev, right_prev = 0.0, 0.0
+        left_curr, right_curr = 0.0, 0.0
+        left_next, right_next = 0.0, 0.0
+        for curr in range(1 + self._k):
+            if curr > 0:
+                left_prev, right_prev = left_curr, right_curr
+                left_curr, right_curr = left_next, right_next
+            next = curr + 1
+            right_next = (next * self._legendres[curr](x_local)
+                + x_local * right_curr)
+            left_next = (next * self._legendres[curr](-x_local)
+                - x_local * left_curr)
+        left = (left_curr + self._eta_prev * left_prev
+            + self._eta_next * left_next) / 2
+        right = (right_curr + self._eta_prev * right_prev
+            + self._eta_next * right_next) / 2
+        return (left, right)
+
+
 class IthLagrange(Polynomial):
     """The Ith Lagrange polynomial for N given points.
     """
