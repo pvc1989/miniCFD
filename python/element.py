@@ -2,6 +2,7 @@
 """
 import numpy as np
 from scipy import integrate
+from scipy import special
 
 from concept import Element, Equation
 from polynomial import Radau
@@ -17,10 +18,15 @@ class LagrangeDG(Element):
         super().__init__(x_left, x_right)
         self._equation = equation
         # Sample points evenly distributed in the element.
-        # Possible alternatives are zeros of special polynomials.
         delta = (x_right - x_left) / 10
         self._solution_points = np.linspace(x_left + delta, x_right - delta,
             degree + 1)
+        # Or, use zeros of special polynomials.
+        roots, _ = special.roots_legendre(degree + 1)
+        x_center = (x_left + x_right) / 2
+        jacobian = (x_right - x_left) / 2
+        self._solution_points = x_center + roots * jacobian
+        assert len(self._solution_points) == degree + 1
         self._solution_lagrange = expansion.Lagrange(self._solution_points,
             x_left, x_right, value_type)
         self._flux_lagrange = expansion.Lagrange(self._solution_points,
