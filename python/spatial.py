@@ -121,7 +121,7 @@ class LagrangeDG(PiecewiseContinuous):
                     values[:,c] = +column * gradient
                 return values
             values, _ = integrate.fixed_quad(integrand,
-                element.x_left(), element.x_right(), n=element.degree())
+                element.x_left(), element.x_right(), n=max(1, element.degree()))
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
