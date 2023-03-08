@@ -77,22 +77,22 @@ class Vincent(Polynomial):
         return (right(-x_local), right(x_local))
 
     def get_gradient_value(self, x_local):
-        left_prev, right_prev = 0.0, 0.0
-        left_curr, right_curr = 0.0, 0.0
-        left_next, right_next = 0.0, 0.0
+        legendre_derivative_prev = 0.0
+        legendre_derivative_curr = 0.0
+        legendre_derivative_next = 0.0
         for curr in range(1 + self._k):
             if curr > 0:
-                left_prev, right_prev = left_curr, right_curr
-                left_curr, right_curr = left_next, right_next
+                legendre_derivative_prev = legendre_derivative_curr
+                legendre_derivative_curr = legendre_derivative_next
             next = curr + 1
-            right_next = (next * self._legendres[curr](x_local)
-                + x_local * right_curr)
-            left_next = (next * self._legendres[curr](-x_local)
-                - x_local * left_curr)
-        left = (left_curr + self._eta_prev * left_prev
-            + self._eta_next * left_next) / 2
-        right = (right_curr + self._eta_prev * right_prev
-            + self._eta_next * right_next) / 2
+            legendre_derivative_next = (next * self._legendres[curr](x_local)
+                + x_local * legendre_derivative_curr)
+        left = (-1)**self._k * (legendre_derivative_curr
+            - self._eta_prev * legendre_derivative_prev
+            - self._eta_next * legendre_derivative_next) / 2
+        right = (legendre_derivative_curr
+            + self._eta_prev * legendre_derivative_prev
+            + self._eta_next * legendre_derivative_next) / 2
         return (left, right)
 
 

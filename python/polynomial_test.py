@@ -79,6 +79,10 @@ class TestVincent(unittest.TestCase):
             vincent_left, vincent_right = vincent.get_function_value(x)
             self.assertAlmostEqual(radau_left, vincent_right)
             self.assertAlmostEqual(radau_right, vincent_left)
+            radau_left, radau_right = radau.get_gradient_value(x)
+            vincent_left, vincent_right = vincent.get_gradient_value(x)
+            self.assertAlmostEqual(radau_left, vincent_right)
+            self.assertAlmostEqual(radau_right, vincent_left)
 
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.
