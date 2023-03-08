@@ -124,25 +124,31 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         return reduced_wavenumbers, modified_wavenumbers
 
     def test_plot(self):
-        spatials = [
-            spatial.LagrangeFR(self._equation, self._riemann,
-                0, self._n_element, self._x_left, self._x_right),
-            spatial.LagrangeFR(self._equation, self._riemann,
-                1, self._n_element, self._x_left, self._x_right),
-            spatial.LagrangeFR(self._equation, self._riemann,
-                2, self._n_element, self._x_left, self._x_right),
-            spatial.LagrangeFR(self._equation, self._riemann,
-                3, self._n_element, self._x_left, self._x_right),
-        ]
-        markers = ['1', '2', '3', '4']
-        labels = ['FR1', 'FR2', 'FR3', 'FR4']
-        kh_max = 4 * np.pi
+        markers = ['1', '2', '3', '4', '+', 'x', '|', '_']
+        degrees = np.arange(0, 6, step=1, dtype=int)
+        spatials = []
+        labels = []
+        xticks_ticks = [0.0]
+        xticks_labels = [r'0']
+        for degree in degrees:
+            spatials.append(spatial.LagrangeFR(self._equation, self._riemann,
+                degree, self._n_element, self._x_left, self._x_right))
+            order = degree + 1
+            labels.append(f'FR{order}')
+            xticks_ticks.append(order * np.pi)
+            xticks_labels.append(f'${order}\pi$')
+        kh_max = (degrees[-1] + 1) * np.pi
         plt.subplot(2,1,1)
-        plt.plot([0, kh_max, kh_max], [0, kh_max, 0], '--')
-        plt.ylabel(r'$\Re(\Omega)$')
-        plt.subplot(2,1,2)
-        plt.ylabel(r'$\Im(\Omega)$')
+        plt.plot([0, kh_max], [0, kh_max], '--')
+        plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
         plt.xlabel(r'$\kappa h$')
+        plt.xticks(xticks_ticks, xticks_labels)
+        plt.grid()
+        plt.subplot(2,1,2)
+        plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
+        plt.xlabel(r'$\kappa h$')
+        plt.xticks(xticks_ticks, xticks_labels)
+        plt.grid()
         plt.plot([0, kh_max], [0, 0], '--')
         for i in range(len(labels)):
             reduced, modified = self.get_wavenumbers(spatials[i])
@@ -156,8 +162,9 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.legend()
         plt.subplot(2,1,2)
         plt.legend()
-        plt.show()
-        # plt.savefig('modified_wave_numbers.pdf')
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig('compare_fr.pdf')
 
 
 if __name__ == '__main__':
