@@ -56,6 +56,18 @@ class Vincent(Polynomial):
         self._eta_prev = eta / (eta + 1)
         self._eta_next = 1 / (eta + 1)
 
+    @staticmethod
+    def discontinuous_galerkin(k: int):
+        return 0
+
+    @staticmethod
+    def spectral_difference(k: int):
+        return 2*k / (2*k + 1) / (k + 1)
+
+    @staticmethod
+    def huyhn_lump_lobatto(k: int):
+        return 2 * (k+1) / (2*k + 1) / k
+
     def get_function_value(self, x_local):
         def right(xi):
             val = self._legendres[self._k](xi)

@@ -66,8 +66,19 @@ class TestVincent(unittest.TestCase):
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._degree = 4
-        self._huyhn = Vincent(self._degree,
-            lambda k: 2 * (k+1) / (2*k + 1) / k)
+        self._huyhn = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
+
+    def test_radau_equivalence(self):
+        """Test Vincent_{k} ≡ Radau_{k+1}, except for the meaning of left/right.
+        """
+        radau = Radau(self._degree + 1)
+        vincent = Vincent(self._degree, Vincent.discontinuous_galerkin)
+        points = np.linspace(-1, 1, num=1001)
+        for x in points:
+            radau_left, radau_right = radau.get_function_value(x)
+            vincent_left, vincent_right = vincent.get_function_value(x)
+            self.assertAlmostEqual(radau_left, vincent_right)
+            self.assertAlmostEqual(radau_right, vincent_left)
 
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.
