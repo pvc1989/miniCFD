@@ -123,7 +123,17 @@ class PlotModifiedWavenumbers(unittest.TestCase):
                 * np.log(kth_fourier_of_u_tau / kth_fourier_of_u_init))
         return reduced_wavenumbers, modified_wavenumbers
 
-    def test_plot(self):
+    def compare_schemes(self, method: str):
+        """Compare spatial schemes using the same method with different orders.
+        """
+        if method == 'DG':
+            SpatialScheme = spatial.LagrangeDG
+        elif method == 'FR':
+            SpatialScheme = spatial.LagrangeFR
+        elif method == 'DGFR':
+            SpatialScheme = spatial.DGwithLagrangeFR
+        else:
+            assert False
         markers = ['1', '2', '3', '4', '+', 'x', '|', '_']
         degrees = np.arange(0, 6, step=1, dtype=int)
         spatials = []
@@ -131,13 +141,14 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         xticks_ticks = [0.0]
         xticks_labels = [r'0']
         for degree in degrees:
-            spatials.append(spatial.LagrangeFR(self._equation, self._riemann,
+            spatials.append(SpatialScheme(self._equation, self._riemann,
                 degree, self._n_element, self._x_left, self._x_right))
             order = degree + 1
-            labels.append(f'FR{order}')
+            labels.append(f'{method}{order}')
             xticks_ticks.append(order * np.pi)
             xticks_labels.append(f'${order}\pi$')
         kh_max = (degrees[-1] + 1) * np.pi
+        plt.figure()
         plt.subplot(2,1,1)
         plt.plot([0, kh_max], [0, kh_max], '--')
         plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
@@ -164,7 +175,12 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_fr.pdf')
+        plt.savefig(f'compare_{method}.pdf')
+
+    def test_all_methods(self):
+        self.compare_schemes('DG')
+        self.compare_schemes('FR')
+        self.compare_schemes('DGFR')
 
 
 if __name__ == '__main__':
