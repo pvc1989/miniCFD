@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 from element import LagrangeFR
 from equation import LinearAdvection
-from polynomial import Radau
+from polynomial import Vincent
 import expansion
 
 
@@ -72,7 +72,7 @@ class TestLagrangeFR(unittest.TestCase):
         self.assertAlmostEqual(upwind_flux_right,
             self._element.get_continuous_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
-        radau = Radau(self._degree + 1)
+        vincent = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
         lagrange = expansion.Lagrange(
             np.linspace(self._x_left, self._x_right, self._degree + 1),
             self._x_left, self._x_right)
@@ -82,10 +82,10 @@ class TestLagrangeFR(unittest.TestCase):
             # continuous_flux = discontinuous_flux + correction
             flux_expect = self._element.get_discontinuous_flux(x_global)
             x_local = lagrange.global_to_local(x_global)
-            radau_left, radau_right = radau.get_function_value(x_local)
-            flux_expect += radau_right * (upwind_flux_left
+            left, right = vincent.get_function_value(x_local)
+            flux_expect += left * (upwind_flux_left
                 - self._element.get_discontinuous_flux(self._x_left))
-            flux_expect += radau_left * (upwind_flux_right
+            flux_expect += right * (upwind_flux_right
                 - self._element.get_discontinuous_flux(self._x_right))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
