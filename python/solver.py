@@ -43,7 +43,7 @@ class SolverBase(abc.ABC):
             approx_solution[i] = self._spatial.get_solution_value(point_i)
             expect_solution[i] = self.u_exact(point_i, t_curr)
         plt.figure(figsize=(6, 3))
-        plt.plot(points, approx_solution, 'b+', label='Approximate Solution')
+        plt.plot(points, approx_solution, 'b.', label='Approximate Solution')
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
         plt.ylim([-1.4, 1.4])
         plt.title(f't = {t_curr:.2f}')
@@ -101,7 +101,7 @@ class SolverBase(abc.ABC):
             3), minor=False)
         plt.grid(which='both')
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b+', label='Approximate Solution')
+        approx_line, = plt.plot([], [], 'b.', label='Approximate Solution')
         expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 101)
         # initialize animation
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     if args.method == 'DG':
-        SpatialClass = spatial.LagrangeDG
+        SpatialClass = spatial.LegendreDG
     elif args.method == 'FR':
         SpatialClass = spatial.LagrangeFR
     elif args.method == 'DGFR':
@@ -254,4 +254,4 @@ if __name__ == '__main__':
             args.degree, args.n_element,
             args.x_left, args.x_right),
         ode_solver = temporal.RungeKutta(args.rk_order))
-    solver.run(args.t_begin, args.t_end, args.n_step)
+    solver.animate(args.t_begin, args.t_end, args.n_step)

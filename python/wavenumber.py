@@ -1,6 +1,5 @@
 """Analyze modified wavenumbers for various spatial schemes.
 """
-import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -10,21 +9,20 @@ import riemann
 import temporal
 
 
-class PlotModifiedWavenumbers(unittest.TestCase):
+class WaveNumberDisplayer:
     """Plot modified-wavenumbers for various spatial schemes.
     """
 
-    def __init__(self, method_name: str = ...) -> None:
-        super().__init__(method_name)
+    def __init__(self, x_left, x_right, n_element, tau,
+            n_sample_per_element) -> None:
         self._a = 1.0
         self._equation = equation.LinearAdvection(self._a)
         self._riemann = riemann.LinearAdvection(self._a)
-        self._tau = 0.0001
-        self._n_element = 20
-        delta_x = 100.0
-        self._x_left = 0.0
-        self._x_right = delta_x * self._n_element
-        n_sample_per_element = 10
+        self._tau = tau
+        self._x_left = x_left
+        self._x_right = x_right
+        self._n_element = n_element
+        delta_x = (x_right - x_left) / n_element
         n_sample = self._n_element * n_sample_per_element
         self._w = np.exp(1.0j * 2 * np.pi / n_sample)
         half_sample_gap = (delta_x / n_sample_per_element) / 2
@@ -79,7 +77,6 @@ class PlotModifiedWavenumbers(unittest.TestCase):
 
     def plot(self, schemes, labels, xticks_ticks, xticks_labels):
         linestyles = [
-            ('dotted',                (0, (1, 1))),
             ('densely dotted',        (0, (1, 1))),
             ('long dash with offset', (5, (10, 3))),
             ('dashed',                (0, (5, 5))),
@@ -91,7 +88,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         kh_max = xticks_ticks[-1]
         plt.figure()
         plt.subplot(2,1,1)
-        plt.plot([0, kh_max], [0, kh_max], 'r-', label='Exact')
+        plt.plot([0, kh_max], [0, kh_max], '-', label='Exact')
         plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
         plt.xlabel(r'$\kappa h$')
         plt.xticks(xticks_ticks, xticks_labels)
@@ -101,7 +98,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.xlabel(r'$\kappa h$')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
-        plt.plot([0, kh_max], [0, 0], 'r-', label='Exact')
+        plt.plot([0, kh_max], [0, 0], '-', label='Exact')
         for i in range(len(labels)):
             reduced, modified = self.get_wavenumbers(schemes[i])
             # reduced /= (i + 2)
@@ -121,7 +118,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
     def compare_degrees(self, method: spatial.PiecewiseContinuous):
         """Compare spatial schemes using the same method but different degrees.
         """
-        degrees = np.arange(0, 5, step=1, dtype=int)
+        degrees = np.arange(0, 4, step=1, dtype=int)
         schemes = []
         labels = []
         xticks_ticks = [0.0]
@@ -143,6 +140,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         methods = [
             spatial.LegendreDG,
             spatial.LagrangeDG,
+            spatial.LegendreFR,
             spatial.LagrangeFR,
             spatial.DGwithLagrangeFR,
         ]
@@ -162,15 +160,19 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         # plt.show()
         plt.savefig(f'compare_{degree}-degree_methods.pdf')
 
-    def test_all_degrees(self):
+    def compare_all_degrees(self):
         self.compare_degrees(spatial.LegendreDG)
         self.compare_degrees(spatial.LagrangeDG)
+        self.compare_degrees(spatial.LegendreFR)
         self.compare_degrees(spatial.LagrangeFR)
         self.compare_degrees(spatial.DGwithLagrangeFR)
 
-    def test_all_methods(self):
+    def compare_all_methods(self):
         self.compare_methods(2)
         self.compare_methods(4)
 
 if __name__ == '__main__':
-    unittest.main()
+    wnd = WaveNumberDisplayer(x_left=0.0, x_right=2000.0, n_element=20,
+        tau=0.0001, n_sample_per_element = 10)
+    wnd.compare_all_methods()
+    wnd.compare_all_degrees() # time-consuming for large degree
