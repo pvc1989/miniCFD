@@ -82,6 +82,63 @@ class PiecewiseContinuous(SpatialScheme):
             element.approximate(function)
 
 
+class LegendreDG(PiecewiseContinuous):
+    """The ODE system given by the DG method using a Legendre expansion.
+    """
+
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float,
+            value_type=float) -> None:
+        super().__init__(equation, riemann, n_element, x_left, x_right)
+        x_left_i = x_left
+        for i_element in range(n_element):
+            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
+            x_right_i = x_left_i + self.delta_x()
+            element_i = element.LegendreDG(
+                  equation, degree, x_left_i, x_right_i, value_type)
+            self._elements[i_element] = element_i
+            x_left_i = x_right_i
+        assert_almost_equal(x_left_i, x_right)
+
+    @staticmethod
+    def name():
+        return 'LegendreDG'
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof())
+        interface_fluxes = self.get_interface_fluxes()
+        i_dof = 0
+        for i in range(self._n_element):
+            element = self._elements[i]
+            n_dof = element.n_dof()
+            # build element_i's residual column
+            # 1st: evaluate the internal integral
+            def integrand(points):
+                n_row = n_dof
+                n_col = len(points)
+                values = np.ndarray((n_row, n_col))
+                for c in range(n_col):
+                    column = element.get_basis_gradients(points[c])
+                    gradient = element.get_discontinuous_flux(points[c])
+                    values[:,c] = +column * gradient
+                return values
+            values, _ = integrate.fixed_quad(integrand,
+                element.x_left(), element.x_right(), n=max(1, element.degree()))
+            # 2nd: evaluate the boundary integral
+            upwind_flux_left = interface_fluxes[i]
+            upwind_flux_right = interface_fluxes[i+1]
+            values += upwind_flux_left * element.get_basis_values(element.x_left())
+            values -= upwind_flux_right * element.get_basis_values(element.x_right())
+            # 3rd: multiply the inverse of the mass matrix
+            # TODO: factor out the only difference between various DG methods.
+            values = element.divide_mass_matrix(values)
+            # write to the global column
+            column[i_dof:i_dof+n_dof] = values
+            i_dof += n_dof
+        assert i_dof == self.n_dof()
+        return column
+
+
 class LagrangeDG(PiecewiseContinuous):
     """The ODE system given by the DG method using a Lagrange expansion.
     """
@@ -104,7 +161,7 @@ class LagrangeDG(PiecewiseContinuous):
 
     @staticmethod
     def name():
-        return 'DG'
+        return 'LagrangeDG'
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
@@ -160,7 +217,7 @@ class LagrangeFR(PiecewiseContinuous):
 
     @staticmethod
     def name():
-        return 'FR'
+        return 'LagrangeFR'
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())

@@ -91,6 +91,60 @@ class LagrangeDG(Element):
         return self._flux_lagrange.get_function_value(x_global)
 
 
+class LegendreDG(Element):
+    """Element for implement the DG scheme based on Legendre polynomials.
+
+    Since flux is not explicitly approximated, it's just a wrapper of the
+    expansion.Legendre class.
+    """
+
+    def __init__(self, equation: Equation, degree: int,
+            x_left: float, x_right: float, value_type=float) -> None:
+        super().__init__(x_left, x_right)
+        self._equation = equation
+        self._expansion = expansion.Legendre(degree, x_left, x_right,
+            value_type)
+
+    def degree(self):
+        return self._expansion.degree()
+
+    def n_term(self):
+        return self._expansion.n_term()
+
+    def n_dof(self):
+        return self.n_term()  # * self_equation.n_component()
+
+    def approximate(self, function):
+        self._expansion.approximate(function)
+
+    def get_basis_values(self, x_global):
+        return self._expansion.get_basis_values(x_global)
+
+    def get_basis_gradients(self, x_global):
+        return self._expansion.get_basis_gradients(x_global)
+
+    def set_solution_coeff(self, coeff):
+        self._expansion.set_coeff(coeff)
+
+    def get_solution_column(self):
+        # In current case (scalar problem), no conversion is needed.
+        return self._expansion.get_coeff()
+
+    def get_solution_value(self, x_global):
+        return self._expansion.get_function_value(x_global)
+
+    def get_discontinuous_flux(self, x_global):
+        """Get the value of the discontinuous flux at a given point.
+        """
+        u_approx = self.get_solution_value(x_global)
+        return self._equation.get_convective_flux(u_approx)
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        for k in range(self.n_term()):
+            column[k] /= self._expansion.get_mode_weight(k)
+        return column
+
+
 class LagrangeFR(LagrangeDG):
     """Element for implement the FR scheme using a Lagrange expansion.
     """

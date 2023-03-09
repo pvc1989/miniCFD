@@ -141,6 +141,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         """Compare spatial schemes using the same degree but different methods.
         """
         methods = [
+            spatial.LegendreDG,
             spatial.LagrangeDG,
             spatial.LagrangeFR,
             spatial.DGwithLagrangeFR,
@@ -162,6 +163,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.savefig(f'compare_{degree}-degree_methods.pdf')
 
     def test_all_degrees(self):
+        self.compare_degrees(spatial.LegendreDG)
         self.compare_degrees(spatial.LagrangeDG)
         self.compare_degrees(spatial.LagrangeFR)
         self.compare_degrees(spatial.DGwithLagrangeFR)
