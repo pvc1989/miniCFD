@@ -77,17 +77,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
                 * np.log(kth_fourier_of_u_tau / kth_fourier_of_u_init))
         return reduced_wavenumbers, modified_wavenumbers
 
-    def compare_degrees(self, method: str):
-        """Compare spatial schemes using the same method but different degrees.
-        """
-        if method == 'DG':
-            SpatialScheme = spatial.LagrangeDG
-        elif method == 'FR':
-            SpatialScheme = spatial.LagrangeFR
-        elif method == 'DGFR':
-            SpatialScheme = spatial.DGwithLagrangeFR
-        else:
-            assert False
+    def plot(self, schemes, labels, xticks_ticks, xticks_labels):
         linestyles = [
             ('dotted',                (0, (1, 1))),
             ('densely dotted',        (0, (1, 1))),
@@ -98,19 +88,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
             ('densely dashdotted',    (0, (3, 1, 1, 1))),
             ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
             ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]
-        degrees = np.arange(0, 5, step=1, dtype=int)
-        spatials = []
-        labels = []
-        xticks_ticks = [0.0]
-        xticks_labels = ['0']
-        for degree in degrees:
-            spatials.append(SpatialScheme(self._equation, self._riemann,
-                degree, self._n_element, self._x_left, self._x_right))
-            order = degree + 1
-            labels.append(f'{method}{order}')
-            xticks_ticks.append(order * np.pi)
-            xticks_labels.append(f'${order}\pi$')
-        kh_max = (degrees[-1] + 1) * np.pi
+        kh_max = xticks_ticks[-1]
         plt.figure()
         plt.subplot(2,1,1)
         plt.plot([0, kh_max], [0, kh_max], 'r-', label='Exact')
@@ -125,7 +103,7 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.grid()
         plt.plot([0, kh_max], [0, 0], 'r-', label='Exact')
         for i in range(len(labels)):
-            reduced, modified = self.get_wavenumbers(spatials[i])
+            reduced, modified = self.get_wavenumbers(schemes[i])
             # reduced /= (i + 2)
             # modified /= (i + 2)
             plt.subplot(2,1,1)
@@ -139,22 +117,29 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         plt.subplot(2,1,2)
         plt.legend()
         plt.tight_layout()
+
+    def compare_degrees(self, method: spatial.PiecewiseContinuous):
+        """Compare spatial schemes using the same method but different degrees.
+        """
+        degrees = np.arange(0, 5, step=1, dtype=int)
+        schemes = []
+        labels = []
+        xticks_ticks = [0.0]
+        xticks_labels = ['0']
+        for degree in degrees:
+            schemes.append(method(self._equation, self._riemann,
+                degree, self._n_element, self._x_left, self._x_right))
+            order = degree + 1
+            labels.append(f'{method.name()}{order}')
+            xticks_ticks.append(order * np.pi)
+            xticks_labels.append(f'${order}\pi$')
+        self.plot(schemes, labels, xticks_ticks, xticks_labels)
         # plt.show()
-        plt.savefig(f'compare_{method}.pdf')
+        plt.savefig(f'compare_{method.name()}.pdf')
 
     def compare_methods(self, degree: int):
         """Compare spatial schemes using the same degree but different methods.
         """
-        linestyles = [
-            ('dotted',                (0, (1, 1))),
-            ('densely dotted',        (0, (1, 1))),
-            ('long dash with offset', (5, (10, 3))),
-            ('dashed',                (0, (5, 5))),
-            ('densely dashed',        (0, (5, 1))),
-            ('dashdotted',            (0, (3, 5, 1, 5))),
-            ('densely dashdotted',    (0, (3, 1, 1, 1))),
-            ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
-            ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))]
         methods = [
             spatial.LagrangeDG,
             spatial.LagrangeFR,
@@ -166,48 +151,20 @@ class PlotModifiedWavenumbers(unittest.TestCase):
         for p in range(1, order + 1):
             xticks_ticks.append(p * np.pi)
             xticks_labels.append(f'${p}\pi$')
-        spatials = []
+        schemes = []
         labels = []
         for method in methods:
-            spatials.append(method(self._equation, self._riemann,
+            schemes.append(method(self._equation, self._riemann,
                 degree, self._n_element, self._x_left, self._x_right))
             labels.append(f'{method.name()}{order}')
-        kh_max = order * np.pi
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.plot([0, kh_max], [0, kh_max], 'r-', label='Exact')
-        plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h$')
-        plt.xticks(xticks_ticks, xticks_labels)
-        plt.grid()
-        plt.subplot(2,1,2)
-        plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h$')
-        plt.xticks(xticks_ticks, xticks_labels)
-        plt.grid()
-        plt.plot([0, kh_max], [0, 0], 'r-', label='Exact')
-        for i in range(len(labels)):
-            reduced, modified = self.get_wavenumbers(spatials[i])
-            # reduced /= (i + 2)
-            # modified /= (i + 2)
-            plt.subplot(2,1,1)
-            plt.plot(reduced, modified.real, label=labels[i],
-                linestyle=linestyles[i][1])
-            plt.subplot(2,1,2)
-            plt.plot(reduced, modified.imag, label=labels[i],
-                linestyle=linestyles[i][1])
-        plt.subplot(2,1,1)
-        plt.legend()
-        plt.subplot(2,1,2)
-        plt.legend()
-        plt.tight_layout()
+        self.plot(schemes, labels, xticks_ticks, xticks_labels)
         # plt.show()
         plt.savefig(f'compare_{degree}-degree_methods.pdf')
 
     def test_all_degrees(self):
-        self.compare_degrees('DG')
-        self.compare_degrees('FR')
-        self.compare_degrees('DGFR')
+        self.compare_degrees(spatial.LagrangeDG)
+        self.compare_degrees(spatial.LagrangeFR)
+        self.compare_degrees(spatial.DGwithLagrangeFR)
 
     def test_all_methods(self):
         self.compare_methods(2)
