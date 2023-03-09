@@ -42,37 +42,38 @@ class Radau(Polynomial):
 
 class Vincent(Polynomial):
     """The left- and right- g(ξ) in Vincent's ESFR schemes.
+
+    The right g(ξ) for a k-degree u^h is defined as
+        (P_{k} + prev_ratio * P_{k-1} + next_ratio * P_{k+1}) / 2
     """
     _legendres = []
     for k in range(10):
         _legendres.append(legendre(k))
 
-    def __init__(self, degree: int, c_vincent: callable) -> None:
-        super().__init__()
-        assert 0 <= degree <= 9
-        self._k = degree  # degree of solution, not the polynomial
-        c_minus = 2 / (2*degree + 1)
-        eta = c_vincent(degree) / c_minus
-        self._eta_prev = eta / (eta + 1)
-        self._eta_next = 1 / (eta + 1)
-
     @staticmethod
     def discontinuous_galerkin(k: int):
-        return 0
+        return 1.0
 
     @staticmethod
     def spectral_difference(k: int):
-        return 2*k / (2*k + 1) / (k + 1)
+        return (k + 1) / (2*k + 1)
 
     @staticmethod
     def huyhn_lump_lobatto(k: int):
-        return 2 * (k+1) / (2*k + 1) / k
+        return k / (2*k + 1)
+
+    def __init__(self, degree: int, next_ratio=huyhn_lump_lobatto) -> None:
+        super().__init__()
+        assert 0 <= degree <= 9
+        self._k = degree  # degree of solution, not the polynomial
+        self._next_ratio = next_ratio(degree)
+        self._prev_ratio = 1 - self._next_ratio
 
     def get_function_value(self, x_local):
         def right(xi):
             val = self._legendres[self._k](xi)
-            val += self._eta_prev * self._legendres[self._k - 1](xi)
-            val += self._eta_next * self._legendres[self._k + 1](xi)
+            val += self._prev_ratio * self._legendres[self._k - 1](xi)
+            val += self._next_ratio * self._legendres[self._k + 1](xi)
             return val / 2
         return (right(-x_local), right(x_local))
 
@@ -88,11 +89,11 @@ class Vincent(Polynomial):
             legendre_derivative_next = (next * self._legendres[curr](x_local)
                 + x_local * legendre_derivative_curr)
         left = (-1)**self._k * (legendre_derivative_curr
-            - self._eta_prev * legendre_derivative_prev
-            - self._eta_next * legendre_derivative_next) / 2
+            - self._prev_ratio * legendre_derivative_prev
+            - self._next_ratio * legendre_derivative_next) / 2
         right = (legendre_derivative_curr
-            + self._eta_prev * legendre_derivative_prev
-            + self._eta_next * legendre_derivative_next) / 2
+            + self._prev_ratio * legendre_derivative_prev
+            + self._next_ratio * legendre_derivative_next) / 2
         return (left, right)
 
 
