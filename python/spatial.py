@@ -130,7 +130,6 @@ class LegendreDG(PiecewiseContinuous):
             values += upwind_flux_left * element.get_basis_values(element.x_left())
             values -= upwind_flux_right * element.get_basis_values(element.x_right())
             # 3rd: multiply the inverse of the mass matrix
-            # TODO: factor out the only difference between various DG methods.
             values = element.divide_mass_matrix(values)
             # write to the global column
             column[i_dof:i_dof+n_dof] = values
@@ -147,7 +146,6 @@ class LagrangeDG(PiecewiseContinuous):
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         super().__init__(equation, riemann, n_element, x_left, x_right)
-        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         x_left_i = x_left
         for i_element in range(n_element):
             assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
@@ -155,7 +153,6 @@ class LagrangeDG(PiecewiseContinuous):
             element_i = element.LagrangeDG(
                   equation, degree, x_left_i, x_right_i, value_type)
             self._elements[i_element] = element_i
-            self._local_mass_matrices[i_element] = element_i.build_mass_matrix()
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
 
@@ -189,7 +186,7 @@ class LagrangeDG(PiecewiseContinuous):
             values += upwind_flux_left * element.get_basis_values(element.x_left())
             values -= upwind_flux_right * element.get_basis_values(element.x_right())
             # 3rd: multiply the inverse of the mass matrix
-            values = np.linalg.solve(self._local_mass_matrices[i], values)
+            values = element.divide_mass_matrix(values)
             # write to the global column
             column[i_dof:i_dof+n_dof] = values
             i_dof += n_dof
@@ -264,11 +261,6 @@ class DGwithLagrangeFR(LagrangeFR):
             value_type=float) -> None:
         super().__init__(equation, riemann, degree, n_element, x_left, x_right,
             value_type)
-        # Most work has been delegated to LagrangeFR.__init__(),
-        # but mass matrices should be built here:
-        self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
-        for i in range(n_element):
-            self._local_mass_matrices[i] = self._elements[i].build_mass_matrix()
 
     @staticmethod
     def name():
@@ -282,6 +274,7 @@ class DGwithLagrangeFR(LagrangeFR):
             element = self._elements[i]
             n_dof = element.n_dof()
             # build element_i's residual column
+            # 1st: evaluate the internal integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
             def integrand(points):
@@ -296,7 +289,10 @@ class DGwithLagrangeFR(LagrangeFR):
                 return values
             values, _ = integrate.fixed_quad(integrand,
                 element.x_left(), element.x_right(), n=element.degree()+1)
-            values = np.linalg.solve(self._local_mass_matrices[i], values)
+            # 2nd: evaluate the boundary integral
+            # Nothing to do here.
+            # 3rd: multiply the inverse of the mass matrix
+            values = element.divide_mass_matrix(values)
             column[i_dof:i_dof+n_dof] = values
             i_dof += n_dof
         assert i_dof == self.n_dof()

@@ -32,6 +32,7 @@ class LagrangeDG(Element):
         self._flux_lagrange = expansion.Lagrange(self._solution_points,
             x_left, x_right, value_type)  # TODO: use self._solution_lagrange
         self._value_type = value_type
+        self._mass_matrix = self._build_mass_matrix()
 
     def degree(self):
         return self._solution_lagrange.degree()
@@ -54,7 +55,7 @@ class LagrangeDG(Element):
     def get_basis_gradients(self, x_global):
         return self._solution_lagrange.get_basis_gradients(x_global)
 
-    def build_mass_matrix(self):
+    def _build_mass_matrix(self):
         def integrand(points):
             n_row = self.n_term()**2
             n_col = len(points)
@@ -69,6 +70,9 @@ class LagrangeDG(Element):
         assert self.n_term() == self.n_dof()
         # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix.reshape(self.n_dof(), self.n_dof())
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        return np.linalg.solve(self._mass_matrix, column)
 
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)

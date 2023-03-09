@@ -120,6 +120,12 @@ class Element(abc.ABC):
         The element is responsible for the coeff-to-column conversion.
         """
 
+    @abc.abstractmethod
+    def divide_mass_matrix(self, column: np.ndarray):
+        """Divide the mass matrix of this element by the given column.
+
+        Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
+        """
 
 class Equation(abc.ABC):
     """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
