@@ -186,13 +186,71 @@ class LagrangeFR(LagrangeDG):
         return gradient
 
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
-        """Get the gradients of the continuous flux at allsolution points.
+        """Get the gradients of the continuous flux at all nodes.
         """
         values = np.ndarray(len(self._solution_points))
         for i in range(len(values)):
             point_i = self._solution_points[i]
             values[i] = self.get_flux_gradient(point_i,
                 upwind_flux_left, upwind_flux_right)
+        return values
+
+
+class LegendreFR(LegendreDG):
+    """Element for implement the FR scheme using a Legendre expansion.
+    """
+
+    def __init__(self, equation: Equation, degree: int,
+            x_left: float, x_right: float, value_type=float) -> None:
+        super().__init__(equation, degree, x_left, x_right, value_type)
+        # self._radau = Radau(degree + 1)
+        self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
+
+    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
+        """Get the value of the reconstructed continuous flux at a given point.
+        """
+        flux = self.get_discontinuous_flux(x_global)
+        x_local = self._expansion.global_to_local(x_global)
+        left, right = self._correction.get_function_value(x_local)
+        flux += left * (upwind_flux_left
+            - self.get_discontinuous_flux(self.x_left()))
+        flux += right * (upwind_flux_right
+            - self.get_discontinuous_flux(self.x_right()))
+        return flux
+
+    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
+        """Get the gradient value of the reconstructed continuous flux at a given point.
+        """
+        u_approx = self._expansion.get_function_value(x_global)
+        a_approx = self._equation.get_convective_jacobian(u_approx)
+        gradient = a_approx * self._expansion.get_gradient_value(x_global)
+        x_local = self._expansion.global_to_local(x_global)
+        left, right = self._correction.get_gradient_value(x_local)
+        left /= self._expansion.jacobian(x_global)
+        right /= self._expansion.jacobian(x_global)
+        gradient += left * (upwind_flux_left
+            - self.get_discontinuous_flux(self.x_left()))
+        gradient += right * (upwind_flux_right
+            - self.get_discontinuous_flux(self.x_right()))
+        return gradient
+
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
+        """Get the gradients of the continuous flux at all modes.
+        """
+        # TODO: project grad-correction on the Legendre basis in init.
+        def integrand(points):
+            n_row = self.n_term()
+            n_col = len(points)
+            values = np.ndarray((n_row, n_col))
+            for c in range(n_col):
+                column = self.get_basis_values(points[c])
+                column = self.divide_mass_matrix(column)
+                gradient = self.get_flux_gradient(points[c],
+                    upwind_flux_left, upwind_flux_right)
+                values[:,c] = column * gradient
+            return values
+        values, _ = integrate.fixed_quad(integrand,
+            self.x_left(), self.x_right(), n=self.n_term())
         return values
 
 
