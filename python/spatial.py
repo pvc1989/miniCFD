@@ -102,6 +102,10 @@ class LagrangeDG(PiecewiseContinuous):
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
 
+    @staticmethod
+    def name():
+        return 'DG'
+
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
         interface_fluxes = self.get_interface_fluxes()
@@ -154,6 +158,10 @@ class LagrangeFR(PiecewiseContinuous):
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
 
+    @staticmethod
+    def name():
+        return 'FR'
+
     def get_residual_column(self):
         column = np.zeros(self.n_dof())
         interface_fluxes = self.get_interface_fluxes()
@@ -204,6 +212,10 @@ class DGwithLagrangeFR(LagrangeFR):
         self._local_mass_matrices = np.ndarray(n_element, np.ndarray)
         for i in range(n_element):
             self._local_mass_matrices[i] = self._elements[i].build_mass_matrix()
+
+    @staticmethod
+    def name():
+        return 'DGFR'
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())

@@ -219,6 +219,11 @@ class SpatialScheme(OdeSystem):
         """
         return self._elements[0].degree()
 
+    @abc.abstractstaticmethod
+    def name():
+        """Get the compact string representation of the method.
+        """
+
     def x_left(self):
         """Get the coordinate of this object's left boundary.
         """
