@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 from scipy import integrate
 
-from concept import SpatialScheme, Equation, RiemannSolver
+from concept import Element, SpatialScheme, Equation, RiemannSolver
 import element
 
 
@@ -13,10 +13,20 @@ class PiecewiseContinuous(SpatialScheme):
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
-            n_element: int, x_left: float, x_right: float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float,
+            element_type: Element, value_type=float) -> None:
         super().__init__(n_element, x_left, x_right)
-        self._equation = equation
+        assert degree >= 0
         self._riemann = riemann
+        x_left_i = x_left
+        for i_element in range(n_element):
+            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
+            x_right_i = x_left_i + self.delta_x()
+            element_i = element_type(
+                  equation, degree, x_left_i, x_right_i, value_type)
+            self._elements[i_element] = element_i
+            x_left_i = x_right_i
+        assert_almost_equal(x_left_i, x_right)
 
     def n_dof(self):
         return self.n_element() * self._elements[0].n_dof()
@@ -82,116 +92,70 @@ class PiecewiseContinuous(SpatialScheme):
             element.approximate(function)
 
 
-class LegendreDG(PiecewiseContinuous):
+class DiscontinuousGalerkin(PiecewiseContinuous):
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof())
+        interface_fluxes = self.get_interface_fluxes()
+        i_dof = 0
+        for i in range(self._n_element):
+            element = self._elements[i]
+            n_dof = element.n_dof()
+            # build element_i's residual column
+            # 1st: evaluate the internal integral
+            def integrand(points):
+                n_row = n_dof
+                n_col = len(points)
+                values = np.ndarray((n_row, n_col))
+                for c in range(n_col):
+                    column = element.get_basis_gradients(points[c])
+                    gradient = element.get_discontinuous_flux(points[c])
+                    values[:,c] = +column * gradient
+                return values
+            values, _ = integrate.fixed_quad(integrand,
+                element.x_left(), element.x_right(), n=max(1, element.degree()))
+            # 2nd: evaluate the boundary integral
+            upwind_flux_left = interface_fluxes[i]
+            upwind_flux_right = interface_fluxes[i+1]
+            values += upwind_flux_left * element.get_basis_values(element.x_left())
+            values -= upwind_flux_right * element.get_basis_values(element.x_right())
+            # 3rd: multiply the inverse of the mass matrix
+            values = element.divide_mass_matrix(values)
+            # write to the global column
+            column[i_dof:i_dof+n_dof] = values
+            i_dof += n_dof
+        assert i_dof == self.n_dof()
+        return column
+
+
+class LegendreDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Legendre expansion.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, n_element, x_left, x_right)
-        x_left_i = x_left
-        for i_element in range(n_element):
-            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
-            x_right_i = x_left_i + self.delta_x()
-            element_i = element.LegendreDG(
-                  equation, degree, x_left_i, x_right_i, value_type)
-            self._elements[i_element] = element_i
-            x_left_i = x_right_i
-        assert_almost_equal(x_left_i, x_right)
+        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
+            element.LegendreDG, value_type)
 
     @staticmethod
     def name():
         return 'LegendreDG'
 
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof())
-        interface_fluxes = self.get_interface_fluxes()
-        i_dof = 0
-        for i in range(self._n_element):
-            element = self._elements[i]
-            n_dof = element.n_dof()
-            # build element_i's residual column
-            # 1st: evaluate the internal integral
-            def integrand(points):
-                n_row = n_dof
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element.get_basis_gradients(points[c])
-                    gradient = element.get_discontinuous_flux(points[c])
-                    values[:,c] = +column * gradient
-                return values
-            values, _ = integrate.fixed_quad(integrand,
-                element.x_left(), element.x_right(), n=max(1, element.degree()))
-            # 2nd: evaluate the boundary integral
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values += upwind_flux_left * element.get_basis_values(element.x_left())
-            values -= upwind_flux_right * element.get_basis_values(element.x_right())
-            # 3rd: multiply the inverse of the mass matrix
-            values = element.divide_mass_matrix(values)
-            # write to the global column
-            column[i_dof:i_dof+n_dof] = values
-            i_dof += n_dof
-        assert i_dof == self.n_dof()
-        return column
 
-
-class LagrangeDG(PiecewiseContinuous):
+class LagrangeDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, n_element, x_left, x_right)
-        x_left_i = x_left
-        for i_element in range(n_element):
-            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
-            x_right_i = x_left_i + self.delta_x()
-            element_i = element.LagrangeDG(
-                  equation, degree, x_left_i, x_right_i, value_type)
-            self._elements[i_element] = element_i
-            x_left_i = x_right_i
-        assert_almost_equal(x_left_i, x_right)
+        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
+            element.LagrangeDG, value_type)
 
     @staticmethod
     def name():
         return 'LagrangeDG'
-
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof())
-        interface_fluxes = self.get_interface_fluxes()
-        i_dof = 0
-        for i in range(self._n_element):
-            element = self._elements[i]
-            n_dof = element.n_dof()
-            # build element_i's residual column
-            # 1st: evaluate the internal integral
-            def integrand(points):
-                n_row = n_dof
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element.get_basis_gradients(points[c])
-                    gradient = element.get_discontinuous_flux(points[c])
-                    values[:,c] = +column * gradient
-                return values
-            values, _ = integrate.fixed_quad(integrand,
-                element.x_left(), element.x_right(), n=max(1, element.degree()))
-            # 2nd: evaluate the boundary integral
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values += upwind_flux_left * element.get_basis_values(element.x_left())
-            values -= upwind_flux_right * element.get_basis_values(element.x_right())
-            # 3rd: multiply the inverse of the mass matrix
-            values = element.divide_mass_matrix(values)
-            # write to the global column
-            column[i_dof:i_dof+n_dof] = values
-            i_dof += n_dof
-        assert i_dof == self.n_dof()
-        return column
 
 
 class LagrangeFR(PiecewiseContinuous):
@@ -201,16 +165,8 @@ class LagrangeFR(PiecewiseContinuous):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, n_element, x_left, x_right)
-        assert degree >= 0
-        x_left_i = x_left
-        for i_element in range(n_element):
-            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
-            x_right_i = x_left_i + self.delta_x()
-            self._elements[i_element] = element.LagrangeFR(
-                  equation, degree, x_left_i, x_right_i, value_type)
-            x_left_i = x_right_i
-        assert_almost_equal(x_left_i, x_right)
+        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
+            element.LagrangeFR, value_type)
 
     @staticmethod
     def name():
