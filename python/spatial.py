@@ -257,7 +257,7 @@ class LegendreFR(PiecewiseContinuous):
             upwind_flux_left, upwind_flux_right)
 
 
-class DGwithLagrangeFR(LagrangeFR):
+class DGwithFR(LagrangeFR):
     """A DG scheme built upon LagrangeFR.
     """
 
@@ -269,7 +269,7 @@ class DGwithLagrangeFR(LagrangeFR):
 
     @staticmethod
     def name():
-        return 'DGFR'
+        return 'DGwithFR'
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof())

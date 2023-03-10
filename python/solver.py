@@ -211,7 +211,7 @@ if __name__ == '__main__':
         default=100, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['DG', 'FR', 'DGFR'],
+        choices=['DG', 'FR', 'DGwithFR'],
         default='FR',
         help='method for spatial discretization')
     parser.add_argument('-d', '--degree',
@@ -233,8 +233,8 @@ if __name__ == '__main__':
         SpatialClass = spatial.LegendreDG
     elif args.method == 'FR':
         SpatialClass = spatial.LagrangeFR
-    elif args.method == 'DGFR':
-        SpatialClass = spatial.DGwithLagrangeFR
+    elif args.method == 'DGwithFR':
+        SpatialClass = spatial.DGwithFR
     else:
         assert False
     if args.problem == 'Linear':

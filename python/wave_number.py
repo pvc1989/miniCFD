@@ -142,7 +142,7 @@ class WaveNumberDisplayer:
             spatial.LagrangeDG,
             spatial.LegendreFR,
             spatial.LagrangeFR,
-            spatial.DGwithLagrangeFR,
+            spatial.DGwithFR,
         ]
         order = degree + 1
         xticks_ticks = [0.0]
@@ -165,7 +165,7 @@ class WaveNumberDisplayer:
         self.compare_degrees(spatial.LagrangeDG)
         self.compare_degrees(spatial.LegendreFR)
         self.compare_degrees(spatial.LagrangeFR)
-        self.compare_degrees(spatial.DGwithLagrangeFR)
+        self.compare_degrees(spatial.DGwithFR)
 
     def compare_all_methods(self):
         self.compare_methods(2)

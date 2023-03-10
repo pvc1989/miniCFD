@@ -27,7 +27,7 @@ class LinearAdvection(object):
             degree, n_element, x_left, x_right)
         self._fr = spatial.LagrangeFR(equation_object, riemann_object,
             degree, n_element, x_left, x_right)
-        self._dgfr = spatial.DGwithLagrangeFR(equation_object, riemann_object,
+        self._dgfr = spatial.DGwithFR(equation_object, riemann_object,
             degree, n_element, x_left, x_right)
         self._length = self._dg.length()
         self._delta_x = self._dg.delta_x()
@@ -77,7 +77,7 @@ class LinearAdvection(object):
         expect_line, = plt.plot([], [], 'r-', label='Exact')
         dg_line, = plt.plot([], [], '1', label='DG')
         fr_line, = plt.plot([], [], '2', label='FR')
-        dgfr_line, = plt.plot([], [], '3', label='DGFR')
+        dgfr_line, = plt.plot([], [], '3', label='DGwithFR')
         # initialize animation
         def init_func():
             u_init = lambda x_global: self.u_init(x_global)
