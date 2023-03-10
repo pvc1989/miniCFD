@@ -23,7 +23,7 @@ class LinearAdvection(object):
         self._x_right = x_right
         equation_object = equation.LinearAdvection(a_const)
         riemann_object = riemann.LinearAdvection(a_const)
-        self._dg = spatial.LagrangeDG(equation_object, riemann_object,
+        self._dg = spatial.LegendreDG(equation_object, riemann_object,
             degree, n_element, x_left, x_right)
         self._fr = spatial.LagrangeFR(equation_object, riemann_object,
             degree, n_element, x_left, x_right)
@@ -59,6 +59,11 @@ class LinearAdvection(object):
         return dg_solution, fr_solution, dgfr_solution
 
     def animate(self, t_start: float, t_stop: float,  n_step: int):
+        linestyles = [
+            ('densely dotted',        (0, (1, 1))),
+            ('long dash with offset', (5, (10, 3))),
+            ('densely dashdotted',    (0, (3, 1, 1, 1))),
+        ]
         delta_x = self._delta_x
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
@@ -75,9 +80,12 @@ class LinearAdvection(object):
         exact_points = np.linspace(self._x_left, self._x_right, 1001)
         approx_points = np.linspace(self._x_left, self._x_right, 101)
         expect_line, = plt.plot([], [], 'r-', label='Exact')
-        dg_line, = plt.plot([], [], '1', label='DG')
-        fr_line, = plt.plot([], [], '2', label='FR')
-        dgfr_line, = plt.plot([], [], '3', label='DGwithFR')
+        dg_line, = plt.plot([], [], linestyle=linestyles[0][1],
+            label=f'LegendreDG{self._degree+1}')
+        fr_line, = plt.plot([], [], linestyle=linestyles[1][1],
+            label=f'LagrangeFR{self._degree+1}')
+        dgfr_line, = plt.plot([], [], linestyle=linestyles[2][1],
+            label=f'DGwithFR{self._degree+1}')
         # initialize animation
         def init_func():
             u_init = lambda x_global: self.u_init(x_global)
@@ -127,7 +135,7 @@ class LinearAdvection(object):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        prog = 'python3 wavepacket.py',
+        prog = 'python3 wave_packet.py',
         description = 'What the program does',
         epilog = 'Text at the bottom of help')
     parser.add_argument('-n', '--n_element',

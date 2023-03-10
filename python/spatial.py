@@ -2,10 +2,10 @@
 """
 import numpy as np
 from numpy.testing import assert_almost_equal
-from scipy import integrate
 
 from concept import Element, SpatialScheme, Equation, RiemannSolver
 import element
+import integrate
 
 
 class PiecewiseContinuous(SpatialScheme):
@@ -103,17 +103,12 @@ class DiscontinuousGalerkin(PiecewiseContinuous):
             n_dof = element.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
-            def integrand(points):
-                n_row = n_dof
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element.get_basis_gradients(points[c])
-                    gradient = element.get_discontinuous_flux(points[c])
-                    values[:,c] = +column * gradient
-                return values
-            values, _ = integrate.fixed_quad(integrand,
-                element.x_left(), element.x_right(), n=max(1, element.degree()))
+            def integrand(x_global):
+                column = element.get_basis_gradients(x_global)
+                gradient = element.get_discontinuous_flux(x_global)
+                return column * gradient
+            values = integrate.fixed_quad_global(integrand,
+                element.x_left(), element.x_right(), max(1, element.degree()))
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
@@ -282,18 +277,13 @@ class DGwithFR(LagrangeFR):
             # 1st: evaluate the internal integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            def integrand(points):
-                n_row = n_dof
-                n_col = len(points)
-                values = np.ndarray((n_row, n_col))
-                for c in range(n_col):
-                    column = element.get_basis_values(points[c])
-                    gradient = element.get_flux_gradient(points[c],
-                        upwind_flux_left, upwind_flux_right)
-                    values[:,c] = -column * gradient
-                return values
-            values, _ = integrate.fixed_quad(integrand,
-                element.x_left(), element.x_right(), n=element.degree()+1)
+            def integrand(x_global):
+                column = element.get_basis_values(x_global)
+                gradient = element.get_flux_gradient(x_global,
+                    upwind_flux_left, upwind_flux_right)
+                return -column * gradient
+            values = integrate.fixed_quad_global(integrand,
+                element.x_left(), element.x_right(), element.n_term())
             # 2nd: evaluate the boundary integral
             # Nothing to do here.
             # 3rd: multiply the inverse of the mass matrix

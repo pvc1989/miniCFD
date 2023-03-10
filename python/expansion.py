@@ -1,10 +1,11 @@
 """Implement some polynomial approximations for general functions.
 """
 import numpy as np
-from scipy import special, integrate
+from scipy import special
 
 from concept import Expansion
 import polynomial
+import integrate
 
 
 class Lagrange(Expansion):
@@ -106,8 +107,8 @@ class Legendre(Expansion):
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
         self._mode_weights = np.ndarray(self._n_term, float)
         for k in range(self._n_term):
-            self._mode_weights[k] = self._jacobian * integrate.fixed_quad(
-                lambda x: (special.eval_legendre(k, x))**2, -1.0, 1.0, n=k+1)[0]
+            self._mode_weights[k] = self._jacobian * integrate.fixed_quad_local(
+                lambda x: (special.eval_legendre(k, x))**2, n_point=k+1)
 
     def get_mode_weight(self, k):
         """Get the inner-product of the kth basis with itself.
@@ -151,8 +152,8 @@ class Legendre(Expansion):
                 value = special.eval_legendre(k, x_local)
                 value *= function(self.local_to_global(x_local))
                 return value
-            self._mode_coeffs[k] = self._jacobian * integrate.fixed_quad(
-                integrand, -1.0, 1.0, n=self.n_term())[0]
+            self._mode_coeffs[k] = integrate.fixed_quad_local(integrand,
+                self.n_term()) * self._jacobian
             self._mode_coeffs[k] /= self._mode_weights[k]
 
     def get_basis_values(self, x_global):

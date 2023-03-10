@@ -1,12 +1,12 @@
 """Implement elements for spatial scheme.
 """
 import numpy as np
-from scipy import integrate
 from scipy import special
 
 from concept import Element, Equation
 from polynomial import Vincent
 import expansion
+import integrate
 
 
 class LagrangeDG(Element):
@@ -56,20 +56,15 @@ class LagrangeDG(Element):
         return self._solution_lagrange.get_basis_gradients(x_global)
 
     def _build_mass_matrix(self):
-        def integrand(points):
-            n_row = self.n_term()**2
-            n_col = len(points)
-            values = np.ndarray((n_row, n_col))
-            for c in range(n_col):
-                column = self.get_basis_values(points[c])
-                matrix = np.tensordot(column, column, axes=0)
-                values[:,c] = matrix.reshape(n_row)
-            return values
-        mass_matrix, _ = integrate.fixed_quad(integrand,
-            self.x_left(), self.x_right(), n=self.degree()+1)
+        def integrand(x_global):
+            column = self.get_basis_values(x_global)
+            matrix = np.tensordot(column, column, axes=0)
+            return matrix
+        mass_matrix = integrate.fixed_quad_global(integrand,
+            self.x_left(), self.x_right(), self.n_term())
         assert self.n_term() == self.n_dof()
         # Otherwise, it should be spanned to a block diagonal matrix.
-        return mass_matrix.reshape(self.n_dof(), self.n_dof())
+        return mass_matrix
 
     def divide_mass_matrix(self, column: np.ndarray):
         return np.linalg.solve(self._mass_matrix, column)
@@ -238,19 +233,14 @@ class LegendreFR(LegendreDG):
         """Get the gradients of the continuous flux at all modes.
         """
         # TODO: project grad-correction on the Legendre basis in init.
-        def integrand(points):
-            n_row = self.n_term()
-            n_col = len(points)
-            values = np.ndarray((n_row, n_col))
-            for c in range(n_col):
-                column = self.get_basis_values(points[c])
-                column = self.divide_mass_matrix(column)
-                gradient = self.get_flux_gradient(points[c],
-                    upwind_flux_left, upwind_flux_right)
-                values[:,c] = column * gradient
-            return values
-        values, _ = integrate.fixed_quad(integrand,
-            self.x_left(), self.x_right(), n=self.n_term())
+        def integrand(x_global):
+            column = self.get_basis_values(x_global)
+            column *= self.get_flux_gradient(x_global,
+                upwind_flux_left, upwind_flux_right)
+            column = self.divide_mass_matrix(column)
+            return column
+        values = integrate.fixed_quad_global(integrand,
+            self.x_left(), self.x_right(), self.n_term())
         return values
 
 
