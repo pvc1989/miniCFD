@@ -12,23 +12,24 @@ class Lagrange(Expansion):
     """The Lagrange expansion of a general function.
     """
 
-    def __init__(self, points: np.ndarray, x_left: float, x_right: float,
+    def __init__(self, degree: int, x_left: float, x_right: float,
             value_type=float) -> None:
         super().__init__()
-        n_point = len(points)
+        n_point = degree + 1
         assert n_point >= 1
-        assert x_left <= points[0] <= points[-1] <= x_right
-        self._sample_values = np.ndarray(n_point, value_type)
-        self._sample_points = points
-        if n_point == 1:  # use the centroid rather than the left end
-            self._sample_points[0] = (x_left + x_right) / 2.0
+        assert x_left < x_right
         # linear coordinate transform:
-        self._x_left = x_left
+        self._x_center = (x_left + x_right) / 2.0
         self._jacobian = (x_right - x_left) / 2.0
-        local_points = np.ndarray(n_point)
-        for i in range(n_point):
-            local_points[i] = self.global_to_local(points[i])
-        self._basis = polynomial.LagrangeBasis(local_points)
+        # Sample points evenly distributed in the element.
+        delta = 0.1
+        roots = np.linspace(delta - 1, 1 - delta, n_point)
+        # Or, use zeros of special polynomials.
+        roots, _ = special.roots_legendre(degree + 1)
+        # Build the basis and sample points.
+        self._basis = polynomial.LagrangeBasis(roots)
+        self._sample_values = np.ndarray(n_point, value_type)
+        self._sample_points = self._x_center + roots * self._jacobian
 
     def n_term(self):
         return self._basis.n_term()
@@ -48,12 +49,12 @@ class Lagrange(Expansion):
     def local_to_global(self, x_local):
         """Coordinate transform from local to global.
         """
-        return self._x_left + (self._jacobian * (x_local + 1.0))
+        return self._x_center + self._jacobian * x_local
 
     def global_to_local(self, x_global):
         """Coordinate transform from global to local.
         """
-        return (x_global - self._x_left) / self._jacobian - 1.0
+        return (x_global - self._x_center) / self._jacobian
 
     def set_coeff(self, values):
         """Set values at sample points.

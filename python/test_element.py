@@ -73,8 +73,7 @@ class TestLagrangeFR(unittest.TestCase):
             self._element.get_continuous_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
         vincent = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
-        lagrange = expansion.Lagrange(
-            np.linspace(self._x_left, self._x_right, self._degree + 1),
+        lagrange = expansion.Lagrange(self._degree,
             self._x_left, self._x_right)
         for x_global in self._test_points:
             flux_actual = self._element.get_continuous_flux(x_global,

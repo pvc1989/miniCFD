@@ -16,9 +16,7 @@ class TestLagrange(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = 0.0
         self._x_right = 10.0
-        points = np.linspace(self._x_left + 0.5, self._x_right - 0.5, 5)
-        self._expansion = expansion.Lagrange(points,
-            self._x_left, self._x_right)
+        self._expansion = expansion.Lagrange(5, self._x_left, self._x_right)
 
     def test_coordinate_transforms(self):
         """Test coordinate transforms.
@@ -38,8 +36,7 @@ class TestLagrange(unittest.TestCase):
         plt.figure()
         plt.plot(points, exact_values, '^', label='Exact')
         for degree in range(8):
-            sample_points = np.linspace(self._x_left, self._x_right, degree+1)
-            my_expansion = expansion.Lagrange(sample_points,
+            my_expansion = expansion.Lagrange(degree,
                 self._x_left, self._x_right)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
@@ -56,7 +53,7 @@ class TestLagrange(unittest.TestCase):
         my_function = np.sin
         self._expansion.approximate(my_function)
         for point in self._expansion.get_sample_points():
-            self.assertEqual(my_function(point), self._expansion.get_function_value(point))
+            self.assertAlmostEqual(my_function(point), self._expansion.get_function_value(point))
 
     def test_get_basis_values_and_gradients(self):
         """Test methods for getting values and gradients of basis.

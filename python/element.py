@@ -1,7 +1,6 @@
 """Implement elements for spatial scheme.
 """
 import numpy as np
-from scipy import special
 
 from concept import Element, Equation
 from polynomial import Vincent
@@ -17,19 +16,8 @@ class LagrangeDG(Element):
             x_left: float, x_right: float, value_type=float) -> None:
         super().__init__(x_left, x_right)
         self._equation = equation
-        # Sample points evenly distributed in the element.
-        delta = (x_right - x_left) / 10
-        self._solution_points = np.linspace(x_left + delta, x_right - delta,
-            degree + 1)
-        # Or, use zeros of special polynomials.
-        roots, _ = special.roots_legendre(degree + 1)
-        x_center = (x_left + x_right) / 2
-        jacobian = (x_right - x_left) / 2
-        self._solution_points = x_center + roots * jacobian
-        assert len(self._solution_points) == degree + 1
-        self._u_approx = expansion.Lagrange(self._solution_points,
+        self._u_approx = expansion.Lagrange(degree,
             x_left, x_right, value_type)
-        self._value_type = value_type
         self._mass_matrix = self._build_mass_matrix()
 
     def degree(self):
@@ -42,10 +30,7 @@ class LagrangeDG(Element):
         return self.n_term()  # * self_equation.n_component()
 
     def approximate(self, function):
-        coeff = np.ndarray(self.n_term(), self._value_type)
-        for i in range(self.n_term()):
-            coeff[i] = function(self._solution_points[i])
-        self.set_solution_coeff(coeff)
+        self._u_approx.approximate(function)
 
     def get_basis_values(self, x_global):
         return self._u_approx.get_basis_values(x_global)
@@ -180,10 +165,10 @@ class LagrangeFR(LagrangeDG):
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
         """Get the gradients of the continuous flux at all nodes.
         """
-        values = np.ndarray(len(self._solution_points))
-        for i in range(len(values)):
-            point_i = self._solution_points[i]
-            values[i] = self.get_flux_gradient(point_i,
+        nodes = self._u_approx.get_sample_points()
+        values = np.ndarray(len(nodes))
+        for i in range(len(nodes)):
+            values[i] = self.get_flux_gradient(nodes[i],
                 upwind_flux_left, upwind_flux_right)
         return values
 
