@@ -29,8 +29,6 @@ class LagrangeDG(Element):
         assert len(self._solution_points) == degree + 1
         self._solution_lagrange = expansion.Lagrange(self._solution_points,
             x_left, x_right, value_type)
-        self._flux_lagrange = expansion.Lagrange(self._solution_points,
-            x_left, x_right, value_type)  # TODO: use self._solution_lagrange
         self._value_type = value_type
         self._mass_matrix = self._build_mass_matrix()
 
@@ -71,11 +69,6 @@ class LagrangeDG(Element):
 
     def set_solution_coeff(self, coeff):
         self._solution_lagrange.set_coeff(coeff)
-        # update the corresponding fluxes
-        flux_values = np.ndarray(self.n_term(), self._value_type)
-        for i in range(self.n_term()):
-            flux_values[i] = self._equation.get_convective_flux(coeff[i])
-        self._flux_lagrange.set_coeff(flux_values)
 
     def get_solution_column(self):
         # In current case (scalar problem), no conversion is needed.
@@ -87,7 +80,8 @@ class LagrangeDG(Element):
     def get_discontinuous_flux(self, x_global):
         """Get the value of the discontinuous flux at a given point.
         """
-        return self._flux_lagrange.get_function_value(x_global)
+        u_approx = self.get_solution_value(x_global)
+        return self._equation.get_convective_flux(u_approx)
 
 
 class LegendreDG(Element):
@@ -169,7 +163,10 @@ class LagrangeFR(LagrangeDG):
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        gradient = self._flux_lagrange.get_gradient_value(x_global)
+        u_approx = self._solution_lagrange.get_function_value(x_global)
+        a_approx = self._equation.get_convective_jacobian(u_approx)
+        gradient = self._solution_lagrange.get_gradient_value(x_global)
+        gradient = a_approx * gradient
         x_local = self._solution_lagrange.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
         left /= self._solution_lagrange.jacobian(x_global)
