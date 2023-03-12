@@ -27,16 +27,16 @@ class LagrangeDG(Element):
         jacobian = (x_right - x_left) / 2
         self._solution_points = x_center + roots * jacobian
         assert len(self._solution_points) == degree + 1
-        self._solution_lagrange = expansion.Lagrange(self._solution_points,
+        self._u_approx = expansion.Lagrange(self._solution_points,
             x_left, x_right, value_type)
         self._value_type = value_type
         self._mass_matrix = self._build_mass_matrix()
 
     def degree(self):
-        return self._solution_lagrange.degree()
+        return self._u_approx.degree()
 
     def n_term(self):
-        return self._solution_lagrange.n_term()
+        return self._u_approx.n_term()
 
     def n_dof(self):
         return self.n_term()  # * self_equation.n_component()
@@ -48,10 +48,10 @@ class LagrangeDG(Element):
         self.set_solution_coeff(coeff)
 
     def get_basis_values(self, x_global):
-        return self._solution_lagrange.get_basis_values(x_global)
+        return self._u_approx.get_basis_values(x_global)
 
     def get_basis_gradients(self, x_global):
-        return self._solution_lagrange.get_basis_gradients(x_global)
+        return self._u_approx.get_basis_gradients(x_global)
 
     def _build_mass_matrix(self):
         def integrand(x_global):
@@ -68,14 +68,14 @@ class LagrangeDG(Element):
         return np.linalg.solve(self._mass_matrix, column)
 
     def set_solution_coeff(self, coeff):
-        self._solution_lagrange.set_coeff(coeff)
+        self._u_approx.set_coeff(coeff)
 
     def get_solution_column(self):
         # In current case (scalar problem), no conversion is needed.
-        return self._solution_lagrange.get_coeff()
+        return self._u_approx.get_coeff()
 
     def get_solution_value(self, x_global):
-        return self._solution_lagrange.get_function_value(x_global)
+        return self._u_approx.get_function_value(x_global)
 
     def get_discontinuous_flux(self, x_global):
         """Get the value of the discontinuous flux at a given point.
@@ -95,36 +95,36 @@ class LegendreDG(Element):
             x_left: float, x_right: float, value_type=float) -> None:
         super().__init__(x_left, x_right)
         self._equation = equation
-        self._expansion = expansion.Legendre(degree, x_left, x_right,
+        self._u_approx = expansion.Legendre(degree, x_left, x_right,
             value_type)
 
     def degree(self):
-        return self._expansion.degree()
+        return self._u_approx.degree()
 
     def n_term(self):
-        return self._expansion.n_term()
+        return self._u_approx.n_term()
 
     def n_dof(self):
         return self.n_term()  # * self_equation.n_component()
 
     def approximate(self, function):
-        self._expansion.approximate(function)
+        self._u_approx.approximate(function)
 
     def get_basis_values(self, x_global):
-        return self._expansion.get_basis_values(x_global)
+        return self._u_approx.get_basis_values(x_global)
 
     def get_basis_gradients(self, x_global):
-        return self._expansion.get_basis_gradients(x_global)
+        return self._u_approx.get_basis_gradients(x_global)
 
     def set_solution_coeff(self, coeff):
-        self._expansion.set_coeff(coeff)
+        self._u_approx.set_coeff(coeff)
 
     def get_solution_column(self):
         # In current case (scalar problem), no conversion is needed.
-        return self._expansion.get_coeff()
+        return self._u_approx.get_coeff()
 
     def get_solution_value(self, x_global):
-        return self._expansion.get_function_value(x_global)
+        return self._u_approx.get_function_value(x_global)
 
     def get_discontinuous_flux(self, x_global):
         """Get the value of the discontinuous flux at a given point.
@@ -134,7 +134,7 @@ class LegendreDG(Element):
 
     def divide_mass_matrix(self, column: np.ndarray):
         for k in range(self.n_term()):
-            column[k] /= self._expansion.get_mode_weight(k)
+            column[k] /= self._u_approx.get_mode_weight(k)
         return column
 
 
@@ -152,7 +152,7 @@ class LagrangeFR(LagrangeDG):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
-        x_local = self._solution_lagrange.global_to_local(x_global)
+        x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_function_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
@@ -163,14 +163,14 @@ class LagrangeFR(LagrangeDG):
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        u_approx = self._solution_lagrange.get_function_value(x_global)
+        u_approx = self._u_approx.get_function_value(x_global)
         a_approx = self._equation.get_convective_jacobian(u_approx)
-        gradient = self._solution_lagrange.get_gradient_value(x_global)
+        gradient = self._u_approx.get_gradient_value(x_global)
         gradient = a_approx * gradient
-        x_local = self._solution_lagrange.global_to_local(x_global)
+        x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
-        left /= self._solution_lagrange.jacobian(x_global)
-        right /= self._solution_lagrange.jacobian(x_global)
+        left /= self._u_approx.jacobian(x_global)
+        right /= self._u_approx.jacobian(x_global)
         gradient += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
         gradient += right * (upwind_flux_right
@@ -202,7 +202,7 @@ class LegendreFR(LegendreDG):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
-        x_local = self._expansion.global_to_local(x_global)
+        x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_function_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
@@ -213,13 +213,13 @@ class LegendreFR(LegendreDG):
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        u_approx = self._expansion.get_function_value(x_global)
+        u_approx = self._u_approx.get_function_value(x_global)
         a_approx = self._equation.get_convective_jacobian(u_approx)
-        gradient = a_approx * self._expansion.get_gradient_value(x_global)
-        x_local = self._expansion.global_to_local(x_global)
+        gradient = a_approx * self._u_approx.get_gradient_value(x_global)
+        x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
-        left /= self._expansion.jacobian(x_global)
-        right /= self._expansion.jacobian(x_global)
+        left /= self._u_approx.jacobian(x_global)
+        right /= self._u_approx.jacobian(x_global)
         gradient += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
         gradient += right * (upwind_flux_right
