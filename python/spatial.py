@@ -27,6 +27,7 @@ class PiecewiseContinuous(SpatialScheme):
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
+        self._value_type = value_type
 
     def n_dof(self):
         return self.n_element() * self._elements[0].n_dof()
@@ -43,7 +44,7 @@ class PiecewiseContinuous(SpatialScheme):
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
-        interface_fluxes = np.ndarray(self._n_element + 1)
+        interface_fluxes = np.ndarray(self._n_element + 1, self._value_type)
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self._n_element):
             x_right = self._elements[i].x_left()
@@ -78,7 +79,7 @@ class PiecewiseContinuous(SpatialScheme):
         assert first == self.n_dof()
 
     def get_solution_column(self):
-        column = np.zeros(self.n_dof())
+        column = np.zeros(self.n_dof(), self._value_type)
         first = 0
         for element in self._elements:
             last = first + element.n_dof()
@@ -95,7 +96,7 @@ class PiecewiseContinuous(SpatialScheme):
 class DiscontinuousGalerkin(PiecewiseContinuous):
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof())
+        column = np.zeros(self.n_dof(), self._value_type)
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self._n_element):
@@ -168,7 +169,7 @@ class LagrangeFR(PiecewiseContinuous):
         return 'LagrangeFR'
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof())
+        column = np.zeros(self.n_dof(), self._value_type)
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
@@ -217,7 +218,7 @@ class LegendreFR(PiecewiseContinuous):
         return 'LegendreFR'
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof())
+        column = np.zeros(self.n_dof(), self._value_type)
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
@@ -267,7 +268,7 @@ class DGwithFR(LagrangeFR):
         return 'DGwithFR'
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof())
+        column = np.zeros(self.n_dof(), self._value_type)
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self._n_element):

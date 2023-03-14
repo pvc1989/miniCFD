@@ -216,9 +216,8 @@ class LegendreFR(LegendreDG):
         """
         # TODO: project grad-correction on the Legendre basis in init.
         def integrand(x_global):
-            column = self.get_basis_values(x_global)
-            column *= self.get_flux_gradient(x_global,
-                upwind_flux_left, upwind_flux_right)
+            column = self.get_basis_values(x_global) * self.get_flux_gradient(
+                x_global, upwind_flux_left, upwind_flux_right)
             column = self.divide_mass_matrix(column)
             return column
         values = integrate.fixed_quad_global(integrand,
