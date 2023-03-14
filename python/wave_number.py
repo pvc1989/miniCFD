@@ -9,8 +9,8 @@ import riemann
 import temporal
 
 
-class WaveNumberDisplayer:
-    """Plot modified-wavenumbers for various spatial schemes.
+class WaveNumberDisplayerOnDFT:
+    """Plot modified-wavenumbers for various spatial schemes using DFT.
     """
 
     def __init__(self, x_left, x_right, n_element, tau,
@@ -171,8 +171,57 @@ class WaveNumberDisplayer:
         self.compare_methods(2)
         self.compare_methods(4)
 
+
+class WaveNumberDisplayer:
+    """Plot modified-wavenumbers for various spatial schemes.
+    """
+
+    def __init__(self, x_left, x_right, n_element) -> None:
+        self._a = 1.0
+        self._equation = equation.LinearAdvection(self._a)
+        self._riemann = riemann.LinearAdvection(self._a)
+        self._x_left = x_left
+        self._x_right = x_right
+        self._n_element = n_element
+
+    def get_spatial_matrix(self, method: spatial.PiecewiseContinuous,
+            degree: int, k_int: int):
+        """Get the spatial matrix of a PiecewiseContinuous scheme.
+        """
+        scheme = method(self._equation, self._riemann,
+            degree, self._n_element, self._x_left, self._x_right, complex)
+        kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
+        n_term = degree + 1
+        matrices = np.zeros((self._n_element, n_term, n_term), dtype=complex)
+        for col in range(n_term):
+            u_tilde = np.zeros(n_term)
+            u_tilde[col] = 1
+            global_column = np.ndarray(n_term * scheme.n_element(),
+                dtype=complex)
+            for i_element in range(scheme.n_element()):
+                first = i_element * n_term
+                last = first + n_term
+                global_column[first:last] = u_tilde * np.exp(1j * i_element * kappa_h)
+            scheme.set_solution_column(global_column)
+            global_column = scheme.get_residual_column()
+            for i_element in range(scheme.n_element()):
+                matrix = matrices[i_element]
+                assert matrix.shape == (n_term, n_term)
+                first = i_element * n_term
+                last = first + n_term
+                matrix[:, col] = global_column[first:last]
+                matrix[:, col] /= np.exp(1j * i_element * kappa_h)
+                print(f'After building column[{col}], matrix[{i_element}] = ')
+                print(matrix)
+                print('whose eigenvalues =')
+                print(np.linalg.eigvals(matrix).reshape(n_term, 1))
+
+
 if __name__ == '__main__':
-    wnd = WaveNumberDisplayer(x_left=0.0, x_right=2000.0, n_element=20,
+    wnd = WaveNumberDisplayer(-1.0, 1.0, 3)
+    wnd.get_spatial_matrix(spatial.LagrangeDG, 2, 2)
+    exit(0)
+    wnd = WaveNumberDisplayerOnDFT(x_left=0.0, x_right=2000.0, n_element=20,
         tau=0.0001, n_sample_per_element = 10)
     wnd.compare_all_methods()
     wnd.compare_all_degrees() # time-consuming for large degree
