@@ -218,54 +218,91 @@ class WaveNumberDisplayer:
         return matrices[-1]
 
     def get_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
-            degree: int, baseline_wavenumbers: np.ndarray):
+            degree: int, sampled_wavenumbers: np.ndarray):
         """Get the eigenvalues of a scheme at a given set of wavenumbers.
         """
-        n_sample = len(baseline_wavenumbers)
+        n_sample = len(sampled_wavenumbers)
         n_term = degree + 1
         modified_wavenumbers = np.ndarray((n_sample, n_term), dtype=complex)
         scheme = self.build_scheme(method, degree)
         for i_sample in range(n_sample):
-            kappa_h = baseline_wavenumbers[i_sample]
+            kappa_h = sampled_wavenumbers[i_sample]
             matrix = self.get_spatial_matrix(scheme, kappa_h)
             matrix *= 1j * scheme.delta_x() / self._a
             modified_wavenumbers[i_sample, :] = np.linalg.eigvals(matrix)
         return modified_wavenumbers
 
+    def get_physical_mode(self, sampled_wavenumbers: np.ndarray,
+            modified_wavenumbers: np.ndarray):
+        n_sample, n_term = modified_wavenumbers.shape
+        assert n_sample == len(sampled_wavenumbers)
+        kn_min = sampled_wavenumbers[0]
+        physical_eigvals = np.ndarray(n_sample, dtype=complex)
+        for i_sample in range(n_sample):
+            eigvals = modified_wavenumbers[i_sample]
+            # sort the eigvals by their norms
+            norms = eigvals.real**2 + eigvals.imag**2
+            pairs = np.ndarray(n_term, dtype=[('x', complex), ('y', float)])
+            for i_term in range(n_term):
+                pairs[i_term] = (eigvals[i_term], norms[i_term])
+            pairs.sort(order='y')
+            i_mode = int(np.floor((sampled_wavenumbers[i_sample] - kn_min) / np.pi))
+            assert 0 <= i_mode <= n_term * 2
+            if 0 <= i_mode < n_term:
+                i_mode = n_term - 1 - i_mode
+            else:
+                i_mode -= n_term
+                if i_mode == n_term:
+                    i_mode -= 1
+            assert 0 <= i_mode < n_term
+            physical_eigvals[i_sample] = pairs[i_mode][0]
+        return physical_eigvals
+
     def plot_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
             degree: int, n_sample: int):
         """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
         """
-        kh_max = (degree+1) * np.pi
-        kh_min = -kh_max
-        baseline_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
+        xticks_labels =np.linspace(-degree-1, degree+1, 2*degree+3, dtype=int)
+        xticks_ticks = xticks_labels * np.pi
+        kh_min, kh_max = xticks_ticks[0], xticks_ticks[-1]
+        sampled_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
         modified_wavenumbers = self.get_modified_wavenumbers(method,
-            degree, baseline_wavenumbers)
-        xticks_ticks = [0.0]
-        xticks_labels = ['0']
-        for order in range(1, degree+2):
-            xticks_ticks.append(order * np.pi)
-            xticks_labels.append(f'${order}\pi$')
-        plt.figure()
-        plt.subplot(2,1,1)
-        plt.plot([kh_min, kh_max], [kh_min, kh_max], '-', label='Exact')
+            degree, sampled_wavenumbers)
+        physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
+            modified_wavenumbers)
+        plt.figure(figsize=(6,9))
+        plt.subplot(3,1,1)
         plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h$')
+        plt.xlabel(r'$\kappa h/\pi$')
+        plt.plot(sampled_wavenumbers, modified_wavenumbers.real, 'k.')
+        plt.plot(sampled_wavenumbers, physical_eigvals.real, 'r+', label='Physical')
+        plt.plot([kh_min, kh_max], [kh_min, kh_max], '-', label='Exact')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
-        plt.subplot(2,1,2)
+        plt.legend()
+        plt.subplot(3,1,2)
         plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h$')
+        plt.xlabel(r'$\kappa h/\pi$')
+        plt.plot(sampled_wavenumbers, modified_wavenumbers.imag, 'k.')
+        plt.plot(sampled_wavenumbers, physical_eigvals.imag, 'r+', label='Physical')
+        plt.plot([kh_min, kh_max], [0, 0], '-', label='Exact')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
-        plt.plot([kh_min, kh_max], [0, 0], '-', label='Exact')
-        plt.subplot(2,1,1)
-        plt.plot(baseline_wavenumbers, modified_wavenumbers.real, 'k.')
-        plt.subplot(2,1,2)
-        plt.plot(baseline_wavenumbers, modified_wavenumbers.imag, 'k.')
+        plt.legend()
+        plt.subplot(3,1,3)
+        plt.ylabel(r'$|\tilde{\kappa}h|$')
+        plt.xlabel(r'$\kappa h/\pi$')
+        norms = np.sqrt(modified_wavenumbers.real**2 + modified_wavenumbers.imag**2)
+        plt.plot(sampled_wavenumbers, norms, 'k.')
+        norms = np.sqrt(physical_eigvals.real**2 + physical_eigvals.imag**2)
+        plt.plot(sampled_wavenumbers, norms, 'r+', label='Physical')
+        plt.plot([kh_min, 0, kh_max], [-kh_min, 0, kh_max], '-', label='Exact')
+        plt.xticks(xticks_ticks, xticks_labels)
+        plt.grid()
+        plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f'all_modes_of_{method.name()}{degree}.pdf')
+        plt.savefig(f'all_modes_of_{method.name()}{degree+1}.pdf')
 
 
 if __name__ == '__main__':
