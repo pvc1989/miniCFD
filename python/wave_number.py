@@ -184,14 +184,17 @@ class WaveNumberDisplayer:
         self._x_right = x_right
         self._n_element = n_element
 
-    def get_spatial_matrix(self, method: spatial.PiecewiseContinuous,
-            degree: int, k_int: int):
-        """Get the spatial matrix of a PiecewiseContinuous scheme.
-        """
+    def build_scheme(self, method: spatial.PiecewiseContinuous, degree: int):
         scheme = method(self._equation, self._riemann,
             degree, self._n_element, self._x_left, self._x_right, complex)
-        kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
-        n_term = degree + 1
+        return scheme
+
+    def get_spatial_matrix(self, scheme: spatial.PiecewiseContinuous,
+            kappa_h: float):
+        """Get the spatial matrix of a PiecewiseContinuous scheme.
+        """
+        # kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
+        n_term = scheme.degree() + 1
         matrices = np.zeros((self._n_element, n_term, n_term), dtype=complex)
         for col in range(n_term):
             u_tilde = np.zeros(n_term)
@@ -211,15 +214,62 @@ class WaveNumberDisplayer:
                 last = first + n_term
                 matrix[:, col] = global_column[first:last]
                 matrix[:, col] /= np.exp(1j * i_element * kappa_h)
-                print(f'After building column[{col}], matrix[{i_element}] = ')
-                print(matrix)
-                print('whose eigenvalues =')
-                print(np.linalg.eigvals(matrix).reshape(n_term, 1))
+        return matrices[-1]
+
+    def get_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
+            degree: int, baseline_wavenumbers: np.ndarray):
+        """Get the eigenvalues of a scheme at a given set of wavenumbers.
+        """
+        n_sample = len(baseline_wavenumbers)
+        n_term = degree + 1
+        modified_wavenumbers = np.ndarray((n_sample, n_term), dtype=complex)
+        scheme = self.build_scheme(method, degree)
+        for i_sample in range(n_sample):
+            kappa_h = baseline_wavenumbers[i_sample]
+            matrix = self.get_spatial_matrix(scheme, kappa_h)
+            matrix *= 1j * scheme.delta_x() / self._a
+            modified_wavenumbers[i_sample, :] = np.linalg.eigvals(matrix)
+        return modified_wavenumbers
+
+    def plot_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
+            degree: int, n_sample: int):
+        """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
+        """
+        kh_max = (degree+1) * np.pi
+        kh_min = -kh_max
+        baseline_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
+        modified_wavenumbers = self.get_modified_wavenumbers(method,
+            degree, baseline_wavenumbers)
+        xticks_ticks = [0.0]
+        xticks_labels = ['0']
+        for order in range(1, degree+2):
+            xticks_ticks.append(order * np.pi)
+            xticks_labels.append(f'${order}\pi$')
+        plt.figure()
+        plt.subplot(2,1,1)
+        plt.plot([kh_min, kh_max], [kh_min, kh_max], '-', label='Exact')
+        plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
+        plt.xlabel(r'$\kappa h$')
+        plt.xticks(xticks_ticks, xticks_labels)
+        plt.grid()
+        plt.subplot(2,1,2)
+        plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
+        plt.xlabel(r'$\kappa h$')
+        plt.xticks(xticks_ticks, xticks_labels)
+        plt.grid()
+        plt.plot([kh_min, kh_max], [0, 0], '-', label='Exact')
+        plt.subplot(2,1,1)
+        plt.plot(baseline_wavenumbers, modified_wavenumbers.real, 'k.')
+        plt.subplot(2,1,2)
+        plt.plot(baseline_wavenumbers, modified_wavenumbers.imag, 'k.')
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig(f'all_modes_of_{method.name()}{degree}.pdf')
 
 
 if __name__ == '__main__':
-    wnd = WaveNumberDisplayer(-1.0, 1.0, 3)
-    wnd.get_spatial_matrix(spatial.LagrangeDG, 2, 2)
+    wnd = WaveNumberDisplayer(-1.0, 1.0, n_element=3)
+    wnd.plot_modified_wavenumbers(spatial.LagrangeDG, degree=2, n_sample=50)
     exit(0)
     wnd = WaveNumberDisplayerOnDFT(x_left=0.0, x_right=2000.0, n_element=20,
         tau=0.0001, n_sample_per_element = 10)
