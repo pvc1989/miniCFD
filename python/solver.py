@@ -211,8 +211,9 @@ if __name__ == '__main__':
         default=100, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['DG', 'FR', 'DGwithFR'],
-        default='FR',
+        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
+            'DGwithFR'],
+        default='LagrangeDG',
         help='method for spatial discretization')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
@@ -229,10 +230,14 @@ if __name__ == '__main__':
         help='number of waves in the domain')
     args = parser.parse_args()
     print(args)
-    if args.method == 'DG':
-        SpatialClass = spatial.LegendreDG
-    elif args.method == 'FR':
+    if args.method == 'LagrangeDG':
+        SpatialClass = spatial.LagrangeDG
+    elif args.method == 'LagrangeFR':
         SpatialClass = spatial.LagrangeFR
+    elif args.method == 'LegendreDG':
+        SpatialClass = spatial.LegendreDG
+    elif args.method == 'LegendreFR':
+        SpatialClass = spatial.LegendreFR
     elif args.method == 'DGwithFR':
         SpatialClass = spatial.DGwithFR
     else:

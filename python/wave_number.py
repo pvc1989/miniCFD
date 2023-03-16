@@ -1,5 +1,6 @@
 """Analyze modified wavenumbers for various spatial schemes.
 """
+import argparse
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -268,8 +269,43 @@ class WaveNumberDisplayer:
 
 
 if __name__ == '__main__':
-    wnd = WaveNumberDisplayer(-1.0, 1.0, n_element=3)
-    wnd.plot_modified_wavenumbers(spatial.LagrangeDG, degree=2, n_sample=50)
+    parser = argparse.ArgumentParser(prog='python3 wave_number.py')
+    parser.add_argument('-n', '--n_element',
+        default=10, type=int,
+        help='number of elements')
+    parser.add_argument('-s', '--n_sample',
+        default=50, type=int,
+        help='number of sample points')
+    parser.add_argument('-l', '--x_left',
+        default=0.0, type=float,
+        help='coordinate of the left end of the domain')
+    parser.add_argument('-r', '--x_right',
+        default=10.0, type=float,
+        help='coordinate of the right end of the domain')
+    parser.add_argument('-m', '--method',
+        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
+            'DGwithFR'],
+        default='LagrangeDG',
+        help='method for spatial discretization')
+    parser.add_argument('-d', '--degree',
+        default=2, type=int,
+        help='degree of polynomials for approximation')
+    args = parser.parse_args()
+    print(args)
+    if args.method == 'LagrangeDG':
+        SpatialClass = spatial.LagrangeDG
+    elif args.method == 'LagrangeFR':
+        SpatialClass = spatial.LagrangeFR
+    elif args.method == 'LegendreDG':
+        SpatialClass = spatial.LegendreDG
+    elif args.method == 'LegendreFR':
+        SpatialClass = spatial.LegendreFR
+    elif args.method == 'DGwithFR':
+        SpatialClass = spatial.DGwithFR
+    else:
+        assert False
+    wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
+    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
     exit(0)
     wnd = WaveNumberDisplayerOnDFT(x_left=0.0, x_right=2000.0, n_element=20,
         tau=0.0001, n_sample_per_element = 10)
