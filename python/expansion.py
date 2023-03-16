@@ -120,7 +120,7 @@ class Legendre(Expansion):
         return self._n_term
 
     def degree(self):
-        return self._n_term + 1
+        return self._n_term - 1
 
     def jacobian(self, x_global: float):
         """Get the Jacobian value at a given point.

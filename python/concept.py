@@ -68,8 +68,9 @@ class Element(abc.ABC):
     """A subdomain that carries some expansion of the solution.
     """
 
-    def __init__(self, x_left: float, x_right: float) -> None:
+    def __init__(self, x_left: float, x_right: float, value_type=float) -> None:
         self._boundaries = (x_left, x_right)
+        self._value_type = value_type
 
     def x_left(self):
         """Get the coordinate of this eleement's left boundary.

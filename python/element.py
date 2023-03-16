@@ -14,7 +14,7 @@ class LagrangeDG(Element):
 
     def __init__(self, equation: Equation, degree: int,
             x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(x_left, x_right)
+        super().__init__(x_left, x_right, value_type)
         self._equation = equation
         self._u_approx = expansion.Lagrange(degree,
             x_left, x_right, value_type)
@@ -78,7 +78,7 @@ class LegendreDG(Element):
 
     def __init__(self, equation: Equation, degree: int,
             x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(x_left, x_right)
+        super().__init__(x_left, x_right, value_type)
         self._equation = equation
         self._u_approx = expansion.Legendre(degree, x_left, x_right,
             value_type)
@@ -166,7 +166,7 @@ class LagrangeFR(LagrangeDG):
         """Get the gradients of the continuous flux at all nodes.
         """
         nodes = self._u_approx.get_sample_points()
-        values = np.ndarray(len(nodes))
+        values = np.ndarray(len(nodes), self._value_type)
         for i in range(len(nodes)):
             values[i] = self.get_flux_gradient(nodes[i],
                 upwind_flux_left, upwind_flux_right)
