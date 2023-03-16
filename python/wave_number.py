@@ -236,7 +236,6 @@ class WaveNumberDisplayer:
             modified_wavenumbers: np.ndarray):
         n_sample, n_term = modified_wavenumbers.shape
         assert n_sample == len(sampled_wavenumbers)
-        kn_min = sampled_wavenumbers[0]
         physical_eigvals = np.ndarray(n_sample, dtype=complex)
         for i_sample in range(n_sample):
             eigvals = modified_wavenumbers[i_sample]
@@ -246,14 +245,16 @@ class WaveNumberDisplayer:
             for i_term in range(n_term):
                 pairs[i_term] = (eigvals[i_term], norms[i_term])
             pairs.sort(order='y')
-            i_mode = int(np.floor((sampled_wavenumbers[i_sample] - kn_min) / np.pi))
-            assert 0 <= i_mode <= n_term * 2
-            if 0 <= i_mode < n_term:
-                i_mode = n_term - 1 - i_mode
+            i_interval = int(np.floor(sampled_wavenumbers[i_sample] / np.pi))
+            while i_interval > n_term:
+                i_interval -= n_term * 2
+            while i_interval <= -n_term:
+                i_interval += n_term * 2
+            assert -n_term < i_interval <= n_term
+            if i_interval < 0:
+                i_mode = -1 - i_interval
             else:
-                i_mode -= n_term
-                if i_mode == n_term:
-                    i_mode -= 1
+                i_mode = i_interval - (i_interval == n_term)
             assert 0 <= i_mode < n_term
             physical_eigvals[i_sample] = pairs[i_mode][0]
         return physical_eigvals
@@ -262,7 +263,8 @@ class WaveNumberDisplayer:
             degree: int, n_sample: int):
         """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
         """
-        xticks_labels =np.linspace(-degree-1, degree+1, 2*degree+3, dtype=int)
+        xticks_labels = np.linspace(-degree-1, degree+1, 2*degree+3, dtype=int)
+        # xticks_labels = np.linspace(0, degree+1, degree+2, dtype=int)
         xticks_ticks = xticks_labels * np.pi
         kh_min, kh_max = xticks_ticks[0], xticks_ticks[-1]
         sampled_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
