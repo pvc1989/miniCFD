@@ -306,6 +306,48 @@ class WaveNumberDisplayer:
         # plt.show()
         plt.savefig(f'all_modes_of_{method.name()}{degree+1}.pdf')
 
+    def compare_schemes(self, methods, degrees, n_sample: int):
+        linestyles = [
+            ('dotted',                (0, (1, 1))),
+            ('loosely dotted',        (0, (1, 4))),
+            ('dashed',                (0, (4, 4))),
+            ('densely dashed',        (0, (4, 1))),
+            ('loosely dashed',        (0, (4, 8))),
+            ('long dash with offset', (4, (8, 2))),
+            ('dashdotted',            (0, (2, 4, 1, 4))),
+            ('densely dashdotted',    (0, (2, 1, 1, 1))),
+            ('loosely dashdotted',    (0, (2, 8, 1, 8))),
+            ('dashdotdotted',         (0, (2, 4, 1, 4, 1, 4))),
+            ('densely dashdotdotted', (0, (2, 1, 1, 1, 1, 1))),
+            ('loosely dashdotdotted', (0, (2, 8, 1, 8, 1, 8))),]
+        schemes = []
+        for method in methods:
+            for degree in degrees:
+                assert isinstance(degree, int)
+                schemes.append(self.build_scheme(method, degree))
+        plt.ylabel(r'$\Re(\tilde{\kappa}h/\pi)$')
+        plt.xlabel(r'$\kappa h/\pi$')
+        i = 0
+        for degree in degrees:
+            kh_max = (degree + 1) * np.pi
+            sampled_wavenumbers = np.linspace(0, kh_max, n_sample)
+            for method in methods:
+                modified_wavenumbers = self.get_modified_wavenumbers(method,
+                    degree, sampled_wavenumbers)
+                physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
+                    modified_wavenumbers)
+                plt.plot(sampled_wavenumbers/np.pi, physical_eigvals.real/np.pi,
+                    label=f'{method.name()}{degree+1}',
+                    linestyle=linestyles[i][1])
+                i += 1
+        plt.plot([0, np.max(degrees)+1], [0, np.max(degrees)+1],
+            '-', label='Exact')
+        plt.grid()
+        plt.legend(handlelength=4)
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig(f'compare_schemes.pdf')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 wave_number.py')
@@ -344,7 +386,9 @@ if __name__ == '__main__':
     else:
         assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
-    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
+    # wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
+    wnd.compare_schemes(methods=[spatial.LegendreDG, spatial.LagrangeFR,
+        spatial.DGwithFR], degrees=[1, 3, 5], n_sample=args.n_sample)
     exit(0)
     wnd = WaveNumberDisplayerOnDFT(x_left=0.0, x_right=2000.0, n_element=20,
         tau=0.0001, n_sample_per_element = 10)
