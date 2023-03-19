@@ -142,7 +142,8 @@ class WaveNumberDisplayer:
         # plt.show()
         plt.savefig(f'all_modes_of_{method.name()}{degree+1}.pdf')
 
-    def compare_schemes(self, methods, degrees, n_sample: int):
+    def compare_schemes(self, methods, degrees, n_sample: int,
+            compressed=False):
         linestyles = [
             ('dotted',                (0, (1, 1))),
             ('loosely dotted',        (0, (1, 4))),
@@ -161,39 +162,43 @@ class WaveNumberDisplayer:
             for degree in degrees:
                 assert isinstance(degree, int)
                 schemes.append(self.build_scheme(method, degree))
+        if compressed:
+            divisor = r'$(N\pi)$'
+        else:
+            divisor = r'$\pi$'
         plt.figure(figsize=(6,9))
         plt.subplot(2,1,1)
-        plt.ylabel(r'$\Re(\tilde{\kappa}h/\pi)$')
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.ylabel(r'$\Re(\tilde{\kappa}h)/$'+divisor)
+        plt.xlabel(r'$\kappa h/$'+divisor)
         plt.subplot(2,1,2)
-        plt.ylabel(r'$\Im(\tilde{\kappa}h/\pi)$')
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.ylabel(r'$\Im(\tilde{\kappa}h/$'+divisor)
+        plt.xlabel(r'$\kappa h/$'+divisor)
         i = 0
         for degree in degrees:
             kh_max = (degree + 1) * np.pi
             sampled_wavenumbers = np.linspace(0, kh_max, n_sample)
+            scale = (degree * compressed + 1) * np.pi
             for method in methods:
                 modified_wavenumbers = self.get_modified_wavenumbers(method,
                     degree, sampled_wavenumbers)
                 physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
                     modified_wavenumbers)
                 plt.subplot(2,1,1)
-                plt.plot(sampled_wavenumbers/np.pi, physical_eigvals.real/np.pi,
+                plt.plot(sampled_wavenumbers/scale, physical_eigvals.real/scale,
                     label=f'{method.name()}{degree+1}',
                     linestyle=linestyles[i][1])
                 plt.subplot(2,1,2)
-                plt.plot(sampled_wavenumbers/np.pi, physical_eigvals.imag/np.pi,
+                plt.plot(sampled_wavenumbers/scale, physical_eigvals.imag/scale,
                     label=f'{method.name()}{degree+1}',
                     linestyle=linestyles[i][1])
                 i += 1
+        x_max = np.max(degrees) * (not compressed) + 1
         plt.subplot(2,1,1)
-        plt.plot([0, np.max(degrees)+1], [0, np.max(degrees)+1],
-            '-', label='Exact')
+        plt.plot([0, x_max], [0, x_max], '-', label='Exact')
         plt.grid()
         plt.legend(handlelength=4)
         plt.subplot(2,1,2)
-        plt.plot([0, np.max(degrees)+1], [0, 0],
-            '-', label='Exact')
+        plt.plot([0, x_max], [0, 0], '-', label='Exact')
         plt.grid()
         plt.legend(handlelength=4)
         plt.tight_layout()
@@ -223,6 +228,9 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--degree',
         default=2, type=int,
         help='degree of polynomials for approximation')
+    parser.add_argument('-c', '--compressed',
+        action='store_true',
+        help='whether the range of input wavenumbers is compressed')
     args = parser.parse_args()
     print(args)
     if args.method == 'LagrangeDG':
@@ -240,4 +248,5 @@ if __name__ == '__main__':
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
     # wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
     wnd.compare_schemes(methods=[spatial.LegendreDG, spatial.LagrangeFR,
-        spatial.DGwithFR], degrees=[1, 3, 5], n_sample=args.n_sample)
+        spatial.DGwithFR], degrees=[1, 3, 5], n_sample=args.n_sample,
+        compressed=args.compressed)
