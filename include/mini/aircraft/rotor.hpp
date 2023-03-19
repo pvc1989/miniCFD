@@ -38,7 +38,7 @@ class Rotor {
       initial_azimuth_ = that.initial_azimuth_;
       azimuth_ = that.azimuth_;
       omega_ = that.omega_;
-      time_ = time_;
+      time_ = that.time_;
       for (auto &blade : blades_) {
         blade.SetRotor(*this);
       }
@@ -56,7 +56,7 @@ class Rotor {
       initial_azimuth_ = that.initial_azimuth_;
       azimuth_ = that.azimuth_;
       omega_ = that.omega_;
-      time_ = time_;
+      time_ = that.time_;
       for (auto &blade : blades_) {
         blade.SetRotor(*this);
       }
@@ -122,6 +122,13 @@ class Rotor {
  public:
   int CountBlades() const {
     return blades_.size();
+  }
+
+  /**
+   * @brief Determine whether the `Rotor` is rotating left-hand.
+   */
+  bool RotateLeftHand() const {
+    return omega_ < 0;
   }
 
   /**

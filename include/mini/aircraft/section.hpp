@@ -56,6 +56,9 @@ class Section {
         left_(a_0, w_0), right_(a_1, w_1) {
   }
 
+  bool RotateLeftHand() const {
+    return blade_->GetRotor().RotateLeftHand();
+  }
   const Frame &GetFrame() const {
     return blade_->GetFrame();
   }
@@ -96,7 +99,11 @@ class Section {
    */
   Vector GetForce(Scalar rho, Vector velocity) const {
     velocity -= GetVelocity();
-    auto u = velocity.dot(GetFrame().X());
+    Vector unit_x = GetFrame().X();
+    if (RotateLeftHand()) {
+      unit_x = -unit_x;
+    }
+    auto u = velocity.dot(unit_x);
     auto w = velocity.dot(GetFrame().Z());
     auto deg = GetAngleOfAttack(u, w);
     Scalar c_lift = Lift(deg), c_drag = Drag(deg);
@@ -104,7 +111,7 @@ class Section {
     auto [cos, sin] = mini::geometry::CosSin(deg);
     Scalar c_z = c_lift * cos + c_drag * sin;
     Scalar c_x = c_drag * cos - c_lift * sin;
-    Vector force = c_z * GetFrame().Z() + c_x * GetFrame().X();
+    Vector force = c_z * GetFrame().Z() + c_x * unit_x;
     force *= -0.5 * rho * (u * u + w * w) * GetChord();
     return force;
   }
