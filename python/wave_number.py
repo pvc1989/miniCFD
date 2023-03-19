@@ -113,7 +113,7 @@ class WaveNumberDisplayer:
         plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
         plt.xlabel(r'$\kappa h/\pi$')
         plt.plot(sampled_wavenumbers, modified_wavenumbers.real, 'k.')
-        plt.plot(sampled_wavenumbers, physical_eigvals.real, 'r+', label='Physical')
+        plt.plot(sampled_wavenumbers, physical_eigvals.real, 'ro', label='Physical')
         plt.plot([kh_min, kh_max], [kh_min, kh_max], '-', label='Exact')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
@@ -122,7 +122,7 @@ class WaveNumberDisplayer:
         plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
         plt.xlabel(r'$\kappa h/\pi$')
         plt.plot(sampled_wavenumbers, modified_wavenumbers.imag, 'k.')
-        plt.plot(sampled_wavenumbers, physical_eigvals.imag, 'r+', label='Physical')
+        plt.plot(sampled_wavenumbers, physical_eigvals.imag, 'ro', label='Physical')
         plt.plot([kh_min, kh_max], [0, 0], '-', label='Exact')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
@@ -133,7 +133,7 @@ class WaveNumberDisplayer:
         norms = np.sqrt(modified_wavenumbers.real**2 + modified_wavenumbers.imag**2)
         plt.plot(sampled_wavenumbers, norms, 'k.')
         norms = np.sqrt(physical_eigvals.real**2 + physical_eigvals.imag**2)
-        plt.plot(sampled_wavenumbers, norms, 'r+', label='Physical')
+        plt.plot(sampled_wavenumbers, norms, 'ro', label='Physical')
         plt.plot([kh_min, 0, kh_max], [-kh_min, 0, kh_max], '-', label='Exact')
         plt.xticks(xticks_ticks, xticks_labels)
         plt.grid()
@@ -161,7 +161,12 @@ class WaveNumberDisplayer:
             for degree in degrees:
                 assert isinstance(degree, int)
                 schemes.append(self.build_scheme(method, degree))
+        plt.figure(figsize=(6,9))
+        plt.subplot(2,1,1)
         plt.ylabel(r'$\Re(\tilde{\kappa}h/\pi)$')
+        plt.xlabel(r'$\kappa h/\pi$')
+        plt.subplot(2,1,2)
+        plt.ylabel(r'$\Im(\tilde{\kappa}h/\pi)$')
         plt.xlabel(r'$\kappa h/\pi$')
         i = 0
         for degree in degrees:
@@ -172,11 +177,22 @@ class WaveNumberDisplayer:
                     degree, sampled_wavenumbers)
                 physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
                     modified_wavenumbers)
+                plt.subplot(2,1,1)
                 plt.plot(sampled_wavenumbers/np.pi, physical_eigvals.real/np.pi,
                     label=f'{method.name()}{degree+1}',
                     linestyle=linestyles[i][1])
+                plt.subplot(2,1,2)
+                plt.plot(sampled_wavenumbers/np.pi, physical_eigvals.imag/np.pi,
+                    label=f'{method.name()}{degree+1}',
+                    linestyle=linestyles[i][1])
                 i += 1
+        plt.subplot(2,1,1)
         plt.plot([0, np.max(degrees)+1], [0, np.max(degrees)+1],
+            '-', label='Exact')
+        plt.grid()
+        plt.legend(handlelength=4)
+        plt.subplot(2,1,2)
+        plt.plot([0, np.max(degrees)+1], [0, 0],
             '-', label='Exact')
         plt.grid()
         plt.legend(handlelength=4)
