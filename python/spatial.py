@@ -38,7 +38,10 @@ class PiecewiseContinuous(SpatialScheme):
             i_element -= 1
         return i_element
 
-    def get_element(self, point):
+    def get_element_by_index(self, index: int) -> Element:
+        return self._elements[index]
+
+    def get_element(self, point) -> Element:
         return self._elements[self.get_element_index(point)]
 
     def get_interface_fluxes(self):

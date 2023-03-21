@@ -82,6 +82,11 @@ class Element(abc.ABC):
         """
         return self._boundaries[1]
 
+    def x_center(self):
+        """Get the coordinate of this eleement's centroid.
+        """
+        return (self.x_left() + self.x_right()) / 2
+
     @abc.abstractmethod
     def degree(self):
         """The highest degree of the approximated solution.
@@ -266,6 +271,21 @@ class SpatialScheme(OdeSystem):
     @abc.abstractmethod
     def initialize(self, function: callable):
         """Set the initial condition.
+        """
+
+
+class Smoothness(abc.ABC):
+    """An object that evaluates the solution smoothness for each element.
+    """
+
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Get the name of the detector.
+        """
+
+    @abc.abstractmethod
+    def get_smoothness_values(self, scheme: SpatialScheme) -> np.ndarray:
+        """Get the values of smoothness for each element.
         """
 
 
