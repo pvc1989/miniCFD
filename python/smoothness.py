@@ -21,7 +21,7 @@ class Krivodonova2004(Smoothness):
     """
 
     def name(self):
-        return 'Krivodonova (2004)'
+        return 'Krivodonova et al. (2004)'
 
     def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
         n_cell = scheme.n_element()
@@ -61,7 +61,7 @@ class LiAndRen2011(Smoothness):
     """
 
     def name(self):
-        return 'Li and Ren (2011)'
+        return 'Li & Ren (2011)'
 
     def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
         n_cell = scheme.n_element()
@@ -102,7 +102,7 @@ class ZhuAndQiu2021(Smoothness):
     """
 
     def name(self):
-        return 'Zhu and Qiu (2011)'
+        return 'Zhu & Shu & Qiu (2021)'
 
     def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
         n_cell = scheme.n_element()
