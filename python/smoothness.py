@@ -2,9 +2,56 @@
 """
 import numpy as np
 
-from concept import Smoothness
+from concept import Smoothness, Element
 from spatial import PiecewiseContinuous
 import integrate
+
+
+def _norm_1(cell: Element):
+    value = integrate.fixed_quad_global(
+        lambda x_global: np.abs(cell.get_solution_value(x_global)),
+        cell.x_left(), cell.x_right(), cell.degree())
+    return value
+
+
+class Krivodonova2004(Smoothness):
+    """A smoothness indicator for high-order DG schemes.
+
+    See Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338.
+    """
+
+    def name(self):
+        return 'Krivodonova (2004)'
+
+    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+        n_cell = scheme.n_element()
+        norms = np.ndarray(n_cell)
+        for i_cell in range(n_cell):
+            cell = scheme.get_element_by_index(i_cell)
+            norms[i_cell] = _norm_1(cell)
+        ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
+        smoothness = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            curr = scheme.get_element_by_index(i_curr)
+            def curr_solution(x_global):
+                return curr.get_solution_value(x_global)
+            # apply periodic BCs
+            i_prev = i_curr - 1
+            prev = scheme.get_element_by_index(i_prev)
+            i_next = (i_curr + 1) % n_cell
+            next = scheme.get_element_by_index(i_next)
+            # evaluate smoothness
+            dividend = 0.0
+            if curr.get_convective_jacobian(curr.x_left()) > 0:
+                dividend += (curr.get_solution_value(curr.x_left())
+                    - prev.get_solution_value(prev.x_right()))
+            if curr.get_convective_jacobian(curr.x_right()) < 0:
+                dividend += (next.get_solution_value(next.x_left())
+                    - curr.get_solution_value(curr.x_right()))
+            dividend = np.abs(dividend)
+            divisor = ratio * norms[i_curr]
+            smoothness[i_curr] = dividend / divisor
+        return smoothness
 
 
 class LiAndRen2011(Smoothness):
@@ -62,9 +109,7 @@ class ZhuAndQiu2021(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = integrate.fixed_quad_global(
-                lambda x_global: np.abs(cell.get_solution_value(x_global)),
-                cell.x_left(), cell.x_right(), cell.degree())
+            norms[i_cell] = _norm_1(cell)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = scheme.get_element_by_index(i_curr)
