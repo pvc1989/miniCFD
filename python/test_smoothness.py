@@ -6,7 +6,7 @@ import numpy as np
 import equation
 import riemann
 import spatial
-from smoothness import LiAndRen2011
+from smoothness import LiAndRen2011, ZhuAndQiu2021
 
 
 class TestSmoothness(unittest.TestCase):
@@ -32,6 +32,9 @@ class TestSmoothness(unittest.TestCase):
         scheme = self.build_scheme(spatial.LagrangeFR, degree)
         scheme.initialize(lambda x: np.sin(x) * 10)
         indicaror = LiAndRen2011()
+        smoothness = indicaror.get_smoothness_values(scheme)
+        print(smoothness)
+        indicaror = ZhuAndQiu2021()
         smoothness = indicaror.get_smoothness_values(scheme)
         print(smoothness)
 
