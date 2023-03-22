@@ -1,6 +1,7 @@
 """Implement elements for spatial scheme.
 """
 import numpy as np
+from scipy import special
 
 from concept import Element, Equation
 from polynomial import Vincent
@@ -36,6 +37,13 @@ class LagrangeDG(Element):
 
     def get_basis_gradients(self, x_global):
         return self._u_approx.get_basis_gradients(x_global)
+
+    def get_quadrature_points(self, n_point: int):
+        roots, _ = special.roots_legendre(n_point)
+        points = np.ndarray(n_point)
+        for i in range(n_point):
+            points[i] = self._u_approx.local_to_global(roots[i])
+        return points
 
     def _build_mass_matrix(self):
         def integrand(x_global):
@@ -98,6 +106,13 @@ class LegendreDG(Element):
 
     def get_basis_gradients(self, x_global):
         return self._u_approx.get_basis_gradients(x_global)
+
+    def get_quadrature_points(self, n_point: int):
+        roots, _ = special.roots_legendre(n_point)
+        points = np.ndarray(n_point)
+        for i in range(n_point):
+            points[i] = self._u_approx.local_to_global(roots[i])
+        return points
 
     def set_solution_coeff(self, coeff):
         self._u_approx.set_coeff(coeff)

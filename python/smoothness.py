@@ -14,6 +14,14 @@ def _norm_1(cell: Element):
     return value
 
 
+def _norm_infty(cell: Element):
+    value = 0.0
+    points = cell.get_quadrature_points(cell.degree())
+    for x_global in points:
+        value = max(value, np.abs(cell.get_solution_value(x_global)))
+    return value
+
+
 class Krivodonova2004(Smoothness):
     """A smoothness indicator for high-order DG schemes.
 
@@ -28,13 +36,11 @@ class Krivodonova2004(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = _norm_1(cell)
+            norms[i_cell] = _norm_infty(cell)
         ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = scheme.get_element_by_index(i_curr)
-            def curr_solution(x_global):
-                return curr.get_solution_value(x_global)
             # apply periodic BCs
             i_prev = i_curr - 1
             prev = scheme.get_element_by_index(i_prev)

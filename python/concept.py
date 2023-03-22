@@ -165,6 +165,11 @@ class Element(abc.ABC):
         Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
         """
 
+    @abc.abstractmethod
+    def get_quadrature_points(self, n_point: int) -> np.ndarray:
+        """Get the global coordinates of quadrature points.
+        """
+
 
 class RiemannSolver(abc.ABC):
     """An exact or approximate solver for the Riemann problem of a conservation law.
