@@ -64,11 +64,37 @@ class Expansion(abc.ABC):
         """
 
 
+class Equation(abc.ABC):
+    """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
+    """
+
+    @abc.abstractmethod
+    def get_convective_flux(self, u_given):
+        """Get the value of F(U) for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_convective_jacobian(self, u_given):
+        """Get the value of ∂F(U)/∂U for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_diffusive_flux(self, u_given):
+        """Get the value of G(U) for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_source(self, u_given):
+        """Get the value of H(U) for a given U.
+        """
+
+
 class Element(abc.ABC):
     """A subdomain that carries some expansion of the solution.
     """
 
-    def __init__(self, x_left: float, x_right: float, value_type=float) -> None:
+    def __init__(self, equation: Equation, x_left: float, x_right: float, value_type=float) -> None:
+        self._equation = equation
         self._boundaries = (x_left, x_right)
         self._value_type = value_type
 
@@ -99,7 +125,7 @@ class Element(abc.ABC):
 
     @abc.abstractmethod
     def approximate(self, function: callable):
-        """Approximate a general function as U_h.
+        """Approximate a general function as u^h.
         """
 
     @abc.abstractmethod
@@ -109,8 +135,14 @@ class Element(abc.ABC):
 
     @abc.abstractmethod
     def get_solution_value(self, x_global: float):
-        """Get the value of U at a given point.
+        """Get the value of u^h at a given point.
         """
+
+    def get_convective_jacobian(self, x_global: float):
+        """Get the value of a(u^h) at a given point.
+        """
+        return self._equation.get_convective_jacobian(
+              self.get_solution_value(x_global))
 
     @abc.abstractmethod
     def set_solution_coeff(self, column):
@@ -131,30 +163,6 @@ class Element(abc.ABC):
         """Divide the mass matrix of this element by the given column.
 
         Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
-        """
-
-class Equation(abc.ABC):
-    """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
-    """
-
-    @abc.abstractmethod
-    def get_convective_flux(self, u_given):
-        """Get the value of F(U) for a given U.
-        """
-
-    @abc.abstractmethod
-    def get_convective_jacobian(self, u_given):
-        """Get the value of ∂F(U)/∂U for a given U.
-        """
-
-    @abc.abstractmethod
-    def get_diffusive_flux(self, u_given):
-        """Get the value of G(U) for a given U.
-        """
-
-    @abc.abstractmethod
-    def get_source(self, u_given):
-        """Get the value of H(U) for a given U.
         """
 
 

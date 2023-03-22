@@ -14,8 +14,7 @@ class LagrangeDG(Element):
 
     def __init__(self, equation: Equation, degree: int,
             x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(x_left, x_right, value_type)
-        self._equation = equation
+        super().__init__(equation, x_left, x_right, value_type)
         self._u_approx = expansion.Lagrange(degree,
             x_left, x_right, value_type)
         self._mass_matrix = self._build_mass_matrix()
@@ -78,8 +77,7 @@ class LegendreDG(Element):
 
     def __init__(self, equation: Equation, degree: int,
             x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(x_left, x_right, value_type)
-        self._equation = equation
+        super().__init__(equation, x_left, x_right, value_type)
         self._u_approx = expansion.Legendre(degree, x_left, x_right,
             value_type)
 
