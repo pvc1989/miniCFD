@@ -1,4 +1,4 @@
-"""Tests for various smoothness indicators.
+"""Tests for various jump detectors.
 """
 import unittest
 import numpy as np
@@ -7,11 +7,11 @@ from matplotlib import pyplot as plt
 import equation
 import riemann
 import spatial
-import smoothness
+import detector
 
 
-class TestSmoothness(unittest.TestCase):
-    """Test various smoothness indicators.
+class TestJumpDetectors(unittest.TestCase):
+    """Test various jump detectors.
     """
 
     def __init__(self, method_name: str = "") -> None:
@@ -37,10 +37,10 @@ class TestSmoothness(unittest.TestCase):
         scheme.initialize(u_init)
         centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
             scheme.x_right() - scheme.delta_x(), self._n_element)
-        indicators = [
-          smoothness.Krivodonova2004(),
-          smoothness.LiAndRen2011(),
-          smoothness.ZhuAndQiu2021()
+        detectors = [
+          detector.Krivodonova2004(),
+          detector.LiAndRen2011(),
+          detector.ZhuAndQiu2021()
         ]
         markers = ['1', '2', '3']
         plt.figure(figsize=(6,6))
@@ -58,9 +58,9 @@ class TestSmoothness(unittest.TestCase):
         plt.ylabel(r'$u^h$')
         plt.subplot(3,1,(2,3))
         plt.semilogy()
-        for i in range(len(indicators)):
-            values = indicators[i].get_smoothness_values(scheme)
-            plt.plot(centers, values, markers[i], label=indicators[i].name())
+        for i in range(len(detectors)):
+            values = detectors[i].get_smoothness_values(scheme)
+            plt.plot(centers, values, markers[i], label=detectors[i].name())
         plt.plot([self._x_left, self._x_right], [1, 1], label=r'$Smoothness=1$')
         plt.legend()
         plt.xlabel(r'$x$')

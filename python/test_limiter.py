@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import equation
 import riemann
 import spatial
-import smoothness
+import detector
 import limiter
 
 
@@ -36,7 +36,10 @@ class TestLimiters(unittest.TestCase):
             y = (x - scheme.x_left()*0.75) * (x - scheme.x_right()*0.75)
             return np.sign(np.sin(x)) * np.abs(y) * (y < 0)
         scheme.initialize(u_init)
-        indicator = smoothness.LiAndRen2011()
+        detectors = [
+            detector.Krivodonova2004(),
+            detector.LiAndRen2011(),
+        ]
         limiters = [
             limiter.SimpleWENO(),
         ]
@@ -50,7 +53,7 @@ class TestLimiters(unittest.TestCase):
             u_exact[i] = u_init(points[i])
         plt.plot(points, u_approx, '--', label=r'$p=4$, no limiter')
         for i in range(len(limiters)):
-            indices = indicator.get_smoothness_values(scheme) > 1
+            indices = detectors[1].get_smoothness_values(scheme) > 1
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 u_approx[k] = scheme.get_solution_value(points[k])

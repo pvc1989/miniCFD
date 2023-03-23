@@ -1,4 +1,4 @@
-"""Concrete implementations of smoothness indicators.
+"""Concrete implementations of jump detectors.
 """
 import numpy as np
 
@@ -26,7 +26,7 @@ def _norm_infty(cell: Element):
 
 
 class Krivodonova2004(Smoothness):
-    """A smoothness indicator for high-order DG schemes.
+    """A jump detector for high-order DG schemes.
 
     See Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338.
     """
@@ -64,7 +64,7 @@ class Krivodonova2004(Smoothness):
 
 
 class LiAndRen2011(Smoothness):
-    """A smoothness indicator for high-order finite volume schemes.
+    """A jump detector for high-order finite volume schemes.
 
     See Li Wanai and Ren Yu-Xin, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
     """
@@ -105,7 +105,7 @@ class LiAndRen2011(Smoothness):
 
 
 class ZhuAndQiu2021(Smoothness):
-    """A smoothness indicator for high-order DG schemes.
+    """A jump detector for high-order DG schemes.
 
     See Zhu Jun, Shu Chi-Wang, and Qiu Jianxian, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
     """
