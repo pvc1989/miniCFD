@@ -84,11 +84,11 @@ class Taylor(Expansion):
         return values
 
     def get_function_value(self, x_global: float):
-        taylor_basis_values = self.get_basis_values(x_global)
+        taylor_basis_values = Taylor.get_basis_values(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_values)
 
     def get_gradient_value(self, x_global: float):
-        taylor_basis_gradients = self.get_basis_values(x_global)
+        taylor_basis_gradients = Taylor.get_basis_values(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_gradients)
 
     def get_derivative_values(self, x_global: float):
@@ -109,6 +109,24 @@ class Taylor(Expansion):
 
     def get_coeff(self):
         return self._taylor_coeff
+
+    def set_taylor_coeff(self):
+        """Transform another polynomial expansion onto its Taylor basis.
+
+        Store basis values in a row, and coefficients in a column, one has
+            base_row = this_row * mat_a => base_col = mat_a^{-1} * this_col.
+        """
+        assert issubclass(type(self), Taylor)
+        this_rows = np.ndarray((self.n_term(), self.n_term()))
+        base_rows = np.ndarray((self.n_term(), self.n_term()))
+        points = np.linspace(-1, 1, self.n_term()) * self.jacobian(0)
+        for k in range(self.n_term()):
+            this_rows[k] = self.get_basis_values(points[k])
+            base_rows[k] = Taylor.get_basis_values(self, points[k])
+        mat_a = np.linalg.solve(this_rows, base_rows)
+        this_col = self.get_coeff()
+        base_col = np.linalg.solve(mat_a, this_col)
+        Taylor.set_coeff(self, base_col)
 
 
 class Lagrange(Taylor):
@@ -143,6 +161,7 @@ class Lagrange(Taylor):
         assert len(values) == self._basis.n_term()
         for i in range(len(values)):
             self._sample_values[i] = values[i]
+        self.set_taylor_coeff()
 
     def get_coeff(self):
         return self._sample_values
@@ -150,6 +169,7 @@ class Lagrange(Taylor):
     def approximate(self, function):
         for i in range(self._basis.n_term()):
             self._sample_values[i] = function(self._sample_points[i])
+        self.set_taylor_coeff()
 
     def get_basis_values(self, x_global):
         x_local = self.global_to_local(x_global)
@@ -197,6 +217,7 @@ class Legendre(Taylor):
         assert len(coeffs) == self.n_term()
         for i in range(len(coeffs)):
             self._mode_coeffs[i] = coeffs[i]
+        self.set_taylor_coeff()
 
     def get_coeff(self):
         return self._mode_coeffs
@@ -210,6 +231,7 @@ class Legendre(Taylor):
             self._mode_coeffs[k] = integrate.fixed_quad_local(integrand,
                 self.n_term()) * self._jacobian
             self._mode_coeffs[k] /= self._mode_weights[k]
+        self.set_taylor_coeff()
 
     def get_basis_values(self, x_global):
         x_local = self.global_to_local(x_global)

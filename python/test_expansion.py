@@ -14,8 +14,8 @@ class TestTaylor(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
-        self._x_left = -0.5
-        self._x_right = 0.5
+        self._x_left = -0.4
+        self._x_right = 0.6  # avoid x_center = 0.0
         self._expansion = expansion.Taylor(5, self._x_left, self._x_right)
 
     def test_coordinate_transforms(self):
@@ -135,6 +135,14 @@ class TestLagrange(unittest.TestCase):
             self.assertAlmostEqual(my_function_gradient(point),
                 self._expansion.get_gradient_value(point))
 
+    def test_consistency_with_taylor(self):
+        self._expansion.approximate(np.sin)
+        points = np.linspace(self._x_left, self._x_right, num=21)
+        for x in points:
+            self.assertAlmostEqual(
+                self._expansion.get_function_value(x),
+                expansion.Taylor.get_function_value(self._expansion, x))
+
 
 class TestLegendre(unittest.TestCase):
     """Test the Legendre class.
@@ -205,6 +213,14 @@ class TestLegendre(unittest.TestCase):
                   integral, _ = integrate.quad(integrand,
                       self._x_left, self._x_right)
                   self.assertAlmostEqual(integral, weight_matrix[k][l])
+
+    def test_consistency_with_taylor(self):
+        self._expansion.approximate(np.sin)
+        points = np.linspace(self._x_left, self._x_right, num=21)
+        for x in points:
+            self.assertAlmostEqual(
+                self._expansion.get_function_value(x),
+                expansion.Taylor.get_function_value(self._expansion, x))
 
 
 if __name__ == '__main__':
