@@ -7,6 +7,9 @@ from spatial import PiecewiseContinuous
 import integrate
 
 
+_eps = 1e-8
+
+
 def _norm_1(cell: Element):
     value = integrate.fixed_quad_global(
         lambda x_global: np.abs(cell.get_solution_value(x_global)),
@@ -36,7 +39,7 @@ class Krivodonova2004(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = _norm_infty(cell)
+            norms[i_cell] = _norm_infty(cell) + _eps
         ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -76,7 +79,7 @@ class LiAndRen2011(Smoothness):
             cell = scheme.get_element_by_index(i_cell)
             averages[i_cell] = integrate.fixed_quad_global(
                 lambda x_global: np.abs(cell.get_solution_value(x_global)),
-                cell.x_left(), cell.x_right(), cell.degree())
+                cell.x_left(), cell.x_right(), cell.degree()) + _eps
         ratio = 2 * scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -115,7 +118,7 @@ class ZhuAndQiu2021(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = _norm_1(cell)
+            norms[i_cell] = _norm_1(cell) + _eps
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = scheme.get_element_by_index(i_curr)
