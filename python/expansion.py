@@ -2,6 +2,7 @@
 """
 import numpy as np
 from scipy import special
+import numdifftools as nd
 
 from concept import Expansion
 import polynomial
@@ -25,6 +26,7 @@ class Taylor(Expansion):
         self._jacobian = (x_right - x_left) / 2.0
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
+        self._value_type = value_type
 
     def n_term(self):
         return self._n_term
@@ -48,7 +50,12 @@ class Taylor(Expansion):
         return (x_global - self._x_center) / self._jacobian
 
     def approximate(self, function: callable):
-        pass
+        self._taylor_coeff[0] = function(self._x_center)
+        for k in range(1, self.n_term()):
+            df_dx = nd.Derivative(function, n=k, step=self._jacobian/50, order=4)
+            derivative = df_dx(self._x_center)
+            # print(derivative)
+            self._taylor_coeff[k] = derivative / special.factorial(k)
 
     def get_basis_values(self, x_global):
         x_global -= self._x_center
@@ -63,6 +70,19 @@ class Taylor(Expansion):
             values[k+1] = (k+1) * x_global**k
         return values
 
+    def get_basis_derivatives(self, x_global: float):
+        """Get all non-zero-in-general derivatives of the basis.
+
+        values[k][l] = the k-th derivative of (x-c)^{l}.
+        """
+        x_global -= self._x_center
+        values = np.zeros((self.n_term(), self.n_term()))
+        for k in range(1, self.n_term()):
+            for l in range(k, self.n_term()):
+                values[k][l] = x_global**(l-k) * (special.factorial(l)
+                    / special.factorial(l-k))
+        return values
+
     def get_function_value(self, x_global: float):
         taylor_basis_values = self.get_basis_values(x_global)
         return self._taylor_coeff.dot(taylor_basis_values)
@@ -70,6 +90,19 @@ class Taylor(Expansion):
     def get_gradient_value(self, x_global: float):
         taylor_basis_gradients = self.get_basis_values(x_global)
         return self._taylor_coeff.dot(taylor_basis_gradients)
+
+    def get_derivative_values(self, x_global: float):
+        """Get all non-zero-in-general derivatives of u^h.
+
+        values[k] = the k-th derivative of u^h.
+        """
+        basis_derivatives = self.get_basis_derivatives(x_global)
+        values = np.zeros(self.n_term(), dtype=self._value_type)
+        # values[0] = get_function_value(x_global)
+        for k in range(1, self.n_term()):
+            for l in range(k, self.n_term()):
+                values[k] += basis_derivatives[k][l] * self._taylor_coeff[l]
+        return values
 
     def set_coeff(self, coeff):
         self._taylor_coeff[:] = coeff

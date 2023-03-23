@@ -14,8 +14,8 @@ class TestTaylor(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
-        self._x_left = 0.0
-        self._x_right = 1.0
+        self._x_left = -0.5
+        self._x_right = 0.5
         self._expansion = expansion.Taylor(5, self._x_left, self._x_right)
 
     def test_coordinate_transforms(self):
@@ -40,6 +40,33 @@ class TestTaylor(unittest.TestCase):
             gradients_actual = self._expansion.get_basis_gradients(point)
             norm = np.linalg.norm(gradients_actual - gradients_approx)
             self.assertAlmostEqual(norm, 0.0)
+
+    def test_get_basis_derivatives(self):
+        """Test methods for getting derivatives of basis.
+        """
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for point in points:
+            gradients_expect = self._expansion.get_basis_gradients(point)
+            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
+            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            self.assertAlmostEqual(norm, 0.0)
+
+    def test_get_derivative_values(self):
+        """Test methods for getting derivatives of u^h.
+        """
+        taylor = expansion.Taylor(5, self._x_left, self._x_right, complex)
+        # only approximate well near the center
+        points = np.linspace(self._x_left/2, self._x_right/2, num=201)
+        def function(x):
+            return np.exp(1j * x)
+        def derivative(x, k):
+            return np.exp(1j * x) * (1j)**k
+        taylor.approximate(function)
+        for x in points:
+            values = taylor.get_derivative_values(x)
+            for k in range(1, taylor.n_term()):
+                self.assertAlmostEqual(values[k], derivative(x, k),
+                    places=taylor.degree()-k)
 
 
 class TestLagrange(unittest.TestCase):
