@@ -39,6 +39,15 @@ class Taylor(Expansion):
         """
         return self._jacobian
 
+    def x_left(self):
+        return self._x_center - self._jacobian
+
+    def x_right(self):
+        return self._x_center + self._jacobian
+
+    def length(self):
+        return self._jacobian * 2
+
     def local_to_global(self, x_local):
         """Coordinate transform from local to global.
         """
@@ -210,6 +219,9 @@ class Legendre(Taylor):
         """Get the inner-product of the kth basis with itself.
         """
         return self._mode_weights[k]
+
+    def get_average(self):
+        return self._mode_coeffs[0]
 
     def set_coeff(self, coeffs):
         """Set coefficient for each mode.

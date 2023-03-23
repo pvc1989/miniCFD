@@ -101,6 +101,9 @@ class LegendreDG(Element):
     def approximate(self, function):
         self._u_approx.approximate(function)
 
+    def get_expansion(self):
+        return self._u_approx
+
     def get_basis_values(self, x_global):
         return self._u_approx.get_basis_values(x_global)
 
