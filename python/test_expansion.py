@@ -8,6 +8,40 @@ from matplotlib import pyplot as plt
 import expansion
 
 
+class TestTaylor(unittest.TestCase):
+    """Test the expansion.Taylor class.
+    """
+
+    def __init__(self, method_name: str = "") -> None:
+        super().__init__(method_name)
+        self._x_left = 0.0
+        self._x_right = 1.0
+        self._expansion = expansion.Taylor(5, self._x_left, self._x_right)
+
+    def test_coordinate_transforms(self):
+        """Test coordinate transforms between local and global.
+        """
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for x_global in points:
+            x_local = self._expansion.global_to_local(x_global)
+            self.assertAlmostEqual(x_global,
+                self._expansion.local_to_global(x_local))
+
+    def test_get_basis_values_and_gradients(self):
+        """Test methods for getting values and gradients of basis.
+        """
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for point in points:
+            # 2nd-order finite difference approximation
+            delta = 0.0001
+            values_right = self._expansion.get_basis_values(point + delta)
+            values_left = self._expansion.get_basis_values(point - delta)
+            gradients_approx = (values_right - values_left) / (delta * 2)
+            gradients_actual = self._expansion.get_basis_gradients(point)
+            norm = np.linalg.norm(gradients_actual - gradients_approx)
+            self.assertAlmostEqual(norm, 0.0)
+
+
 class TestLagrange(unittest.TestCase):
     """Test the expansion.Lagrange class.
     """
@@ -17,15 +51,6 @@ class TestLagrange(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = 10.0
         self._expansion = expansion.Lagrange(5, self._x_left, self._x_right)
-
-    def test_coordinate_transforms(self):
-        """Test coordinate transforms.
-        """
-        points = np.linspace(self._x_left, self._x_right, num=201)
-        for x_global in points:
-            x_local = self._expansion.global_to_local(x_global)
-            self.assertAlmostEqual(x_global,
-                self._expansion.local_to_global(x_local))
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
@@ -153,6 +178,7 @@ class TestLegendre(unittest.TestCase):
                   integral, _ = integrate.quad(integrand,
                       self._x_left, self._x_right)
                   self.assertAlmostEqual(integral, weight_matrix[k][l])
+
 
 if __name__ == '__main__':
     unittest.main()
