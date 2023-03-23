@@ -68,6 +68,26 @@ class TestTaylor(unittest.TestCase):
                 self.assertAlmostEqual(values[k], derivative(x, k),
                     places=taylor.degree()-k)
 
+    def test_plot(self):
+        """Plot the curves of a function and its approximations."""
+        points = np.linspace(0, 10, num=201)
+        def my_function(point):
+            return np.sin(point)
+        exact_values = my_function(points)
+        plt.figure()
+        plt.plot(points, exact_values, 'o', label='Exact')
+        for degree in range(8):
+            my_expansion = expansion.Taylor(degree, 0, 10)
+            my_expansion.approximate(my_function)
+            approx_values = np.ndarray(len(points))
+            for i in range(len(points)):
+                approx_values[i] = my_expansion.get_function_value(points[i])
+            plt.plot(points, approx_values, label= f'$p={degree}$')
+        plt.legend()
+        plt.ylim([-1.5, 2.0])
+        # plt.show()
+        plt.savefig("expansion_on_taylor.pdf")
+
 
 class TestLagrange(unittest.TestCase):
     """Test the expansion.Lagrange class.
@@ -86,7 +106,7 @@ class TestLagrange(unittest.TestCase):
             return np.sin(point)
         exact_values = my_function(points)
         plt.figure()
-        plt.plot(points, exact_values, '^', label='Exact')
+        plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
             my_expansion = expansion.Lagrange(degree,
                 self._x_left, self._x_right)
@@ -96,6 +116,7 @@ class TestLagrange(unittest.TestCase):
                 approx_values[i] = my_expansion.get_function_value(points[i])
             plt.plot(points, approx_values, label= f'$p={degree}$')
         plt.legend()
+        plt.ylim([-1.5, 2.0])
         # plt.show()
         plt.savefig("expansion_on_lagrange.pdf")
 
@@ -161,7 +182,7 @@ class TestLegendre(unittest.TestCase):
             return np.sin(point)
         exact_values = my_function(points)
         plt.figure()
-        plt.plot(points, exact_values, '^', label='Exact')
+        plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
             my_expansion = expansion.Legendre(degree,
                 self._x_left, self._x_right)
@@ -171,6 +192,7 @@ class TestLegendre(unittest.TestCase):
                 approx_values[i] = my_expansion.get_function_value(points[i])
             plt.plot(points, approx_values, label= f'$p={degree}$')
         plt.legend()
+        plt.ylim([-1.5, 2.0])
         # plt.show()
         plt.savefig("expansion_on_legendre.pdf")
 
