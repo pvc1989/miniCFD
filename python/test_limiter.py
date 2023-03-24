@@ -9,6 +9,7 @@ import riemann
 import spatial
 import detector
 import limiter
+import test_detector
 
 
 class TestLimiters(unittest.TestCase):
@@ -32,14 +33,7 @@ class TestLimiters(unittest.TestCase):
     def test_limiters(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreFR, degree)
-        def u_init(x):
-            a = scheme.x_left()*0.75
-            b = scheme.x_right()*0.75
-            y = (x - a) * (x - b)
-            z = b - x
-            if x < 0:
-                z = x - a
-            return np.sign(np.sin(x)) * z * (y < 0)
+        u_init = test_detector.jumps
         scheme.initialize(u_init)
         detectors = [
             detector.Krivodonova2004(),
@@ -49,19 +43,19 @@ class TestLimiters(unittest.TestCase):
             limiter.SimpleWENO(),
         ]
         markers = ['1', '2', '3']
-        fig, ax = plt.subplots(figsize=[6, 5])
+        _, ax = plt.subplots(figsize=[6, 4])
         # inset axes....
         axins = ax.inset_axes([0.7, 0.10, 0.25, 0.15])
         # sub region of the original image
         axins.set_xlim(-0.5, 0.5)
-        axins.set_ylim(-3.5, -2)
+        axins.set_ylim(+6.5, 8.0)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         u_approx = np.ndarray(len(points))
         u_exact = np.ndarray(len(points))
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(points, u_approx, '--', label=r'$p=4$, no limiter')
+        plt.plot(points, u_approx, '--', label=r'$p=4$, No Limiter')
         axins.plot(points, u_approx, '--')
         for i in range(len(limiters)):
             indices = detectors[1].get_smoothness_values(scheme) > 1
@@ -71,7 +65,7 @@ class TestLimiters(unittest.TestCase):
             plt.plot(points, u_approx, marker=markers[i],
                 label=r'$p=4$, '+f'{limiters[i].name()}')
             axins.plot(points, u_approx, marker=markers[i])
-        plt.plot(points, u_exact, 'r-', label=r'$p=\infty$, i.e. Exact')
+        plt.plot(points, u_exact, 'r-', label='Exact Solution')
         axins.plot(points, u_exact, 'r-')
         ax.indicate_inset_zoom(axins, edgecolor="gray")
         plt.xlabel(r'$x$')
