@@ -293,8 +293,8 @@ class SpatialScheme(OdeSystem):
         """
 
 
-class Smoothness(abc.ABC):
-    """An object that evaluates the solution smoothness for each element.
+class JumpDetector(abc.ABC):
+    """An object that detects jumps on an element.
     """
 
     @abc.abstractmethod
