@@ -2,27 +2,12 @@
 """
 import numpy as np
 
-from concept import Smoothness, Element
+from concept import Smoothness
 from spatial import PiecewiseContinuous
 import integrate
 
 
 _eps = 1e-8
-
-
-def _norm_1(cell: Element):
-    value = integrate.fixed_quad_global(
-        lambda x_global: np.abs(cell.get_solution_value(x_global)),
-        cell.x_left(), cell.x_right(), cell.degree())
-    return value
-
-
-def _norm_infty(cell: Element):
-    value = 0.0
-    points = cell.get_quadrature_points(cell.degree())
-    for x_global in points:
-        value = max(value, np.abs(cell.get_solution_value(x_global)))
-    return value
 
 
 class Krivodonova2004(Smoothness):
@@ -39,7 +24,9 @@ class Krivodonova2004(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = _norm_infty(cell) + _eps
+            def function(x_global):
+                return cell.get_solution_value(x_global)
+            norms[i_cell] = integrate.norm_infty(function, cell) + _eps
         ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -118,7 +105,9 @@ class ZhuAndQiu2021(Smoothness):
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            norms[i_cell] = _norm_1(cell) + _eps
+            def function(x_global):
+                return cell.get_solution_value(x_global)
+            norms[i_cell] = integrate.norm_1(function, cell) + _eps
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = scheme.get_element_by_index(i_curr)

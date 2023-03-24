@@ -95,23 +95,29 @@ class Element(abc.ABC):
 
     def __init__(self, equation: Equation, x_left: float, x_right: float, value_type=float) -> None:
         self._equation = equation
-        self._boundaries = (x_left, x_right)
+        self._x_left = x_left
+        self._x_right = x_right
         self._value_type = value_type
 
     def x_left(self):
         """Get the coordinate of this eleement's left boundary.
         """
-        return self._boundaries[0]
+        return self._x_left
 
     def x_right(self):
         """Get the coordinate of this eleement's right boundary.
         """
-        return self._boundaries[1]
+        return self._x_right
 
     def x_center(self):
         """Get the coordinate of this eleement's centroid.
         """
         return (self.x_left() + self.x_right()) / 2
+
+    def length(self):
+        """Get the length of this eleement.
+        """
+        return self.x_right() - self.x_left()
 
     @abc.abstractmethod
     def degree(self):

@@ -3,29 +3,12 @@
 import numpy as np
 from scipy import special
 
-import concept
 from spatial import PiecewiseContinuous
 import expansion
-import element
 import integrate
 
 
 _eps = 1e-8
-
-
-def _norm_1(cell: concept.Element):
-    value = integrate.fixed_quad_global(
-        lambda x_global: np.abs(cell.get_solution_value(x_global)),
-        cell.x_left(), cell.x_right(), cell.degree())
-    return value
-
-
-def _norm_infty(cell: concept.Element):
-    value = 0.0
-    points = cell.get_quadrature_points(cell.degree())
-    for x_global in points:
-        value = max(value, np.abs(cell.get_solution_value(x_global)))
-    return value
 
 
 class SimpleWENO:
