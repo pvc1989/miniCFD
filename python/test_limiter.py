@@ -47,28 +47,29 @@ class TestLimiters(unittest.TestCase):
         # inset axes....
         axins = ax.inset_axes([0.7, 0.10, 0.25, 0.15])
         # sub region of the original image
-        axins.set_xlim(-0.5, 0.5)
+        axins.set_xlim(-1, 1)
         axins.set_ylim(+6.5, 8.0)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
+        x_values = points / scheme.delta_x()
         u_approx = np.ndarray(len(points))
         u_exact = np.ndarray(len(points))
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(points, u_approx, '--', label=r'$p=4$, No Limiter')
-        axins.plot(points, u_approx, '--')
+        plt.plot(x_values, u_approx, '--', label=r'$p=4$, No Limiter')
+        axins.plot(x_values, u_approx, '--')
         for i in range(len(limiters)):
             indices = detectors[1].get_smoothness_values(scheme) > 1
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 u_approx[k] = scheme.get_solution_value(points[k])
-            plt.plot(points, u_approx, marker=markers[i],
+            plt.plot(x_values, u_approx, marker=markers[i],
                 label=r'$p=4$, '+f'{limiters[i].name()}')
-            axins.plot(points, u_approx, marker=markers[i])
-        plt.plot(points, u_exact, 'r-', label='Exact Solution')
-        axins.plot(points, u_exact, 'r-')
+            axins.plot(x_values, u_approx, marker=markers[i])
+        plt.plot(x_values, u_exact, 'r-', label='Exact Solution')
+        axins.plot(x_values, u_exact, 'r-')
         ax.indicate_inset_zoom(axins, edgecolor="gray")
-        plt.xlabel(r'$x$')
+        plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
         plt.legend()
         plt.tight_layout()

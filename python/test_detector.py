@@ -65,24 +65,31 @@ class TestJumpDetectors(unittest.TestCase):
         plt.figure(figsize=(6,6))
         plt.subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
+        x_values = points / scheme.delta_x()
         u_approx = np.ndarray(len(points))
         u_exact = np.ndarray(len(points))
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(points, u_approx, '.', label=r'$p=4$')
-        plt.plot(points, u_exact, 'r-', label=r'$p=\infty$')
+        plt.plot(x_values, u_approx, '.', label=r'$p=4$')
+        plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
         plt.legend()
-        plt.xlabel(r'$x$')
+        plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
         plt.subplot(3,1,(2,3))
         plt.semilogy()
+        x_values = centers / scheme.delta_x()
         for i in range(len(detectors)):
-            values = detectors[i].get_smoothness_values(scheme)
-            plt.plot(centers, values, markers[i], label=detectors[i].name())
-        plt.plot([self._x_left, self._x_right], [1, 1], label=r'$Smoothness=1$')
+            y_values = detectors[i].get_smoothness_values(scheme)
+            plt.plot(x_values, y_values, markers[i],
+                label=r'$p=4$, '+detectors[i].name())
+        x_values = [
+            scheme.x_left() / scheme.delta_x(),
+            scheme.x_right() / scheme.delta_x()
+        ]
+        plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
         plt.legend()
-        plt.xlabel(r'$x$')
+        plt.xlabel(r'$x/h$')
         plt.ylabel(r'$Smoothness$')
         plt.tight_layout()
         # plt.show()
