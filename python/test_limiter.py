@@ -33,8 +33,13 @@ class TestLimiters(unittest.TestCase):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         def u_init(x):
-            y = (x - scheme.x_left()*0.75) * (x - scheme.x_right()*0.75)
-            return np.sign(np.sin(x)) * np.abs(y) * (y < 0)
+            a = scheme.x_left()*0.75
+            b = scheme.x_right()*0.75
+            y = (x - a) * (x - b)
+            z = b - x
+            if x < 0:
+                z = x - a
+            return np.sign(np.sin(x)) * z * (y < 0)
         scheme.initialize(u_init)
         detectors = [
             detector.Krivodonova2004(),
