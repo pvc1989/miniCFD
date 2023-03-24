@@ -56,6 +56,7 @@ class SimpleWENO:
         return beta
 
     def reconstruct(self, scheme: PiecewiseContinuous, troubled_cell_indices):
+        new_coeffs = []
         for i_curr in range(len(troubled_cell_indices)):
             if not troubled_cell_indices[i_curr]:
                 continue
@@ -85,7 +86,14 @@ class SimpleWENO:
             coeff  = candidates[0].get_coeff() * weights[0]
             coeff += candidates[1].get_coeff() * weights[1]
             coeff += candidates[2].get_coeff() * weights[2]
-            curr.set_solution_coeff(coeff)
+            new_coeffs.append(coeff)
+        i_new = 0
+        for i_curr in range(len(troubled_cell_indices)):
+            if troubled_cell_indices[i_curr]:
+                curr = scheme.get_element_by_index(i_curr)
+                curr.set_solution_coeff(new_coeffs[i_new])
+                i_new += 1
+        assert i_new == len(new_coeffs)
 
 
 if __name__ == '__main__':
