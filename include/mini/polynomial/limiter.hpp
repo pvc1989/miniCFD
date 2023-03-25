@@ -34,6 +34,9 @@ class LazyWeno {
     weights_.setOnes();
     weights_ *= w0;
   }
+  bool IsNotSmooth(const Cell &cell) {
+    return true;
+  }
   Projection operator()(const Cell &cell) {
     my_cell_ = &cell;
     Borrow();
@@ -126,6 +129,24 @@ class EigenWeno {
       : eps_(eps) {
     weights_.setOnes();
     weights_ *= w0;
+  }
+  static bool IsNotSmooth(const Cell &cell) {
+    constexpr int kComponent = 0;
+    auto center_value = cell.projection_(cell.center())[kComponent];
+    auto average_max = std::max(1e-9,
+        std::abs(cell.projection_.GetAverage()[kComponent]));
+    auto difference_sum = 0.0;
+    for (const Cell *adj_cell : cell.adj_cells_) {
+      difference_sum += std::abs(center_value
+          - adj_cell->projection_(cell.center())[kComponent]);
+      average_max = std::max(average_max,
+          std::abs(adj_cell->projection_.GetAverage()[kComponent]));
+    }
+    constexpr auto volume_power = (cell.kDegrees+1.0) / 2.0 / cell.kDimensions;
+    auto smoothness = difference_sum / average_max
+        / cell.adj_cells_.size() / std::pow(cell.volume(), volume_power);
+    constexpr auto smoothness_reference = cell.kDegrees < 3 ? 1.0 : 3.0;
+    return smoothness > smoothness_reference;
   }
   Projection operator()(const Cell &cell) {
     my_cell_ = &cell;
@@ -222,6 +243,9 @@ class DummyWeno {
 
  public:
   DummyWeno(Scalar w0, Scalar eps, bool verbose = false) {
+  }
+  bool IsNotSmooth(const Cell &cell) {
+    return true;
   }
   Projection operator()(const Cell &cell) {
     return cell.projection_;

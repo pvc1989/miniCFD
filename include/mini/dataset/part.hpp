@@ -1584,28 +1584,32 @@ class Part {
     if (kDegrees == 0) {
       return;
     }
-    ShareGhostCellCoeffs();
     // run the limiter on inner cells that need no ghost cells
+    ShareGhostCellCoeffs();
+    Reconstruct(limiter, inner_cells_.begin(), inner_cells_.end());
+    // run the limiter on inter cells that need ghost cells
+    UpdateGhostCellCoeffs();
+    Reconstruct(limiter, inter_cells_.begin(), inter_cells_.end());
+  }
+
+  template <typename Limiter, typename CellPtrIter>
+  void Reconstruct(Limiter &&limiter, CellPtrIter iter, CellPtrIter end) {
+    auto troubled_cells = std::vector<Cell *>();
+    while (iter != end) {
+      Cell *cell_ptr = *iter++;
+      if (limiter.IsNotSmooth(*cell_ptr)) {
+        troubled_cells.push_back(cell_ptr);
+      }
+    }
     auto new_projections = std::vector<typename Cell::Projection>();
-    new_projections.reserve(inner_cells_.size());
-    for (const auto *cell_ptr : inner_cells_) {
+    for (Cell *cell_ptr : troubled_cells) {
       new_projections.emplace_back(limiter(*cell_ptr));
     }
     int i = 0;
-    for (auto *cell_ptr : inner_cells_) {
+    for (Cell *cell_ptr : troubled_cells) {
       cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
     }
-    // run the limiter on inter cells that need ghost cells
-    new_projections.clear();
-    new_projections.reserve(inter_cells_.size());
-    UpdateGhostCellCoeffs();
-    for (const auto *cell_ptr : inter_cells_) {
-      new_projections.emplace_back(limiter(*cell_ptr));
-    }
-    i = 0;
-    for (auto *cell_ptr : inter_cells_) {
-      cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
-    }
+    assert(i == troubled_cells.size());
   }
 
   // Accessors:
