@@ -131,22 +131,33 @@ class EigenWeno {
     weights_ *= w0;
   }
   static bool IsNotSmooth(const Cell &cell) {
-    constexpr int kComponent = 0;
-    auto center_value = cell.projection_(cell.center())[kComponent];
-    auto average_max = std::max(1e-9,
-        std::abs(cell.projection_.GetAverage()[kComponent]));
-    auto difference_sum = 0.0;
+    constexpr int components[] = { 0, cell.kComponents-1 };
+    auto max_abs_averages = cell.projection_.GetAverage();
+    for (int i : components) {
+      max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
+    }
+    typename Cell::Value sum_abs_differences; sum_abs_differences.setZero();
+    auto my_values = cell.projection_(cell.center());
     for (const Cell *adj_cell : cell.adj_cells_) {
-      difference_sum += std::abs(center_value
-          - adj_cell->projection_(cell.center())[kComponent]);
-      average_max = std::max(average_max,
-          std::abs(adj_cell->projection_.GetAverage()[kComponent]));
+      auto adj_values = adj_cell->projection_(cell.center());
+      auto adj_averages = adj_cell->projection_.GetAverage();
+      for (int i : components) {
+        sum_abs_differences[i] += std::abs(my_values[i] - adj_values[i]);
+        max_abs_averages[i] = std::max(max_abs_averages[i],
+            std::abs(adj_averages[i]));
+      }
     }
     constexpr auto volume_power = (cell.kDegrees+1.0) / 2.0 / cell.kDimensions;
-    auto smoothness = difference_sum / average_max
-        / cell.adj_cells_.size() / std::pow(cell.volume(), volume_power);
+    auto divisor = std::pow(cell.volume(), volume_power);
+    divisor *= cell.adj_cells_.size();
     constexpr auto smoothness_reference = cell.kDegrees < 3 ? 1.0 : 3.0;
-    return smoothness > smoothness_reference;
+    for (int i : components) {
+      auto smoothness = sum_abs_differences[i] / max_abs_averages[i] / divisor;
+      if (smoothness > smoothness_reference) {
+        return true;  // if any component is not smooth
+      }
+    }
+    return false;  // if all components are smooth
   }
   Projection operator()(const Cell &cell) {
     my_cell_ = &cell;
