@@ -23,6 +23,6 @@ set_target_properties(test_dataset_shuffler PROPERTIES OUTPUT_NAME shuffler)
 add_test(NAME test_dataset_shuffler COMMAND shuffler)
 
 add_executable(test_dataset_part part.cpp)
-target_include_directories(test_dataset_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_CXX_HEADER_DIR})
-target_link_libraries(test_dataset_part ${CGNS_LIB} ${MPI_mpi_LIBRARY})
+target_include_directories(test_dataset_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_INCLUDE_PATH})
+target_link_libraries(test_dataset_part ${CGNS_LIB} ${MPI_LIBRARIES})
 set_target_properties(test_dataset_part PROPERTIES OUTPUT_NAME part)
