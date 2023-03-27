@@ -128,7 +128,7 @@ class Taylor(Expansion):
         assert issubclass(type(self), Taylor)
         this_rows = np.ndarray((self.n_term(), self.n_term()))
         base_rows = np.ndarray((self.n_term(), self.n_term()))
-        points = np.linspace(-1, 1, self.n_term()) * self.jacobian(0)
+        points = integrate.get_quadrature_points(self, self.n_term())
         for k in range(self.n_term()):
             this_rows[k] = self.get_basis_values(points[k])
             base_rows[k] = Taylor.get_basis_values(self, points[k])

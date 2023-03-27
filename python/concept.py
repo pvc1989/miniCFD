@@ -169,6 +169,11 @@ class Element(abc.ABC):
     def global_to_local(self, x_global):
         return self._coord_map.global_to_local(x_global)
 
+    def get_coord_map(self) -> CoordinateMap:
+        """Get the underlying CoordinateMap object.
+        """
+        return self._coord_map
+
     @abc.abstractmethod
     def degree(self):
         """The highest degree of the approximated solution.
@@ -219,11 +224,6 @@ class Element(abc.ABC):
         """Divide the mass matrix of this element by the given column.
 
         Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
-        """
-
-    @abc.abstractmethod
-    def get_quadrature_points(self, n_point: int) -> np.ndarray:
-        """Get the global coordinates of quadrature points.
         """
 
 

@@ -6,6 +6,15 @@ from scipy import special
 import concept
 
 
+def get_quadrature_points(coord_map: concept.CoordinateMap,
+        n_point: int) -> np.ndarray:
+    roots, _ = special.roots_legendre(n_point)
+    points = np.ndarray(n_point)
+    for i in range(n_point):
+        points[i] = coord_map.local_to_global(roots[i])
+    return points
+
+
 def fixed_quad_global(function: callable, x_left, x_right, n_point=5):
     x_center = (x_right + x_left) / 2
     jacobian = (x_right - x_left) / 2
@@ -43,7 +52,7 @@ def norm_2(function: callable, cell: concept.Element):
 
 def norm_infty(function: callable, cell: concept.Element):
     value = 0.0
-    points = cell.get_quadrature_points(cell.degree())
+    points = get_quadrature_points(cell.get_coord_map(), cell.degree())
     for x_global in points:
         value = max(value, np.abs(function(x_global)))
     return value
