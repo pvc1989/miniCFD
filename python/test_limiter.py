@@ -48,7 +48,7 @@ class TestLimiters(unittest.TestCase):
         axins = ax.inset_axes([0.7, 0.10, 0.25, 0.15])
         # sub region of the original image
         axins.set_xlim(-1, 1)
-        axins.set_ylim(+6.5, 8.0)
+        axins.set_ylim(-3.5, -2.0)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         x_values = points / scheme.delta_x()
         u_approx = np.ndarray(len(points))

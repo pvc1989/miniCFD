@@ -7,9 +7,6 @@ from spatial import PiecewiseContinuous
 import integrate
 
 
-_eps = 1e-8
-
-
 class Krivodonova2004(JumpDetector):
     """A jump detector for high-order DG schemes.
 
@@ -26,7 +23,7 @@ class Krivodonova2004(JumpDetector):
             cell = scheme.get_element_by_index(i_cell)
             def function(x_global):
                 return cell.get_solution_value(x_global)
-            norms[i_cell] = integrate.norm_infty(function, cell) + _eps
+            norms[i_cell] = integrate.norm_infty(function, cell) + 1.0
         ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -64,9 +61,10 @@ class LiAndRen2011(JumpDetector):
         averages = np.ndarray(n_cell)  # could be easier for some schemes
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
-            averages[i_cell] = integrate.fixed_quad_global(
-                lambda x_global: np.abs(cell.get_solution_value(x_global)),
-                cell.x_left(), cell.x_right(), cell.degree()) + _eps
+            def function(x_global):
+                return cell.get_solution_value(x_global)
+            average = integrate.average(function, cell)
+            averages[i_cell] = np.abs(average) + cell.length()
         ratio = 2 * scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -82,8 +80,8 @@ class LiAndRen2011(JumpDetector):
             next_solution = next.get_solution_value(curr.x_center()
                 - scheme.length() * (i_next == 0))
             # evaluate smoothness
-            dividend = max(np.abs(curr_solution - next_solution),
-                np.abs(curr_solution - prev_solution))
+            dividend = (np.abs(curr_solution - next_solution)
+                + np.abs(curr_solution - prev_solution))
             divisor = ratio * max(averages[i_curr], averages[i_prev],
                 averages[i_next])
             # print(dividend, divisor)
@@ -107,7 +105,7 @@ class ZhuAndQiu2021(JumpDetector):
             cell = scheme.get_element_by_index(i_cell)
             def function(x_global):
                 return cell.get_solution_value(x_global)
-            norms[i_cell] = integrate.norm_1(function, cell) + _eps
+            norms[i_cell] = integrate.norm_1(function, cell) + cell.length()
         smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = scheme.get_element_by_index(i_curr)

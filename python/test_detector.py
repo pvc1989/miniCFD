@@ -17,7 +17,7 @@ def smooth(x):
         * np.sin(5 * x))
     value += (np.exp(-((x + x_shift) / gauss_width)**2 / 2)
         * np.sin(10 * x))
-    return value + 10
+    return value + 0
 
 
 def jumps(x):
@@ -28,7 +28,7 @@ def jumps(x):
     amplitude = b - x
     if x < 0:
         amplitude = x - a
-    return sign * amplitude * on_off + 10
+    return sign * amplitude * on_off + 0
 
 
 class TestJumpDetectors(unittest.TestCase):
@@ -52,7 +52,7 @@ class TestJumpDetectors(unittest.TestCase):
     def test_smoothness_values(self):
         degree = 4
         scheme = self.build_scheme(spatial.LagrangeFR, degree)
-        u_init = jumps
+        u_init = smooth
         scheme.initialize(u_init)
         centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
             scheme.x_right() - scheme.delta_x(), self._n_element)
