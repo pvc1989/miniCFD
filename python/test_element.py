@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
+import concept
 from element import LagrangeFR
 from equation import LinearAdvection
 from polynomial import Vincent
@@ -22,7 +23,8 @@ class TestLagrangeFR(unittest.TestCase):
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
         self._element = LagrangeFR(self._equation, self._degree,
-            self._x_left, self._x_right)
+            self._x_left, self._x_right,
+            concept.LinearCoordinateMap(self._x_left, self._x_right))
         self._element.approximate(np.sin)
 
     def test_plot(self):

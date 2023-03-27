@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 from concept import Element, SpatialScheme, Equation, RiemannSolver
+import concept
 import element
 import integrate
 
@@ -23,7 +24,8 @@ class PiecewiseContinuous(SpatialScheme):
             assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
             x_right_i = x_left_i + self.delta_x()
             element_i = element_type(
-                  equation, degree, x_left_i, x_right_i, value_type)
+                equation, degree, x_left_i, x_right_i,
+                concept.LinearCoordinateMap(x_left, x_right), value_type)
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)

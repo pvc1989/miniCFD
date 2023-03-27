@@ -19,6 +19,48 @@ class Polynomial(abc.ABC):
         """
 
 
+class CoordinateMap(abc.ABC):
+    """A map between local and global coordinates.
+    """
+
+    def local_to_global(self, x_local: float) -> float:
+        """Coordinate transform from local to global.
+        """
+
+    def global_to_local(self, x_global: float) -> float:
+        """Coordinate transform from global to local.
+        """
+
+    def local_to_jacobian(self, x_local: float) -> float:
+        """Get the Jacobian value at a point given by its local coordinate.
+        """
+
+    def global_to_jacobian(self, x_global: float) -> float:
+        """Get the Jacobian value at a point given by its global coordinate.
+        """
+
+
+class LinearCoordinateMap(CoordinateMap):
+    """A linear map between local and global coordinates.
+    """
+
+    def __init__(self, x_left: float, x_right: float):
+        self._x_center = (x_left + x_right) / 2
+        self._jacobian = (x_right - x_left) / 2
+
+    def local_to_global(self, x_local: float) -> float:
+        return self._x_center + x_local * self._jacobian
+
+    def global_to_local(self, x_global: float) -> float:
+        return (x_global - self._x_center) / self._jacobian
+
+    def local_to_jacobian(self, x_local: float) -> float:
+        return self._jacobian
+
+    def global_to_jacobian(self, x_global: float) -> float:
+        return self._jacobian
+
+
 class Expansion(abc.ABC):
     """The polynomial approximation of a general function.
     """
@@ -93,10 +135,12 @@ class Element(abc.ABC):
     """A subdomain that carries some expansion of the solution.
     """
 
-    def __init__(self, equation: Equation, x_left: float, x_right: float, value_type=float) -> None:
+    def __init__(self, equation: Equation, x_left: float, x_right: float,
+            coord_map: CoordinateMap, value_type=float) -> None:
         self._equation = equation
         self._x_left = x_left
         self._x_right = x_right
+        self._coord_map = coord_map
         self._value_type = value_type
 
     def x_left(self):
@@ -118,6 +162,12 @@ class Element(abc.ABC):
         """Get the length of this eleement.
         """
         return self.x_right() - self.x_left()
+
+    def local_to_global(self, x_local):
+        return self._coord_map.local_to_global(x_local)
+
+    def global_to_local(self, x_global):
+        return self._coord_map.global_to_local(x_global)
 
     @abc.abstractmethod
     def degree(self):

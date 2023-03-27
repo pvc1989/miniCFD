@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import special
 
-from concept import Element, Equation
+from concept import Element, Equation, CoordinateMap
 from polynomial import Vincent
 import expansion
 import integrate
@@ -14,8 +14,10 @@ class LagrangeDG(Element):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(equation, x_left, x_right, value_type)
+            x_left: float, x_right: float, coord_map: CoordinateMap,
+            value_type=float) -> None:
+        Element.__init__(self, equation, x_left, x_right,
+            coord_map, value_type)
         self._u_approx = expansion.Lagrange(degree,
             x_left, x_right, value_type)
         self._mass_matrix = self._build_mass_matrix()
@@ -84,8 +86,10 @@ class LegendreDG(Element):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(equation, x_left, x_right, value_type)
+            x_left: float, x_right: float, coord_map: CoordinateMap,
+            value_type=float) -> None:
+        Element.__init__(self, equation,
+            x_left, x_right, coord_map, value_type)
         self._u_approx = expansion.Legendre(degree, x_left, x_right,
             value_type)
 
@@ -144,9 +148,10 @@ class LagrangeFR(LagrangeDG):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(equation, degree, x_left, x_right, value_type)
-        # self._radau = Radau(degree + 1)
+            x_left: float, x_right: float, coord_map: CoordinateMap,
+            value_type=float) -> None:
+        LagrangeDG.__init__(self, equation, degree, x_left, x_right,
+            coord_map, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
@@ -194,9 +199,10 @@ class LegendreFR(LegendreDG):
     """
 
     def __init__(self, equation: Equation, degree: int,
-            x_left: float, x_right: float, value_type=float) -> None:
-        super().__init__(equation, degree, x_left, x_right, value_type)
-        # self._radau = Radau(degree + 1)
+            x_left: float, x_right: float, coord_map: CoordinateMap,
+            value_type=float) -> None:
+        LegendreDG.__init__(self, equation, degree, x_left, x_right,
+            coord_map, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
