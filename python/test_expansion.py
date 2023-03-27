@@ -158,7 +158,12 @@ class TestLagrange(unittest.TestCase):
 
     def test_consistency_with_taylor(self):
         self._expansion.approximate(np.sin)
-        points = np.linspace(self._x_left, self._x_right, num=21)
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for x in points:
+            self.assertAlmostEqual(
+                self._expansion.get_function_value(x),
+                expansion.Taylor.get_function_value(self._expansion, x))
+        self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
         for x in points:
             self.assertAlmostEqual(
                 self._expansion.get_function_value(x),
@@ -238,7 +243,12 @@ class TestLegendre(unittest.TestCase):
 
     def test_consistency_with_taylor(self):
         self._expansion.approximate(np.sin)
-        points = np.linspace(self._x_left, self._x_right, num=21)
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for x in points:
+            self.assertAlmostEqual(
+                self._expansion.get_function_value(x),
+                expansion.Taylor.get_function_value(self._expansion, x))
+        self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
         for x in points:
             self.assertAlmostEqual(
                 self._expansion.get_function_value(x),

@@ -119,16 +119,16 @@ class Taylor(Expansion):
     def get_coeff(self):
         return self._taylor_coeff
 
-    def set_taylor_coeff(self):
+    def set_taylor_coeff(self, points: np.ndarray):
         """Transform another polynomial expansion onto its Taylor basis.
 
         Store basis values in a row, and coefficients in a column, one has
             base_row = this_row * mat_a => base_col = mat_a^{-1} * this_col.
         """
         assert issubclass(type(self), Taylor)
+        assert len(points) == self.n_term()
         this_rows = np.ndarray((self.n_term(), self.n_term()))
         base_rows = np.ndarray((self.n_term(), self.n_term()))
-        points = integrate.get_quadrature_points(self, self.n_term())
         for k in range(self.n_term()):
             this_rows[k] = self.get_basis_values(points[k])
             base_rows[k] = Taylor.get_basis_values(self, points[k])
@@ -161,6 +161,21 @@ class Lagrange(Taylor):
     def get_sample_points(self):
         """Get the global coordinates of all sample points."""
         return self._sample_points
+
+    def set_taylor_coeff(self):
+        """Transform a Lagrage expansion onto its Taylor basis.
+
+        For Lagrange basis, this_rows will be np.eye(self.n_term()), if
+        the i-th row is evaluated at the i-th sample point. So
+            base_rows = mat_a => base_col = base_rows^{-1} * this_col.
+        """
+        base_rows = np.ndarray((self.n_term(), self.n_term()))
+        points = self.get_sample_points()
+        for k in range(self.n_term()):
+            base_rows[k] = Taylor.get_basis_values(self, points[k])
+        this_col = self.get_coeff()
+        base_col = np.linalg.solve(base_rows, this_col)
+        Taylor.set_coeff(self, base_col)
 
     def set_coeff(self, values):
         """Set values at sample points.
@@ -214,6 +229,17 @@ class Legendre(Taylor):
         for k in range(self._n_term):
             self._mode_weights[k] = self._jacobian * integrate.fixed_quad_local(
                 lambda x: (special.eval_legendre(k, x))**2, n_point=k+1)
+        # taylor_basis_row * matrix_on_taylor = legendre_basis_row
+        self._matrix_on_taylor = np.eye(self._n_term)
+        for k in range(2, self._n_term):
+            self._matrix_on_taylor[1:k+1, k] = ((2*k-1) / k
+                * self._matrix_on_taylor[0:k, k-1])
+            self._matrix_on_taylor[0:k-1, k] -= ((k-1) / k
+                * self._matrix_on_taylor[0:k-1, k-2])
+        # Taylor basis is dimensional, but Legendre basis is dimensionless...
+        half_length = (x_right - x_left) / 2
+        for k in range(1, self._n_term):
+            self._matrix_on_taylor[k] /= half_length**k
 
     def get_mode_weight(self, k):
         """Get the inner-product of the kth basis with itself.
@@ -222,6 +248,18 @@ class Legendre(Taylor):
 
     def get_average(self):
         return self._mode_coeffs[0]
+
+    def set_taylor_coeff(self):
+        """Transform a Lagrage expansion onto its Taylor basis.
+        
+        For Legendre basis, there is
+            taylor_basis_row * matrix_on_taylor = legendre_basis_row
+        So
+            taylor_coeff_col = matrix_on_taylor * legendre_coeff_col.
+        """
+        legendre_coeff_col = self.get_coeff()
+        taylor_coeff_col = self._matrix_on_taylor.dot(legendre_coeff_col)
+        Taylor.set_coeff(self, taylor_coeff_col)
 
     def set_coeff(self, coeffs):
         """Set coefficient for each mode.
