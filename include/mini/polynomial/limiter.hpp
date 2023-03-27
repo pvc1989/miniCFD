@@ -131,7 +131,7 @@ class EigenWeno {
     weights_ *= w0;
   }
   static bool IsNotSmooth(const Cell &cell) {
-    constexpr int components[] = { 0, cell.kComponents-1 };
+    constexpr int components[] = { 0, Cell::kComponents-1 };
     auto max_abs_averages = cell.projection_.GetAverage();
     for (int i : components) {
       max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
@@ -147,10 +147,10 @@ class EigenWeno {
             std::abs(adj_averages[i]));
       }
     }
-    constexpr auto volume_power = (cell.kDegrees+1.0) / 2.0 / cell.kDimensions;
+    constexpr auto volume_power = (Cell::kDegrees+1.0) / 2.0 / cell.kDimensions;
     auto divisor = std::pow(cell.volume(), volume_power);
     divisor *= cell.adj_cells_.size();
-    constexpr auto smoothness_reference = cell.kDegrees < 3 ? 1.0 : 3.0;
+    constexpr auto smoothness_reference = Cell::kDegrees < 3 ? 1.0 : 3.0;
     for (int i : components) {
       auto smoothness = sum_abs_differences[i] / max_abs_averages[i] / divisor;
       if (smoothness > smoothness_reference) {
