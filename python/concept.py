@@ -190,6 +190,11 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_expansion(self) -> Expansion:
+        """Get the underlying Expansion object.
+        """
+
+    @abc.abstractmethod
     def get_basis_values(self, x_global: float):
         """Get the values of basis at a given point.
         """

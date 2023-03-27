@@ -33,6 +33,9 @@ class LagrangeDG(Element):
     def approximate(self, function):
         self._u_approx.approximate(function)
 
+    def get_expansion(self) -> expansion.Lagrange:
+        return self._u_approx
+
     def get_basis_values(self, x_global):
         return self._u_approx.get_basis_values(x_global)
 
@@ -97,7 +100,7 @@ class LegendreDG(Element):
     def approximate(self, function):
         self._u_approx.approximate(function)
 
-    def get_expansion(self):
+    def get_expansion(self) -> expansion.Legendre:
         return self._u_approx
 
     def get_basis_values(self, x_global):
