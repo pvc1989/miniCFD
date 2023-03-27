@@ -147,7 +147,7 @@ class EigenWeno {
             std::abs(adj_averages[i]));
       }
     }
-    constexpr auto volume_power = (Cell::kDegrees+1.0) / 2.0 / cell.kDimensions;
+    constexpr auto volume_power = (Cell::kDegrees+1.0) / 2.0 / Cell::kDimensions;
     auto divisor = std::pow(cell.volume(), volume_power);
     divisor *= cell.adj_cells_.size();
     constexpr auto smoothness_reference = Cell::kDegrees < 3 ? 1.0 : 3.0;
