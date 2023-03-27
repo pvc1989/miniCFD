@@ -7,7 +7,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-18.04]
+        os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }} # For each os, run this job on it.
     steps:
     - name: Install Dependencies on Linux
