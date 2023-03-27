@@ -7,7 +7,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest]
+        os: [macos-latest, ubuntu-22.04]
     runs-on: ${{ matrix.os }} # For each os, run this job on it.
     steps:
     - name: Install Dependencies on Linux
@@ -16,7 +16,7 @@ jobs:
     - name: Install Dependencies on macOS
       if: startsWith(runner.os, 'macOS')
       run: brew install hdf5-mpi
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@main
       with:
         submodules: 'recursive'
     - name: Create Build Environment
