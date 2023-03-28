@@ -331,5 +331,23 @@ class Legendre(Taylor):
         return value
 
 
+class TruncatedLegendre(Taylor):
+    """A lower-order view of a higher-order Legendre expansion.
+    """
+
+    def __init__(self, degree: int, that: Legendre) -> None:
+        assert 0 <= degree <= that.degree()
+        Taylor.__init__(self, degree, that.x_left(), that.x_right(), that._value_type)
+        n_term = degree + 1
+        self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
+        self._mode_coeffs = that._mode_coeffs[0:n_term]
+        self._mode_weights = that._mode_weights[0:n_term]
+        self._matrix_on_taylor = that._matrix_on_taylor[0:n_term, 0:n_term]
+        Legendre.set_taylor_coeff(self)
+
+    def get_coeff(self):
+        return self._mode_coeffs
+
+
 if __name__ == '__main__':
     pass

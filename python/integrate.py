@@ -58,5 +58,11 @@ def norm_infty(function: callable, cell: concept.Element):
     return value
 
 
+def inner_product(phi: callable, psi: callable, cell: concept.Element):
+    value = fixed_quad_global(lambda x_global: phi(x_global) * psi(x_global),
+        cell.x_left(), cell.x_right(), cell.degree()+1)
+    return value
+
+
 if __name__ == '__main__':
     pass

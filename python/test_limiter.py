@@ -33,7 +33,7 @@ class TestLimiters(unittest.TestCase):
     def test_limiters(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreFR, degree)
-        u_init = test_detector.jumps
+        u_init = test_detector.smooth
         scheme.initialize(u_init)
         detectors = [
             detector.Krivodonova2004(),
@@ -41,14 +41,18 @@ class TestLimiters(unittest.TestCase):
         ]
         limiters = [
             limiter.SimpleWENO(),
+            limiter.PWeighted(),
         ]
-        markers = ['1', '2', '3']
-        _, ax = plt.subplots(figsize=[6, 4])
-        # inset axes....
-        axins = ax.inset_axes([0.7, 0.10, 0.25, 0.15])
-        # sub region of the original image
-        axins.set_xlim(-1, 1)
-        axins.set_ylim(-3.5, -2.0)
+        markers = ['+', 'x', 'o']
+        _, ax = plt.subplots(figsize=[6, 5])
+        if u_init == test_detector.jumps:
+            axins = ax.inset_axes([0.75, 0.10, 0.20, 0.25])
+            axins.set_xlim(-1, 1)
+            axins.set_ylim(-3.2, -2.2)
+        else:
+            axins = ax.inset_axes([0.35, 0.10, 0.35, 0.25])
+            axins.set_xlim(-22, -19)
+            axins.set_ylim(-0.2, +0.4)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         x_values = points / scheme.delta_x()
         u_approx = np.ndarray(len(points))
@@ -59,7 +63,9 @@ class TestLimiters(unittest.TestCase):
         plt.plot(x_values, u_approx, '--', label=r'$p=4$, No Limiter')
         axins.plot(x_values, u_approx, '--')
         for i in range(len(limiters)):
+            scheme.initialize(u_init)
             indices = detectors[1].get_troubled_cell_indices(scheme)
+            indices = np.arange(0, scheme.n_element())
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 u_approx[k] = scheme.get_solution_value(points[k])
