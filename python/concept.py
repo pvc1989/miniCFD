@@ -76,6 +76,11 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_basis(self, i_basis: int) -> callable:
+        """Get i-th basis function, which maps x_global to its value.
+        """
+
+    @abc.abstractmethod
     def get_basis_values(self, x_global: float):
         """Get the values of all basis functions at a given point.
         """

@@ -66,6 +66,12 @@ class Taylor(Expansion):
             # print(derivative)
             self._taylor_coeff[k] = derivative / special.factorial(k)
 
+    def get_basis(self, i_basis: int) -> callable:
+        assert 0 <= i_basis
+        def function(x_global):
+            return (x_global - self._x_center)**i_basis
+        return function
+
     def get_basis_values(self, x_global):
         x_global -= self._x_center
         values = x_global**np.arange(0, self.n_term(), dtype=int)
@@ -195,6 +201,13 @@ class Lagrange(Taylor):
             self._sample_values[i] = function(self._sample_points[i])
         self.set_taylor_coeff()
 
+    def get_basis(self, i_basis: int) -> callable:
+        assert 0 <= i_basis
+        def function(x_global):
+            x_local = self.global_to_local(x_global)
+            return self._basis[i_basis].get_function_value(x_local)
+        return function
+
     def get_basis_values(self, x_global):
         x_local = self.global_to_local(x_global)
         values = self._basis.get_function_value(x_local)
@@ -282,6 +295,13 @@ class Legendre(Taylor):
                 self.n_term()) * self._jacobian
             self._mode_coeffs[k] /= self._mode_weights[k]
         self.set_taylor_coeff()
+
+    def get_basis(self, i_basis: int) -> callable:
+        assert 0 <= i_basis
+        def function(x_global):
+            x_local = self.global_to_local(x_global)
+            return special.eval_legendre(i_basis, x_local)
+        return function
 
     def get_basis_values(self, x_global):
         x_local = self.global_to_local(x_global)
