@@ -3,6 +3,7 @@
 import numpy as np
 from scipy import special
 
+import concept
 from spatial import PiecewiseContinuous
 import expansion
 import integrate
@@ -11,12 +12,12 @@ import integrate
 _eps = 1e-8
 
 
-class SimpleWENO:
+class SimpleWENO(concept.Limiter):
 
     def name(self):
         return 'Zhong (2013)'
 
-    def borrow_expansion(self, this: expansion.Legendre,
+    def _borrow_expansion(self, this: expansion.Legendre,
             that: expansion.Legendre) -> expansion.Legendre:
         borrowed = expansion.Legendre(this.degree(), this.x_left(),
             this.x_right(), this._value_type)
@@ -27,7 +28,7 @@ class SimpleWENO:
             + this.get_average() - that_average)
         return borrowed
 
-    def get_smoothness_value(self, taylor: expansion.Taylor):
+    def _get_smoothness_value(self, taylor: expansion.Taylor):
         beta = 0.0
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
@@ -38,37 +39,44 @@ class SimpleWENO:
             beta /= (special.factorial(k))**2
         return beta
 
+    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+        candidates = []
+        candidates.append(curr.get_expansion())
+        for neighbor in neighbors:
+            candidates.append(self._borrow_expansion(curr.get_expansion(),
+                neighbor.get_expansion()))
+        # evaluate weights for each candidate
+        w_small = 0.001
+        linear_weights = (1-w_small*2, w_small, w_small)
+        weights = np.ndarray(3)
+        weights_sum = 0.0
+        for i in range(len(candidates)):
+            smoothness = self._get_smoothness_value(candidates[i])
+            weights[i] = linear_weights[i] / (1e-6 + smoothness)**2
+            weights_sum += weights[i]
+        weights /= weights_sum
+        # weight the coeffs
+        coeff  = candidates[0].get_coeff() * weights[0]
+        for i in range(1, len(candidates)):
+            coeff += candidates[i].get_coeff() * weights[i]
+        return coeff
+
     def reconstruct(self, scheme: PiecewiseContinuous, troubled_cell_indices):
         new_coeffs = []
         for i_curr in range(len(troubled_cell_indices)):
             if not troubled_cell_indices[i_curr]:
                 continue
-            candidates = []
             curr = scheme.get_element_by_index(i_curr)
-            candidates.append(curr.get_expansion())
-            # periodic BC
-            i_prev = i_curr - 1
-            prev = scheme.get_element_by_index(i_prev)
-            candidates.append(self.borrow_expansion(curr.get_expansion(),
-                prev.get_expansion()))
-            i_next = (i_curr + 1) % scheme.n_element()
-            next = scheme.get_element_by_index(i_next)
-            candidates.append(self.borrow_expansion(curr.get_expansion(),
-                next.get_expansion()))
-            # evaluate weights for each candidate
-            w_small = 0.001
-            linear_weights = (1-w_small*2, w_small, w_small)
-            weights = np.ndarray(3)
-            weights_sum = 0.0
-            for i in range(3):
-                smoothness = self.get_smoothness_value(candidates[i])
-                weights[i] = linear_weights[i] / (1e-6 + smoothness)**2
-                weights_sum += weights[i]
-            weights /= weights_sum
-            # weight the coeffs
-            coeff  = candidates[0].get_coeff() * weights[0]
-            coeff += candidates[1].get_coeff() * weights[1]
-            coeff += candidates[2].get_coeff() * weights[2]
+            neighbors = []
+            if i_curr > 0:
+                i_prev = i_curr - 1
+                prev = scheme.get_element_by_index(i_prev)
+                neighbors.append(prev)
+            if i_curr + 1 < scheme.n_element():
+                i_next = (i_curr + 1) % scheme.n_element()
+                next = scheme.get_element_by_index(i_next)
+                neighbors.append(next)
+            coeff = self.get_new_coeff(curr, neighbors)
             new_coeffs.append(coeff)
         i_new = 0
         for i_curr in range(len(troubled_cell_indices)):

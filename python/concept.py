@@ -363,5 +363,25 @@ class JumpDetector(abc.ABC):
         """
 
 
+class Limiter(abc.ABC):
+    """An object that limits oscillations on an element.
+    """
+
+    @abc.abstractmethod
+    def name(self) -> str:
+        """Get the name of the limiter.
+        """
+
+    @abc.abstractmethod
+    def get_new_coeff(self, element: Element, neighbors) -> np.ndarray:
+        """Reconstruct the expansion on a troubled cell.
+        """
+
+    @abc.abstractmethod
+    def reconstruct(self, scheme: SpatialScheme, troubled_cell_indices):
+        """Reconstruct the expansion on each troubled cell.
+        """
+
+
 if __name__ == '__main__':
     pass
