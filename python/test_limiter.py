@@ -20,7 +20,7 @@ class TestLimiters(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = -np.pi * 4
         self._x_right = np.pi * 4
-        self._n_element = 43
+        self._n_element = 73
         self._equation = equation.LinearAdvection(1.0)
         self._riemann = riemann.LinearAdvection(1.0)
 
@@ -59,7 +59,7 @@ class TestLimiters(unittest.TestCase):
         plt.plot(x_values, u_approx, '--', label=r'$p=4$, No Limiter')
         axins.plot(x_values, u_approx, '--')
         for i in range(len(limiters)):
-            indices = detectors[1].get_smoothness_values(scheme) > 1
+            indices = detectors[1].get_troubled_cell_indices(scheme)
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 u_approx[k] = scheme.get_solution_value(points[k])

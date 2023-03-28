@@ -46,6 +46,14 @@ class Krivodonova2004(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
+    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            if smoothness_values[i_cell] > 1:
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
+
 
 class LiAndRen2011(JumpDetector):
     """A jump detector for high-order finite volume schemes.
@@ -87,6 +95,15 @@ class LiAndRen2011(JumpDetector):
             # print(dividend, divisor)
             smoothness[i_curr] = dividend / divisor
         return smoothness
+
+    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            cell = scheme.get_element_by_index(i_cell)
+            if smoothness_values[i_cell] > (1 + 2*(cell.degree() > 2)):
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
 
 
 class ZhuAndQiu2021(JumpDetector):
@@ -131,6 +148,14 @@ class ZhuAndQiu2021(JumpDetector):
             # print(dividend, divisor)
             smoothness[i_curr] = dividend / divisor
         return smoothness
+
+    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            if smoothness_values[i_cell] > 1:
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
 
     def _integrate(self, f, g, cell):
         value = integrate.fixed_quad_global(lambda x: f(x) - g(x),

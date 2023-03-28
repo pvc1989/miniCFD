@@ -63,9 +63,7 @@ class SimpleWENO(concept.Limiter):
 
     def reconstruct(self, scheme: PiecewiseContinuous, troubled_cell_indices):
         new_coeffs = []
-        for i_curr in range(len(troubled_cell_indices)):
-            if not troubled_cell_indices[i_curr]:
-                continue
+        for i_curr in troubled_cell_indices:
             curr = scheme.get_element_by_index(i_curr)
             neighbors = []
             if i_curr > 0:
@@ -79,11 +77,10 @@ class SimpleWENO(concept.Limiter):
             coeff = self.get_new_coeff(curr, neighbors)
             new_coeffs.append(coeff)
         i_new = 0
-        for i_curr in range(len(troubled_cell_indices)):
-            if troubled_cell_indices[i_curr]:
-                curr = scheme.get_element_by_index(i_curr)
-                curr.set_solution_coeff(new_coeffs[i_new])
-                i_new += 1
+        for i_curr in troubled_cell_indices:
+            curr = scheme.get_element_by_index(i_curr)
+            curr.set_solution_coeff(new_coeffs[i_new])
+            i_new += 1
         assert i_new == len(new_coeffs)
 
 

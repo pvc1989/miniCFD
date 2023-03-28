@@ -362,6 +362,11 @@ class JumpDetector(abc.ABC):
         """Get the values of smoothness for each element.
         """
 
+    @abc.abstractmethod
+    def get_troubled_cell_indices(self, scheme: SpatialScheme) -> np.ndarray:
+        """Get the indices of trouble cells.
+        """
+
 
 class Limiter(abc.ABC):
     """An object that limits oscillations on an element.
