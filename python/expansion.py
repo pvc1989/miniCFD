@@ -341,12 +341,23 @@ class TruncatedLegendre(Taylor):
         n_term = degree + 1
         self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
         self._mode_coeffs = that._mode_coeffs[0:n_term]
-        self._mode_weights = that._mode_weights[0:n_term]
         self._matrix_on_taylor = that._matrix_on_taylor[0:n_term, 0:n_term]
         Legendre.set_taylor_coeff(self)
 
+    def set_coeff(self):
+        assert False
+
     def get_coeff(self):
-        return self._mode_coeffs
+        return Legendre.get_coeff(self)
+
+    def get_basis(self, i_basis: int) -> callable:
+        return Legendre.get_basis(self, i_basis)
+
+    def get_basis_values(self, x_global):
+        return Legendre.get_basis_values(self, x_global)
+
+    def get_basis_gradients(self, x_global: float):
+        assert False
 
 
 if __name__ == '__main__':

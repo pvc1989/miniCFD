@@ -255,5 +255,31 @@ class TestLegendre(unittest.TestCase):
                 expansion.Taylor.get_function_value(self._expansion, x))
 
 
+class TestTruncatedLegendre(unittest.TestCase):
+    """Test the TruncatedLegendre class.
+    """
+
+    def test_consistency(self):
+        x_left, x_right = 0.0, 10
+        points = np.linspace(x_left, x_right, num=201)
+        p_high = 5
+        legendre_high = expansion.Legendre(5, x_left, x_right)
+        u_init = np.sin
+        legendre_high.approximate(u_init)
+        for p_low in range(p_high+1):
+            legendre_trunc = expansion.TruncatedLegendre(p_low, legendre_high)
+            legendre_low = expansion.Legendre(p_low, x_left, x_right)
+            legendre_low.set_coeff(legendre_high.get_coeff()[0:p_low+1])
+            for x in points:
+                self.assertAlmostEqual(legendre_low.get_function_value(x),
+                    legendre_trunc.get_function_value(x))
+                diff = (legendre_low.get_derivative_values(x)
+                    - legendre_trunc.get_derivative_values(x))
+                self.assertEqual(np.linalg.norm(diff), 0)
+                diff = (legendre_low.get_basis_values(x)
+                    - legendre_trunc.get_basis_values(x))
+                self.assertEqual(np.linalg.norm(diff), 0)
+
+
 if __name__ == '__main__':
     unittest.main()
