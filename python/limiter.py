@@ -41,6 +41,10 @@ class SimpleWENO(CompactWENO):
     """A high-order compact WENO limiter, which is simple (just borrowing immediate neighbors' expansions).
     """
 
+    def __init__(self, epsilon=1e-6, w_small=0.001) -> None:
+        self._epsilon = epsilon
+        self._w_small = w_small
+
     def name(self):
         return 'Zhong–Shu (2013)'
 
@@ -75,15 +79,14 @@ class SimpleWENO(CompactWENO):
         for neighbor in neighbors:
             candidates.append(self._borrow_expansion(curr, neighbor))
         # evaluate weights for each candidate
-        w_small = 0.001
         weights = np.ndarray(len(candidates))
         for i in range(len(candidates)):
             if i == 0:
-                linear_weight = 1 - len(neighbors) * w_small
+                linear_weight = 1 - len(neighbors) * self._w_small
             else:
-                linear_weight = w_small
+                linear_weight = self._w_small
             smoothness = self._get_smoothness_value(candidates[i])
-            weights[i] = linear_weight / (1e-6 + smoothness)**2
+            weights[i] = linear_weight / (self._epsilon + smoothness)**2
         weights /= np.sum(weights)
         # weight the coeffs
         coeff = candidates[0].get_coeff() * weights[0]
@@ -95,6 +98,11 @@ class SimpleWENO(CompactWENO):
 class PWeighted(CompactWENO):
     """A high-order compact WENO limiter, whose linear weights are related to candidates' degrees.
     """
+
+    def __init__(self, epsilon=1e-16, k_epsilon=0.1, k_trunc=1.0) -> None:
+        self._epsilon = epsilon
+        self._k_epsilon = k_epsilon
+        self._k_trunc = k_trunc
 
     def name(self):
         return 'Li–Wang–Ren (2020)'
@@ -147,14 +155,14 @@ class PWeighted(CompactWENO):
         i_candidate = 0
         for degree in range(curr.degree(), 1, -1):
             linear_weight = 10**(degree+1)
-            epsilon = 1e-16
             weights[i_candidate] = linear_weight / (
-                smoothness_values[i_candidate]**2 + epsilon)
+                smoothness_values[i_candidate]**2 + self._epsilon)
             i_candidate += 1
         # degree == 1
         beta_left = smoothness_values[i_candidate+1]
         beta_right = smoothness_values[-1]
-        epsilon = 1e-16 + 0.1 * (beta_left**2 + beta_right**2) / 2
+        epsilon = self._epsilon + self._k_epsilon * (beta_left**2
+            + beta_right**2) / 2
         weights[i_candidate] = 10 / (
             smoothness_values[i_candidate]**2 + epsilon)
         i_candidate += 1
