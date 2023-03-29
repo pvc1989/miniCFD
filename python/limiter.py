@@ -105,7 +105,7 @@ class PWeighted(CompactWENO):
         self._k_trunc = k_trunc
 
     def name(self):
-        return 'Li–Wang–Ren (2020)'
+        return r'Li (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
@@ -125,16 +125,19 @@ class PWeighted(CompactWENO):
         borrowed.set_coeff(coeff)
         return borrowed
 
-    def _get_smoothness_value(self, taylor: expansion.Taylor):
-        beta = 0.0
+    def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
         norms = integrate.fixed_quad_global(integrand, taylor.x_left(),
             taylor.x_right(), n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
             scale = taylor.jacobian(0)**(2*k-1) / (special.factorial(k-1))**2
-            beta += norms[k] * scale
-        return beta
+            norms[k] *= scale
+        return norms
+
+    def _get_smoothness_value(self, taylor: expansion.Taylor):
+        norms = self._get_derivative_norms(taylor)
+        return np.sum(norms[1:])
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         candidates = []
@@ -147,37 +150,44 @@ class PWeighted(CompactWENO):
             candidates.append(self._borrow_expansion(curr, neighbor))
         assert len(candidates) == curr.degree() + len(neighbors)
         # Get smoothness values: (TODO: use quadrature-free implementation)
-        smoothness_values = np.ndarray(len(candidates))
-        for i in range(len(candidates)):
-            smoothness_values[i] = self._get_smoothness_value(candidates[i])
+        # process 1-degree candidates
+        i_candidate = curr.degree() - 1
+        beta_curr = self._get_smoothness_value(candidates[i_candidate])
+        assert i_candidate+2 <= len(candidates)  # at least 1 candidate
+        beta_left = self._get_smoothness_value(candidates[i_candidate+1])
+        beta_right = self._get_smoothness_value(candidates[-1])
+        beta_mean = (beta_curr + beta_left + beta_right) / 3
         # Get non-linear weights:
-        weights = np.ndarray(len(candidates))
+        weights = []
         i_candidate = 0
-        for degree in range(curr.degree(), 1, -1):
+        for degree in range(curr.degree(), 1, -1):  # from p to 2
+            norms = self._get_derivative_norms(candidates[i_candidate])
+            beta = np.sum(norms[1:])
             linear_weight = 10**(degree+1)
-            weights[i_candidate] = linear_weight / (
-                smoothness_values[i_candidate]**2 + self._epsilon)
+            weights.append(linear_weight / (beta**2 + self._epsilon))
             i_candidate += 1
-        # degree == 1
-        beta_left = smoothness_values[i_candidate+1]
-        beta_right = smoothness_values[-1]
-        epsilon = self._epsilon + self._k_epsilon * (beta_left**2
-            + beta_right**2) / 2
-        weights[i_candidate] = 10 / (
-            smoothness_values[i_candidate]**2 + epsilon)
-        i_candidate += 1
-        assert i_candidate == curr.degree()
-        # neighbors
-        while i_candidate < len(candidates):
-            weights[i_candidate] = 1 / (
-                smoothness_values[i_candidate]**2 + epsilon)
+            if beta_mean > self._k_trunc / (degree-1) * (beta - norms[1]):
+                break
+        if i_candidate == curr.degree() - 1:  # p = 1, no truncation
+            epsilon = self._epsilon + self._k_epsilon * (beta_left**2
+                + beta_right**2) / 2
+            weights.append(10 / (beta_curr**2 + epsilon))
             i_candidate += 1
-        weights /= np.sum(weights)
+            # neighbors
+            weights.append(1 / (beta_left**2 + epsilon))
+            i_candidate += 1
+            if i_candidate < len(candidates):
+                weights.append(1 / (beta_right**2 + epsilon))
+                i_candidate += 1
+            assert i_candidate == len(candidates)
+        assert i_candidate == len(weights)
+        weight_sum = np.sum(weights)
         # Average the coeffs:
         new_coeff = np.zeros(curr.degree()+1)
-        for i_candidate in range(len(candidates)):
+        for i_candidate in range(len(weights)):
             coeff = candidates[i_candidate].get_coeff()
-            new_coeff[0:len(coeff)] += coeff * weights[i_candidate]
+            weight = weights[i_candidate] / weight_sum
+            new_coeff[0:len(coeff)] += coeff * weight
         return new_coeff
 
 

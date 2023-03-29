@@ -41,9 +41,10 @@ class TestLimiters(unittest.TestCase):
         ]
         limiters = [
             limiter.SimpleWENO(),
-            limiter.PWeighted(),
+            limiter.PWeighted(k_trunc=1e0),
+            limiter.PWeighted(k_trunc=1e100),
         ]
-        markers = ['+', 'x', 'o']
+        markers = ['1', '2', '3', '4']
         _, ax = plt.subplots(figsize=[6, 5])
         if u_init == test_detector.jumps:
             axins = ax.inset_axes([0.75, 0.10, 0.20, 0.25])
@@ -52,7 +53,7 @@ class TestLimiters(unittest.TestCase):
         else:
             axins = ax.inset_axes([0.35, 0.10, 0.35, 0.25])
             axins.set_xlim(-22, -19)
-            axins.set_ylim(-0.2, +0.4)
+            axins.set_ylim(-0.4, +0.6)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         x_values = points / scheme.delta_x()
         u_approx = np.ndarray(len(points))
@@ -64,7 +65,7 @@ class TestLimiters(unittest.TestCase):
         axins.plot(x_values, u_approx, '--')
         for i in range(len(limiters)):
             scheme.initialize(u_init)
-            indices = detectors[1].get_troubled_cell_indices(scheme)
+            # indices = detectors[1].get_troubled_cell_indices(scheme)
             indices = np.arange(0, scheme.n_element())
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
@@ -72,8 +73,8 @@ class TestLimiters(unittest.TestCase):
             plt.plot(x_values, u_approx, marker=markers[i],
                 label=r'$p=4$, '+f'{limiters[i].name()}')
             axins.plot(x_values, u_approx, marker=markers[i])
-        plt.plot(x_values, u_exact, 'r-', label='Exact Solution')
-        axins.plot(x_values, u_exact, 'r-')
+        plt.plot(x_values, u_exact, '-', label='Exact Solution')
+        axins.plot(x_values, u_exact, '-')
         ax.indicate_inset_zoom(axins, edgecolor="gray")
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
