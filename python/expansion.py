@@ -66,6 +66,11 @@ class Taylor(Expansion):
             # print(derivative)
             self._taylor_coeff[k] = derivative / special.factorial(k)
 
+    def get_average(self):
+        def integrand(x_global):
+            return self.get_function_value(x_global)
+        return integrate.average(integrand, self)
+
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
         def function(x_global):
@@ -340,6 +345,7 @@ class TruncatedLegendre(Taylor):
         Taylor.__init__(self, degree, that.x_left(), that.x_right(), that._value_type)
         n_term = degree + 1
         self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
+        assert isinstance(that, Legendre) # TODO: relax to Taylor
         self._mode_coeffs = that._mode_coeffs[0:n_term]
         self._matrix_on_taylor = that._matrix_on_taylor[0:n_term, 0:n_term]
         Legendre.set_taylor_coeff(self)
@@ -349,6 +355,9 @@ class TruncatedLegendre(Taylor):
 
     def get_coeff(self):
         return Legendre.get_coeff(self)
+
+    def get_average(self):
+        return Legendre.get_average(self)
 
     def get_basis(self, i_basis: int) -> callable:
         return Legendre.get_basis(self, i_basis)

@@ -48,8 +48,8 @@ class SimpleWENO(CompactWENO):
             neighbor: concept.Element) -> expansion.Legendre:
         this = curr.get_expansion()
         that = neighbor.get_expansion()
-        assert isinstance(this, expansion.Legendre)
-        assert isinstance(that, expansion.Legendre)
+        assert isinstance(this, expansion.Taylor)
+        assert isinstance(that, expansion.Taylor)
         borrowed = expansion.Legendre(this.degree(), this.x_left(),
             this.x_right(), this._value_type)
         that_average = integrate.average(lambda x: that.get_function_value(x),
@@ -104,7 +104,7 @@ class PWeighted(CompactWENO):
         this = curr.get_expansion()
         that = neighbor.get_expansion()
         assert isinstance(this, expansion.Legendre)
-        assert isinstance(that, expansion.Legendre)
+        assert isinstance(that, expansion.Taylor)
         borrowed = expansion.Legendre(1, this.x_left(),
             this.x_right(), this._value_type)
         coeff = np.ndarray(2, dtype=this._value_type)

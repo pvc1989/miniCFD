@@ -76,6 +76,11 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_average(self):
+        """Get the average value of the approximated function.
+        """
+
+    @abc.abstractmethod
     def get_basis(self, i_basis: int) -> callable:
         """Get i-th basis function, which maps x_global to its value.
         """
