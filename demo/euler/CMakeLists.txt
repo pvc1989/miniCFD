@@ -12,8 +12,11 @@ endforeach(lib ${libs})
 
 set (cases
   # shock tube problems:
+  shock_tube_sod_exact
   shock_tube_sod
+  shock_tube_lax_exact
   shock_tube_lax
+  shock_tube_vacuum_exact
   shock_tube_vacuum
   # two-dimensional problems:
   double_mach
