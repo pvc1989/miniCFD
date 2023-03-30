@@ -309,6 +309,8 @@ class SpatialScheme(OdeSystem):
         self._n_element = n_element
         self._delta_x = (x_right - x_left) / n_element
         self._elements = np.ndarray(n_element, Element)
+        self._detector = None
+        self._limiter = None
 
     def degree(self):
         """Get the degree of the polynomial approximation.
@@ -356,6 +358,20 @@ class SpatialScheme(OdeSystem):
     def initialize(self, function: callable):
         """Set the initial condition.
         """
+
+    def set_detector_and_limiter(self, detector, limiter):
+        assert isinstance(detector, JumpDetector)
+        assert isinstance(limiter, Limiter)
+        self._detector = detector
+        self._limiter = limiter
+
+    def _detect_and_limit(self):
+        if self._limiter is None:
+            return
+        assert isinstance(self._detector, JumpDetector)
+        assert isinstance(self._limiter, Limiter)
+        indices = self._detector.get_troubled_cell_indices(self)
+        self._limiter.reconstruct(self, indices)
 
 
 class JumpDetector(abc.ABC):

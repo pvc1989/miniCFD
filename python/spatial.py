@@ -82,6 +82,7 @@ class PiecewiseContinuous(SpatialScheme):
             element.set_solution_coeff(column[first:last])
             first = last
         assert first == self.n_dof()
+        self._detect_and_limit()
 
     def get_solution_column(self):
         column = np.zeros(self.n_dof(), self._value_type)
@@ -96,6 +97,7 @@ class PiecewiseContinuous(SpatialScheme):
     def initialize(self, function: callable):
         for element in self._elements:
             element.approximate(function)
+        self._detect_and_limit()
 
 
 class DiscontinuousGalerkin(PiecewiseContinuous):

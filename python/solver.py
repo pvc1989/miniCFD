@@ -10,7 +10,7 @@ from scipy import optimize
 import concept
 import equation
 import riemann
-import spatial
+import spatial, detector, limiter
 import temporal
 
 
@@ -19,8 +19,10 @@ class SolverBase(abc.ABC):
     """
 
     def __init__(self, spatial_scheme: concept.SpatialScheme,
+            detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
+        self._spatial.set_detector_and_limiter(detector, limiter)
         self._ode_solver = ode_solver
         self._animation = None
 
@@ -129,8 +131,9 @@ class LinearAdvection(SolverBase):
 
     def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
+            detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, ode_solver)
+        super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._a_const = a_const
         self._wave_number = k_const * np.pi * 2 / self._spatial.length()
 
@@ -140,7 +143,7 @@ class LinearAdvection(SolverBase):
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
-        return value  # np.sign(value)
+        return np.sign(value)
 
     def u_exact(self, x_global, t_curr):
         return self.u_init(x_global - self._a_const * t_curr)
@@ -152,8 +155,9 @@ class InviscidBurgers(SolverBase):
 
     def __init__(self, a_const: float, k_const: float,
             spatial_scheme: concept.SpatialScheme,
+            detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, ode_solver)
+        super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._k = a_const
         self._wave_number = k_const * np.pi * 2 / self._spatial.length()
         self._u_prev = 0.0
@@ -258,5 +262,7 @@ if __name__ == '__main__':
             RiemannClass(args.phase_speed),
             args.degree, args.n_element,
             args.x_left, args.x_right),
+        detector=detector.LiAndRen2011(),
+        limiter=limiter.PWeighted(),
         ode_solver = temporal.RungeKutta(args.rk_order))
     solver.animate(args.t_begin, args.t_end, args.n_step)
