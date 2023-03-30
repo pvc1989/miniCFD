@@ -36,10 +36,10 @@ class TestLimiters(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         u_init = test_detector.jumps
         limiters = [
-            limiter.PWeighted(k_trunc=0),
-            limiter.PWeighted(k_trunc=1e0),
-            limiter.PWeighted(k_trunc=1e100),
-            limiter.SimpleWENO(),
+            limiter.LiWangRen2020(k_trunc=0),
+            limiter.LiWangRen2020(k_trunc=1e0),
+            limiter.LiWangRen2020(k_trunc=1e100),
+            limiter.ZhongShu2013(),
         ]
         markers = ['1', '2', '3', '4']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -87,10 +87,10 @@ class TestLimiters(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         u_init = test_detector.smooth
         limiters = [
-            limiter.PWeighted(k_trunc=0),
-            limiter.PWeighted(k_trunc=1e0),
-            limiter.PWeighted(k_trunc=1e100),
-            limiter.SimpleWENO(),
+            limiter.LiWangRen2020(k_trunc=0),
+            limiter.LiWangRen2020(k_trunc=1e0),
+            limiter.LiWangRen2020(k_trunc=1e100),
+            limiter.ZhongShu2013(),
         ]
         markers = ['1', '2', '3', '4']
         _, ax = plt.subplots(figsize=[6, 5])

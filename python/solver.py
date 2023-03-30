@@ -262,7 +262,7 @@ if __name__ == '__main__':
             RiemannClass(args.phase_speed),
             args.degree, args.n_element,
             args.x_left, args.x_right),
-        detector=detector.LiAndRen2011(),
-        limiter=limiter.PWeighted(),
+        detector=detector.LiRen2011(),
+        limiter=limiter.LiWangRen2020(),
         ode_solver = temporal.RungeKutta(args.rk_order))
     solver.animate(args.t_begin, args.t_end, args.n_step)

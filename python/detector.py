@@ -11,7 +11,7 @@ class ReportAll(JumpDetector):
     """A jump detector that reports all cells as troubled.
     """
 
-    def name(self):
+    def name(self, verbose=False):
         return 'ReportAll'
 
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
@@ -29,8 +29,11 @@ class Krivodonova2004(JumpDetector):
     See Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338.
     """
 
-    def name(self):
-        return 'Krivodonova et al. (2004)'
+    def name(self, verbose=False):
+        if verbose:
+            return 'Krivodonova et al. (2004)'
+        else:
+            return 'KXCRF (2004)'
 
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
@@ -71,14 +74,17 @@ class Krivodonova2004(JumpDetector):
         return troubled_cell_indices
 
 
-class LiAndRen2011(JumpDetector):
+class LiRen2011(JumpDetector):
     """A jump detector for high-order finite volume schemes.
 
-    See Li Wanai and Ren Yu-Xin, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
+    See Li and Ren, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
     """
 
-    def name(self):
-        return 'Li & Ren (2011)'
+    def name(self, verbose=False):
+        if verbose:
+            return 'Li–Ren (2011)'
+        else:
+            return 'Li (2011)'
 
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
@@ -122,14 +128,17 @@ class LiAndRen2011(JumpDetector):
         return troubled_cell_indices
 
 
-class ZhuAndQiu2021(JumpDetector):
+class ZhuShuQiu2021(JumpDetector):
     """A jump detector for high-order DG schemes.
 
-    See Zhu Jun, Shu Chi-Wang, and Qiu Jianxian, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
+    See Zhu and Shu and Qiu, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
     """
 
-    def name(self):
-        return 'Zhu & Shu & Qiu (2021)'
+    def name(self, verbose=False):
+        if verbose:
+            return 'Zhu–Shu–Qiu (2011)'
+        else:
+            return 'Zhu (2021)'
 
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()

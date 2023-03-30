@@ -379,7 +379,7 @@ class JumpDetector(abc.ABC):
     """
 
     @abc.abstractmethod
-    def name(self) -> str:
+    def name(self, verbose) -> str:
         """Get the name of the detector.
         """
 
@@ -399,7 +399,7 @@ class Limiter(abc.ABC):
     """
 
     @abc.abstractmethod
-    def name(self) -> str:
+    def name(self, verbose) -> str:
         """Get the name of the limiter.
         """
 

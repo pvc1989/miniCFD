@@ -37,16 +37,21 @@ class CompactWENO(concept.Limiter):
         assert i_new == len(new_coeffs)
 
 
-class SimpleWENO(CompactWENO):
+class ZhongShu2013(CompactWENO):
     """A high-order compact WENO limiter, which is simple (just borrowing immediate neighbors' expansions).
+
+    See Zhong and Shu, "A simple weighted essentially nonoscillatory limiter for Runge–Kutta discontinuous Galerkin methods", Journal of Computational Physics 232, 1 (2013), pp. 397--415.
     """
 
     def __init__(self, epsilon=1e-6, w_small=0.001) -> None:
         self._epsilon = epsilon
         self._w_small = w_small
 
-    def name(self):
-        return 'Zhong–Shu (2013)'
+    def name(self, verbose=False):
+        if verbose:
+            return 'Zhong–Shu (2013)'
+        else:
+            return 'Zhong (2013)'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
@@ -95,8 +100,10 @@ class SimpleWENO(CompactWENO):
         return coeff
 
 
-class PWeighted(CompactWENO):
+class LiWangRen2020(CompactWENO):
     """A high-order compact WENO limiter, whose linear weights are related to candidates' degrees.
+
+    See Li and Wang and Ren, "A p-weighted limiter for the discontinuous Galerkin method on one-dimensional and two-dimensional triangular grids", Journal of Computational Physics 407 (2020), pp. 109246.
     """
 
     def __init__(self, epsilon=1e-16, k_epsilon=0.1, k_trunc=1.0) -> None:
@@ -104,8 +111,11 @@ class PWeighted(CompactWENO):
         self._k_epsilon = k_epsilon
         self._k_trunc = k_trunc
 
-    def name(self):
-        return r'Li (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
+    def name(self, verbose=False):
+        if verbose:
+            return r'Li–Wang–Ren (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
+        else:
+            return r'Li (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:

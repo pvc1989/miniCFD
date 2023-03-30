@@ -57,8 +57,8 @@ class TestJumpDetectors(unittest.TestCase):
             scheme.x_right() - scheme.delta_x(), self._n_element)
         detectors = [
           detector.Krivodonova2004(),
-          detector.LiAndRen2011(),
-          detector.ZhuAndQiu2021()
+          detector.LiRen2011(),
+          detector.ZhuShuQiu2021()
         ]
         markers = ['1', '2', '3']
         plt.figure(figsize=(6,6))
