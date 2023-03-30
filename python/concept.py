@@ -359,6 +359,21 @@ class SpatialScheme(OdeSystem):
         """Set the initial condition.
         """
 
+    @abc.abstractmethod
+    def get_element_index(self, point) -> int:
+        """Get the index of the element in which the given point locates.
+        """
+
+    def get_element_by_index(self, index: int) -> Element:
+        """Get the index of the element in which the point locates.
+        """
+        return self._elements[index]
+
+    def get_element(self, point) -> Element:
+        """Get the element in which the given point locates.
+        """
+        return self._elements[self.get_element_index(point)]
+
     def set_detector_and_limiter(self, detector, limiter):
         assert isinstance(detector, JumpDetector)
         assert isinstance(limiter, Limiter)

@@ -3,20 +3,20 @@
 import numpy as np
 from numpy.testing import assert_almost_equal
 
-from concept import Element, SpatialScheme, Equation, RiemannSolver
 import concept
 import element
 import integrate
 
 
-class FiniteElement(SpatialScheme):
+class FiniteElement(concept.SpatialScheme):
     """The base of all finite element schemes for conservation laws.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
-            element_type: Element, value_type=float) -> None:
-        SpatialScheme.__init__(self, n_element, x_left, x_right)
+            element_type: concept.Element, value_type=float) -> None:
+        concept.SpatialScheme.__init__(self, n_element, x_left, x_right)
         assert degree >= 0
         self._riemann = riemann
         x_left_i = x_left
@@ -32,7 +32,7 @@ class FiniteElement(SpatialScheme):
         self._value_type = value_type
 
     def n_dof(self):
-        return self.n_element() * self._elements[0].n_dof()
+        return self.n_element() * self.get_element_by_index(0).n_dof()
 
     def get_element_index(self, point):
         i_element = int((point - self.x_left()) / self.delta_x())
@@ -40,30 +40,30 @@ class FiniteElement(SpatialScheme):
             i_element -= 1
         return i_element
 
-    def get_element_by_index(self, index: int) -> Element:
-        return self._elements[index]
-
-    def get_element(self, point) -> Element:
-        return self._elements[self.get_element_index(point)]
-
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
         interface_fluxes = np.ndarray(self._n_element + 1, self._value_type)
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self._n_element):
-            x_right = self._elements[i].x_left()
-            u_right= self._elements[i].get_solution_value(x_right)
-            x_left = self._elements[i-1].x_right()
-            u_left = self._elements[i-1].get_solution_value(x_left)
+            curr, prev = self._elements[i], self._elements[i-1]
+            assert isinstance(curr, concept.Element)
+            assert isinstance(prev, concept.Element)
+            x_right = curr.x_left()
+            u_right= curr.get_solution_value(x_right)
+            x_left = prev.x_right()
+            u_left = prev.get_solution_value(x_left)
             interface_fluxes[i] = self._riemann.get_upwind_flux(u_left, u_right)
-        # periodic boundary condtion
-        x_right = self._elements[0].x_left()
-        u_right = self._elements[0].get_solution_value(x_right)
-        x_left = self._elements[-1].x_right()
-        u_left = self._elements[-1].get_solution_value(x_left)
-        interface_fluxes[0] = self._riemann.get_upwind_flux(u_left, u_right)
-        interface_fluxes[-1] = interface_fluxes[0]
+        if True:  # TODO: only for periodic boundary condtion
+            curr, prev = self._elements[0], self._elements[-1]
+            assert isinstance(curr, concept.Element)
+            assert isinstance(prev, concept.Element)
+            x_right = curr.x_left()
+            u_right = curr.get_solution_value(x_right)
+            x_left = prev.x_right()
+            u_left = prev.get_solution_value(x_left)
+            interface_fluxes[0] = self._riemann.get_upwind_flux(u_left, u_right)
+            interface_fluxes[-1] = interface_fluxes[0]
         return interface_fluxes
 
     def get_solution_value(self, point):
@@ -78,6 +78,7 @@ class FiniteElement(SpatialScheme):
         assert len(column) == self.n_dof()
         first = 0
         for element in self._elements:
+            assert isinstance(element, concept.Element)
             last = first + element.n_dof()
             element.set_solution_coeff(column[first:last])
             first = last
@@ -88,6 +89,7 @@ class FiniteElement(SpatialScheme):
         column = np.zeros(self.n_dof(), self._value_type)
         first = 0
         for element in self._elements:
+            assert isinstance(element, concept.Element)
             last = first + element.n_dof()
             column[first:last] = element.get_solution_column()
             first = last
@@ -96,6 +98,7 @@ class FiniteElement(SpatialScheme):
 
     def initialize(self, function: callable):
         for element in self._elements:
+            assert isinstance(element, concept.Element)
             element.approximate(function)
         self._detect_and_limit()
 
@@ -109,7 +112,7 @@ class DiscontinuousGalerkin(FiniteElement):
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self._n_element):
-            element = self._elements[i]
+            element = self.get_element_by_index(i)
             n_dof = element.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
@@ -137,7 +140,8 @@ class LegendreDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Legendre expansion.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         FiniteElement.__init__(self, equation, riemann, degree,
@@ -152,7 +156,8 @@ class LagrangeDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         DiscontinuousGalerkin.__init__(self, equation, riemann, degree,
@@ -173,7 +178,7 @@ class FluxReconstruction(FiniteElement):
         # evaluate flux gradients
         i_dof = 0
         for i in range(self._n_element):
-            element = self._elements[i]
+            element = self.get_element_by_index(i)
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
             values = -element.get_flux_gradients(
@@ -207,7 +212,8 @@ class LagrangeFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         FluxReconstruction.__init__(self, equation, riemann, degree,
@@ -222,7 +228,8 @@ class LegendreFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         FluxReconstruction.__init__(self, equation, riemann, degree,
@@ -237,7 +244,8 @@ class DGwithFR(LagrangeFR):
     """A DG scheme built upon LagrangeFR.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, equation: concept.Equation,
+            riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
         LagrangeFR.__init__(self, equation, riemann, degree,
@@ -252,7 +260,7 @@ class DGwithFR(LagrangeFR):
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self._n_element):
-            element = self._elements[i]
+            element = self.get_element_by_index(i)
             n_dof = element.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
