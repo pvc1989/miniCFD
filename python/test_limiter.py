@@ -23,6 +23,7 @@ class TestLimiters(unittest.TestCase):
         self._n_element = 53
         self._equation = equation.LinearAdvection(1.0)
         self._riemann = riemann.LinearAdvection(1.0)
+        self._detector = detector.ReportAll()
 
     def build_scheme(self, method: spatial.PiecewiseContinuous,
             degree: int) -> spatial.PiecewiseContinuous:
@@ -57,7 +58,7 @@ class TestLimiters(unittest.TestCase):
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
-            indices = np.arange(0, scheme.n_element())
+            indices = self._detector.get_troubled_cell_indices(scheme)
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
@@ -103,7 +104,7 @@ class TestLimiters(unittest.TestCase):
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
-            indices = np.arange(0, scheme.n_element())
+            indices = self._detector.get_troubled_cell_indices(scheme)
             limiters[i].reconstruct(scheme, indices)
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])

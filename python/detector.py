@@ -7,6 +7,22 @@ from spatial import PiecewiseContinuous
 import integrate
 
 
+class ReportAll(JumpDetector):
+    """A jump detector that reports all cells as troubled.
+    """
+
+    def name(self):
+        return 'ReportAll'
+
+    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+        smoothness = np.ones(scheme.n_element()) * np.Inf
+        return smoothness
+
+    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+        troubled_cell_indices = np.arange(scheme.n_element(), dtype=int)
+        return troubled_cell_indices
+
+
 class Krivodonova2004(JumpDetector):
     """A jump detector for high-order DG schemes.
 
