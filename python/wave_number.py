@@ -21,14 +21,14 @@ class WaveNumberDisplayer:
         self._x_right = x_right
         self._n_element = n_element
 
-    def build_scheme(self, method: spatial.PiecewiseContinuous, degree: int):
+    def build_scheme(self, method: spatial.FiniteElement, degree: int):
         scheme = method(self._equation, self._riemann,
             degree, self._n_element, self._x_left, self._x_right, complex)
         return scheme
 
-    def get_spatial_matrix(self, scheme: spatial.PiecewiseContinuous,
+    def get_spatial_matrix(self, scheme: spatial.FiniteElement,
             kappa_h: float):
-        """Get the spatial matrix of a PiecewiseContinuous scheme.
+        """Get the spatial matrix of a FiniteElement scheme.
         """
         # kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
         n_term = scheme.degree() + 1
@@ -53,7 +53,7 @@ class WaveNumberDisplayer:
                 matrix[:, col] /= np.exp(1j * i_element * kappa_h)
         return matrices[-1]
 
-    def get_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
+    def get_modified_wavenumbers(self, method: spatial.FiniteElement,
             degree: int, sampled_wavenumbers: np.ndarray):
         """Get the eigenvalues of a scheme at a given set of wavenumbers.
         """
@@ -95,7 +95,7 @@ class WaveNumberDisplayer:
             physical_eigvals[i_sample] = pairs[i_mode][0]
         return physical_eigvals
 
-    def plot_modified_wavenumbers(self, method: spatial.PiecewiseContinuous,
+    def plot_modified_wavenumbers(self, method: spatial.FiniteElement,
             degree: int, n_sample: int):
         """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
         """

@@ -4,7 +4,7 @@ import numpy as np
 from scipy import special
 
 import concept
-from spatial import PiecewiseContinuous
+from spatial import FiniteElement
 import expansion
 import integrate
 
@@ -13,7 +13,7 @@ class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """
 
-    def reconstruct(self, scheme: PiecewiseContinuous, troubled_cell_indices):
+    def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
         new_coeffs = []
         for i_curr in troubled_cell_indices:
             curr = scheme.get_element_by_index(i_curr)

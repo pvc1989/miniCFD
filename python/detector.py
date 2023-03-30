@@ -3,7 +3,7 @@
 import numpy as np
 
 from concept import JumpDetector
-from spatial import PiecewiseContinuous
+from spatial import FiniteElement
 import integrate
 
 
@@ -14,11 +14,11 @@ class ReportAll(JumpDetector):
     def name(self):
         return 'ReportAll'
 
-    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         smoothness = np.ones(scheme.n_element()) * np.Inf
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
         troubled_cell_indices = np.arange(scheme.n_element(), dtype=int)
         return troubled_cell_indices
 
@@ -32,7 +32,7 @@ class Krivodonova2004(JumpDetector):
     def name(self):
         return 'Krivodonova et al. (2004)'
 
-    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
@@ -62,7 +62,7 @@ class Krivodonova2004(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
         smoothness_values = self.get_smoothness_values(scheme)
         troubled_cell_indices = []
         for i_cell in range(len(smoothness_values)):
@@ -80,7 +80,7 @@ class LiAndRen2011(JumpDetector):
     def name(self):
         return 'Li & Ren (2011)'
 
-    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
         averages = np.ndarray(n_cell)  # could be easier for some schemes
         for i_cell in range(n_cell):
@@ -112,7 +112,7 @@ class LiAndRen2011(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
         smoothness_values = self.get_smoothness_values(scheme)
         troubled_cell_indices = []
         for i_cell in range(len(smoothness_values)):
@@ -131,7 +131,7 @@ class ZhuAndQiu2021(JumpDetector):
     def name(self):
         return 'Zhu & Shu & Qiu (2021)'
 
-    def get_smoothness_values(self, scheme: PiecewiseContinuous) -> np.ndarray:
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
         norms = np.ndarray(n_cell)
         for i_cell in range(n_cell):
@@ -165,7 +165,7 @@ class ZhuAndQiu2021(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: PiecewiseContinuous):
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
         smoothness_values = self.get_smoothness_values(scheme)
         troubled_cell_indices = []
         for i_cell in range(len(smoothness_values)):

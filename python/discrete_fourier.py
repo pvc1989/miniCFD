@@ -41,8 +41,8 @@ class DiscreteFourierAnalysis:
             kth_fourier_coeff += u_j * self._w**(-j*k)
         return kth_fourier_coeff / n_sample
 
-    def get_wavenumbers(self, spatial_scheme: spatial.PiecewiseContinuous):
-        """Get the reduced and modified wavenumbers of a PiecewiseContinuous scheme.
+    def get_wavenumbers(self, spatial_scheme: spatial.FiniteElement):
+        """Get the reduced and modified wavenumbers of a FiniteElement scheme.
         """
         k_max = spatial_scheme.n_element() // 2
         k_max *= spatial_scheme.get_element(0.0).n_term()
@@ -116,7 +116,7 @@ class DiscreteFourierAnalysis:
         plt.legend()
         plt.tight_layout()
 
-    def compare_degrees(self, method: spatial.PiecewiseContinuous):
+    def compare_degrees(self, method: spatial.FiniteElement):
         """Compare spatial schemes using the same method but different degrees.
         """
         degrees = np.arange(0, 4, step=1, dtype=int)

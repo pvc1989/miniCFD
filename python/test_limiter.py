@@ -25,8 +25,8 @@ class TestLimiters(unittest.TestCase):
         self._riemann = riemann.LinearAdvection(1.0)
         self._detector = detector.ReportAll()
 
-    def build_scheme(self, method: spatial.PiecewiseContinuous,
-            degree: int) -> spatial.PiecewiseContinuous:
+    def build_scheme(self, method: spatial.FiniteElement,
+            degree: int) -> spatial.FiniteElement:
         scheme = method(self._equation, self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme

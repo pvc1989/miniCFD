@@ -9,14 +9,14 @@ import element
 import integrate
 
 
-class PiecewiseContinuous(SpatialScheme):
-    """The base of all piecewise continuous schemes.
+class FiniteElement(SpatialScheme):
+    """The base of all finite element schemes for conservation laws.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             element_type: Element, value_type=float) -> None:
-        super().__init__(n_element, x_left, x_right)
+        SpatialScheme.__init__(self, n_element, x_left, x_right)
         assert degree >= 0
         self._riemann = riemann
         x_left_i = x_left
@@ -100,7 +100,9 @@ class PiecewiseContinuous(SpatialScheme):
         self._detect_and_limit()
 
 
-class DiscontinuousGalerkin(PiecewiseContinuous):
+class DiscontinuousGalerkin(FiniteElement):
+    """An mid-level class that defines common methods for all DG schemes.
+    """
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self._value_type)
@@ -138,8 +140,8 @@ class LegendreDG(DiscontinuousGalerkin):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
-            element.LegendreDG, value_type)
+        FiniteElement.__init__(self, equation, riemann, degree,
+            n_element, x_left, x_right, element.LegendreDG, value_type)
 
     @staticmethod
     def name():
@@ -153,111 +155,82 @@ class LagrangeDG(DiscontinuousGalerkin):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
-            element.LagrangeDG, value_type)
+        DiscontinuousGalerkin.__init__(self, equation, riemann, degree,
+            n_element, x_left, x_right, element.LagrangeDG, value_type)
 
     @staticmethod
     def name():
         return 'LagrangeDG'
 
 
-class LagrangeFR(PiecewiseContinuous):
+class FluxReconstruction(FiniteElement):
+    """An mid-level class that defines common methods for all FR schemes.
+    """
+
+    def get_residual_column(self):
+        column = np.zeros(self.n_dof(), self._value_type)
+        interface_fluxes = self.get_interface_fluxes()
+        # evaluate flux gradients
+        i_dof = 0
+        for i in range(self._n_element):
+            element = self._elements[i]
+            upwind_flux_left = interface_fluxes[i]
+            upwind_flux_right = interface_fluxes[i+1]
+            values = -element.get_flux_gradients(
+                upwind_flux_left, upwind_flux_right)
+            column[i_dof:i_dof+len(values)] = values
+            i_dof += len(values)
+        assert i_dof == self.n_dof()
+        return column
+
+    def get_continuous_flux(self, point):
+        curr = self.get_element_index(point)
+        # solve riemann problem at the left end of curr element
+        x_right = self._elements[curr].x_left()
+        u_right = self._elements[curr].get_solution_value(x_right)
+        prev = curr - 1
+        x_left = self._elements[prev].x_right()
+        u_left = self._elements[prev].get_solution_value(x_left)
+        upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
+        # solve riemann problem at the right end of curr element
+        x_left = self._elements[curr].x_right()
+        u_left = self._elements[curr].get_solution_value(x_left)
+        next = (curr + 1) % self._n_element
+        x_right = self._elements[next].x_left()
+        u_right = self._elements[next].get_solution_value(x_right)
+        upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
+        return self._elements[curr].get_continuous_flux(point,
+            upwind_flux_left, upwind_flux_right)
+
+
+class LagrangeFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
-            element.LagrangeFR, value_type)
+        FluxReconstruction.__init__(self, equation, riemann, degree,
+            n_element, x_left, x_right, element.LagrangeFR, value_type)
 
     @staticmethod
     def name():
         return 'LagrangeFR'
 
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
-        interface_fluxes = self.get_interface_fluxes()
-        # evaluate flux gradients
-        i_dof = 0
-        for i in range(self._n_element):
-            element = self._elements[i]
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values = -element.get_flux_gradients(
-                upwind_flux_left, upwind_flux_right)
-            column[i_dof:i_dof+len(values)] = values
-            i_dof += len(values)
-        assert i_dof == self.n_dof()
-        return column
 
-    def get_continuous_flux(self, point):
-        curr = self.get_element_index(point)
-        # solve riemann problem at the left end of curr element
-        x_right = self._elements[curr].x_left()
-        u_right = self._elements[curr].get_solution_value(x_right)
-        prev = curr - 1
-        x_left = self._elements[prev].x_right()
-        u_left = self._elements[prev].get_solution_value(x_left)
-        upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
-        # solve riemann problem at the right end of curr element
-        x_left = self._elements[curr].x_right()
-        u_left = self._elements[curr].get_solution_value(x_left)
-        next = (curr + 1) % self._n_element
-        x_right = self._elements[next].x_left()
-        u_right = self._elements[next].get_solution_value(x_right)
-        upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
-        return self._elements[curr].get_continuous_flux(point,
-            upwind_flux_left, upwind_flux_right)
-
-class LegendreFR(PiecewiseContinuous):
+class LegendreFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
-            element.LegendreFR, value_type)
+        FluxReconstruction.__init__(self, equation, riemann, degree,
+            n_element, x_left, x_right, element.LegendreFR, value_type)
 
     @staticmethod
     def name():
         return 'LegendreFR'
-
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
-        interface_fluxes = self.get_interface_fluxes()
-        # evaluate flux gradients
-        i_dof = 0
-        for i in range(self._n_element):
-            element = self._elements[i]
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values = -element.get_flux_gradients(
-                upwind_flux_left, upwind_flux_right)
-            column[i_dof:i_dof+len(values)] = values
-            i_dof += len(values)
-        assert i_dof == self.n_dof()
-        return column
-
-    def get_continuous_flux(self, point):
-        curr = self.get_element_index(point)
-        # solve riemann problem at the left end of curr element
-        x_right = self._elements[curr].x_left()
-        u_right = self._elements[curr].get_solution_value(x_right)
-        prev = curr - 1
-        x_left = self._elements[prev].x_right()
-        u_left = self._elements[prev].get_solution_value(x_left)
-        upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
-        # solve riemann problem at the right end of curr element
-        x_left = self._elements[curr].x_right()
-        u_left = self._elements[curr].get_solution_value(x_left)
-        next = (curr + 1) % self._n_element
-        x_right = self._elements[next].x_left()
-        u_right = self._elements[next].get_solution_value(x_right)
-        upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
-        return self._elements[curr].get_continuous_flux(point,
-            upwind_flux_left, upwind_flux_right)
 
 
 class DGwithFR(LagrangeFR):
@@ -267,8 +240,8 @@ class DGwithFR(LagrangeFR):
     def __init__(self, equation: Equation, riemann: RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        super().__init__(equation, riemann, degree, n_element, x_left, x_right,
-            value_type)
+        LagrangeFR.__init__(self, equation, riemann, degree,
+            n_element, x_left, x_right, value_type)
 
     @staticmethod
     def name():
