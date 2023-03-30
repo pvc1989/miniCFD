@@ -173,6 +173,7 @@ class InviscidBurgers(SolverBase):
 
     def u_exact(self, x_global, t_curr):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
+        return np.nan
         def func(u_curr):
             return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
         if np.abs(x_global - self._x_mid) < 1e-6:
@@ -219,6 +220,14 @@ if __name__ == '__main__':
             'DGwithFR'],
         default='LagrangeDG',
         help='method for spatial discretization')
+    parser.add_argument('--detector',
+        choices=['ReportAll', 'Krivodonova2004', 'LiRen2011', 'ZhuShuQiu2021'],
+        default='LiRen2011',
+        help='method for detecting jumps')
+    parser.add_argument('--limiter',
+        choices=['LiWangRen2020', 'ZhongShu2013'],
+        default='LiWangRen2020',
+        help='method for limiting numerical oscillations')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
         help='degree of polynomials for approximation')
@@ -246,6 +255,22 @@ if __name__ == '__main__':
         SpatialClass = spatial.DGwithFR
     else:
         assert False
+    if args.detector == 'ReportAll':
+        DetectorClass = detector.ReportAll
+    elif args.detector == 'Krivodonova2004':
+        DetectorClass = detector.Krivodonova2004
+    elif args.detector == 'LiRen2011':
+        DetectorClass = detector.LiRen2011
+    elif args.detector == 'ZhuShuQiu2021':
+        DetectorClass = detector.ZhuShuQiu2021
+    else:
+        assert False
+    if args.limiter == 'LiWangRen2020':
+        LimiterClass = limiter.LiWangRen2020
+    elif args.limiter == 'ZhongShu2013':
+        LimiterClass = limiter.ZhongShu2013
+    else:
+        assert False
     if args.problem == 'Linear':
         SolverClass = LinearAdvection
         EquationClass = equation.LinearAdvection
@@ -258,11 +283,8 @@ if __name__ == '__main__':
         assert False
     solver = SolverClass(args.phase_speed, args.wave_number,
         spatial_scheme=SpatialClass(
-            EquationClass(args.phase_speed),
-            RiemannClass(args.phase_speed),
-            args.degree, args.n_element,
-            args.x_left, args.x_right),
-        detector=detector.LiRen2011(),
-        limiter=limiter.LiWangRen2020(),
-        ode_solver = temporal.RungeKutta(args.rk_order))
+            EquationClass(args.phase_speed), RiemannClass(args.phase_speed),
+            args.degree, args.n_element, args.x_left, args.x_right),
+        detector=DetectorClass(), limiter=LimiterClass(),
+        ode_solver=temporal.RungeKutta(args.rk_order))
     solver.animate(args.t_begin, args.t_end, args.n_step)
