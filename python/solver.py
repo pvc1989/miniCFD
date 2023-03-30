@@ -22,6 +22,8 @@ class SolverBase(abc.ABC):
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
+        self._detector = detector
+        self._limiter = limiter
         self._spatial.set_detector_and_limiter(detector, limiter)
         self._ode_solver = ode_solver
         self._animation = None
@@ -90,20 +92,24 @@ class SolverBase(abc.ABC):
     def animate(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and animate the results.
         """
+        degree = self._spatial.degree()
         delta_x = self._spatial.delta_x()
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
         # general plot setting
-        plt.figure(figsize=(6, 3))
-        plt.ylim([-1.4, 1.4])
+        plt.figure('scheme='+self._spatial.name()+', detector='
+            +self._detector.name())
+        plt.ylim([-1.4, 1.6])
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            3), minor=False)
+            2), minor=False)
         plt.grid(which='both')
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b.', label='Approximate Solution')
+        approx_line, = plt.plot([], [], 'b--',
+            label=r'$p=$'+f'{degree}'+r', $h=$'+f'{delta_x:.2f}'
+                +', limiter='+self._limiter.name())
         expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 101)
         # initialize animation
@@ -195,7 +201,7 @@ if __name__ == '__main__':
         description = 'What the program does',
         epilog = 'Text at the bottom of help')
     parser.add_argument('-n', '--n_element',
-        default=10, type=int,
+        default=23, type=int,
         help='number of elements')
     parser.add_argument('-l', '--x_left',
         default=0.0, type=float,
@@ -218,7 +224,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--method',
         choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
             'DGwithFR'],
-        default='LagrangeDG',
+        default='LegendreFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
         choices=['ReportAll', 'Krivodonova2004', 'LiRen2011', 'ZhuShuQiu2021'],
