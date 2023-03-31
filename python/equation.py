@@ -54,18 +54,18 @@ class LinearSystem(ConservationLaw):
         return self._A
 
 
-class Euler1d(ConservationLaw):
+class Euler(ConservationLaw):
 
     def __init__(self, gamma=1.4):
         self._gas = gas.Ideal(gamma)
 
-    def u_p_rho_to_U(self, u, p, rho):
+    def primitive_to_conservative(self, rho, u, p):
         U = np.array([rho, rho*u, 0.0])
         U[2] = u*U[1]/2 + p/self._gas.gamma_minus_1()
-        # print(u, p, rho, '->', U)
+        # print(rho, u, p, '->', U)
         return U
 
-    def U_to_u_p_rho(self, U):
+    def conservative_to_primitive(self, U):
         rho = U[0]
         if rho == 0:
             assert U[1] == U[2] == 0, U
@@ -73,11 +73,11 @@ class Euler1d(ConservationLaw):
         else:
             u = U[1] / U[0]
         p = (U[2] - u*U[1]/2) * self._gas.gamma_minus_1()
-        # print(U, '->', u, p, rho)
-        return u, p, rho
+        # print(U, '->', rho, u, p)
+        return rho, u, p
 
     def get_convective_flux(self, U):
-        u, p, rho = self.U_to_u_p_rho(U)
+        rho, u, p = self.conservative_to_primitive(U)
         F = U * u
         F[1] += p
         F[2] += p*u

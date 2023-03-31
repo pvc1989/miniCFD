@@ -247,8 +247,13 @@ class RiemannSolver(abc.ABC):
     """
 
     @abc.abstractmethod
-    def get_upwind_flux(self, u_left, u_right):
+    def get_value(self, x_global, t_curr):
         """Get the solution of a Riemann problem.
+        """
+
+    @abc.abstractmethod
+    def get_upwind_flux(self, u_left, u_right):
+        """Get the flux at (x=0, t) from the solution of a Riemann problem.
         """
 
 

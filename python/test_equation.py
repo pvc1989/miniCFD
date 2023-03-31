@@ -38,15 +38,16 @@ class TestEquations(unittest.TestCase):
         self.assertEqual(norm, 0.0)
 
     def test_euler_1d(self):
-        """Test methods of an Euler1d object."""
-        euler = equation.Euler1d(gamma=1.4)
+        """Test methods of an Euler object."""
+        euler = equation.Euler(gamma=1.4)
         # If unknown is an array of ints, small number will be rounded to 0.
-        u_given, p_given, rho_given = rand(), rand(), rand()
-        unknown = euler.u_p_rho_to_U(u_given, p_given, rho_given)
-        u_actual, p_actual, rho_actual = euler.U_to_u_p_rho(unknown)
+        rho_given, u_given, p_given = rand(), rand(), rand()
+        unknown = euler.primitive_to_conservative(rho_given, u_given, p_given)
+        rho_actual, u_actual, p_actual = euler.conservative_to_primitive(
+            unknown)
+        self.assertAlmostEqual(rho_actual, rho_given)
         self.assertAlmostEqual(u_actual, u_given)
         self.assertAlmostEqual(p_actual, p_given)
-        self.assertAlmostEqual(rho_actual, rho_given)
         # test unknown-property
         norm = np.linalg.norm(euler.get_convective_flux(unknown)
             - euler.get_convective_jacobian(unknown).dot(unknown))
