@@ -195,6 +195,37 @@ class InviscidBurgers(SolverBase):
         return root
 
 
+class Euler(SolverBase):
+    """Demo the usage of Euler related classes.
+    """
+
+    def __init__(self, a_const: float, k_const: float,
+            spatial_scheme: concept.SpatialScheme,
+            detector: concept.JumpDetector, limiter: concept.Limiter,
+            ode_solver: concept.OdeSolver) -> None:
+        super().__init__(spatial_scheme, detector, limiter, ode_solver)
+        self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
+        self._equation = equation.Euler(gamma=1.4)
+        self._riemann = riemann.Euler(gamma=1.4)
+        self._value_left = self._equation.primitive_to_conservative(
+              rho=1.0, u=0, p=1.0)
+        self._value_right = self._equation.primitive_to_conservative(
+              rho=0.125, u=0, p=0.1)
+        self._riemann.set_initial(self._value_left, self._value_right)
+
+    def a_max(self):
+        return 1.0
+
+    def u_init(self, x_global):
+        if x_global < self._x_mid:
+            return self._value_left
+        else:
+            return self._value_right
+
+    def u_exact(self, x_global, t_curr):
+        return self._riemann.U(x_global - self._x_mid, t_curr)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog = 'python3 solver.py',
@@ -238,7 +269,7 @@ if __name__ == '__main__':
         default=2, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
-        choices=['Linear', 'Burgers'],
+        choices=['Linear', 'Burgers', 'Euler'],
         default='Linear',
         help='problem to be solved')
     parser.add_argument('-a', '--phase_speed',
@@ -279,17 +310,20 @@ if __name__ == '__main__':
         assert False
     if args.problem == 'Linear':
         SolverClass = LinearAdvection
-        EquationClass = equation.LinearAdvection
-        RiemannClass = riemann.LinearAdvection
+        the_equation = equation.LinearAdvection(args.phase_speed)
+        the_riemann = riemann.LinearAdvection(args.phase_speed)
     elif args.problem == 'Burgers':
         SolverClass = InviscidBurgers
-        EquationClass = equation.InviscidBurgers
-        RiemannClass = riemann.InviscidBurgers
+        the_equation = equation.InviscidBurgers(args.phase_speed)
+        the_riemann = riemann.InviscidBurgers(args.phase_speed)
+    elif args.problem == 'Euler':
+        SolverClass = Euler
+        the_equation = equation.Euler(gamma=1.4)
+        the_riemann = riemann.Euler(gamma=1.4)
     else:
         assert False
     solver = SolverClass(args.phase_speed, args.wave_number,
-        spatial_scheme=SpatialClass(
-            EquationClass(args.phase_speed), RiemannClass(args.phase_speed),
+        spatial_scheme=SpatialClass(the_equation, the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
         detector=DetectorClass(), limiter=LimiterClass(),
         ode_solver=temporal.RungeKutta(args.rk_order))
