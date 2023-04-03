@@ -91,8 +91,15 @@ class Rotorcraft {
           auto &cv = *reinterpret_cast<Conservative *>(&value);
           auto uvw = cv.momentum() / cv.mass();
           auto force = section.GetForce(cv.mass(), uvw);
-          using Mat3xN = mini::algebra::Matrix<Scalar, 3, Cell::N>;
-          Mat3xN prod = force * cell.basis_(xyz).transpose();
+          using Mat1xN = mini::algebra::Matrix<Scalar, 1, Cell::N>;
+          Mat1xN basis_values = cell.basis_(xyz).transpose();
+          using Mat4xN = mini::algebra::Matrix<Scalar, 4, Cell::N>;
+          Mat4xN prod;
+          prod.row(0) = force[0] * basis_values;
+          prod.row(1) = force[1] * basis_values;
+          prod.row(2) = force[2] * basis_values;
+          auto work = force.transpose() * uvw;
+          prod.row(3) = work * basis_values;
           return prod;
         };
         auto integral = mini::integrator::Integrate(func, line);
@@ -100,6 +107,7 @@ class Rotorcraft {
         coeff->row(1) += integral.row(0);
         coeff->row(2) += integral.row(1);
         coeff->row(3) += integral.row(2);
+        coeff->row(4) += integral.row(3);
       }
     }
   }
