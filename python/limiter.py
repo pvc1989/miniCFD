@@ -9,6 +9,20 @@ import expansion
 import integrate
 
 
+class Dummy(concept.Limiter):
+    """A dummy limiter for comparison, which keeps the given object unchanged.
+    """
+
+    def name(self):
+        return 'Dummy'
+
+    def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
+        pass
+
+    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+        return curr.get_expansion().get_coeff()
+
+
 class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """

@@ -263,7 +263,7 @@ if __name__ == '__main__':
         default='Li2011',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['Li2020', 'Zhong2013'],
+        choices=['Li2020', 'Zhong2013', 'Dummy'],
         default='Li2020',
         help='method for limiting numerical oscillations')
     parser.add_argument('-d', '--degree',
@@ -307,6 +307,8 @@ if __name__ == '__main__':
         LimiterClass = limiter.LiWangRen2020
     elif args.limiter == 'Zhong2013':
         LimiterClass = limiter.ZhongShu2013
+    elif args.limiter == 'Dummy':
+        LimiterClass = limiter.Dummy
     else:
         assert False
     if args.problem == 'Linear':
