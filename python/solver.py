@@ -74,7 +74,7 @@ class SolverBase(abc.ABC):
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         def plot(t_curr):
-            self.plot(t_curr, n_point=101)
+            self.plot(t_curr, n_point=201)
         self._ode_solver.solve(self._spatial, plot, t_start, t_stop, delta_t)
 
     def get_ydata(self, t_curr, points):
@@ -105,12 +105,12 @@ class SolverBase(abc.ABC):
             5), minor=False)
         plt.grid(which='minor')
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b--',
+        approx_line, = plt.plot([], [], 'b.',
             label=f'scheme={self._spatial.name()}'
                 +f', detector={self._detector.name()}'
                 +f', limiter={self._limiter.name()}')
         expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 101)
+        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 201)
         # initialize animation
         def init_func():
             self._spatial.initialize(lambda x_global: self.u_init(x_global))
@@ -178,7 +178,6 @@ class InviscidBurgers(SolverBase):
 
     def u_exact(self, x_global, t_curr):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
-        return np.nan
         def func(u_curr):
             return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
         if np.abs(x_global - self._x_mid) < 1e-6:
@@ -186,10 +185,13 @@ class InviscidBurgers(SolverBase):
         else:
             if x_global > self._x_mid and self._u_prev > 0:
                 self._u_prev = -self._u_prev
-            a = self._u_prev - 0.2
-            b = self._u_prev + 0.2
-            # print(x_global, self._x_mid, self._u_prev, func(a), func(b))
-            root = optimize.bisect(func, a, b)
+            delta = 0.1
+            u_min = self._u_prev - delta
+            u_max = self._u_prev + delta
+            while func(u_min) * func(u_max) > 0:
+                u_min -= delta
+                u_max += delta
+            root = optimize.bisect(func, u_min, u_max)
             self._u_prev = root
         return root
 
