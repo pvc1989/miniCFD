@@ -115,7 +115,7 @@ class LiWangRen2020(CompactWENO):
         if verbose:
             return r'Li–Wang–Ren (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
         else:
-            return r'Li (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
+            return r'Li (2020, $K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:

@@ -147,9 +147,9 @@ class LegendreDG(DiscontinuousGalerkin):
         FiniteElement.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LegendreDG, value_type)
 
-    @staticmethod
-    def name():
-        return 'LegendreDG'
+
+    def name(self):
+        return 'DG (Legendre, '+r'$p$='+f'{self.degree()})'
 
 
 class LagrangeDG(DiscontinuousGalerkin):
@@ -163,9 +163,8 @@ class LagrangeDG(DiscontinuousGalerkin):
         DiscontinuousGalerkin.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LagrangeDG, value_type)
 
-    @staticmethod
-    def name():
-        return 'LagrangeDG'
+    def name(self):
+        return 'DG (Lagrange, '+r'$p$='+f'{self.degree()})'
 
 
 class FluxReconstruction(FiniteElement):
@@ -219,9 +218,8 @@ class LagrangeFR(FluxReconstruction):
         FluxReconstruction.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LagrangeFR, value_type)
 
-    @staticmethod
-    def name():
-        return 'LagrangeFR'
+    def name(self):
+        return 'FR (Lagrange, '+r'$p$='+f'{self.degree()})'
 
 
 class LegendreFR(FluxReconstruction):
@@ -235,9 +233,9 @@ class LegendreFR(FluxReconstruction):
         FluxReconstruction.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LegendreFR, value_type)
 
-    @staticmethod
-    def name():
-        return 'LegendreFR'
+
+    def name(self):
+        return 'FR (Legendre, '+r'$p$='+f'{self.degree()})'
 
 
 class DGwithFR(LagrangeFR):
@@ -251,9 +249,8 @@ class DGwithFR(LagrangeFR):
         LagrangeFR.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, value_type)
 
-    @staticmethod
-    def name():
-        return 'DGwithFR'
+    def name(self):
+        return 'DGwithFR (Lagrange, '+r'$p$='+f'{self.degree()})'
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self._value_type)

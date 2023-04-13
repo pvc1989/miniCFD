@@ -98,8 +98,7 @@ class SolverBase(abc.ABC):
         cfl = self.a_max() * delta_t / delta_x
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
         # general plot setting
-        plt.figure('scheme='+self._spatial.name()+', detector='
-            +self._detector.name())
+        plt.figure(figsize=(8,6))
         plt.ylim([-1.4, 1.6])
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
@@ -108,8 +107,9 @@ class SolverBase(abc.ABC):
         plt.grid(which='both')
         # initialize line-plot objects
         approx_line, = plt.plot([], [], 'b--',
-            label=r'$p=$'+f'{degree}'+r', $h=$'+f'{delta_x:.2f}'
-                +', limiter='+self._limiter.name())
+            label=f'scheme={self._spatial.name()}'
+                +f', detector={self._detector.name()}'
+                +f', limiter={self._limiter.name()}')
         expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 101)
         # initialize animation

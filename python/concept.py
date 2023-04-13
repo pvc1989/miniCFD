@@ -322,8 +322,8 @@ class SpatialScheme(OdeSystem):
         """
         return self._elements[0].degree()
 
-    @abc.abstractstaticmethod
-    def name():
+    @abc.abstractmethod
+    def name(self) -> str:
         """Get the compact string representation of the method.
         """
 

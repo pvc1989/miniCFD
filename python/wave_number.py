@@ -157,11 +157,6 @@ class WaveNumberDisplayer:
             ('dashdotdotted',         (0, (2, 4, 1, 4, 1, 4))),
             ('densely dashdotdotted', (0, (2, 1, 1, 1, 1, 1))),
             ('loosely dashdotdotted', (0, (2, 8, 1, 8, 1, 8))),]
-        schemes = []
-        for method in methods:
-            for degree in degrees:
-                assert isinstance(degree, int)
-                schemes.append(self.build_scheme(method, degree))
         if compressed:
             divisor = r'$(N\pi)$'
         else:
@@ -179,18 +174,17 @@ class WaveNumberDisplayer:
             sampled_wavenumbers = np.linspace(0, kh_max, n_sample)
             scale = (degree * compressed + 1) * np.pi
             for method in methods:
+                scheme = self.build_scheme(method, degree)
                 modified_wavenumbers = self.get_modified_wavenumbers(method,
                     degree, sampled_wavenumbers)
                 physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
                     modified_wavenumbers)
                 plt.subplot(2,1,1)
                 plt.plot(sampled_wavenumbers/scale, physical_eigvals.real/scale,
-                    label=f'{method.name()}{degree+1}',
-                    linestyle=linestyles[i][1])
+                    label=scheme.name(), linestyle=linestyles[i][1])
                 plt.subplot(2,1,2)
                 plt.plot(sampled_wavenumbers/scale, physical_eigvals.imag/scale,
-                    label=f'{method.name()}{degree+1}',
-                    linestyle=linestyles[i][1])
+                    label=scheme.name(), linestyle=linestyles[i][1])
                 i += 1
         x_max = np.max(degrees) * (not compressed) + 1
         plt.subplot(2,1,1)
@@ -220,33 +214,12 @@ if __name__ == '__main__':
     parser.add_argument('-r', '--x_right',
         default=10.0, type=float,
         help='coordinate of the right end of the domain')
-    parser.add_argument('-m', '--method',
-        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
-            'DGwithFR'],
-        default='LagrangeDG',
-        help='method for spatial discretization')
-    parser.add_argument('-d', '--degree',
-        default=2, type=int,
-        help='degree of polynomials for approximation')
     parser.add_argument('-c', '--compressed',
         action='store_true',
         help='whether the range of input wavenumbers is compressed')
     args = parser.parse_args()
-    print(args)
-    if args.method == 'LagrangeDG':
-        SpatialClass = spatial.LagrangeDG
-    elif args.method == 'LagrangeFR':
-        SpatialClass = spatial.LagrangeFR
-    elif args.method == 'LegendreDG':
-        SpatialClass = spatial.LegendreDG
-    elif args.method == 'LegendreFR':
-        SpatialClass = spatial.LegendreFR
-    elif args.method == 'DGwithFR':
-        SpatialClass = spatial.DGwithFR
-    else:
-        assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
     # wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
     wnd.compare_schemes(methods=[spatial.LegendreDG, spatial.LagrangeFR,
-        spatial.DGwithFR], degrees=[1, 3, 5], n_sample=args.n_sample,
+        spatial.LegendreFR], degrees=[1, 3, 5], n_sample=args.n_sample,
         compressed=args.compressed)
