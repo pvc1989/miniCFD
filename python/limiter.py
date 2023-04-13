@@ -32,11 +32,11 @@ class CompactWENO(concept.Limiter):
         for i_curr in troubled_cell_indices:
             curr = scheme.get_element_by_index(i_curr)
             neighbors = []
-            if i_curr > 0:
+            if scheme.is_periodic() or i_curr > 0:
                 i_prev = i_curr - 1
                 prev = scheme.get_element_by_index(i_prev)
                 neighbors.append(prev)
-            if i_curr + 1 < scheme.n_element():
+            if scheme.is_periodic() or i_curr + 1 < scheme.n_element():
                 i_next = (i_curr + 1) % scheme.n_element()
                 next = scheme.get_element_by_index(i_next)
                 neighbors.append(next)
@@ -49,6 +49,17 @@ class CompactWENO(concept.Limiter):
             curr.set_solution_coeff(new_coeffs[i_new])
             i_new += 1
         assert i_new == len(new_coeffs)
+
+    def _x_shift(self, this: expansion.Taylor, that: expansion.Taylor):
+        x_shift = 0.0
+        if this.x_right() < that.x_left() - that.length():  # this << that
+            x_shift = that.x_right() - this.x_left()
+        elif this.x_left() > that.x_right() + that.length():  # that << this
+            x_shift = that.x_left() - this.x_right()
+        else:
+            assert np.abs((this.x_right() - that.x_left())
+                * (this.x_left() - that.x_right())) < 1e-10
+        return x_shift
 
 
 class ZhongShu2013(CompactWENO):
@@ -81,10 +92,11 @@ class ZhongShu2013(CompactWENO):
             assert False
         borrowed = Expansion(this.degree(), this.x_left(), this.x_right(),
             this._value_type)
-        that_average = integrate.average(lambda x: that.get_function_value(x),
-            this)
-        borrowed.approximate(lambda x: that.get_function_value(x)
-            + this.get_average() - that_average)
+        x_shift = self._x_shift(this, that)
+        that_average = integrate.average(
+            lambda x_this: that.get_function_value(x_this + x_shift), this)
+        borrowed.approximate(lambda x_this: this.get_average() - that_average
+            + that.get_function_value(x_this + x_shift))
         return borrowed
 
     def _get_smoothness_value(self, taylor: expansion.Taylor):
@@ -146,10 +158,13 @@ class LiWangRen2020(CompactWENO):
         coeff = np.ndarray(2, dtype=this._value_type)
         this_average = this.get_average()
         coeff[0] = this_average
-        def psi(x_global):
-            return that.get_function_value(x_global) - this_average
-        coeff[1] = (integrate.inner_product(this.get_basis(1), psi, neighbor)
-            / integrate.norm_2(this.get_basis(1), neighbor))
+        x_shift = self._x_shift(this, that)
+        def psi(x_that):
+            return that.get_function_value(x_that) - this_average
+        def phi(x_that):
+            return this.get_basis(1)(x_that - x_shift)
+        coeff[1] = (integrate.inner_product(phi, psi, neighbor)
+            / integrate.norm_2(phi, neighbor))
         borrowed.set_coeff(coeff)
         return borrowed
 

@@ -354,6 +354,11 @@ class SpatialScheme(OdeSystem):
         """
         return self._delta_x
 
+    def is_periodic(self):
+        """Whether a periodic boundary condition is applied.
+        """
+        return True
+
     @abc.abstractmethod
     def n_dof(self):
         """Count degrees of freedom in current object.

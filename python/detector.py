@@ -45,9 +45,10 @@ class Krivodonova2004(JumpDetector):
             norms[i_cell] = integrate.norm_infty(function, cell) + 1.0
         ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
-        for i_curr in range(n_cell):
+        # always report boundary cells as troubled
+        smoothness[0] = smoothness[-1] = 100.0
+        for i_curr in range(1, n_cell-1):
             curr = scheme.get_element_by_index(i_curr)
-            # apply periodic BCs
             i_prev = i_curr - 1
             prev = scheme.get_element_by_index(i_prev)
             i_next = (i_curr + 1) % n_cell
@@ -97,10 +98,11 @@ class LiRen2011(JumpDetector):
             averages[i_cell] = np.abs(average) + cell.length()
         ratio = 2 * scheme.delta_x()**((cell.degree() + 1) / 2)
         smoothness = np.ndarray(n_cell)
-        for i_curr in range(n_cell):
+        # always report boundary cells as troubled
+        smoothness[0] = smoothness[-1] = 100.0
+        for i_curr in range(1, n_cell-1):
             curr = scheme.get_element_by_index(i_curr)
             curr_solution = curr.get_solution_value(curr.x_center())
-            # apply periodic BCs
             i_prev = i_curr - 1
             prev = scheme.get_element_by_index(i_prev)
             prev_solution = prev.get_solution_value(curr.x_center()
@@ -149,11 +151,12 @@ class ZhuShuQiu2021(JumpDetector):
                 return cell.get_solution_value(x_global)
             norms[i_cell] = integrate.norm_1(function, cell) + cell.length()
         smoothness = np.ndarray(n_cell)
-        for i_curr in range(n_cell):
+        # always report boundary cells as troubled
+        smoothness[0] = smoothness[-1] = 100.0
+        for i_curr in range(1, n_cell-1):
             curr = scheme.get_element_by_index(i_curr)
             def curr_solution(x_global):
                 return curr.get_solution_value(x_global)
-            # apply periodic BCs
             i_prev = i_curr - 1
             prev = scheme.get_element_by_index(i_prev)
             def prev_solution(x_global):

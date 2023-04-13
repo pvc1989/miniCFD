@@ -54,7 +54,7 @@ class FiniteElement(concept.SpatialScheme):
             x_left = prev.x_right()
             u_left = prev.get_solution_value(x_left)
             interface_fluxes[i] = self._riemann.get_upwind_flux(u_left, u_right)
-        if True:  # TODO: only for periodic boundary condtion
+        if self.is_periodic():
             curr, prev = self._elements[0], self._elements[-1]
             assert isinstance(curr, concept.Element)
             assert isinstance(prev, concept.Element)
@@ -64,6 +64,8 @@ class FiniteElement(concept.SpatialScheme):
             u_left = prev.get_solution_value(x_left)
             interface_fluxes[0] = self._riemann.get_upwind_flux(u_left, u_right)
             interface_fluxes[-1] = interface_fluxes[0]
+        else:  # TODO: support other boundary condtions
+            assert False
         return interface_fluxes
 
     def get_solution_value(self, point):
