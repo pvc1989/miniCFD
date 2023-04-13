@@ -259,12 +259,12 @@ if __name__ == '__main__':
         default='LegendreFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['ReportAll', 'Krivodonova2004', 'LiRen2011', 'ZhuShuQiu2021'],
-        default='LiRen2011',
+        choices=['ReportAll', 'KXCRF2004', 'Li2011', 'Zhu2021'],
+        default='Li2011',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['LiWangRen2020', 'ZhongShu2013'],
-        default='LiWangRen2020',
+        choices=['Li2020', 'Zhong2013'],
+        default='Li2020',
         help='method for limiting numerical oscillations')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
@@ -295,17 +295,17 @@ if __name__ == '__main__':
         assert False
     if args.detector == 'ReportAll':
         DetectorClass = detector.ReportAll
-    elif args.detector == 'Krivodonova2004':
+    elif args.detector == 'KXCRF2004':
         DetectorClass = detector.Krivodonova2004
-    elif args.detector == 'LiRen2011':
+    elif args.detector == 'Li2011':
         DetectorClass = detector.LiRen2011
-    elif args.detector == 'ZhuShuQiu2021':
+    elif args.detector == 'Zhu2021':
         DetectorClass = detector.ZhuShuQiu2021
     else:
         assert False
-    if args.limiter == 'LiWangRen2020':
+    if args.limiter == 'Li2020':
         LimiterClass = limiter.LiWangRen2020
-    elif args.limiter == 'ZhongShu2013':
+    elif args.limiter == 'Zhong2013':
         LimiterClass = limiter.ZhongShu2013
     else:
         assert False
