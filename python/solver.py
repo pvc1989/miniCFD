@@ -50,13 +50,13 @@ class SolverBase(abc.ABC):
         plt.plot(points, approx_solution, 'b.', label='Approximate Solution')
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
         plt.ylim([-1.4, 1.4])
-        plt.title(f't = {t_curr:.2f}')
+        plt.title(r'$t$'+f' = {t_curr:.2f}')
         plt.legend(loc='upper right')
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            3), minor=False)
-        plt.grid(which='both')
+            5), minor=False)
+        plt.grid(which='minor')
         # plt.show()
         plt.savefig(f't={t_curr:.2f}.pdf')
 
@@ -92,19 +92,18 @@ class SolverBase(abc.ABC):
     def animate(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and animate the results.
         """
-        degree = self._spatial.degree()
         delta_x = self._spatial.delta_x()
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
-        print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
+        print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl}")
         # general plot setting
-        plt.figure(figsize=(8,6))
+        plt.figure(figsize=(9,6))
         plt.ylim([-1.4, 1.6])
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            2), minor=False)
-        plt.grid(which='both')
+            5), minor=False)
+        plt.grid(which='minor')
         # initialize line-plot objects
         approx_line, = plt.plot([], [], 'b--',
             label=f'scheme={self._spatial.name()}'
@@ -122,7 +121,7 @@ class SolverBase(abc.ABC):
             expect_solution, approx_solution = self.get_ydata(t_curr, points)
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
-            plt.title(f't = {t_curr:.2f}')
+            plt.title(r'$t$'+f' = {t_curr:.2f}')
             plt.legend(loc='upper right')
             self._ode_solver.update(self._spatial, delta_t)
         frames = np.linspace(t_start, t_stop, n_step)
@@ -235,10 +234,10 @@ if __name__ == '__main__':
         default=23, type=int,
         help='number of elements')
     parser.add_argument('-l', '--x_left',
-        default=0.0, type=float,
+        default=-1.0, type=float,
         help='coordinate of the left end of the domain')
     parser.add_argument('-r', '--x_right',
-        default=10.0, type=float,
+        default=+1.0, type=float,
         help='coordinate of the right end of the domain')
     parser.add_argument('-o', '--rk_order',
         default=3, type=int,
@@ -250,7 +249,7 @@ if __name__ == '__main__':
         default=10.0, type=float,
         help='time to stop')
     parser.add_argument('-s', '--n_step',
-        default=100, type=int,
+        default=400, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
         choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
