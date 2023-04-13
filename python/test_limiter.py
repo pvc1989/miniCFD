@@ -39,9 +39,10 @@ class TestLimiters(unittest.TestCase):
             limiter.LiWangRen2020(k_trunc=0),
             limiter.LiWangRen2020(k_trunc=1e0),
             limiter.LiWangRen2020(k_trunc=1e100),
+            limiter.Xu2023(alpha=1.0),
             limiter.ZhongShu2013(),
         ]
-        markers = ['1', '2', '3', '4']
+        markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
         axins1 = ax.inset_axes([0.1, 0.08, 0.20, 0.20])
         xmin = -1 / 73 * self._n_element
@@ -90,9 +91,10 @@ class TestLimiters(unittest.TestCase):
             limiter.LiWangRen2020(k_trunc=0),
             limiter.LiWangRen2020(k_trunc=1e0),
             limiter.LiWangRen2020(k_trunc=1e100),
+            limiter.Xu2023(alpha=1.0),
             limiter.ZhongShu2013(),
         ]
-        markers = ['1', '2', '3', '4']
+        markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
         axins = ax.inset_axes([0.35, 0.10, 0.35, 0.25])
         xmin = -28 / 73 * self._n_element

@@ -236,5 +236,47 @@ class LiWangRen2020(CompactWENO):
         return new_coeff
 
 
+class Xu2023(CompactWENO):
+    """A limiter using min-max compression.
+    """
+
+    def __init__(self, alpha=1.0) -> None:
+        self._alpha = alpha
+
+    def name(self):
+        return 'Xu (2023, ' + r'$\alpha$' + f'={self._alpha:.1f})'
+
+    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+        curr_expansion = curr.get_expansion()
+        curr_average = curr_expansion.get_average()
+        u_max = curr_average
+        u_min = u_max
+        for cell in neighbors:
+            average = cell.get_expansion().get_average()
+            u_max = max(u_max, average)
+            u_min = min(u_min, average)
+        big_a = self._alpha * min(u_max - curr_average, curr_average - u_min)
+        if big_a == 0:
+            old_coeff = curr_expansion.get_coeff()
+            curr_expansion.approximate(lambda x: curr_average)
+            new_coeff = curr_expansion.get_coeff()
+            curr_expansion.set_coeff(old_coeff)
+        else:
+            def monotone(x):
+                q = curr_expansion.get_function_value(x) - curr_average
+                q /= big_a
+                return np.tanh(q)
+            monotone_average = integrate.average(monotone, curr)
+            def new_expansion(x):
+                dividend = (monotone(x) - monotone_average) * big_a
+                divisor = 1 + np.abs(monotone_average)
+                return curr_average + dividend / divisor
+            old_coeff = curr_expansion.get_coeff()
+            curr_expansion.approximate(new_expansion)
+            new_coeff = curr_expansion.get_coeff()
+            curr_expansion.set_coeff(old_coeff)
+        return new_coeff
+
+
 if __name__ == '__main__':
     pass
