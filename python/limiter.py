@@ -73,8 +73,14 @@ class ZhongShu2013(CompactWENO):
         that = neighbor.get_expansion()
         assert isinstance(this, expansion.Taylor)
         assert isinstance(that, expansion.Taylor)
-        borrowed = expansion.Legendre(this.degree(), this.x_left(),
-            this.x_right(), this._value_type)
+        if isinstance(this, expansion.Lagrange):
+            Expansion = expansion.Lagrange
+        elif isinstance(this, expansion.Legendre):
+            Expansion = expansion.Legendre
+        else:
+            assert False
+        borrowed = Expansion(this.degree(), this.x_left(), this.x_right(),
+            this._value_type)
         that_average = integrate.average(lambda x: that.get_function_value(x),
             this)
         borrowed.approximate(lambda x: that.get_function_value(x)
@@ -131,11 +137,9 @@ class LiWangRen2020(CompactWENO):
         else:
             return r'Li (2020, $K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
-    def _borrow_expansion(self, curr: concept.Element,
+    def _borrow_expansion(self, this: expansion.Legendre,
             neighbor: concept.Element) -> expansion.Legendre:
-        this = curr.get_expansion()
         that = neighbor.get_expansion()
-        assert isinstance(this, expansion.Legendre)
         assert isinstance(that, expansion.Taylor)
         borrowed = expansion.Legendre(1, this.x_left(),
             this.x_right(), this._value_type)
@@ -166,12 +170,17 @@ class LiWangRen2020(CompactWENO):
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         candidates = []
         # Get candidates by projecting to lower-order spaces:
+        curr_legendre = curr.get_expansion()
+        if not isinstance(curr_legendre, expansion.Legendre):
+            curr_legendre = expansion.Legendre(curr.degree(),
+                curr.x_left(), curr.x_right(), curr._value_type)
+            curr_legendre.approximate(lambda x: curr.get_solution_value(x))
         for degree in range(curr.degree(), 0, -1):
             candidates.append(
-                expansion.TruncatedLegendre(degree, curr.get_expansion()))
+                expansion.TruncatedLegendre(degree, curr_legendre))
         # Get candidates by borrowing from neighbors:
         for neighbor in neighbors:
-            candidates.append(self._borrow_expansion(curr, neighbor))
+            candidates.append(self._borrow_expansion(curr_legendre, neighbor))
         assert len(candidates) == curr.degree() + len(neighbors)
         # Get smoothness values: (TODO: use quadrature-free implementation)
         # process 1-degree candidates
@@ -212,6 +221,18 @@ class LiWangRen2020(CompactWENO):
             coeff = candidates[i_candidate].get_coeff()
             weight = weights[i_candidate] / weight_sum
             new_coeff[0:len(coeff)] += coeff * weight
+        # Legendre to Lagrange, if necessary:
+        if isinstance(curr.get_expansion(), expansion.Lagrange):
+            new_legendre = expansion.Legendre(curr.degree(),
+                curr.x_left(), curr.x_right(), curr._value_type)
+            new_legendre.set_coeff(new_coeff)
+            new_lagrange = expansion.Lagrange(curr.degree(),
+                curr.x_left(), curr.x_right(), curr._value_type)
+            new_lagrange.approximate(lambda x:
+                new_legendre.get_function_value(x))
+            new_coeff = new_lagrange.get_coeff()
+        else:
+            assert isinstance(curr.get_expansion(), expansion.Legendre)
         return new_coeff
 
 
