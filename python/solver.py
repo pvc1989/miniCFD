@@ -47,7 +47,7 @@ class SolverBase(abc.ABC):
             approx_solution[i] = self._spatial.get_solution_value(point_i)
             expect_solution[i] = self.u_exact(point_i, t_curr)
         plt.figure(figsize=(6, 3))
-        plt.plot(points, approx_solution, 'b.', label='Approximate Solution')
+        plt.plot(points, approx_solution, 'b-+', label='Approximate Solution')
         plt.plot(points, expect_solution, 'r-', label='Exact Solution')
         plt.ylim([-1.4, 1.4])
         plt.title(r'$t$'+f' = {t_curr:.2f}')
@@ -105,7 +105,7 @@ class SolverBase(abc.ABC):
             5), minor=False)
         plt.grid(which='minor')
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b.',
+        approx_line, = plt.plot([], [], 'b-+',
             label=f'scheme={self._spatial.name()}'
                 +f', detector={self._detector.name()}'
                 +f', limiter={self._limiter.name()}')
@@ -130,8 +130,8 @@ class SolverBase(abc.ABC):
         plt.show()
 
 
-class LinearAdvection(SolverBase):
-    """Demo the usage of LinearAdvection related classes.
+class LinearSmooth(SolverBase):
+    """Demo the usage of LinearAdvection related classes for smooth IC.
     """
 
     def __init__(self, a_const: float, k_const: float,
@@ -148,10 +148,26 @@ class LinearAdvection(SolverBase):
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
-        return np.sign(value)
+        return value
 
     def u_exact(self, x_global, t_curr):
         return self.u_init(x_global - self._a_const * t_curr)
+
+
+class LinearJumps(LinearSmooth):
+    """Demo the usage of LinearAdvection related classes for IC with jumps.
+    """
+
+    def __init__(self, a_const: float, k_const: float,
+            spatial_scheme: concept.SpatialScheme,
+            detector: concept.JumpDetector, limiter: concept.Limiter,
+            ode_solver: concept.OdeSolver) -> None:
+        LinearSmooth.__init__(self, a_const, k_const, spatial_scheme,
+            detector, limiter, ode_solver)
+
+    def u_init(self, x_global):
+        value = LinearSmooth.u_init(self, x_global)
+        return np.sign(value)
 
 
 class InviscidBurgers(SolverBase):
@@ -251,7 +267,7 @@ if __name__ == '__main__':
         default=10.0, type=float,
         help='time to stop')
     parser.add_argument('-s', '--n_step',
-        default=400, type=int,
+        default=500, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
         choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
@@ -270,8 +286,8 @@ if __name__ == '__main__':
         default=2, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
-        choices=['Linear', 'Burgers', 'Euler'],
-        default='Linear',
+        choices=['Smooth', 'Jumps', 'Burgers', 'Euler'],
+        default='Smooth',
         help='problem to be solved')
     parser.add_argument('-a', '--phase_speed',
         default=1.0, type=float,
@@ -313,8 +329,12 @@ if __name__ == '__main__':
         LimiterClass = limiter.Dummy
     else:
         assert False
-    if args.problem == 'Linear':
-        SolverClass = LinearAdvection
+    if args.problem == 'Smooth':
+        SolverClass = LinearSmooth
+        the_equation = equation.LinearAdvection(args.phase_speed)
+        the_riemann = riemann.LinearAdvection(args.phase_speed)
+    elif args.problem == 'Jumps':
+        SolverClass = LinearJumps
         the_equation = equation.LinearAdvection(args.phase_speed)
         the_riemann = riemann.LinearAdvection(args.phase_speed)
     elif args.problem == 'Burgers':
