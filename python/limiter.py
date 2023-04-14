@@ -259,7 +259,7 @@ class Xu2023(CompactWENO):
         self._alpha = alpha
 
     def name(self):
-        return 'Xu (2023, ' + r'$\alpha$' + f'={self._alpha:.1f})'
+        return 'Xu (2023, ' + r'$\alpha$' + f'={self._alpha:g})'
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         curr_expansion = curr.get_expansion()

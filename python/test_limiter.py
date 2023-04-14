@@ -37,14 +37,14 @@ class TestLimiters(unittest.TestCase):
         u_init = test_detector.jumps
         limiters = [
             limiter.ZhongShu2013(),
-            limiter.LiWangRen2020(k_trunc=0),
-            limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e1),
-            limiter.LiWangRen2020(k_trunc=1e10),
-            # limiter.Xu2023(alpha=0.1),
-            # limiter.Xu2023(alpha=1e0),
-            # limiter.Xu2023(alpha=1e1),
-            # limiter.Xu2023(alpha=1e2),
+            # limiter.LiWangRen2020(k_trunc=0),
+            # limiter.LiWangRen2020(k_trunc=1e0),
+            # limiter.LiWangRen2020(k_trunc=1e1),
+            # limiter.LiWangRen2020(k_trunc=1e10),
+            limiter.Xu2023(alpha=0.1),
+            limiter.Xu2023(alpha=1e0),
+            limiter.Xu2023(alpha=1e1),
+            limiter.Xu2023(alpha=1e2),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -52,7 +52,7 @@ class TestLimiters(unittest.TestCase):
         xmin = -1 / 73 * self._n_element
         xmax = +1 / 73 * self._n_element
         axins1.set_xlim(xmin, xmax)
-        axins1.set_ylim(-3.2, -2.2)
+        axins1.set_ylim(-4.2, -1.2)
         axins2 = ax.inset_axes([0.80, 0.08, 0.18, 0.30])
         xmin = +6 / 53 * self._n_element
         xmax = +8 / 53 * self._n_element
@@ -93,13 +93,14 @@ class TestLimiters(unittest.TestCase):
         u_init = test_detector.smooth
         limiters = [
             limiter.ZhongShu2013(),
-            limiter.LiWangRen2020(k_trunc=0),
-            limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e1),
-            limiter.LiWangRen2020(k_trunc=1e10),
-            # limiter.Xu2023(alpha=0.1),
-            # limiter.Xu2023(alpha=1e0),
-            # limiter.Xu2023(alpha=1e3),
+            # limiter.LiWangRen2020(k_trunc=0),
+            # limiter.LiWangRen2020(k_trunc=1e0),
+            # limiter.LiWangRen2020(k_trunc=1e1),
+            # limiter.LiWangRen2020(k_trunc=1e10),
+            limiter.Xu2023(alpha=0.1),
+            limiter.Xu2023(alpha=1e0),
+            limiter.Xu2023(alpha=1e1),
+            limiter.Xu2023(alpha=1e2),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
