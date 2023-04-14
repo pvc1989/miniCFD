@@ -111,8 +111,8 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_coeff(self):
-        """Get the coefficient for each basis.
+    def get_coeff_ref(self):
+        """Get the reference to the coefficient for each basis.
         """
 
 

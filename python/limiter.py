@@ -2,6 +2,7 @@
 """
 import numpy as np
 from scipy import special
+from copy import deepcopy
 
 import concept
 from spatial import FiniteElement
@@ -20,7 +21,7 @@ class Dummy(concept.Limiter):
         pass
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
-        return curr.get_expansion().get_coeff()
+        return curr.get_expansion().get_coeff_ref()
 
 
 class CompactWENO(concept.Limiter):
@@ -126,9 +127,9 @@ class ZhongShu2013(CompactWENO):
             weights[i] = linear_weight / (self._epsilon + smoothness)**2
         weights /= np.sum(weights)
         # weight the coeffs
-        coeff = candidates[0].get_coeff() * weights[0]
+        coeff = candidates[0].get_coeff_ref() * weights[0]
         for i in range(1, len(candidates)):
-            coeff += candidates[i].get_coeff() * weights[i]
+            coeff += candidates[i].get_coeff_ref() * weights[i]
         return coeff
 
 
@@ -233,7 +234,7 @@ class LiWangRen2020(CompactWENO):
         # Average the coeffs:
         new_coeff = np.zeros(curr.degree()+1)
         for i_candidate in range(len(weights)):
-            coeff = candidates[i_candidate].get_coeff()
+            coeff = candidates[i_candidate].get_coeff_ref()
             weight = weights[i_candidate] / weight_sum
             new_coeff[0:len(coeff)] += coeff * weight
         # Legendre to Lagrange, if necessary:
@@ -245,7 +246,7 @@ class LiWangRen2020(CompactWENO):
                 curr.x_left(), curr.x_right(), curr._value_type)
             new_lagrange.approximate(lambda x:
                 new_legendre.get_function_value(x))
-            new_coeff = new_lagrange.get_coeff()
+            new_coeff = new_lagrange.get_coeff_ref()
         else:
             assert isinstance(curr.get_expansion(), expansion.Legendre)
         return new_coeff
@@ -272,9 +273,9 @@ class Xu2023(CompactWENO):
             u_min = min(u_min, average)
         big_a = self._alpha * min(u_max - curr_average, curr_average - u_min)
         if big_a == 0:
-            old_coeff = curr_expansion.get_coeff()
+            old_coeff = deepcopy(curr_expansion.get_coeff_ref())
             curr_expansion.approximate(lambda x: curr_average)
-            new_coeff = curr_expansion.get_coeff()
+            new_coeff = deepcopy(curr_expansion.get_coeff_ref())
             curr_expansion.set_coeff(old_coeff)
         else:
             def monotone(x):
@@ -286,9 +287,9 @@ class Xu2023(CompactWENO):
                 dividend = (monotone(x) - monotone_average) * big_a
                 divisor = 1 + np.abs(monotone_average)
                 return curr_average + dividend / divisor
-            old_coeff = curr_expansion.get_coeff()
+            old_coeff = deepcopy(curr_expansion.get_coeff_ref())
             curr_expansion.approximate(new_expansion)
-            new_coeff = curr_expansion.get_coeff()
+            new_coeff = deepcopy(curr_expansion.get_coeff_ref())
             curr_expansion.set_coeff(old_coeff)
         return new_coeff
 

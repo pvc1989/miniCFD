@@ -61,7 +61,7 @@ class LagrangeDG(Element):
 
     def get_solution_column(self):
         # In current case (scalar problem), no conversion is needed.
-        return self._u_approx.get_coeff()
+        return self._u_approx.get_coeff_ref()
 
     def get_solution_value(self, x_global):
         return self._u_approx.get_function_value(x_global)
@@ -114,7 +114,7 @@ class LegendreDG(Element):
 
     def get_solution_column(self):
         # In current case (scalar problem), no conversion is needed.
-        return self._u_approx.get_coeff()
+        return self._u_approx.get_coeff_ref()
 
     def get_solution_value(self, x_global):
         return self._u_approx.get_function_value(x_global)

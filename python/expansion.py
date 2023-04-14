@@ -3,6 +3,7 @@
 import numpy as np
 from scipy import special
 import numdifftools as nd
+from copy import deepcopy
 
 from concept import Expansion
 import polynomial
@@ -125,9 +126,9 @@ class Taylor(Expansion):
         return values
 
     def set_coeff(self, coeff):
-        self._taylor_coeff[:] = coeff
+        self._taylor_coeff[:] = deepcopy(coeff)
 
-    def get_coeff(self):
+    def get_coeff_ref(self):
         return self._taylor_coeff
 
     def set_taylor_coeff(self, points: np.ndarray):
@@ -144,7 +145,7 @@ class Taylor(Expansion):
             this_rows[k] = self.get_basis_values(points[k])
             base_rows[k] = Taylor.get_basis_values(self, points[k])
         mat_a = np.linalg.solve(this_rows, base_rows)
-        this_col = self.get_coeff()
+        this_col = self.get_coeff_ref()
         base_col = np.linalg.solve(mat_a, this_col)
         Taylor.set_coeff(self, base_col)
 
@@ -184,7 +185,7 @@ class Lagrange(Taylor):
         points = self.get_sample_points()
         for k in range(self.n_term()):
             base_rows[k] = Taylor.get_basis_values(self, points[k])
-        this_col = self.get_coeff()
+        this_col = self.get_coeff_ref()
         base_col = np.linalg.solve(base_rows, this_col)
         Taylor.set_coeff(self, base_col)
 
@@ -198,7 +199,7 @@ class Lagrange(Taylor):
             self._sample_values[i] = values[i]
         self.set_taylor_coeff()
 
-    def get_coeff(self):
+    def get_coeff_ref(self):
         return self._sample_values
 
     def approximate(self, function):
@@ -275,7 +276,7 @@ class Legendre(Taylor):
         So
             taylor_coeff_col = matrix_on_taylor * legendre_coeff_col.
         """
-        legendre_coeff_col = self.get_coeff()
+        legendre_coeff_col = self.get_coeff_ref()
         taylor_coeff_col = self._matrix_on_taylor.dot(legendre_coeff_col)
         Taylor.set_coeff(self, taylor_coeff_col)
 
@@ -287,7 +288,7 @@ class Legendre(Taylor):
             self._mode_coeffs[i] = coeffs[i]
         self.set_taylor_coeff()
 
-    def get_coeff(self):
+    def get_coeff_ref(self):
         return self._mode_coeffs
 
     def approximate(self, function):
@@ -344,17 +345,18 @@ class TruncatedLegendre(Taylor):
         assert 0 <= degree <= that.degree()
         Taylor.__init__(self, degree, that.x_left(), that.x_right(), that._value_type)
         n_term = degree + 1
-        self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
+        self._taylor_coeff[:] = deepcopy(that._taylor_coeff[0:n_term])
         assert isinstance(that, Legendre) # TODO: relax to Taylor
-        self._mode_coeffs = that._mode_coeffs[0:n_term]
-        self._matrix_on_taylor = that._matrix_on_taylor[0:n_term, 0:n_term]
+        self._mode_coeffs = deepcopy(that._mode_coeffs[0:n_term])
+        self._matrix_on_taylor = deepcopy(
+            that._matrix_on_taylor[0:n_term, 0:n_term])
         Legendre.set_taylor_coeff(self)
 
     def set_coeff(self):
         assert False
 
-    def get_coeff(self):
-        return Legendre.get_coeff(self)
+    def get_coeff_ref(self):
+        return Legendre.get_coeff_ref(self)
 
     def get_average(self):
         return Legendre.get_average(self)

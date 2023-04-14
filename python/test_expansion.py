@@ -279,7 +279,7 @@ class TestTruncatedLegendre(unittest.TestCase):
         for p_low in range(p_high+1):
             legendre_trunc = expansion.TruncatedLegendre(p_low, legendre_high)
             legendre_low = expansion.Legendre(p_low, x_left, x_right)
-            legendre_low.set_coeff(legendre_high.get_coeff()[0:p_low+1])
+            legendre_low.set_coeff(legendre_high.get_coeff_ref()[0:p_low+1])
             for x in points:
                 self.assertAlmostEqual(legendre_low.get_function_value(x),
                     legendre_trunc.get_function_value(x))
