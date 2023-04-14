@@ -36,11 +36,15 @@ class TestLimiters(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         u_init = test_detector.jumps
         limiters = [
+            limiter.ZhongShu2013(),
             limiter.LiWangRen2020(k_trunc=0),
             limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e100),
-            limiter.Xu2023(alpha=1.0),
-            limiter.ZhongShu2013(),
+            limiter.LiWangRen2020(k_trunc=1e1),
+            limiter.LiWangRen2020(k_trunc=1e10),
+            # limiter.Xu2023(alpha=0.1),
+            # limiter.Xu2023(alpha=1e0),
+            # limiter.Xu2023(alpha=1e1),
+            # limiter.Xu2023(alpha=1e2),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -88,11 +92,14 @@ class TestLimiters(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         u_init = test_detector.smooth
         limiters = [
+            limiter.ZhongShu2013(),
             limiter.LiWangRen2020(k_trunc=0),
             limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e100),
-            limiter.Xu2023(alpha=1.0),
-            limiter.ZhongShu2013(),
+            limiter.LiWangRen2020(k_trunc=1e1),
+            limiter.LiWangRen2020(k_trunc=1e10),
+            # limiter.Xu2023(alpha=0.1),
+            # limiter.Xu2023(alpha=1e0),
+            # limiter.Xu2023(alpha=1e3),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -121,7 +128,10 @@ class TestLimiters(unittest.TestCase):
         ax.indicate_inset_zoom(axins, edgecolor="gray")
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
-        plt.title(r'$p=$'+f'{degree}, '+r'$h=$'+f'{scheme.delta_x():.3f}')
+        kappa_h = 10 * scheme.delta_x() / np.pi
+        plt.title(r'$p=$'+f'{degree}, '
+            +r'$(\kappa h)_\mathrm{left}=$'+f'{kappa_h:.2f}'+r'$\pi$, '
+            +r'$(\kappa h)_\mathrm{right}=$'+f'{kappa_h/2:.2f}'+r'$\pi$')
         plt.legend()
         plt.tight_layout()
         # plt.show()
