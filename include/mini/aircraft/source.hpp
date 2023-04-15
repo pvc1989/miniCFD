@@ -68,17 +68,15 @@ class Rotorcraft {
           }
         }
       }
-      // If only one common point is found, then either p or q is inside.
       if (r_found && !t_found) {
+        // If only one common point is found (R is always found before T),
+        // then either P or Q is inside.
         t_found = true;
+        // assume pq.length() >> cell.length()
         t_ratio = r_ratio < 0.5 ? 0 : 1;
       }
-      if (!r_found && t_found) {
-        r_found = true;
-        r_ratio = t_ratio < 0.5 ? 0 : 1;
-      }
       if (r_found && t_found) {
-        // Integrate along (r)---(t);
+        // Integrate along (R)---(T);
         if (r_ratio > t_ratio) {
           std::swap(r_ratio, t_ratio);
         }
