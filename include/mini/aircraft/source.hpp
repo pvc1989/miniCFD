@@ -34,14 +34,18 @@ class Rotorcraft {
   using Blade = typename Rotor::Blade;
 
  private:
-  void UpdateCoeff(const Cell &cell, const Blade &blade, Coeff *coeff) {
+  static bool Valid(Scalar ratio) {
+    return 0.0 <= ratio && ratio <= 1.0;
+  }
+
+  static std::pair<Scalar, Scalar>
+  Intersect(const Cell &cell, const Blade &blade) {
     const Coord &p = blade.P();
     const Coord &q = blade.Q();
     const Coord &pq = blade.PQ();
-    Scalar r_ratio; bool r_found = false;
-    Scalar t_ratio; bool t_found = false;
+    Scalar r_ratio{-1}, s_ratio{-1};
     for (const Face *face : cell.adj_faces_) {
-      if (r_found && t_found) {
+      if (Valid(r_ratio) && Valid(s_ratio)) {
         break;
       }
       const auto &gauss = face->gauss();
@@ -52,32 +56,37 @@ class Rotorcraft {
       Coord pc = gauss.GetVertex(2) - p;
       Scalar ratio = -1.0;
       mini::geometry::Intersect(pa, pb, pc, pq, &ratio);
-      if (0 <= ratio && ratio <= 1) {
-        if (!r_found) {
+      if (Valid(ratio)) {
+        if (!Valid(r_ratio)) {
           r_ratio = ratio;
-          r_found = true;
-        } else if (!t_found) {
-          t_ratio = ratio;
-          t_found = true;
+        } else if (!Valid(s_ratio)) {
+          s_ratio = ratio;
         } else {
           // More than two common points are found.
           assert(false);
         }
       }
     }
-    if (r_found && !t_found) {
-      // If only one common point is found (R is always found before T),
+    if (Valid(r_ratio) && !Valid(s_ratio)) {
+      // If only one common point is found (R is always found before S),
       // then either P or Q is inside.
-      t_found = true;
-      // assume pq.length() >> cell.length()
-      t_ratio = r_ratio < 0.5 ? 0 : 1;
+      s_ratio = r_ratio < 0.5 ? 0 : 1;  // p_ratio = 0, q_ratio = 1
     }
-    if (r_found && t_found) {
-      // Integrate along (R)---(T);
-      if (r_ratio > t_ratio) {
-        std::swap(r_ratio, t_ratio);
+    if (Valid(r_ratio) && Valid(s_ratio)) {
+      if (r_ratio > s_ratio) {
+        std::swap(r_ratio, s_ratio);
       }
-      auto line = mini::integrator::Line<Scalar, 1, 4>(r_ratio, t_ratio);
+    }
+    return {r_ratio, s_ratio};
+  }
+
+  void UpdateCoeff(const Cell &cell, const Blade &blade, Coeff *coeff) {
+    auto [r_ratio, s_ratio] = Intersect(cell, blade);
+    if (r_ratio < s_ratio) {
+      // r_ratio is always set before s_ratio
+      assert(Valid(r_ratio) && Valid(s_ratio));
+      // Integrate along RS:
+      auto line = mini::integrator::Line<Scalar, 1, 4>(r_ratio, s_ratio);
       auto func = [&cell, &blade](Scalar ratio){
         auto section = blade.GetSection(ratio);
         auto xyz = section.GetOrigin();
