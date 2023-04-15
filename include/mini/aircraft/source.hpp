@@ -32,6 +32,8 @@ class Rotorcraft {
   using Conservative = typename Part::Riemann::Conservative;
   using Rotor = mini::aircraft::Rotor<Scalar>;
   using Blade = typename Rotor::Blade;
+  using Section = typename Blade::Section;
+  using Force = Coord;
 
  private:
   static bool Valid(Scalar ratio) {
@@ -80,6 +82,16 @@ class Rotorcraft {
     return {r_ratio, s_ratio};
   }
 
+  static std::pair<Force, Scalar>
+  GetSourceValue(const Cell &cell, const Section &section, const Coord &xyz) {
+    auto value = cell.projection_(xyz);
+    auto &cv = *reinterpret_cast<Conservative *>(&value);
+    auto uvw = cv.momentum() / cv.mass();
+    Force force = section.GetForce(cv.mass(), uvw);
+    auto power = force.transpose() * uvw;
+    return {force, power};
+  }
+
   void UpdateCoeff(const Cell &cell, const Blade &blade, Coeff *coeff) {
     auto [r_ratio, s_ratio] = Intersect(cell, blade);
     if (r_ratio < s_ratio) {
@@ -87,26 +99,21 @@ class Rotorcraft {
       assert(Valid(r_ratio) && Valid(s_ratio));
       // Integrate along RS:
       auto line = mini::integrator::Line<Scalar, 1, 4>(r_ratio, s_ratio);
-      auto func = [&cell, &blade](Scalar ratio){
+      auto integrand = [&cell, &blade](Scalar ratio){
         auto section = blade.GetSection(ratio);
         auto xyz = section.GetOrigin();
-        const auto &proj = cell.projection_;
-        auto value = proj(xyz);  // conservative variable
-        auto &cv = *reinterpret_cast<Conservative *>(&value);
-        auto uvw = cv.momentum() / cv.mass();
-        auto force = section.GetForce(cv.mass(), uvw);
+        auto [force, power] = GetSourceValue(cell, section, xyz);
         using Mat1xN = mini::algebra::Matrix<Scalar, 1, Cell::N>;
         Mat1xN basis_values = cell.basis_(xyz).transpose();
         using Mat4xN = mini::algebra::Matrix<Scalar, 4, Cell::N>;
-        Mat4xN prod;
-        prod.row(0) = force[0] * basis_values;
-        prod.row(1) = force[1] * basis_values;
-        prod.row(2) = force[2] * basis_values;
-        auto work = force.transpose() * uvw;
-        prod.row(3) = work * basis_values;
-        return prod;
+        Mat4xN product;
+        product.row(0) = force[0] * basis_values;
+        product.row(1) = force[1] * basis_values;
+        product.row(2) = force[2] * basis_values;
+        product.row(3) = power * basis_values;
+        return product;
       };
-      auto integral = mini::integrator::Integrate(func, line);
+      auto integral = mini::integrator::Integrate(integrand, line);
       integral *= blade.GetSpan();
       coeff->row(1) += integral.row(0);
       coeff->row(2) += integral.row(1);
