@@ -15,7 +15,13 @@ void WriteForces(Part const &part, Source *source, double t_curr,
       [source, t_curr, &forces, &points, &weights](const Cell &cell){
     source->GetForces(cell, t_curr, &forces, &points, &weights);
   });
-  std::cout << forces.size() << ' ' << points.size() << ' ' << weights.size() << '\n';
+  auto out = part.GetFileStream(frame_name, false, "csv");
+  out << "\"X\",\"Y\",\"Z\",\"ForceX\",\"ForceY\",\"ForceZ\",\"Weight\"\n";
+  for (int i = 0, n = weights.size(); i < n; ++i) {
+    out << points[i][0] << ',' << points[i][1] << ',' << points[i][2] << ',';
+    out << forces[i][0] << ',' << forces[i][1] << ',' << forces[i][2] << ',';
+    out << weights[i] << '\n';
+  }
 }
 
 int main(int argc, char* argv[]) {

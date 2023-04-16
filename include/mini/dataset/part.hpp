@@ -1828,6 +1828,8 @@ class Part {
     }
     return coord;
   }
+
+ public:
   std::ofstream GetFileStream(std::string const &soln_name, bool binary,
       std::string const &suffix) const {
     char temp[1024];
