@@ -132,6 +132,31 @@ class Rotorcraft {
     }
   }
 
+  void GetForces(const Cell &cell, double t_curr, std::vector<Coord> *forces,
+      std::vector<Coord> *points, std::vector<Scalar> *weights) {
+    for (auto &rotor : rotors_) {
+      rotor.UpdateAzimuth(t_curr);
+      for (int i = 0, n = rotor.CountBlades(); i < n; ++i) {
+        const Blade &blade = rotor.GetBlade(i);
+        auto [r_ratio, s_ratio] = Intersect(cell, blade);
+        if (r_ratio >= s_ratio) {
+          continue;
+        }
+        constexpr int Q = 4;
+        auto line = mini::integrator::Line<Scalar, 1, Q>(r_ratio, s_ratio);
+        for (int q = 0; q < Q; ++q) {
+          auto ratio = line.GetGlobalCoord(q);
+          auto section = blade.GetSection(ratio);
+          auto xyz = section.GetOrigin();
+          auto [force, power] = GetSourceValue(cell, section, xyz);
+          forces->emplace_back(force);
+          points->emplace_back(xyz);
+          weights->emplace_back(line.GetGlobalWeight(q) * blade.GetSpan());
+        }
+      }
+    }
+  }
+
   Rotorcraft &InstallRotor(const Rotor &rotor) {
     rotors_.emplace_back(rotor);
     return *this;

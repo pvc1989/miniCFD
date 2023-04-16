@@ -1,15 +1,22 @@
 //  Copyright 2022 PEI Weicheng
+#include <vector>
+
 #include "rotorcraft.hpp"
 
 #include "mini/dataset/shuffler.hpp"
 
-class Writer {
- public:
-  void Update(Part const &part, Source *source, double t_curr) {
-  }
-  void Write(std::string const &frame_name, int i_core) const {
-  }
-};
+void WriteForces(Part const &part, Source *source, double t_curr,
+    std::string const &frame_name, int i_core) {
+  using Force = Coord;
+  std::vector<Force> forces;
+  std::vector<Coord> points;
+  std::vector<Scalar> weights;
+  part.ForEachConstLocalCell(
+      [source, t_curr, &forces, &points, &weights](const Cell &cell){
+    source->GetForces(cell, t_curr, &forces, &points, &weights);
+  });
+  std::cout << forces.size() << ' ' << points.size() << ' ' << weights.size() << '\n';
+}
 
 int main(int argc, char* argv[]) {
   // Parameters set below must be exactly the same with the solver!
@@ -23,7 +30,7 @@ int main(int argc, char* argv[]) {
   frame.RotateY(-90.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  std::vector<double> y_values{0.0, 0.9}, chords{0.1, 0.1},
+  std::vector<double> y_values{0.0, 1.6}, chords{0.1, 0.1},
       twists{+10.0, +10.0};
   auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(2);
   auto blade = Blade();
@@ -37,7 +44,7 @@ int main(int argc, char* argv[]) {
   source.InstallRotor(rotor);
   // Set parameters for the 2nd rotor:
   rotor.SetRevolutionsPerSecond(-kOmega);  // left-hand rotation
-  rotor.SetOrigin(0.2, 0.0, 0.0);
+  rotor.SetOrigin(4.0, 0.0, 0.0);
   source.InstallRotor(rotor);
   // Parameters set above must be exactly the same with the solver!
 
@@ -95,11 +102,6 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
-  /* Choose the time-stepping scheme.
-    In this case, just a force writer.
-  */
-  auto writer = Writer();
-
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_frame = i_frame_start; i_frame <= i_frame_start + n_frames;
@@ -116,15 +118,12 @@ int main(int argc, char* argv[]) {
 
     int i_step = 1 + n_steps_per_frame * (i_frame - i_frame_start);
     double t_curr = t_start + dt * (i_step - 1);
-    writer.Update(part, &source, t_curr);
 
-    if (i_step % n_steps_per_frame == 1) {
-      auto frame_name = "Frame" + std::to_string(i_frame);
-      writer.Write(frame_name, i_core);
-      if (i_core == 0) {
-        std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
-            i_frame, n_cores, MPI_Wtime() - wtime_start);
-      }
+    auto frame_name = "Frame" + std::to_string(i_frame);
+    WriteForces(part, &source, t_curr, frame_name, i_core);
+    if (i_core == 0) {
+      std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
+          i_frame, n_cores, MPI_Wtime() - wtime_start);
     }
   }
 
