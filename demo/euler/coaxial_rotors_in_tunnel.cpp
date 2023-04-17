@@ -2,7 +2,7 @@
 #include "rotorcraft.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.29, 0.0, 0.0, 0.0, 101325.0);
+auto primitive = Primitive(1.29, 1.0, 0.0, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   frame.RotateY(-90.0/* deg */);
   rotor.SetFrame(frame);
   // build a blade
-  std::vector<double> y_values{0.0, 0.9}, chords{0.1, 0.1},
+  std::vector<double> y_values{0.0, 1.9}, chords{0.1, 0.1},
       twists{+10.0, +10.0};
   auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(2);
   auto blade = Blade();
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
   source.InstallRotor(rotor);
   // Set parameters for the 2nd rotor:
   rotor.SetRevolutionsPerSecond(-kOmega);  // left-hand rotation
-  rotor.SetOrigin(0.2, 0.0, 0.0);
+  rotor.SetOrigin(1.0, 0.0, 0.0);
   source.InstallRotor(rotor);
 
   return Main(argc, argv, MyIC, MyBC, source);

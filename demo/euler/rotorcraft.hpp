@@ -23,7 +23,7 @@ using Gas = mini::riemann::euler::IdealGas<Scalar, 1, 4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
-constexpr int kDegrees = 2;
+constexpr int kDegrees = 0;
 using Part = mini::mesh::cgns::Part<cgsize_t, kDegrees, Riemann>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
