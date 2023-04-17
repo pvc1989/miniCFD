@@ -41,9 +41,9 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   if (argc < 7) {
     if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> <hexa|tetra>"
+          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> tetra"
           << " <t_start> <t_stop> <n_steps_per_frame> <n_frames>"
-          << " [<i_frame_start> [n_parts_prev]]\n";
+          << " [<i_frame_start> [n_parts_prev] [--write_forces]]\n";
     }
     MPI_Finalize();
     exit(0);
@@ -63,6 +63,10 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   int n_parts_prev = 0;
   if (argc > 8) {
     n_parts_prev = std::atoi(argv[8]);
+  }
+  bool write_forces = false;
+  if (argc > 9) {
+    write_forces = true;
   }
 
   auto case_name = std::string(argv[0]);
@@ -129,6 +133,14 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
           i_frame, n_cores, MPI_Wtime() - time_begin);
     }
   }
+  if (write_forces) {
+    auto frame_name = "Frame" + std::to_string(i_frame);
+    WriteForces(part, &source, t_start, frame_name, i_core);
+    if (i_core == 0) {
+      std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
+          i_frame, n_cores, MPI_Wtime() - time_begin);
+    }
+  }
 
   /* Choose the time-stepping scheme. */
   auto solver = Solver(dt, limiter, source);
@@ -140,6 +152,26 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
+    std::string frame_name;
+    if (write_forces) {
+      while (i_step % n_steps_per_frame) {
+        ++i_step;
+      }
+      ++i_frame;
+      auto frame_name = "Frame" + std::to_string(i_frame);
+      part.ReadSolutions(frame_name);
+      part.ScatterSolutions();
+      if (i_core == 0) {
+        std::printf("[Done] ReadSolutions(Frame%d) on %d cores at %f sec\n",
+            i_frame, n_cores, MPI_Wtime() - time_begin);
+      }
+      WriteForces(part, &source, t_curr, frame_name, i_core);
+      if (i_core == 0) {
+        std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
+            i_frame, n_cores, MPI_Wtime() - wtime_start);
+      }
+      continue;
+    }
     solver.Update(&part, t_curr);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;

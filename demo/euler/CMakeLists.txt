@@ -40,7 +40,6 @@ set (cases
   rotor_in_tunnel
   rotor_over_ship
   coaxial_rotors_in_tunnel
-  coaxial_rotors_in_tunnel_writer
 )
 foreach (case ${cases})
   set(target demo_euler_${case})
