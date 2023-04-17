@@ -13,11 +13,13 @@
 #include "mini/solver/rkdg.hpp"
 #include "mini/aircraft/source.hpp"
 
+using Scalar = double;
+
 /* Define the Euler system. */
 constexpr int kDimensions = 3;
-using Primitive = mini::riemann::euler::Primitives<double, kDimensions>;
-using Conservative = mini::riemann::euler::Conservatives<double, kDimensions>;
-using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+using Primitive = mini::riemann::euler::Primitives<Scalar, kDimensions>;
+using Conservative = mini::riemann::euler::Conservatives<Scalar, kDimensions>;
+using Gas = mini::riemann::euler::IdealGas<Scalar, 1, 4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
@@ -31,8 +33,8 @@ using Coeff = typename Cell::Coeff;
 
 using Limiter = mini::polynomial::EigenWeno<Cell>;
 
-using Source = mini::aircraft::Rotorcraft<Part, double>;
-using Rotor = mini::aircraft::Rotor<double>;
+using Source = mini::aircraft::Rotorcraft<Part, Scalar>;
+using Rotor = mini::aircraft::Rotor<Scalar>;
 using Blade = typename Rotor::Blade;
 using Frame = typename Blade::Frame;
 using Airfoil = typename Blade::Airfoil;
@@ -43,6 +45,9 @@ using Solver = RungeKutta<kOrders, Part, Limiter, Source>;
 
 using IC = Value(*)(const Coord &);
 using BC = void(*)(const std::string &, Solver *);
+
+void WriteForces(Part const &part, Source *source, double t_curr,
+    std::string const &frame_name, int i_core);
 
 int Main(int argc, char* argv[], IC ic, BC bc, Source source);
 
