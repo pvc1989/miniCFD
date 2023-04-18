@@ -18,7 +18,7 @@
 #include "mini/dataset/mapper.hpp"
 #include "mini/dataset/shuffler.hpp"
 #include "mini/dataset/part.hpp"
-#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/hexahedron.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/riemann/rotated/single.hpp"
@@ -30,7 +30,7 @@
 class TestWenoLimiters : public ::testing::Test {
  protected:
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
-  using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Gauss = mini::integrator::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
   Gauss gauss_;
   std::string const test_input_dir_{TEST_INPUT_DIR};

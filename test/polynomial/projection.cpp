@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,7 +13,7 @@ class TestProjection : public ::testing::Test {
  protected:
   using Raw = mini::polynomial::Raw<double, 3, 2>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
-  using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Gauss = mini::integrator::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
   Gauss gauss_;
 };

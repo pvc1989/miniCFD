@@ -16,20 +16,20 @@ class Writer {
   using Coord = typename Cell::Coord;
 
   enum class CellType {
-    kTetra = 10,
+    kTetrahedron = 10,
     kHexahedron = 12,
-    kQuadraticTetra = 24,
-    kQuadraticHexahedron = 25,
-    kCubicHexahedron = 72,
+    kTetrahedron10 = 24,
+    kHexahedron20 = 25,
+    kHexahedron64 = 72,
   };
   static CellType GetCellType(int n_corners) {
     CellType cell_type;
     switch (n_corners) {
       case 4:
-        cell_type = CellType::kQuadraticTetra;
+        cell_type = CellType::kTetrahedron10;
         break;
       case 8:
-        cell_type = CellType::kCubicHexahedron;
+        cell_type = CellType::kHexahedron64;
         break;
       default:
         assert(false);
@@ -40,19 +40,19 @@ class Writer {
   static int CountNodes(CellType cell_type) {
     int n_nodes;
     switch (cell_type) {
-      case CellType::kTetra:
+      case CellType::kTetrahedron:
         n_nodes = 4;
         break;
       case CellType::kHexahedron:
         n_nodes = 8;
         break;
-      case CellType::kQuadraticTetra:
+      case CellType::kTetrahedron10:
         n_nodes = 10;
         break;
-      case CellType::kQuadraticHexahedron:
+      case CellType::kHexahedron20:
         n_nodes = 20;
         break;
-      case CellType::kCubicHexahedron:
+      case CellType::kHexahedron64:
         n_nodes = 64;
         break;
       default:
@@ -68,19 +68,19 @@ class Writer {
     types->push_back(type);
     // TODO(PVC): dispatch by virtual functions?
     switch (type) {
-      case CellType::kTetra:
-        PrepareDataOnTetra4(cell, coords, values);
+      case CellType::kTetrahedron:
+        PrepareDataOnTetrahedron4(cell, coords, values);
         break;
       case CellType::kHexahedron:
         PrepareDataOnHexa8(cell, coords, values);
         break;
-      case CellType::kQuadraticTetra:
-        PrepareDataOnTetra10(cell, coords, values);
+      case CellType::kTetrahedron10:
+        PrepareDataOnTetrahedron10(cell, coords, values);
         break;
-      case CellType::kQuadraticHexahedron:
+      case CellType::kHexahedron20:
         PrepareDataOnHexa20(cell, coords, values);
         break;
-      case CellType::kCubicHexahedron:
+      case CellType::kHexahedron64:
         PrepareDataOnHexa64(cell, coords, values);
         break;
       default:
@@ -88,7 +88,7 @@ class Writer {
         break;
     }
   }
-  static void PrepareDataOnTetra4(const Cell &cell,
+  static void PrepareDataOnTetrahedron4(const Cell &cell,
       std::vector<Coord> *coords, std::vector<Value> *values) {
     coords->emplace_back(cell.LocalToGlobal({1, 0, 0}));
     values->emplace_back(cell.GetValue(coords->back()));
@@ -99,10 +99,10 @@ class Writer {
     coords->emplace_back(cell.LocalToGlobal({0, 0, 0}));
     values->emplace_back(cell.GetValue(coords->back()));
   }
-  static void PrepareDataOnTetra10(const Cell &cell,
+  static void PrepareDataOnTetrahedron10(const Cell &cell,
       std::vector<Coord> *coords, std::vector<Value> *values) {
     // nodes at corners
-    PrepareDataOnTetra4(cell, coords, values);
+    PrepareDataOnTetrahedron4(cell, coords, values);
     // nodes on edges
     coords->emplace_back(cell.LocalToGlobal({0.5, 0.5, 0}));
     values->emplace_back(cell.GetValue(coords->back()));

@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_TETRA_HPP_
-#define MINI_INTEGRATOR_TETRA_HPP_
+#ifndef MINI_INTEGRATOR_TETRAHEDRON_HPP_
+#define MINI_INTEGRATOR_TETRAHEDRON_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -21,7 +21,7 @@ namespace integrator {
  * @tparam kPoints 
  */
 template <typename Scalar, int kPoints>
-class Tetra : public Cell<Scalar> {
+class Tetrahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
   using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
@@ -141,17 +141,17 @@ class Tetra : public Cell<Scalar> {
   }
 
  public:
-  explicit Tetra(Mat3x4 const &xyz_global) {
+  explicit Tetrahedron(Mat3x4 const &xyz_global) {
     xyz_global_3x4_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Tetra(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2,
+  Tetrahedron(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2,
       Mat3x1 const &p3) {
     xyz_global_3x4_.col(0) = p0; xyz_global_3x4_.col(1) = p1;
     xyz_global_3x4_.col(2) = p2; xyz_global_3x4_.col(3) = p3;
     BuildQuadraturePoints();
   }
-  Tetra(std::initializer_list<Mat3x1> il) {
+  Tetrahedron(std::initializer_list<Mat3x1> il) {
     assert(il.size() == 4);
     auto p = il.begin();
     for (int i = 0; i < 4; ++i) {
@@ -159,18 +159,18 @@ class Tetra : public Cell<Scalar> {
     }
     BuildQuadraturePoints();
   }
-  Tetra() {
+  Tetrahedron() {
     xyz_global_3x4_.col(0) << 0, 0, 0;
     xyz_global_3x4_.col(1) << 1, 0, 0;
     xyz_global_3x4_.col(2) << 0, 1, 0;
     xyz_global_3x4_.col(3) << 0, 0, 1;
     BuildQuadraturePoints();
   }
-  Tetra(const Tetra &) = default;
-  Tetra &operator=(const Tetra &) = default;
-  Tetra(Tetra &&) noexcept = default;
-  Tetra &operator=(Tetra &&) noexcept = default;
-  virtual ~Tetra() noexcept = default;
+  Tetrahedron(const Tetrahedron &) = default;
+  Tetrahedron &operator=(const Tetrahedron &) = default;
+  Tetrahedron(Tetrahedron &&) noexcept = default;
+  Tetrahedron &operator=(Tetrahedron &&) noexcept = default;
+  virtual ~Tetrahedron() noexcept = default;
 
   Mat3x1 center() const override {
     Mat3x1 c = xyz_global_3x4_.col(0);
@@ -211,27 +211,27 @@ class Tetra : public Cell<Scalar> {
 };
 
 template <typename Scalar, int kPoints>
-class TetraBuilder;
+class TetrahedronBuilder;
 
 template <typename Scalar, int kPoints>
-const std::array<typename Tetra<Scalar, kPoints>::LocalCoord, kPoints>
-Tetra<Scalar, kPoints>::local_coords_
-    = TetraBuilder<Scalar, kPoints>::BuildLocalCoords();
+const std::array<typename Tetrahedron<Scalar, kPoints>::LocalCoord, kPoints>
+Tetrahedron<Scalar, kPoints>::local_coords_
+    = TetrahedronBuilder<Scalar, kPoints>::BuildLocalCoords();
 
 template <typename Scalar, int kPoints>
 const std::array<Scalar, kPoints>
-Tetra<Scalar, kPoints>::local_weights_
-    = TetraBuilder<Scalar, kPoints>::BuildLocalWeights();
+Tetrahedron<Scalar, kPoints>::local_weights_
+    = TetrahedronBuilder<Scalar, kPoints>::BuildLocalWeights();
 
 template <typename Scalar, int kPoints>
 const std::array<std::array<int, 3>, 4>
-Tetra<Scalar, kPoints>::faces_
-    = Tetra<Scalar, kPoints>::BuildFaces();
+Tetrahedron<Scalar, kPoints>::faces_
+    = Tetrahedron<Scalar, kPoints>::BuildFaces();
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 1> {
+class TetrahedronBuilder<Scalar, 1> {
   static constexpr int kPoints = 1;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -247,9 +247,9 @@ class TetraBuilder<Scalar, 1> {
 };
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 4> {
+class TetrahedronBuilder<Scalar, 4> {
   static constexpr int kPoints = 4;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -274,9 +274,9 @@ class TetraBuilder<Scalar, 4> {
 };
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 14> {
+class TetrahedronBuilder<Scalar, 14> {
   static constexpr int kPoints = 14;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -321,9 +321,9 @@ class TetraBuilder<Scalar, 14> {
 };
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 15> {
+class TetrahedronBuilder<Scalar, 15> {
   static constexpr int kPoints = 15;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -374,9 +374,9 @@ class TetraBuilder<Scalar, 15> {
 };
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 24> {
+class TetrahedronBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -431,9 +431,9 @@ class TetraBuilder<Scalar, 24> {
 };
 
 template <typename Scalar>
-class TetraBuilder<Scalar, 46> {
+class TetrahedronBuilder<Scalar, 46> {
   static constexpr int kPoints = 46;
-  using LocalCoord = typename Tetra<Scalar, kPoints>::LocalCoord;
+  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -511,4 +511,4 @@ class TetraBuilder<Scalar, 46> {
 }  // namespace integrator
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_TETRA_HPP_
+#endif  // MINI_INTEGRATOR_TETRAHEDRON_HPP_

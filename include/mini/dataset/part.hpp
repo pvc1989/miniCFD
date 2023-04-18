@@ -23,8 +23,8 @@
 #include "mini/dataset/cgns.hpp"
 #include "mini/integrator/triangle.hpp"
 #include "mini/integrator/quadrangle.hpp"
-#include "mini/integrator/tetra.hpp"
-#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/tetrahedron.hpp"
+#include "mini/integrator/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -398,16 +398,16 @@ class Part {
     integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
     integrator::Quadrangle<Scalar, kDimensions, 3, 3>,
     integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
-  using GaussOnTetra = mini::select_t<kDegrees,
-    integrator::Tetra<Scalar, 1>,
-    integrator::Tetra<Scalar, 4>,
-    integrator::Tetra<Scalar, 14>,
-    integrator::Tetra<Scalar, 24>>;
-  using GaussOnHexa = mini::select_t<kDegrees,
-    integrator::Hexa<Scalar, 1, 1, 1>,
-    integrator::Hexa<Scalar, 2, 2, 2>,
-    integrator::Hexa<Scalar, 3, 3, 3>,
-    integrator::Hexa<Scalar, 4, 4, 4>>;
+  using GaussOnTetrahedron = mini::select_t<kDegrees,
+    integrator::Tetrahedron<Scalar, 1>,
+    integrator::Tetrahedron<Scalar, 4>,
+    integrator::Tetrahedron<Scalar, 14>,
+    integrator::Tetrahedron<Scalar, 24>>;
+  using GaussOnHexahedron = mini::select_t<kDegrees,
+    integrator::Hexahedron<Scalar, 1, 1, 1>,
+    integrator::Hexahedron<Scalar, 2, 2, 2>,
+    integrator::Hexahedron<Scalar, 3, 3, 3>,
+    integrator::Hexahedron<Scalar, 4, 4, 4>>;
 
  public:
   Part(std::string const &directory, int rank)
@@ -600,13 +600,13 @@ class Part {
       }
     }
   }
-  auto BuildTetraUptr(int i_zone, Int const *i_node_list) const {
-    return std::make_unique<GaussOnTetra>(
+  auto BuildTetrahedronUptr(int i_zone, Int const *i_node_list) const {
+    return std::make_unique<GaussOnTetrahedron>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
   }
-  auto BuildHexaUptr(int i_zone, Int const *i_node_list) const {
-    return std::make_unique<GaussOnHexa>(
+  auto BuildHexahedronUptr(int i_zone, Int const *i_node_list) const {
+    return std::make_unique<GaussOnHexahedron>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
@@ -616,9 +616,9 @@ class Part {
     std::unique_ptr<integrator::Cell<Scalar>> gauss_uptr;
     switch (npe) {
       case 4:
-        gauss_uptr = BuildTetraUptr(i_zone, i_node_list); break;
+        gauss_uptr = BuildTetrahedronUptr(i_zone, i_node_list); break;
       case 8:
-        gauss_uptr = BuildHexaUptr(i_zone, i_node_list); break;
+        gauss_uptr = BuildHexahedronUptr(i_zone, i_node_list); break;
       default:
         assert(false);
         break;
@@ -655,10 +655,10 @@ class Part {
   static void SortNodesOnFace(int npe, Int const *cell, Int *face) {
     switch (npe) {
       case 4:
-        GaussOnTetra::SortNodesOnFace(cell, face);
+        GaussOnTetrahedron::SortNodesOnFace(cell, face);
         break;
       case 8:
-        GaussOnHexa::SortNodesOnFace(cell, face);
+        GaussOnHexahedron::SortNodesOnFace(cell, face);
         break;
       default:
         assert(false);

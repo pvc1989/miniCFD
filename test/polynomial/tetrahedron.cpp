@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/tetra.hpp"
+#include "mini/integrator/tetrahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -11,21 +11,21 @@
 
 using std::sqrt;
 
-class TestTetra : public ::testing::Test {
+class TestTetrahedron : public ::testing::Test {
  protected:
-  using Tetra = mini::integrator::Tetra<double, 14>;
+  using Tetrahedron = mini::integrator::Tetrahedron<double, 14>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Coord = typename Basis::Coord;
   using A = typename Basis::MatNxN;
 };
-TEST_F(TestTetra, OrthoNormal) {
+TEST_F(TestTetrahedron, OrthoNormal) {
   // build a tetra-integrator
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 10, 0, 10, 10;
   xyz_global_i.row(1) << 10, 10, 0, 10;
   xyz_global_i.row(2) << 0, 10, 10, 10;
-  auto tetra = Tetra(xyz_global_i);
+  auto tetra = Tetrahedron(xyz_global_i);
   // build an orthonormal basis on it
   auto basis = Basis(tetra);
   // check orthonormality
@@ -41,7 +41,7 @@ TEST_F(TestTetra, OrthoNormal) {
   xyz_global_i.col(1) += shift;
   xyz_global_i.col(2) += shift;
   xyz_global_i.col(3) += shift;
-  tetra = Tetra(xyz_global_i);
+  tetra = Tetrahedron(xyz_global_i);
   // build another orthonormal basis on it
   basis = Basis(tetra);
   // check orthonormality

@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -11,9 +11,9 @@
 
 using std::sqrt;
 
-class TestHexa4x4x4 : public ::testing::Test {
+class TestHexahedron4x4x4 : public ::testing::Test {
  protected:
-  using Hexa4x4x4 = mini::integrator::Hexa<double, 4, 4, 4>;
+  using Hexahedron4x4x4 = mini::integrator::Hexahedron<double, 4, 4, 4>;
   using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
@@ -26,13 +26,13 @@ class TestHexa4x4x4 : public ::testing::Test {
   using Mat11x1 = mini::algebra::Matrix<double, 11, 1>;
   using Mat11x10 = mini::algebra::Matrix<double, 11, 10>;
 };
-TEST_F(TestHexa4x4x4, OrthoNormal) {
+TEST_F(TestHexahedron4x4x4, OrthoNormal) {
   // build a hexa-integrator
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
-  auto hexa = Hexa4x4x4(xyz_global_i);
+  auto hexa = Hexahedron4x4x4(xyz_global_i);
   // build an orthonormal basis on it
   auto basis = Basis(hexa);
   // check orthonormality
@@ -48,7 +48,7 @@ TEST_F(TestHexa4x4x4, OrthoNormal) {
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1, x-1, x+1, x+1, x-1;
   xyz_global_i.row(1) << y-1, y-1, y+1, y+1, y-1, y-1, y+1, y+1;
   xyz_global_i.row(2) << z-1, z-1, z-1, z-1, z+1, z+1, z+1, z+1;
-  hexa = Hexa4x4x4(xyz_global_i);
+  hexa = Hexahedron4x4x4(xyz_global_i);
   // build another orthonormal basis on it
   basis = Basis(hexa);
   // check orthonormality
@@ -59,12 +59,12 @@ TEST_F(TestHexa4x4x4, OrthoNormal) {
   }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
-TEST_F(TestHexa4x4x4, Projection) {
+TEST_F(TestHexahedron4x4x4, Projection) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
   xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
-  auto hexa = Hexa4x4x4(xyz_global_i);
+  auto hexa = Hexahedron4x4x4(xyz_global_i);
   auto basis = Basis(hexa);
   auto scalar_f = [](Mat3x1 const& xyz){
     return xyz[0] * xyz[1] + xyz[2];

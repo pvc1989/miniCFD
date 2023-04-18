@@ -5,8 +5,8 @@ add_test(NAME test_integrator_gauss COMMAND gauss)
 set (cases
   triangle
   quadrangle
-  tetra
-  hexa
+  tetrahedron
+  hexahedron
 )
 foreach (case ${cases})
   add_executable(test_integrator_${case} ${case}.cpp)

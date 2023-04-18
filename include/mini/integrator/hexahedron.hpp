@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_HEXA_HPP_
-#define MINI_INTEGRATOR_HEXA_HPP_
+#ifndef MINI_INTEGRATOR_HEXAHEDRON_HPP_
+#define MINI_INTEGRATOR_HEXAHEDRON_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -23,7 +23,7 @@ namespace integrator {
  * @tparam Qz 
  */
 template <typename Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
-class Hexa : public Cell<Scalar> {
+class Hexahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;
   using Mat8x1 = algebra::Matrix<Scalar, 8, 1>;
@@ -206,11 +206,11 @@ class Hexa : public Cell<Scalar> {
   }
 
  public:
-  explicit Hexa(Mat3x8 const &xyz_global) {
+  explicit Hexahedron(Mat3x8 const &xyz_global) {
     xyz_global_3x8_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Hexa(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2, Mat3x1 const &p3,
+  Hexahedron(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2, Mat3x1 const &p3,
        Mat3x1 const &p4, Mat3x1 const &p5, Mat3x1 const &p6, Mat3x1 const &p7) {
     xyz_global_3x8_.col(0) = p0; xyz_global_3x8_.col(1) = p1;
     xyz_global_3x8_.col(2) = p2; xyz_global_3x8_.col(3) = p3;
@@ -218,7 +218,7 @@ class Hexa : public Cell<Scalar> {
     xyz_global_3x8_.col(6) = p6; xyz_global_3x8_.col(7) = p7;
     BuildQuadraturePoints();
   }
-  Hexa(std::initializer_list<Mat3x1> il) {
+  Hexahedron(std::initializer_list<Mat3x1> il) {
     assert(il.size() == 8);
     auto p = il.begin();
     for (int i = 0; i < 8; ++i) {
@@ -226,7 +226,7 @@ class Hexa : public Cell<Scalar> {
     }
     BuildQuadraturePoints();
   }
-  Hexa() {
+  Hexahedron() {
     xyz_global_3x8_.col(0) << -1, -1, -1;
     xyz_global_3x8_.col(1) << +1, -1, -1;
     xyz_global_3x8_.col(2) << +1, +1, -1;
@@ -237,11 +237,11 @@ class Hexa : public Cell<Scalar> {
     xyz_global_3x8_.col(7) << -1, +1, +1;
     BuildQuadraturePoints();
   }
-  Hexa(const Hexa &) = default;
-  Hexa &operator=(const Hexa &) = default;
-  Hexa(Hexa &&) noexcept = default;
-  Hexa &operator=(Hexa &&) noexcept = default;
-  virtual ~Hexa() noexcept = default;
+  Hexahedron(const Hexahedron &) = default;
+  Hexahedron &operator=(const Hexahedron &) = default;
+  Hexahedron(Hexahedron &&) noexcept = default;
+  Hexahedron &operator=(Hexahedron &&) noexcept = default;
+  virtual ~Hexahedron() noexcept = default;
 
   Mat3x1 center() const override {
     Mat3x1 c = xyz_global_3x8_.col(0);
@@ -281,33 +281,33 @@ class Hexa : public Cell<Scalar> {
   }
 };
 template <typename Scalar, int Qx, int Qy, int Qz>
-typename Hexa<Scalar, Qx, Qy, Qz>::Arr1x8 const
-Hexa<Scalar, Qx, Qy, Qz>::x_local_i_ = {-1, +1, +1, -1, -1, +1, +1, -1};
+typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
+Hexahedron<Scalar, Qx, Qy, Qz>::x_local_i_ = {-1, +1, +1, -1, -1, +1, +1, -1};
 
 template <typename Scalar, int Qx, int Qy, int Qz>
-typename Hexa<Scalar, Qx, Qy, Qz>::Arr1x8 const
-Hexa<Scalar, Qx, Qy, Qz>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
+typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
+Hexahedron<Scalar, Qx, Qy, Qz>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
 
 template <typename Scalar, int Qx, int Qy, int Qz>
-typename Hexa<Scalar, Qx, Qy, Qz>::Arr1x8 const
-Hexa<Scalar, Qx, Qy, Qz>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
+typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
+Hexahedron<Scalar, Qx, Qy, Qz>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
 
 template <typename Scalar, int Qx, int Qy, int Qz>
-std::array<typename Hexa<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::local_coords_
-    = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
+std::array<typename Hexahedron<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
+Hexahedron<Scalar, Qx, Qy, Qz>::local_coords_
+    = Hexahedron<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<Scalar, Qx * Qy * Qz> const
-Hexa<Scalar, Qx, Qy, Qz>::local_weights_
-    = Hexa<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
+Hexahedron<Scalar, Qx, Qy, Qz>::local_weights_
+    = Hexahedron<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
 
 template <typename Scalar, int Qx, int Qy, int Qz>
 std::array<std::array<int, 4>, 6> const
-Hexa<Scalar, Qx, Qy, Qz>::faces_
-    = Hexa<Scalar, Qx, Qy, Qz>::BuildFaces();
+Hexahedron<Scalar, Qx, Qy, Qz>::faces_
+    = Hexahedron<Scalar, Qx, Qy, Qz>::BuildFaces();
 
 }  // namespace integrator
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_HEXA_HPP_
+#endif  // MINI_INTEGRATOR_HEXAHEDRON_HPP_

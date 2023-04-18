@@ -3,36 +3,36 @@
 #include <cmath>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/tetra.hpp"
+#include "mini/integrator/tetrahedron.hpp"
 
 #include "gtest/gtest.h"
 
-class TestTetraIntegrator : public ::testing::Test {
+class TestTetrahedronIntegrator : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
-  using Tetra = mini::integrator::Tetra<double, kPoints>;
+  using Tetrahedron = mini::integrator::Tetrahedron<double, kPoints>;
   using Mat1x4 = mini::algebra::Matrix<double, 1, 4>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestTetraIntegrator, VirtualMethods) {
+TEST_F(TestTetrahedronIntegrator, VirtualMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
   xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = Tetra(xyz_global_i);
+  auto tetra = Tetrahedron(xyz_global_i);
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
 }
-TEST_F(TestTetraIntegrator, CommonMethods) {
+TEST_F(TestTetrahedronIntegrator, CommonMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
   xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = Tetra(xyz_global_i);
+  auto tetra = Tetrahedron(xyz_global_i);
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));

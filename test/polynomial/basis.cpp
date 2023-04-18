@@ -3,8 +3,8 @@
 #include <iostream>
 
 #include "mini/integrator/function.hpp"
-#include "mini/integrator/tetra.hpp"
-#include "mini/integrator/hexa.hpp"
+#include "mini/integrator/tetrahedron.hpp"
+#include "mini/integrator/hexahedron.hpp"
 #include "mini/integrator/triangle.hpp"
 #include "mini/integrator/quadrangle.hpp"
 #include "mini/polynomial/basis.hpp"
@@ -159,8 +159,8 @@ TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
-  using Gauss = mini::integrator::Tetra<double, 24>;
+TEST_F(TestOrthoNormalBasis, OnTetrahedronhedron) {
+  using Gauss = mini::integrator::Tetrahedron<double, 24>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
   auto gauss = Gauss(p0, p1, p2, p3);
@@ -178,8 +178,8 @@ TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormalBasis, OnHexahedron) {
-  using Gauss = mini::integrator::Hexa<double, 4, 4, 4>;
+TEST_F(TestOrthoNormalBasis, OnHexahedronhedron) {
+  using Gauss = mini::integrator::Hexahedron<double, 4, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
         p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};
