@@ -9,6 +9,7 @@
 #include "pcgnslib.h"
 
 #include "mini/dataset/shuffler.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"
@@ -140,7 +141,7 @@ int main(int argc, char* argv[]) {
           n_cores, MPI_Wtime() - time_begin);
     }
     part.WriteSolutions("Frame0");
-    part.WriteSolutionsOnCellCenters("Frame0");
+    mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Frame0");
   } else {
     if (i_core == 0) {
       std::printf("[Start] ReadSolutions(Frame%d) on %d cores at %f sec\n",
@@ -209,7 +210,7 @@ int main(int argc, char* argv[]) {
       }
       auto frame_name = "Frame" + std::to_string(i_frame);
       part.WriteSolutions(frame_name);
-      part.WriteSolutionsOnCellCenters(frame_name);
+      mini::mesh::vtk::Writer<Part>::WriteSolutions(part, frame_name);
     }
   }
 

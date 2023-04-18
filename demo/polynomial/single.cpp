@@ -9,6 +9,7 @@
 #include "pcgnslib.h"
 
 #include "mini/dataset/shuffler.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
           n_cores, MPI_Wtime() - time_begin);
     }
     part.WriteSolutions("Frame0");
-    part.WriteSolutionsOnCellCenters("Frame0");
+    mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Frame0");
   }
 
   if (i_core == 0) {

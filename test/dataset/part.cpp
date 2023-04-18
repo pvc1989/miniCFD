@@ -9,6 +9,7 @@
 
 #include "mini/dataset/cgns.hpp"
 #include "mini/dataset/part.hpp"
+#include "mini/dataset/vtk.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
       i_core, n_cores, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
-  part.WriteSolutionsOnCellCenters("Step0");
+  mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
       i_core, n_cores, MPI_Wtime() - time_begin);
   MPI_Finalize();

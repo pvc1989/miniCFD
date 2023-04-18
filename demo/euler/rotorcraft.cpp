@@ -9,6 +9,7 @@
 #include "pcgnslib.h"
 
 #include "mini/dataset/shuffler.hpp"
+#include "mini/dataset/vtk.hpp"
 
 #include "rotorcraft.hpp"
 
@@ -118,7 +119,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
 
     part.GatherSolutions();
     part.WriteSolutions("Frame0");
-    part.WriteSolutionsOnCellCenters("Frame0");
+    mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Frame0");
     if (i_core == 0) {
       std::printf("[Done] WriteSolutions(Frame0) on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
@@ -186,7 +187,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
       auto frame_name = "Frame" + std::to_string(i_frame);
       part.GatherSolutions();
       part.WriteSolutions(frame_name);
-      part.WriteSolutionsOnCellCenters(frame_name);
+      mini::mesh::vtk::Writer<Part>::WriteSolutions(part, frame_name);
       if (i_core == 0) {
         std::printf("[Done] WriteSolutions(Frame%d) on %d cores at %f sec\n",
             i_frame, n_cores, MPI_Wtime() - wtime_start);
