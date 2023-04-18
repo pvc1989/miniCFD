@@ -10,7 +10,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "mini/dataset/part.hpp"
+#include "mini/mesh/part.hpp"
 
 template <typename P>
 class DummySource {

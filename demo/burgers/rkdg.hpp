@@ -5,8 +5,8 @@
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/dataset/part.hpp"
-#include "mini/dataset/shuffler.hpp"
+#include "mini/mesh/part.hpp"
+#include "mini/mesh/shuffler.hpp"
 #include "mini/solver/rkdg.hpp"
 
 namespace mini {

@@ -6,7 +6,7 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/dataset/mapper.hpp"
+#include "mini/mesh/mapper.hpp"
 #include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
 namespace mini {
@@ -18,7 +18,7 @@ class MeshMapperTest : public ::testing::Test {
   using Mapper = CgnsToMetis<idx_t, double>;
   std::string const test_input_dir_{TEST_INPUT_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
-      + "/test/dataset/"};
+      + "/test/mesh/"};
 };
 TEST_F(MeshMapperTest, MapCgnsToMetis) {
   // convert cgns_mesh to metis_mesh

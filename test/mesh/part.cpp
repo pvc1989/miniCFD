@@ -7,9 +7,9 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 
-#include "mini/dataset/cgns.hpp"
-#include "mini/dataset/part.hpp"
-#include "mini/dataset/vtk.hpp"
+#include "mini/mesh/cgns.hpp"
+#include "mini/mesh/part.hpp"
+#include "mini/mesh/vtk.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 

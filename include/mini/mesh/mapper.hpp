@@ -1,7 +1,7 @@
 // Copyright 2020 PEI Weicheng and YANG Minghao
 
-#ifndef MINI_DATASET_MAPPER_HPP_
-#define MINI_DATASET_MAPPER_HPP_
+#ifndef MINI_MESH_MAPPER_HPP_
+#define MINI_MESH_MAPPER_HPP_
 
 #include <cassert>
 #include <cstdio>
@@ -15,8 +15,8 @@
 
 #include "cgnslib.h"
 
-#include "mini/dataset/cgns.hpp"
-#include "mini/dataset/metis.hpp"
+#include "mini/mesh/cgns.hpp"
+#include "mini/mesh/metis.hpp"
 
 namespace mini {
 namespace mesh {
@@ -201,4 +201,4 @@ void CgnsToMetis<Int, Real>::WriteParts(
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_DATASET_MAPPER_HPP_
+#endif  // MINI_MESH_MAPPER_HPP_

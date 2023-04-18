@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "mini/dataset/metis.hpp"
+#include "mini/mesh/metis.hpp"
 
 namespace mini {
 namespace mesh {

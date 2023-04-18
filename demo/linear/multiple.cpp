@@ -8,8 +8,8 @@
 #include "mpi.h"
 #include "pcgnslib.h"
 
-#include "mini/dataset/shuffler.hpp"
-#include "mini/dataset/vtk.hpp"
+#include "mini/mesh/shuffler.hpp"
+#include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/integrator/function.hpp"

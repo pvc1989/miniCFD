@@ -2,8 +2,8 @@
 /**
  * This file defines wrappers of APIs and types in CGNS/MLL.
  */
-#ifndef MINI_DATASET_CGNS_HPP_
-#define MINI_DATASET_CGNS_HPP_
+#ifndef MINI_MESH_CGNS_HPP_
+#define MINI_MESH_CGNS_HPP_
 
 #include <algorithm>
 #include <array>
@@ -284,7 +284,7 @@ struct BC {
   char name[32];
   cgsize_t ptset[2];
   cgsize_t n_pnts, normal_list_flag, normal_list_size;
-  int normal_index, n_dataset;
+  int normal_index, n_mesh;
   CGNS_ENUMT(PointSetType_t) ptset_type;
   CGNS_ENUMT(BCType_t) type;
   CGNS_ENUMT(GridLocation_t) location;
@@ -318,7 +318,7 @@ class ZoneBC {
       cg_boco_info(file().id(), base().id(), zone().id(), i_boco,
           boco.name, &boco.type, &boco.ptset_type, &boco.n_pnts,
           &boco.normal_index, &boco.normal_list_size,
-          &boco.normal_data_type, &boco.n_dataset);
+          &boco.normal_data_type, &boco.n_mesh);
       assert(boco.n_pnts == 2);
       cg_boco_read(file().id(), base().id(), zone().id(), i_boco,
           boco.ptset, nullptr);
@@ -945,4 +945,4 @@ class File {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_DATASET_CGNS_HPP_
+#endif  // MINI_MESH_CGNS_HPP_

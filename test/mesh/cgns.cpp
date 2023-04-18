@@ -7,7 +7,7 @@
 #include "cgnslib.h"
 #include "gtest/gtest.h"
 
-#include "mini/dataset/cgns.hpp"
+#include "mini/mesh/cgns.hpp"
 #include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
 namespace mini {

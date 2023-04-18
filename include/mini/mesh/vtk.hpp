@@ -1,6 +1,6 @@
 // Copyright 2023 PEI Weicheng
-#ifndef MINI_DATASET_VTK_HPP_
-#define MINI_DATASET_VTK_HPP_
+#ifndef MINI_MESH_VTK_HPP_
+#define MINI_MESH_VTK_HPP_
 
 #include <string>
 #include <vector>
@@ -394,4 +394,4 @@ class Writer {
 }  // namespace mesh
 }  // namespace mini
 
-#endif  // MINI_DATASET_VTK_HPP_
+#endif  // MINI_MESH_VTK_HPP_
