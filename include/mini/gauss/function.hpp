@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_FUNCTION_HPP_
-#define MINI_INTEGRATOR_FUNCTION_HPP_
+#ifndef MINI_GAUSS_FUNCTION_HPP_
+#define MINI_GAUSS_FUNCTION_HPP_
 
 #include <cmath>
 #include <type_traits>
@@ -8,7 +8,7 @@
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 /**
  * @brief Set the value of a scalar to be 0.
@@ -39,9 +39,9 @@ inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
  * @brief Perform Gaussian quadrature of a callable object on an integratable element in the parametric space.
  * 
  * @tparam Callable the type of the integrand
- * @tparam Element the type of the integrator
+ * @tparam Element the type of the gauss
  * @param f_in_local the integrand using local coordinates as arguments
- * @param element the integrator
+ * @param element the gauss
  * @return auto the value of the integral
  */
 template <typename Callable, typename Element>
@@ -62,9 +62,9 @@ auto Quadrature(Callable &&f_in_local, Element &&element) {
  * @brief Perform Gaussian quadrature of a callable object on an integratable element in the physical space.
  * 
  * @tparam Callable the type of the integrand
- * @tparam Element the type of the integrator
+ * @tparam Element the type of the gauss
  * @param f_in_global the integrand using global coordinates as arguments
- * @param element the integrator
+ * @param element the gauss
  * @return auto the value of the integral
  */
 template <typename Callable, typename Element>
@@ -86,10 +86,10 @@ auto Integrate(Callable &&f_in_global, Element &&element) {
  * 
  * @tparam Func1 the type of the first function
  * @tparam Func2 the type of the second function
- * @tparam Element the type of the integrator
+ * @tparam Element the type of the gauss
  * @param f1 the first function
  * @param f2 the second function
- * @param element the integrator
+ * @param element the gauss
  * @return auto the value of the innerproduct
  */
 template <typename Func1, typename Func2, typename Element>
@@ -105,9 +105,9 @@ auto Innerprod(Func1 &&f1, Func2 &&f2, Element &&element) {
  * @brief Calculate the 2-norm of a function on an integratable element.
  * 
  * @tparam Callable type of the function
- * @tparam Element the type of the integrator
+ * @tparam Element the type of the gauss
  * @param f the function
- * @param element the integrator
+ * @param element the gauss
  * @return auto the value of the norm
  */
 template <typename Callable, typename Element>
@@ -119,9 +119,9 @@ auto Norm(Callable &&f, Element &&element) {
  * @brief Change a group of linearly independent functions into an orthonormal basis.
  * 
  * @tparam Basis the type of the basis
- * @tparam Element the type of the integrator
+ * @tparam Element the type of the gauss
  * @param basis the basis to be orthonormalized, whose components are linearly independent from each other
- * @param elem the integrator
+ * @param elem the gauss
  */
 template <class Basis, class Element>
 void OrthoNormalize(Basis *basis, const Element &elem) {
@@ -159,7 +159,7 @@ void OrthoNormalize(Basis *basis, const Element &elem) {
   basis->Transform(algebra::GetLowerTriangularView(S));
 }
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_FUNCTION_HPP_
+#endif  // MINI_GAUSS_FUNCTION_HPP_

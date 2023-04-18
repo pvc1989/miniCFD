@@ -2,20 +2,20 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/tetrahedron.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/tetrahedron.hpp"
 
 #include "gtest/gtest.h"
 
-class TestTetrahedronIntegrator : public ::testing::Test {
+class TestTetrahedronGauss : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
-  using Tetrahedron = mini::integrator::Tetrahedron<double, kPoints>;
+  using Tetrahedron = mini::gauss::Tetrahedron<double, kPoints>;
   using Mat1x4 = mini::algebra::Matrix<double, 1, 4>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestTetrahedronIntegrator, VirtualMethods) {
+TEST_F(TestTetrahedronGauss, VirtualMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;
@@ -27,7 +27,7 @@ TEST_F(TestTetrahedronIntegrator, VirtualMethods) {
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
 }
-TEST_F(TestTetrahedronIntegrator, CommonMethods) {
+TEST_F(TestTetrahedronGauss, CommonMethods) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 3, 0, 0;
   xyz_global_i.row(1) << 0, 0, 3, 0;

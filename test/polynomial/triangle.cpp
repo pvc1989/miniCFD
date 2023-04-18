@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/triangle.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/triangle.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,14 +13,14 @@ using std::sqrt;
 
 class TestTriangle : public ::testing::Test {
  protected:
-  using Triangle = mini::integrator::Triangle<double, 2, 12>;
+  using Triangle = mini::gauss::Triangle<double, 2, 12>;
   using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   using Coord = typename Basis::Coord;
   using A = typename Basis::MatNxN;
 };
 TEST_F(TestTriangle, OrthoNormal) {
-  // build a triangle-integrator
+  // build a triangle-gauss
   Mat2x3 xy_global_i;
   xy_global_i.row(0) << 10, 0, 0;
   xy_global_i.row(1) << 0, 10, 0;
@@ -34,7 +34,7 @@ TEST_F(TestTriangle, OrthoNormal) {
     return prod;
   }, triangle) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
-  // build another triangle-integrator
+  // build another triangle-gauss
   Coord shift = {10, 20};
   xy_global_i.col(0) += shift;
   xy_global_i.col(1) += shift;

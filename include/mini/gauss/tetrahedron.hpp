@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_TETRAHEDRON_HPP_
-#define MINI_INTEGRATOR_TETRAHEDRON_HPP_
+#ifndef MINI_GAUSS_TETRAHEDRON_HPP_
+#define MINI_GAUSS_TETRAHEDRON_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -9,10 +9,10 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/integrator/cell.hpp"
+#include "mini/gauss/cell.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 /**
  * @brief 
@@ -508,7 +508,7 @@ class TetrahedronBuilder<Scalar, 46> {
   }
 };
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_TETRAHEDRON_HPP_
+#endif  // MINI_GAUSS_TETRAHEDRON_HPP_

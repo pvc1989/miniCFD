@@ -1,6 +1,6 @@
 // Copyright 2019 PEI Weicheng and YANG Minghao
 
-#include "mini/integrator/gauss.hpp"
+#include "mini/gauss/gauss.hpp"
 
 #include "gtest/gtest.h"
 
@@ -9,14 +9,14 @@ class TestGaussLegendre : public ::testing::Test {
   using Scalar = double;
 };
 TEST_F(TestGaussLegendre, OnePoint) {
-  using Gauss = mini::integrator::GaussLegendre<Scalar, 1>;
+  using Gauss = mini::gauss::GaussLegendre<Scalar, 1>;
   auto &p = Gauss::points;
   auto &w = Gauss::weights;
   EXPECT_DOUBLE_EQ(p[0], 0.0);
   EXPECT_DOUBLE_EQ(w[0], 2.0);
 }
 TEST_F(TestGaussLegendre, TwoPoint) {
-  using Gauss = mini::integrator::GaussLegendre<Scalar, 2>;
+  using Gauss = mini::gauss::GaussLegendre<Scalar, 2>;
   auto &p = Gauss::points;
   auto &w = Gauss::weights;
   EXPECT_DOUBLE_EQ(p[0], -0.5773502691896257);
@@ -25,7 +25,7 @@ TEST_F(TestGaussLegendre, TwoPoint) {
   EXPECT_DOUBLE_EQ(w[1], 1.0);
 }
 TEST_F(TestGaussLegendre, ThreePoint) {
-  using Gauss = mini::integrator::GaussLegendre<Scalar, 3>;
+  using Gauss = mini::gauss::GaussLegendre<Scalar, 3>;
   auto &p = Gauss::points;
   auto &w = Gauss::weights;
   EXPECT_DOUBLE_EQ(p[0], -0.7745966692414834);
@@ -36,7 +36,7 @@ TEST_F(TestGaussLegendre, ThreePoint) {
   EXPECT_DOUBLE_EQ(w[2], 0.5555555555555556);
 }
 TEST_F(TestGaussLegendre, FourPoint) {
-  using Gauss = mini::integrator::GaussLegendre<Scalar, 4>;
+  using Gauss = mini::gauss::GaussLegendre<Scalar, 4>;
   auto &p = Gauss::points;
   auto &w = Gauss::weights;
   EXPECT_DOUBLE_EQ(p[0], -0.8611363115940526);
@@ -49,7 +49,7 @@ TEST_F(TestGaussLegendre, FourPoint) {
   EXPECT_DOUBLE_EQ(w[3], 0.34785484513745385);
 }
 TEST_F(TestGaussLegendre, FivePoint) {
-  using Gauss = mini::integrator::GaussLegendre<Scalar, 5>;
+  using Gauss = mini::gauss::GaussLegendre<Scalar, 5>;
   auto &p = Gauss::points;
   auto &w = Gauss::weights;
   EXPECT_DOUBLE_EQ(p[0], -0.906179845938664);

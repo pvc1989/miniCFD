@@ -2,19 +2,19 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/hexahedron.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/hexahedron.hpp"
 
 #include "gtest/gtest.h"
 
-class TestHexahedronIntegrator : public ::testing::Test {
+class TestHexahedronGauss : public ::testing::Test {
  protected:
-  using Hexahedron = mini::integrator::Hexahedron<double, 4, 4, 4>;
+  using Hexahedron = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestHexahedronIntegrator, VirtualMethods) {
+TEST_F(TestHexahedronGauss, VirtualMethods) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
@@ -31,7 +31,7 @@ TEST_F(TestHexahedronIntegrator, VirtualMethods) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
-TEST_F(TestHexahedronIntegrator, CommonMethods) {
+TEST_F(TestHexahedronGauss, CommonMethods) {
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;

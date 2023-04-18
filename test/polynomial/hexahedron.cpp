@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/hexahedron.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,7 +13,7 @@ using std::sqrt;
 
 class TestHexahedron4x4x4 : public ::testing::Test {
  protected:
-  using Hexahedron4x4x4 = mini::integrator::Hexahedron<double, 4, 4, 4>;
+  using Hexahedron4x4x4 = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
@@ -27,7 +27,7 @@ class TestHexahedron4x4x4 : public ::testing::Test {
   using Mat11x10 = mini::algebra::Matrix<double, 11, 10>;
 };
 TEST_F(TestHexahedron4x4x4, OrthoNormal) {
-  // build a hexa-integrator
+  // build a hexa-gauss
   Mat3x8 xyz_global_i;
   xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
   xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
@@ -42,7 +42,7 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
     return prod;
   }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
-  // build another hexa-integrator
+  // build another hexa-gauss
   Mat3x1 left = {-1, 2, 3};
   auto x = left[0], y = left[1], z = left[2];
   xyz_global_i.row(0) << x-1, x+1, x+1, x-1, x-1, x+1, x+1, x-1;

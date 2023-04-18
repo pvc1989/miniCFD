@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_TRIANGLE_HPP_
-#define MINI_INTEGRATOR_TRIANGLE_HPP_
+#ifndef MINI_GAUSS_TRIANGLE_HPP_
+#define MINI_GAUSS_TRIANGLE_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -8,10 +8,10 @@
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/integrator/face.hpp"
+#include "mini/gauss/face.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 /**
  * @brief 
@@ -379,7 +379,7 @@ class TriangleBuilder<Scalar, kDimensions, 16> {
   }
 };
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_TRIANGLE_HPP_
+#endif  // MINI_GAUSS_TRIANGLE_HPP_

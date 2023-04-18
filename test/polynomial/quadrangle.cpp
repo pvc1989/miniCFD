@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/quadrangle.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/quadrangle.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,8 +13,8 @@ using std::sqrt;
 
 class TestQuadrangle4x4 : public ::testing::Test {
  protected:
-  using Quadrangle2D4x4 = mini::integrator::Quadrangle<double, 2, 4, 4>;
-  using Quadrangle3D4x4 = mini::integrator::Quadrangle<double, 3, 4, 4>;
+  using Quadrangle2D4x4 = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Quadrangle3D4x4 = mini::gauss::Quadrangle<double, 3, 4, 4>;
   using Mat2x4 = mini::algebra::Matrix<double, 2, 4>;
   using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;

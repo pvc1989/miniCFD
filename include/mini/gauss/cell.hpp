@@ -1,11 +1,11 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_CELL_HPP_
-#define MINI_INTEGRATOR_CELL_HPP_
+#ifndef MINI_GAUSS_CELL_HPP_
+#define MINI_GAUSS_CELL_HPP_
 
-#include "mini/integrator/function.hpp"
+#include "mini/gauss/function.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 template <typename Scalar>
 class Cell {
@@ -38,7 +38,7 @@ class Cell {
   virtual ~Cell() noexcept = default;
 };
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_CELL_HPP_
+#endif  // MINI_GAUSS_CELL_HPP_

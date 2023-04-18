@@ -8,9 +8,9 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/face.hpp"
-#include "mini/integrator/cell.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/face.hpp"
+#include "mini/gauss/cell.hpp"
 
 namespace mini {
 namespace polynomial {
@@ -459,7 +459,7 @@ class Linear {
   using MatNx1 = typename RB::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
   using Gauss = std::conditional_t<kDimensions == 2,
-      integrator::Face<Scalar, 2>, integrator::Cell<Scalar>>;
+      gauss::Face<Scalar, 2>, gauss::Cell<Scalar>>;
 
  public:
   explicit Linear(Coord const &center)

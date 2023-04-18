@@ -1,11 +1,11 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_FACE_HPP_
-#define MINI_INTEGRATOR_FACE_HPP_
+#ifndef MINI_GAUSS_FACE_HPP_
+#define MINI_GAUSS_FACE_HPP_
 
-#include "mini/integrator/function.hpp"
+#include "mini/gauss/function.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 template <typename Scalar, int D>
 class Face {
@@ -43,7 +43,7 @@ class Face {
   virtual ~Face() noexcept = default;
 };
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_FACE_HPP_
+#endif  // MINI_GAUSS_FACE_HPP_

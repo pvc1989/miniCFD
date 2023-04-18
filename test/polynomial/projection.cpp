@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/hexahedron.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,7 +13,7 @@ class TestProjection : public ::testing::Test {
  protected:
   using Raw = mini::polynomial::Raw<double, 3, 2>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
-  using Gauss = mini::integrator::Hexahedron<double, 4, 4, 4>;
+  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
   Gauss gauss_;
 };
@@ -29,8 +29,8 @@ TEST_F(TestProjection, ScalarFunction) {
   static_assert(ProjFunc::N == 10);
   EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-14);
   EXPECT_NEAR(projection({0.3, 0.4, 0.5})[0], 0.5, 1e-15);
-  auto integral_f = mini::integrator::Integrate(func, gauss_);
-  auto integral_1 = mini::integrator::Integrate([](auto const &){
+  auto integral_f = mini::gauss::Integrate(func, gauss_);
+  auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
   }, gauss_);
   EXPECT_NEAR(projection.GetAverage()[0], integral_f / integral_1, 1e-14);
@@ -60,8 +60,8 @@ TEST_F(TestProjection, VectorFunction) {
   EXPECT_NEAR(v_actual[7], v_expect[7], 1e-15);
   EXPECT_NEAR(v_actual[8], v_expect[8], 1e-16);
   EXPECT_NEAR(v_actual[9], v_expect[9], 1e-15);
-  auto integral_f = mini::integrator::Integrate(func, gauss_);
-  auto integral_1 = mini::integrator::Integrate([](auto const &){
+  auto integral_f = mini::gauss::Integrate(func, gauss_);
+  auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
   }, gauss_);
   res = projection.GetAverage() - integral_f / integral_1;

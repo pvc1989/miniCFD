@@ -9,7 +9,7 @@
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
 #include "mini/geometry/intersect.hpp"
-#include "mini/integrator/line.hpp"
+#include "mini/gauss/line.hpp"
 #include "mini/aircraft/rotor.hpp"
 
 namespace mini {
@@ -98,7 +98,7 @@ class Rotorcraft {
       // r_ratio is always set before s_ratio
       assert(Valid(r_ratio) && Valid(s_ratio));
       // Integrate along RS:
-      auto line = mini::integrator::Line<Scalar, 1, 4>(r_ratio, s_ratio);
+      auto line = mini::gauss::Line<Scalar, 1, 4>(r_ratio, s_ratio);
       auto integrand = [&cell, &blade](Scalar ratio){
         auto section = blade.GetSection(ratio);
         auto xyz = section.GetOrigin();
@@ -113,7 +113,7 @@ class Rotorcraft {
         product.row(3) = power * basis_values;
         return product;
       };
-      auto integral = mini::integrator::Integrate(integrand, line);
+      auto integral = mini::gauss::Integrate(integrand, line);
       integral *= blade.GetSpan();
       coeff->row(1) += integral.row(0);
       coeff->row(2) += integral.row(1);
@@ -143,7 +143,7 @@ class Rotorcraft {
           continue;
         }
         constexpr int Q = 4;
-        auto line = mini::integrator::Line<Scalar, 1, Q>(r_ratio, s_ratio);
+        auto line = mini::gauss::Line<Scalar, 1, Q>(r_ratio, s_ratio);
         for (int q = 0; q < Q; ++q) {
           auto ratio = line.GetGlobalCoord(q);
           auto section = blade.GetSection(ratio);

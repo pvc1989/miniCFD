@@ -1,15 +1,15 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_LINE_HPP_
-#define MINI_INTEGRATOR_LINE_HPP_
+#ifndef MINI_GAUSS_LINE_HPP_
+#define MINI_GAUSS_LINE_HPP_
 
 #include <cmath>
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/integrator/gauss.hpp"
+#include "mini/gauss/gauss.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 template <typename S, int D, int Q>
 class Line {
@@ -101,7 +101,7 @@ template <typename S, int D, int Q>
 std::array<S, Q> const
 Line<S, D, Q>::local_weights_ = Line<S, D, Q>::BuildLocalWeights();
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_LINE_HPP_
+#endif  // MINI_GAUSS_LINE_HPP_

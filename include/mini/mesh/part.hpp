@@ -21,10 +21,10 @@
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns.hpp"
-#include "mini/integrator/triangle.hpp"
-#include "mini/integrator/quadrangle.hpp"
-#include "mini/integrator/tetrahedron.hpp"
-#include "mini/integrator/hexahedron.hpp"
+#include "mini/gauss/triangle.hpp"
+#include "mini/gauss/quadrangle.hpp"
+#include "mini/gauss/tetrahedron.hpp"
+#include "mini/gauss/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -134,7 +134,7 @@ struct Face {
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDimensions = Riemann::kDimensions;
-  using Gauss = integrator::Face<Scalar, kDimensions>;
+  using Gauss = gauss::Face<Scalar, kDimensions>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Cell = cgns::Cell<Int, kDegrees, Riemann>;
 
@@ -176,7 +176,7 @@ struct Cell {
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kDimensions = Riemann::kDimensions;
-  using Gauss = integrator::Cell<Scalar>;
+  using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegrees>;
   using Projection = polynomial::
@@ -389,25 +389,25 @@ class Part {
 
  private:
   using GaussOnTriangle = mini::select_t<kDegrees,
-    integrator::Triangle<Scalar, kDimensions, 1>,
-    integrator::Triangle<Scalar, kDimensions, 3>,
-    integrator::Triangle<Scalar, kDimensions, 6>,
-    integrator::Triangle<Scalar, kDimensions, 12>>;
+    gauss::Triangle<Scalar, kDimensions, 1>,
+    gauss::Triangle<Scalar, kDimensions, 3>,
+    gauss::Triangle<Scalar, kDimensions, 6>,
+    gauss::Triangle<Scalar, kDimensions, 12>>;
   using GaussOnQuadrangle = mini::select_t<kDegrees,
-    integrator::Quadrangle<Scalar, kDimensions, 1, 1>,
-    integrator::Quadrangle<Scalar, kDimensions, 2, 2>,
-    integrator::Quadrangle<Scalar, kDimensions, 3, 3>,
-    integrator::Quadrangle<Scalar, kDimensions, 4, 4>>;
+    gauss::Quadrangle<Scalar, kDimensions, 1, 1>,
+    gauss::Quadrangle<Scalar, kDimensions, 2, 2>,
+    gauss::Quadrangle<Scalar, kDimensions, 3, 3>,
+    gauss::Quadrangle<Scalar, kDimensions, 4, 4>>;
   using GaussOnTetrahedron = mini::select_t<kDegrees,
-    integrator::Tetrahedron<Scalar, 1>,
-    integrator::Tetrahedron<Scalar, 4>,
-    integrator::Tetrahedron<Scalar, 14>,
-    integrator::Tetrahedron<Scalar, 24>>;
+    gauss::Tetrahedron<Scalar, 1>,
+    gauss::Tetrahedron<Scalar, 4>,
+    gauss::Tetrahedron<Scalar, 14>,
+    gauss::Tetrahedron<Scalar, 24>>;
   using GaussOnHexahedron = mini::select_t<kDegrees,
-    integrator::Hexahedron<Scalar, 1, 1, 1>,
-    integrator::Hexahedron<Scalar, 2, 2, 2>,
-    integrator::Hexahedron<Scalar, 3, 3, 3>,
-    integrator::Hexahedron<Scalar, 4, 4, 4>>;
+    gauss::Hexahedron<Scalar, 1, 1, 1>,
+    gauss::Hexahedron<Scalar, 2, 2, 2>,
+    gauss::Hexahedron<Scalar, 3, 3, 3>,
+    gauss::Hexahedron<Scalar, 4, 4, 4>>;
 
  public:
   Part(std::string const &directory, int rank)
@@ -613,7 +613,7 @@ class Part {
         GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
   }
   auto BuildGaussForCell(int npe, int i_zone, Int const *i_node_list) const {
-    std::unique_ptr<integrator::Cell<Scalar>> gauss_uptr;
+    std::unique_ptr<gauss::Cell<Scalar>> gauss_uptr;
     switch (npe) {
       case 4:
         gauss_uptr = BuildTetrahedronUptr(i_zone, i_node_list); break;
@@ -640,7 +640,7 @@ class Part {
     return gauss_uptr;
   }
   auto BuildGaussForFace(int npe, int i_zone, Int const *i_node_list) const {
-    std::unique_ptr<integrator::Face<Scalar, kDimensions>> gauss_uptr;
+    std::unique_ptr<gauss::Face<Scalar, kDimensions>> gauss_uptr;
     switch (npe) {
       case 3:
         gauss_uptr = BuildTriangleUptr(i_zone, i_node_list); break;
@@ -977,7 +977,7 @@ class Part {
         value = value.cwiseAbs();
         return value;
       };
-      l1_error += mini::integrator::Integrate(func, cell.gauss());
+      l1_error += mini::gauss::Integrate(func, cell.gauss());
     };
     ForEachConstLocalCell(visitor);
     return l1_error;

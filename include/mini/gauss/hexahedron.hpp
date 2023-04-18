@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_HEXAHEDRON_HPP_
-#define MINI_INTEGRATOR_HEXAHEDRON_HPP_
+#ifndef MINI_GAUSS_HEXAHEDRON_HPP_
+#define MINI_GAUSS_HEXAHEDRON_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -9,11 +9,11 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/integrator/gauss.hpp"
-#include "mini/integrator/cell.hpp"
+#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/cell.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 /**
  * @brief 
  * 
@@ -307,7 +307,7 @@ std::array<std::array<int, 4>, 6> const
 Hexahedron<Scalar, Qx, Qy, Qz>::faces_
     = Hexahedron<Scalar, Qx, Qy, Qz>::BuildFaces();
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_HEXAHEDRON_HPP_
+#endif  // MINI_GAUSS_HEXAHEDRON_HPP_

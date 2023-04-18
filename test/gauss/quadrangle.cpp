@@ -2,21 +2,21 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/quadrangle.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/quadrangle.hpp"
 
 #include "gtest/gtest.h"
 
-class TestQuadrangleIntegrator : public ::testing::Test {
+class TestQuadrangleGauss : public ::testing::Test {
  protected:
-  using Quadrangle2D = mini::integrator::Quadrangle<double, 2, 4, 4>;
-  using Quadrangle3D = mini::integrator::Quadrangle<double, 3, 4, 4>;
+  using Quadrangle2D = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Quadrangle3D = mini::gauss::Quadrangle<double, 3, 4, 4>;
   using Mat2x4 = mini::algebra::Matrix<double, 2, 4>;
   using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
   using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestQuadrangleIntegrator, VirtualMethods) {
+TEST_F(TestQuadrangleGauss, VirtualMethods) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
@@ -28,7 +28,7 @@ TEST_F(TestQuadrangleIntegrator, VirtualMethods) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(quad.GetLocalWeight(0), w1d * w1d);
 }
-TEST_F(TestQuadrangleIntegrator, In2dSpace) {
+TEST_F(TestQuadrangleGauss, In2dSpace) {
   Mat2x4 xyz_global_i;
   xyz_global_i.row(0) << -1, 1, 1, -1;
   xyz_global_i.row(1) << -1, -1, 1, 1;
@@ -48,7 +48,7 @@ TEST_F(TestQuadrangleIntegrator, In2dSpace) {
   EXPECT_DOUBLE_EQ(Norm(f, quad), std::sqrt(Innerprod(f, f, quad)));
   EXPECT_DOUBLE_EQ(Norm(g, quad), std::sqrt(Innerprod(g, g, quad)));
 }
-TEST_F(TestQuadrangleIntegrator, In3dSpace) {
+TEST_F(TestQuadrangleGauss, In3dSpace) {
   Mat3x4 xyz_global_i;
   xyz_global_i.row(0) << 0, 4, 4, 0;
   xyz_global_i.row(1) << 0, 0, 4, 4;

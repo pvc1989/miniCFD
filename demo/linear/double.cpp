@@ -12,7 +12,7 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/double.hpp"
 #include "mini/polynomial/limiter.hpp"
-#include "mini/integrator/function.hpp"
+#include "mini/gauss/function.hpp"
 #include "mini/solver/rkdg.hpp"
 
 int main(int argc, char* argv[]) {

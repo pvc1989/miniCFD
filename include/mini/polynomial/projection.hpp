@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/integrator/function.hpp"
+#include "mini/gauss/function.hpp"
 #include "mini/polynomial/basis.hpp"
 
 namespace mini {
@@ -44,7 +44,7 @@ class Projection {
       : basis_ptr_(&basis) {
     using Return = decltype(func(basis.center()));
     static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
-    coeff_ = integrator::Integrate([&](Coord const &xyz) {
+    coeff_ = gauss::Integrate([&](Coord const &xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis(xyz).transpose();
       MatKxN prod = f_col * b_row;
@@ -111,7 +111,7 @@ class Projection {
       mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
       return mat_pdv;
     };
-    auto integral = integrator::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
+    auto integral = gauss::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
     return Raw<Scalar, kDimensions, kDegrees>::GetSmoothness(integral, volume);
   }

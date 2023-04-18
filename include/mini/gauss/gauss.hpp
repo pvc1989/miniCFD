@@ -1,12 +1,12 @@
 //  Copyright 2019 PEI Weicheng and YANG Minghao
-#ifndef MINI_INTEGRATOR_GAUSS_HPP_
-#define MINI_INTEGRATOR_GAUSS_HPP_
+#ifndef MINI_GAUSS_GAUSS_HPP_
+#define MINI_GAUSS_GAUSS_HPP_
 
 #include <array>
 #include <cmath>
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 template <typename Scalar = double, int Q = 4>
 struct GaussLegendre;
@@ -138,7 +138,7 @@ typename GaussLegendre<Scalar, 5>::Array const
 GaussLegendre<Scalar, 5>::weights =
     GaussLegendre<Scalar, 5>::BuildWeights();
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_GAUSS_HPP_
+#endif  // MINI_GAUSS_GAUSS_HPP_

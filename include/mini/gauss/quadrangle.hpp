@@ -1,16 +1,16 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_INTEGRATOR_QUADRANGLE_HPP_
-#define MINI_INTEGRATOR_QUADRANGLE_HPP_
+#ifndef MINI_GAUSS_QUADRANGLE_HPP_
+#define MINI_GAUSS_QUADRANGLE_HPP_
 
 #include <cmath>
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/integrator/gauss.hpp"
-#include "mini/integrator/face.hpp"
+#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/face.hpp"
 
 namespace mini {
-namespace integrator {
+namespace gauss {
 
 /**
  * @brief 
@@ -232,7 +232,7 @@ std::array<Scalar, Qx * Qy> const
 Quadrangle<Scalar, D, Qx, Qy>::local_weights_
     = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalWeights();
 
-}  // namespace integrator
+}  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_INTEGRATOR_QUADRANGLE_HPP_
+#endif  // MINI_GAUSS_QUADRANGLE_HPP_

@@ -2,28 +2,28 @@
 
 #include <cmath>
 
-#include "mini/integrator/function.hpp"
-#include "mini/integrator/triangle.hpp"
+#include "mini/gauss/function.hpp"
+#include "mini/gauss/triangle.hpp"
 
 #include "gtest/gtest.h"
 
-class TestTriangleIntegrator : public ::testing::Test {
+class TestTriangleGauss : public ::testing::Test {
  protected:
-  using Triangle2D = mini::integrator::Triangle<double, 2, 16>;
-  using Triangle3D = mini::integrator::Triangle<double, 3, 16>;
+  using Triangle2D = mini::gauss::Triangle<double, 2, 16>;
+  using Triangle3D = mini::gauss::Triangle<double, 3, 16>;
   using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
   using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
   using Mat3x3 = mini::algebra::Matrix<double, 3, 3>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
 };
-TEST_F(TestTriangleIntegrator, VirtualMethods) {
+TEST_F(TestTriangleGauss, VirtualMethods) {
   Mat2x3 xy_global_i;
   xy_global_i.row(0) << 0, 2, 2;
   xy_global_i.row(1) << 0, 0, 2;
   auto tri = Triangle2D(xy_global_i);
   EXPECT_EQ(tri.CountQuadraturePoints(), 16);
 }
-TEST_F(TestTriangleIntegrator, In2dSpace) {
+TEST_F(TestTriangleGauss, In2dSpace) {
   Mat2x3 xy_global_i;
   xy_global_i.row(0) << 0, 2, 2;
   xy_global_i.row(1) << 0, 0, 2;
@@ -44,7 +44,7 @@ TEST_F(TestTriangleIntegrator, In2dSpace) {
   EXPECT_DOUBLE_EQ(Norm(f, tri), std::sqrt(Innerprod(f, f, tri)));
   EXPECT_DOUBLE_EQ(Norm(g, tri), std::sqrt(Innerprod(g, g, tri)));
 }
-TEST_F(TestTriangleIntegrator, In3dSpace) {
+TEST_F(TestTriangleGauss, In3dSpace) {
   Mat3x3 xyz_global_i;
   xyz_global_i.row(0) << 0, 2, 2;
   xyz_global_i.row(1) << 0, 0, 2;
