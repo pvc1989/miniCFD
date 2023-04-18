@@ -108,7 +108,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
-        return cells[j_cell].projection_(xyz);
+        return cells[j_cell].GetValue(xyz);
       };
       adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
       auto &adj_projection = adj_projections[i_cell].back();

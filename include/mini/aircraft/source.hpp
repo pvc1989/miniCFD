@@ -84,7 +84,7 @@ class Rotorcraft {
 
   static std::pair<Force, Scalar>
   GetSourceValue(const Cell &cell, const Section &section, const Coord &xyz) {
-    auto value = cell.projection_(xyz);
+    auto value = cell.GetValue(xyz);
     auto &cv = *reinterpret_cast<Conservative *>(&value);
     auto uvw = cv.momentum() / cv.mass();
     Force force = section.GetForce(cv.mass(), uvw);

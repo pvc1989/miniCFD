@@ -137,9 +137,9 @@ class EigenWeno {
       max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
     }
     typename Cell::Value sum_abs_differences; sum_abs_differences.setZero();
-    auto my_values = cell.projection_(cell.center());
+    auto my_values = cell.GetValue(cell.center());
     for (const Cell *adj_cell : cell.adj_cells_) {
-      auto adj_values = adj_cell->projection_(cell.center());
+      auto adj_values = adj_cell->GetValue(cell.center());
       auto adj_averages = adj_cell->projection_.GetAverage();
       for (int i : components) {
         sum_abs_differences[i] += std::abs(my_values[i] - adj_values[i]);

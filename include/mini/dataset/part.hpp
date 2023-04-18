@@ -972,7 +972,7 @@ class Part {
     Value l1_error; l1_error.setZero();
     auto visitor = [&t_next, &exact_solution, &l1_error](Cell const &cell){
       auto func = [&t_next, &exact_solution, &cell](Coord const &xyz){
-        auto value = cell.projection_(xyz);
+        auto value = cell.GetValue(xyz);
         value -= exact_solution(xyz, t_next);
         value = value.cwiseAbs();
         return value;
