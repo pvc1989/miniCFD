@@ -51,6 +51,9 @@ class Tetra : public Cell<Scalar> {
   Scalar volume_;
 
  public:
+  int CountVertices() const {
+    return 4;
+  }
   int CountQuadraturePoints() const override {
     return kPoints;
   }

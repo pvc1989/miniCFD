@@ -60,6 +60,9 @@ class Hexa : public Cell<Scalar> {
   Scalar volume_;
 
  public:
+  int CountVertices() const {
+    return 8;
+  }
   int CountQuadraturePoints() const override {
     return Qx * Qy * Qz;
   }
