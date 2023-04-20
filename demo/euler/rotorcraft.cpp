@@ -42,7 +42,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   if (argc < 7) {
     if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> tetra"
+          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> <output_path>"
           << " <t_start> <t_stop> <n_steps_per_frame> <n_frames>"
           << " [<i_frame_start> [n_parts_prev] [--write_forces]]\n";
     }
@@ -50,7 +50,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     exit(0);
   }
   auto old_file_name = std::string(argv[1]);
-  auto suffix = std::string(argv[2]);
+  auto output_path = std::string(argv[2]);
   double t_start = std::atof(argv[3]);
   double t_stop = std::atof(argv[4]);
   int n_steps_per_frame = std::atoi(argv[5]);
@@ -70,20 +70,12 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     write_forces = true;
   }
 
-  auto case_name = std::string(argv[0]);
-  auto pos = case_name.find_last_of('/');
-  if (pos != std::string::npos) {
-    case_name = case_name.substr(pos+1);
-  }
-  case_name.push_back('_');
-  case_name += suffix;
-
   auto time_begin = MPI_Wtime();
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_cores) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-    Shuffler::PartitionAndShuffle(case_name, old_file_name, n_cores);
+    Shuffler::PartitionAndShuffle(output_path, old_file_name, n_cores);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -91,7 +83,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     std::printf("Create %d `Part`s at %f sec\n",
         n_cores, MPI_Wtime() - time_begin);
   }
-  auto part = Part(case_name, i_core);
+  auto part = Part(output_path, i_core);
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
@@ -107,16 +99,6 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
       std::printf("[Done] Project() on %d cores at %f sec\n",
           n_cores, MPI_Wtime() - time_begin);
     }
-
-    part.Reconstruct(limiter);
-    if (suffix == "tetra") {
-      part.Reconstruct(limiter);
-    }
-    if (i_core == 0) {
-      std::printf("[Done] Reconstruct() on %d cores at %f sec\n",
-          n_cores, MPI_Wtime() - time_begin);
-    }
-
     part.GatherSolutions();
     part.WriteSolutions("Frame0");
     mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Frame0");
@@ -147,7 +129,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   auto solver = Solver(dt, limiter, source);
 
   /* Set boundary conditions. */
-  bc(suffix, &solver);
+  bc("tetra", &solver);
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
