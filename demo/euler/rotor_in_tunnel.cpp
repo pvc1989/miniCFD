@@ -2,7 +2,7 @@
 #include "rotorcraft.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.29, 0.0, 0.0, 0.0, 101325.0);
+auto primitive = Primitive(1.29, 5.0, 0.0, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Coord &xyz) {
@@ -25,24 +25,47 @@ void MyBC(const std::string &suffix, Solver *solver) {
 
 int main(int argc, char* argv[]) {
   auto source = Source();
+  auto kOmega = 35.0;
+  // build a blade
+  std::vector<double> y_values{0.0, 1.9}, chords{0.1, 0.1},
+      twists{+10.0, +10.0};
+  auto sc1095 = mini::aircraft::airfoil::SC1095<Scalar>();
+  auto linear = mini::aircraft::airfoil::Linear<Scalar>(0.1, 0);
+  std::vector<mini::aircraft::airfoil::Abstract<Scalar> const *>
+      airfoils{ &sc1095, &linear };
+  auto blade = Blade();
+  for (int i = 0, n = y_values.size(); i < n; ++i) {
+    blade.InstallSection(y_values[i], chords[i], twists[i], *airfoils[0]);
+  }
+  double root{0.1};
+{
+  // Set parameters for the 1st rotor:
   auto rotor = Rotor();
-  rotor.SetRevolutionsPerSecond(40.0);
+  rotor.SetRevolutionsPerSecond(+kOmega);  // right-hand rotation
   rotor.SetOrigin(0.0, 0.0, 0.0);
   auto frame = Frame();
   frame.RotateY(-90.0/* deg */);
   rotor.SetFrame(frame);
-  // build a blade
-  std::vector<double> y_values{0.0, 0.9}, chords{0.1, 0.1},
-      twists{+10.0, +10.0};
-  auto airfoils = std::vector<mini::aircraft::airfoil::SC1095<double>>(2);
-  auto blade = Blade();
-  blade.InstallSection(y_values[0], chords[0], twists[0], airfoils[0]);
-  blade.InstallSection(y_values[1], chords[1], twists[1], airfoils[1]);
-  double root{0.1};
+  rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
   rotor.SetInitialAzimuth(0.0);
   source.InstallRotor(rotor);
+}
+{
+  // Set parameters for the 2nd rotor:
+  auto rotor = Rotor();
+  rotor.SetRevolutionsPerSecond(-kOmega);  // left-hand rotation
+  rotor.SetOrigin(1.0, 0.0, 0.0);
+  auto frame = Frame();
+  frame.RotateY(-90.0/* deg */);
+  rotor.SetFrame(frame);
+  rotor.InstallBlade(root, blade);
+  rotor.InstallBlade(root, blade);
+  rotor.InstallBlade(root, blade);
+  rotor.SetInitialAzimuth(0.0);
+  source.InstallRotor(rotor);
+}
 
   return Main(argc, argv, MyIC, MyBC, source);
 }

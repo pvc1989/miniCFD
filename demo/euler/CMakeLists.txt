@@ -39,7 +39,6 @@ set (cases
   wing
   rotor_in_tunnel
   rotor_over_ship
-  coaxial_rotors_in_tunnel
 )
 foreach (case ${cases})
   set(target demo_euler_${case})
