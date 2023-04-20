@@ -27,7 +27,8 @@ int main(int argc, char* argv[]) {
   auto source = Source();
   auto kOmega = 35.0;
   // build a blade
-  std::vector<double> y_values{0.0, 1.9}, chords{0.1, 0.1},
+  std::vector<double> y_values{0.0, 0.9},
+      chords{0.1, 0.1},
       twists{+10.0, +10.0};
   auto sc1095 = mini::aircraft::airfoil::SC1095<Scalar>();
   auto linear = mini::aircraft::airfoil::Linear<Scalar>(0.1, 0);
@@ -42,9 +43,9 @@ int main(int argc, char* argv[]) {
   // Set parameters for the 1st rotor:
   auto rotor = Rotor();
   rotor.SetRevolutionsPerSecond(+kOmega);  // right-hand rotation
-  rotor.SetOrigin(0.0, 0.0, 0.0);
+  rotor.SetOrigin(1.0, 0.0, 1.0);
   auto frame = Frame();
-  frame.RotateY(-90.0/* deg */);
+  frame.RotateY(-5.0/* deg */);
   rotor.SetFrame(frame);
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
@@ -56,9 +57,9 @@ int main(int argc, char* argv[]) {
   // Set parameters for the 2nd rotor:
   auto rotor = Rotor();
   rotor.SetRevolutionsPerSecond(-kOmega);  // left-hand rotation
-  rotor.SetOrigin(1.0, 0.0, 0.0);
+  rotor.SetOrigin(1.0, 0.0, -1.0);
   auto frame = Frame();
-  frame.RotateY(-90.0/* deg */);
+  frame.RotateY(-5.0/* deg */);
   rotor.SetFrame(frame);
   rotor.InstallBlade(root, blade);
   rotor.InstallBlade(root, blade);
