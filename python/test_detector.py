@@ -92,6 +92,66 @@ class TestJumpDetectors(unittest.TestCase):
         plt.ylabel(r'$Smoothness$')
         plt.tight_layout()
         # plt.show()
+        plt.savefig('compare_smoothness_values.pdf')
+
+    def test_detectors_on_smooth(self):
+        degree = 4
+        scheme = self.build_scheme(spatial.LegendreDG, degree)
+        def kh(x):
+            kh_min = np.pi * 0.0
+            kh_max = np.pi * 0.5 * (scheme.degree() + 1)
+            kh = (kh_max - kh_min) * (x - scheme.x_left())
+            kh /= scheme.length()
+            kh += kh_min
+            return kh
+        def u_init(x):
+            k = kh(x) / scheme.delta_x()
+            return np.sin(k * (x - scheme.x_left()))
+        scheme.initialize(u_init)
+        centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
+            scheme.x_right() - scheme.delta_x(), self._n_element)
+        detectors = [
+          detector.Krivodonova2004(),
+          detector.LiRen2011(),
+          detector.ZhuShuQiu2021()
+        ]
+        markers = ['1', '2', '3']
+        fig = plt.figure(figsize=(6,6))
+        ax = fig.add_subplot(3,1,1)
+        points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
+        x_values = points / scheme.delta_x()
+        u_approx = np.ndarray(len(points))
+        u_exact = np.ndarray(len(points))
+        for i in range(len(points)):
+            u_approx[i] = scheme.get_solution_value(points[i])
+            u_exact[i] = u_init(points[i])
+        plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
+        plt.plot(x_values, u_approx, 'g-', label=r'$p=4$')
+        plt.legend()
+        plt.xlabel(r'$x/h$')
+        plt.ylabel(r'$u^h$')
+        ax = fig.add_subplot(3,1,(2,3))
+        plt.semilogy()
+        x_values = centers / scheme.delta_x()
+        for i in range(len(detectors)):
+            y_values = detectors[i].get_smoothness_values(scheme)
+            plt.plot(x_values, y_values, markers[i],
+                label=detectors[i].name())
+        x_values = [
+            scheme.x_left() / scheme.delta_x(),
+            scheme.x_right() / scheme.delta_x()
+        ]
+        plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
+        plt.legend(loc='right')
+        plt.xlabel(r'$x/h$')
+        plt.ylabel(r'$Smoothness$')
+        ax_right = ax.twinx()
+        x_values = points / scheme.delta_x()
+        y_values = kh(points) / np.pi
+        ax_right.plot(x_values, y_values, 'b-.')
+        ax_right.set_ylabel(r'$\kappa h/\pi$')
+        plt.tight_layout()
+        # plt.show()
         plt.savefig('compare_detectors.pdf')
 
 
