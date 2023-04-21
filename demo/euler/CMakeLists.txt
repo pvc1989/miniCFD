@@ -18,6 +18,7 @@ set (cases
   shock_tube_lax
   shock_tube_vacuum_exact
   shock_tube_vacuum
+  shu_osher
   # two-dimensional problems:
   double_mach
   forward_step
