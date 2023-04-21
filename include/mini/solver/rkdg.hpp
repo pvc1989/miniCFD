@@ -340,8 +340,8 @@ struct RungeKutta<1, P, L, S>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
-    this->t_curr_ = t_curr;
 
+    this->t_curr_ = t_curr;
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
@@ -397,8 +397,8 @@ struct RungeKutta<2, P, L, S>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
-    this->t_curr_ = t_curr;
 
+    this->t_curr_ = t_curr;
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
@@ -410,6 +410,7 @@ struct RungeKutta<2, P, L, S>
     Base::WriteToLocalCells(u_frac12_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
+    this->t_curr_ = t_curr + this->dt_;
     Base::ReadFromLocalCells(part, &u_frac12_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
@@ -477,8 +478,8 @@ struct RungeKutta<3, P, L, S>
  public:
   void Update(Part *part_ptr, double t_curr) {
     const Part &part = *part_ptr;
-    this->t_curr_ = t_curr;
 
+    this->t_curr_ = t_curr;
     Base::ReadFromLocalCells(part, &u_old_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
@@ -490,6 +491,7 @@ struct RungeKutta<3, P, L, S>
     Base::WriteToLocalCells(u_frac13_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
+    this->t_curr_ = t_curr + this->dt_;
     Base::ReadFromLocalCells(part, &u_frac13_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);
@@ -501,6 +503,7 @@ struct RungeKutta<3, P, L, S>
     Base::WriteToLocalCells(u_frac23_, part_ptr);
     part_ptr->Reconstruct(this->limiter_);
 
+    this->t_curr_ = t_curr + this->dt_ / 2.0;
     Base::ReadFromLocalCells(part, &u_frac23_);
     part_ptr->ShareGhostCellCoeffs();
     this->InitializeResidual(part);

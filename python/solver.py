@@ -123,7 +123,7 @@ class SolverBase(abc.ABC):
             approx_line.set_ydata(approx_solution)
             plt.title(r'$t$'+f' = {t_curr:.2f}')
             plt.legend(loc='upper right')
-            self._ode_solver.update(self._spatial, delta_t)
+            self._ode_solver.update(self._spatial, delta_t, t_curr)
         frames = np.linspace(t_start, t_stop, n_step)
         self._animation = mpla.FuncAnimation(
             plt.gcf(), func, frames, init_func, interval=5)

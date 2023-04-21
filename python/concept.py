@@ -276,6 +276,12 @@ class OdeSystem(abc.ABC):
         """Get a copy of the residual column.
         """
 
+    def set_time(self, t_curr: float):
+        """Set the current time value.
+
+        For steady system, it does nothing.
+        """
+
 
 class OdeSolver(abc.ABC):
     """A solver for the standard ODE system dU/dt = R.
@@ -284,7 +290,7 @@ class OdeSolver(abc.ABC):
     """
 
     @abc.abstractmethod
-    def update(self, ode_system: OdeSystem, delta_t: float):
+    def update(self, ode_system: OdeSystem, delta_t: float, t_curr: float):
         """Update the given OdeSystem object to the next time step.
         """
 
@@ -301,7 +307,7 @@ class OdeSolver(abc.ABC):
                 print(f'step {i_step}, t = {t_curr}')
                 plot(t_curr)
             if i_step < n_step:
-                self.update(ode_system, delta_t)
+                self.update(ode_system, delta_t, t_curr)
 
 
 class SpatialScheme(OdeSystem):

@@ -74,7 +74,7 @@ class TestExplicitEuler(unittest.TestCase):
         ode_system.set_solution_column(u_curr)
         scheme = ExplicitEuler()
         delta_t = 0.01
-        scheme.update(ode_system, delta_t)
+        scheme.update(ode_system, delta_t, t_curr=0.0)
         u_expect = u_curr + a_const.dot(u_curr) * delta_t
         u_actual = ode_system.get_solution_column()
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
@@ -99,7 +99,7 @@ class TestRungeKutta(unittest.TestCase):
         ode_system.set_solution_column(u_curr)
         scheme = RungeKutta(order=1)
         delta_t = 0.01
-        scheme.update(ode_system, delta_t)
+        scheme.update(ode_system, delta_t, t_curr=0.0)
         u_actual = ode_system.get_solution_column()
         u_expect = self.euler(u_curr, a_const, delta_t)
         self.assertFalse(np.linalg.norm(u_expect - u_actual))
@@ -114,7 +114,7 @@ class TestRungeKutta(unittest.TestCase):
         ode_system.set_solution_column(u_curr)
         scheme = RungeKutta(order=2)
         delta_t = 0.01
-        scheme.update(ode_system, delta_t)
+        scheme.update(ode_system, delta_t, t_curr=0.0)
         u_actual = ode_system.get_solution_column()
         u_frac12 = self.euler(u_curr, a_const, delta_t)
         u_expect = (u_curr + self.euler(u_frac12, a_const, delta_t)) / 2
@@ -130,7 +130,7 @@ class TestRungeKutta(unittest.TestCase):
         ode_system.set_solution_column(u_curr)
         scheme = RungeKutta(order=3)
         delta_t = 0.01
-        scheme.update(ode_system, delta_t)
+        scheme.update(ode_system, delta_t, t_curr=0.0)
         u_actual = ode_system.get_solution_column()
         u_frac13 = self.euler(u_curr, a_const, delta_t)
         u_frac23 = (u_curr * 3 + self.euler(u_frac13, a_const, delta_t)) / 4
@@ -152,13 +152,14 @@ class TestRungeKutta(unittest.TestCase):
             rk_values = np.ndarray(n_step)
             rk_values[0] = ode_system.get_solution_column()[0]
             for i_step in range(1, n_step):
-                scheme.update(ode_system, delta_t)
+                t_curr = t_start + delta_t * i_step
+                scheme.update(ode_system, delta_t, t_curr)
                 rk_values[i_step] = ode_system.get_solution_column()[0]
             plt.plot(time_values, rk_values, markers[order], label=f'RK{order}')
         plt.plot(time_values, exact_values, label='Exact')
         plt.legend()
         # plt.show()
-        plt.savefig('rk_compare.pdf')
+        plt.savefig('compare_runge_kutta.pdf')
 
 
 if __name__ == '__main__':
