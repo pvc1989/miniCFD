@@ -191,5 +191,58 @@ class ZhuShuQiu2021(JumpDetector):
         return np.abs(value)
 
 
+class LiRen2022(JumpDetector):
+    """A jump detector for high-order FD schemes.
+
+    See Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770.
+    """
+
+    def __init__(self) -> None:
+        self._xi = 0.01
+        self._psi_c = 0.4
+        self._epsilon = (0.9 * self._psi_c) / (1 - 0.9 * self._psi_c)
+        self._epsilon *= self._xi**2
+
+    def name(self, verbose=False):
+        if verbose:
+            return 'Li–Ren (2022)'
+        else:
+            return 'Li (2022)'
+
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+        n_cell = scheme.n_element()
+        averages = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            expansion = scheme.get_element_by_index(i_curr).get_expansion()
+            averages[i_curr] = expansion.get_average()
+        psi_values = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            a = np.abs(averages[i_curr] - averages[i_curr-1])
+            a += np.abs(averages[i_curr] - 2 * averages[i_curr-1]
+                + averages[i_curr-2])
+            b = np.abs(averages[i_curr] - averages[(i_curr+1)%n_cell])
+            b += np.abs(averages[i_curr] - 2 * averages[(i_curr+1)%n_cell]
+                + averages[(i_curr+2)%n_cell])
+            psi_values[i_curr] = (2 * a * b + self._epsilon) / (
+                a**2 + b**2 + self._epsilon)
+        smoothness = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            left = min(psi_values[i_curr], psi_values[i_curr-1])
+            right = min(psi_values[i_curr], psi_values[(i_curr+1)%n_cell])
+            if min(left, right) >= self._psi_c:
+                smoothness[i_curr] = 1e-2
+            else:
+                smoothness[i_curr] = 1e+2
+        return smoothness
+
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            if smoothness_values[i_cell] > 1:
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
+
+
 if __name__ == '__main__':
     pass

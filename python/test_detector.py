@@ -58,9 +58,10 @@ class TestJumpDetectors(unittest.TestCase):
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),
-          detector.ZhuShuQiu2021()
+          detector.ZhuShuQiu2021(),
+          detector.LiRen2022(),
         ]
-        markers = ['1', '2', '3']
+        markers = ['1', '2', '3', '4']
         plt.figure(figsize=(6,6))
         plt.subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -70,18 +71,19 @@ class TestJumpDetectors(unittest.TestCase):
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(x_values, u_approx, '.', label=r'$p=4$')
         plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
+        plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
+        plt.grid()
         plt.subplot(3,1,(2,3))
         plt.semilogy()
         x_values = centers / scheme.delta_x()
         for i in range(len(detectors)):
             y_values = detectors[i].get_smoothness_values(scheme)
             plt.plot(x_values, y_values, markers[i],
-                label=r'$p=4$, '+detectors[i].name())
+                label=detectors[i].name())
         x_values = [
             scheme.x_left() / scheme.delta_x(),
             scheme.x_right() / scheme.delta_x()
@@ -90,9 +92,10 @@ class TestJumpDetectors(unittest.TestCase):
         plt.legend()
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$Smoothness$')
+        plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_smoothness_values.pdf')
+        plt.savefig('compare_detectors_on_jumps.pdf')
 
     def test_detectors_on_smooth(self):
         degree = 4
@@ -113,9 +116,10 @@ class TestJumpDetectors(unittest.TestCase):
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),
-          detector.ZhuShuQiu2021()
+          detector.ZhuShuQiu2021(),
+          detector.LiRen2022(),
         ]
-        markers = ['1', '2', '3']
+        markers = ['1', '2', '3', '4']
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -126,33 +130,27 @@ class TestJumpDetectors(unittest.TestCase):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
         plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
-        plt.plot(x_values, u_approx, 'g-', label=r'$p=4$')
+        plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
+        plt.grid()
         ax = fig.add_subplot(3,1,(2,3))
         plt.semilogy()
-        x_values = centers / scheme.delta_x()
+        x_values = kh(centers)
         for i in range(len(detectors)):
             y_values = detectors[i].get_smoothness_values(scheme)
             plt.plot(x_values, y_values, markers[i],
                 label=detectors[i].name())
-        x_values = [
-            scheme.x_left() / scheme.delta_x(),
-            scheme.x_right() / scheme.delta_x()
-        ]
+        x_values = [kh(scheme.x_left()), kh(scheme.x_right())]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
         plt.legend(loc='right')
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$\kappa h$')
         plt.ylabel(r'$Smoothness$')
-        ax_right = ax.twinx()
-        x_values = points / scheme.delta_x()
-        y_values = kh(points) / np.pi
-        ax_right.plot(x_values, y_values, 'b-.')
-        ax_right.set_ylabel(r'$\kappa h/\pi$')
+        plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_detectors.pdf')
+        plt.savefig('compare_detectors_on_smooth.pdf')
 
 
 if __name__ == '__main__':
