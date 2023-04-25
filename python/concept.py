@@ -319,9 +319,11 @@ class SpatialScheme(OdeSystem):
     """An ODE system given by some spatial scheme.
     """
 
-    def __init__(self, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, equation: Equation,
+            n_element: int, x_left: float, x_right: float) -> None:
         assert x_left < x_right
         assert n_element > 1
+        self._equation = equation
         self._n_element = n_element
         self._delta_x = (x_right - x_left) / n_element
         self._elements = np.ndarray(n_element, Element)
@@ -337,6 +339,11 @@ class SpatialScheme(OdeSystem):
     def name(self) -> str:
         """Get the compact string representation of the method.
         """
+
+    def equation(self) -> Equation:
+        """Get the equation to be solved.
+        """
+        return self._equation
 
     def x_left(self):
         """Get the coordinate of this object's left boundary.

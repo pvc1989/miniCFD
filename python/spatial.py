@@ -16,7 +16,8 @@ class FiniteElement(concept.SpatialScheme):
             riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             element_type: concept.Element, value_type=float) -> None:
-        concept.SpatialScheme.__init__(self, n_element, x_left, x_right)
+        concept.SpatialScheme.__init__(self, equation,
+            n_element, x_left, x_right)
         assert degree >= 0
         self._riemann = riemann
         x_left_i = x_left

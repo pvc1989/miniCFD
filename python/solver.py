@@ -134,13 +134,14 @@ class LinearSmooth(SolverBase):
     """Demo the usage of LinearAdvection related classes for smooth IC.
     """
 
-    def __init__(self, a_const: float, k_const: float,
+    def __init__(self, wave_number: float,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
-        self._a_const = a_const
-        self._wave_number = k_const * np.pi * 2 / self._spatial.length()
+        self._a_const = self._spatial.equation().get_convective_jacobian()
+        self._b_const = self._spatial.equation().get_diffusive_coeff()
+        self._wave_number = wave_number * np.pi * 2 / self._spatial.length()
 
     def a_max(self):
         return np.abs(self._a_const)
@@ -151,18 +152,19 @@ class LinearSmooth(SolverBase):
         return value
 
     def u_exact(self, x_global, t_curr):
-        return self.u_init(x_global - self._a_const * t_curr)
+        ratio = np.exp(-t_curr * self._b_const * self._wave_number**2)
+        return ratio * self.u_init(x_global - self._a_const * t_curr)
 
 
 class LinearJumps(LinearSmooth):
     """Demo the usage of LinearAdvection related classes for IC with jumps.
     """
 
-    def __init__(self, a_const: float, k_const: float,
+    def __init__(self, wave_number: float,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
-        LinearSmooth.__init__(self, a_const, k_const, spatial_scheme,
+        LinearSmooth.__init__(self, wave_number, spatial_scheme,
             detector, limiter, ode_solver)
 
     def u_init(self, x_global):
@@ -174,18 +176,17 @@ class InviscidBurgers(SolverBase):
     """Demo the usage of InviscidBurgers related classes.
     """
 
-    def __init__(self, a_const: float, k_const: float,
+    def __init__(self, wave_number: float,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
-        self._k = a_const
-        self._wave_number = k_const * np.pi * 2 / self._spatial.length()
+        self._wave_number = wave_number * np.pi * 2 / self._spatial.length()
         self._u_prev = 0.0
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
 
     def a_max(self):
-        return self._k
+        return self._spatial.equation().get_convective_jacobian(u=1.0)
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
@@ -212,11 +213,11 @@ class InviscidBurgers(SolverBase):
         return root
 
 
-class Euler(SolverBase):
+class EulerRiemann(SolverBase):
     """Demo the usage of Euler related classes.
     """
 
-    def __init__(self, a_const: float, k_const: float,
+    def __init__(self,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
@@ -292,6 +293,9 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--phase_speed',
         default=1.0, type=float,
         help='phase speed of the wave')
+    parser.add_argument('-v', '--viscous_coeff',
+        default=0.0, type=float,
+        help='viscous coeff of the equation')
     parser.add_argument('-k', '--wave_number',
         default=1.0, type=float,
         help='number of waves in the domain')
@@ -331,7 +335,8 @@ if __name__ == '__main__':
         assert False
     if args.problem == 'Smooth':
         SolverClass = LinearSmooth
-        the_equation = equation.LinearAdvection(args.phase_speed)
+        the_equation = equation.LinearAdvectionDiffusion(args.phase_speed,
+            args.viscous_coeff)
         the_riemann = riemann.LinearAdvection(args.phase_speed)
     elif args.problem == 'Jumps':
         SolverClass = LinearJumps
@@ -342,12 +347,12 @@ if __name__ == '__main__':
         the_equation = equation.InviscidBurgers(args.phase_speed)
         the_riemann = riemann.InviscidBurgers(args.phase_speed)
     elif args.problem == 'Euler':
-        SolverClass = Euler
+        SolverClass = EulerRiemann
         the_equation = equation.Euler(gamma=1.4)
         the_riemann = riemann.Euler(gamma=1.4)
     else:
         assert False
-    solver = SolverClass(args.phase_speed, args.wave_number,
+    solver = SolverClass(args.wave_number,
         spatial_scheme=SpatialClass(the_equation, the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
         detector=DetectorClass(), limiter=LimiterClass(),
