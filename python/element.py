@@ -142,13 +142,25 @@ class LagrangeFR(LagrangeDG):
             - self.get_discontinuous_flux(self.x_right()))
         return flux
 
+    def _get_flux_gradient(self, x_global):
+        """Get the gradient value of the discontinuous flux at a given point.
+        """
+        basis_gradients = self.get_basis_gradients(x_global)
+        flux_gradient = 0.0
+        i_sample = 0
+        for x_sample in self.get_expansion().get_sample_points():
+            u_sample = self._u_approx.get_function_value(x_sample)
+            du_sample = self._u_approx.get_gradient_value(x_sample)
+            f_sample = self._equation.get_convective_flux(u_sample)
+            f_sample -= self._equation.get_diffusive_flux(u_sample, du_sample)
+            flux_gradient += f_sample * basis_gradients[i_sample]
+            i_sample += 1
+        return flux_gradient
+
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        u_approx = self._u_approx.get_function_value(x_global)
-        a_approx = self._equation.get_convective_jacobian(u_approx)
-        gradient = self._u_approx.get_gradient_value(x_global)
-        gradient = a_approx * gradient
+        gradient = self._get_flux_gradient(x_global)
         x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
         left /= self._u_approx.jacobian(x_global)
