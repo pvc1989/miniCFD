@@ -14,7 +14,7 @@ class Dummy(concept.Limiter):
     """A dummy limiter for comparison, which keeps the given object unchanged.
     """
 
-    def name(self):
+    def name(self, verbose=False):
         return 'Dummy'
 
     def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
@@ -259,8 +259,8 @@ class Xu2023(CompactWENO):
     def __init__(self, alpha=1.0) -> None:
         self._alpha = alpha
 
-    def name(self):
-        return 'Xu (2023, ' + r'$\alpha$' + f'={self._alpha:g})'
+    def name(self, verbose=False):
+        return 'Xu (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         curr_expansion = curr.get_expansion()

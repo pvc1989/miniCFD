@@ -1,5 +1,3 @@
-import abc
-
 import numpy as np
 
 import concept
@@ -25,6 +23,11 @@ class LinearAdvection(ConservationLaw):
     def __init__(self, a_const):
         self._a = a_const
 
+    def name(self, verbose=True) -> str:
+        my_name = r'$\partial u/\partial t$+' + f'{self._a} '
+        my_name += r'$\partial u/\partial x=0$'
+        return my_name
+
     def get_convective_flux(self, u):
         return self._a * u
 
@@ -39,6 +42,12 @@ class LinearAdvectionDiffusion(LinearAdvection):
         super().__init__(a_const)
         self._b = b_const
 
+    def name(self, verbose=True) -> str:
+        my_name = r'$\partial u/\partial t+$' + f'{self._a} '
+        my_name += r'$\partial u/\partial x=$' + f'{self._b} '
+        my_name += r'$\partial^2 u/\partial x^2$'
+        return my_name
+
     def get_diffusive_coeff(self, u=0.0):
         return self._b
 
@@ -49,6 +58,11 @@ class InviscidBurgers(ConservationLaw):
     def __init__(self, k=1.0):
         assert k > 0.0
         self._k = k
+
+    def name(self, verbose=True) -> str:
+        my_name = r'$\partial u/\partial t+$' + f'{self._k} '
+        my_name += r'$\partial u/\partial x=0$'
+        return my_name
 
     def get_convective_flux(self, u):
         return self._k * u**2 / 2
@@ -65,6 +79,12 @@ class Burgers(InviscidBurgers):
         super().__init__(k_const)
         self._nu = nu_const
 
+    def name(self, verbose=True) -> str:
+        my_name = r'$\partial u/\partial t$+' + f'{self._k} '
+        my_name += r'$\partial u/\partial x=$' + f'{self._nu} '
+        my_name += r'$\partial^2 u/\partial x^2$'
+        return my_name
+
     def get_diffusive_coeff(self, u=0.0):
         return self._nu
 
@@ -74,6 +94,9 @@ class LinearSystem(ConservationLaw):
     def __init__(self, A_const):
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
+
+    def name(self, verbose=True) -> str:
+        return "LinearSystem"
 
     def get_convective_flux(self, U):
         return self._A.dot(U)
@@ -86,6 +109,9 @@ class Euler(ConservationLaw):
 
     def __init__(self, gamma=1.4):
         self._gas = gas.Ideal(gamma)
+
+    def name(self, verbose=True) -> str:
+        return "Euler"
 
     def primitive_to_conservative(self, rho, u, p):
         U = np.array([rho, rho*u, 0.0])

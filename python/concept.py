@@ -66,6 +66,11 @@ class Expansion(abc.ABC):
     """
 
     @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the expansion.
+        """
+
+    @abc.abstractmethod
     def degree(self):
         """The highest degree of the approximated function.
         """
@@ -119,6 +124,11 @@ class Expansion(abc.ABC):
 class Equation(abc.ABC):
     """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
     """
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the equation.
+        """
 
     @abc.abstractmethod
     def get_convective_flux(self, u_given):
@@ -345,7 +355,7 @@ class SpatialScheme(OdeSystem):
         return self._elements[0].degree()
 
     @abc.abstractmethod
-    def name(self) -> str:
+    def name(self, verbose: bool) -> str:
         """Get the compact string representation of the method.
         """
 
@@ -431,7 +441,7 @@ class JumpDetector(abc.ABC):
     """
 
     @abc.abstractmethod
-    def name(self, verbose) -> str:
+    def name(self, verbose: bool) -> str:
         """Get the name of the detector.
         """
 
@@ -451,7 +461,7 @@ class Limiter(abc.ABC):
     """
 
     @abc.abstractmethod
-    def name(self, verbose) -> str:
+    def name(self, verbose: bool) -> str:
         """Get the name of the limiter.
         """
 

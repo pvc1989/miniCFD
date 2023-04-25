@@ -109,7 +109,8 @@ class SolverBase(abc.ABC):
             label=f'scheme={self._spatial.name()}'
                 +f', detector={self._detector.name()}'
                 +f', limiter={self._limiter.name()}')
-        expect_line, = plt.plot([], [], 'r-', label='Exact Solution')
+        expect_line, = plt.plot([], [], 'r-',
+            label=f'Exact Solution of {self._spatial.equation().name(True)}')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 201)
         # initialize animation
         def init_func():
@@ -196,7 +197,8 @@ class InviscidBurgers(SolverBase):
     def u_exact(self, x_global, t_curr):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
         def func(u_curr):
-            return u_curr - self.u_init(x_global - self._k * u_curr * t_curr)
+            ku = self._spatial.equation().get_convective_jacobian(u_curr)
+            return u_curr - self.u_init(x_global - ku * t_curr)
         if np.abs(x_global - self._x_mid) < 1e-6:
             root = 0.0
         else:

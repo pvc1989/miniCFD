@@ -29,6 +29,12 @@ class Taylor(Expansion):
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
         self._value_type = value_type
 
+    def name(self, verbose) -> str:
+        my_name = 'Taylor'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
     def n_term(self):
         return self._n_term
 
@@ -170,6 +176,12 @@ class Lagrange(Taylor):
         self._sample_values = np.ndarray(n_point, value_type)
         self._sample_points = self._x_center + roots * self._jacobian
 
+    def name(self, verbose) -> str:
+        my_name = 'Lagrange'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
     def get_sample_points(self):
         """Get the global coordinates of all sample points."""
         return self._sample_points
@@ -259,6 +271,12 @@ class Legendre(Taylor):
         half_length = (x_right - x_left) / 2
         for k in range(1, self._n_term):
             self._matrix_on_taylor[k] /= half_length**k
+
+    def name(self, verbose) -> str:
+        my_name = 'Legendre'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
     def get_mode_weight(self, k):
         """Get the inner-product of the kth basis with itself.
@@ -351,6 +369,12 @@ class TruncatedLegendre(Taylor):
         self._matrix_on_taylor = deepcopy(
             that._matrix_on_taylor[0:n_term, 0:n_term])
         Legendre.set_taylor_coeff(self)
+
+    def name(self, verbose) -> str:
+        my_name = 'TruncatedLegendre'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
     def set_coeff(self):
         assert False

@@ -175,9 +175,11 @@ class LegendreDG(DiscontinuousGalerkin):
         FiniteElement.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LegendreDG, value_type)
 
-
-    def name(self):
-        return 'DG (Legendre, '+r'$p$='+f'{self.degree()})'
+    def name(self, verbose=True):
+        my_name = 'LegendreDG'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
 
 class LagrangeDG(DiscontinuousGalerkin):
@@ -191,8 +193,11 @@ class LagrangeDG(DiscontinuousGalerkin):
         DiscontinuousGalerkin.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LagrangeDG, value_type)
 
-    def name(self):
-        return 'DG (Lagrange, '+r'$p$='+f'{self.degree()})'
+    def name(self, verbose=True):
+        my_name = 'LagrangeDG'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
 
 class FluxReconstruction(FiniteElement):
@@ -246,8 +251,11 @@ class LagrangeFR(FluxReconstruction):
         FluxReconstruction.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LagrangeFR, value_type)
 
-    def name(self):
-        return 'FR (Lagrange, '+r'$p$='+f'{self.degree()})'
+    def name(self, verbose=True):
+        my_name = 'LagrangeFR'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
 
 class LegendreFR(FluxReconstruction):
@@ -261,9 +269,11 @@ class LegendreFR(FluxReconstruction):
         FluxReconstruction.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, element.LegendreFR, value_type)
 
-
-    def name(self):
-        return 'FR (Legendre, '+r'$p$='+f'{self.degree()})'
+    def name(self, verbose=True):
+        my_name = 'LegendreFR'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
 
 
 class DGwithFR(LagrangeFR):
@@ -277,7 +287,7 @@ class DGwithFR(LagrangeFR):
         LagrangeFR.__init__(self, equation, riemann, degree,
             n_element, x_left, x_right, value_type)
 
-    def name(self):
+    def name(self, verbose=True):
         return 'DGwithFR (Lagrange, '+r'$p$='+f'{self.degree()})'
 
     def get_residual_column(self):
