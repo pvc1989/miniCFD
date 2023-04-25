@@ -9,14 +9,18 @@ import gas
 class ConservationLaw(concept.Equation):
     # \pdv{U}{t} + \pdv{F}{x} = 0
 
-    def get_diffusive_flux(self, u):
-        return u * 0
+    def get_diffusive_coeff(self, u):
+        return 0
+
+    def get_diffusive_flux(self, u, du_dx):
+        return self.get_diffusive_coeff(u) * du_dx
 
     def get_source(self, u):
         return u * 0
 
 
 class LinearAdvection(ConservationLaw):
+    # ∂u/∂t + a * ∂u/∂x = 0
 
     def __init__(self, a_const):
         self._a = a_const
@@ -28,7 +32,19 @@ class LinearAdvection(ConservationLaw):
         return self._a
 
 
+class LinearAdvectionDiffusion(LinearAdvection):
+    # ∂u/∂t + a * ∂u/∂x = (∂/∂x)(b * ∂u/∂x)
+
+    def __init__(self, a_const, b_const):
+        super.__init__(a_const)
+        self._b = b_const
+
+    def get_diffusive_coeff(self, u):
+        return self._b
+
+
 class InviscidBurgers(ConservationLaw):
+    # ∂u/∂t + k * ∂u/∂x = 0
 
     def __init__(self, k=1.0):
         assert k > 0.0
@@ -39,6 +55,18 @@ class InviscidBurgers(ConservationLaw):
 
     def get_convective_jacobian(self, U):
         return self._k * U
+
+
+class Burgers(InviscidBurgers):
+    # ∂u/∂t + k * ∂u/∂x = (∂/∂x)(ν * ∂u/∂x)
+
+    def __init__(self, k_const=1.0, nu_const=0.0):
+        assert k_const > 0.0 and nu_const >= 0.0
+        super.__init__(k_const)
+        self._nu = nu_const
+
+    def get_diffusive_coeff(self, u):
+        return self._nu
 
 
 class LinearSystem(ConservationLaw):

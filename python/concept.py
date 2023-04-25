@@ -131,8 +131,13 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_diffusive_flux(self, u_given):
-        """Get the value of G(U) for a given U.
+    def get_diffusive_coeff(self, u_given):
+        """Get the value of b for a given U if G(U, ∂U/∂x) = b(U) * ∂U/∂x.
+        """
+
+    @abc.abstractmethod
+    def get_diffusive_flux(self, u_given, du_dx_given):
+        """Get the value of G(U, ∂U/∂x) for a given pair of U and ∂U/∂x.
         """
 
     @abc.abstractmethod
