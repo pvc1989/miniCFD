@@ -29,6 +29,10 @@ class SolverBase(abc.ABC):
         self._animation = None
 
     @abc.abstractmethod
+    def name(self) -> str:
+        """Get a string representation of the problem."""
+
+    @abc.abstractmethod
     def u_init(self, x_global):
         """Initial condition of the problem."""
 
@@ -96,7 +100,7 @@ class SolverBase(abc.ABC):
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
         viscous = self._spatial.equation().get_diffusive_coeff()
-        cell_reynolds = self.a_max() * delta_x / viscous
+        cell_reynolds = self.a_max() * delta_x / (viscous + 1e-18)
         cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
             f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
@@ -114,7 +118,7 @@ class SolverBase(abc.ABC):
                 +f', detector={self._detector.name()}'
                 +f', limiter={self._limiter.name()}')
         expect_line, = plt.plot([], [], 'r-',
-            label=f'Exact Solution of {self._spatial.equation().name(True)}')
+            label=f'Exact Solution of {self.name()}')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 201)
         # initialize animation
         def init_func():
@@ -139,14 +143,21 @@ class LinearSmooth(SolverBase):
     """Demo the usage of LinearAdvection related classes for smooth IC.
     """
 
-    def __init__(self, wave_number: float,
+    def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._a_const = self._spatial.equation().get_convective_jacobian()
         self._b_const = self._spatial.equation().get_diffusive_coeff()
-        self._wave_number = wave_number * np.pi * 2 / self._spatial.length()
+        self._k_const = wave_number
+        self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
+
+    def name(self):
+        my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
+        length = self._spatial.length() / 2
+        my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
+        return my_name
 
     def a_max(self):
         return np.abs(self._a_const)
@@ -165,7 +176,7 @@ class LinearJumps(LinearSmooth):
     """Demo the usage of LinearAdvection related classes for IC with jumps.
     """
 
-    def __init__(self, wave_number: float,
+    def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
@@ -176,19 +187,31 @@ class LinearJumps(LinearSmooth):
         value = LinearSmooth.u_init(self, x_global)
         return np.sign(value)
 
+    def name(self):
+        my_name = self._spatial.equation().name() + r', $u(x,t=0)=$sign$(\sin($'
+        length = self._spatial.length() / 2
+        my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$))$'
+        return my_name
+
 
 class InviscidBurgers(SolverBase):
     """Demo the usage of InviscidBurgers related classes.
     """
 
-    def __init__(self, wave_number: float,
+    def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.JumpDetector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
-        self._wave_number = wave_number * np.pi * 2 / self._spatial.length()
+        self._wave_number = 1.0 * np.pi * 2 / self._spatial.length()
         self._u_prev = 0.0
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
+
+    def name(self) -> str:
+        my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
+        length = self._spatial.length() / 2
+        my_name += r'$\pi x/$' + f'{length:g}' + r'$)$'
+        return my_name
 
     def a_max(self):
         return self._spatial.equation().get_convective_jacobian(u=1.0)
@@ -303,7 +326,7 @@ if __name__ == '__main__':
         default=0.0, type=float,
         help='viscous coeff of the equation')
     parser.add_argument('-k', '--wave_number',
-        default=1.0, type=float,
+        default=1, type=int,
         help='number of waves in the domain')
     args = parser.parse_args()
     print(args)
