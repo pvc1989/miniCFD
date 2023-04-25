@@ -95,7 +95,11 @@ class SolverBase(abc.ABC):
         delta_x = self._spatial.delta_x()
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
-        print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl}")
+        viscous = self._spatial.equation().get_diffusive_coeff()
+        cell_reynolds = self.a_max() * delta_x / viscous
+        cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
+        print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
+            f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
         # general plot setting
         plt.figure(figsize=(9,6))
         plt.ylim([-1.4, 1.6])
