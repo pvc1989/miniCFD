@@ -29,8 +29,12 @@ class SolverBase(abc.ABC):
         self._animation = None
 
     @abc.abstractmethod
-    def name(self) -> str:
+    def problem_name(self) -> str:
         """Get a string representation of the problem."""
+
+    def solver_name(self) -> str:
+        return (f'scheme={self._spatial.name()}, ' +
+            f'detector={self._detector.name()}, limiter={self._limiter.name()}')
 
     @abc.abstractmethod
     def u_init(self, x_global):
@@ -39,6 +43,18 @@ class SolverBase(abc.ABC):
     @abc.abstractmethod
     def u_exact(self, x_global, t_curr):
         """Exact solution of the problem."""
+
+    def get_figure(self):
+        fig = plt.figure(figsize=(8, 6))
+        plt.xlabel(r'$x$')
+        plt.ylabel(r'$u$')
+        plt.ylim([-1.4, 1.6])
+        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            self._spatial.n_element() + 1), minor=True)
+        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            5), minor=False)
+        plt.grid(which='minor')
+        return fig
 
     def plot(self, t_curr, n_point: int):
         """Plot solution curves at a given moment.
@@ -50,17 +66,13 @@ class SolverBase(abc.ABC):
             point_i = points[i]
             approx_solution[i] = self._spatial.get_solution_value(point_i)
             expect_solution[i] = self.u_exact(point_i, t_curr)
-        plt.figure(figsize=(6, 3))
-        plt.plot(points, approx_solution, 'b-+', label='Approximate Solution')
-        plt.plot(points, expect_solution, 'r-', label='Exact Solution')
-        plt.ylim([-1.4, 1.4])
+        fig = self.get_figure()
+        plt.plot(points, approx_solution, 'b-+', label=self.solver_name())
+        plt.plot(points, expect_solution, 'r-',
+            label=f'Exact Solution of {self.problem_name()}')
         plt.title(r'$t$'+f' = {t_curr:.2f}')
         plt.legend(loc='upper right')
-        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            self._spatial.n_element() + 1), minor=True)
-        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            5), minor=False)
-        plt.grid(which='minor')
+        plt.tight_layout()
         # plt.show()
         plt.savefig(f't={t_curr:.2f}.pdf')
 
@@ -72,14 +84,18 @@ class SolverBase(abc.ABC):
     def run(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and plot the results.
         """
-        delta_x = self._spatial.delta_x()
         delta_t = (t_stop - t_start) / n_step
-        cfl = self.a_max() * delta_t / delta_x
-        print(f"delta_x = {delta_x}, delta_t = {delta_t}, cfl = {cfl}")
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
-        def plot(t_curr):
-            self.plot(t_curr, n_point=201)
-        self._ode_solver.solve(self._spatial, plot, t_start, t_stop, delta_t)
+        n_step = int(np.ceil((t_stop - t_start) / delta_t))
+        delta_t = (t_stop - t_start) / n_step
+        plot_steps = n_step // 4
+        for i_step in range(n_step + 1):
+            t_curr = t_start + i_step * delta_t
+            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
+            if i_step % plot_steps == 0:
+                self.plot(t_curr, n_point=201)
+            if i_step < n_step:
+                self._ode_solver.update(self._spatial, delta_t, t_curr)
 
     def get_ydata(self, t_curr, points):
         """Get the y-data for updating the solution curvess.
@@ -104,21 +120,11 @@ class SolverBase(abc.ABC):
         cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
             f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
-        # general plot setting
-        plt.figure(figsize=(9,6))
-        plt.ylim([-1.4, 1.6])
-        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            self._spatial.n_element() + 1), minor=True)
-        plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            5), minor=False)
-        plt.grid(which='minor')
+        fig = self.get_figure()
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b-+',
-            label=f'scheme={self._spatial.name()}'
-                +f', detector={self._detector.name()}'
-                +f', limiter={self._limiter.name()}')
+        approx_line, = plt.plot([], [], 'b-+', label=self.solver_name())
         expect_line, = plt.plot([], [], 'r-',
-            label=f'Exact Solution of {self.name()}')
+            label=f'Exact Solution of {self.problem_name()}')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 201)
         # initialize animation
         def init_func():
@@ -153,7 +159,7 @@ class LinearSmooth(SolverBase):
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
 
-    def name(self):
+    def problem_name(self):
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
@@ -187,7 +193,7 @@ class LinearJumps(LinearSmooth):
         value = LinearSmooth.u_init(self, x_global)
         return np.sign(value)
 
-    def name(self):
+    def problem_name(self):
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=$sign$(\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$))$'
@@ -207,7 +213,7 @@ class InviscidBurgers(SolverBase):
         self._u_prev = 0.0
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
 
-    def name(self) -> str:
+    def problem_name(self) -> str:
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += r'$\pi x/$' + f'{length:g}' + r'$)$'
@@ -328,6 +334,7 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--wave_number',
         default=1, type=int,
         help='number of waves in the domain')
+    parser.add_argument('--animate', action='store_true')
     args = parser.parse_args()
     print(args)
     if args.method == 'LagrangeDG':
@@ -388,4 +395,8 @@ if __name__ == '__main__':
             args.degree, args.n_element, args.x_left, args.x_right),
         detector=DetectorClass(), limiter=LimiterClass(),
         ode_solver=temporal.RungeKutta(args.rk_order))
-    solver.animate(args.t_begin, args.t_end, args.n_step)
+    if args.animate:
+        solver.animate(args.t_begin, args.t_end, args.n_step)
+    else:
+        solver.run(args.t_begin, args.t_end, args.n_step)
+
