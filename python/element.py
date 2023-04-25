@@ -66,12 +66,6 @@ class LagrangeDG(Element):
     def get_solution_value(self, x_global):
         return self._u_approx.get_function_value(x_global)
 
-    def get_discontinuous_flux(self, x_global):
-        """Get the value of the discontinuous flux at a given point.
-        """
-        u_approx = self.get_solution_value(x_global)
-        return self._equation.get_convective_flux(u_approx)
-
 
 class LegendreDG(Element):
     """Element for implement the DG scheme based on Legendre polynomials.
@@ -118,12 +112,6 @@ class LegendreDG(Element):
 
     def get_solution_value(self, x_global):
         return self._u_approx.get_function_value(x_global)
-
-    def get_discontinuous_flux(self, x_global):
-        """Get the value of the discontinuous flux at a given point.
-        """
-        u_approx = self.get_solution_value(x_global)
-        return self._equation.get_convective_flux(u_approx)
 
     def divide_mass_matrix(self, column: np.ndarray):
         for k in range(self.n_term()):

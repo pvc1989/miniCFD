@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 import concept
+import expansion
 import element
 import integrate
 
@@ -41,6 +42,42 @@ class FiniteElement(concept.SpatialScheme):
             i_element -= 1
         return i_element
 
+    def _get_interface_flux(self, cell_left: concept.Element,
+            cell_right: concept.Element):
+        # Solve the local Riemann problem:
+        x_left = cell_left.x_right()
+        u_left = cell_left.get_solution_value(x_left)
+        x_right = cell_right.x_left()
+        u_right = cell_right.get_solution_value(x_right)
+        flux = self._riemann.get_upwind_flux(u_left, u_right)
+        # Add the diffusive interface flux:
+        expansion_left = cell_left.get_expansion()
+        assert isinstance(expansion_left, expansion.Taylor)
+        derivatives = expansion_left.get_derivative_values(x_left)
+        if self.degree() > 1:
+            du_left, ddu_left = derivatives[1], derivatives[2]
+        elif self.degree() == 1:
+            du_left, ddu_left = derivatives[1], 0
+        else:
+            du_left, ddu_left = 0, 0
+        expansion_right = cell_right.get_expansion()
+        assert isinstance(expansion_right, expansion.Taylor)
+        derivatives = expansion_right.get_derivative_values(x_right)
+        if self.degree() > 1:
+            du_right, ddu_right = derivatives[1], derivatives[2]
+        elif self.degree() == 1:
+            du_right, ddu_right = derivatives[1], 0
+        else:
+            du_right, ddu_right = 0, 0
+        # Use the DDG method to get the value of ∂u/∂x at interface:
+        du = (du_left + du_right) / 2
+        distance = (cell_left.length() + cell_right.length()) / 2
+        beta_0 = 3
+        du += beta_0 / distance * (u_right - u_left)
+        beta_1 = 1/12
+        du += beta_1 * distance * (ddu_right - ddu_left)
+        return flux - du * self.equation().get_diffusive_coeff()
+
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
@@ -48,22 +85,10 @@ class FiniteElement(concept.SpatialScheme):
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self._n_element):
             curr, prev = self._elements[i], self._elements[i-1]
-            assert isinstance(curr, concept.Element)
-            assert isinstance(prev, concept.Element)
-            x_right = curr.x_left()
-            u_right= curr.get_solution_value(x_right)
-            x_left = prev.x_right()
-            u_left = prev.get_solution_value(x_left)
-            interface_fluxes[i] = self._riemann.get_upwind_flux(u_left, u_right)
+            interface_fluxes[i] = self._get_interface_flux(prev, curr)
         if self.is_periodic():
             curr, prev = self._elements[0], self._elements[-1]
-            assert isinstance(curr, concept.Element)
-            assert isinstance(prev, concept.Element)
-            x_right = curr.x_left()
-            u_right = curr.get_solution_value(x_right)
-            x_left = prev.x_right()
-            u_left = prev.get_solution_value(x_left)
-            interface_fluxes[0] = self._riemann.get_upwind_flux(u_left, u_right)
+            interface_fluxes[0] = self._get_interface_flux(prev, curr)
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
             assert False
