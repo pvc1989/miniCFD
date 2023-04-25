@@ -282,7 +282,7 @@ if __name__ == '__main__':
         default='LegendreFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['ReportAll', 'KXCRF2004', 'Li2011', 'Zhu2021'],
+        choices=['Dummy', 'ReportAll', 'KXCRF2004', 'Li2011', 'Zhu2021'],
         default='Li2011',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
@@ -319,7 +319,9 @@ if __name__ == '__main__':
         SpatialClass = spatial.DGwithFR
     else:
         assert False
-    if args.detector == 'ReportAll':
+    if args.detector == 'Dummy':
+        DetectorClass = detector.Dummy
+    elif args.detector == 'ReportAll':
         DetectorClass = detector.ReportAll
     elif args.detector == 'KXCRF2004':
         DetectorClass = detector.Krivodonova2004

@@ -7,6 +7,21 @@ from spatial import FiniteElement
 import integrate
 
 
+class Dummy(JumpDetector):
+    """A jump detector that reports no cell as troubled.
+    """
+
+    def name(self, verbose=False):
+        return 'Dummy'
+
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+        smoothness = np.zeros(scheme.n_element())
+        return smoothness
+
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
+        return []
+
+
 class ReportAll(JumpDetector):
     """A jump detector that reports all cells as troubled.
     """
