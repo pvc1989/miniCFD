@@ -13,15 +13,14 @@ import detector
 
 markers = ['1', '2', '3', '4', '+', 'x']
 
-
-def smooth(x):
-    x_shift = 8
+def smooth(x, k_left=10, k_right=5):
+    x_shift = 6
     gauss_width = 1.25
     value = (np.exp(-((x - x_shift) / gauss_width)**2 / 2)
-        * np.sin(5 * x))
+        * np.sin(k_right * x))
     value += (np.exp(-((x + x_shift) / gauss_width)**2 / 2)
-        * np.sin(10 * x))
-    return value + 0
+        * np.sin(k_left * x))
+    return value + 10
 
 
 def jumps(x):
@@ -31,7 +30,7 @@ def jumps(x):
     amplitude = b - x
     if x < 0:
         amplitude = x - a
-    return sign * amplitude + 0
+    return sign * amplitude + 10
 
 
 class TestJumpDetectors(unittest.TestCase):
@@ -75,9 +74,10 @@ class TestJumpDetectors(unittest.TestCase):
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
+        plt.plot(x_values, u_exact, 'r-', label='Exact')
         plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
+        plt.title('Jumps Approximated by '+scheme.name(False))
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
         plt.grid()
@@ -104,16 +104,9 @@ class TestJumpDetectors(unittest.TestCase):
     def test_smoothness_on_smooth(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreDG, degree)
-        def kh(x):
-            kh_min = np.pi * 0.0
-            kh_max = np.pi * 0.5 * (scheme.degree() + 1)
-            kh = (kh_max - kh_min) * (x - scheme.x_left())
-            kh /= scheme.length()
-            kh += kh_min
-            return kh
+        k1, k2 = 10, 20
         def u_init(x):
-            k = kh(x) / scheme.delta_x()
-            return np.sin(k * (x - scheme.x_left()))
+            return smooth(x, k1, k2)
         scheme.initialize(u_init)
         centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
             scheme.x_right() - scheme.delta_x(), self._n_element)
@@ -133,24 +126,29 @@ class TestJumpDetectors(unittest.TestCase):
         for i in range(len(points)):
             u_approx[i] = scheme.get_solution_value(points[i])
             u_exact[i] = u_init(points[i])
-        plt.plot(x_values, u_exact, 'r-', label=r'$p=\infty$')
+        plt.plot(x_values, u_exact, 'r-', label='Exact')
         plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
+        k1_h = k1 * scheme.delta_x()
+        k2_h = k2 * scheme.delta_x()
+        plt.title(r'$kh=$'+f'({k1_h:.2f}, {k2_h:.2f})' +
+            ' Approximated by '+scheme.name(False))
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
         plt.grid()
         ax = fig.add_subplot(3,1,(2,3))
         plt.semilogy()
-        x_values = kh(centers)
         for i in range(len(detectors)):
             y_values = detectors[i].get_smoothness_values(scheme)
-            plt.plot(x_values, y_values, markers[i],
+            plt.plot(centers/scheme.delta_x(), y_values, markers[i],
                 label=detectors[i].name())
-        x_values = [kh(scheme.x_left()), kh(scheme.x_right())]
+        x_values = [
+            scheme.x_left() / scheme.delta_x(),
+            scheme.x_right() / scheme.delta_x()]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
-        plt.legend(loc='right')
-        plt.xlabel(r'$\kappa h$')
+        plt.xlabel(r'$x/h$')
         plt.ylabel(r'$Smoothness$')
+        plt.legend()
         plt.grid()
         plt.tight_layout()
         # plt.show()
@@ -158,7 +156,7 @@ class TestJumpDetectors(unittest.TestCase):
 
     def test_detectors_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LagrangeDG, degree)
+        scheme = self.build_scheme(spatial.LegendreDG, degree)
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),
@@ -173,19 +171,19 @@ class TestJumpDetectors(unittest.TestCase):
             kappa = (k+1) * 2 * np.pi / scheme.length()
             kappa_h[k] = kappa * scheme.delta_x()
             def u_init(x):
-                return np.sin(kappa * (x - scheme.x_left()))
+                return 1+np.sin(kappa * (x - scheme.x_left()))
             scheme.initialize(u_init)
             for i in range(len(detectors)):
                 detector_i = detectors[i]
                 assert isinstance(detector_i, concept.JumpDetector)
                 active_counts[i][k] = len(
                     detector_i.get_troubled_cell_indices(scheme))
-        fig = plt.figure()
+        plt.figure()
         for i in range(len(detectors)):
             plt.plot(kappa_h/np.pi, active_counts[i]/scheme.n_element()*100,
                 f'-{markers[i]}', label=detectors[i].name())
         plt.legend()
-        plt.title(r'$\sin(\kappa x)$ approximated by '+scheme.name())
+        plt.title(r'On $1+\sin(\kappa x)$ Approximated by '+scheme.name())
         plt.xlabel(r'$\kappa h/\pi$')
         plt.ylabel('Troubled Cell Count (%)')
         plt.grid()
