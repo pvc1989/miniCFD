@@ -155,6 +155,13 @@ class Taylor(Expansion):
         base_col = np.linalg.solve(mat_a, this_col)
         Taylor.set_coeff(self, base_col)
 
+    def convert_to(self, Expansion):
+        assert issubclass(Expansion, Taylor)
+        that = Expansion(self.degree(), self.x_left(), self.x_right(),
+            self._value_type)
+        that.approximate(lambda x: self.get_function_value(x))
+        return that
+
 
 class Lagrange(Taylor):
     """The Lagrange expansion of a general function.

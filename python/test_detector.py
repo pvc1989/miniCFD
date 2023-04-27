@@ -158,7 +158,7 @@ class TestJumpDetectors(unittest.TestCase):
 
     def test_detectors_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LegendreDG, degree)
+        scheme = self.build_scheme(spatial.LagrangeDG, degree)
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),

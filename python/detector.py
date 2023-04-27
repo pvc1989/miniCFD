@@ -3,13 +3,13 @@
 import numpy as np
 import abc
 
-from concept import JumpDetector
+import concept
 from spatial import FiniteElement
 import integrate
 import expansion
 
 
-class Dummy(JumpDetector):
+class Dummy(concept.JumpDetector):
     """A jump detector that reports no cell as troubled.
     """
 
@@ -20,7 +20,7 @@ class Dummy(JumpDetector):
         return []
 
 
-class ReportAll(JumpDetector):
+class ReportAll(concept.JumpDetector):
     """A jump detector that reports all cells as troubled.
     """
 
@@ -32,7 +32,7 @@ class ReportAll(JumpDetector):
         return troubled_cell_indices
 
 
-class SmoothnessBased(JumpDetector):
+class SmoothnessBased(concept.JumpDetector):
 
     @abc.abstractmethod
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
@@ -199,7 +199,7 @@ class ZhuShuQiu2021(SmoothnessBased):
         return np.abs(value)
 
 
-class LiRen2022(JumpDetector):
+class LiRen2022(concept.JumpDetector):
     """A jump detector for high-order FD schemes.
 
     See Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770.
@@ -263,12 +263,15 @@ class Persson2006(SmoothnessBased):
         n_cell = scheme.n_element()
         smoothness = np.ndarray(n_cell)
         sensor_ref = scheme.degree()**(-3)
-        nu_0 = scheme.delta_x() / scheme.degree()
         for i_cell in range(n_cell):
-            u_approx = scheme.get_element_by_index(i_cell).get_expansion()
-            assert isinstance(u_approx, expansion.Legendre)
-            coeff = u_approx.get_coeff_ref()
-            assert len(coeff) == scheme.degree() + 1
+            cell = scheme.get_element_by_index(i_cell)
+            u_approx = cell.get_expansion()
+            if isinstance(u_approx, expansion.Legendre):
+                u_legendre = u_approx
+            else:
+                assert isinstance(u_approx, expansion.Taylor)
+                u_legendre = u_approx.convert_to(expansion.Legendre)
+            coeff = u_legendre.get_coeff_ref()
             sensor = coeff[-1]**2 / np.linalg.norm(coeff)**2
             smoothness[i_cell] = sensor / sensor_ref
         return smoothness
