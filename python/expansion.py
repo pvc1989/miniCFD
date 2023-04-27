@@ -263,10 +263,7 @@ class Legendre(Taylor):
             value_type=float) -> None:
         super().__init__(degree, x_left, x_right, value_type)
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
-        self._mode_weights = np.ndarray(self._n_term, float)
-        for k in range(self._n_term):
-            self._mode_weights[k] = self._jacobian * integrate.fixed_quad_local(
-                lambda x: (special.eval_legendre(k, x))**2, n_point=k+1)
+        self._mode_weights = self._jacobian * 2 / (2 * np.arange(degree+1) + 1)
         # taylor_basis_row * matrix_on_taylor = legendre_basis_row
         self._matrix_on_taylor = np.eye(self._n_term)
         for k in range(2, self._n_term):
@@ -289,6 +286,11 @@ class Legendre(Taylor):
         """Get the inner-product of the kth basis with itself.
         """
         return self._mode_weights[k]
+
+    def get_mode_energy(self, k):
+        """Get the inner-product of the kth component with itself.
+        """
+        return self._mode_weights[k] * self._mode_coeffs[k]**2
 
     def get_average(self):
         return self._mode_coeffs[0]

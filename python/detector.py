@@ -267,12 +267,21 @@ class Persson2006(SmoothnessBased):
             cell = scheme.get_element_by_index(i_cell)
             u_approx = cell.get_expansion()
             if isinstance(u_approx, expansion.Legendre):
-                u_legendre = u_approx
+                pth_mode_energy = u_approx.get_mode_energy(-1)
+                all_modes_energy = 0.0
+                for k in range(u_approx.n_term()):
+                    all_modes_energy += u_approx.get_mode_energy(k)
             else:
                 assert isinstance(u_approx, expansion.Taylor)
-                u_legendre = u_approx.convert_to(expansion.Legendre)
-            coeff = u_legendre.get_coeff_ref()
-            sensor = coeff[-1]**2 / np.linalg.norm(coeff)**2
+                def u(x):
+                    return u_approx.get_function_value(x)
+                all_modes_energy = integrate.inner_product(u, u, cell)
+                legendre = expansion.Legendre(u_approx.degree(),
+                    u_approx.x_left(), u_approx.x_right())
+                pth_basis = legendre.get_basis(u_approx.degree())
+                pth_mode_energy = integrate.inner_product(u, pth_basis, cell)**2
+                pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
+            sensor = pth_mode_energy / all_modes_energy
             smoothness[i_cell] = sensor / sensor_ref
         return smoothness
 
