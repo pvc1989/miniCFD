@@ -5,6 +5,7 @@ import numpy as np
 from concept import JumpDetector
 from spatial import FiniteElement
 import integrate
+import expansion
 
 
 class Dummy(JumpDetector):
@@ -248,6 +249,44 @@ class LiRen2022(JumpDetector):
                 smoothness[i_curr] = 1e-2
             else:
                 smoothness[i_curr] = 1e+2
+        return smoothness
+
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            if smoothness_values[i_cell] > 1:
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
+
+
+class Persson2006(JumpDetector):
+    """A jump detector based on artificial viscosity.
+
+    See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
+    """
+
+    def __init__(self, kappa=0.1) -> None:
+        self._kappa = kappa
+
+    def name(self, verbose=False):
+        if verbose:
+            return r'Persson (2006, $\kappa=$' + f'{self._kappa:g})'
+        else:
+            return 'Persson (2006)'
+
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+        n_cell = scheme.n_element()
+        smoothness = np.ndarray(n_cell)
+        sensor_ref = scheme.degree()**(-3)
+        nu_0 = scheme.delta_x() / scheme.degree()
+        for i_cell in range(n_cell):
+            u_approx = scheme.get_element_by_index(i_cell).get_expansion()
+            assert isinstance(u_approx, expansion.Legendre)
+            coeff = u_approx.get_coeff_ref()
+            assert len(coeff) == scheme.degree() + 1
+            sensor = coeff[-1]**2 / np.linalg.norm(coeff)**2
+            smoothness[i_cell] = sensor / sensor_ref
         return smoothness
 
     def get_troubled_cell_indices(self, scheme: FiniteElement):

@@ -11,6 +11,9 @@ import spatial
 import detector
 
 
+markers = ['1', '2', '3', '4', '+', 'x']
+
+
 def smooth(x):
     x_shift = 8
     gauss_width = 1.25
@@ -49,9 +52,9 @@ class TestJumpDetectors(unittest.TestCase):
             degree, self._n_element, self._x_left, self._x_right)
         return scheme
 
-    def test_smoothness_values(self):
+    def test_smoothness_on_jumps(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LagrangeFR, degree)
+        scheme = self.build_scheme(spatial.LegendreDG, degree)
         u_init = jumps
         scheme.initialize(u_init)
         centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
@@ -61,8 +64,8 @@ class TestJumpDetectors(unittest.TestCase):
           detector.LiRen2011(),
           detector.ZhuShuQiu2021(),
           detector.LiRen2022(),
+          detector.Persson2006(),
         ]
-        markers = ['1', '2', '3', '4']
         plt.figure(figsize=(6,6))
         plt.subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -98,7 +101,7 @@ class TestJumpDetectors(unittest.TestCase):
         # plt.show()
         plt.savefig('compare_detectors_on_jumps.pdf')
 
-    def test_detectors_on_smooth(self):
+    def test_smoothness_on_smooth(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreDG, degree)
         def kh(x):
@@ -119,8 +122,8 @@ class TestJumpDetectors(unittest.TestCase):
           detector.LiRen2011(),
           detector.ZhuShuQiu2021(),
           detector.LiRen2022(),
+          detector.Persson2006(),
         ]
-        markers = ['1', '2', '3', '4']
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -161,8 +164,8 @@ class TestJumpDetectors(unittest.TestCase):
           detector.LiRen2011(),
           detector.ZhuShuQiu2021(),
           detector.LiRen2022(),
+          detector.Persson2006(),
         ]
-        markers = ['1', '2', '3', '4']
         k_max = int((0+1) * scheme.n_element() / 2)
         kappa_h = np.ndarray(k_max)
         active_counts = np.ndarray((len(detectors), k_max))
