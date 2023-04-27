@@ -259,6 +259,24 @@ class Persson2006(SmoothnessBased):
     def name(self, verbose=False):
         return 'Persson (2006)'
 
+    def get_smoothness_value(self, u_approx: expansion.Taylor):
+        if isinstance(u_approx, expansion.Legendre):
+            pth_mode_energy = u_approx.get_mode_energy(-1)
+            all_modes_energy = 0.0
+            for k in range(u_approx.n_term()):
+                all_modes_energy += u_approx.get_mode_energy(k)
+        else:
+            assert isinstance(u_approx, expansion.Taylor)
+            def u(x):
+                return u_approx.get_function_value(x)
+            all_modes_energy = integrate.inner_product(u, u, u_approx)
+            legendre = expansion.Legendre(u_approx.degree(),
+                u_approx.x_left(), u_approx.x_right())
+            pth_basis = legendre.get_basis(u_approx.degree())
+            pth_mode_energy = integrate.inner_product(u, pth_basis, u_approx)**2
+            pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
+        return pth_mode_energy / all_modes_energy
+
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
         smoothness = np.ndarray(n_cell)
@@ -266,22 +284,7 @@ class Persson2006(SmoothnessBased):
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
             u_approx = cell.get_expansion()
-            if isinstance(u_approx, expansion.Legendre):
-                pth_mode_energy = u_approx.get_mode_energy(-1)
-                all_modes_energy = 0.0
-                for k in range(u_approx.n_term()):
-                    all_modes_energy += u_approx.get_mode_energy(k)
-            else:
-                assert isinstance(u_approx, expansion.Taylor)
-                def u(x):
-                    return u_approx.get_function_value(x)
-                all_modes_energy = integrate.inner_product(u, u, cell)
-                legendre = expansion.Legendre(u_approx.degree(),
-                    u_approx.x_left(), u_approx.x_right())
-                pth_basis = legendre.get_basis(u_approx.degree())
-                pth_mode_energy = integrate.inner_product(u, pth_basis, cell)**2
-                pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
-            sensor = pth_mode_energy / all_modes_energy
+            sensor = self.get_smoothness_value(u_approx)
             smoothness[i_cell] = sensor / sensor_ref
         return smoothness
 
