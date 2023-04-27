@@ -10,7 +10,7 @@ from scipy import optimize
 import concept
 import equation
 import riemann
-import spatial, detector, limiter
+import spatial, detector, limiter, viscous
 import temporal
 
 
@@ -20,11 +20,12 @@ class SolverBase(abc.ABC):
 
     def __init__(self, spatial_scheme: concept.SpatialScheme,
             detector: concept.Detector, limiter: concept.Limiter,
+            viscous: concept.Viscous,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
         self._detector = detector
         self._limiter = limiter
-        self._spatial.set_detector_and_limiter(detector, limiter)
+        self._spatial.set_detector_and_limiter(detector, limiter, viscous)
         self._ode_solver = ode_solver
         self._animation = None
 
@@ -152,8 +153,9 @@ class LinearSmooth(SolverBase):
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.Detector, limiter: concept.Limiter,
+            viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, ode_solver)
+        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
         self._a_const = self._spatial.equation().get_convective_jacobian()
         self._b_const = self._spatial.equation().get_diffusive_coeff()
         self._k_const = wave_number
@@ -185,9 +187,10 @@ class LinearJumps(LinearSmooth):
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.Detector, limiter: concept.Limiter,
+            viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
         LinearSmooth.__init__(self, wave_number, spatial_scheme,
-            detector, limiter, ode_solver)
+            detector, limiter, viscous, ode_solver)
 
     def u_init(self, x_global):
         value = LinearSmooth.u_init(self, x_global)
@@ -207,8 +210,9 @@ class InviscidBurgers(SolverBase):
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.Detector, limiter: concept.Limiter,
+            viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, ode_solver)
+        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
         self._wave_number = 1.0 * np.pi * 2 / self._spatial.length()
         self._u_prev = 0.0
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
@@ -255,8 +259,9 @@ class EulerRiemann(SolverBase):
     def __init__(self,
             spatial_scheme: concept.SpatialScheme,
             detector: concept.Detector, limiter: concept.Limiter,
+            viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, ode_solver)
+        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
         self._equation = equation.Euler(gamma=1.4)
         self._riemann = riemann.Euler(gamma=1.4)
@@ -312,12 +317,16 @@ if __name__ == '__main__':
         help='method for spatial discretization')
     parser.add_argument('--detector',
         choices=['Dummy', 'ReportAll', 'KXCRF2004', 'Li2011', 'Zhu2021'],
-        default='Li2011',
+        default='Dummy',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
         choices=['Li2020', 'Zhong2013', 'Xu2023', 'Dummy'],
-        default='Li2020',
+        default='Dummy',
         help='method for limiting numerical oscillations')
+    parser.add_argument('--viscous',
+        choices=['Dummy', 'Persson2006'],
+        default='Dummy',
+        help='method for adding artificial viscosity')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
         help='degree of polynomials for approximation')
@@ -371,6 +380,12 @@ if __name__ == '__main__':
         LimiterClass = limiter.Dummy
     else:
         assert False
+    if args.viscous == 'Dummy':
+        ViscousClass = viscous.Dummy
+    elif args.viscous == 'Persson2006':
+        ViscousClass = viscous.Persson2006
+    else:
+        assert False
     if args.problem == 'Smooth':
         SolverClass = LinearSmooth
         the_equation = equation.LinearAdvectionDiffusion(args.phase_speed,
@@ -394,6 +409,7 @@ if __name__ == '__main__':
         spatial_scheme=SpatialClass(the_equation, the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
         detector=DetectorClass(), limiter=LimiterClass(),
+        viscous=ViscousClass(),
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.animate:
         solver.animate(args.t_begin, args.t_end, args.n_step)

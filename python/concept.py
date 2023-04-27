@@ -333,6 +333,7 @@ class SpatialScheme(OdeSystem):
         self._elements = np.ndarray(n_element, Element)
         self._detector = None
         self._limiter = None
+        self._viscous = None
 
     def degree(self):
         """Get the degree of the polynomial approximation.
@@ -406,11 +407,13 @@ class SpatialScheme(OdeSystem):
         """
         return self._elements[self.get_element_index(point)]
 
-    def set_detector_and_limiter(self, detector, limiter):
+    def set_detector_and_limiter(self, detector, limiter, viscous):
         assert isinstance(detector, Detector)
         assert isinstance(limiter, Limiter)
+        assert isinstance(viscous, Viscous)
         self._detector = detector
         self._limiter = limiter
+        self._viscous = viscous
 
     def _detect_and_limit(self):
         if self._limiter is None:
@@ -419,6 +422,7 @@ class SpatialScheme(OdeSystem):
         assert isinstance(self._limiter, Limiter)
         indices = self._detector.get_troubled_cell_indices(self)
         self._limiter.reconstruct(self, indices)
+        self._viscous.generate(self, indices)
 
 
 class Detector(abc.ABC):
@@ -454,6 +458,26 @@ class Limiter(abc.ABC):
     def reconstruct(self, scheme: SpatialScheme, troubled_cell_indices):
         """Reconstruct the expansion on each troubled cell.
         """
+
+
+class Viscous(abc.ABC):
+    """An object that adds artificial viscosity to a spatial scheme.
+    """
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the limiter.
+        """
+
+    @abc.abstractmethod
+    def generate(self, scheme: SpatialScheme, troubled_cell_indices):
+        """Add viscosity on each troubled cell.
+        """
+
+    def get_coeff(self, i_cell: int):
+        """Get the viscous coefficient of the ith cell.
+        """
+        return 0.0
 
 
 if __name__ == '__main__':

@@ -5,7 +5,16 @@ import expansion
 import detector
 
 
-class Persson2006(detector.Persson2006):
+class Dummy(concept.Viscous):
+
+    def name(self, verbose: bool) -> str:
+        return "Dummy"
+
+    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
+        pass
+
+
+class Persson2006(concept.Viscous):
     """Artificial viscosity for DG and FR schemes.
 
     See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
@@ -13,10 +22,15 @@ class Persson2006(detector.Persson2006):
 
     def __init__(self, kappa=0.1) -> None:
         self._kappa = kappa
+        self._coeffs = np.ndarray(0)
 
-    def get_viscous_coeff(self, u_approx: expansion.Taylor):
+    def name(self, verbose: bool) -> str:
+        return "Persson (2006)"
+
+    def _get_viscous_coeff(self, u_approx: expansion.Taylor):
         s_0 = -4 * np.log10(u_approx.degree())
-        s_gap = np.log10(self.get_smoothness_value(u_approx)) - s_0
+        smoothness = detector.Persson2006.get_smoothness_value(u_approx)
+        s_gap = np.log10(smoothness) - s_0
         nu = u_approx.length() / u_approx.degree()
         if s_gap > self._kappa:
             pass
@@ -25,6 +39,15 @@ class Persson2006(detector.Persson2006):
         else:
             nu = 0.0
         return nu
+
+    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
+        self._coeffs = np.zeros(scheme.n_element())
+        for i_cell in troubled_cell_indices:
+            u_approx = scheme.get_element_by_index(i_cell).get_expansion()
+            self._coeffs[i_cell] = self._get_viscous_coeff(u_approx)
+
+    def get_coeff(self, i_cell: int):
+        return self._coeffs[i_cell]
 
 
 if __name__ == '__main__':

@@ -259,7 +259,8 @@ class Persson2006(SmoothnessBased):
     def name(self, verbose=False):
         return 'Persson (2006)'
 
-    def get_smoothness_value(self, u_approx: expansion.Taylor):
+    @staticmethod
+    def get_smoothness_value(u_approx: expansion.Taylor):
         if isinstance(u_approx, expansion.Legendre):
             pth_mode_energy = u_approx.get_mode_energy(-1)
             all_modes_energy = 0.0
@@ -284,7 +285,7 @@ class Persson2006(SmoothnessBased):
         for i_cell in range(n_cell):
             cell = scheme.get_element_by_index(i_cell)
             u_approx = cell.get_expansion()
-            sensor = self.get_smoothness_value(u_approx)
+            sensor = Persson2006.get_smoothness_value(u_approx)
             smoothness[i_cell] = sensor / sensor_ref
         return smoothness
 
