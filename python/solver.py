@@ -19,7 +19,7 @@ class SolverBase(abc.ABC):
     """
 
     def __init__(self, spatial_scheme: concept.SpatialScheme,
-            detector: concept.JumpDetector, limiter: concept.Limiter,
+            detector: concept.Detector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
         self._detector = detector
@@ -151,7 +151,7 @@ class LinearSmooth(SolverBase):
 
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
-            detector: concept.JumpDetector, limiter: concept.Limiter,
+            detector: concept.Detector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._a_const = self._spatial.equation().get_convective_jacobian()
@@ -184,7 +184,7 @@ class LinearJumps(LinearSmooth):
 
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
-            detector: concept.JumpDetector, limiter: concept.Limiter,
+            detector: concept.Detector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         LinearSmooth.__init__(self, wave_number, spatial_scheme,
             detector, limiter, ode_solver)
@@ -206,7 +206,7 @@ class InviscidBurgers(SolverBase):
 
     def __init__(self, wave_number: int,
             spatial_scheme: concept.SpatialScheme,
-            detector: concept.JumpDetector, limiter: concept.Limiter,
+            detector: concept.Detector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._wave_number = 1.0 * np.pi * 2 / self._spatial.length()
@@ -254,7 +254,7 @@ class EulerRiemann(SolverBase):
 
     def __init__(self,
             spatial_scheme: concept.SpatialScheme,
-            detector: concept.JumpDetector, limiter: concept.Limiter,
+            detector: concept.Detector, limiter: concept.Limiter,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, ode_solver)
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2

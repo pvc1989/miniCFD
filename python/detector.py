@@ -9,7 +9,7 @@ import integrate
 import expansion
 
 
-class Dummy(concept.JumpDetector):
+class Dummy(concept.Detector):
     """A jump detector that reports no cell as troubled.
     """
 
@@ -20,7 +20,7 @@ class Dummy(concept.JumpDetector):
         return []
 
 
-class ReportAll(concept.JumpDetector):
+class ReportAll(concept.Detector):
     """A jump detector that reports all cells as troubled.
     """
 
@@ -32,7 +32,7 @@ class ReportAll(concept.JumpDetector):
         return troubled_cell_indices
 
 
-class SmoothnessBased(concept.JumpDetector):
+class SmoothnessBased(concept.Detector):
 
     @abc.abstractmethod
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
@@ -199,7 +199,7 @@ class ZhuShuQiu2021(SmoothnessBased):
         return np.abs(value)
 
 
-class LiRen2022(concept.JumpDetector):
+class LiRen2022(concept.Detector):
     """A jump detector for high-order FD schemes.
 
     See Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770.

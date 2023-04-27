@@ -33,7 +33,7 @@ def jumps(x):
     return sign * amplitude + 10
 
 
-class TestJumpDetectors(unittest.TestCase):
+class TestDetectors(unittest.TestCase):
     """Test various jump detectors.
     """
 
@@ -175,7 +175,7 @@ class TestJumpDetectors(unittest.TestCase):
             scheme.initialize(u_init)
             for i in range(len(detectors)):
                 detector_i = detectors[i]
-                assert isinstance(detector_i, concept.JumpDetector)
+                assert isinstance(detector_i, concept.Detector)
                 active_counts[i][k] = len(
                     detector_i.get_troubled_cell_indices(scheme))
         plt.figure()

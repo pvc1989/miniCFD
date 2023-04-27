@@ -407,7 +407,7 @@ class SpatialScheme(OdeSystem):
         return self._elements[self.get_element_index(point)]
 
     def set_detector_and_limiter(self, detector, limiter):
-        assert isinstance(detector, JumpDetector)
+        assert isinstance(detector, Detector)
         assert isinstance(limiter, Limiter)
         self._detector = detector
         self._limiter = limiter
@@ -415,13 +415,13 @@ class SpatialScheme(OdeSystem):
     def _detect_and_limit(self):
         if self._limiter is None:
             return
-        assert isinstance(self._detector, JumpDetector)
+        assert isinstance(self._detector, Detector)
         assert isinstance(self._limiter, Limiter)
         indices = self._detector.get_troubled_cell_indices(self)
         self._limiter.reconstruct(self, indices)
 
 
-class JumpDetector(abc.ABC):
+class Detector(abc.ABC):
     """An object that detects jumps on an element.
     """
 
