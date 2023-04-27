@@ -99,7 +99,7 @@ class TestJumpDetectors(unittest.TestCase):
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_detectors_on_jumps.pdf')
+        plt.savefig('compare_smoothness_on_jumps.pdf')
 
     def test_smoothness_on_smooth(self):
         degree = 4
@@ -154,9 +154,9 @@ class TestJumpDetectors(unittest.TestCase):
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_detectors_on_smooth.pdf')
+        plt.savefig('compare_smoothness_on_smooth.pdf')
 
-    def test_detectors_on_uniform(self):
+    def test_detectors_on_smooth(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreDG, degree)
         detectors = [
@@ -166,7 +166,7 @@ class TestJumpDetectors(unittest.TestCase):
           detector.LiRen2022(),
           detector.Persson2006(),
         ]
-        k_max = int((0+1) * scheme.n_element() / 2)
+        k_max = int((degree+1) * scheme.n_element() / 2)
         kappa_h = np.ndarray(k_max)
         active_counts = np.ndarray((len(detectors), k_max))
         for k in range(k_max):
@@ -182,15 +182,16 @@ class TestJumpDetectors(unittest.TestCase):
                     detector_i.get_troubled_cell_indices(scheme))
         fig = plt.figure()
         for i in range(len(detectors)):
-            plt.plot(kappa_h, active_counts[i]/scheme.n_element()*100,
+            plt.plot(kappa_h/np.pi, active_counts[i]/scheme.n_element()*100,
                 f'-{markers[i]}', label=detectors[i].name())
         plt.legend()
-        plt.xlabel(r'$\kappa h$')
+        plt.title(r'$\sin(\kappa x)$ approximated by '+scheme.name())
+        plt.xlabel(r'$\kappa h/\pi$')
         plt.ylabel('Troubled Cell Count (%)')
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_detectors_on_uniform.pdf')
+        plt.savefig('compare_detectors_on_smooth.pdf')
 
 
 if __name__ == '__main__':

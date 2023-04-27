@@ -1,6 +1,7 @@
 """Concrete implementations of jump detectors.
 """
 import numpy as np
+import abc
 
 from concept import JumpDetector
 from spatial import FiniteElement
@@ -15,10 +16,6 @@ class Dummy(JumpDetector):
     def name(self, verbose=False):
         return 'Dummy'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        smoothness = np.zeros(scheme.n_element())
-        return smoothness
-
     def get_troubled_cell_indices(self, scheme: FiniteElement):
         return []
 
@@ -30,16 +27,33 @@ class ReportAll(JumpDetector):
     def name(self, verbose=False):
         return 'ReportAll'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        smoothness = np.ones(scheme.n_element()) * np.Inf
-        return smoothness
-
     def get_troubled_cell_indices(self, scheme: FiniteElement):
         troubled_cell_indices = np.arange(scheme.n_element(), dtype=int)
         return troubled_cell_indices
 
 
-class Krivodonova2004(JumpDetector):
+class SmoothnessBased(JumpDetector):
+
+    @abc.abstractmethod
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+        """Get the values of smoothness for each element.
+        """
+
+    def max_smoothness(self, scheme: FiniteElement) -> float:
+        """Get the max value of the smoothness of a smooth cell.
+        """
+        return 1.0
+
+    def get_troubled_cell_indices(self, scheme: FiniteElement):
+        smoothness_values = self.get_smoothness_values(scheme)
+        troubled_cell_indices = []
+        for i_cell in range(len(smoothness_values)):
+            if smoothness_values[i_cell] > self.max_smoothness(scheme):
+                troubled_cell_indices.append(i_cell)
+        return troubled_cell_indices
+
+
+class Krivodonova2004(SmoothnessBased):
     """A jump detector for high-order DG schemes.
 
     See Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338.
@@ -82,16 +96,8 @@ class Krivodonova2004(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
-        troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            if smoothness_values[i_cell] > 1:
-                troubled_cell_indices.append(i_cell)
-        return troubled_cell_indices
 
-
-class LiRen2011(JumpDetector):
+class LiRen2011(SmoothnessBased):
     """A jump detector for high-order finite volume schemes.
 
     See Li and Ren, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
@@ -136,17 +142,11 @@ class LiRen2011(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
-        troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            cell = scheme.get_element_by_index(i_cell)
-            if smoothness_values[i_cell] > (1 + 2*(cell.degree() > 2)):
-                troubled_cell_indices.append(i_cell)
-        return troubled_cell_indices
+    def max_smoothness(self, scheme: FiniteElement):
+        return 1 + 2*(scheme.degree() > 2)
 
 
-class ZhuShuQiu2021(JumpDetector):
+class ZhuShuQiu2021(SmoothnessBased):
     """A jump detector for high-order DG schemes.
 
     See Zhu and Shu and Qiu, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
@@ -193,14 +193,6 @@ class ZhuShuQiu2021(JumpDetector):
             smoothness[i_curr] = dividend / divisor
         return smoothness
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
-        troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            if smoothness_values[i_cell] > 1:
-                troubled_cell_indices.append(i_cell)
-        return troubled_cell_indices
-
     def _integrate(self, f, g, cell):
         value = integrate.fixed_quad_global(lambda x: f(x) - g(x),
             cell.x_left(), cell.x_right(), cell.degree())
@@ -225,7 +217,8 @@ class LiRen2022(JumpDetector):
         else:
             return 'Li (2022)'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+    def get_troubled_cell_indices(self, scheme: FiniteElement) -> np.ndarray:
+        troubled_cell_indices = []
         n_cell = scheme.n_element()
         averages = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -241,39 +234,30 @@ class LiRen2022(JumpDetector):
                 + averages[(i_curr+2)%n_cell])
             psi_values[i_curr] = (2 * a * b + self._epsilon) / (
                 a**2 + b**2 + self._epsilon)
-        smoothness = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             left = min(psi_values[i_curr], psi_values[i_curr-1])
             right = min(psi_values[i_curr], psi_values[(i_curr+1)%n_cell])
-            if min(left, right) >= self._psi_c:
-                smoothness[i_curr] = 1e-2
-            else:
-                smoothness[i_curr] = 1e+2
-        return smoothness
-
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
-        troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            if smoothness_values[i_cell] > 1:
-                troubled_cell_indices.append(i_cell)
+            if min(left, right) < self._psi_c:
+                troubled_cell_indices.append(i_curr)
         return troubled_cell_indices
 
+    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+        troubled_cell_indices = self.get_troubled_cell_indices(scheme)
+        n_cell = scheme.n_element()
+        smoothness_values = np.zeros(n_cell) + 1e-2
+        for i_cell in troubled_cell_indices:
+            smoothness_values[i_cell] = 1e2
+        return smoothness_values
 
-class Persson2006(JumpDetector):
+
+class Persson2006(SmoothnessBased):
     """A jump detector based on artificial viscosity.
 
     See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
     """
 
-    def __init__(self, kappa=0.1) -> None:
-        self._kappa = kappa
-
     def name(self, verbose=False):
-        if verbose:
-            return r'Persson (2006, $\kappa=$' + f'{self._kappa:g})'
-        else:
-            return 'Persson (2006)'
+        return 'Persson (2006)'
 
     def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
         n_cell = scheme.n_element()
@@ -288,14 +272,6 @@ class Persson2006(JumpDetector):
             sensor = coeff[-1]**2 / np.linalg.norm(coeff)**2
             smoothness[i_cell] = sensor / sensor_ref
         return smoothness
-
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
-        troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            if smoothness_values[i_cell] > 1:
-                troubled_cell_indices.append(i_cell)
-        return troubled_cell_indices
 
 
 if __name__ == '__main__':

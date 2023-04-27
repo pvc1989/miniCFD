@@ -431,11 +431,6 @@ class JumpDetector(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_smoothness_values(self, scheme: SpatialScheme) -> np.ndarray:
-        """Get the values of smoothness for each element.
-        """
-
-    @abc.abstractmethod
     def get_troubled_cell_indices(self, scheme: SpatialScheme) -> np.ndarray:
         """Get the indices of trouble cells.
         """
