@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
+import concept
 import equation
 import riemann
 import spatial
@@ -151,6 +152,42 @@ class TestJumpDetectors(unittest.TestCase):
         plt.tight_layout()
         # plt.show()
         plt.savefig('compare_detectors_on_smooth.pdf')
+
+    def test_detectors_on_uniform(self):
+        degree = 4
+        scheme = self.build_scheme(spatial.LegendreDG, degree)
+        detectors = [
+          detector.Krivodonova2004(),
+          detector.LiRen2011(),
+          detector.ZhuShuQiu2021(),
+          detector.LiRen2022(),
+        ]
+        markers = ['1', '2', '3', '4']
+        k_max = int((0+1) * scheme.n_element() / 2)
+        kappa_h = np.ndarray(k_max)
+        active_counts = np.ndarray((len(detectors), k_max))
+        for k in range(k_max):
+            kappa = (k+1) * 2 * np.pi / scheme.length()
+            kappa_h[k] = kappa * scheme.delta_x()
+            def u_init(x):
+                return np.sin(kappa * (x - scheme.x_left()))
+            scheme.initialize(u_init)
+            for i in range(len(detectors)):
+                detector_i = detectors[i]
+                assert isinstance(detector_i, concept.JumpDetector)
+                active_counts[i][k] = len(
+                    detector_i.get_troubled_cell_indices(scheme))
+        fig = plt.figure()
+        for i in range(len(detectors)):
+            plt.plot(kappa_h, active_counts[i]/scheme.n_element()*100,
+                f'-{markers[i]}', label=detectors[i].name())
+        plt.legend()
+        plt.xlabel(r'$\kappa h$')
+        plt.ylabel('Troubled Cell Count (%)')
+        plt.grid()
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig('compare_detectors_on_uniform.pdf')
 
 
 if __name__ == '__main__':
