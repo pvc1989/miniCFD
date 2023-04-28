@@ -235,13 +235,14 @@ class Element(abc.ABC):
         return self._equation.get_convective_jacobian(
               self.get_solution_value(x_global))
 
-    def get_discontinuous_flux(self, x_global):
+    def get_discontinuous_flux(self, x_global, extra_viscous):
         """Get the value of f(u^h) at a given point.
         """
         u_approx = self.get_solution_value(x_global)
         flux = self._equation.get_convective_flux(u_approx)
         du_approx = self.get_expansion().get_gradient_value(x_global)
         flux -= self._equation.get_diffusive_flux(u_approx, du_approx)
+        flux -= extra_viscous * du_approx
         return flux
 
     @abc.abstractmethod

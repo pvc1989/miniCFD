@@ -43,7 +43,7 @@ class FiniteElement(concept.SpatialScheme):
         return i_element
 
     def _get_interface_flux(self, cell_left: concept.Element,
-            cell_right: concept.Element):
+            cell_right: concept.Element, extra_viscous: float):
         # Solve the local Riemann problem:
         x_left = cell_left.x_right()
         u_left = cell_left.get_solution_value(x_left)
@@ -76,7 +76,8 @@ class FiniteElement(concept.SpatialScheme):
         du += beta_0 / distance * (u_right - u_left)
         beta_1 = 1/12
         du += beta_1 * distance * (ddu_right - ddu_left)
-        return flux - du * self.equation().get_diffusive_coeff()
+        viscous = extra_viscous + self.equation().get_diffusive_coeff()
+        return flux - viscous * du
 
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
@@ -85,10 +86,14 @@ class FiniteElement(concept.SpatialScheme):
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self._n_element):
             curr, prev = self._elements[i], self._elements[i-1]
-            interface_fluxes[i] = self._get_interface_flux(prev, curr)
+            viscous = max(self._viscous.get_coeff(i),
+                self._viscous.get_coeff(i-1))
+            interface_fluxes[i] = self._get_interface_flux(prev, curr, viscous)
         if self.is_periodic():
             curr, prev = self._elements[0], self._elements[-1]
-            interface_fluxes[0] = self._get_interface_flux(prev, curr)
+            viscous = max(self._viscous.get_coeff(0),
+                self._viscous.get_coeff(-1))
+            interface_fluxes[0] = self._get_interface_flux(prev, curr, viscous)
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
             assert False
@@ -144,9 +149,10 @@ class DiscontinuousGalerkin(FiniteElement):
             n_dof = element.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
+            extra_viscous = self._viscous.get_coeff(i)
             def integrand(x_global):
                 column = element.get_basis_gradients(x_global)
-                gradient = element.get_discontinuous_flux(x_global)
+                gradient = element.get_discontinuous_flux(x_global, extra_viscous)
                 return column * gradient
             values = integrate.fixed_quad_global(integrand,
                 element.x_left(), element.x_right(), max(1, element.degree()))
@@ -211,9 +217,10 @@ class FluxReconstruction(FiniteElement):
         i_dof = 0
         for i in range(self._n_element):
             element = self.get_element_by_index(i)
+            extra_viscous = self._viscous.get_coeff(i)
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            values = -element.get_flux_gradients(
+            values = -element.get_flux_gradients(extra_viscous,
                 upwind_flux_left, upwind_flux_right)
             column[i_dof:i_dof+len(values)] = values
             i_dof += len(values)

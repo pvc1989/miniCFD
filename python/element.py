@@ -142,7 +142,7 @@ class LagrangeFR(LagrangeDG):
             - self.get_discontinuous_flux(self.x_right()))
         return flux
 
-    def _get_flux_gradient(self, x_global):
+    def _get_flux_gradient(self, x_global, extra_viscous):
         """Get the gradient value of the discontinuous flux at a given point.
         """
         basis_gradients = self.get_basis_gradients(x_global)
@@ -153,31 +153,34 @@ class LagrangeFR(LagrangeDG):
             du_sample = self._u_approx.get_gradient_value(x_sample)
             f_sample = self._equation.get_convective_flux(u_sample)
             f_sample -= self._equation.get_diffusive_flux(u_sample, du_sample)
+            f_sample -= extra_viscous * du_sample
             flux_gradient += f_sample * basis_gradients[i_sample]
             i_sample += 1
         return flux_gradient
 
-    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
+    def get_flux_gradient(self, x_global, extra_viscous,
+            upwind_flux_left, upwind_flux_right):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
-        gradient = self._get_flux_gradient(x_global)
+        gradient = self._get_flux_gradient(x_global, extra_viscous)
         x_local = self._u_approx.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
         left /= self._u_approx.jacobian(x_global)
         right /= self._u_approx.jacobian(x_global)
         gradient += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left()))
+            - self.get_discontinuous_flux(self.x_left(), extra_viscous))
         gradient += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right()))
+            - self.get_discontinuous_flux(self.x_right(), extra_viscous))
         return gradient
 
-    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
+    def get_flux_gradients(self, extra_viscous,
+            upwind_flux_left, upwind_flux_right):
         """Get the gradients of the continuous flux at all nodes.
         """
         nodes = self._u_approx.get_sample_points()
         values = np.ndarray(len(nodes), self._value_type)
         for i in range(len(nodes)):
-            values[i] = self.get_flux_gradient(nodes[i],
+            values[i] = self.get_flux_gradient(nodes[i], extra_viscous,
                 upwind_flux_left, upwind_flux_right)
         return values
 
