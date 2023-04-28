@@ -130,7 +130,8 @@ class LagrangeFR(LagrangeDG):
             coord_map, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
-    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
+    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
@@ -158,8 +159,8 @@ class LagrangeFR(LagrangeDG):
             i_sample += 1
         return flux_gradient
 
-    def get_flux_gradient(self, x_global, extra_viscous,
-            upwind_flux_left, upwind_flux_right):
+    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
         gradient = self._get_flux_gradient(x_global, extra_viscous)
@@ -173,15 +174,15 @@ class LagrangeFR(LagrangeDG):
             - self.get_discontinuous_flux(self.x_right(), extra_viscous))
         return gradient
 
-    def get_flux_gradients(self, extra_viscous,
-            upwind_flux_left, upwind_flux_right):
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the gradients of the continuous flux at all nodes.
         """
         nodes = self._u_approx.get_sample_points()
         values = np.ndarray(len(nodes), self._value_type)
         for i in range(len(nodes)):
-            values[i] = self.get_flux_gradient(nodes[i], extra_viscous,
-                upwind_flux_left, upwind_flux_right)
+            values[i] = self.get_flux_gradient(nodes[i],
+                upwind_flux_left, upwind_flux_right, extra_viscous)
         return values
 
 
@@ -196,7 +197,8 @@ class LegendreFR(LegendreDG):
             coord_map, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
-    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right):
+    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
@@ -208,7 +210,8 @@ class LegendreFR(LegendreDG):
             - self.get_discontinuous_flux(self.x_right()))
         return flux
 
-    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right):
+    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
         u_approx = self._u_approx.get_function_value(x_global)
@@ -224,13 +227,14 @@ class LegendreFR(LegendreDG):
             - self.get_discontinuous_flux(self.x_right()))
         return gradient
 
-    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         """Get the gradients of the continuous flux at all modes.
         """
         # TODO: project grad-correction on the Legendre basis in init.
         def integrand(x_global):
             column = self.get_basis_values(x_global) * self.get_flux_gradient(
-                x_global, upwind_flux_left, upwind_flux_right)
+                x_global, upwind_flux_left, upwind_flux_right, extra_viscous)
             column = self.divide_mass_matrix(column)
             return column
         values = integrate.fixed_quad_global(integrand,

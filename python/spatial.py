@@ -220,8 +220,8 @@ class FluxReconstruction(FiniteElement):
             extra_viscous = self._viscous.get_coeff(i)
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            values = -element.get_flux_gradients(extra_viscous,
-                upwind_flux_left, upwind_flux_right)
+            values = -element.get_flux_gradients(
+                upwind_flux_left, upwind_flux_right, extra_viscous)
             column[i_dof:i_dof+len(values)] = values
             i_dof += len(values)
         assert i_dof == self.n_dof()
