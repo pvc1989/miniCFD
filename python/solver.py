@@ -316,17 +316,20 @@ if __name__ == '__main__':
         default='LegendreFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['Off', 'All', 'KXCRF2004', 'Li2011', 'Zhu2021'],
+        choices=['Off', 'All', 'KXCRF', 'Li2011', 'Li2022', 'Zhu', 'Persson'],
         default='Off',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['Li2020', 'Zhong2013', 'Xu2023', 'Off'],
+        choices=['Off', 'Li', 'Zhong', 'Xu'],
         default='Off',
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscous_model',
-        choices=['Off', 'Persson2006'],
+        choices=['Off', 'Constant', 'Persson'],
         default='Off',
         help='method for adding artificial viscosity')
+    parser.add_argument('--viscous_model_const',
+        default=0.0, type=float,
+        help='constant in viscous model')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
         help='degree of polynomials for approximation')
@@ -362,19 +365,23 @@ if __name__ == '__main__':
         DetectorClass = detector.Off
     elif args.detector == 'All':
         DetectorClass = detector.All
-    elif args.detector == 'KXCRF2004':
+    elif args.detector == 'KXCRF':
         DetectorClass = detector.Krivodonova2004
     elif args.detector == 'Li2011':
         DetectorClass = detector.LiRen2011
-    elif args.detector == 'Zhu2021':
+    elif args.detector == 'Li2022':
+        DetectorClass = detector.LiRen2022
+    elif args.detector == 'Zhu':
         DetectorClass = detector.ZhuShuQiu2021
+    elif args.detector == 'Persson':
+        DetectorClass = detector.Persson2006
     else:
         assert False
-    if args.limiter == 'Li2020':
+    if args.limiter == 'Li':
         LimiterClass = limiter.LiWangRen2020
-    elif args.limiter == 'Zhong2013':
+    elif args.limiter == 'Zhong':
         LimiterClass = limiter.ZhongShu2013
-    elif args.limiter == 'Xu2023':
+    elif args.limiter == 'Xu':
         LimiterClass = limiter.Xu2023
     elif args.limiter == 'Off':
         LimiterClass = limiter.Off
@@ -382,7 +389,9 @@ if __name__ == '__main__':
         assert False
     if args.viscous_model == 'Off':
         ViscousClass = viscous.Off
-    elif args.viscous_model == 'Persson2006':
+    elif args.viscous_model == 'Constant':
+        ViscousClass = viscous.Constant
+    elif args.viscous_model == 'Persson':
         ViscousClass = viscous.Persson2006
     else:
         assert False
@@ -409,7 +418,7 @@ if __name__ == '__main__':
         spatial_scheme=SpatialClass(the_equation, the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
         detector=DetectorClass(), limiter=LimiterClass(),
-        viscous=ViscousClass(),
+        viscous=ViscousClass(args.viscous_model_const),
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.animate:
         solver.animate(args.t_begin, args.t_end, args.n_step)

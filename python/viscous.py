@@ -7,11 +7,29 @@ import detector
 
 class Off(concept.Viscous):
 
+    def __init__(self, const) -> None:
+        pass
+
     def name(self, verbose=False) -> str:
         return "Off"
 
     def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
         pass
+
+
+class Constant(concept.Viscous):
+
+    def __init__(self, const=0.0) -> None:
+        self._const = const
+
+    def name(self, verbose=False) -> str:
+        return 'Constant (' + r'$\nu=$' + f'{self._const})'
+
+    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
+        pass
+
+    def get_coeff(self, i_cell: int):
+        return self._const
 
 
 class Persson2006(concept.Viscous):
