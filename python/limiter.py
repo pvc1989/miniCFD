@@ -10,12 +10,12 @@ import expansion
 import integrate
 
 
-class Dummy(concept.Limiter):
+class Off(concept.Limiter):
     """A dummy limiter for comparison, which keeps the given object unchanged.
     """
 
     def name(self, verbose=False):
-        return 'Dummy'
+        return 'Off'
 
     def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
         pass

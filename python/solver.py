@@ -316,16 +316,16 @@ if __name__ == '__main__':
         default='LegendreFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['Dummy', 'ReportAll', 'KXCRF2004', 'Li2011', 'Zhu2021'],
-        default='Dummy',
+        choices=['Off', 'All', 'KXCRF2004', 'Li2011', 'Zhu2021'],
+        default='Off',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['Li2020', 'Zhong2013', 'Xu2023', 'Dummy'],
-        default='Dummy',
+        choices=['Li2020', 'Zhong2013', 'Xu2023', 'Off'],
+        default='Off',
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscous',
-        choices=['Dummy', 'Persson2006'],
-        default='Dummy',
+        choices=['Off', 'Persson2006'],
+        default='Off',
         help='method for adding artificial viscosity')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
@@ -358,10 +358,10 @@ if __name__ == '__main__':
         SpatialClass = spatial.DGwithFR
     else:
         assert False
-    if args.detector == 'Dummy':
-        DetectorClass = detector.Dummy
-    elif args.detector == 'ReportAll':
-        DetectorClass = detector.ReportAll
+    if args.detector == 'Off':
+        DetectorClass = detector.Off
+    elif args.detector == 'All':
+        DetectorClass = detector.All
     elif args.detector == 'KXCRF2004':
         DetectorClass = detector.Krivodonova2004
     elif args.detector == 'Li2011':
@@ -376,12 +376,12 @@ if __name__ == '__main__':
         LimiterClass = limiter.ZhongShu2013
     elif args.limiter == 'Xu2023':
         LimiterClass = limiter.Xu2023
-    elif args.limiter == 'Dummy':
-        LimiterClass = limiter.Dummy
+    elif args.limiter == 'Off':
+        LimiterClass = limiter.Off
     else:
         assert False
-    if args.viscous == 'Dummy':
-        ViscousClass = viscous.Dummy
+    if args.viscous == 'Off':
+        ViscousClass = viscous.Off
     elif args.viscous == 'Persson2006':
         ViscousClass = viscous.Persson2006
     else:

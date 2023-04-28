@@ -5,10 +5,10 @@ import expansion
 import detector
 
 
-class Dummy(concept.Viscous):
+class Off(concept.Viscous):
 
     def name(self, verbose: bool) -> str:
-        return "Dummy"
+        return "Off"
 
     def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
         pass

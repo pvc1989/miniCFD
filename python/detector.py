@@ -9,23 +9,23 @@ import integrate
 import expansion
 
 
-class Dummy(concept.Detector):
+class Off(concept.Detector):
     """A jump detector that reports no cell as troubled.
     """
 
     def name(self, verbose=False):
-        return 'Dummy'
+        return 'Off'
 
     def get_troubled_cell_indices(self, scheme: FiniteElement):
         return []
 
 
-class ReportAll(concept.Detector):
+class All(concept.Detector):
     """A jump detector that reports all cells as troubled.
     """
 
     def name(self, verbose=False):
-        return 'ReportAll'
+        return 'All'
 
     def get_troubled_cell_indices(self, scheme: FiniteElement):
         troubled_cell_indices = np.arange(scheme.n_element(), dtype=int)

@@ -23,7 +23,7 @@ class TestLimiters(unittest.TestCase):
         self._n_element = 53
         self._equation = equation.LinearAdvection(1.0)
         self._riemann = riemann.LinearAdvection(1.0)
-        self._detector = detector.ReportAll()
+        self._detector = detector.All()
 
     def build_scheme(self, method: spatial.FiniteElement,
             degree: int) -> spatial.FiniteElement:
