@@ -53,14 +53,14 @@ class LinearAdvectionDiffusion(LinearAdvection):
 
 
 class InviscidBurgers(ConservationLaw):
-    # ∂u/∂t + k * ∂u/∂x = 0
+    # ∂u/∂t + k * u * ∂u/∂x = 0
 
     def __init__(self, k=1.0):
         assert k > 0.0
         self._k = k
 
     def name(self, verbose=True) -> str:
-        my_name = r'$\partial u/\partial t+$' + f'{self._k} '
+        my_name = r'$\partial u/\partial t+$' + f'{self._k} u '
         my_name += r'$\partial u/\partial x=0$'
         return my_name
 
@@ -80,7 +80,7 @@ class Burgers(InviscidBurgers):
         self._nu = nu_const
 
     def name(self, verbose=True) -> str:
-        my_name = r'$\partial u/\partial t$+' + f'{self._k} '
+        my_name = r'$\partial u/\partial t$+' + f'{self._k} u '
         my_name += r'$\partial u/\partial x=$' + f'{self._nu} '
         my_name += r'$\partial^2 u/\partial x^2$'
         return my_name

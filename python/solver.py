@@ -23,10 +23,11 @@ class SolverBase(abc.ABC):
             viscous: concept.Viscous,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
-        self._detector = detector
-        self._limiter = limiter
         self._spatial.set_detector_and_limiter(detector, limiter, viscous)
         self._ode_solver = ode_solver
+        self._solver_name = (f'scheme={self._spatial.name()}, ' +
+            f'detector={detector.name()}, limiter={limiter.name()}, ' +
+            f'viscous={viscous.name()}')
         self._animation = None
 
     @abc.abstractmethod
@@ -34,8 +35,7 @@ class SolverBase(abc.ABC):
         """Get a string representation of the problem."""
 
     def solver_name(self) -> str:
-        return (f'scheme={self._spatial.name()}, ' +
-            f'detector={self._detector.name()}, limiter={self._limiter.name()}')
+        return self._solver_name
 
     @abc.abstractmethod
     def u_init(self, x_global):
@@ -323,7 +323,7 @@ if __name__ == '__main__':
         choices=['Li2020', 'Zhong2013', 'Xu2023', 'Off'],
         default='Off',
         help='method for limiting numerical oscillations')
-    parser.add_argument('--viscous',
+    parser.add_argument('--viscous_model',
         choices=['Off', 'Persson2006'],
         default='Off',
         help='method for adding artificial viscosity')
@@ -380,9 +380,9 @@ if __name__ == '__main__':
         LimiterClass = limiter.Off
     else:
         assert False
-    if args.viscous == 'Off':
+    if args.viscous_model == 'Off':
         ViscousClass = viscous.Off
-    elif args.viscous == 'Persson2006':
+    elif args.viscous_model == 'Persson2006':
         ViscousClass = viscous.Persson2006
     else:
         assert False

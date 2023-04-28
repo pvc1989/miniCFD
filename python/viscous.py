@@ -7,7 +7,7 @@ import detector
 
 class Off(concept.Viscous):
 
-    def name(self, verbose: bool) -> str:
+    def name(self, verbose=False) -> str:
         return "Off"
 
     def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
@@ -24,7 +24,7 @@ class Persson2006(concept.Viscous):
         self._kappa = kappa
         self._coeffs = np.ndarray(0)
 
-    def name(self, verbose: bool) -> str:
+    def name(self, verbose=False) -> str:
         return "Persson (2006)"
 
     def _get_viscous_coeff(self, u_approx: expansion.Taylor):
