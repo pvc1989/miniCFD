@@ -9,7 +9,26 @@ import riemann
 import spatial
 import detector
 import limiter
-import test_detector
+
+
+def smooth(x, k_left=10, k_right=5):
+    x_shift = 8
+    gauss_width = 1.25
+    value = (np.exp(-((x - x_shift) / gauss_width)**2 / 2)
+        * np.sin(k_right * x))
+    value += (np.exp(-((x + x_shift) / gauss_width)**2 / 2)
+        * np.sin(k_left * x))
+    return value + 0
+
+
+def jumps(x):
+    a = -np.pi * 3
+    b = +np.pi * 3
+    sign = np.sign(np.sin(x))
+    amplitude = b - x
+    if x < 0:
+        amplitude = x - a
+    return sign * amplitude + 0
 
 
 class TestLimiters(unittest.TestCase):
@@ -34,17 +53,15 @@ class TestLimiters(unittest.TestCase):
     def test_limiters_on_jumps(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreFR, degree)
-        u_init = test_detector.jumps
+        u_init = jumps
         limiters = [
             limiter.ZhongShu2013(),
-            # limiter.LiWangRen2020(k_trunc=0),
-            # limiter.LiWangRen2020(k_trunc=1e0),
-            # limiter.LiWangRen2020(k_trunc=1e1),
-            # limiter.LiWangRen2020(k_trunc=1e10),
-            limiter.Xu2023(alpha=0.1),
-            limiter.Xu2023(alpha=1e0),
-            limiter.Xu2023(alpha=1e1),
-            limiter.Xu2023(alpha=1e2),
+            limiter.LiWangRen2020(k_trunc=0),
+            limiter.LiWangRen2020(k_trunc=1e0),
+            limiter.LiWangRen2020(k_trunc=1e1),
+            # limiter.Xu2023(alpha=0.1),
+            # limiter.Xu2023(alpha=1e0),
+            # limiter.Xu2023(alpha=1e1),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -90,17 +107,17 @@ class TestLimiters(unittest.TestCase):
     def test_limiters_on_smooth(self):
         degree = 4
         scheme = self.build_scheme(spatial.LegendreFR, degree)
-        u_init = test_detector.smooth
+        k1, k2 = 10, 5
+        def u_init(x):
+            return smooth(x, k1, k2)
         limiters = [
             limiter.ZhongShu2013(),
-            # limiter.LiWangRen2020(k_trunc=0),
-            # limiter.LiWangRen2020(k_trunc=1e0),
-            # limiter.LiWangRen2020(k_trunc=1e1),
-            # limiter.LiWangRen2020(k_trunc=1e10),
-            limiter.Xu2023(alpha=0.1),
-            limiter.Xu2023(alpha=1e0),
-            limiter.Xu2023(alpha=1e1),
-            limiter.Xu2023(alpha=1e2),
+            limiter.LiWangRen2020(k_trunc=0),
+            limiter.LiWangRen2020(k_trunc=1e0),
+            limiter.LiWangRen2020(k_trunc=1e1),
+            # limiter.Xu2023(alpha=0.1),
+            # limiter.Xu2023(alpha=1e0),
+            # limiter.Xu2023(alpha=1e1),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -129,10 +146,9 @@ class TestLimiters(unittest.TestCase):
         ax.indicate_inset_zoom(axins, edgecolor="gray")
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
-        kappa_h = 10 * scheme.delta_x() / np.pi
-        plt.title(r'$p=$'+f'{degree}, '
-            +r'$(\kappa h)_\mathrm{left}=$'+f'{kappa_h:.2f}'+r'$\pi$, '
-            +r'$(\kappa h)_\mathrm{right}=$'+f'{kappa_h/2:.2f}'+r'$\pi$')
+        plt.title(scheme.name() +
+            r', $(\kappa h)_\mathrm{L}=$'+f'{k1*scheme.delta_x():.2f}'
+            r', $(\kappa h)_\mathrm{R}=$'+f'{k2*scheme.delta_x():.2f}')
         plt.legend()
         plt.tight_layout()
         # plt.show()
