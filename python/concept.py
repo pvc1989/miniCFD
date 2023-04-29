@@ -7,6 +7,7 @@ import numpy as np
 class Polynomial(abc.ABC):
     """Polynomial functions defined on [-1, 1].
     """
+    # TODO: rename to LocalPolynomial
 
     @abc.abstractmethod
     def get_function_value(self, x_local):
@@ -19,46 +20,120 @@ class Polynomial(abc.ABC):
         """
 
 
-class CoordinateMap(abc.ABC):
-    """A map between local and global coordinates.
+class Coordinate(abc.ABC):
+    """A cell-like object that performs coordinate maps on it.
     """
 
+    @abc.abstractmethod
+    def jacobian_degree(self) -> int:
+        """Degree of the Jacobian determinant.
+        """
+
+    @abc.abstractmethod
     def local_to_global(self, x_local: float) -> float:
         """Coordinate transform from local to global.
         """
 
+    @abc.abstractmethod
     def global_to_local(self, x_global: float) -> float:
         """Coordinate transform from global to local.
         """
 
+    @abc.abstractmethod
     def local_to_jacobian(self, x_local: float) -> float:
         """Get the Jacobian value at a point given by its local coordinate.
         """
 
+    @abc.abstractmethod
     def global_to_jacobian(self, x_global: float) -> float:
         """Get the Jacobian value at a point given by its global coordinate.
         """
 
+    def x_left(self):
+        """Get the coordinate of this element's left boundary.
+        """
+        return self.local_to_global(-1)
 
-class LinearCoordinateMap(CoordinateMap):
-    """A linear map between local and global coordinates.
+    def x_right(self):
+        """Get the coordinate of this element's right boundary.
+        """
+        return self.local_to_global(+1)
+
+    def x_center(self):
+        """Get the coordinate of this element's centroid.
+        """
+        return self.local_to_global(0)
+
+    def length(self):
+        """Get the length of this element.
+        """
+        return self.x_right() - self.x_left()
+
+
+class Integrator(abc.ABC):
+    """A cell-like object that performs integrations on it.
     """
+    # TODO: rename to IntegrableElement
 
-    def __init__(self, x_left: float, x_right: float):
-        self._x_center = (x_left + x_right) / 2
-        self._jacobian = (x_right - x_left) / 2
+    def __init__(self, coordinate: Coordinate) -> None:
+        assert isinstance(coordinate, Coordinate)
+        self._coordinate = coordinate
 
-    def local_to_global(self, x_local: float) -> float:
-        return self._x_center + x_local * self._jacobian
+    @abc.abstractmethod
+    def get_quadrature_points(self, n_point: int) -> np.ndarray:
+        """Get the global coordinates of a given number of quadrature points.
+        """
 
-    def global_to_local(self, x_global: float) -> float:
-        return (x_global - self._x_center) / self._jacobian
+    @abc.abstractmethod
+    def fixed_quad_local(self, function: callable, n_point: int):
+        """Integrate a function defined in local coordinates on [-1, 1] with a given number of quadrature points."""
 
-    def local_to_jacobian(self, x_local: float) -> float:
-        return self._jacobian
+    def fixed_quad_global(self, function: callable, n_point: int):
+        """Integrate a function defined in global coordinates with a given number of quadrature points."""
+        def integrand(x_local):
+            x_global = self._coordinate.local_to_global(x_local)
+            jacobian = self._coordinate.local_to_jacobian(x_local)
+            return function(x_global) * jacobian
+        return self.fixed_quad_local(integrand, n_point)
 
-    def global_to_jacobian(self, x_global: float) -> float:
-        return self._jacobian
+    def average(self, function: callable, n_point: int):
+        """Get the average value of a function on this element.
+        """
+        integral = self.fixed_quad_global(function, n_point)
+        return integral / self._coordinate.length()
+
+    def norm_1(self, function: callable, n_point: int):
+        """Get the L_1 norm of a function on this element.
+        """
+        value = self.fixed_quad_global(
+            lambda x_global: np.abs(function(x_global)),
+            n_point)
+        return value
+
+    def norm_2(self, function: callable, n_point: int):
+        """Get the L_2 norm of a function on this element.
+        """
+        value = self.fixed_quad_global(
+            lambda x_global: np.abs(function(x_global))**2,
+            n_point)
+        return np.sqrt(value)
+
+    def norm_infty(self, function: callable, n_point: int):
+        """Get the (approximate) L_infty norm of a function on this element.
+        """
+        value = 0.0
+        # Alternatively, quadrature points can be used.
+        points = np.linspace(
+            self._coordinate.x_left(), self._coordinate.x_right(), n_point)
+        for x_global in points:
+            value = max(value, np.abs(function(x_global)))
+        return value
+
+    def inner_product(self, phi: callable, psi: callable, n_point):
+        value = self.fixed_quad_global(
+            lambda x_global: phi(x_global) * psi(x_global),
+            n_point)
+        return value
 
 
 class Expansion(abc.ABC):
@@ -68,6 +143,11 @@ class Expansion(abc.ABC):
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
         """Get the name of the expansion.
+        """
+
+    @abc.abstractmethod
+    def n_term(self):
+        """Number of terms in the approximated function.
         """
 
     @abc.abstractmethod
@@ -101,6 +181,11 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_basis_innerproducts(self):
+        """Get the inner-products of each pair of basis functions.
+        """
+
+    @abc.abstractmethod
     def get_function_value(self, x_global: float):
         """Evaluate the approximation and return-by-value the result.
         """
@@ -124,6 +209,11 @@ class Expansion(abc.ABC):
 class Equation(abc.ABC):
     """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
     """
+
+    def n_component(self):
+        """Number of scalar components in U.
+        """
+        return 1
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -157,77 +247,69 @@ class Equation(abc.ABC):
 
 
 class Element(abc.ABC):
-    """A subdomain that carries some expansion of the solution.
+    """A cell-like object that carries some expansion of the solution.
     """
+    # TODO: rename to PhysicalElement
 
-    def __init__(self, equation: Equation, x_left: float, x_right: float,
-            coord_map: CoordinateMap, value_type=float) -> None:
+    def __init__(self, equation: Equation, coordinate: Coordinate,
+            expansion: Expansion, value_type=float) -> None:
+        assert isinstance(equation, Equation)
+        assert isinstance(coordinate, Coordinate)
         self._equation = equation
-        self._x_left = x_left
-        self._x_right = x_right
-        self._coord_map = coord_map
+        self._coordinate = coordinate
+        self._expansion = expansion
         self._value_type = value_type
 
     def x_left(self):
-        """Get the coordinate of this eleement's left boundary.
-        """
-        return self._x_left
+        return self._coordinate.x_left()
 
     def x_right(self):
-        """Get the coordinate of this eleement's right boundary.
-        """
-        return self._x_right
+        return self._coordinate.x_right()
 
     def x_center(self):
-        """Get the coordinate of this eleement's centroid.
-        """
-        return (self.x_left() + self.x_right()) / 2
+        return self._coordinate.x_center()
 
     def length(self):
-        """Get the length of this eleement.
-        """
-        return self.x_right() - self.x_left()
+        return self._coordinate.length()
 
-    def local_to_global(self, x_local):
-        return self._coord_map.local_to_global(x_local)
-
-    def global_to_local(self, x_global):
-        return self._coord_map.global_to_local(x_global)
-
-    def get_coord_map(self) -> CoordinateMap:
-        """Get the underlying CoordinateMap object.
-        """
-        return self._coord_map
-
-    @abc.abstractmethod
     def degree(self):
         """The highest degree of the approximated solution.
         """
+        return self._expansion.degree()
 
-    @abc.abstractmethod
+    def n_term(self):
+        """Number of terms in the approximated function.
+        """
+        return self._expansion.n_term()
+
     def n_dof(self):
         """Count degrees of freedom in current object.
         """
+        return self.n_term() * self._equation.n_component()
 
-    @abc.abstractmethod
     def approximate(self, function: callable):
         """Approximate a general function as u^h.
         """
+        self._expansion.approximate(function)
 
-    @abc.abstractmethod
     def get_expansion(self) -> Expansion:
         """Get the underlying Expansion object.
         """
+        return self._expansion
 
-    @abc.abstractmethod
     def get_basis_values(self, x_global: float):
         """Get the values of basis at a given point.
         """
+        return self._expansion.get_basis_values(x_global)
 
-    @abc.abstractmethod
-    def get_solution_value(self, x_global: float):
-        """Get the value of u^h at a given point.
-        """
+    def get_basis_gradients(self, x_global):
+        return self._expansion.get_basis_gradients(x_global)
+
+    def _build_mass_matrix(self):
+        mass_matrix = self._expansion.get_basis_innerproducts()
+        assert self.n_term() == self.n_dof()
+        # Otherwise, it should be spanned to a block diagonal matrix.
+        return mass_matrix
 
     def get_convective_jacobian(self, x_global: float):
         """Get the value of a(u^h) at a given point.
@@ -245,19 +327,31 @@ class Element(abc.ABC):
         flux -= extra_viscous * du_approx
         return flux
 
-    @abc.abstractmethod
+    def get_solution_value(self, x_global: float):
+        """Get the value of u^h at a given point.
+        """
+        return self._expansion.get_function_value(x_global)
+
+    def get_solution_gradient(self, x_global: float):
+        """Get the gradient value of u^h at a given point.
+        """
+        return self._expansion.get_gradient_value(x_global)
+
     def set_solution_coeff(self, column):
         """Set coefficients of the solution's expansion.
 
         The element is responsible for the column-to-coeff conversion.
         """
+        assert self._equation.n_component() == 1
+        self._expansion.set_coeff(column)
 
-    @abc.abstractmethod
     def get_solution_column(self):
         """Get coefficients of the solution's expansion.
 
         The element is responsible for the coeff-to-column conversion.
         """
+        assert self._equation.n_component() == 1
+        return self._expansion.get_coeff_ref()
 
     @abc.abstractmethod
     def divide_mass_matrix(self, column: np.ndarray):

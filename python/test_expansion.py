@@ -6,6 +6,7 @@ from scipy import integrate
 from matplotlib import pyplot as plt
 
 import expansion
+from coordinate import LinearCoordinate
 
 
 class TestTaylor(unittest.TestCase):
@@ -16,16 +17,8 @@ class TestTaylor(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = -0.4
         self._x_right = 0.6  # avoid x_center = 0.0
-        self._expansion = expansion.Taylor(5, self._x_left, self._x_right)
-
-    def test_coordinate_transforms(self):
-        """Test coordinate transforms between local and global.
-        """
-        points = np.linspace(self._x_left, self._x_right, num=201)
-        for x_global in points:
-            x_local = self._expansion.global_to_local(x_global)
-            self.assertAlmostEqual(x_global,
-                self._expansion.local_to_global(x_local))
+        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self._expansion = expansion.Taylor(5, self._coordinate)
 
     def test_get_basis_values_and_gradients(self):
         """Test methods for getting values and gradients of basis.
@@ -54,7 +47,7 @@ class TestTaylor(unittest.TestCase):
     def test_get_derivative_values(self):
         """Test methods for getting derivatives of u^h.
         """
-        taylor = expansion.Taylor(5, self._x_left, self._x_right, complex)
+        taylor = expansion.Taylor(5, self._coordinate, complex)
         # only approximate well near the center
         points = np.linspace(self._x_left/2, self._x_right/2, num=201)
         def function(x):
@@ -70,14 +63,16 @@ class TestTaylor(unittest.TestCase):
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
-        points = np.linspace(0, 10, num=201)
+        x_left, x_right = 0.0, 10.0
+        points = np.linspace(x_left, x_right, num=201)
         def my_function(point):
             return np.sin(point)
         exact_values = my_function(points)
         plt.figure()
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
-            my_expansion = expansion.Taylor(degree, 0, 10)
+            my_expansion = expansion.Taylor(degree,
+                LinearCoordinate(x_left, x_right))
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -97,7 +92,8 @@ class TestLagrange(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = 0.0
         self._x_right = 10.0
-        self._expansion = expansion.Lagrange(5, self._x_left, self._x_right)
+        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self._expansion = expansion.Lagrange(5, self._coordinate)
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
@@ -108,8 +104,7 @@ class TestLagrange(unittest.TestCase):
         plt.figure()
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
-            my_expansion = expansion.Lagrange(degree,
-                self._x_left, self._x_right)
+            my_expansion = expansion.Lagrange(degree, self._coordinate)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -178,7 +173,8 @@ class TestLegendre(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = 0.0
         self._x_right = 10.0
-        self._expansion = expansion.Legendre(5, self._x_left, self._x_right)
+        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self._expansion = expansion.Legendre(5, self._coordinate)
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
@@ -189,8 +185,7 @@ class TestLegendre(unittest.TestCase):
         plt.figure()
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
-            my_expansion = expansion.Legendre(degree,
-                self._x_left, self._x_right)
+            my_expansion = expansion.Legendre(degree, self._coordinate)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -239,6 +234,7 @@ class TestLegendre(unittest.TestCase):
                 self._expansion.get_gradient_value(point))
 
     def test_orthogonality(self):
+        inner_products = self._expansion.get_basis_innerproducts()
         weight_matrix = np.eye(self._expansion.n_term())
         for k in range(self._expansion.n_term()):
             weight_matrix[k][k] = self._expansion.get_mode_weight(k)
@@ -250,6 +246,7 @@ class TestLegendre(unittest.TestCase):
                   integral, _ = integrate.quad(integrand,
                       self._x_left, self._x_right)
                   self.assertAlmostEqual(integral, weight_matrix[k][l])
+                  self.assertAlmostEqual(integral, inner_products[k][l])
 
     def test_consistency_with_taylor(self):
         self._expansion.approximate(np.sin)
@@ -271,14 +268,15 @@ class TestTruncatedLegendre(unittest.TestCase):
 
     def test_consistency(self):
         x_left, x_right = 0.0, 10
+        coordinate = LinearCoordinate(x_left, x_right)
         points = np.linspace(x_left, x_right, num=201)
         p_high = 5
-        legendre_high = expansion.Legendre(5, x_left, x_right)
+        legendre_high = expansion.Legendre(p_high, coordinate)
         u_init = np.sin
         legendre_high.approximate(u_init)
         for p_low in range(p_high+1):
             legendre_trunc = expansion.TruncatedLegendre(p_low, legendre_high)
-            legendre_low = expansion.Legendre(p_low, x_left, x_right)
+            legendre_low = expansion.Legendre(p_low, coordinate)
             legendre_low.set_coeff(legendre_high.get_coeff_ref()[0:p_low+1])
             for x in points:
                 self.assertAlmostEqual(legendre_low.get_function_value(x),
