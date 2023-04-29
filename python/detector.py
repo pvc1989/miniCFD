@@ -5,7 +5,6 @@ import abc
 
 import concept
 from spatial import FiniteElement
-import integrate
 import expansion
 
 
@@ -16,7 +15,7 @@ class Off(concept.Detector):
     def name(self, verbose=False):
         return 'Off'
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
+    def get_troubled_cell_indices(self, elements, periodic: bool):
         return []
 
 
@@ -27,29 +26,28 @@ class All(concept.Detector):
     def name(self, verbose=False):
         return 'All'
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        troubled_cell_indices = np.arange(scheme.n_element(), dtype=int)
-        return troubled_cell_indices
+    def get_troubled_cell_indices(self, elements, periodic: bool):
+        return range(len(elements))
 
 
 class SmoothnessBased(concept.Detector):
 
     @abc.abstractmethod
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
         """Get the values of smoothness for each element.
         """
 
-    def max_smoothness(self, scheme: FiniteElement) -> float:
+    def max_smoothness(self, curr: concept.Element) -> float:
         """Get the max value of the smoothness of a smooth cell.
         """
         return 1.0
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement):
-        smoothness_values = self.get_smoothness_values(scheme)
+    def get_troubled_cell_indices(self, elements, periodic: bool) -> list:
         troubled_cell_indices = []
-        for i_cell in range(len(smoothness_values)):
-            if smoothness_values[i_cell] > self.max_smoothness(scheme):
-                troubled_cell_indices.append(i_cell)
+        smoothness_values = self.get_smoothness_values(elements, periodic)
+        for i in range(len(elements)):
+            if smoothness_values[i] > self.max_smoothness(elements[i]):
+                troubled_cell_indices.append(i)
         return troubled_cell_indices
 
 
@@ -65,36 +63,34 @@ class Krivodonova2004(SmoothnessBased):
         else:
             return 'KXCRF (2004)'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        n_cell = scheme.n_element()
-        norms = np.ndarray(n_cell)
-        for i_cell in range(n_cell):
-            cell = scheme.get_element_by_index(i_cell)
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        n_cell = len(elements)
+        smoothness_values = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
             def function(x_global):
-                return cell.get_solution_value(x_global)
-            norms[i_cell] = integrate.norm_infty(function, cell) + 1.0
-        ratio = scheme.delta_x()**((cell.degree() + 1) / 2)
-        smoothness = np.ndarray(n_cell)
-        # always report boundary cells as troubled
-        smoothness[0] = smoothness[-1] = 100.0
-        for i_curr in range(1, n_cell-1):
-            curr = scheme.get_element_by_index(i_curr)
-            i_prev = i_curr - 1
-            prev = scheme.get_element_by_index(i_prev)
-            i_next = (i_curr + 1) % n_cell
-            next = scheme.get_element_by_index(i_next)
-            # evaluate smoothness
+                return curr.get_solution_value(x_global)
+            curr_norm = curr._integrator.norm_infty(function, curr.n_term())
+            curr_norm += 1e-8  # avoid division-by-zero
+            ratio = curr.length()**((curr.degree() + 1) / 2)
+            left, right = None, None
+            if periodic or i_curr > 0:
+                left = elements[i_curr - 1]
+            if periodic or i_curr + 1 < n_cell:
+                right = elements[(i_curr + 1) % n_cell]
             dividend = 0.0
-            if curr.get_convective_jacobian(curr.x_left()) > 0:
-                dividend += (curr.get_solution_value(curr.x_left())
-                    - prev.get_solution_value(prev.x_right()))
-            if curr.get_convective_jacobian(curr.x_right()) < 0:
-                dividend += (next.get_solution_value(next.x_left())
-                    - curr.get_solution_value(curr.x_right()))
-            dividend = np.abs(dividend)
-            divisor = ratio * norms[i_curr]
-            smoothness[i_curr] = dividend / divisor
-        return smoothness
+            if (curr.get_convective_jacobian(curr.x_left()) > 0 and
+                    isinstance(left, concept.Element)):
+                dividend += np.abs(curr.get_solution_value(curr.x_left())
+                    - left.get_solution_value(left.x_right()))
+            if (curr.get_convective_jacobian(curr.x_right()) < 0 and
+                    isinstance(right, concept.Element)):
+                dividend += np.abs(curr.get_solution_value(curr.x_right())
+                    - right.get_solution_value(right.x_left()))
+            divisor = ratio * curr_norm
+            smoothness_values[i_curr] = dividend / divisor
+        return smoothness_values
 
 
 class LiRen2011(SmoothnessBased):
@@ -109,41 +105,52 @@ class LiRen2011(SmoothnessBased):
         else:
             return 'Li (2011)'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        n_cell = scheme.n_element()
-        averages = np.ndarray(n_cell)  # could be easier for some schemes
-        for i_cell in range(n_cell):
-            cell = scheme.get_element_by_index(i_cell)
-            def function(x_global):
-                return cell.get_solution_value(x_global)
-            average = integrate.average(function, cell)
-            averages[i_cell] = np.abs(average) + cell.length()
-        ratio = 2 * scheme.delta_x()**((cell.degree() + 1) / 2)
-        smoothness = np.ndarray(n_cell)
-        # always report boundary cells as troubled
-        smoothness[0] = smoothness[-1] = 100.0
-        for i_curr in range(1, n_cell-1):
-            curr = scheme.get_element_by_index(i_curr)
-            curr_solution = curr.get_solution_value(curr.x_center())
-            i_prev = i_curr - 1
-            prev = scheme.get_element_by_index(i_prev)
-            prev_solution = prev.get_solution_value(curr.x_center()
-                + scheme.length() * (i_curr == 0))
-            i_next = (i_curr + 1) % n_cell
-            next = scheme.get_element_by_index(i_next)
-            next_solution = next.get_solution_value(curr.x_center()
-                - scheme.length() * (i_next == 0))
-            # evaluate smoothness
-            dividend = (np.abs(curr_solution - next_solution)
-                + np.abs(curr_solution - prev_solution))
-            divisor = ratio * max(averages[i_curr], averages[i_prev],
-                averages[i_next])
-            # print(dividend, divisor)
-            smoothness[i_curr] = dividend / divisor
-        return smoothness
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        n_cell = len(elements)
+        averages = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
+            averages[i_curr] = np.abs(curr._expansion.get_average())
+        # Averaging is trivial for finite-volume and Legendre-based schems,
+        # but might be expansive for Lagrange-based schemes.
+        smoothness_values = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
+            curr_value = curr.get_solution_value(curr.x_center())
+            left_value = curr_value
+            right_value = curr_value
+            max_average = averages[i_curr]
+            n_neighbor = 0
+            dividend = 0.0
+            left, right = None, None
+            if periodic or i_curr > 0:
+                i_left = i_curr - 1
+                left = elements[i_left]
+                assert isinstance(left, concept.Element)
+                n_neighbor += 1
+                max_average = max(max_average, averages[i_left])
+                curr_center = left.x_right() + curr.length() / 2
+                left_value = left.get_solution_value(curr_center)
+                dividend += np.abs(curr_value - left_value)
+            if periodic or i_curr + 1 < n_cell:
+                i_right = (i_curr + 1) % n_cell
+                right = elements[i_right]
+                assert isinstance(right, concept.Element)
+                n_neighbor += 1
+                max_average = max(max_average, averages[i_right])
+                curr_center = right.x_left() - curr.length() / 2
+                right_value = right.get_solution_value(curr_center)
+                dividend += np.abs(curr_value - right_value)
+            ratio = n_neighbor * curr.length()**((curr.degree() + 1) / 2)
+            max_average += 1e-8  # avoid division-by-zero
+            divisor = ratio * max_average
+            smoothness_values[i_curr] = dividend / divisor
+        return smoothness_values
 
-    def max_smoothness(self, scheme: FiniteElement):
-        return 1 + 2*(scheme.degree() > 2)
+    def max_smoothness(self, curr: concept.Element):
+        return 1 + 2*(curr.degree() > 2)
 
 
 class ZhuShuQiu2021(SmoothnessBased):
@@ -158,45 +165,51 @@ class ZhuShuQiu2021(SmoothnessBased):
         else:
             return 'Zhu (2021)'
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        n_cell = scheme.n_element()
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        n_cell = len(elements)
         norms = np.ndarray(n_cell)
-        for i_cell in range(n_cell):
-            cell = scheme.get_element_by_index(i_cell)
+        for i_curr in range(n_cell):
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
             def function(x_global):
-                return cell.get_solution_value(x_global)
-            norms[i_cell] = integrate.norm_1(function, cell) + cell.length()
-        smoothness = np.ndarray(n_cell)
-        # always report boundary cells as troubled
-        smoothness[0] = smoothness[-1] = 100.0
-        for i_curr in range(1, n_cell-1):
-            curr = scheme.get_element_by_index(i_curr)
-            def curr_solution(x_global):
                 return curr.get_solution_value(x_global)
-            i_prev = i_curr - 1
-            prev = scheme.get_element_by_index(i_prev)
-            def prev_solution(x_global):
-                return prev.get_solution_value(x_global
-                    + scheme.length() * (i_curr == 0))
-            i_next = (i_curr + 1) % n_cell
-            next = scheme.get_element_by_index(i_next)
-            def next_solution(x_global):
-                return next.get_solution_value(x_global
-                    - scheme.length() * (i_next == 0))
-            # evaluate smoothness
-            dividend = max(
-                self._integrate(curr_solution, prev_solution, curr),
-                self._integrate(curr_solution, next_solution, curr))
-            divisor = min(norms[i_curr], norms[i_prev],
-                norms[i_next]) * scheme.delta_x()
-            # print(dividend, divisor)
-            smoothness[i_curr] = dividend / divisor
-        return smoothness
+            norms[i_curr] = curr._integrator.norm_1(function, curr.n_term())
+        smoothness_values = np.ndarray(n_cell)
+        for i_curr in range(n_cell):
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
+            dividend = 0.0
+            min_norm = norms[i_curr]
+            if periodic or i_curr > 0:
+                i_left = i_curr - 1
+                integral = self._integrate(curr, elements[i_left], True)
+                dividend = max(dividend, integral)
+                min_norm = min(min_norm, norms[i_left])
+            if periodic or i_curr + 1 < n_cell:
+                i_right = (i_curr + 1) % n_cell
+                integral = self._integrate(curr, elements[i_right], False)
+                dividend = max(dividend, integral)
+                min_norm = min(min_norm, norms[i_right])
+            min_norm += 1e-8  # avoid division-by-zero
+            divisor = min_norm * curr.length()
+            smoothness_values[i_curr] = dividend / divisor
+        return smoothness_values
 
-    def _integrate(self, f, g, cell):
-        value = integrate.fixed_quad_global(lambda x: f(x) - g(x),
-            cell.x_left(), cell.x_right(), cell.degree())
-        return np.abs(value)
+    def _integrate(self, curr: concept.Element, that: concept.Element,
+            left: bool):
+        def integrand(x_curr):
+            value = curr.get_solution_value(x_curr)
+            if left:
+                x_left = that.x_right() + (x_curr - curr.x_left())
+                value -= that.get_solution_value(x_left)
+                return value
+            else:
+                x_right = that.x_left() - (curr.x_right() - x_curr)
+                value -= that.get_solution_value(x_right)
+            return value
+        integral = curr._integrator.fixed_quad_global(integrand,
+            curr.n_term())
+        return np.abs(integral)
 
 
 class LiRen2022(concept.Detector):
@@ -217,13 +230,14 @@ class LiRen2022(concept.Detector):
         else:
             return 'Li (2022)'
 
-    def get_troubled_cell_indices(self, scheme: FiniteElement) -> np.ndarray:
+    def get_troubled_cell_indices(self, elements, periodic: bool) -> np.ndarray:
         troubled_cell_indices = []
-        n_cell = scheme.n_element()
+        n_cell = len(elements)
         averages = np.ndarray(n_cell)
         for i_curr in range(n_cell):
-            expansion = scheme.get_element_by_index(i_curr).get_expansion()
-            averages[i_curr] = expansion.get_average()
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
+            averages[i_curr] = curr._expansion.get_average()
         psi_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             a = np.abs(averages[i_curr] - averages[i_curr-1])
@@ -241,10 +255,9 @@ class LiRen2022(concept.Detector):
                 troubled_cell_indices.append(i_curr)
         return troubled_cell_indices
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        troubled_cell_indices = self.get_troubled_cell_indices(scheme)
-        n_cell = scheme.n_element()
-        smoothness_values = np.zeros(n_cell) + 1e-2
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        troubled_cell_indices = self.get_troubled_cell_indices(elements, periodic)
+        smoothness_values = np.zeros(len(elements)) + 1e-2
         for i_cell in troubled_cell_indices:
             smoothness_values[i_cell] = 1e2
         return smoothness_values
@@ -270,24 +283,27 @@ class Persson2006(SmoothnessBased):
             assert isinstance(u_approx, expansion.Taylor)
             def u(x):
                 return u_approx.get_function_value(x)
-            all_modes_energy = integrate.inner_product(u, u, u_approx)
+            all_modes_energy = u_approx._integrator.inner_product(
+                u, u, u_approx.n_term())
             legendre = expansion.Legendre(u_approx.degree(),
-                u_approx.x_left(), u_approx.x_right())
+                u_approx._coordinate)
             pth_basis = legendre.get_basis(u_approx.degree())
-            pth_mode_energy = integrate.inner_product(u, pth_basis, u_approx)**2
+            pth_mode_energy = u_approx._integrator.inner_product(
+                u, pth_basis, u_approx.n_term())**2
             pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
         return pth_mode_energy / all_modes_energy
 
-    def get_smoothness_values(self, scheme: FiniteElement) -> np.ndarray:
-        n_cell = scheme.n_element()
-        smoothness = np.ndarray(n_cell)
-        sensor_ref = scheme.degree()**(-3)
+    def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        n_cell = len(elements)
+        smoothness_values = np.ndarray(n_cell)
         for i_cell in range(n_cell):
-            cell = scheme.get_element_by_index(i_cell)
+            cell = elements[i_cell]
+            assert isinstance(cell, concept.Element)
+            sensor_ref = cell.degree()**(-3)
             u_approx = cell.get_expansion()
             sensor = Persson2006.get_smoothness_value(u_approx)
-            smoothness[i_cell] = sensor / sensor_ref
-        return smoothness
+            smoothness_values[i_cell] = sensor / sensor_ref
+        return smoothness_values
 
 
 if __name__ == '__main__':

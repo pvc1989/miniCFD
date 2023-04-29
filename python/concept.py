@@ -90,6 +90,7 @@ class Integrator(abc.ABC):
 
     def fixed_quad_global(self, function: callable, n_point: int):
         """Integrate a function defined in global coordinates with a given number of quadrature points."""
+        n_point = max(1, n_point)
         def integrand(x_local):
             x_global = self._coordinate.local_to_global(x_local)
             jacobian = self._coordinate.local_to_jacobian(x_local)
@@ -121,10 +122,11 @@ class Integrator(abc.ABC):
     def norm_infty(self, function: callable, n_point: int):
         """Get the (approximate) L_infty norm of a function on this element.
         """
-        value = 0.0
-        # Alternatively, quadrature points can be used.
         points = np.linspace(
             self._coordinate.x_left(), self._coordinate.x_right(), n_point)
+        # Alternatively, quadrature points can be used:
+        # points = self.get_quadrature_points(n_point)
+        value = 0.0
         for x_global in points:
             value = max(value, np.abs(function(x_global)))
         return value
@@ -139,6 +141,10 @@ class Integrator(abc.ABC):
 class Expansion(abc.ABC):
     """The polynomial approximation of a general function.
     """
+
+    def __init__(self, coordinate: Coordinate, integrator: Integrator) -> None:
+        self._coordinate = coordinate
+        self._integrator = integrator
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -257,6 +263,7 @@ class Element(abc.ABC):
         assert isinstance(coordinate, Coordinate)
         self._equation = equation
         self._coordinate = coordinate
+        self._integrator = expansion._integrator
         self._expansion = expansion
         self._value_type = value_type
 
@@ -291,6 +298,9 @@ class Element(abc.ABC):
         """Approximate a general function as u^h.
         """
         self._expansion.approximate(function)
+
+    def fixed_quad_global(self, function: callable, n_point: int):
+        return self._integrator.fixed_quad_global(function, n_point)
 
     def get_expansion(self) -> Expansion:
         """Get the underlying Expansion object.
@@ -376,6 +386,56 @@ class RiemannSolver(abc.ABC):
         """
 
 
+class Detector(abc.ABC):
+    """An object that detects jumps on an element.
+    """
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the detector.
+        """
+
+    @abc.abstractmethod
+    def get_troubled_cell_indices(self, elements, periodic: bool):
+        """Whether the current element is troubled.
+        """
+
+
+class Limiter(abc.ABC):
+    """An object that limits oscillations on an element.
+    """
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the limiter.
+        """
+
+    @abc.abstractmethod
+    def get_new_coeff(self, curr: Element, left: Element, right: Element) -> np.ndarray:
+        """Reconstruct the expansion on a troubled cell.
+        """
+
+
+class Viscous(abc.ABC):
+    """An object that adds artificial viscosity to a spatial scheme.
+    """
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the limiter.
+        """
+
+    @abc.abstractmethod
+    def generate(self, curr: Element, left: Element, right: Element):
+        """Add viscosity on a troubled cell.
+        """
+
+    def get_coeff(self, i_cell: int):
+        """Get the viscous coefficient of the ith cell.
+        """
+        return 0.0
+
+
 class OdeSystem(abc.ABC):
     """A system of ODEs in the form of dU/∂t = R.
     """
@@ -419,21 +479,20 @@ class SpatialScheme(OdeSystem):
     """
 
     def __init__(self, equation: Equation,
-            n_element: int, x_left: float, x_right: float) -> None:
+            n_element: int, x_left: float, x_right: float,
+            detector=None, limiter=None, viscous=None) -> None:
         assert x_left < x_right
         assert n_element > 1
         self._equation = equation
-        self._n_element = n_element
-        self._delta_x = (x_right - x_left) / n_element
         self._elements = np.ndarray(n_element, Element)
-        self._detector = None
-        self._limiter = None
-        self._viscous = None
+        self._detector = detector
+        self._limiter = limiter
+        self._viscous = viscous
 
     def degree(self):
         """Get the degree of the polynomial approximation.
         """
-        return self._elements[0].degree()
+        return self.get_element_by_index(0).degree()
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -448,12 +507,12 @@ class SpatialScheme(OdeSystem):
     def x_left(self):
         """Get the coordinate of this object's left boundary.
         """
-        return self._elements[0].x_left()
+        return self.get_element_by_index(0).x_left()
 
     def x_right(self):
         """Get the coordinate of this object's right boundary.
         """
-        return self._elements[-1].x_right()
+        return self.get_element_by_index(-1).x_right()
 
     def length(self):
         """Get the length of this object.
@@ -463,14 +522,14 @@ class SpatialScheme(OdeSystem):
     def n_element(self):
         """Count elements in this object.
         """
-        return self._n_element
+        return len(self._elements)
 
     def delta_x(self):
         """Get the length of each element.
 
         Currently, only uniform meshing is supported.
         """
-        return self._delta_x
+        return self.get_element_by_index(0).length()
 
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
@@ -510,69 +569,15 @@ class SpatialScheme(OdeSystem):
         self._limiter = limiter
         self._viscous = viscous
 
-    def _detect_and_limit(self):
-        if self._limiter is None:
-            return
-        assert isinstance(self._detector, Detector)
-        assert isinstance(self._limiter, Limiter)
-        indices = self._detector.get_troubled_cell_indices(self)
-        self._limiter.reconstruct(self, indices)
-        self._viscous.generate(self, indices)
+    def apply_limiter(self, troubled_cell_indices: list):
+        if isinstance(self._limiter, Limiter):
+            for i_element in range(1, self.n_element()):
+                pass
 
-
-class Detector(abc.ABC):
-    """An object that detects jumps on an element.
-    """
-
-    @abc.abstractmethod
-    def name(self, verbose: bool) -> str:
-        """Get the name of the detector.
-        """
-
-    @abc.abstractmethod
-    def get_troubled_cell_indices(self, scheme: SpatialScheme) -> np.ndarray:
-        """Get the indices of trouble cells.
-        """
-
-
-class Limiter(abc.ABC):
-    """An object that limits oscillations on an element.
-    """
-
-    @abc.abstractmethod
-    def name(self, verbose: bool) -> str:
-        """Get the name of the limiter.
-        """
-
-    @abc.abstractmethod
-    def get_new_coeff(self, element: Element, neighbors) -> np.ndarray:
-        """Reconstruct the expansion on a troubled cell.
-        """
-
-    @abc.abstractmethod
-    def reconstruct(self, scheme: SpatialScheme, troubled_cell_indices):
-        """Reconstruct the expansion on each troubled cell.
-        """
-
-
-class Viscous(abc.ABC):
-    """An object that adds artificial viscosity to a spatial scheme.
-    """
-
-    @abc.abstractmethod
-    def name(self, verbose: bool) -> str:
-        """Get the name of the limiter.
-        """
-
-    @abc.abstractmethod
-    def generate(self, scheme: SpatialScheme, troubled_cell_indices):
-        """Add viscosity on each troubled cell.
-        """
-
-    def get_coeff(self, i_cell: int):
-        """Get the viscous coefficient of the ith cell.
-        """
-        return 0.0
+    def add_viscosity(self, troubled_cell_indices: list):
+        if isinstance(self._viscous, Viscous):
+            for i_element in range(1, self.n_element()):
+                pass
 
 
 if __name__ == '__main__':

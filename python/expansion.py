@@ -18,12 +18,10 @@ class Taylor(Expansion):
 
     def __init__(self, degree: int, coordinate: Coordinate,
             value_type=float) -> None:
-        super().__init__()
         assert degree >= 0
         self._n_term = degree + 1
-        assert isinstance(coordinate, Coordinate)
-        self._coordinate = coordinate
-        self._integrator = integrator.GaussLegendre(self._coordinate)
+        Expansion.__init__(self, coordinate,
+            integrator.GaussLegendre(coordinate))
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
         self._value_type = value_type
@@ -157,7 +155,7 @@ class Lagrange(Taylor):
 
     def __init__(self, degree: int, coordinate: Coordinate,
             value_type=float) -> None:
-        super().__init__(degree, coordinate, value_type)
+        Taylor.__init__(self, degree, coordinate, value_type)
         n_point = degree + 1
         assert n_point >= 1
         # Sample points evenly distributed in the element.
@@ -248,7 +246,7 @@ class Legendre(Taylor):
 
     def __init__(self, degree: int, coordinate: Coordinate,
             value_type=float) -> None:
-        super().__init__(degree, coordinate, value_type)
+        Taylor.__init__(self, degree, coordinate, value_type)
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
         # Legendre polynoamials are only orthogonal for 1-degree coordinate map,
         # whose Jacobian determinant is constant over [-1, 1].

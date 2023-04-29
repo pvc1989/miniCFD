@@ -4,9 +4,9 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 
 import concept
+from  coordinate import LinearCoordinate
 import expansion
 import element
-import integrate
 
 
 class FiniteElement(concept.SpatialScheme):
@@ -16,18 +16,18 @@ class FiniteElement(concept.SpatialScheme):
     def __init__(self, equation: concept.Equation,
             riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
-            element_type: concept.Element, value_type=float) -> None:
+            ElementType: concept.Element, value_type=float) -> None:
         concept.SpatialScheme.__init__(self, equation,
             n_element, x_left, x_right)
         assert degree >= 0
         self._riemann = riemann
+        delta_x = (x_right - x_left) / n_element
         x_left_i = x_left
         for i_element in range(n_element):
-            assert_almost_equal(x_left_i, x_left + i_element * self.delta_x())
-            x_right_i = x_left_i + self.delta_x()
-            element_i = element_type(
-                equation, degree, x_left_i, x_right_i,
-                concept.LinearCoordinateMap(x_left, x_right), value_type)
+            assert_almost_equal(x_left_i, x_left + i_element * delta_x)
+            x_right_i = x_left_i + delta_x
+            element_i = ElementType(equation, degree,
+                LinearCoordinate(x_left_i, x_right_i), value_type)
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
@@ -38,7 +38,7 @@ class FiniteElement(concept.SpatialScheme):
 
     def get_element_index(self, point):
         i_element = int((point - self.x_left()) / self.delta_x())
-        if i_element == self._n_element:
+        if i_element == self.n_element():
             i_element -= 1
         return i_element
 
@@ -82,9 +82,9 @@ class FiniteElement(concept.SpatialScheme):
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
-        interface_fluxes = np.ndarray(self._n_element + 1, self._value_type)
+        interface_fluxes = np.ndarray(self.n_element() + 1, self._value_type)
         # interface_flux[i] := flux on interface(element[i-1], element[i])
-        for i in range(1, self._n_element):
+        for i in range(1, self.n_element()):
             curr, prev = self._elements[i], self._elements[i-1]
             viscous = max(self._viscous.get_coeff(i),
                 self._viscous.get_coeff(i-1))
@@ -100,20 +100,18 @@ class FiniteElement(concept.SpatialScheme):
         return interface_fluxes
 
     def get_solution_value(self, point):
-        element = self.get_element(point)
-        return element.get_solution_value(point)
+        return self.get_element(point).get_solution_value(point)
 
     def get_discontinuous_flux(self, point):
-        element = self.get_element(point)
-        return element.get_discontinuous_flux(point)
+        return self.get_element(point).get_discontinuous_flux(point)
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
         first = 0
-        for element in self._elements:
-            assert isinstance(element, concept.Element)
-            last = first + element.n_dof()
-            element.set_solution_coeff(column[first:last])
+        for element_i in self._elements:
+            assert isinstance(element_i, concept.Element)
+            last = first + element_i.n_dof()
+            element_i.set_solution_coeff(column[first:last])
             first = last
         assert first == self.n_dof()
         self._detect_and_limit()
@@ -121,19 +119,18 @@ class FiniteElement(concept.SpatialScheme):
     def get_solution_column(self):
         column = np.zeros(self.n_dof(), self._value_type)
         first = 0
-        for element in self._elements:
-            assert isinstance(element, concept.Element)
-            last = first + element.n_dof()
-            column[first:last] = element.get_solution_column()
+        for element_i in self._elements:
+            assert isinstance(element_i, concept.Element)
+            last = first + element_i.n_dof()
+            column[first:last] = element_i.get_solution_column()
             first = last
         assert first == self.n_dof()
         return column
 
     def initialize(self, function: callable):
-        for element in self._elements:
-            assert isinstance(element, concept.Element)
-            element.approximate(function)
-        self._detect_and_limit()
+        for element_i in self._elements:
+            assert isinstance(element_i, concept.Element)
+            element_i.approximate(function)
 
 
 class DiscontinuousGalerkin(FiniteElement):
@@ -144,25 +141,24 @@ class DiscontinuousGalerkin(FiniteElement):
         column = np.zeros(self.n_dof(), self._value_type)
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
-        for i in range(self._n_element):
-            element = self.get_element_by_index(i)
-            n_dof = element.n_dof()
+        for i in range(self.n_element()):
+            element_i = self.get_element_by_index(i)
+            n_dof = element_i.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
             extra_viscous = self._viscous.get_coeff(i)
             def integrand(x_global):
-                column = element.get_basis_gradients(x_global)
-                gradient = element.get_discontinuous_flux(x_global, extra_viscous)
+                column = element_i.get_basis_gradients(x_global)
+                gradient = element_i.get_discontinuous_flux(x_global, extra_viscous)
                 return column * gradient
-            values = integrate.fixed_quad_global(integrand,
-                element.x_left(), element.x_right(), max(1, element.degree()))
+            values = element_i.fixed_quad_global(integrand, element_i.degree())
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            values += upwind_flux_left * element.get_basis_values(element.x_left())
-            values -= upwind_flux_right * element.get_basis_values(element.x_right())
+            values += upwind_flux_left * element_i.get_basis_values(element_i.x_left())
+            values -= upwind_flux_right * element_i.get_basis_values(element_i.x_right())
             # 3rd: multiply the inverse of the mass matrix
-            values = element.divide_mass_matrix(values)
+            values = element_i.divide_mass_matrix(values)
             # write to the global column
             column[i_dof:i_dof+n_dof] = values
             i_dof += n_dof
@@ -215,12 +211,14 @@ class FluxReconstruction(FiniteElement):
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
-        for i in range(self._n_element):
-            element = self.get_element_by_index(i)
+        for i in range(self.n_element()):
+            element_i = self.get_element_by_index(i)
+            assert (isinstance(element_i, element.LagrangeFR)
+                or isinstance(element_i, element.LegendreFR))
             extra_viscous = self._viscous.get_coeff(i)
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            values = -element.get_flux_gradients(
+            values = -element_i.get_flux_gradients(
                 upwind_flux_left, upwind_flux_right, extra_viscous)
             column[i_dof:i_dof+len(values)] = values
             i_dof += len(values)
@@ -230,20 +228,24 @@ class FluxReconstruction(FiniteElement):
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)
         # solve riemann problem at the left end of curr element
-        x_right = self._elements[curr].x_left()
-        u_right = self._elements[curr].get_solution_value(x_right)
-        prev = curr - 1
-        x_left = self._elements[prev].x_right()
-        u_left = self._elements[prev].get_solution_value(x_left)
+        right = self.get_element_by_index(curr)
+        x_right = right.x_left()
+        u_right = right.get_solution_value(x_right)
+        left = self.get_element_by_index(curr-1)
+        x_left = left.x_right()
+        u_left = left.get_solution_value(x_left)
         upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
         # solve riemann problem at the right end of curr element
-        x_left = self._elements[curr].x_right()
-        u_left = self._elements[curr].get_solution_value(x_left)
-        next = (curr + 1) % self._n_element
-        x_right = self._elements[next].x_left()
-        u_right = self._elements[next].get_solution_value(x_right)
+        left = self.get_element_by_index(curr)
+        x_left = left.x_right()
+        u_left = left.get_solution_value(x_left)
+        right = self.get_element_by_index((curr + 1) % self.n_element())
+        x_right = right.x_left()
+        u_right = right.get_solution_value(x_right)
         upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
-        return self._elements[curr].get_continuous_flux(point,
+        assert (isinstance(left, element.LagrangeFR)
+            or isinstance(left, element.LegendreFR))
+        return left.get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
 
 
@@ -281,48 +283,6 @@ class LegendreFR(FluxReconstruction):
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
-
-
-class DGwithFR(LagrangeFR):
-    """A DG scheme built upon LagrangeFR.
-    """
-
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
-            value_type=float) -> None:
-        LagrangeFR.__init__(self, equation, riemann, degree,
-            n_element, x_left, x_right, value_type)
-
-    def name(self, verbose=True):
-        return 'DGwithFR (Lagrange, '+r'$p$='+f'{self.degree()})'
-
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
-        interface_fluxes = self.get_interface_fluxes()
-        i_dof = 0
-        for i in range(self._n_element):
-            element = self.get_element_by_index(i)
-            n_dof = element.n_dof()
-            # build element_i's residual column
-            # 1st: evaluate the internal integral
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            def integrand(x_global):
-                column = element.get_basis_values(x_global)
-                gradient = element.get_flux_gradient(x_global,
-                    upwind_flux_left, upwind_flux_right)
-                return -column * gradient
-            values = integrate.fixed_quad_global(integrand,
-                element.x_left(), element.x_right(), element.n_term())
-            # 2nd: evaluate the boundary integral
-            # Nothing to do here.
-            # 3rd: multiply the inverse of the mass matrix
-            values = element.divide_mass_matrix(values)
-            column[i_dof:i_dof+n_dof] = values
-            i_dof += n_dof
-        assert i_dof == self.n_dof()
-        return column
 
 
 if __name__ == '__main__':
