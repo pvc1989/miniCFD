@@ -5,9 +5,7 @@ from scipy import special
 from copy import deepcopy
 
 import concept
-from spatial import FiniteElement
 import expansion
-import integrate
 
 
 class Off(concept.Limiter):
@@ -17,7 +15,7 @@ class Off(concept.Limiter):
     def name(self, verbose=False):
         return 'Off'
 
-    def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
+    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
         pass
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
@@ -28,30 +26,29 @@ class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """
 
-    def reconstruct(self, scheme: FiniteElement, troubled_cell_indices):
+    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
         new_coeffs = []
         for i_curr in troubled_cell_indices:
-            curr = scheme.get_element_by_index(i_curr)
+            curr = elements[i_curr]
             neighbors = []
-            if scheme.is_periodic() or i_curr > 0:
+            if periodic or i_curr > 0:
                 i_prev = i_curr - 1
-                prev = scheme.get_element_by_index(i_prev)
-                neighbors.append(prev)
-            if scheme.is_periodic() or i_curr + 1 < scheme.n_element():
-                i_next = (i_curr + 1) % scheme.n_element()
-                next = scheme.get_element_by_index(i_next)
-                neighbors.append(next)
+                neighbors.append(elements[i_prev])
+            if periodic or i_curr + 1 < len(elements):
+                i_next = (i_curr + 1) % len(elements)
+                neighbors.append(elements[i_next])
             coeff = self.get_new_coeff(curr, neighbors)
             new_coeffs.append(coeff)
         assert len(new_coeffs) == len(troubled_cell_indices)
         i_new = 0
         for i_curr in troubled_cell_indices:
-            curr = scheme.get_element_by_index(i_curr)
+            curr = elements[i_curr]
+            assert isinstance(curr, concept.Element)
             curr.set_solution_coeff(new_coeffs[i_new])
             i_new += 1
         assert i_new == len(new_coeffs)
 
-    def _x_shift(self, this: expansion.Taylor, that: expansion.Taylor):
+    def _x_shift(self, this: concept.Element, that: concept.Element):
         x_shift = 0.0
         if this.x_right() < that.x_left() - that.length():  # this << that
             x_shift = that.x_right() - this.x_left()
@@ -91,11 +88,11 @@ class ZhongShu2013(CompactWENO):
             Expansion = expansion.Legendre
         else:
             assert False
-        borrowed = Expansion(this.degree(), this.x_left(), this.x_right(),
-            this._value_type)
-        x_shift = self._x_shift(this, that)
-        that_average = integrate.average(
-            lambda x_this: that.get_function_value(x_this + x_shift), this)
+        borrowed = Expansion(this.degree(), this._coordinate, this._value_type)
+        x_shift = self._x_shift(curr, neighbor)
+        that_average = this._integrator.average(
+            lambda x_this: that.get_function_value(x_this + x_shift),
+            n_point=this.degree())
         borrowed.approximate(lambda x_this: this.get_average() - that_average
             + that.get_function_value(x_this + x_shift))
         return borrowed
@@ -104,10 +101,11 @@ class ZhongShu2013(CompactWENO):
         beta = 0.0
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
-        norms = integrate.fixed_quad_global(integrand, taylor.x_left(),
-            taylor.x_right(), n_point=taylor.degree())
+        norms = taylor._integrator.fixed_quad_global(integrand,
+            n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
-            scale = taylor.length()**(2*k-1) / (special.factorial(k))**2
+            length = taylor._coordinate.length()
+            scale = length**(2*k-1) / (special.factorial(k))**2
             beta += norms[k] * scale
         return beta
 
@@ -150,32 +148,34 @@ class LiWangRen2020(CompactWENO):
         else:
             return r'Li (2020, $K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
-    def _borrow_expansion(self, this: expansion.Legendre,
+    def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
+        this = curr.get_expansion()
+        assert isinstance(this, expansion.Legendre)
         that = neighbor.get_expansion()
         assert isinstance(that, expansion.Taylor)
-        borrowed = expansion.Legendre(1, this.x_left(),
-            this.x_right(), this._value_type)
+        borrowed = expansion.Legendre(1, this._coordinate, this._value_type)
         coeff = np.ndarray(2, dtype=this._value_type)
         this_average = this.get_average()
         coeff[0] = this_average
-        x_shift = self._x_shift(this, that)
+        x_shift = self._x_shift(curr, neighbor)
         def psi(x_that):
             return that.get_function_value(x_that) - this_average
         def phi(x_that):
             return this.get_basis(1)(x_that - x_shift)
-        coeff[1] = (integrate.inner_product(phi, psi, neighbor)
-            / integrate.norm_2(phi, neighbor))
+        coeff[1] = (that._integrator.inner_product(phi, psi, that.degree())
+            / that._integrator.norm_2(phi, that.degree()))
         borrowed.set_coeff(coeff)
         return borrowed
 
     def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
-        norms = integrate.fixed_quad_global(integrand, taylor.x_left(),
-            taylor.x_right(), n_point=taylor.degree())
+        norms = taylor._integrator.fixed_quad_global(integrand,
+            n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
-            scale = taylor.jacobian(0)**(2*k-1) / (special.factorial(k-1))**2
+            jacobian = taylor._coordinate.length() / 2
+            scale = jacobian**(2*k-1) / (special.factorial(k-1))**2
             norms[k] *= scale
         return norms
 
@@ -196,7 +196,7 @@ class LiWangRen2020(CompactWENO):
                 expansion.TruncatedLegendre(degree, curr_legendre))
         # Get candidates by borrowing from neighbors:
         for neighbor in neighbors:
-            candidates.append(self._borrow_expansion(curr_legendre, neighbor))
+            candidates.append(self._borrow_expansion(curr, neighbor))
         assert len(candidates) == curr.degree() + len(neighbors)
         # Get smoothness values: (TODO: use quadrature-free implementation)
         # process 1-degree candidates
@@ -282,7 +282,7 @@ class Xu2023(CompactWENO):
                 q = curr_expansion.get_function_value(x) - curr_average
                 q /= big_a
                 return np.tanh(q)
-            monotone_average = integrate.average(monotone, curr)
+            monotone_average = curr._integrator.average(monotone, curr.degree())
             def new_expansion(x):
                 dividend = (monotone(x) - monotone_average) * big_a
                 divisor = 1 + np.abs(monotone_average)

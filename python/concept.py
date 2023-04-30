@@ -411,7 +411,11 @@ class Limiter(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_new_coeff(self, curr: Element, left: Element, right: Element) -> np.ndarray:
+    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
+        pass
+
+    @abc.abstractmethod
+    def get_new_coeff(self, curr: Element, neighbors) -> np.ndarray:
         """Reconstruct the expansion on a troubled cell.
         """
 

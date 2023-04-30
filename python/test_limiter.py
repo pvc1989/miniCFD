@@ -80,8 +80,10 @@ class TestLimiters(unittest.TestCase):
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
-            indices = self._detector.get_troubled_cell_indices(scheme)
-            limiters[i].reconstruct(scheme, indices)
+            indices = self._detector.get_troubled_cell_indices(
+                scheme._elements, scheme.is_periodic())
+            limiters[i].reconstruct(indices,
+                scheme._elements, scheme.is_periodic())
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
@@ -131,8 +133,10 @@ class TestLimiters(unittest.TestCase):
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
-            indices = self._detector.get_troubled_cell_indices(scheme)
-            limiters[i].reconstruct(scheme, indices)
+            indices = self._detector.get_troubled_cell_indices(
+                scheme._elements, scheme.is_periodic())
+            limiters[i].reconstruct(indices,
+                scheme._elements, scheme.is_periodic())
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
