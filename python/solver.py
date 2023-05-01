@@ -116,7 +116,7 @@ class SolverBase(abc.ABC):
         delta_x = self._spatial.delta_x()
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
-        viscous = self._spatial.equation().get_diffusive_coeff()
+        viscous = self._spatial.equation.get_diffusive_coeff()
         cell_reynolds = self.a_max() * delta_x / (viscous + 1e-18)
         cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
@@ -156,13 +156,13 @@ class LinearSmooth(SolverBase):
             viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
-        self._a_const = self._spatial.equation().get_convective_jacobian()
-        self._b_const = self._spatial.equation().get_diffusive_coeff()
+        self._a_const = self._spatial.equation.get_convective_jacobian()
+        self._b_const = self._spatial.equation.get_diffusive_coeff()
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
 
     def problem_name(self):
-        my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
+        my_name = self._spatial.equation.name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
         return my_name
@@ -197,7 +197,7 @@ class LinearJumps(LinearSmooth):
         return np.sign(value)
 
     def problem_name(self):
-        my_name = self._spatial.equation().name() + r', $u(x,t=0)=$sign$(\sin($'
+        my_name = self._spatial.equation.name() + r', $u(x,t=0)=$sign$(\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$))$'
         return my_name
@@ -218,13 +218,13 @@ class InviscidBurgers(SolverBase):
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
 
     def problem_name(self) -> str:
-        my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
+        my_name = self._spatial.equation.name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += r'$\pi x/$' + f'{length:g}' + r'$)$'
         return my_name
 
     def a_max(self):
-        return self._spatial.equation().get_convective_jacobian(u=1.0)
+        return self._spatial.equation.get_convective_jacobian(u=1.0)
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
@@ -234,7 +234,7 @@ class InviscidBurgers(SolverBase):
     def u_exact(self, x_global, t_curr):
         # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
         def func(u_curr):
-            ku = self._spatial.equation().get_convective_jacobian(u_curr)
+            ku = self._spatial.equation.get_convective_jacobian(u_curr)
             return u_curr - self.u_init(x_global - ku * t_curr)
         if np.abs(x_global - self._x_mid) < 1e-6:
             root = 0.0

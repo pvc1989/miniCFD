@@ -71,7 +71,7 @@ class Krivodonova2004(SmoothnessBased):
             assert isinstance(curr, concept.Element)
             def function(x_global):
                 return curr.get_solution_value(x_global)
-            curr_norm = curr._integrator.norm_infty(function, curr.n_term())
+            curr_norm = curr.integrator.norm_infty(function, curr.n_term())
             curr_norm += 1e-8  # avoid division-by-zero
             ratio = curr.length()**((curr.degree() + 1) / 2)
             left, right = None, None
@@ -111,7 +111,7 @@ class LiRen2011(SmoothnessBased):
         for i_curr in range(n_cell):
             curr = elements[i_curr]
             assert isinstance(curr, concept.Element)
-            averages[i_curr] = np.abs(curr._expansion.get_average())
+            averages[i_curr] = np.abs(curr.expansion.get_average())
         # Averaging is trivial for finite-volume and Legendre-based schems,
         # but might be expansive for Lagrange-based schemes.
         smoothness_values = np.ndarray(n_cell)
@@ -173,7 +173,7 @@ class ZhuShuQiu2021(SmoothnessBased):
             assert isinstance(curr, concept.Element)
             def function(x_global):
                 return curr.get_solution_value(x_global)
-            norms[i_curr] = curr._integrator.norm_1(function, curr.n_term())
+            norms[i_curr] = curr.integrator.norm_1(function, curr.n_term())
         smoothness_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = elements[i_curr]
@@ -207,7 +207,7 @@ class ZhuShuQiu2021(SmoothnessBased):
                 x_right = that.x_left() - (curr.x_right() - x_curr)
                 value -= that.get_solution_value(x_right)
             return value
-        integral = curr._integrator.fixed_quad_global(integrand,
+        integral = curr.integrator.fixed_quad_global(integrand,
             curr.n_term())
         return np.abs(integral)
 
@@ -237,7 +237,7 @@ class LiRen2022(concept.Detector):
         for i_curr in range(n_cell):
             curr = elements[i_curr]
             assert isinstance(curr, concept.Element)
-            averages[i_curr] = curr._expansion.get_average()
+            averages[i_curr] = curr.expansion.get_average()
         psi_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             a = np.abs(averages[i_curr] - averages[i_curr-1])
@@ -283,12 +283,12 @@ class Persson2006(SmoothnessBased):
             assert isinstance(u_approx, expansion.Taylor)
             def u(x):
                 return u_approx.get_function_value(x)
-            all_modes_energy = u_approx._integrator.inner_product(
+            all_modes_energy = u_approx.integrator.inner_product(
                 u, u, u_approx.n_term())
             legendre = expansion.Legendre(u_approx.degree(),
-                u_approx._coordinate)
+                u_approx.coordinate)
             pth_basis = legendre.get_basis(u_approx.degree())
-            pth_mode_energy = u_approx._integrator.inner_product(
+            pth_mode_energy = u_approx.integrator.inner_product(
                 u, pth_basis, u_approx.n_term())**2
             pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
         return pth_mode_energy / all_modes_energy
@@ -300,7 +300,7 @@ class Persson2006(SmoothnessBased):
             cell = elements[i_cell]
             assert isinstance(cell, concept.Element)
             sensor_ref = cell.degree()**(-3)
-            u_approx = cell.get_expansion()
+            u_approx = cell.expansion
             sensor = Persson2006.get_smoothness_value(u_approx)
             smoothness_values[i_cell] = sensor / sensor_ref
         return smoothness_values

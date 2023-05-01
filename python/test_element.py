@@ -22,9 +22,9 @@ class TestLagrangeFR(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
-        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self.coordinate = LinearCoordinate(self._x_left, self._x_right)
         self._element = LagrangeFR(self._equation, self._degree,
-            self._coordinate)
+            self.coordinate)
         self._element.approximate(np.sin)
 
     def test_plot(self):
@@ -80,7 +80,7 @@ class TestLagrangeFR(unittest.TestCase):
                 upwind_flux_left, upwind_flux_right)
             # continuous_flux = discontinuous_flux + correction
             flux_expect = self._element.get_discontinuous_flux(x_global)
-            x_local = self._coordinate.global_to_local(x_global)
+            x_local = self.coordinate.global_to_local(x_global)
             left, right = vincent.get_function_value(x_local)
             flux_expect += left * (upwind_flux_left
                 - self._element.get_discontinuous_flux(self._x_left))

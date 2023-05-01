@@ -46,7 +46,7 @@ class Persson2006(concept.Viscous):
         return "Persson (2006)"
 
     def _get_viscous_coeff(self, cell: concept.Element):
-        u_approx = cell.get_expansion()
+        u_approx = cell.expansion
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
         s_gap = np.log10(smoothness) - s_0

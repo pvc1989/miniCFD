@@ -19,7 +19,7 @@ class Off(concept.Limiter):
         pass
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
-        return curr.get_expansion().get_coeff_ref()
+        return curr.expansion.get_coeff_ref()
 
 
 class CompactWENO(concept.Limiter):
@@ -78,8 +78,8 @@ class ZhongShu2013(CompactWENO):
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
-        this = curr.get_expansion()
-        that = neighbor.get_expansion()
+        this = curr.expansion
+        that = neighbor.expansion
         assert isinstance(this, expansion.Taylor)
         assert isinstance(that, expansion.Taylor)
         if isinstance(this, expansion.Lagrange):
@@ -88,9 +88,9 @@ class ZhongShu2013(CompactWENO):
             Expansion = expansion.Legendre
         else:
             assert False
-        borrowed = Expansion(this.degree(), this._coordinate, this._value_type)
+        borrowed = Expansion(this.degree(), this.coordinate, this._value_type)
         x_shift = self._x_shift(curr, neighbor)
-        that_average = this._integrator.average(
+        that_average = this.integrator.average(
             lambda x_this: that.get_function_value(x_this + x_shift),
             n_point=this.degree())
         borrowed.approximate(lambda x_this: this.get_average() - that_average
@@ -101,17 +101,17 @@ class ZhongShu2013(CompactWENO):
         beta = 0.0
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
-        norms = taylor._integrator.fixed_quad_global(integrand,
+        norms = taylor.integrator.fixed_quad_global(integrand,
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
-            length = taylor._coordinate.length()
+            length = taylor.coordinate.length()
             scale = length**(2*k-1) / (special.factorial(k))**2
             beta += norms[k] * scale
         return beta
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         candidates = []
-        candidates.append(curr.get_expansion())
+        candidates.append(curr.expansion)
         for neighbor in neighbors:
             candidates.append(self._borrow_expansion(curr, neighbor))
         # evaluate weights for each candidate
@@ -150,11 +150,11 @@ class LiWangRen2020(CompactWENO):
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
-        this = curr.get_expansion()
+        this = curr.expansion
         assert isinstance(this, expansion.Legendre)
-        that = neighbor.get_expansion()
+        that = neighbor.expansion
         assert isinstance(that, expansion.Taylor)
-        borrowed = expansion.Legendre(1, this._coordinate, this._value_type)
+        borrowed = expansion.Legendre(1, this.coordinate, this._value_type)
         coeff = np.ndarray(2, dtype=this._value_type)
         this_average = this.get_average()
         coeff[0] = this_average
@@ -163,18 +163,18 @@ class LiWangRen2020(CompactWENO):
             return that.get_function_value(x_that) - this_average
         def phi(x_that):
             return this.get_basis(1)(x_that - x_shift)
-        coeff[1] = (that._integrator.inner_product(phi, psi, that.degree())
-            / that._integrator.norm_2(phi, that.degree()))
+        coeff[1] = (that.integrator.inner_product(phi, psi, that.degree())
+            / that.integrator.norm_2(phi, that.degree()))
         borrowed.set_coeff(coeff)
         return borrowed
 
     def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
             return taylor.get_derivative_values(x_global)**2
-        norms = taylor._integrator.fixed_quad_global(integrand,
+        norms = taylor.integrator.fixed_quad_global(integrand,
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
-            jacobian = taylor._coordinate.length() / 2
+            jacobian = taylor.coordinate.length() / 2
             scale = jacobian**(2*k-1) / (special.factorial(k-1))**2
             norms[k] *= scale
         return norms
@@ -186,7 +186,7 @@ class LiWangRen2020(CompactWENO):
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         candidates = []
         # Get candidates by projecting to lower-order spaces:
-        curr_legendre = curr.get_expansion()
+        curr_legendre = curr.expansion
         if not isinstance(curr_legendre, expansion.Legendre):
             curr_legendre = expansion.Legendre(curr.degree(),
                 curr.x_left(), curr.x_right(), curr._value_type)
@@ -238,7 +238,7 @@ class LiWangRen2020(CompactWENO):
             weight = weights[i_candidate] / weight_sum
             new_coeff[0:len(coeff)] += coeff * weight
         # Legendre to Lagrange, if necessary:
-        if isinstance(curr.get_expansion(), expansion.Lagrange):
+        if isinstance(curr.expansion, expansion.Lagrange):
             new_legendre = expansion.Legendre(curr.degree(),
                 curr.x_left(), curr.x_right(), curr._value_type)
             new_legendre.set_coeff(new_coeff)
@@ -248,7 +248,7 @@ class LiWangRen2020(CompactWENO):
                 new_legendre.get_function_value(x))
             new_coeff = new_lagrange.get_coeff_ref()
         else:
-            assert isinstance(curr.get_expansion(), expansion.Legendre)
+            assert isinstance(curr.expansion, expansion.Legendre)
         return new_coeff
 
 
@@ -263,12 +263,12 @@ class Xu2023(CompactWENO):
         return 'Xu (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
-        curr_expansion = curr.get_expansion()
+        curr_expansion = curr.expansion
         curr_average = curr_expansion.get_average()
         u_max = curr_average
         u_min = u_max
         for cell in neighbors:
-            average = cell.get_expansion().get_average()
+            average = cell.expansion.get_average()
             u_max = max(u_max, average)
             u_min = min(u_min, average)
         big_a = self._alpha * min(u_max - curr_average, curr_average - u_min)
@@ -282,7 +282,7 @@ class Xu2023(CompactWENO):
                 q = curr_expansion.get_function_value(x) - curr_average
                 q /= big_a
                 return np.tanh(q)
-            monotone_average = curr._integrator.average(monotone, curr.degree())
+            monotone_average = curr.integrator.average(monotone, curr.degree())
             def new_expansion(x):
                 dividend = (monotone(x) - monotone_average) * big_a
                 divisor = 1 + np.abs(monotone_average)

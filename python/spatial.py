@@ -51,7 +51,7 @@ class FiniteElement(concept.SpatialScheme):
         u_right = cell_right.get_solution_value(x_right)
         flux = self._riemann.get_upwind_flux(u_left, u_right)
         # Add the diffusive interface flux:
-        expansion_left = cell_left.get_expansion()
+        expansion_left = cell_left.expansion
         assert isinstance(expansion_left, expansion.Taylor)
         derivatives = expansion_left.get_derivative_values(x_left)
         if self.degree() > 1:
@@ -60,7 +60,7 @@ class FiniteElement(concept.SpatialScheme):
             du_left, ddu_left = derivatives[1], 0
         else:
             du_left, ddu_left = 0, 0
-        expansion_right = cell_right.get_expansion()
+        expansion_right = cell_right.expansion
         assert isinstance(expansion_right, expansion.Taylor)
         derivatives = expansion_right.get_derivative_values(x_right)
         if self.degree() > 1:
@@ -76,7 +76,7 @@ class FiniteElement(concept.SpatialScheme):
         du += beta_0 / distance * (u_right - u_left)
         beta_1 = 1/12
         du += beta_1 * distance * (ddu_right - ddu_left)
-        viscous = extra_viscous + self.equation().get_diffusive_coeff()
+        viscous = extra_viscous + self.equation.get_diffusive_coeff()
         return flux - viscous * du
 
     def get_interface_fluxes(self):

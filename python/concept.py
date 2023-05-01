@@ -77,7 +77,7 @@ class Integrator(abc.ABC):
 
     def __init__(self, coordinate: Coordinate) -> None:
         assert isinstance(coordinate, Coordinate)
-        self._coordinate = coordinate
+        self.coordinate = coordinate
 
     @abc.abstractmethod
     def get_quadrature_points(self, n_point: int) -> np.ndarray:
@@ -92,8 +92,8 @@ class Integrator(abc.ABC):
         """Integrate a function defined in global coordinates with a given number of quadrature points."""
         n_point = max(1, n_point)
         def integrand(x_local):
-            x_global = self._coordinate.local_to_global(x_local)
-            jacobian = self._coordinate.local_to_jacobian(x_local)
+            x_global = self.coordinate.local_to_global(x_local)
+            jacobian = self.coordinate.local_to_jacobian(x_local)
             return function(x_global) * jacobian
         return self.fixed_quad_local(integrand, n_point)
 
@@ -101,7 +101,7 @@ class Integrator(abc.ABC):
         """Get the average value of a function on this element.
         """
         integral = self.fixed_quad_global(function, n_point)
-        return integral / self._coordinate.length()
+        return integral / self.coordinate.length()
 
     def norm_1(self, function: callable, n_point: int):
         """Get the L_1 norm of a function on this element.
@@ -123,7 +123,7 @@ class Integrator(abc.ABC):
         """Get the (approximate) L_infty norm of a function on this element.
         """
         points = np.linspace(
-            self._coordinate.x_left(), self._coordinate.x_right(), n_point)
+            self.coordinate.x_left(), self.coordinate.x_right(), n_point)
         # Alternatively, quadrature points can be used:
         # points = self.get_quadrature_points(n_point)
         value = 0.0
@@ -143,8 +143,8 @@ class Expansion(abc.ABC):
     """
 
     def __init__(self, coordinate: Coordinate, integrator: Integrator) -> None:
-        self._coordinate = coordinate
-        self._integrator = integrator
+        self.coordinate = coordinate
+        self.integrator = integrator
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -262,32 +262,32 @@ class Element(abc.ABC):
         assert isinstance(equation, Equation)
         assert isinstance(coordinate, Coordinate)
         self._equation = equation
-        self._coordinate = coordinate
-        self._integrator = expansion._integrator
-        self._expansion = expansion
+        self.coordinate = coordinate
+        self.integrator = expansion.integrator
+        self.expansion = expansion
         self._value_type = value_type
 
     def x_left(self):
-        return self._coordinate.x_left()
+        return self.coordinate.x_left()
 
     def x_right(self):
-        return self._coordinate.x_right()
+        return self.coordinate.x_right()
 
     def x_center(self):
-        return self._coordinate.x_center()
+        return self.coordinate.x_center()
 
     def length(self):
-        return self._coordinate.length()
+        return self.coordinate.length()
 
     def degree(self):
         """The highest degree of the approximated solution.
         """
-        return self._expansion.degree()
+        return self.expansion.degree()
 
     def n_term(self):
         """Number of terms in the approximated function.
         """
-        return self._expansion.n_term()
+        return self.expansion.n_term()
 
     def n_dof(self):
         """Count degrees of freedom in current object.
@@ -297,26 +297,21 @@ class Element(abc.ABC):
     def approximate(self, function: callable):
         """Approximate a general function as u^h.
         """
-        self._expansion.approximate(function)
+        self.expansion.approximate(function)
 
     def fixed_quad_global(self, function: callable, n_point: int):
-        return self._integrator.fixed_quad_global(function, n_point)
-
-    def get_expansion(self) -> Expansion:
-        """Get the underlying Expansion object.
-        """
-        return self._expansion
+        return self.integrator.fixed_quad_global(function, n_point)
 
     def get_basis_values(self, x_global: float):
         """Get the values of basis at a given point.
         """
-        return self._expansion.get_basis_values(x_global)
+        return self.expansion.get_basis_values(x_global)
 
     def get_basis_gradients(self, x_global):
-        return self._expansion.get_basis_gradients(x_global)
+        return self.expansion.get_basis_gradients(x_global)
 
     def _build_mass_matrix(self):
-        mass_matrix = self._expansion.get_basis_innerproducts()
+        mass_matrix = self.expansion.get_basis_innerproducts()
         assert self.n_term() == self.n_dof()
         # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix
@@ -332,7 +327,7 @@ class Element(abc.ABC):
         """
         u_approx = self.get_solution_value(x_global)
         flux = self._equation.get_convective_flux(u_approx)
-        du_approx = self.get_expansion().get_gradient_value(x_global)
+        du_approx = self.expansion.get_gradient_value(x_global)
         flux -= self._equation.get_diffusive_flux(u_approx, du_approx)
         flux -= extra_viscous * du_approx
         return flux
@@ -340,12 +335,12 @@ class Element(abc.ABC):
     def get_solution_value(self, x_global: float):
         """Get the value of u^h at a given point.
         """
-        return self._expansion.get_function_value(x_global)
+        return self.expansion.get_function_value(x_global)
 
     def get_solution_gradient(self, x_global: float):
         """Get the gradient value of u^h at a given point.
         """
-        return self._expansion.get_gradient_value(x_global)
+        return self.expansion.get_gradient_value(x_global)
 
     def set_solution_coeff(self, column):
         """Set coefficients of the solution's expansion.
@@ -353,7 +348,7 @@ class Element(abc.ABC):
         The element is responsible for the column-to-coeff conversion.
         """
         assert self._equation.n_component() == 1
-        self._expansion.set_coeff(column)
+        self.expansion.set_coeff(column)
 
     def get_solution_column(self):
         """Get coefficients of the solution's expansion.
@@ -361,7 +356,7 @@ class Element(abc.ABC):
         The element is responsible for the coeff-to-column conversion.
         """
         assert self._equation.n_component() == 1
-        return self._expansion.get_coeff_ref()
+        return self.expansion.get_coeff_ref()
 
     @abc.abstractmethod
     def divide_mass_matrix(self, column: np.ndarray):
@@ -488,7 +483,7 @@ class SpatialScheme(OdeSystem):
             detector=None, limiter=None, viscous=None) -> None:
         assert x_left < x_right
         assert n_element > 1
-        self._equation = equation
+        self.equation = equation
         self._elements = np.ndarray(n_element, Element)
         self._detector = detector
         self._limiter = limiter
@@ -503,11 +498,6 @@ class SpatialScheme(OdeSystem):
     def name(self, verbose: bool) -> str:
         """Get the compact string representation of the method.
         """
-
-    def equation(self) -> Equation:
-        """Get the equation to be solved.
-        """
-        return self._equation
 
     def x_left(self):
         """Get the coordinate of this object's left boundary.
