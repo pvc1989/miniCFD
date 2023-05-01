@@ -13,7 +13,7 @@ class Off(concept.Viscous):
     def name(self, verbose=False) -> str:
         return "Off"
 
-    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
+    def generate(self, troubled_cell_indices, elements, periodic: bool):
         pass
 
 
@@ -25,7 +25,7 @@ class Constant(concept.Viscous):
     def name(self, verbose=False) -> str:
         return 'Constant (' + r'$\nu=$' + f'{self._const})'
 
-    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
+    def generate(self, troubled_cell_indices, elements, periodic: bool):
         pass
 
     def get_coeff(self, i_cell: int):
@@ -40,16 +40,17 @@ class Persson2006(concept.Viscous):
 
     def __init__(self, kappa=0.1) -> None:
         self._kappa = kappa
-        self._coeffs = np.ndarray(0)
+        self._index_to_coeff = dict()
 
     def name(self, verbose=False) -> str:
         return "Persson (2006)"
 
-    def _get_viscous_coeff(self, u_approx: expansion.Taylor):
+    def _get_viscous_coeff(self, cell: concept.Element):
+        u_approx = cell.get_expansion()
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
         s_gap = np.log10(smoothness) - s_0
-        nu = u_approx.length() / u_approx.degree()
+        nu = u_approx._coordinate.length() / u_approx.degree()
         if s_gap > self._kappa:
             pass
         elif s_gap > -self._kappa:
@@ -58,14 +59,17 @@ class Persson2006(concept.Viscous):
             nu = 0.0
         return nu
 
-    def generate(self, scheme: concept.SpatialScheme, troubled_cell_indices):
-        self._coeffs = np.zeros(scheme.n_element())
+    def generate(self, troubled_cell_indices, elements, periodic: bool):
+        self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
-            u_approx = scheme.get_element_by_index(i_cell).get_expansion()
-            self._coeffs[i_cell] = self._get_viscous_coeff(u_approx)
+            coeff = self._get_viscous_coeff(elements[i_cell])
+            self._index_to_coeff[i_cell] = coeff
 
     def get_coeff(self, i_cell: int):
-        return self._coeffs[i_cell]
+        if i_cell in self._index_to_coeff:
+            return self._index_to_coeff[i_cell]
+        else:
+            return 0.0
 
 
 if __name__ == '__main__':

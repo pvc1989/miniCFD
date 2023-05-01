@@ -114,7 +114,7 @@ class FiniteElement(concept.SpatialScheme):
             element_i.set_solution_coeff(column[first:last])
             first = last
         assert first == self.n_dof()
-        self._detect_and_limit()
+        self.suppress_oscillations()
 
     def get_solution_column(self):
         column = np.zeros(self.n_dof(), self._value_type)
@@ -131,6 +131,7 @@ class FiniteElement(concept.SpatialScheme):
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
             element_i.approximate(function)
+        self.suppress_oscillations()
 
 
 class DiscontinuousGalerkin(FiniteElement):

@@ -412,7 +412,8 @@ class Limiter(abc.ABC):
 
     @abc.abstractmethod
     def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
-        pass
+        """Reconstruct the expansion on each troubled cell.
+        """
 
     @abc.abstractmethod
     def get_new_coeff(self, curr: Element, neighbors) -> np.ndarray:
@@ -430,8 +431,8 @@ class Viscous(abc.ABC):
         """
 
     @abc.abstractmethod
-    def generate(self, curr: Element, left: Element, right: Element):
-        """Add viscosity on a troubled cell.
+    def generate(self, troubled_cell_indices, elements, periodic: bool):
+        """Generate artificial viscosity for each troubled cell.
         """
 
     def get_coeff(self, i_cell: int):
@@ -573,15 +574,17 @@ class SpatialScheme(OdeSystem):
         self._limiter = limiter
         self._viscous = viscous
 
-    def apply_limiter(self, troubled_cell_indices: list):
-        if isinstance(self._limiter, Limiter):
-            for i_element in range(1, self.n_element()):
-                pass
-
-    def add_viscosity(self, troubled_cell_indices: list):
-        if isinstance(self._viscous, Viscous):
-            for i_element in range(1, self.n_element()):
-                pass
+    def suppress_oscillations(self):
+        if isinstance(self._detector, Detector):
+            indices = self._detector.get_troubled_cell_indices(
+                self._elements, self.is_periodic())
+            print(indices)
+            if isinstance(self._limiter, Limiter):
+                self._limiter.reconstruct(indices,
+                    self._elements, self.is_periodic())
+            elif isinstance(self._viscous, Viscous):
+                self._viscous.generate(indices,
+                    self._elements, self.is_periodic())
 
 
 if __name__ == '__main__':
