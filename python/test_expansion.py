@@ -44,7 +44,7 @@ class TestTaylor(unittest.TestCase):
             norm = np.linalg.norm(gradients_actual - gradients_expect)
             self.assertAlmostEqual(norm, 0.0)
 
-    def test_get_derivative_values(self):
+    def test_get_gradient_and_derivative_values(self):
         """Test methods for getting derivatives of u^h.
         """
         taylor = expansion.Taylor(5, self._coordinate, complex)
@@ -57,6 +57,7 @@ class TestTaylor(unittest.TestCase):
         taylor.approximate(function)
         for x in points:
             values = taylor.get_derivative_values(x)
+            self.assertEqual(taylor.get_gradient_value(x), values[1])
             for k in range(1, taylor.n_term()):
                 self.assertAlmostEqual(values[k], derivative(x, k),
                     places=taylor.degree()-k)
