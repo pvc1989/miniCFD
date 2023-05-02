@@ -62,15 +62,22 @@ class Taylor(Expansion):
 
     def get_basis_values(self, x_global):
         x_global -= self.coordinate.x_center()
-        values = x_global**np.arange(0, self.n_term(), dtype=int)
+        values = np.ndarray(self.n_term())
+        x_power = 1.0
+        values[0] = 1.0
+        for k in range(0, self.n_term()):
+            values[k] = x_power
+            x_power *= x_global
         return values
 
     def get_basis_gradients(self, x_global: float):
         x_global -= self.coordinate.x_center()
         values = np.ndarray(self.n_term())
+        x_power = 1.0
         values[0] = 0
-        for k in range(self.degree()):
-            values[k+1] = (k+1) * x_global**k
+        for k in range(1, self.n_term()):
+            values[k] = k * x_power
+            x_power *= x_global
         return values
 
     def get_basis_derivatives(self, x_global: float):
@@ -110,7 +117,7 @@ class Taylor(Expansion):
         values[k] = the k-th derivative of u^h.
         """
         # TODO: evaluate the k-th derivative only
-        basis_derivatives = self.get_basis_derivatives(x_global)
+        basis_derivatives = Taylor.get_basis_derivatives(self, x_global)
         values = np.zeros(self.n_term(), dtype=self._value_type)
         # values[0] = get_function_value(x_global)
         for k in range(1, self.n_term()):
@@ -167,6 +174,20 @@ class Lagrange(Taylor):
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
         self._sample_points = self.coordinate.local_to_global(roots)
+        # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
+        base_rows = np.ndarray((self.n_term(), self.n_term()))
+        for k in range(self.n_term()):
+            x_global = self._sample_points[k]
+            base_rows[k] = Taylor.get_basis_values(self, x_global)
+        """
+        Since
+            base_rows * matrix_on_taylor = lagrange_basis_rows = eye,
+        we have
+            matrix_on_taylor = base_rows^{-1},
+        which can be used in
+            taylor_coeff_col = matrix_on_taylor * lagrange_coeff_col.
+        """
+        self._matrix_on_taylor = np.linalg.inv(base_rows)
 
     def name(self, verbose) -> str:
         my_name = 'Lagrange'
@@ -180,18 +201,10 @@ class Lagrange(Taylor):
 
     def set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.
-
-        For Lagrange basis, this_rows will be np.eye(self.n_term()), if
-        the i-th row is evaluated at the i-th sample point. So
-            base_rows = mat_a => base_col = base_rows^{-1} * this_col.
         """
-        base_rows = np.ndarray((self.n_term(), self.n_term()))
-        points = self.get_sample_points()
-        for k in range(self.n_term()):
-            base_rows[k] = Taylor.get_basis_values(self, points[k])
-        this_col = self.get_coeff_ref()
-        base_col = np.linalg.solve(base_rows, this_col)
-        Taylor.set_coeff(self, base_col)
+        lagrange_col = self.get_coeff_ref()
+        taylor_col = self._matrix_on_taylor.dot(lagrange_col)
+        Taylor.set_coeff(self, taylor_col)
 
     def set_coeff(self, values):
         """Set values at sample points.
@@ -224,20 +237,14 @@ class Lagrange(Taylor):
         return values
 
     def get_basis_gradients(self, x_global):
-        x_local = self.coordinate.global_to_local(x_global)
-        values = self._basis.get_gradient_value(x_local)
-        values /= self.coordinate.local_to_jacobian(x_local)
-        return values
-
-    def get_function_value(self, x_global):
-        values = self.get_basis_values(x_global)
-        value = values.dot(self._sample_values)
-        return value
-
-    def get_gradient_value(self, x_global):
-        basis_grad = self.get_basis_gradients(x_global)
-        value = basis_grad.dot(self._sample_values)
-        return value
+        """
+        Since
+            taylor_basis_row * matrix_on_taylor = lagrange_basis_row,
+        we have
+            taylor_gradient_row * matrix_on_taylor = lagrange_gradient_row.
+        """
+        taylor_gradients = Taylor.get_basis_gradients(self, x_global)
+        return taylor_gradients.dot(self._matrix_on_taylor)
 
 
 class Legendre(Taylor):
@@ -335,24 +342,8 @@ class Legendre(Taylor):
         return values
 
     def get_basis_gradients(self, x_global):
-        x_local = self.coordinate.global_to_local(x_global)
-        values = np.ndarray(self.n_term())
-        values[0] = 0.0
-        for k in range(1, self.n_term()):
-            values[k] = (k * special.eval_legendre(k-1, x_local)
-                + x_local * values[k-1])
-        values /= self.coordinate.global_to_jacobian(x_global)
-        return values
-
-    def get_function_value(self, x_global):
-        values = self.get_basis_values(x_global)
-        value = values.dot(self._mode_coeffs)
-        return value
-
-    def get_gradient_value(self, x_global):
-        basis_grad = self.get_basis_gradients(x_global)
-        value = basis_grad.dot(self._mode_coeffs)
-        return value
+        taylor_gradients = Taylor.get_basis_gradients(self, x_global)
+        return taylor_gradients.dot(self._matrix_on_taylor)
 
 
 class TruncatedLegendre(Taylor):

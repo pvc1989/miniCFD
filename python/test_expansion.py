@@ -57,7 +57,7 @@ class TestTaylor(unittest.TestCase):
         taylor.approximate(function)
         for x in points:
             values = taylor.get_derivative_values(x)
-            self.assertEqual(taylor.get_gradient_value(x), values[1])
+            self.assertAlmostEqual(taylor.get_gradient_value(x), values[1])
             for k in range(1, taylor.n_term()):
                 self.assertAlmostEqual(values[k], derivative(x, k),
                     places=taylor.degree()-k)
