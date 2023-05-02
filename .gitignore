@@ -1,5 +1,6 @@
 .DS_Store
 *.pdf
+python/stats
 
 ### Python.gitignore ###
 # Byte-compiled / optimized / DLL files
