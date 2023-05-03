@@ -50,6 +50,8 @@ class Vincent(Polynomial):
     for k in range(10):
         _legendres.append(legendre(k))
 
+    _local_to_gradients = dict()
+
     @staticmethod
     def discontinuous_galerkin(k: int):
         return 1.0
@@ -78,6 +80,8 @@ class Vincent(Polynomial):
         return (right(-x_local), right(x_local))
 
     def get_gradient_value(self, x_local):
+        if x_local in Vincent._local_to_gradients:
+            return Vincent._local_to_gradients[x_local]
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         legendre_derivative_next = 0.0
@@ -94,6 +98,7 @@ class Vincent(Polynomial):
         right = (legendre_derivative_curr
             + self._prev_ratio * legendre_derivative_prev
             + self._next_ratio * legendre_derivative_next) / 2
+        Vincent._local_to_gradients[x_local] = (left, right)
         return (left, right)
 
 
