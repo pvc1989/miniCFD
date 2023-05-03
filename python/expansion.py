@@ -16,9 +16,13 @@ class Taylor(Expansion):
     u^h(x) = \sum_{k=0}^{p} u^{(k)} / (k!) * (x-c)^{k}
     """
 
+    _factorials = np.ones(20)
+    for k in range(1, len(_factorials)):
+        _factorials[k] = _factorials[k-1] * k
+
     def __init__(self, degree: int, coordinate: Coordinate,
             value_type=float) -> None:
-        assert degree >= 0
+        assert 0 <= degree < 20
         self._n_term = degree + 1
         Expansion.__init__(self, coordinate,
             integrator.GaussLegendre(coordinate))
@@ -46,7 +50,7 @@ class Taylor(Expansion):
                 step=self.coordinate.length()/100, order=4)
             derivative = df_dx(x_center)
             # print(derivative)
-            self._taylor_coeff[k] = derivative / special.factorial(k)
+            self._taylor_coeff[k] = derivative / Taylor._factorials[k]
 
     def get_average(self):
         def integrand(x_global):
@@ -89,8 +93,8 @@ class Taylor(Expansion):
         values = np.zeros((self.n_term(), self.n_term()))
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
-                values[k][l] = x_global**(l-k) * (special.factorial(l)
-                    / special.factorial(l-k))
+                values[k][l] = x_global**(l-k) * (Taylor._factorials[l]
+                    / Taylor._factorials[l-k])
         return values
 
     def get_basis_innerproducts(self):
