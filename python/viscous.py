@@ -50,7 +50,8 @@ class Persson2006(concept.Viscous):
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
         s_gap = np.log10(smoothness) - s_0
-        nu = u_approx._coordinate.length() / u_approx.degree()
+        print(s_gap)
+        nu = u_approx.coordinate.length() / u_approx.degree()
         if s_gap > self._kappa:
             pass
         elif s_gap > -self._kappa:
@@ -63,6 +64,7 @@ class Persson2006(concept.Viscous):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(elements[i_cell])
+            print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
     def get_coeff(self, i_cell: int):

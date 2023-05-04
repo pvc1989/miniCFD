@@ -568,11 +568,10 @@ class SpatialScheme(OdeSystem):
         if isinstance(self._detector, Detector):
             indices = self._detector.get_troubled_cell_indices(
                 self._elements, self.is_periodic())
-            # print(indices)
             if isinstance(self._limiter, Limiter):
                 self._limiter.reconstruct(indices,
                     self._elements, self.is_periodic())
-            elif isinstance(self._viscous, Viscous):
+            if isinstance(self._viscous, Viscous):
                 self._viscous.generate(indices,
                     self._elements, self.is_periodic())
 
