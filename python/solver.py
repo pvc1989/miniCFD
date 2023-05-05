@@ -213,14 +213,14 @@ class InviscidBurgers(SolverBase):
             viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
-        self._wave_number = 1.0 * np.pi * 2 / self._spatial.length()
-        self._u_prev = 0.0
-        self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
+        self._k_const = wave_number
+        self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
+        self._u_prev = dict()
 
-    def problem_name(self) -> str:
+    def problem_name(self):
         my_name = self._spatial.equation.name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
-        my_name += r'$\pi x/$' + f'{length:g}' + r'$)$'
+        my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
         return my_name
 
     def a_max(self):
@@ -232,23 +232,25 @@ class InviscidBurgers(SolverBase):
         return value
 
     def u_exact(self, x_global, t_curr):
-        # Solve u from u_curr = u_init(x - a(u_curr) * t_curr).
+        """ Solve u_curr from u_curr = u_init(x - a(u_curr) * t_curr).
+
+        Currently, the solution is only correct for standing waves in t <= 10.
+        """
         def func(u_curr):
             ku = self._spatial.equation.get_convective_jacobian(u_curr)
             return u_curr - self.u_init(x_global - ku * t_curr)
-        if np.abs(x_global - self._x_mid) < 1e-6:
-            root = 0.0
+        if x_global in self._u_prev:
+            u_prev = self._u_prev[x_global]
         else:
-            if x_global > self._x_mid and self._u_prev > 0:
-                self._u_prev = -self._u_prev
-            delta = 0.1
-            u_min = self._u_prev - delta
-            u_max = self._u_prev + delta
-            while func(u_min) * func(u_max) > 0:
-                u_min -= delta
-                u_max += delta
-            root = optimize.bisect(func, u_min, u_max)
-            self._u_prev = root
+            u_prev = self.u_init(x_global)
+        delta = 0.02
+        u_min = u_prev - delta
+        u_max = u_prev + delta
+        while func(u_min) * func(u_max) > 0:
+            u_min -= delta
+            u_max += delta
+        root = optimize.bisect(func, u_min, u_max)
+        self._u_prev[x_global] = root
         return root
 
 
