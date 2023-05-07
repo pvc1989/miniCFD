@@ -38,6 +38,11 @@ class SolverBase(abc.ABC):
         return self._solver_name
 
     @abc.abstractmethod
+    def a_max(self):
+        """The maximum phase speed.
+        """
+
+    @abc.abstractmethod
     def u_init(self, x_global):
         """Initial condition of the problem."""
 
@@ -45,7 +50,7 @@ class SolverBase(abc.ABC):
     def u_exact(self, x_global, t_curr):
         """Exact solution of the problem."""
 
-    def get_figure(self):
+    def _get_figure(self):
         fig = plt.figure(figsize=(8, 6))
         plt.xlabel(r'$x$')
         plt.ylabel(r'$u$')
@@ -57,50 +62,7 @@ class SolverBase(abc.ABC):
         plt.grid(which='minor')
         return fig
 
-    def plot(self, t_curr, n_point: int):
-        """Plot solution curves at a given moment.
-        """
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), n_point)
-        expect_solution = np.ndarray(n_point)
-        approx_solution = np.ndarray(n_point)
-        for i in range(n_point):
-            point_i = points[i]
-            approx_solution[i] = self._spatial.get_solution_value(point_i)
-            expect_solution[i] = self.u_exact(point_i, t_curr)
-        fig = self.get_figure()
-        plt.plot(points, approx_solution, 'b-+', label=self.solver_name())
-        plt.plot(points, expect_solution, 'r-',
-            label=f'Exact Solution of {self.problem_name()}')
-        plt.title(r'$t$'+f' = {t_curr:.2f}')
-        plt.legend(loc='upper right')
-        plt.tight_layout()
-        # plt.show()
-        plt.savefig(f't={t_curr:.2f}.pdf')
-
-    @abc.abstractmethod
-    def a_max(self):
-        """The maximum phase speed.
-        """
-
-    def run(self, t_start: float, t_stop: float,  n_step: int):
-        """Solve the problem in a given time range and plot the results.
-        """
-        delta_t = (t_stop - t_start) / n_step
-        self._spatial.initialize(lambda x_global: self.u_init(x_global))
-        n_step = int(np.ceil((t_stop - t_start) / delta_t))
-        delta_t = (t_stop - t_start) / n_step
-        plot_steps = n_step // 4
-        for i_step in range(n_step + 1):
-            t_curr = t_start + i_step * delta_t
-            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
-            if i_step % plot_steps == 0:
-                self.plot(t_curr, n_point=201)
-            if i_step < n_step:
-                self._ode_solver.update(self._spatial, delta_t, t_curr)
-
-    def get_ydata(self, t_curr, points):
-        """Get the y-data for updating the solution curvess.
-        """
+    def _get_ydata(self, t_curr, points):
         n_point = len(points)
         expect_solution = np.ndarray(n_point)
         approx_solution = np.ndarray(n_point)
@@ -109,6 +71,34 @@ class SolverBase(abc.ABC):
             approx_solution[i] = self._spatial.get_solution_value(point_i)
             expect_solution[i] = self.u_exact(point_i, t_curr)
         return expect_solution, approx_solution
+
+    def snapshot(self, t_start: float, t_stop: float,  n_step: int):
+        """Solve the problem in a given time range and snapshot the results.
+        """
+        delta_t = (t_stop - t_start) / n_step
+        self._spatial.initialize(lambda x_global: self.u_init(x_global))
+        n_step = int(np.ceil((t_stop - t_start) / delta_t))
+        delta_t = (t_stop - t_start) / n_step
+        plot_steps = n_step // 4
+        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            num=201)
+        for i_step in range(n_step + 1):
+            t_curr = t_start + i_step * delta_t
+            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
+            expect_solution, approx_solution = self._get_ydata(t_curr, points)
+            if i_step % plot_steps == 0:
+                fig = self._get_figure()
+                plt.plot(points, approx_solution, 'b-+',
+                    label=self.solver_name())
+                plt.plot(points, expect_solution, 'r-',
+                    label=f'Exact Solution of {self.problem_name()}')
+                plt.title(r'$t$'+f' = {t_curr:.2f}')
+                plt.legend(loc='upper right')
+                plt.tight_layout()
+                # plt.show()
+                plt.savefig(f't={t_curr:.2f}.pdf')
+            if i_step < n_step:
+                self._ode_solver.update(self._spatial, delta_t, t_curr)
 
     def animate(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and animate the results.
@@ -121,20 +111,21 @@ class SolverBase(abc.ABC):
         cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
         print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
             f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
-        fig = self.get_figure()
+        fig = self._get_figure()
         # initialize line-plot objects
         approx_line, = plt.plot([], [], 'b-+', label=self.solver_name())
         expect_line, = plt.plot([], [], 'r-',
             label=f'Exact Solution of {self.problem_name()}')
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(), 201)
+        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            num=201)
         # initialize animation
         def init_func():
             self._spatial.initialize(lambda x_global: self.u_init(x_global))
             expect_line.set_xdata(points)
             approx_line.set_xdata(points)
         # update data for the next frame
-        def func(t_curr):
-            expect_solution, approx_solution = self.get_ydata(t_curr, points)
+        def update_func(t_curr):
+            expect_solution, approx_solution = self._get_ydata(t_curr, points)
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
             plt.title(r'$t$'+f' = {t_curr:.2f}')
@@ -142,7 +133,7 @@ class SolverBase(abc.ABC):
             self._ode_solver.update(self._spatial, delta_t, t_curr)
         frames = np.linspace(t_start, t_stop, n_step)
         self._animation = mpla.FuncAnimation(
-            plt.gcf(), func, frames, init_func, interval=5)
+            plt.gcf(), update_func, frames, init_func, interval=5)
         plt.show()
 
 
@@ -425,5 +416,5 @@ if __name__ == '__main__':
     if args.animate:
         solver.animate(args.t_begin, args.t_end, args.n_step)
     else:
-        solver.run(args.t_begin, args.t_end, args.n_step)
+        solver.snapshot(args.t_begin, args.t_end, args.n_step)
 
