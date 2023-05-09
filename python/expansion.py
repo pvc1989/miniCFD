@@ -170,7 +170,7 @@ class Lagrange(Taylor):
         n_point = degree + 1
         assert n_point >= 1
         # Sample points evenly distributed in the element.
-        # delta = 0.1
+        # delta = 2.0 / n_point / 2
         # roots = np.linspace(delta - 1, 1 - delta, n_point)
         # Or, use zeros of special polynomials.
         roots, _ = special.roots_legendre(degree + 1)

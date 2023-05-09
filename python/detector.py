@@ -233,29 +233,49 @@ class LiRen2022(concept.Detector):
     def get_troubled_cell_indices(self, elements, periodic: bool) -> np.ndarray:
         troubled_cell_indices = []
         n_cell = len(elements)
-        averages = np.ndarray(n_cell)
-        for i_curr in range(n_cell):
-            curr = elements[i_curr]
-            assert isinstance(curr, concept.Element)
-            averages[i_curr] = curr.expansion.get_average()
-        psi_values = np.ndarray(n_cell)
-        for i_curr in range(n_cell):
-            a = np.abs(averages[i_curr] - averages[i_curr-1])
-            a += np.abs(averages[i_curr] - 2 * averages[i_curr-1]
-                + averages[i_curr-2])
-            b = np.abs(averages[i_curr] - averages[(i_curr+1)%n_cell])
-            b += np.abs(averages[i_curr] - 2 * averages[(i_curr+1)%n_cell]
-                + averages[(i_curr+2)%n_cell])
-            psi_values[i_curr] = (2 * a * b + self._epsilon) / (
+        n_node_per_cell = elements[0].n_term()
+        n_node = n_cell * n_node_per_cell
+        u_values = np.ndarray(n_node)
+        i_node = 0
+        for i_cell in range(n_cell):
+            curr_element = elements[i_cell]
+            assert isinstance(curr_element, concept.Element)
+            if isinstance(curr_element.expansion, expansion.Lagrange):
+                for u_value in curr_element.get_solution_column():
+                    u_values[i_node] = u_value
+                    i_node += 1
+            else:
+                delta = curr_element.length() / curr_element.n_term() / 2
+                points = np.linspace(curr_element.x_left() + delta,
+                    curr_element.x_right() - delta, curr_element.n_term())
+                for x in points:
+                    u_values[i_node] = curr_element.get_solution_value(x)
+                    i_node += 1
+        assert i_node == n_node
+        psi_values = np.ndarray(n_node)
+        for i_node in range(n_node):
+            a = np.abs(u_values[i_node] - u_values[i_node-1])
+            a += np.abs(u_values[i_node] - 2 * u_values[i_node-1]
+                + u_values[i_node-2])
+            b = np.abs(u_values[i_node] - u_values[(i_node+1)%n_node])
+            b += np.abs(u_values[i_node] - 2 * u_values[(i_node+1)%n_node]
+                + u_values[(i_node+2)%n_node])
+            psi_values[i_node] = (2 * a * b + self._epsilon) / (
                 a**2 + b**2 + self._epsilon)
-        for i_curr in range(n_cell):
-            left = min(psi_values[i_curr], psi_values[i_curr-1])
-            right = min(psi_values[i_curr], psi_values[(i_curr+1)%n_cell])
-            if min(left, right) < self._psi_c:
-                troubled_cell_indices.append(i_curr)
+        for i_cell in range(n_cell):
+            i_node_min = n_node_per_cell * i_cell
+            i_node_max = n_node_per_cell + i_node_min
+            for i_node in range(i_node_min, i_node_max):
+                left = min(psi_values[i_node], psi_values[i_node-1])
+                right = min(psi_values[i_node], psi_values[(i_node+1)%n_cell])
+                if min(left, right) < self._psi_c:
+                    troubled_cell_indices.append(i_cell)
+                    break
         return troubled_cell_indices
 
     def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
+        """Not necessary for detecting, just for comparison.
+        """
         troubled_cell_indices = self.get_troubled_cell_indices(elements, periodic)
         smoothness_values = np.zeros(len(elements)) + 1e-2
         for i_cell in troubled_cell_indices:
