@@ -72,6 +72,21 @@ class SolverBase(abc.ABC):
             expect_solution[i] = self.u_exact(point_i, t_curr)
         return expect_solution, approx_solution
 
+    def _measure_errors(self, t_curr):
+        error_1, error_2, error_infty = 0, 0, 0
+        n_element = self._spatial.n_element()
+        for i_element in range(n_element):
+            element_i = self._spatial.get_element_by_index(i_element)
+            def error(x_global):
+                value = self.u_exact(x_global, t_curr)
+                value -= element_i.get_solution_value(x_global)
+                return value
+            n_point = element_i.n_term()
+            error_1 += element_i.integrator.norm_1(error, n_point)
+            error_2 += element_i.integrator.norm_2(error, n_point)
+            error_infty += element_i.integrator.norm_infty(error, n_point)
+        return error_1, error_2, error_infty
+
     def snapshot(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and snapshot the results.
         """
@@ -97,6 +112,11 @@ class SolverBase(abc.ABC):
                 plt.tight_layout()
                 # plt.show()
                 plt.savefig(f't={t_curr:.2f}.pdf')
+                error_1, error_2, error_infty = self._measure_errors(t_curr)
+                print(f't = {t_curr}'
+                    + f', error_1 = {error_1:6e}'
+                    + f', error_2 = {error_2:6e}'
+                    + f', error_∞ = {error_infty:6e}')
             if i_step < n_step:
                 self._ode_solver.update(self._spatial, delta_t, t_curr)
 
