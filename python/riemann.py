@@ -56,12 +56,17 @@ class Solver(concept.RiemannSolver):
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
         return self._get_convective_flux(u_upwind)
 
-    def get_inteface_gradient(self, expansion_left: expansion.Taylor,
-            expansion_right: expansion.Taylor):
-        """Use the DDG method to get the value of ∂u/∂x at interface.
-        """
+    def get_interface_flux(self, expansion_left: expansion.Taylor,
+            expansion_right: expansion.Taylor, viscous: float):
+        # Get the convective flux on the interface:
         x_left = expansion_left.x_right()
         u_left = expansion_left.get_function_value(x_left)
+        x_right = expansion_right.x_left()
+        u_right = expansion_right.get_function_value(x_right)
+        flux = self.get_upwind_flux(u_left, u_right)
+        if viscous == 0:
+            return flux
+        # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
         if expansion_left.degree() > 1:
             derivatives = expansion_left.get_derivative_values(x_left)
@@ -70,8 +75,6 @@ class Solver(concept.RiemannSolver):
             du_left = expansion_left.get_gradient_value(x_left)
         else:
             pass
-        x_right = expansion_right.x_left()
-        u_right = expansion_right.get_function_value(x_right)
         du_right, ddu_right = 0, 0
         if expansion_right.degree() > 1:
             derivatives = expansion_right.get_derivative_values(x_right)
@@ -84,7 +87,7 @@ class Solver(concept.RiemannSolver):
         distance = (expansion_left.length() + expansion_right.length()) / 2
         du += self._beta_0 / distance * (u_right - u_left)
         du += self._beta_1 * distance * (ddu_right - ddu_left)
-        return du
+        return flux - viscous * du
 
 
 class LinearAdvection(Solver):

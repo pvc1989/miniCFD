@@ -393,8 +393,11 @@ class RiemannSolver(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_inteface_gradient(self, u_left: Expansion, u_right: Expansion):
-        """Get the value of ∂U/∂x on the interface.
+    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
+            viscous: float):
+        """Get the value of F - G on the interface.
+        
+        It is assumed G is in the form of nu * ∂U/∂x.
         """
 
 

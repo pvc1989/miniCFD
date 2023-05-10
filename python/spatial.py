@@ -42,35 +42,25 @@ class FiniteElement(concept.SpatialScheme):
             i_element -= 1
         return i_element
 
-    def _get_interface_flux(self, cell_left: concept.Element,
-            cell_right: concept.Element, extra_viscous: float):
-        # Solve the local Riemann problem:
-        x_left = cell_left.x_right()
-        u_left = cell_left.get_solution_value(x_left)
-        x_right = cell_right.x_left()
-        u_right = cell_right.get_solution_value(x_right)
-        flux = self._riemann.get_upwind_flux(u_left, u_right)
-        # Add the diffusive interface flux:
-        du = self._riemann.get_inteface_gradient(cell_left.expansion,
-            cell_right.expansion)
-        viscous = extra_viscous + self.equation.get_diffusive_coeff()
-        return flux - viscous * du
-
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
         interface_fluxes = np.ndarray(self.n_element() + 1, self._value_type)
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self.n_element()):
-            curr, prev = self._elements[i], self._elements[i-1]
-            viscous = max(self._viscous.get_coeff(i),
-                self._viscous.get_coeff(i-1))
-            interface_fluxes[i] = self._get_interface_flux(prev, curr, viscous)
+            curr = self.get_element_by_index(i)
+            prev = self.get_element_by_index(i-1)
+            viscous = self.equation.get_diffusive_coeff() + max(
+                self._viscous.get_coeff(i), self._viscous.get_coeff(i-1))
+            interface_fluxes[i] = self._riemann.get_interface_flux(
+                prev.expansion, curr.expansion, viscous)
         if self.is_periodic():
-            curr, prev = self._elements[0], self._elements[-1]
-            viscous = max(self._viscous.get_coeff(0),
-                self._viscous.get_coeff(-1))
-            interface_fluxes[0] = self._get_interface_flux(prev, curr, viscous)
+            curr = self.get_element_by_index(0)
+            prev = self.get_element_by_index(-1)
+            viscous = self.equation.get_diffusive_coeff() + max(
+                self._viscous.get_coeff(0), self._viscous.get_coeff(-1))
+            interface_fluxes[0] = self._riemann.get_interface_flux(
+                prev.expansion, curr.expansion, viscous)
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
             assert False
@@ -205,22 +195,17 @@ class FluxReconstruction(FiniteElement):
 
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)
+        viscous = self.equation.get_diffusive_coeff()
         # solve riemann problem at the left end of curr element
         right = self.get_element_by_index(curr)
-        x_right = right.x_left()
-        u_right = right.get_solution_value(x_right)
         left = self.get_element_by_index(curr-1)
-        x_left = left.x_right()
-        u_left = left.get_solution_value(x_left)
-        upwind_flux_left = self._riemann.get_upwind_flux(u_left, u_right)
+        upwind_flux_left = self._riemann.get_interface_flux(
+            left.expansion, right.expansion, viscous)
         # solve riemann problem at the right end of curr element
         left = self.get_element_by_index(curr)
-        x_left = left.x_right()
-        u_left = left.get_solution_value(x_left)
         right = self.get_element_by_index((curr + 1) % self.n_element())
-        x_right = right.x_left()
-        u_right = right.get_solution_value(x_right)
-        upwind_flux_right = self._riemann.get_upwind_flux(u_left, u_right)
+        upwind_flux_right = self._riemann.get_interface_flux(
+            left.expansion, right.expansion, viscous)
         assert (isinstance(left, element.LagrangeFR)
             or isinstance(left, element.LegendreFR))
         return left.get_continuous_flux(point,
