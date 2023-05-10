@@ -147,7 +147,7 @@ class LinearSmooth(SolverBase):
             viscous: concept.Viscous,
             ode_solver: concept.OdeSolver) -> None:
         super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
-        self._a_const = self._spatial.equation.get_convective_jacobian()
+        self._a_const = self._spatial.equation.get_convective_speed()
         self._b_const = self._spatial.equation.get_diffusive_coeff()
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
@@ -215,7 +215,7 @@ class InviscidBurgers(SolverBase):
         return my_name
 
     def a_max(self):
-        return self._spatial.equation.get_convective_jacobian(u=1.0)
+        return self._spatial.equation.get_convective_speed(u=1.0)
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
@@ -228,7 +228,7 @@ class InviscidBurgers(SolverBase):
         Currently, the solution is only correct for standing waves in t <= 10.
         """
         def func(u_curr):
-            ku = self._spatial.equation.get_convective_jacobian(u_curr)
+            ku = self._spatial.equation.get_convective_speed(u_curr)
             return u_curr - self.u_init(x_global - ku * t_curr)
         if x_global in self._u_prev:
             u_prev = self._u_prev[x_global]

@@ -244,7 +244,7 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_convective_jacobian(self, u_given):
+    def get_convective_speed(self, u_given):
         """Get the value of ∂F(U)/∂U for a given U.
         """
 
@@ -328,10 +328,10 @@ class Element(abc.ABC):
         # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix
 
-    def get_convective_jacobian(self, x_global: float):
+    def get_convective_speed(self, x_global: float):
         """Get the value of a(u^h) at a given point.
         """
-        return self._equation.get_convective_jacobian(
+        return self._equation.get_convective_speed(
               self.get_solution_value(x_global))
 
     def get_discontinuous_flux(self, x_global, extra_viscous=0.0):

@@ -80,11 +80,11 @@ class Krivodonova2004(SmoothnessBased):
             if periodic or i_curr + 1 < n_cell:
                 right = elements[(i_curr + 1) % n_cell]
             dividend = 0.0
-            if (curr.get_convective_jacobian(curr.x_left()) > 0 and
+            if (curr.get_convective_speed(curr.x_left()) > 0 and
                     isinstance(left, concept.Element)):
                 dividend += np.abs(curr.get_solution_value(curr.x_left())
                     - left.get_solution_value(left.x_right()))
-            if (curr.get_convective_jacobian(curr.x_right()) < 0 and
+            if (curr.get_convective_speed(curr.x_right()) < 0 and
                     isinstance(right, concept.Element)):
                 dividend += np.abs(curr.get_solution_value(curr.x_right())
                     - right.get_solution_value(right.x_left()))

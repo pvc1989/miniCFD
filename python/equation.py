@@ -31,7 +31,7 @@ class LinearAdvection(ConservationLaw):
     def get_convective_flux(self, u):
         return self._a * u
 
-    def get_convective_jacobian(self, u=0.0):
+    def get_convective_speed(self, u=0.0):
         return self._a
 
 
@@ -67,7 +67,7 @@ class InviscidBurgers(ConservationLaw):
     def get_convective_flux(self, u):
         return self._k * u**2 / 2
 
-    def get_convective_jacobian(self, u):
+    def get_convective_speed(self, u):
         return self._k * u
 
 
@@ -101,7 +101,7 @@ class LinearSystem(ConservationLaw):
     def get_convective_flux(self, U):
         return self._A.dot(U)
 
-    def get_convective_jacobian(self, U):
+    def get_convective_speed(self, U):
         return self._A
 
 
@@ -137,7 +137,7 @@ class Euler(ConservationLaw):
         F[2] += p*u
         return F
 
-    def get_convective_jacobian(self, U):
+    def get_convective_speed(self, U):
         A = np.zeros((3, 3))
         A[0][1] = 1.0
         u = U[1] / U[0]

@@ -134,7 +134,7 @@ class LegendreFR(LegendreDG):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
         u_approx = self.get_solution_value(x_global)
-        a_approx = self._equation.get_convective_jacobian(u_approx)
+        a_approx = self._equation.get_convective_speed(u_approx)
         gradient = a_approx * self.expansion.get_gradient_value(x_global)
         x_local = self.coordinate.global_to_local(x_global)
         left, right = self._correction.get_gradient_value(x_local)
