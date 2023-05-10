@@ -146,6 +146,18 @@ class Expansion(abc.ABC):
         self.coordinate = coordinate
         self.integrator = integrator
 
+    def x_left(self):
+        return self.coordinate.x_left()
+
+    def x_right(self):
+        return self.coordinate.x_right()
+
+    def x_center(self):
+        return self.coordinate.x_center()
+
+    def length(self):
+        return self.coordinate.length()
+
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
         """Get the name of the expansion.
@@ -367,7 +379,7 @@ class Element(abc.ABC):
 
 
 class RiemannSolver(abc.ABC):
-    """An exact or approximate solver for the Riemann problem of a conservation law.
+    """An exact or approximate solver for the Riemann problem of an Equation.
     """
 
     @abc.abstractmethod
@@ -377,7 +389,12 @@ class RiemannSolver(abc.ABC):
 
     @abc.abstractmethod
     def get_upwind_flux(self, u_left, u_right):
-        """Get the flux at (x=0, t) from the solution of a Riemann problem.
+        """Get the value of the convective flux on the interface.
+        """
+
+    @abc.abstractmethod
+    def get_inteface_gradient(self, u_left: Expansion, u_right: Expansion):
+        """Get the value of ∂U/∂x on the interface.
         """
 
 

@@ -51,31 +51,8 @@ class FiniteElement(concept.SpatialScheme):
         u_right = cell_right.get_solution_value(x_right)
         flux = self._riemann.get_upwind_flux(u_left, u_right)
         # Add the diffusive interface flux:
-        expansion_left = cell_left.expansion
-        assert isinstance(expansion_left, expansion.Taylor)
-        derivatives = expansion_left.get_derivative_values(x_left)
-        if self.degree() > 1:
-            du_left, ddu_left = derivatives[1], derivatives[2]
-        elif self.degree() == 1:
-            du_left, ddu_left = derivatives[1], 0
-        else:
-            du_left, ddu_left = 0, 0
-        expansion_right = cell_right.expansion
-        assert isinstance(expansion_right, expansion.Taylor)
-        derivatives = expansion_right.get_derivative_values(x_right)
-        if self.degree() > 1:
-            du_right, ddu_right = derivatives[1], derivatives[2]
-        elif self.degree() == 1:
-            du_right, ddu_right = derivatives[1], 0
-        else:
-            du_right, ddu_right = 0, 0
-        # Use the DDG method to get the value of ∂u/∂x at interface:
-        du = (du_left + du_right) / 2
-        distance = (cell_left.length() + cell_right.length()) / 2
-        beta_0 = 3
-        du += beta_0 / distance * (u_right - u_left)
-        beta_1 = 1/12
-        du += beta_1 * distance * (ddu_right - ddu_left)
+        du = self._riemann.get_inteface_gradient(cell_left.expansion,
+            cell_right.expansion)
         viscous = extra_viscous + self.equation.get_diffusive_coeff()
         return flux - viscous * du
 

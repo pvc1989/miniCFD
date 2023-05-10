@@ -6,9 +6,13 @@ from scipy.optimize import fsolve
 import concept
 import equation
 import gas
+import expansion
 
 
 class Solver(concept.RiemannSolver):
+
+    # DDG constants:
+    _beta_0, _beta_1 = 3.0, 1.0 / 12
 
     def set_initial(self, u_left, u_right):
         self._u_left = u_left
@@ -51,7 +55,36 @@ class Solver(concept.RiemannSolver):
         # If the speed of a shock is 0, then U(x=-0, t=1) != U(x=+0, t=1).
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
         return self._get_convective_flux(u_upwind)
-        return self.get_convective_flux(u_upwind)
+
+    def get_inteface_gradient(self, expansion_left: expansion.Taylor,
+            expansion_right: expansion.Taylor):
+        """Use the DDG method to get the value of ∂u/∂x at interface.
+        """
+        x_left = expansion_left.x_right()
+        u_left = expansion_left.get_function_value(x_left)
+        du_left, ddu_left = 0, 0
+        if expansion_left.degree() > 1:
+            derivatives = expansion_left.get_derivative_values(x_left)
+            du_left, ddu_left = derivatives[1], derivatives[2]
+        elif expansion_left.degree() == 1:
+            du_left = expansion_left.get_gradient_value(x_left)
+        else:
+            pass
+        x_right = expansion_right.x_left()
+        u_right = expansion_right.get_function_value(x_right)
+        du_right, ddu_right = 0, 0
+        if expansion_right.degree() > 1:
+            derivatives = expansion_right.get_derivative_values(x_right)
+            du_right, ddu_right = derivatives[1], derivatives[2]
+        elif expansion_right.degree() == 1:
+            du_right = expansion_right.get_gradient_value(x_right)
+        else:
+            pass
+        du = (du_left + du_right) / 2
+        distance = (expansion_left.length() + expansion_right.length()) / 2
+        du += self._beta_0 / distance * (u_right - u_left)
+        du += self._beta_1 * distance * (ddu_right - ddu_left)
+        return du
 
 
 class LinearAdvection(Solver):
