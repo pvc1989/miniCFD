@@ -34,9 +34,15 @@ class Solver(concept.RiemannSolver):
 
     @abc.abstractmethod
     def _U(self, slope):
-        # slope = x / t
-        # return the self-similar solution
-        pass
+        """Get the self-similar solution on x / t.
+        """
+
+    @abc.abstractmethod
+    def _get_convective_flux(self, u_upwind):
+        """Get the convective flux for a given value.
+        
+        TODO: delegate to an Equation object.
+        """
 
     def get_upwind_flux(self, u_left, u_right):
         self.set_initial(u_left, u_right)
@@ -44,6 +50,7 @@ class Solver(concept.RiemannSolver):
         # Actually, get_value(x=0, t=1) returns either U(x=-0, t=1) or U(x=+0, t=1).
         # If the speed of a shock is 0, then U(x=-0, t=1) != U(x=+0, t=1).
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
+        return self._get_convective_flux(u_upwind)
         return self.get_convective_flux(u_upwind)
 
 
@@ -63,7 +70,7 @@ class LinearAdvection(Solver):
             U = self._u_right
         return U
 
-    def get_convective_flux(self, U):
+    def _get_convective_flux(self, U):
         return U * self._a
 
 
@@ -92,7 +99,7 @@ class InviscidBurgers(Solver):
         else:  # slope_left < slope < slope_right, u = a^{-1}(slope)
             return slope / self._k
 
-    def get_convective_flux(self, U):
+    def _get_convective_flux(self, U):
         return self._k * U**2 / 2
 
 
@@ -102,7 +109,7 @@ class Euler(Solver):
         self._gas = gas.Ideal(gamma)
         self._equation = equation.Euler(gamma)
 
-    def get_convective_flux(self, U):
+    def _get_convective_flux(self, U):
         return self._equation.get_convective_flux(U)
 
     def _determine_wave_structure(self):
