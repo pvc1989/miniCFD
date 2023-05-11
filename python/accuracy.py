@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import stats
 
 errors = dict()
 degree_range = range(2, 5)
@@ -23,7 +24,10 @@ def plot(errors, figname: str):
             ydata = []
             for n_element in n_element_range:
                 ydata.append(errors[degree][n_element][i_frame][i_error])
-            plt.plot(xdata, ydata, marker=markers[i_error], label=labels[i_error])
+            ydata = np.array(ydata)
+            slope = stats.linregress(np.log(xdata), np.log(ydata))[0]
+            plt.plot(xdata, ydata, marker=markers[i_error],
+                label=labels[i_error]+f', {slope:.2f}')
         plt.title(r'$p=$'+f'{degree}')
         plt.xlabel(r'$h$')
         plt.ylabel(r'$\Vert u^h - u\Vert$')
@@ -247,3 +251,41 @@ if __name__ == '__main__':
     ])
 
     plot(errors, 'compare_errors_dt_fixed.pdf')
+
+    # python3 solver.py --method LagrangeFR --degree 4 --n_element 80 --rk_order 4 --n_step 10000 --problem Smooth --wave_number 3 --viscous_coeff 0.001 | grep error
+    errors[4][80] = np.array([
+        [ 0.0, 2.368917e-16, 2.233226e-15, 1.246519e-06 ],
+        [ 2.5, 2.667463e-08, 1.933398e-07, 2.796981e-06 ],
+        [ 5.0, 3.239331e-08, 2.278625e-07, 2.698880e-06 ],
+        [ 7.5, 3.614387e-08, 2.468670e-07, 2.565848e-06 ],
+        [ 10.0, 3.750394e-08, 2.513238e-07, 2.397843e-06 ],
+    ])
+
+    # python3 solver.py --method LagrangeFR --degree 4 --n_element 40 --rk_order 4 --n_step 10000 --problem Smooth --wave_number 3 --viscous_coeff 0.001 | grep error
+    errors[4][40] = np.array([
+        [ 0.0, 3.151449e-16, 1.962144e-15, 2.030197e-05 ],
+        [ 2.5, 1.129298e-06, 5.682627e-06, 6.196763e-05 ],
+        [ 5.0, 1.571367e-06, 7.551607e-06, 6.104314e-05 ],
+        [ 7.5, 1.825719e-06, 8.596917e-06, 5.910268e-05 ],
+        [ 10.0, 1.928673e-06, 8.972789e-06, 5.596292e-05 ],
+    ])
+
+    # python3 solver.py --method LagrangeFR --degree 4 --n_element 20 --rk_order 4 --n_step 10000 --problem Smooth --wave_number 3 --viscous_coeff 0.001 | grep error
+    errors[4][20] = np.array([
+        [ 0.0, 2.900440e-16, 1.190799e-15, 3.353849e-04 ],
+        [ 2.5, 2.802282e-05, 1.020279e-04, 1.028525e-03 ],
+        [ 5.0, 3.601144e-05, 1.263143e-04, 9.218623e-04 ],
+        [ 7.5, 4.113691e-05, 1.404693e-04, 8.310785e-04 ],
+        [ 10.0, 4.300079e-05, 1.451794e-04, 7.480224e-04 ],
+    ])
+
+    # python3 solver.py --method LagrangeFR --degree 4 --n_element 10 --rk_order 4 --n_step 10000 --problem Smooth --wave_number 3 --viscous_coeff 0.001 | grep error
+    errors[4][10] = np.array([
+        [ 0.0, 5.797319e-16, 1.474262e-15, 5.404930e-03 ],
+        [ 2.5, 7.338255e-04, 1.896512e-03, 1.608700e-02 ],
+        [ 5.0, 8.738545e-04, 2.229685e-03, 1.436728e-02 ],
+        [ 7.5, 9.837593e-04, 2.442677e-03, 1.259951e-02 ],
+        [ 10.0, 9.976349e-04, 2.513452e-03, 1.121897e-02 ],
+    ])
+
+    plot(errors, 'compare_errors_dt_small.pdf')
