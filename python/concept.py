@@ -189,13 +189,18 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_basis_values(self, x_global: float):
+    def get_basis_values(self, x_global: float) -> np.ndarray:
         """Get the values of all basis functions at a given point.
         """
 
     @abc.abstractmethod
-    def get_basis_gradients(self, x_global: float):
+    def get_basis_gradients(self, x_global: float) -> np.ndarray:
         """Get the gradients of all basis functions at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_basis_hessians(self, x_global: float) -> np.ndarray:
+        """Get the hessians of all basis functions at a given point.
         """
 
     @abc.abstractmethod
@@ -314,13 +319,20 @@ class Element(abc.ABC):
     def fixed_quad_global(self, function: callable, n_point: int):
         return self.integrator.fixed_quad_global(function, n_point)
 
-    def get_basis_values(self, x_global: float):
+    def get_basis_values(self, x_global: float) -> np.ndarray:
         """Get the values of basis at a given point.
         """
         return self.expansion.get_basis_values(x_global)
 
-    def get_basis_gradients(self, x_global):
+    def get_basis_gradients(self, x_global: float) -> np.ndarray:
+        """Get the gradients of basis at a given point.
+        """
         return self.expansion.get_basis_gradients(x_global)
+
+    def get_basis_hessians(self, x_global: float) -> np.ndarray:
+        """Get the hessians of basis at a given point.
+        """
+        return self.expansion.get_basis_hessians(x_global)
 
     def _build_mass_matrix(self):
         mass_matrix = self.expansion.get_basis_innerproducts()

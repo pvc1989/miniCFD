@@ -43,6 +43,10 @@ class TestTaylor(unittest.TestCase):
             gradients_actual = self._expansion.get_basis_derivatives(point)[1]
             norm = np.linalg.norm(gradients_actual - gradients_expect)
             self.assertAlmostEqual(norm, 0.0)
+            hessians_expect = self._expansion.get_basis_hessians(point)
+            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
+            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            self.assertAlmostEqual(norm, 0.0)
 
     def test_get_gradient_and_derivative_values(self):
         """Test methods for getting derivatives of u^h.
@@ -138,6 +142,20 @@ class TestLagrange(unittest.TestCase):
             norm = np.linalg.norm(gradients_actual - gradients_approx)
             self.assertAlmostEqual(norm, 0.0)
 
+    def test_get_basis_derivatives(self):
+        """Test methods for getting derivatives of basis.
+        """
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for point in points:
+            gradients_expect = self._expansion.get_basis_gradients(point)
+            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
+            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            self.assertAlmostEqual(norm, 0.0)
+            hessians_expect = self._expansion.get_basis_hessians(point)
+            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
+            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            self.assertAlmostEqual(norm, 0.0)
+
     def test_get_gradient_value(self):
         """Test the method for getting gradient values.
         """
@@ -219,6 +237,20 @@ class TestLegendre(unittest.TestCase):
             gradients_approx = (values_right - values_left) / (delta * 2)
             gradients_actual = self._expansion.get_basis_gradients(point)
             norm = np.linalg.norm(gradients_actual - gradients_approx)
+            self.assertAlmostEqual(norm, 0.0)
+
+    def test_get_basis_derivatives(self):
+        """Test methods for getting derivatives of basis.
+        """
+        points = np.linspace(self._x_left, self._x_right, num=201)
+        for point in points:
+            gradients_expect = self._expansion.get_basis_gradients(point)
+            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
+            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            self.assertAlmostEqual(norm, 0.0)
+            hessians_expect = self._expansion.get_basis_hessians(point)
+            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
+            norm = np.linalg.norm(hessians_expect - hessians_actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_get_gradient_value(self):

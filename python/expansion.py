@@ -84,6 +84,18 @@ class Taylor(Expansion):
             x_power *= x_global
         return values
 
+    def get_basis_hessians(self, x_global: float):
+        x_global -= self.coordinate.x_center()
+        values = np.ndarray(self.n_term())
+        x_power = 1.0
+        values[0] = 0
+        if self.degree() > 0:
+            values[1] = 0
+        for k in range(2, self.n_term()):
+            values[k] = k * (k-1) * x_power
+            x_power *= x_global
+        return values
+
     def get_basis_derivatives(self, x_global: float):
         """Get all non-zero-in-general derivatives of the basis.
 
@@ -250,6 +262,14 @@ class Lagrange(Taylor):
         taylor_gradients = Taylor.get_basis_gradients(self, x_global)
         return taylor_gradients.dot(self._matrix_on_taylor)
 
+    def get_basis_hessians(self, x_global: float):
+        taylor_hessians = Taylor.get_basis_hessians(self, x_global)
+        return taylor_hessians.dot(self._matrix_on_taylor)
+
+    def get_basis_derivatives(self, x_global: float):
+        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
+        return taylor_derivatives.dot(self._matrix_on_taylor)
+
 
 class Legendre(Taylor):
     """Approximate a general function based on Legendre polynomials.
@@ -349,6 +369,14 @@ class Legendre(Taylor):
         taylor_gradients = Taylor.get_basis_gradients(self, x_global)
         return taylor_gradients.dot(self._matrix_on_taylor)
 
+    def get_basis_hessians(self, x_global: float):
+        taylor_hessians = Taylor.get_basis_hessians(self, x_global)
+        return taylor_hessians.dot(self._matrix_on_taylor)
+
+    def get_basis_derivatives(self, x_global: float):
+        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
+        return taylor_derivatives.dot(self._matrix_on_taylor)
+
 
 class TruncatedLegendre(Taylor):
     """A lower-order view of a higher-order Legendre expansion.
@@ -388,6 +416,12 @@ class TruncatedLegendre(Taylor):
         return Legendre.get_basis_values(self, x_global)
 
     def get_basis_gradients(self, x_global: float):
+        assert False
+
+    def get_basis_hessians(self, x_global: float):
+        assert False
+
+    def get_basis_derivatives(self, x_global: float):
         assert False
 
 
