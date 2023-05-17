@@ -2,6 +2,7 @@ import numpy as np
 
 import concept
 import expansion
+import element
 import detector
 
 
@@ -64,6 +65,56 @@ class Persson2006(concept.Viscous):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(elements[i_cell])
+            print(f'nu[{i_cell}] = {coeff}')
+            self._index_to_coeff[i_cell] = coeff
+
+    def get_coeff(self, i_cell: int):
+        if i_cell in self._index_to_coeff:
+            return self._index_to_coeff[i_cell]
+        else:
+            return 0.0
+
+
+class Energy(concept.Viscous):
+
+    def __init__(self, const=0.0) -> None:
+        self._const = const
+        self._index_to_coeff = dict()
+        self._index_to_matrices = dict()
+
+    def name(self, verbose=False) -> str:
+        return 'Energy'
+
+    def _build_matrices(self, curr: element.LagrangeFR,
+            left: element.LagrangeFR, right: element.LagrangeFR):
+        shape = (curr.n_term(), curr.n_term())
+        mat_b = mat_c = mat_d = mat_e = mat_f = np.zeros(shape)
+        return (mat_b, mat_c, mat_d, mat_e, mat_f)
+
+    def _get_viscous_coeff(self, elements, i_curr):
+        i_left = i_curr - 1
+        i_right = (i_curr + 1) % len(elements)
+        curr = elements[i_curr]
+        left = elements[i_left]
+        right = elements[i_right]
+        assert isinstance(curr, element.LagrangeFR)
+        assert isinstance(left, element.LagrangeFR)
+        assert isinstance(right, element.LagrangeFR)
+        if i_curr not in self._index_to_matrices:
+            self._index_to_matrices[i_curr] = self._build_matrices(curr, left, right)
+        mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
+        curr_column = curr.get_solution_column()
+        dissipation_rate = (mat_b - mat_c + mat_d) @ curr_column
+        dissipation_rate += mat_e @ left.get_solution_column()
+        dissipation_rate += mat_f @ right.get_solution_column()
+        dissipation_rate = curr_column.transpose() @ dissipation_rate
+        print('dissipation_rate = ', dissipation_rate)
+        return self._const
+
+    def generate(self, troubled_cell_indices, elements, periodic: bool):
+        self._index_to_coeff.clear()
+        for i_cell in troubled_cell_indices:
+            coeff = self._get_viscous_coeff(elements, i_cell)
             print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 

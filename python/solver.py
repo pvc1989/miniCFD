@@ -336,7 +336,7 @@ if __name__ == '__main__':
         default='Off',
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscous_model',
-        choices=['Off', 'Constant', 'Persson'],
+        choices=['Off', 'Constant', 'Persson', 'Energy'],
         default='Off',
         help='method for adding artificial viscosity')
     parser.add_argument('--viscous_model_const',
@@ -405,6 +405,8 @@ if __name__ == '__main__':
         ViscousClass = viscous.Constant
     elif args.viscous_model == 'Persson':
         ViscousClass = viscous.Persson2006
+    elif args.viscous_model == 'Energy':
+        ViscousClass = viscous.Energy
     else:
         assert False
     if args.problem == 'Smooth':

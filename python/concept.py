@@ -219,7 +219,7 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_coeff_ref(self):
+    def get_coeff_ref(self) -> np.ndarray:
         """Get the reference to the coefficient for each basis.
         """
 
@@ -362,7 +362,7 @@ class Element(abc.ABC):
         assert self._equation.n_component() == 1
         self.expansion.set_coeff(column)
 
-    def get_solution_column(self):
+    def get_solution_column(self) -> np.ndarray:
         """Get coefficients of the solution's expansion.
 
         The element is responsible for the coeff-to-column conversion.
