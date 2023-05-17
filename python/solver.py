@@ -104,9 +104,9 @@ class SolverBase(abc.ABC):
             expect_solution, approx_solution = self._get_ydata(t_curr, points)
             if i_step % plot_steps == 0:
                 fig = self._get_figure()
-                plt.plot(points, approx_solution, 'b-+',
+                plt.plot(points, approx_solution, 'b-',
                     label=self.solver_name())
-                plt.plot(points, expect_solution, 'r-',
+                plt.plot(points, expect_solution, 'r--',
                     label=f'Exact Solution of {self.problem_name()}')
                 plt.title(r'$t$'+f' = {t_curr:.2f}')
                 plt.legend(loc='upper right')
@@ -132,8 +132,8 @@ class SolverBase(abc.ABC):
             f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
         fig = self._get_figure()
         # initialize line-plot objects
-        approx_line, = plt.plot([], [], 'b-+', label=self.solver_name())
-        expect_line, = plt.plot([], [], 'r-',
+        approx_line, = plt.plot([], [], 'b-', label=self.solver_name())
+        expect_line, = plt.plot([], [], 'r-.',
             label=f'Exact Solution of {self.problem_name()}')
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             num=201)
@@ -407,6 +407,8 @@ if __name__ == '__main__':
         ViscousClass = viscous.Persson2006
     elif args.viscous_model == 'Energy':
         ViscousClass = viscous.Energy
+        dt = (args.t_end - args.t_begin) / args.n_step
+        args.viscous_model_const = dt
     else:
         assert False
     if args.problem == 'Smooth':

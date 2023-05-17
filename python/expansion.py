@@ -211,7 +211,7 @@ class Lagrange(Taylor):
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
 
-    def get_sample_points(self):
+    def get_sample_points(self) -> np.ndarray:
         """Get the global coordinates of all sample points."""
         return self._sample_points
 
