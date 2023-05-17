@@ -21,16 +21,18 @@ class Off(concept.Viscous):
 class Constant(concept.Viscous):
 
     def __init__(self, const=0.0) -> None:
+        super().__init__()
         self._const = const
 
     def name(self, verbose=False) -> str:
         return 'Constant (' + r'$\nu=$' + f'{self._const})'
 
     def generate(self, troubled_cell_indices, elements, periodic: bool):
-        pass
-
-    def get_coeff(self, i_cell: int):
-        return self._const
+        self._index_to_coeff.clear()
+        for i_cell in troubled_cell_indices:
+            coeff = self._const
+            print(f'nu[{i_cell}] = {coeff}')
+            self._index_to_coeff[i_cell] = coeff
 
 
 class Persson2006(concept.Viscous):
@@ -40,8 +42,8 @@ class Persson2006(concept.Viscous):
     """
 
     def __init__(self, kappa=0.1) -> None:
+        super().__init__()
         self._kappa = kappa
-        self._index_to_coeff = dict()
 
     def name(self, verbose=False) -> str:
         return "Persson (2006)"
@@ -68,18 +70,12 @@ class Persson2006(concept.Viscous):
             print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
-    def get_coeff(self, i_cell: int):
-        if i_cell in self._index_to_coeff:
-            return self._index_to_coeff[i_cell]
-        else:
-            return 0.0
-
 
 class Energy(concept.Viscous):
 
     def __init__(self, const=0.0) -> None:
+        super().__init__()
         self._const = const
-        self._index_to_coeff = dict()
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
@@ -117,12 +113,6 @@ class Energy(concept.Viscous):
             coeff = self._get_viscous_coeff(elements, i_cell)
             print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
-
-    def get_coeff(self, i_cell: int):
-        if i_cell in self._index_to_coeff:
-            return self._index_to_coeff[i_cell]
-        else:
-            return 0.0
 
 
 if __name__ == '__main__':

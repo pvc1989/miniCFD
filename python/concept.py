@@ -440,6 +440,9 @@ class Viscous(abc.ABC):
     """An object that adds artificial viscosity to a spatial scheme.
     """
 
+    def __init__(self) -> None:
+        self._index_to_coeff = dict()
+
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
         """Get the name of the limiter.
@@ -453,7 +456,10 @@ class Viscous(abc.ABC):
     def get_coeff(self, i_cell: int):
         """Get the viscous coefficient of the ith cell.
         """
-        return 0.0
+        if i_cell in self._index_to_coeff:
+            return self._index_to_coeff[i_cell]
+        else:
+            return 0.0
 
 
 class OdeSystem(abc.ABC):
