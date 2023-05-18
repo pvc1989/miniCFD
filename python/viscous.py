@@ -97,32 +97,38 @@ class Energy(concept.Viscous):
         correction_gradients_left = np.ndarray(curr.n_term())
         correction_gradients_right = np.ndarray(curr.n_term())
         for i in range(curr.n_term()):
-            left, right = curr.get_correction_gradients(points[i])
-            correction_gradients_left[i] = left
-            correction_gradients_right[i] = right
+            correction_gradients_left[i], correction_gradients_right[i] \
+                = curr.get_correction_gradients(points[i])
         mat_c = np.zeros(shape)
         for k in range(curr.n_term()):
             for l in range(1, curr.n_term()):
                 a = correction_gradients_right[k] * basis_values_curr_right[l]
                 a += correction_gradients_left[k] * basis_values_curr_left[l]
                 mat_c[k] += a * mat_a[l]
-        basis_gradients_curr_left = curr.get_basis_gradients(curr.x_left())
-        basis_gradients_curr_right = curr.get_basis_gradients(curr.x_right())
-        basis_hessians_curr_left = curr.get_basis_hessians(curr.x_left())
-        basis_hessians_curr_right = curr.get_basis_hessians(curr.x_right())
+        # TODO: use DDG methods
         beta_0, beta_1 = 3, 1/12
         delta_x = curr.length()
-        d_minus_right = 0.5 * basis_gradients_curr_right
-        d_minus_right -= beta_0 / delta_x * basis_values_curr_right
-        d_minus_right -= beta_1 * delta_x * basis_hessians_curr_right
-        d_minus_left = 0.5 * basis_gradients_curr_left
-        d_minus_left += beta_0 / delta_x * basis_values_curr_left
-        d_minus_right += beta_1 * delta_x * basis_hessians_curr_left
+        d_minus_right = 0.5 * curr.get_basis_gradients(curr.x_right()) \
+            - beta_0 / delta_x * basis_values_curr_right \
+            - beta_1 * delta_x * curr.get_basis_hessians(curr.x_right())
+        d_minus_left = 0.5 * curr.get_basis_gradients(curr.x_left()) \
+            + beta_0 / delta_x * basis_values_curr_left \
+            + beta_1 * delta_x * curr.get_basis_hessians(curr.x_left())
         mat_d = np.ndarray(shape)
         for k in range(curr.n_term()):
             mat_d[k] = correction_gradients_right[k] * d_minus_right
             mat_d[k] += correction_gradients_left[k] * d_minus_left
-        mat_e = mat_f = np.zeros(shape)
+        d_plus_right = 0.5 * right.get_basis_gradients(right.x_left()) \
+            + beta_0 / delta_x * right.get_basis_values(right.x_left()) \
+            + beta_1 * delta_x * right.get_basis_hessians(right.x_left())
+        d_plus_left = 0.5 * left.get_basis_gradients(left.x_right()) \
+            - beta_0 / delta_x * left.get_basis_values(left.x_right()) \
+            - beta_1 * delta_x * left.get_basis_hessians(left.x_right())
+        mat_e = np.ndarray(shape)
+        mat_f = np.ndarray(shape)
+        for k in range(curr.n_term()):
+            mat_e[k] = correction_gradients_left[k] * d_plus_left
+            mat_f[k] = correction_gradients_right[k] * d_plus_right
         return (mat_b, mat_c, mat_d, mat_e, mat_f)
 
     def _get_extra_energy(self, curr: expansion.Lagrange,
@@ -139,8 +145,11 @@ class Energy(concept.Viscous):
                 x_curr + left_shift)
             right_values[i] = curr_value - right.get_function_value(
                 x_curr + right_shift)
-        print(left_values, '\n', right_values)
-        return min(np.linalg.norm(left_values), np.linalg.norm(right_values))**2 / 2
+        extra_energy = min(np.linalg.norm(left_values),
+            np.linalg.norm(right_values))**2 / 2
+        # print(left_values, '\n', right_values)
+        # print(f'extra_energy = {extra_energy:.2e}')
+        return extra_energy
 
     def _get_viscous_coeff(self, elements, i_curr):
         i_left = i_curr - 1
@@ -148,6 +157,7 @@ class Energy(concept.Viscous):
         curr = elements[i_curr]
         left = elements[i_left]
         right = elements[i_right]
+        # TODO: move to element.LagrangeFR
         assert isinstance(curr, element.LagrangeFR)
         assert isinstance(left, element.LagrangeFR)
         assert isinstance(right, element.LagrangeFR)
@@ -155,23 +165,23 @@ class Energy(concept.Viscous):
             self._index_to_matrices[i_curr] = self._build_matrices(curr, left, right)
         mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
         # print(i_curr, '\n', mat_b - mat_c + mat_d)
+        # print(i_curr, '\n', mat_e, '\n', mat_f)
         curr_column = curr.get_solution_column()
-        dissipation_rate = (mat_b - mat_c + mat_d) @ curr_column
-        dissipation_rate += mat_e @ left.get_solution_column()
-        dissipation_rate += mat_f @ right.get_solution_column()
-        dissipation_rate = curr_column.transpose() @ dissipation_rate
-        assert dissipation_rate < 0
-        print(f'dissipation_rate = {dissipation_rate:.2e}')
+        dissipation = (mat_b - mat_c + mat_d) @ curr_column
+        dissipation += mat_e @ left.get_solution_column()
+        dissipation += mat_f @ right.get_solution_column()
+        dissipation = curr_column.transpose() @ dissipation
+        # assert dissipation < 0
+        print(f'dissipation = {dissipation:.2e}')
         extra_energy = self._get_extra_energy(curr.expansion, left.expansion,
             right.expansion)
-        print(f'extra_energy = {extra_energy:.2e}')
-        return extra_energy / (-dissipation_rate * self._delta_t)
+        return extra_energy / (-dissipation * self._delta_t)
 
     def generate(self, troubled_cell_indices, elements, periodic: bool):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(elements, i_cell)
-            print(f'nu[{i_cell}] = {coeff:.2e}')
+            print(f'ν[{i_cell}] = {coeff:.2e}')
             self._index_to_coeff[i_cell] = coeff
 
 
