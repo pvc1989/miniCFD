@@ -31,7 +31,7 @@ class Constant(concept.Viscous):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._const
-            print(f'nu[{i_cell}] = {coeff}')
+            # print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
 
@@ -92,6 +92,7 @@ class Energy(concept.Viscous):
         for k in range(curr.n_term()):
             for l in range(curr.n_term()):
                 mat_b[k] += mat_a[k][l] * mat_a[l]
+        # print('B =\n', mat_b)
         basis_values_curr_left = curr.get_basis_values(curr.x_left())
         basis_values_curr_right = curr.get_basis_values(curr.x_right())
         correction_gradients_left = np.ndarray(curr.n_term())
@@ -101,10 +102,11 @@ class Energy(concept.Viscous):
                 = curr.get_correction_gradients(points[i])
         mat_c = np.zeros(shape)
         for k in range(curr.n_term()):
-            for l in range(1, curr.n_term()):
+            for l in range(curr.n_term()):
                 a = correction_gradients_right[k] * basis_values_curr_right[l]
                 a += correction_gradients_left[k] * basis_values_curr_left[l]
                 mat_c[k] += a * mat_a[l]
+        # print('C =\n', mat_c)
         # TODO: use DDG methods
         beta_0, beta_1 = 3, 1/12
         delta_x = curr.length()
@@ -118,6 +120,8 @@ class Energy(concept.Viscous):
         for k in range(curr.n_term()):
             mat_d[k] = correction_gradients_right[k] * d_minus_right
             mat_d[k] += correction_gradients_left[k] * d_minus_left
+        # print('D- =\n', mat_d)
+        # print('D =\n', mat_b - mat_c + mat_d)
         d_plus_right = 0.5 * right.get_basis_gradients(right.x_left()) \
             + beta_0 / delta_x * right.get_basis_values(right.x_left()) \
             + beta_1 * delta_x * right.get_basis_hessians(right.x_left())
@@ -129,6 +133,8 @@ class Energy(concept.Viscous):
         for k in range(curr.n_term()):
             mat_e[k] = correction_gradients_left[k] * d_plus_left
             mat_f[k] = correction_gradients_right[k] * d_plus_right
+        # print('E =\n', mat_e)
+        # print('F =\n', mat_f)
         return (mat_b, mat_c, mat_d, mat_e, mat_f)
 
     def _get_extra_energy(self, curr: expansion.Lagrange,
@@ -164,15 +170,13 @@ class Energy(concept.Viscous):
         if i_curr not in self._index_to_matrices:
             self._index_to_matrices[i_curr] = self._build_matrices(curr, left, right)
         mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
-        # print(i_curr, '\n', mat_b - mat_c + mat_d)
-        # print(i_curr, '\n', mat_e, '\n', mat_f)
         curr_column = curr.get_solution_column()
         dissipation = (mat_b - mat_c + mat_d) @ curr_column
         dissipation += mat_e @ left.get_solution_column()
         dissipation += mat_f @ right.get_solution_column()
         dissipation = curr_column.transpose() @ dissipation
         # assert dissipation < 0
-        print(f'dissipation = {dissipation:.2e}')
+        # print(f'dissipation = {dissipation:.2e}')
         extra_energy = self._get_extra_energy(curr.expansion, left.expansion,
             right.expansion)
         return extra_energy / (-dissipation * self._delta_t)

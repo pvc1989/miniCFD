@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import spatial
 import equation
 import riemann
+import detector, limiter, viscous
 
 
 class TestLagrangeFR(unittest.TestCase):
@@ -94,6 +95,92 @@ class TestLagrangeFR(unittest.TestCase):
         plt.tight_layout()
         # plt.show()
         plt.savefig("compare_resolutions.pdf")
+
+    def test_dissipation(self):
+        x_left, x_right = -1.0, 1.0
+        n_element = 23
+        degree = 2
+        a_const = 1.0
+        scheme = spatial.LagrangeFR(
+            equation.LinearAdvection(a_const),
+            riemann.LinearAdvection(a_const),
+            degree, n_element, x_left, x_right)
+        nu = np.random.rand()
+        scheme.set_detector_and_limiter(detector.All(), limiter.Off(),
+            viscous.Constant(nu))
+        i_prev, i_curr, i_next = 10, 11, 12
+        cell_prev = scheme.get_element_by_index(i_prev)
+        cell_curr = scheme.get_element_by_index(i_curr)
+        cell_next = scheme.get_element_by_index(i_next)
+        n_term = cell_curr.n_term()
+        shape = (n_term, n_term)
+        first, last = i_curr*n_term, i_next*n_term
+        zeros = np.zeros(n_term)
+        # turn off viscous
+        s_prev = np.ndarray(shape)
+        s_curr = np.ndarray(shape)
+        s_next = np.ndarray(shape)
+        for k in range(n_term):
+            k_only = np.zeros(n_term)
+            k_only[k] = 1
+            cell_prev.set_solution_coeff(k_only)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            s_prev[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(k_only)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            s_curr[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(k_only)
+            residual = scheme.get_residual_column()
+            s_next[:,k] = residual[first : last]
+        column = np.random.rand(n_term)
+        cell_prev.set_solution_coeff(zeros)
+        cell_curr.set_solution_coeff(column)
+        cell_next.set_solution_coeff(zeros)
+        residual = scheme.get_residual_column()
+        self.assertAlmostEqual(0.0,
+            np.linalg.norm(s_curr @ column - residual[first : last]))
+        # turn on viscous
+        scheme.suppress_oscillations()
+        r_prev = np.ndarray(shape)
+        r_curr = np.ndarray(shape)
+        r_next = np.ndarray(shape)
+        for k in range(n_term):
+            k_only = np.zeros(n_term)
+            k_only[k] = 1
+            cell_prev.set_solution_coeff(k_only)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            r_prev[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(k_only)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            r_curr[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(k_only)
+            residual = scheme.get_residual_column()
+            r_next[:,k] = residual[first : last]
+        mat_d = (r_curr - s_curr) / nu
+        mat_e = (r_prev - s_prev) / nu
+        mat_f = (r_next - s_next) / nu
+        # print('D =\n', mat_d)
+        # print('E =\n', mat_e)
+        # print('F =\n', mat_f)
+        column = np.random.rand(n_term)
+        cell_prev.set_solution_coeff(column)
+        cell_curr.set_solution_coeff(zeros)
+        cell_next.set_solution_coeff(zeros)
+        residual = scheme.get_residual_column()
+        self.assertAlmostEqual(0.0,
+            np.linalg.norm(r_prev @ column - residual[first : last]))
 
 
 if __name__ == '__main__':
