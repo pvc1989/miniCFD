@@ -19,15 +19,18 @@ class SolverBase(abc.ABC):
     """
 
     def __init__(self, spatial_scheme: concept.SpatialScheme,
-            detector: concept.Detector, limiter: concept.Limiter,
-            viscous: concept.Viscous,
+            d: concept.Detector, l: concept.Limiter, v: concept.Viscous,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
-        self._spatial.set_detector_and_limiter(detector, limiter, viscous)
+        self._spatial.set_detector_and_limiter(d, l, v)
         self._ode_solver = ode_solver
-        self._solver_name = (f'scheme={self._spatial.name()}, ' +
-            f'detector={detector.name()}, limiter={limiter.name()}, ' +
-            f'viscous={viscous.name()}')
+        self._solver_name = f'scheme={self._spatial.name()}'
+        if not isinstance(d, detector.Off):
+            self._solver_name += f', detector={d.name()}'
+        if not isinstance(l, limiter.Off):
+            self._solver_name += f', limiter={l.name()}'
+        if not isinstance(v, viscous.Off):
+            self._solver_name += f', viscous={v.name()}'
         self._animation = None
 
     @abc.abstractmethod
@@ -408,7 +411,7 @@ if __name__ == '__main__':
     elif args.viscous_model == 'Energy':
         ViscousClass = viscous.Energy
         dt = (args.t_end - args.t_begin) / args.n_step
-        args.viscous_model_const = dt
+        args.viscous_model_const *= dt
     else:
         assert False
     if args.problem == 'Smooth':

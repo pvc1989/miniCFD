@@ -83,11 +83,11 @@ class TestLagrangeFR(unittest.TestCase):
             kappa = k * np.pi / scheme.delta_x()
             u_exact = lambda x: np.sin(kappa * (x - scheme.x_left()))
             y_data = u_exact(points)
-            plt.plot(x_data, y_data, label='Exact')
+            plt.plot(x_data, y_data, '--', label='Exact')
             scheme.initialize(u_exact)
             for i in range(len(points)):
                 y_data[i] = scheme.get_solution_value(points[i])
-            plt.plot(x_data, y_data, '--', label=scheme.name())
+            plt.plot(x_data, y_data, '-', label=scheme.name())
             plt.xlabel(r'$x/h$')
             plt.ylabel(f'sin({k}'+r'$\pi x/h)$')
             plt.legend(loc='upper right')

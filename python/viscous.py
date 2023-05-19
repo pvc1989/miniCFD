@@ -79,7 +79,7 @@ class Energy(concept.Viscous):
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
-        return 'Energy'
+        return 'Energy (' + r'$\Delta t=$' + f'{self._delta_t})'
 
     def _build_matrices(self, curr: element.LagrangeFR,
             left: element.LagrangeFR, right: element.LagrangeFR):
