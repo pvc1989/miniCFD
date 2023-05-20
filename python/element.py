@@ -144,9 +144,9 @@ class LegendreFR(LegendreDG):
         """
         u_approx = self.get_solution_value(x_global)
         a_approx = self._equation.get_convective_speed(u_approx)
-        gradient = a_approx * self.expansion.get_gradient_value(x_global)
+        gradient = a_approx * self.expansion.global_to_gradient(x_global)
         x_local = self.coordinate.global_to_local(x_global)
-        left, right = self._correction.get_gradient_value(x_local)
+        left, right = self._correction.global_to_gradient(x_local)
         left /= self.coordinate.global_to_jacobian(x_global)
         right /= self.coordinate.global_to_jacobian(x_global)
         gradient += left * (upwind_flux_left

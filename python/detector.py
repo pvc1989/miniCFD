@@ -302,7 +302,7 @@ class Persson2006(SmoothnessBased):
         else:
             assert isinstance(u_approx, expansion.Taylor)
             def u(x):
-                return u_approx.get_function_value(x)
+                return u_approx.global_to_value(x)
             all_modes_energy = u_approx.integrator.inner_product(
                 u, u, u_approx.n_term())
             legendre = expansion.Legendre(u_approx.degree(),

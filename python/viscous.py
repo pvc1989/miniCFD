@@ -146,10 +146,10 @@ class Energy(concept.Viscous):
         right_shift = right.x_left() - curr.x_right()
         for i in range(len(points)):
             x_curr = points[i]
-            curr_value = curr.get_function_value(x_curr)
-            left_values[i] = curr_value - left.get_function_value(
+            curr_value = curr.global_to_value(x_curr)
+            left_values[i] = curr_value - left.global_to_value(
                 x_curr + left_shift)
-            right_values[i] = curr_value - right.get_function_value(
+            right_values[i] = curr_value - right.global_to_value(
                 x_curr + right_shift)
         extra_energy = min(np.linalg.norm(left_values),
             np.linalg.norm(right_values))**2 / 2

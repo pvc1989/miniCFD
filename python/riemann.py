@@ -60,9 +60,9 @@ class Solver(concept.RiemannSolver):
             expansion_right: expansion.Taylor, viscous: float):
         # Get the convective flux on the interface:
         x_left = expansion_left.x_right()
-        u_left = expansion_left.get_function_value(x_left)
+        u_left = expansion_left.global_to_value(x_left)
         x_right = expansion_right.x_left()
-        u_right = expansion_right.get_function_value(x_right)
+        u_right = expansion_right.global_to_value(x_right)
         flux = self.get_upwind_flux(u_left, u_right)
         if viscous == 0:
             return flux
@@ -72,7 +72,7 @@ class Solver(concept.RiemannSolver):
             derivatives = expansion_left.get_derivative_values(x_left)
             du_left, ddu_left = derivatives[1], derivatives[2]
         elif expansion_left.degree() == 1:
-            du_left = expansion_left.get_gradient_value(x_left)
+            du_left = expansion_left.global_to_gradient(x_left)
         else:
             pass
         du_right, ddu_right = 0, 0
@@ -80,7 +80,7 @@ class Solver(concept.RiemannSolver):
             derivatives = expansion_right.get_derivative_values(x_right)
             du_right, ddu_right = derivatives[1], derivatives[2]
         elif expansion_right.degree() == 1:
-            du_right = expansion_right.get_gradient_value(x_right)
+            du_right = expansion_right.global_to_gradient(x_right)
         else:
             pass
         du = (du_left + du_right) / 2

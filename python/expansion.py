@@ -54,7 +54,7 @@ class Taylor(Expansion):
 
     def get_average(self):
         def integrand(x_global):
-            return self.get_function_value(x_global)
+            return self.global_to_value(x_global)
         n_point = 1 + (self.degree() + self.coordinate.jacobian_degree()) // 2
         return self.integrator.average(integrand, n_point)
 
@@ -119,11 +119,11 @@ class Taylor(Expansion):
         # mass_matrix[i][j] := inner-product of basis[i] and basis[j]
         return mass_matrix
 
-    def get_function_value(self, x_global: float):
+    def global_to_value(self, x_global: float):
         taylor_basis_values = Taylor.get_basis_values(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_values)
 
-    def get_gradient_value(self, x_global: float):
+    def global_to_gradient(self, x_global: float):
         taylor_basis_gradients = Taylor.get_basis_gradients(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_gradients)
 
@@ -135,7 +135,7 @@ class Taylor(Expansion):
         # TODO: evaluate the k-th derivative only
         basis_derivatives = Taylor.get_basis_derivatives(self, x_global)
         values = np.zeros(self.n_term(), dtype=self._value_type)
-        # values[0] = get_function_value(x_global)
+        # values[0] = global_to_value(x_global)
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
                 values[k] += basis_derivatives[k][l] * self._taylor_coeff[l]
@@ -168,7 +168,7 @@ class Taylor(Expansion):
     def convert_to(self, Expansion):
         assert issubclass(Expansion, Taylor)
         that = Expansion(self.degree(), self.coordinate, self._value_type)
-        that.approximate(lambda x: self.get_function_value(x))
+        that.approximate(lambda x: self.global_to_value(x))
         return that
 
 

@@ -61,7 +61,7 @@ class TestTaylor(unittest.TestCase):
         taylor.approximate(function)
         for x in points:
             values = taylor.get_derivative_values(x)
-            self.assertAlmostEqual(taylor.get_gradient_value(x), values[1])
+            self.assertAlmostEqual(taylor.global_to_gradient(x), values[1])
             for k in range(1, taylor.n_term()):
                 self.assertAlmostEqual(values[k], derivative(x, k),
                     places=taylor.degree()-k)
@@ -81,7 +81,7 @@ class TestTaylor(unittest.TestCase):
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
-                approx_values[i] = my_expansion.get_function_value(points[i])
+                approx_values[i] = my_expansion.global_to_value(points[i])
             plt.plot(points, approx_values, label= f'$p={degree}$')
         plt.legend()
         plt.ylim([-1.5, 2.0])
@@ -113,7 +113,7 @@ class TestLagrange(unittest.TestCase):
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
-                approx_values[i] = my_expansion.get_function_value(points[i])
+                approx_values[i] = my_expansion.global_to_value(points[i])
             plt.plot(points, approx_values, label= f'$p={degree}$')
         plt.legend()
         plt.ylim([-1.5, 2.0])
@@ -126,7 +126,7 @@ class TestLagrange(unittest.TestCase):
         my_function = np.sin
         self._expansion.approximate(my_function)
         for point in self._expansion.get_sample_points():
-            self.assertAlmostEqual(my_function(point), self._expansion.get_function_value(point))
+            self.assertAlmostEqual(my_function(point), self._expansion.global_to_value(point))
 
     def test_get_basis_values_and_gradients(self):
         """Test methods for getting values and gradients of basis.
@@ -156,7 +156,7 @@ class TestLagrange(unittest.TestCase):
             norm = np.linalg.norm(hessians_expect - hessians_actual)
             self.assertAlmostEqual(norm, 0.0)
 
-    def test_get_gradient_value(self):
+    def test_global_to_gradient(self):
         """Test the method for getting gradient values.
         """
         def my_function(point):
@@ -168,20 +168,20 @@ class TestLagrange(unittest.TestCase):
         points = np.linspace(0.0, 10.0, n_point)
         for point in points:
             self.assertAlmostEqual(my_function_gradient(point),
-                self._expansion.get_gradient_value(point))
+                self._expansion.global_to_gradient(point))
 
     def test_consistency_with_taylor(self):
         self._expansion.approximate(np.sin)
         points = np.linspace(self._x_left, self._x_right, num=201)
         for x in points:
             self.assertAlmostEqual(
-                self._expansion.get_function_value(x),
-                expansion.Taylor.get_function_value(self._expansion, x))
+                self._expansion.global_to_value(x),
+                expansion.Taylor.global_to_value(self._expansion, x))
         self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
         for x in points:
             self.assertAlmostEqual(
-                self._expansion.get_function_value(x),
-                expansion.Taylor.get_function_value(self._expansion, x))
+                self._expansion.global_to_value(x),
+                expansion.Taylor.global_to_value(self._expansion, x))
 
 
 class TestLegendre(unittest.TestCase):
@@ -208,7 +208,7 @@ class TestLegendre(unittest.TestCase):
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
-                approx_values[i] = my_expansion.get_function_value(points[i])
+                approx_values[i] = my_expansion.global_to_value(points[i])
             plt.plot(points, approx_values, label= f'$p={degree}$')
         plt.legend()
         plt.ylim([-1.5, 2.0])
@@ -253,7 +253,7 @@ class TestLegendre(unittest.TestCase):
             norm = np.linalg.norm(hessians_expect - hessians_actual)
             self.assertAlmostEqual(norm, 0.0)
 
-    def test_get_gradient_value(self):
+    def test_global_to_gradient(self):
         """Test the method for getting gradient values.
         """
         def my_function(point):
@@ -264,7 +264,7 @@ class TestLegendre(unittest.TestCase):
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
             self.assertAlmostEqual(my_function_gradient(point),
-                self._expansion.get_gradient_value(point))
+                self._expansion.global_to_gradient(point))
 
     def test_orthogonality(self):
         inner_products = self._expansion.get_basis_innerproducts()
@@ -286,13 +286,13 @@ class TestLegendre(unittest.TestCase):
         points = np.linspace(self._x_left, self._x_right, num=201)
         for x in points:
             self.assertAlmostEqual(
-                self._expansion.get_function_value(x),
-                expansion.Taylor.get_function_value(self._expansion, x))
+                self._expansion.global_to_value(x),
+                expansion.Taylor.global_to_value(self._expansion, x))
         self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
         for x in points:
             self.assertAlmostEqual(
-                self._expansion.get_function_value(x),
-                expansion.Taylor.get_function_value(self._expansion, x))
+                self._expansion.global_to_value(x),
+                expansion.Taylor.global_to_value(self._expansion, x))
 
 
 class TestTruncatedLegendre(unittest.TestCase):
@@ -312,8 +312,8 @@ class TestTruncatedLegendre(unittest.TestCase):
             legendre_low = expansion.Legendre(p_low, coordinate)
             legendre_low.set_coeff(legendre_high.get_coeff_ref()[0:p_low+1])
             for x in points:
-                self.assertAlmostEqual(legendre_low.get_function_value(x),
-                    legendre_trunc.get_function_value(x))
+                self.assertAlmostEqual(legendre_low.global_to_value(x),
+                    legendre_trunc.global_to_value(x))
                 diff = (legendre_low.get_derivative_values(x)
                     - legendre_trunc.get_derivative_values(x))
                 self.assertEqual(np.linalg.norm(diff), 0)

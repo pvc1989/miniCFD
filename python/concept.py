@@ -209,12 +209,12 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_function_value(self, x_global: float):
+    def global_to_value(self, x_global: float):
         """Evaluate the approximation and return-by-value the result.
         """
 
     @abc.abstractmethod
-    def get_gradient_value(self, x_global: float):
+    def global_to_gradient(self, x_global: float):
         """Evaluate the gradient of the approximation and return-by-value the result.
         """
 
@@ -351,7 +351,7 @@ class Element(abc.ABC):
         """
         u_approx = self.get_solution_value(x_global)
         flux = self._equation.get_convective_flux(u_approx)
-        du_approx = self.expansion.get_gradient_value(x_global)
+        du_approx = self.expansion.global_to_gradient(x_global)
         flux -= self._equation.get_diffusive_flux(u_approx, du_approx)
         flux -= extra_viscous * du_approx
         return flux
@@ -359,12 +359,12 @@ class Element(abc.ABC):
     def get_solution_value(self, x_global: float):
         """Get the value of u^h at a given point.
         """
-        return self.expansion.get_function_value(x_global)
+        return self.expansion.global_to_value(x_global)
 
     def get_solution_gradient(self, x_global: float):
         """Get the gradient value of u^h at a given point.
         """
-        return self.expansion.get_gradient_value(x_global)
+        return self.expansion.global_to_gradient(x_global)
 
     def set_solution_coeff(self, column):
         """Set coefficients of the solution's expansion.

@@ -91,10 +91,10 @@ class ZhongShu2013(CompactWENO):
         borrowed = Expansion(this.degree(), this.coordinate, this._value_type)
         x_shift = self._x_shift(curr, neighbor)
         that_average = this.integrator.average(
-            lambda x_this: that.get_function_value(x_this + x_shift),
+            lambda x_this: that.global_to_value(x_this + x_shift),
             n_point=this.degree())
         borrowed.approximate(lambda x_this: this.get_average() - that_average
-            + that.get_function_value(x_this + x_shift))
+            + that.global_to_value(x_this + x_shift))
         return borrowed
 
     def _get_smoothness_value(self, taylor: expansion.Taylor):
@@ -160,7 +160,7 @@ class LiWangRen2020(CompactWENO):
         coeff[0] = this_average
         x_shift = self._x_shift(curr, neighbor)
         def psi(x_that):
-            return that.get_function_value(x_that) - this_average
+            return that.global_to_value(x_that) - this_average
         def phi(x_that):
             return this.get_basis(1)(x_that - x_shift)
         coeff[1] = (that.integrator.inner_product(phi, psi, that.degree())
@@ -245,7 +245,7 @@ class LiWangRen2020(CompactWENO):
             new_lagrange = expansion.Lagrange(curr.degree(),
                 curr.x_left(), curr.x_right(), curr._value_type)
             new_lagrange.approximate(lambda x:
-                new_legendre.get_function_value(x))
+                new_legendre.global_to_value(x))
             new_coeff = new_lagrange.get_coeff_ref()
         else:
             assert isinstance(curr.expansion, expansion.Legendre)
@@ -279,7 +279,7 @@ class Xu2023(CompactWENO):
             curr_expansion.set_coeff(old_coeff)
         else:
             def monotone(x):
-                q = curr_expansion.get_function_value(x) - curr_average
+                q = curr_expansion.global_to_value(x) - curr_average
                 q /= big_a
                 return np.tanh(q)
             monotone_average = curr.integrator.average(monotone, curr.degree())
