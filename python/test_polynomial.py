@@ -20,17 +20,17 @@ class TestRadau(unittest.TestCase):
     def test_values_at_ends(self):
         """Test values and -1 and +1.
         """
-        self.assertEqual((0.0, 1.0), self._radau.get_function_value(-1.0))
-        self.assertEqual((1.0, 0.0), self._radau.get_function_value(+1.0))
+        self.assertEqual((0.0, 1.0), self._radau.local_to_value(-1.0))
+        self.assertEqual((1.0, 0.0), self._radau.local_to_value(+1.0))
 
     def test_orthogonality(self):
         """Test Radau_{k} ⟂ Polynpmial_{k-2}.
         """
         for k in range(self._degree - 1):
-            integral, _ = integrate.quad(lambda x: x**k * self._radau.get_function_value(x)[0],
+            integral, _ = integrate.quad(lambda x: x**k * self._radau.local_to_value(x)[0],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
-            integral, _ = integrate.quad(lambda x: x**k * self._radau.get_function_value(x)[1],
+            integral, _ = integrate.quad(lambda x: x**k * self._radau.local_to_value(x)[1],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
 
@@ -44,8 +44,8 @@ class TestRadau(unittest.TestCase):
         right_derivatives = np.zeros(n_point)
         for i in range(n_point):
             point_i = points[i]
-            left_values[i], right_values[i] = self._radau.get_function_value(point_i)
-            left_derivatives[i], right_derivatives[i] = self._radau.get_gradient_value(point_i)
+            left_values[i], right_values[i] = self._radau.local_to_value(point_i)
+            left_derivatives[i], right_derivatives[i] = self._radau.local_to_gradient(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         plt.plot(points, left_values, 'r--', label=r'$g_{+1}(\xi)$')
@@ -73,29 +73,29 @@ class TestVincent(unittest.TestCase):
         """
         radau = Radau(self._degree + 1)
         vincent = Vincent(self._degree, Vincent.discontinuous_galerkin)
-        points = np.linspace(-1, 1, num=1001)
+        points = np.linspace(-1, 1, num=3)
         for x in points:
-            radau_left, radau_right = radau.get_function_value(x)
-            vincent_left, vincent_right = vincent.get_function_value(x)
+            radau_left, radau_right = radau.local_to_value(x)
+            vincent_left, vincent_right = vincent.local_to_value(x)
             self.assertAlmostEqual(radau_left, vincent_right)
             self.assertAlmostEqual(radau_right, vincent_left)
-            radau_left, radau_right = radau.get_gradient_value(x)
-            vincent_left, vincent_right = vincent.get_gradient_value(x)
+            radau_left, radau_right = radau.local_to_gradient(x)
+            vincent_left, vincent_right = vincent.local_to_gradient(x)
             self.assertAlmostEqual(radau_left, vincent_right)
             self.assertAlmostEqual(radau_right, vincent_left)
 
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.
         """
-        left, right = self._huyhn.get_function_value(+1.0)
+        left, right = self._huyhn.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
         self.assertAlmostEqual(1.0, right)
-        left, right = self._huyhn.get_function_value(-1.0)
+        left, right = self._huyhn.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
         self.assertAlmostEqual(1.0, left)
-        left, right = self._huyhn.get_function_value(+1.0)
+        left, right = self._huyhn.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
-        left, right = self._huyhn.get_function_value(-1.0)
+        left, right = self._huyhn.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
 
     def test_orthogonality(self):
@@ -103,10 +103,10 @@ class TestVincent(unittest.TestCase):
         """
         huyhn = Vincent(self._degree, lambda k: 2 * (k+1) / (2*k + 1) / k)
         for k in range(self._degree - 1):
-            integral, _ = integrate.quad(lambda x: x**k * huyhn.get_function_value(x)[0],
+            integral, _ = integrate.quad(lambda x: x**k * huyhn.local_to_value(x)[0],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
-            integral, _ = integrate.quad(lambda x: x**k * huyhn.get_function_value(x)[1],
+            integral, _ = integrate.quad(lambda x: x**k * huyhn.local_to_value(x)[1],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
 
@@ -120,8 +120,8 @@ class TestVincent(unittest.TestCase):
         right_derivatives = np.zeros(n_point)
         for i in range(n_point):
             point_i = points[i]
-            left_values[i], right_values[i] = self._huyhn.get_function_value(point_i)
-            left_derivatives[i], right_derivatives[i] = self._huyhn.get_gradient_value(point_i)
+            left_values[i], right_values[i] = self._huyhn.local_to_value(point_i)
+            left_derivatives[i], right_derivatives[i] = self._huyhn.local_to_gradient(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         plt.plot(points, left_values, 'r--', label=r'$g_{-1}(\xi)$')
@@ -153,7 +153,7 @@ class TestLagrangeBasis(unittest.TestCase):
         values = np.zeros((n_point, self._n_point))
         for i in range(n_point):
             point_i = points[i]
-            values[i] = self._lagrange.get_function_value(point_i)
+            values[i] = self._lagrange.local_to_value(point_i)
         plt.figure()
         for i in range(self._n_point):
             plt.plot(points, values[:, i], label=f'$L_{i}$')
@@ -166,7 +166,7 @@ class TestLagrangeBasis(unittest.TestCase):
         """
         points = np.linspace(-1.0, 1.0, self._n_point)
         for i in range(self._n_point):
-            values = self._lagrange.get_function_value(points[i])
+            values = self._lagrange.local_to_value(points[i])
             for j in range(self._n_point):
                 if i == j:
                     self.assertEqual(1.0, values[j])

@@ -18,7 +18,7 @@ class Radau(Polynomial):
         assert 1 <= degree <= 9
         self._k = degree
 
-    def get_function_value(self, x_local):
+    def local_to_value(self, x_local):
         legendre_value_curr = self._legendres[self._k](x_local)
         legendre_value_prev = self._legendres[self._k - 1](x_local)
         left = (legendre_value_curr + legendre_value_prev) / 2
@@ -26,7 +26,7 @@ class Radau(Polynomial):
         right *= (-1)**self._k / 2
         return (left, right)
 
-    def get_gradient_value(self, x_local):
+    def local_to_gradient(self, x_local):
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         for k in range(1, self._k + 1):
@@ -50,8 +50,6 @@ class Vincent(Polynomial):
     for k in range(10):
         _legendres.append(legendre(k))
 
-    _local_to_gradients = dict()
-
     @staticmethod
     def discontinuous_galerkin(k: int):
         return 1.0
@@ -70,8 +68,9 @@ class Vincent(Polynomial):
         self._k = degree  # degree of solution, not the polynomial
         self._next_ratio = next_ratio(degree)
         self._prev_ratio = 1 - self._next_ratio
+        self._local_to_gradient = dict()
 
-    def get_function_value(self, x_local):
+    def local_to_value(self, x_local):
         def right(xi):
             val = self._legendres[self._k](xi)
             val += self._prev_ratio * self._legendres[self._k - 1](xi)
@@ -79,9 +78,9 @@ class Vincent(Polynomial):
             return val / 2
         return (right(-x_local), right(x_local))
 
-    def get_gradient_value(self, x_local):
-        if x_local in Vincent._local_to_gradients:
-            return Vincent._local_to_gradients[x_local]
+    def local_to_gradient(self, x_local):
+        if x_local in self._local_to_gradient:
+            return self._local_to_gradient[x_local]
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         legendre_derivative_next = 0.0
@@ -98,7 +97,7 @@ class Vincent(Polynomial):
         right = (legendre_derivative_curr
             + self._prev_ratio * legendre_derivative_prev
             + self._next_ratio * legendre_derivative_next) / 2
-        Vincent._local_to_gradients[x_local] = (left, right)
+        self._local_to_gradient[x_local] = (left, right)
         return (left, right)
 
 
@@ -114,17 +113,17 @@ class IthLagrange(Polynomial):
     def n_point(self):
         return len(self._points)
 
-    def get_function_value(self, point: float):
+    def local_to_value(self, x_local: float):
         value = 1.0
         for j in range(self.n_point()):
             if j == self._i:
                 continue
-            dividend = point - self._points[j]
+            dividend = x_local - self._points[j]
             divisor = self._points[self._i] - self._points[j]
             value *= (dividend / divisor)
         return value
 
-    def get_gradient_value(self, point: float):
+    def local_to_gradient(self, x_local: float):
         value = 0.0
         for j in range(self.n_point()):
             if j == self._i:
@@ -134,7 +133,7 @@ class IthLagrange(Polynomial):
             for k in range(self.n_point()):
                 if k in (self._i, j):
                     continue
-                dividend *= point - self._points[k]
+                dividend *= x_local - self._points[k]
                 divisor *= self._points[self._i] - self._points[k]
             value += dividend / divisor
         return value
@@ -155,16 +154,16 @@ class LagrangeBasis(Polynomial):
     def n_term(self):
         return len(self._points)
 
-    def get_function_value(self, x_local):
+    def local_to_value(self, x_local):
         values = np.ndarray(self.n_term())
         for i in range(self.n_term()):
-            values[i] = self._lagranges[i].get_function_value(x_local)
+            values[i] = self._lagranges[i].local_to_value(x_local)
         return values
 
-    def get_gradient_value(self, x_local):
+    def local_to_gradient(self, x_local):
         values = np.ndarray(self.n_term())
         for i in range(self.n_term()):
-            values[i] = self._lagranges[i].get_gradient_value(x_local)
+            values[i] = self._lagranges[i].local_to_gradient(x_local)
         return values
 
 

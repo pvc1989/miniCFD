@@ -10,12 +10,12 @@ class Polynomial(abc.ABC):
     # TODO: rename to LocalPolynomial
 
     @abc.abstractmethod
-    def get_function_value(self, x_local):
+    def local_to_value(self, x_local):
         """Evaluate the polynomial and return-by-value the result.
         """
 
     @abc.abstractmethod
-    def get_gradient_value(self, x_local):
+    def local_to_gradient(self, x_local):
         """Evaluate the gradient of the polynomial and return-by-value the result.
         """
 
