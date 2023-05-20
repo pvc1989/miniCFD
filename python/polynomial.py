@@ -1,7 +1,7 @@
 """Implement some special polynomials.
 """
 import numpy as np
-from scipy.special import legendre
+from scipy.special import eval_legendre
 
 from concept import Polynomial
 
@@ -9,18 +9,15 @@ from concept import Polynomial
 class Radau(Polynomial):
     """The left- and right- Radau polynomials.
     """
-    _legendres = []
-    for k in range(10):
-        _legendres.append(legendre(k))
 
     def __init__(self, degree: int) -> None:
         super().__init__()
-        assert 1 <= degree <= 9
+        assert 1 <= degree
         self._k = degree
 
     def local_to_value(self, x_local):
-        legendre_value_curr = self._legendres[self._k](x_local)
-        legendre_value_prev = self._legendres[self._k - 1](x_local)
+        legendre_value_curr = eval_legendre(self._k, x_local)
+        legendre_value_prev = eval_legendre(self._k-1, x_local)
         left = (legendre_value_curr + legendre_value_prev) / 2
         right = legendre_value_curr - legendre_value_prev
         right *= (-1)**self._k / 2
@@ -32,7 +29,7 @@ class Radau(Polynomial):
         for k in range(1, self._k + 1):
             legendre_derivative_prev = legendre_derivative_curr
             # prev == k - 1, curr == k
-            legendre_derivative_curr = k * self._legendres[k-1](x_local)
+            legendre_derivative_curr = k * eval_legendre(k-1, x_local)
             legendre_derivative_curr += x_local * legendre_derivative_prev
         left = (legendre_derivative_curr + legendre_derivative_prev) / 2
         right = legendre_derivative_curr - legendre_derivative_prev
@@ -46,9 +43,6 @@ class Vincent(Polynomial):
     The right g(ξ) for a k-degree u^h is defined as
         (P_{k} + prev_ratio * P_{k-1} + next_ratio * P_{k+1}) / 2
     """
-    _legendres = []
-    for k in range(10):
-        _legendres.append(legendre(k))
 
     @staticmethod
     def discontinuous_galerkin(k: int):
@@ -72,9 +66,9 @@ class Vincent(Polynomial):
 
     def local_to_value(self, x_local):
         def right(xi):
-            val = self._legendres[self._k](xi)
-            val += self._prev_ratio * self._legendres[self._k - 1](xi)
-            val += self._next_ratio * self._legendres[self._k + 1](xi)
+            val = eval_legendre(self._k, xi)
+            val += self._prev_ratio * eval_legendre(self._k - 1, xi)
+            val += self._next_ratio * eval_legendre(self._k + 1, xi)
             return val / 2
         return (right(-x_local), right(x_local))
 
@@ -84,12 +78,12 @@ class Vincent(Polynomial):
         legendre_derivative_prev = 0.0
         legendre_derivative_curr = 0.0
         legendre_derivative_next = 0.0
-        for curr in range(1 + self._k):
-            if curr > 0:
+        for k_curr in range(1 + self._k):
+            if k_curr > 0:
                 legendre_derivative_prev = legendre_derivative_curr
                 legendre_derivative_curr = legendre_derivative_next
-            next = curr + 1
-            legendre_derivative_next = (next * self._legendres[curr](x_local)
+            k_next = k_curr + 1
+            legendre_derivative_next = (k_next * eval_legendre(k_curr, x_local)
                 + x_local * legendre_derivative_curr)
         left = (-1)**self._k * (legendre_derivative_curr
             - self._prev_ratio * legendre_derivative_prev
