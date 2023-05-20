@@ -244,12 +244,12 @@ class Lagrange(Taylor):
         assert 0 <= i_basis
         def function(x_global):
             x_local = self.coordinate.global_to_local(x_global)
-            return self._basis[i_basis].get_function_value(x_local)
+            return self._basis[i_basis].local_to_value(x_local)
         return function
 
     def get_basis_values(self, x_global):
         x_local = self.coordinate.global_to_local(x_global)
-        values = self._basis.get_function_value(x_local)
+        values = self._basis.local_to_value(x_local)
         return values
 
     def get_basis_gradients(self, x_global):

@@ -55,7 +55,7 @@ class LagrangeFR(LagrangeDG):
 
     def get_correction_gradients(self, x_global):
         x_local = self.coordinate.global_to_local(x_global)
-        left, right = self._correction.get_gradient_value(x_local)
+        left, right = self._correction.local_to_gradient(x_local)
         jacobian = self.coordinate.local_to_jacobian(x_local)
         left /= jacobian
         right /= jacobian
@@ -67,7 +67,7 @@ class LagrangeFR(LagrangeDG):
         """
         flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate.global_to_local(x_global)
-        left, right = self._correction.get_function_value(x_local)
+        left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
         flux += right * (upwind_flux_right
@@ -131,7 +131,7 @@ class LegendreFR(LegendreDG):
         """
         flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate.global_to_local(x_global)
-        left, right = self._correction.get_function_value(x_local)
+        left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
         flux += right * (upwind_flux_right

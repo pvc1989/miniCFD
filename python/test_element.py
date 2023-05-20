@@ -81,7 +81,7 @@ class TestLagrangeFR(unittest.TestCase):
             # continuous_flux = discontinuous_flux + correction
             flux_expect = self._element.get_discontinuous_flux(x_global)
             x_local = self.coordinate.global_to_local(x_global)
-            left, right = vincent.get_function_value(x_local)
+            left, right = vincent.local_to_value(x_local)
             flux_expect += left * (upwind_flux_left
                 - self._element.get_discontinuous_flux(self._x_left))
             flux_expect += right * (upwind_flux_right
