@@ -41,20 +41,13 @@ class Solver(concept.RiemannSolver):
         """Get the self-similar solution on x / t.
         """
 
-    @abc.abstractmethod
-    def _get_convective_flux(self, u_upwind):
-        """Get the convective flux for a given value.
-        
-        TODO: delegate to an Equation object.
-        """
-
     def get_upwind_flux(self, u_left, u_right):
         self.set_initial(u_left, u_right)
         u_upwind = self.get_value(x=0, t=1)
         # Actually, get_value(x=0, t=1) returns either U(x=-0, t=1) or U(x=+0, t=1).
         # If the speed of a shock is 0, then U(x=-0, t=1) != U(x=+0, t=1).
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
-        return self._get_convective_flux(u_upwind)
+        return self.equation().get_convective_flux(u_upwind)
 
     def get_interface_flux(self, expansion_left: expansion.Taylor,
             expansion_right: expansion.Taylor, viscous: float):
@@ -93,38 +86,39 @@ class Solver(concept.RiemannSolver):
 class LinearAdvection(Solver):
 
     def __init__(self, a_const):
-        self._a = a_const
+        self._equation = equation.LinearAdvection(a_const)
+
+    def equation(self) -> concept.Equation:
+        return self._equation
 
     def _determine_wave_structure(self):
         pass
 
     def _U(self, slope):
         U = 0.0
-        if slope <= self._a:
+        if slope <= self.equation().get_convective_speed():
             U = self._u_left
         else:
             U = self._u_right
         return U
 
-    def _get_convective_flux(self, U):
-        return U * self._a
-
 
 class InviscidBurgers(Solver):
 
     def __init__(self, k=1.0):
-        assert k > 0.0
-        self._k = k
+        self._equation = equation.InviscidBurgers(k)
+
+    def equation(self) -> equation.InviscidBurgers:
+        return self._equation
 
     def _determine_wave_structure(self):
         self._slope_left, self._slope_right = 0, 0
-        if self._u_left <= self._u_right:
-            # rarefaction
-            self._slope_left = self._k * self._u_left
-            self._slope_right = self._k * self._u_right
-        else:
-            # shock
-            slope = self._k * (self._u_left + self._u_right) / 2
+        if self._u_left <= self._u_right:  # rarefaction
+            self._slope_left = self._equation.get_convective_speed(self._u_left)
+            self._slope_right = self._equation.get_convective_speed(self._u_right)
+        else:  # shock
+            u_mean = (self._u_left + self._u_right) / 2
+            slope = self._equation.get_convective_speed(u_mean) 
             self._slope_left, self._slope_right = slope, slope
 
     def _U(self, slope):
@@ -133,10 +127,8 @@ class InviscidBurgers(Solver):
         elif slope >= self._slope_right:
             return self._u_right
         else:  # slope_left < slope < slope_right, u = a^{-1}(slope)
-            return slope / self._k
-
-    def _get_convective_flux(self, U):
-        return self._k * U**2 / 2
+            k = (self._slope_right - self._slope_left) / (self._u_right - self._u_left)
+            return slope / k
 
 
 class Euler(Solver):
@@ -145,8 +137,8 @@ class Euler(Solver):
         self._gas = gas.Ideal(gamma)
         self._equation = equation.Euler(gamma)
 
-    def _get_convective_flux(self, U):
-        return self._equation.get_convective_flux(U)
+    def equation(self) -> concept.Equation:
+        return self._equation
 
     def _determine_wave_structure(self):
         # set states in unaffected regions

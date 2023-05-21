@@ -17,10 +17,9 @@ class FiniteElement(concept.SpatialScheme):
             riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             ElementType: concept.Element, value_type=float) -> None:
-        concept.SpatialScheme.__init__(self, equation,
+        concept.SpatialScheme.__init__(self, equation, riemann,
             n_element, x_left, x_right)
         assert degree >= 0
-        self._riemann = riemann
         delta_x = (x_right - x_left) / n_element
         x_left_i = x_left
         for i_element in range(n_element):

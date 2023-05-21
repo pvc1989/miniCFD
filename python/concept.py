@@ -269,6 +269,34 @@ class Equation(abc.ABC):
         """
 
 
+class RiemannSolver(abc.ABC):
+    """An exact or approximate solver for the Riemann problem of an Equation.
+    """
+
+    @abc.abstractmethod
+    def equation(self) -> Equation:
+        """Get a reference to the underlying Equation object.
+        """
+
+    @abc.abstractmethod
+    def get_value(self, x_global, t_curr):
+        """Get the solution of a Riemann problem.
+        """
+
+    @abc.abstractmethod
+    def get_upwind_flux(self, u_left, u_right):
+        """Get the value of the convective flux on the interface.
+        """
+
+    @abc.abstractmethod
+    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
+            viscous: float):
+        """Get the value of F - G on the interface.
+        
+        It is assumed G is in the form of nu * ∂U/∂x.
+        """
+
+
 class Element(abc.ABC):
     """A cell-like object that carries some expansion of the solution.
     """
@@ -390,29 +418,6 @@ class Element(abc.ABC):
         """
 
 
-class RiemannSolver(abc.ABC):
-    """An exact or approximate solver for the Riemann problem of an Equation.
-    """
-
-    @abc.abstractmethod
-    def get_value(self, x_global, t_curr):
-        """Get the solution of a Riemann problem.
-        """
-
-    @abc.abstractmethod
-    def get_upwind_flux(self, u_left, u_right):
-        """Get the value of the convective flux on the interface.
-        """
-
-    @abc.abstractmethod
-    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
-            viscous: float):
-        """Get the value of F - G on the interface.
-        
-        It is assumed G is in the form of nu * ∂U/∂x.
-        """
-
-
 class Detector(abc.ABC):
     """An object that detects jumps on an element.
     """
@@ -516,12 +521,13 @@ class SpatialScheme(OdeSystem):
     """An ODE system given by some spatial scheme.
     """
 
-    def __init__(self, equation: Equation,
+    def __init__(self, equation: Equation, riemann: RiemannSolver,
             n_element: int, x_left: float, x_right: float,
             detector=None, limiter=None, viscous=None) -> None:
         assert x_left < x_right
         assert n_element > 1
         self.equation = equation
+        self._riemann = riemann
         self._elements = np.ndarray(n_element, Element)
         self._detector = detector
         self._limiter = limiter
