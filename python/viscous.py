@@ -9,7 +9,7 @@ import detector
 class Off(concept.Viscous):
 
     def __init__(self, const) -> None:
-        pass
+        super().__init__()
 
     def name(self, verbose=False) -> str:
         return "Off"
@@ -81,62 +81,6 @@ class Energy(concept.Viscous):
     def name(self, verbose=False) -> str:
         return 'Energy (' + r'$\Delta t=$' + f'{self._delta_t})'
 
-    def _build_matrices(self, curr: element.LagrangeFR,
-            left: element.LagrangeFR, right: element.LagrangeFR):
-        shape = (curr.n_term(), curr.n_term())
-        points = curr.get_sample_points()
-        mat_a = np.ndarray(shape)
-        for i in range(curr.n_term()):
-            mat_a[i] = curr.get_basis_gradients(points[i])
-        mat_b = np.zeros(shape)
-        for k in range(curr.n_term()):
-            for l in range(curr.n_term()):
-                mat_b[k] += mat_a[k][l] * mat_a[l]
-        # print('B =\n', mat_b)
-        basis_values_curr_left = curr.get_basis_values(curr.x_left())
-        basis_values_curr_right = curr.get_basis_values(curr.x_right())
-        correction_gradients_left = np.ndarray(curr.n_term())
-        correction_gradients_right = np.ndarray(curr.n_term())
-        for i in range(curr.n_term()):
-            correction_gradients_left[i], correction_gradients_right[i] \
-                = curr.get_correction_gradients(points[i])
-        mat_c = np.zeros(shape)
-        for k in range(curr.n_term()):
-            for l in range(curr.n_term()):
-                a = correction_gradients_right[k] * basis_values_curr_right[l]
-                a += correction_gradients_left[k] * basis_values_curr_left[l]
-                mat_c[k] += a * mat_a[l]
-        # print('C =\n', mat_c)
-        # TODO: use DDG methods
-        beta_0, beta_1 = 3, 1/12
-        delta_x = curr.length()
-        d_minus_right = 0.5 * curr.get_basis_gradients(curr.x_right()) \
-            - beta_0 / delta_x * basis_values_curr_right \
-            - beta_1 * delta_x * curr.get_basis_hessians(curr.x_right())
-        d_minus_left = 0.5 * curr.get_basis_gradients(curr.x_left()) \
-            + beta_0 / delta_x * basis_values_curr_left \
-            + beta_1 * delta_x * curr.get_basis_hessians(curr.x_left())
-        mat_d = np.ndarray(shape)
-        for k in range(curr.n_term()):
-            mat_d[k] = correction_gradients_right[k] * d_minus_right
-            mat_d[k] += correction_gradients_left[k] * d_minus_left
-        # print('D- =\n', mat_d)
-        # print('D =\n', mat_b - mat_c + mat_d)
-        d_plus_right = 0.5 * right.get_basis_gradients(right.x_left()) \
-            + beta_0 / delta_x * right.get_basis_values(right.x_left()) \
-            + beta_1 * delta_x * right.get_basis_hessians(right.x_left())
-        d_plus_left = 0.5 * left.get_basis_gradients(left.x_right()) \
-            - beta_0 / delta_x * left.get_basis_values(left.x_right()) \
-            - beta_1 * delta_x * left.get_basis_hessians(left.x_right())
-        mat_e = np.ndarray(shape)
-        mat_f = np.ndarray(shape)
-        for k in range(curr.n_term()):
-            mat_e[k] = correction_gradients_left[k] * d_plus_left
-            mat_f[k] = correction_gradients_right[k] * d_plus_right
-        # print('E =\n', mat_e)
-        # print('F =\n', mat_f)
-        return (mat_b, mat_c, mat_d, mat_e, mat_f)
-
     def _get_extra_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         points = curr.get_sample_points()
@@ -168,7 +112,8 @@ class Energy(concept.Viscous):
         assert isinstance(left, element.LagrangeFR)
         assert isinstance(right, element.LagrangeFR)
         if i_curr not in self._index_to_matrices:
-            self._index_to_matrices[i_curr] = self._build_matrices(curr, left, right)
+            self._index_to_matrices[i_curr] = curr.get_dissipation_matrices(
+                left.expansion, right.expansion)
         mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
         curr_column = curr.get_solution_column()
         dissipation = (mat_b - mat_c + mat_d) @ curr_column

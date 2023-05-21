@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 
 import spatial
 import equation
+import element
 import riemann
 import detector, limiter, viscous
 
@@ -96,7 +97,7 @@ class TestLagrangeFR(unittest.TestCase):
         # plt.show()
         plt.savefig("compare_resolutions.pdf")
 
-    def test_dissipation(self):
+    def test_dissipation_matrices(self):
         x_left, x_right = -1.0, 1.0
         n_element = 23
         degree = 2
@@ -138,13 +139,6 @@ class TestLagrangeFR(unittest.TestCase):
             cell_next.set_solution_coeff(k_only)
             residual = scheme.get_residual_column()
             s_next[:,k] = residual[first : last]
-        column = np.random.rand(n_term)
-        cell_prev.set_solution_coeff(zeros)
-        cell_curr.set_solution_coeff(column)
-        cell_next.set_solution_coeff(zeros)
-        residual = scheme.get_residual_column()
-        self.assertAlmostEqual(0.0,
-            np.linalg.norm(s_curr @ column - residual[first : last]))
         # turn on viscous
         scheme.suppress_oscillations()
         r_prev = np.ndarray(shape)
@@ -168,19 +162,15 @@ class TestLagrangeFR(unittest.TestCase):
             cell_next.set_solution_coeff(k_only)
             residual = scheme.get_residual_column()
             r_next[:,k] = residual[first : last]
-        mat_d = (r_curr - s_curr) / nu
-        mat_e = (r_prev - s_prev) / nu
-        mat_f = (r_next - s_next) / nu
-        # print('D =\n', mat_d)
-        # print('E =\n', mat_e)
-        # print('F =\n', mat_f)
-        column = np.random.rand(n_term)
-        cell_prev.set_solution_coeff(column)
-        cell_curr.set_solution_coeff(zeros)
-        cell_next.set_solution_coeff(zeros)
-        residual = scheme.get_residual_column()
+        assert isinstance(cell_curr, element.LagrangeFR)
+        mat_b, mat_c, mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices(
+            cell_prev.expansion, cell_next.expansion)
         self.assertAlmostEqual(0.0,
-            np.linalg.norm(r_prev @ column - residual[first : last]))
+            np.linalg.norm((r_curr - s_curr) / nu - (mat_b - mat_c + mat_d)))
+        self.assertAlmostEqual(0.0,
+            np.linalg.norm((r_prev - s_prev) / nu - mat_e))
+        self.assertAlmostEqual(0.0,
+            np.linalg.norm((r_next - s_next) / nu - mat_f))
 
 
 if __name__ == '__main__':

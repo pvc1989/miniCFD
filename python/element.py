@@ -115,6 +115,62 @@ class LagrangeFR(LagrangeDG):
                 upwind_flux_left, upwind_flux_right, extra_viscous)
         return values
 
+    def get_dissipation_matrices(self, left: expansion.Lagrange, right: expansion.Lagrange):
+        n_term = self.n_term()
+        shape = (n_term, n_term)
+        points = self.get_sample_points()
+        mat_a = np.ndarray(shape)
+        for i in range(n_term):
+            mat_a[i] = self.get_basis_gradients(points[i])
+        mat_b = np.zeros(shape)
+        for k in range(n_term):
+            for l in range(n_term):
+                mat_b[k] += mat_a[k][l] * mat_a[l]
+        # print('B =\n', mat_b)
+        basis_values_curr_left = self.get_basis_values(self.x_left())
+        basis_values_curr_right = self.get_basis_values(self.x_right())
+        correction_gradients_left = np.ndarray(n_term)
+        correction_gradients_right = np.ndarray(n_term)
+        for i in range(n_term):
+            correction_gradients_left[i], correction_gradients_right[i] \
+                = self.get_correction_gradients(points[i])
+        mat_c = np.zeros(shape)
+        for k in range(n_term):
+            for l in range(n_term):
+                a = correction_gradients_right[k] * basis_values_curr_right[l]
+                a += correction_gradients_left[k] * basis_values_curr_left[l]
+                mat_c[k] += a * mat_a[l]
+        # print('C =\n', mat_c)
+        # TODO: use DDG methods
+        beta_0, beta_1 = 3, 1/12
+        delta_x = self.length()
+        d_minus_right = 0.5 * self.get_basis_gradients(self.x_right()) \
+            - beta_0 / delta_x * basis_values_curr_right \
+            - beta_1 * delta_x * self.get_basis_hessians(self.x_right())
+        d_minus_left = 0.5 * self.get_basis_gradients(self.x_left()) \
+            + beta_0 / delta_x * basis_values_curr_left \
+            + beta_1 * delta_x * self.get_basis_hessians(self.x_left())
+        mat_d = np.ndarray(shape)
+        for k in range(n_term):
+            mat_d[k] = correction_gradients_right[k] * d_minus_right
+            mat_d[k] += correction_gradients_left[k] * d_minus_left
+        # print('D- =\n', mat_d)
+        # print('D =\n', mat_b - mat_c + mat_d)
+        d_plus_right = 0.5 * right.get_basis_gradients(right.x_left()) \
+            + beta_0 / delta_x * right.get_basis_values(right.x_left()) \
+            + beta_1 * delta_x * right.get_basis_hessians(right.x_left())
+        d_plus_left = 0.5 * left.get_basis_gradients(left.x_right()) \
+            - beta_0 / delta_x * left.get_basis_values(left.x_right()) \
+            - beta_1 * delta_x * left.get_basis_hessians(left.x_right())
+        mat_e = np.ndarray(shape)
+        mat_f = np.ndarray(shape)
+        for k in range(n_term):
+            mat_e[k] = correction_gradients_left[k] * d_plus_left
+            mat_f[k] = correction_gradients_right[k] * d_plus_right
+        # print('E =\n', mat_e)
+        # print('F =\n', mat_f)
+        return (mat_b, mat_c, mat_d, mat_e, mat_f)
+
 
 class LegendreFR(LegendreDG):
     """Element for implement the FR scheme using a Legendre expansion.
