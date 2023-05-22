@@ -4,7 +4,6 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-import equation
 import riemann
 import spatial
 import detector
@@ -40,13 +39,12 @@ class TestLimiters(unittest.TestCase):
         self._x_left = -np.pi * 4
         self._x_right = np.pi * 4
         self._n_element = 53
-        self._equation = equation.LinearAdvection(1.0)
         self._riemann = riemann.LinearAdvection(1.0)
         self._detector = detector.All()
 
     def build_scheme(self, method: spatial.FiniteElement,
             degree: int) -> spatial.FiniteElement:
-        scheme = method(self._equation, self._riemann,
+        scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme
 

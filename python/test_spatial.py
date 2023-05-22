@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import spatial
-import equation
 import element
 import riemann
 import detector, limiter, viscous
@@ -23,7 +22,6 @@ class TestLagrangeFR(unittest.TestCase):
         self._degree = 1
         self._a_const = np.pi
         self._spatial = spatial.LagrangeFR(
-            equation.LinearAdvection(self._a_const),
             riemann.LinearAdvection(self._a_const),
             self._degree, self._n_element, self._x_left, self._x_right)
 
@@ -46,7 +44,7 @@ class TestLagrangeFR(unittest.TestCase):
             discontinuous_solution[i] = self._spatial.get_solution_value(
                 point_i)
             exact_solution[i] = u(point_i)
-            exact_flux[i] = self._spatial.equation.get_convective_flux(
+            exact_flux[i] = self._spatial.equation().get_convective_flux(
                 exact_solution[i])
             discontinuous_flux[i] = self._spatial.get_discontinuous_flux(
                 point_i)
@@ -73,7 +71,6 @@ class TestLagrangeFR(unittest.TestCase):
     def test_resolution(self):
         degree = 4
         scheme = spatial.LagrangeFR(
-            equation.LinearAdvection(self._a_const),
             riemann.LinearAdvection(self._a_const),
             degree, self._n_element, self._x_left, self._x_right)
         points = np.linspace(scheme.x_left(), scheme.x_right(), 201)
@@ -103,7 +100,6 @@ class TestLagrangeFR(unittest.TestCase):
         degree = 2
         a_const = 1.0
         scheme = spatial.LagrangeFR(
-            equation.LinearAdvection(a_const),
             riemann.LinearAdvection(a_const),
             degree, n_element, x_left, x_right)
         nu = np.random.rand()

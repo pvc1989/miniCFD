@@ -6,9 +6,8 @@ from matplotlib import pyplot as plt
 
 from element import LagrangeFR
 from coordinate import LinearCoordinate
-from equation import LinearAdvection
+from riemann import LinearAdvection
 from polynomial import Vincent
-import expansion
 
 
 class TestLagrangeFR(unittest.TestCase):
@@ -17,13 +16,14 @@ class TestLagrangeFR(unittest.TestCase):
 
     def __init__(self, method_name: str = ...) -> None:
         super().__init__(method_name)
-        self._equation = LinearAdvection(a_const=np.random.rand())
+        self._riemann = LinearAdvection(a_const=np.random.rand())
+        self._equation = self._riemann.equation()
         self._degree = 4
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
         self.coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._element = LagrangeFR(self._equation, self._degree,
+        self._element = LagrangeFR(self._riemann, self._degree,
             self.coordinate)
         self._element.approximate(np.sin)
 

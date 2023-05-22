@@ -2,7 +2,7 @@
 """
 import numpy as np
 
-from concept import Element, Equation, Coordinate
+from concept import Element, RiemannSolver, Coordinate
 from polynomial import Vincent
 import expansion
 
@@ -11,9 +11,9 @@ class LagrangeDG(Element):
     """Element for implement the DG scheme using a Lagrange expansion.
     """
 
-    def __init__(self, equation: Equation, degree: int,
+    def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        Element.__init__(self, equation, coordinate,
+        Element.__init__(self, riemann, coordinate,
             expansion.Lagrange(degree, coordinate, value_type), value_type)
         self._mass_matrix = self._build_mass_matrix()
 
@@ -32,9 +32,9 @@ class LegendreDG(Element):
     expansion.Legendre class.
     """
 
-    def __init__(self, equation: Equation, degree: int,
+    def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        Element.__init__(self, equation, coordinate,
+        Element.__init__(self, riemann, coordinate,
             expansion.Legendre(degree, coordinate, value_type), value_type)
 
     def divide_mass_matrix(self, column: np.ndarray):
@@ -48,9 +48,9 @@ class LagrangeFR(LagrangeDG):
     """Element for implement the FR scheme using a Lagrange expansion.
     """
 
-    def __init__(self, equation: Equation, degree: int,
+    def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        LagrangeDG.__init__(self, equation, degree, coordinate, value_type)
+        LagrangeDG.__init__(self, riemann, degree, coordinate, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
     def get_correction_gradients(self, x_global):
@@ -84,8 +84,8 @@ class LagrangeFR(LagrangeDG):
         for x_sample in self.expansion.get_sample_points():
             u_sample = self.get_solution_value(x_sample)
             du_sample = self.get_solution_gradient(x_sample)
-            f_sample = self._equation.get_convective_flux(u_sample)
-            f_sample -= self._equation.get_diffusive_flux(u_sample, du_sample)
+            f_sample = self.equation().get_convective_flux(u_sample)
+            f_sample -= self.equation().get_diffusive_flux(u_sample, du_sample)
             f_sample -= extra_viscous * du_sample
             flux_gradient += f_sample * basis_gradients[i_sample]
             i_sample += 1
@@ -176,9 +176,9 @@ class LegendreFR(LegendreDG):
     """Element for implement the FR scheme using a Legendre expansion.
     """
 
-    def __init__(self, equation: Equation, degree: int,
+    def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        LegendreDG.__init__(self, equation, degree, coordinate, value_type)
+        LegendreDG.__init__(self, riemann, degree, coordinate, value_type)
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
@@ -199,10 +199,10 @@ class LegendreFR(LegendreDG):
         """Get the gradient value of the reconstructed continuous flux at a given point.
         """
         u_approx = self.get_solution_value(x_global)
-        a_approx = self._equation.get_convective_speed(u_approx)
+        a_approx = self.equation().get_convective_speed(u_approx)
         gradient = a_approx * self.expansion.global_to_gradient(x_global)
         x_local = self.coordinate.global_to_local(x_global)
-        left, right = self._correction.global_to_gradient(x_local)
+        left, right = self._correction.local_to_gradient(x_local)
         left /= self.coordinate.global_to_jacobian(x_global)
         right /= self.coordinate.global_to_jacobian(x_global)
         gradient += left * (upwind_flux_left

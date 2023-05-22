@@ -13,11 +13,10 @@ class FiniteElement(concept.SpatialScheme):
     """The base of all finite element schemes for conservation laws.
     """
 
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
+    def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             ElementType: concept.Element, value_type=float) -> None:
-        concept.SpatialScheme.__init__(self, equation, riemann,
+        concept.SpatialScheme.__init__(self, riemann,
             n_element, x_left, x_right)
         assert degree >= 0
         delta_x = (x_right - x_left) / n_element
@@ -25,7 +24,7 @@ class FiniteElement(concept.SpatialScheme):
         for i_element in range(n_element):
             assert_almost_equal(x_left_i, x_left + i_element * delta_x)
             x_right_i = x_left_i + delta_x
-            element_i = ElementType(equation, degree,
+            element_i = ElementType(riemann, degree,
                 LinearCoordinate(x_left_i, x_right_i), value_type)
             self._elements[i_element] = element_i
             x_left_i = x_right_i
@@ -49,15 +48,16 @@ class FiniteElement(concept.SpatialScheme):
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
             prev = self.get_element_by_index(i-1)
-            viscous = self.equation.get_diffusive_coeff() + max(
+            viscous = self.equation().get_diffusive_coeff() + max(
                 self._viscous.get_coeff(i), self._viscous.get_coeff(i-1))
             interface_fluxes[i] = self._riemann.get_interface_flux(
                 prev.expansion, curr.expansion, viscous)
         if self.is_periodic():
+            i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
-            prev = self.get_element_by_index(-1)
-            viscous = self.equation.get_diffusive_coeff() + max(
-                self._viscous.get_coeff(0), self._viscous.get_coeff(-1))
+            prev = self.get_element_by_index(i_prev)
+            viscous = self.equation().get_diffusive_coeff() + max(
+                self._viscous.get_coeff(0), self._viscous.get_coeff(i_prev))
             interface_fluxes[0] = self._riemann.get_interface_flux(
                 prev.expansion, curr.expansion, viscous)
             interface_fluxes[-1] = interface_fluxes[0]
@@ -137,11 +137,10 @@ class LegendreDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Legendre expansion.
     """
 
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
+    def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        FiniteElement.__init__(self, equation, riemann, degree,
+        FiniteElement.__init__(self, riemann, degree,
             n_element, x_left, x_right, element.LegendreDG, value_type)
 
     def name(self, verbose=True):
@@ -155,11 +154,10 @@ class LagrangeDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion.
     """
 
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
+    def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        DiscontinuousGalerkin.__init__(self, equation, riemann, degree,
+        DiscontinuousGalerkin.__init__(self, riemann, degree,
             n_element, x_left, x_right, element.LagrangeDG, value_type)
 
     def name(self, verbose=True):
@@ -194,7 +192,7 @@ class FluxReconstruction(FiniteElement):
 
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)
-        viscous = self.equation.get_diffusive_coeff()
+        viscous = self.equation().get_diffusive_coeff()
         # solve riemann problem at the left end of curr element
         right = self.get_element_by_index(curr)
         left = self.get_element_by_index(curr-1)
@@ -215,11 +213,10 @@ class LagrangeFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
+    def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        FluxReconstruction.__init__(self, equation, riemann, degree,
+        FluxReconstruction.__init__(self, riemann, degree,
             n_element, x_left, x_right, element.LagrangeFR, value_type)
 
     def name(self, verbose=True):
@@ -233,11 +230,10 @@ class LegendreFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
-    def __init__(self, equation: concept.Equation,
-            riemann: concept.RiemannSolver,
+    def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             value_type=float) -> None:
-        FluxReconstruction.__init__(self, equation, riemann, degree,
+        FluxReconstruction.__init__(self, riemann, degree,
             n_element, x_left, x_right, element.LegendreFR, value_type)
 
     def name(self, verbose=True):

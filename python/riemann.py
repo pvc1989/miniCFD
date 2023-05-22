@@ -103,6 +103,12 @@ class LinearAdvection(Solver):
         return U
 
 
+class LinearAdvectionDiffusion(LinearAdvection):
+
+    def __init__(self, a_const, b_const):
+        self._equation = equation.LinearAdvectionDiffusion(a_const, b_const)
+
+
 class InviscidBurgers(Solver):
 
     def __init__(self, k=1.0):
@@ -129,6 +135,12 @@ class InviscidBurgers(Solver):
         else:  # slope_left < slope < slope_right, u = a^{-1}(slope)
             k = (self._slope_right - self._slope_left) / (self._u_right - self._u_left)
             return slope / k
+
+
+class Burgers(InviscidBurgers):
+
+    def __init__(self, k=1.0, nu=0.0):
+        self._equation = equation.Burgers(k, nu)
 
 
 class Euler(Solver):

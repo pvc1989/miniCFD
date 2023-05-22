@@ -302,15 +302,18 @@ class Element(abc.ABC):
     """
     # TODO: rename to PhysicalElement
 
-    def __init__(self, equation: Equation, coordinate: Coordinate,
+    def __init__(self, riemann: RiemannSolver, coordinate: Coordinate,
             expansion: Expansion, value_type=float) -> None:
-        assert isinstance(equation, Equation)
+        assert isinstance(riemann, RiemannSolver)
         assert isinstance(coordinate, Coordinate)
-        self._equation = equation
+        self._riemann = riemann
         self.coordinate = coordinate
         self.integrator = expansion.integrator
         self.expansion = expansion
         self._value_type = value_type
+
+    def equation(self) -> Equation:
+        return self._riemann.equation()
 
     def x_left(self):
         return self.coordinate.x_left()
@@ -337,7 +340,7 @@ class Element(abc.ABC):
     def n_dof(self):
         """Count degrees of freedom in current object.
         """
-        return self.n_term() * self._equation.n_component()
+        return self.n_term() * self.equation().n_component()
 
     def approximate(self, function: callable):
         """Approximate a general function as u^h.
@@ -371,16 +374,16 @@ class Element(abc.ABC):
     def get_convective_speed(self, x_global: float):
         """Get the value of a(u^h) at a given point.
         """
-        return self._equation.get_convective_speed(
+        return self.equation().get_convective_speed(
               self.get_solution_value(x_global))
 
     def get_discontinuous_flux(self, x_global, extra_viscous=0.0):
         """Get the value of f(u^h) at a given point.
         """
         u_approx = self.get_solution_value(x_global)
-        flux = self._equation.get_convective_flux(u_approx)
+        flux = self.equation().get_convective_flux(u_approx)
         du_approx = self.expansion.global_to_gradient(x_global)
-        flux -= self._equation.get_diffusive_flux(u_approx, du_approx)
+        flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
         flux -= extra_viscous * du_approx
         return flux
 
@@ -399,7 +402,7 @@ class Element(abc.ABC):
 
         The element is responsible for the column-to-coeff conversion.
         """
-        assert self._equation.n_component() == 1
+        assert self.equation().n_component() == 1
         self.expansion.set_coeff(column)
 
     def get_solution_column(self) -> np.ndarray:
@@ -407,7 +410,7 @@ class Element(abc.ABC):
 
         The element is responsible for the coeff-to-column conversion.
         """
-        assert self._equation.n_component() == 1
+        assert self.equation().n_component() == 1
         return self.expansion.get_coeff_ref()
 
     @abc.abstractmethod
@@ -473,6 +476,7 @@ class Viscous(abc.ABC):
     def get_coeff(self, i_cell: int):
         """Get the viscous coefficient of the ith cell.
         """
+        assert 0 <= i_cell
         if i_cell in self._index_to_coeff:
             return self._index_to_coeff[i_cell]
         else:
@@ -521,12 +525,11 @@ class SpatialScheme(OdeSystem):
     """An ODE system given by some spatial scheme.
     """
 
-    def __init__(self, equation: Equation, riemann: RiemannSolver,
+    def __init__(self, riemann: RiemannSolver,
             n_element: int, x_left: float, x_right: float,
             detector=None, limiter=None, viscous=None) -> None:
         assert x_left < x_right
         assert n_element > 1
-        self.equation = equation
         self._riemann = riemann
         self._elements = np.ndarray(n_element, Element)
         self._detector = detector
@@ -537,6 +540,9 @@ class SpatialScheme(OdeSystem):
         """Get the degree of the polynomial approximation.
         """
         return self.get_element_by_index(0).degree()
+
+    def equation(self) -> Equation:
+        return self._riemann.equation()
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
