@@ -48,16 +48,20 @@ class FiniteElement(concept.SpatialScheme):
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
             prev = self.get_element_by_index(i-1)
-            viscous = self.equation().get_diffusive_coeff() + max(
-                self._viscous.get_coeff(i), self._viscous.get_coeff(i-1))
+            viscous = self.equation().get_diffusive_coeff()
+            if self._viscous:
+                viscous += max(self._viscous.get_coeff(i),
+                               self._viscous.get_coeff(i-1))
             interface_fluxes[i] = self._riemann.get_interface_flux(
                 prev.expansion, curr.expansion, viscous)
         if self.is_periodic():
             i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
             prev = self.get_element_by_index(i_prev)
-            viscous = self.equation().get_diffusive_coeff() + max(
-                self._viscous.get_coeff(0), self._viscous.get_coeff(i_prev))
+            viscous = self.equation().get_diffusive_coeff()
+            if self._viscous:
+                viscous += max(self._viscous.get_coeff(0),
+                               self._viscous.get_coeff(i_prev))
             interface_fluxes[0] = self._riemann.get_interface_flux(
                 prev.expansion, curr.expansion, viscous)
             interface_fluxes[-1] = interface_fluxes[0]
@@ -113,7 +117,9 @@ class DiscontinuousGalerkin(FiniteElement):
             n_dof = element_i.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
-            extra_viscous = self._viscous.get_coeff(i)
+            extra_viscous = 0.0
+            if self._viscous:
+                extra_viscous = self._viscous.get_coeff(i)
             def integrand(x_global):
                 column = element_i.get_basis_gradients(x_global)
                 gradient = element_i.get_discontinuous_flux(x_global, extra_viscous)
@@ -180,7 +186,9 @@ class FluxReconstruction(FiniteElement):
             element_i = self.get_element_by_index(i)
             assert (isinstance(element_i, element.LagrangeFR)
                 or isinstance(element_i, element.LegendreFR))
-            extra_viscous = self._viscous.get_coeff(i)
+            extra_viscous = 0.0
+            if self._viscous:
+                extra_viscous = self._viscous.get_coeff(i)
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
             values = -element_i.get_flux_gradients(
