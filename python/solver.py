@@ -324,9 +324,8 @@ if __name__ == '__main__':
         default=500, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR',
-            'DGwithFR'],
-        default='LegendreFR',
+        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR'],
+        default='LagrangeFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
         choices=['Off', 'All', 'KXCRF', 'Li2011', 'Li2022', 'Zhu', 'Persson'],
@@ -370,8 +369,6 @@ if __name__ == '__main__':
         SpatialClass = spatial.LegendreDG
     elif args.method == 'LegendreFR':
         SpatialClass = spatial.LegendreFR
-    elif args.method == 'DGwithFR':
-        SpatialClass = spatial.DGwithFR
     else:
         assert False
     if args.detector == 'Off':

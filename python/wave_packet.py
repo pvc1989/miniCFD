@@ -21,13 +21,10 @@ class LinearAdvection(object):
         self._n_element = n_element
         self._x_left = x_left
         self._x_right = x_right
-        equation_object = equation.LinearAdvection(a_const)
         riemann_object = riemann.LinearAdvection(a_const)
-        self._dg = spatial.LegendreDG(equation_object, riemann_object,
+        self._dg = spatial.LegendreDG(riemann_object,
             degree, n_element, x_left, x_right)
-        self._fr = spatial.LagrangeFR(equation_object, riemann_object,
-            degree, n_element, x_left, x_right)
-        self._dgfr = spatial.DGwithFR(equation_object, riemann_object,
+        self._fr = spatial.LagrangeFR(riemann_object,
             degree, n_element, x_left, x_right)
         self._length = self._dg.length()
         self._delta_x = self._dg.delta_x()
@@ -50,13 +47,11 @@ class LinearAdvection(object):
         n_point = len(points)
         dg_solution = np.ndarray(n_point)
         fr_solution = np.ndarray(n_point)
-        dgfr_solution = np.ndarray(n_point)
         for i in range(n_point):
             point_i = points[i]
             dg_solution[i] = self._dg.get_solution_value(point_i)
             fr_solution[i] = self._fr.get_solution_value(point_i)
-            dgfr_solution[i] = self._dgfr.get_solution_value(point_i)
-        return dg_solution, fr_solution, dgfr_solution
+        return dg_solution, fr_solution
 
     def animate(self, t_start: float, t_stop: float,  n_step: int):
         linestyles = [
@@ -84,31 +79,25 @@ class LinearAdvection(object):
             label=f'LegendreDG{self._degree+1}')
         fr_line, = plt.plot([], [], linestyle=linestyles[1][1],
             label=f'LagrangeFR{self._degree+1}')
-        dgfr_line, = plt.plot([], [], linestyle=linestyles[2][1],
-            label=f'DGwithFR{self._degree+1}')
         # initialize animation
         def init_func():
             u_init = lambda x_global: self.u_init(x_global)
             self._dg.initialize(u_init)
             self._fr.initialize(u_init)
-            self._dgfr.initialize(u_init)
             expect_line.set_xdata(exact_points)
             dg_line.set_xdata(approx_points)
             fr_line.set_xdata(approx_points)
-            dgfr_line.set_xdata(approx_points)
         # update data for the next frame
         def func(t_curr):
             expect_solution = self.get_exact_ydata(t_curr, exact_points)
             expect_line.set_ydata(expect_solution)
-            dg_solution, fr_solution, dgfr_solution = self.get_approx_ydata(t_curr, approx_points)
+            dg_solution, fr_solution = self.get_approx_ydata(t_curr, approx_points)
             dg_line.set_ydata(dg_solution)
             fr_line.set_ydata(fr_solution)
-            dgfr_line.set_ydata(dgfr_solution)
             plt.title(f't = {t_curr:.2f}')
             plt.legend(loc='upper right')
-            self._ode_solver.update(self._dg, delta_t)
-            self._ode_solver.update(self._fr, delta_t)
-            self._ode_solver.update(self._dgfr, delta_t)
+            self._ode_solver.update(self._dg, delta_t, t_curr)
+            self._ode_solver.update(self._fr, delta_t, t_curr)
         frames = np.linspace(t_start, t_stop, n_step)
         anim = mpla.FuncAnimation(
             plt.gcf(), func, frames, init_func, interval=5)

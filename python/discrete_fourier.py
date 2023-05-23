@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import spatial
-import equation
 import riemann
 import temporal
 
@@ -17,7 +16,6 @@ class DiscreteFourierAnalysis:
     def __init__(self, x_left, x_right, n_element, tau,
             n_sample_per_element) -> None:
         self._a = 1.0
-        self._equation = equation.LinearAdvection(self._a)
         self._riemann = riemann.LinearAdvection(self._a)
         self._tau = tau
         self._x_left = x_left
@@ -60,14 +58,14 @@ class DiscreteFourierAnalysis:
             spatial_scheme.initialize(lambda x: u_init(x).real)
             kth_fourier_of_u_init += self.get_kth_fourier_coeff(k,
                 lambda x: spatial_scheme.get_solution_value(x))
-            ode_solver.update(spatial_scheme, delta_t=self._tau)
+            ode_solver.update(spatial_scheme, delta_t=self._tau, t_curr=0.0)
             kth_fourier_of_u_tau += self.get_kth_fourier_coeff(k,
                 lambda x: spatial_scheme.get_solution_value(x))
             # solve the imag part
             spatial_scheme.initialize(lambda x: u_init(x).imag)
             kth_fourier_of_u_init += 1j * self.get_kth_fourier_coeff(k,
                 lambda x: spatial_scheme.get_solution_value(x))
-            ode_solver.update(spatial_scheme, delta_t=self._tau)
+            ode_solver.update(spatial_scheme, delta_t=self._tau, t_curr=0.0)
             kth_fourier_of_u_tau += 1j * self.get_kth_fourier_coeff(k,
                 lambda x: spatial_scheme.get_solution_value(x))
             # put together
@@ -111,9 +109,9 @@ class DiscreteFourierAnalysis:
             plt.plot(reduced, modified.imag, label=labels[i],
                 linestyle=linestyles[i][1])
         plt.subplot(2,1,1)
-        plt.legend()
+        plt.legend(loc='upper left')
         plt.subplot(2,1,2)
-        plt.legend()
+        plt.legend(loc='lower left')
         plt.tight_layout()
 
     def compare_degrees(self, method: spatial.FiniteElement):
@@ -125,15 +123,15 @@ class DiscreteFourierAnalysis:
         xticks_ticks = [0.0]
         xticks_labels = ['0']
         for degree in degrees:
-            schemes.append(method(self._equation, self._riemann,
+            schemes.append(method(self._riemann,
                 degree, self._n_element, self._x_left, self._x_right))
             order = degree + 1
-            labels.append(f'{method.name()}{order}')
+            labels.append(schemes[-1].name())
             xticks_ticks.append(order * np.pi)
             xticks_labels.append(f'${order}\pi$')
         self.plot(schemes, labels, xticks_ticks, xticks_labels)
         # plt.show()
-        plt.savefig(f'compare_{method.name()}.pdf')
+        plt.savefig(f'compare_{schemes[-1].name(False)}.pdf')
 
     def compare_methods(self, degree: int):
         """Compare spatial schemes using the same degree but different methods.
@@ -143,7 +141,6 @@ class DiscreteFourierAnalysis:
             spatial.LagrangeDG,
             spatial.LegendreFR,
             spatial.LagrangeFR,
-            spatial.DGwithFR,
         ]
         order = degree + 1
         xticks_ticks = [0.0]
@@ -154,9 +151,9 @@ class DiscreteFourierAnalysis:
         schemes = []
         labels = []
         for method in methods:
-            schemes.append(method(self._equation, self._riemann,
+            schemes.append(method(self._riemann,
                 degree, self._n_element, self._x_left, self._x_right))
-            labels.append(f'{method.name()}{order}')
+            labels.append(schemes[-1].name())
         self.plot(schemes, labels, xticks_ticks, xticks_labels)
         # plt.show()
         plt.savefig(f'compare_{degree}-degree_methods.pdf')
@@ -166,7 +163,6 @@ class DiscreteFourierAnalysis:
         self.compare_degrees(spatial.LagrangeDG)
         self.compare_degrees(spatial.LegendreFR)
         self.compare_degrees(spatial.LagrangeFR)
-        self.compare_degrees(spatial.DGwithFR)
 
     def compare_all_methods(self):
         self.compare_methods(2)

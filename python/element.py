@@ -226,7 +226,7 @@ class LegendreFR(LegendreDG):
                 x_global, upwind_flux_left, upwind_flux_right, extra_viscous)
             column = self.divide_mass_matrix(column)
             return column
-        values = self.expansion._integrator.fixed_quad_global(
+        values = self.expansion.integrator.fixed_quad_global(
             integrand, self.n_term())
         return values
 

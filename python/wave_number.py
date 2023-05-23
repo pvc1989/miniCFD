@@ -5,7 +5,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import spatial
-import equation
 import riemann
 
 
@@ -15,14 +14,13 @@ class WaveNumberDisplayer:
 
     def __init__(self, x_left, x_right, n_element) -> None:
         self._a = 1.0
-        self._equation = equation.LinearAdvection(self._a)
         self._riemann = riemann.LinearAdvection(self._a)
         self._x_left = x_left
         self._x_right = x_right
         self._n_element = n_element
 
     def build_scheme(self, method: spatial.FiniteElement, degree: int):
-        scheme = method(self._equation, self._riemann,
+        scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right, complex)
         return scheme
 
@@ -140,7 +138,8 @@ class WaveNumberDisplayer:
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f'all_modes_of_{method.name()}{degree+1}.pdf')
+        scheme = self.build_scheme(method, degree)
+        plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.pdf')
 
     def compare_schemes(self, methods, degrees, n_sample: int,
             compressed=False):
@@ -202,6 +201,13 @@ class WaveNumberDisplayer:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 wave_number.py')
+    parser.add_argument('-m', '--method',
+        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR'],
+        default='LagrangeFR',
+        help='method for spatial discretization')
+    parser.add_argument('-d', '--degree',
+        default=2, type=int,
+        help='degree of polynomials for approximation')
     parser.add_argument('-n', '--n_element',
         default=10, type=int,
         help='number of elements')
@@ -218,8 +224,19 @@ if __name__ == '__main__':
         action='store_true',
         help='whether the range of input wavenumbers is compressed')
     args = parser.parse_args()
+    print(args)
+    if args.method == 'LagrangeDG':
+        SpatialClass = spatial.LagrangeDG
+    elif args.method == 'LagrangeFR':
+        SpatialClass = spatial.LagrangeFR
+    elif args.method == 'LegendreDG':
+        SpatialClass = spatial.LegendreDG
+    elif args.method == 'LegendreFR':
+        SpatialClass = spatial.LegendreFR
+    else:
+        assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
-    # wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
+    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
     wnd.compare_schemes(methods=[spatial.LegendreDG, spatial.LagrangeFR,
         spatial.LegendreFR], degrees=[1, 3, 5], n_sample=args.n_sample,
         compressed=args.compressed)
