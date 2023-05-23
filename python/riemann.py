@@ -49,6 +49,14 @@ class Solver(concept.RiemannSolver):
         # However, the jump condition guarantees F(U(x=-0, t=1)) == F(U(x=+0, t=1)).
         return self.equation().get_convective_flux(u_upwind)
 
+    def get_interface_gradient(self, h_left, h_right,
+            u_jump, du_mean, ddu_jump):
+        delta_x = (h_left + h_right) / 2
+        du = self._beta_0 / delta_x * u_jump
+        du += self._beta_1 * delta_x * ddu_jump
+        du += du_mean
+        return du
+
     def get_interface_flux(self, expansion_left: expansion.Taylor,
             expansion_right: expansion.Taylor, viscous: float):
         # Get the convective flux on the interface:
@@ -76,10 +84,9 @@ class Solver(concept.RiemannSolver):
             du_right = expansion_right.global_to_gradient(x_right)
         else:
             pass
-        du = (du_left + du_right) / 2
-        distance = (expansion_left.length() + expansion_right.length()) / 2
-        du += self._beta_0 / distance * (u_right - u_left)
-        du += self._beta_1 * distance * (ddu_right - ddu_left)
+        du = self.get_interface_gradient(expansion_left.length(), 
+            expansion_right.length(), u_right - u_left,
+            (du_left + du_right) / 2, ddu_right - ddu_left)
         return flux - viscous * du
 
 
