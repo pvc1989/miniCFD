@@ -8,7 +8,7 @@ import detector
 
 class Off(concept.Viscous):
 
-    def __init__(self, const) -> None:
+    def __init__(self) -> None:
         super().__init__()
 
     def name(self, verbose=False) -> str:

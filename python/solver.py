@@ -372,41 +372,41 @@ if __name__ == '__main__':
     else:
         assert False
     if args.detector == 'Off':
-        DetectorClass = detector.Off
+        the_detector = detector.Off()
     elif args.detector == 'All':
-        DetectorClass = detector.All
+        the_detector = detector.All()
     elif args.detector == 'KXCRF':
-        DetectorClass = detector.Krivodonova2004
+        the_detector = detector.Krivodonova2004()
     elif args.detector == 'Li2011':
-        DetectorClass = detector.LiRen2011
+        the_detector = detector.LiRen2011()
     elif args.detector == 'Li2022':
-        DetectorClass = detector.LiRen2022
+        the_detector = detector.LiRen2022()
     elif args.detector == 'Zhu':
-        DetectorClass = detector.ZhuShuQiu2021
+        the_detector = detector.ZhuShuQiu2021()
     elif args.detector == 'Persson':
-        DetectorClass = detector.Persson2006
+        the_detector = detector.Persson2006()
     else:
         assert False
     if args.limiter == 'Li':
-        LimiterClass = limiter.LiWangRen2020
+        the_limiter = limiter.LiWangRen2020()
     elif args.limiter == 'Zhong':
-        LimiterClass = limiter.ZhongShu2013
+        the_limiter = limiter.ZhongShu2013()
     elif args.limiter == 'Xu':
-        LimiterClass = limiter.Xu2023
+        the_limiter = limiter.Xu2023()
     elif args.limiter == 'Off':
-        LimiterClass = limiter.Off
+        the_limiter = limiter.Off()
     else:
         assert False
     if args.viscous_model == 'Off':
-        ViscousClass = viscous.Off
+        the_viscous = viscous.Off()
     elif args.viscous_model == 'Constant':
-        ViscousClass = viscous.Constant
+        the_viscous = viscous.Constant(args.viscous_model_const)
     elif args.viscous_model == 'Persson':
-        ViscousClass = viscous.Persson2006
+        the_viscous = viscous.Persson2006(args.viscous_model_const)
     elif args.viscous_model == 'Energy':
-        ViscousClass = viscous.Energy
         dt = (args.t_end - args.t_begin) / args.n_step
         args.viscous_model_const *= dt
+        the_viscous = viscous.Energy(args.viscous_model_const)
     else:
         assert False
     if args.problem == 'Smooth':
@@ -425,10 +425,9 @@ if __name__ == '__main__':
     else:
         assert False
     solver = SolverClass(args.wave_number,
-        spatial_scheme=SpatialClass(the_riemann,
+        SpatialClass(the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
-        detector=DetectorClass(), limiter=LimiterClass(),
-        viscous=ViscousClass(args.viscous_model_const),
+        the_detector, the_limiter, the_viscous,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.animate:
         solver.animate(args.t_begin, args.t_end, args.n_step)
