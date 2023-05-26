@@ -51,7 +51,7 @@ class TestLagrangeFR(unittest.TestCase):
             continuous_flux[i] = self._spatial.get_continuous_flux(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
-        points /= self._spatial.delta_x()
+        points /= self._spatial.delta_x(0)
         plt.plot(points, exact_solution, 'r-', label='Exact')
         plt.plot(points, discontinuous_solution, 'b+', label='Discontinuous')
         plt.xlabel(r'$x/h$')
@@ -74,11 +74,11 @@ class TestLagrangeFR(unittest.TestCase):
             riemann.LinearAdvection(self._a_const),
             degree, self._n_element, self._x_left, self._x_right)
         points = np.linspace(scheme.x_left(), scheme.x_right(), 201)
-        x_data = points / scheme.delta_x()
+        x_data = points / scheme.delta_x(0)
         plt.figure(figsize=(6, degree*2))
         for k in range(1, 1+degree):
             plt.subplot(degree, 1, k)
-            kappa = k * np.pi / scheme.delta_x()
+            kappa = k * np.pi / scheme.delta_x(0)
             u_exact = lambda x: np.sin(kappa * (x - scheme.x_left()))
             y_data = u_exact(points)
             plt.plot(x_data, y_data, '--', label='Exact')

@@ -54,8 +54,8 @@ class TestDetectors(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreDG, degree)
         u_init = jumps
         scheme.initialize(u_init)
-        centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
-            scheme.x_right() - scheme.delta_x(), self._n_element)
+        centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
+            scheme.x_right() - scheme.delta_x(0), self._n_element)
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),
@@ -66,7 +66,7 @@ class TestDetectors(unittest.TestCase):
         plt.figure(figsize=(6,6))
         plt.subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
-        x_values = points / scheme.delta_x()
+        x_values = points / scheme.delta_x(0)
         u_approx = np.ndarray(len(points))
         u_exact = np.ndarray(len(points))
         for i in range(len(points)):
@@ -81,15 +81,15 @@ class TestDetectors(unittest.TestCase):
         plt.grid()
         plt.subplot(3,1,(2,3))
         plt.semilogy()
-        x_values = centers / scheme.delta_x()
+        x_values = centers / scheme.delta_x(0)
         for i in range(len(detectors)):
             y_values = detectors[i].get_smoothness_values(
                 scheme._elements, scheme.is_periodic())
             plt.plot(x_values, y_values, markers[i],
                 label=detectors[i].name())
         x_values = [
-            scheme.x_left() / scheme.delta_x(),
-            scheme.x_right() / scheme.delta_x()
+            scheme.x_left() / scheme.delta_x(0),
+            scheme.x_right() / scheme.delta_x(0)
         ]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
         plt.legend()
@@ -107,8 +107,8 @@ class TestDetectors(unittest.TestCase):
         def u_init(x):
             return smooth(x, k1, k2)
         scheme.initialize(u_init)
-        centers = scheme.delta_x()/2 + np.linspace(scheme.x_left(),
-            scheme.x_right() - scheme.delta_x(), self._n_element)
+        centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
+            scheme.x_right() - scheme.delta_x(0), self._n_element)
         detectors = [
           detector.Krivodonova2004(),
           detector.LiRen2011(),
@@ -119,7 +119,7 @@ class TestDetectors(unittest.TestCase):
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
-        x_values = points / scheme.delta_x()
+        x_values = points / scheme.delta_x(0)
         u_approx = np.ndarray(len(points))
         u_exact = np.ndarray(len(points))
         for i in range(len(points)):
@@ -128,8 +128,8 @@ class TestDetectors(unittest.TestCase):
         plt.plot(x_values, u_exact, 'r-', label='Exact')
         plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
-        k1_h = k1 * scheme.delta_x()
-        k2_h = k2 * scheme.delta_x()
+        k1_h = k1 * scheme.delta_x(0)
+        k2_h = k2 * scheme.delta_x(0)
         plt.title(r'$kh=$'+f'({k1_h:.2f}, {k2_h:.2f})' +
             ' Approximated by '+scheme.name(False))
         plt.xlabel(r'$x/h$')
@@ -140,11 +140,11 @@ class TestDetectors(unittest.TestCase):
         for i in range(len(detectors)):
             y_values = detectors[i].get_smoothness_values(
                 scheme._elements, scheme.is_periodic())
-            plt.plot(centers/scheme.delta_x(), y_values, markers[i],
+            plt.plot(centers/scheme.delta_x(0), y_values, markers[i],
                 label=detectors[i].name())
         x_values = [
-            scheme.x_left() / scheme.delta_x(),
-            scheme.x_right() / scheme.delta_x()]
+            scheme.x_left() / scheme.delta_x(0),
+            scheme.x_right() / scheme.delta_x(0)]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$Smoothness$')
@@ -169,7 +169,7 @@ class TestDetectors(unittest.TestCase):
         active_counts = np.ndarray((len(detectors), k_max))
         for k in range(k_max):
             kappa = (k+1) * 2 * np.pi / scheme.length()
-            kappa_h[k] = kappa * scheme.delta_x()
+            kappa_h[k] = kappa * scheme.delta_x(0)
             def u_init(x):
                 return 1+np.sin(kappa * (x - scheme.x_left()))
             scheme.initialize(u_init)

@@ -2,10 +2,10 @@
 """
 import numpy as np
 from numpy.testing import assert_almost_equal
+import bisect
 
 import concept
 from  coordinate import LinearCoordinate
-import expansion
 import element
 
 
@@ -20,9 +20,11 @@ class FiniteElement(concept.SpatialScheme):
             n_element, x_left, x_right)
         assert degree >= 0
         delta_x = (x_right - x_left) / n_element
+        self._x_left_sorted = np.ndarray(n_element)
         x_left_i = x_left
         for i_element in range(n_element):
             assert_almost_equal(x_left_i, x_left + i_element * delta_x)
+            self._x_left_sorted[i_element] = x_left_i
             x_right_i = x_left_i + delta_x
             element_i = ElementType(riemann, degree,
                 LinearCoordinate(x_left_i, x_right_i), value_type)
@@ -34,11 +36,10 @@ class FiniteElement(concept.SpatialScheme):
     def n_dof(self):
         return self.n_element() * self.get_element_by_index(0).n_dof()
 
-    def get_element_index(self, point):
-        i_element = int((point - self.x_left()) / self.delta_x())
-        if i_element == self.n_element():
-            i_element -= 1
-        return i_element
+    def get_element_index(self, x_global):
+        i_element = bisect.bisect_right(self._x_left_sorted, x_global)
+        # bisect_right(a, x) gives such an i that a[:i] <= x < a[i:]
+        return i_element - 1
 
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.

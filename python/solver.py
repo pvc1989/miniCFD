@@ -124,7 +124,7 @@ class SolverBase(abc.ABC):
     def animate(self, t_start: float, t_stop: float,  n_step: int):
         """Solve the problem in a given time range and animate the results.
         """
-        delta_x = self._spatial.delta_x()
+        delta_x = self._spatial.delta_x(0)
         delta_t = (t_stop - t_start) / n_step
         cfl = self.a_max() * delta_t / delta_x
         viscous = self._spatial.equation().get_diffusive_coeff()

@@ -74,7 +74,7 @@ class TestLimiters(unittest.TestCase):
         axins2.set_xlim(xmin, xmax)
         axins2.set_ylim(-7.5, -3.5)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
-        x_values = points / scheme.delta_x()
+        x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
@@ -98,7 +98,7 @@ class TestLimiters(unittest.TestCase):
         ax.indicate_inset_zoom(axins2, edgecolor="gray")
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
-        plt.title(r'$p=$'+f'{degree}, '+r'$h=$'+f'{scheme.delta_x():.3f}')
+        plt.title(r'$p=$'+f'{degree}, '+r'$h=$'+f'{scheme.delta_x(0):.3f}')
         plt.legend()
         plt.tight_layout()
         # plt.show()
@@ -127,7 +127,7 @@ class TestLimiters(unittest.TestCase):
         axins.set_xlim(xmin, xmax)
         axins.set_ylim(-1.1, +1.1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
-        x_values = points / scheme.delta_x()
+        x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
             scheme.initialize(u_init)
@@ -149,8 +149,8 @@ class TestLimiters(unittest.TestCase):
         plt.xlabel(r'$x/h$')
         plt.ylabel(r'$u^h$')
         plt.title(scheme.name() +
-            r', $(\kappa h)_\mathrm{L}=$'+f'{k1*scheme.delta_x():.2f}'
-            r', $(\kappa h)_\mathrm{R}=$'+f'{k2*scheme.delta_x():.2f}')
+            r', $(\kappa h)_\mathrm{L}=$'+f'{k1*scheme.delta_x(0):.2f}'
+            r', $(\kappa h)_\mathrm{R}=$'+f'{k2*scheme.delta_x(0):.2f}')
         plt.legend()
         plt.tight_layout()
         # plt.show()

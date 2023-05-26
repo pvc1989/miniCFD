@@ -607,12 +607,10 @@ class SpatialScheme(OdeSystem):
         """
         return len(self._elements)
 
-    def delta_x(self):
-        """Get the length of each element.
-
-        Currently, only uniform meshing is supported.
+    def delta_x(self, i_cell: int):
+        """Get the length of the i-th element.
         """
-        return self.get_element_by_index(0).length()
+        return self.get_element_by_index(i_cell).length()
 
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
