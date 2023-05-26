@@ -84,10 +84,10 @@ class SolverBase(abc.ABC):
                 value -= element_i.get_solution_value(x_global)
                 return value
             n_point = element_i.n_term()
-            error_1 += element_i.integrator.norm_1(error, n_point)
-            error_2 += element_i.integrator.norm_2(error, n_point)**2
+            error_1 += element_i.integrator().norm_1(error, n_point)
+            error_2 += element_i.integrator().norm_2(error, n_point)**2
             error_infty = max(error_infty,
-                element_i.integrator.norm_infty(error, n_point*2))
+                element_i.integrator().norm_infty(error, n_point*2))
         return error_1, np.sqrt(error_2), error_infty
 
     def snapshot(self, t_start: float, t_stop: float,  n_step: int):

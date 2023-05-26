@@ -21,8 +21,7 @@ class LagrangeDG(Element):
         return np.linalg.solve(self._mass_matrix, column)
 
     def get_sample_points(self) -> np.ndarray:
-        assert isinstance(self.expansion, expansion.Lagrange)
-        return self.expansion.get_sample_points()
+        return self.expansion().get_sample_points()
 
 
 class LegendreDG(Element):
@@ -38,9 +37,9 @@ class LegendreDG(Element):
             expansion.Legendre(degree, coordinate, value_type), value_type)
 
     def divide_mass_matrix(self, column: np.ndarray):
-        assert isinstance(self.expansion, expansion.Legendre)
+        assert isinstance(self.expansion(), expansion.Legendre)
         for k in range(self.n_term()):
-            column[k] /= self.expansion.get_mode_weight(k)
+            column[k] /= self.expansion().get_mode_weight(k)
         return column
 
 
@@ -54,9 +53,9 @@ class LagrangeFR(LagrangeDG):
         self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
 
     def get_correction_gradients(self, x_global):
-        x_local = self.coordinate.global_to_local(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_gradient(x_local)
-        jacobian = self.coordinate.local_to_jacobian(x_local)
+        jacobian = self.coordinate().local_to_jacobian(x_local)
         left /= jacobian
         right /= jacobian
         return left, right
@@ -66,7 +65,7 @@ class LagrangeFR(LagrangeDG):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
-        x_local = self.coordinate.global_to_local(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
@@ -80,8 +79,9 @@ class LagrangeFR(LagrangeDG):
         basis_gradients = self.get_basis_gradients(x_global)
         flux_gradient = 0.0
         i_sample = 0
-        assert isinstance(self.expansion, expansion.Lagrange)
-        for x_sample in self.expansion.get_sample_points():
+        my_expansion = self.expansion()
+        assert isinstance(my_expansion, expansion.Lagrange)
+        for x_sample in my_expansion.get_sample_points():
             u_sample = self.get_solution_value(x_sample)
             du_sample = self.get_solution_gradient(x_sample)
             f_sample = self.equation().get_convective_flux(u_sample)
@@ -107,8 +107,9 @@ class LagrangeFR(LagrangeDG):
             extra_viscous=0.0):
         """Get the gradients of the continuous flux at all nodes.
         """
-        assert isinstance(self.expansion, expansion.Lagrange)
-        nodes = self.expansion.get_sample_points()
+        my_expansion = self.expansion()
+        assert isinstance(my_expansion, expansion.Lagrange)
+        nodes = my_expansion.get_sample_points()
         values = np.ndarray(len(nodes), self._value_type)
         for i in range(len(nodes)):
             values[i] = self.get_flux_gradient(nodes[i],
@@ -191,7 +192,7 @@ class LegendreFR(LegendreDG):
         """Get the value of the reconstructed continuous flux at a given point.
         """
         flux = self.get_discontinuous_flux(x_global)
-        x_local = self.coordinate.global_to_local(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
@@ -205,11 +206,11 @@ class LegendreFR(LegendreDG):
         """
         u_approx = self.get_solution_value(x_global)
         a_approx = self.equation().get_convective_speed(u_approx)
-        gradient = a_approx * self.expansion.global_to_gradient(x_global)
-        x_local = self.coordinate.global_to_local(x_global)
+        gradient = a_approx * self.expansion().global_to_gradient(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_gradient(x_local)
-        left /= self.coordinate.global_to_jacobian(x_global)
-        right /= self.coordinate.global_to_jacobian(x_global)
+        left /= self.coordinate().global_to_jacobian(x_global)
+        right /= self.coordinate().global_to_jacobian(x_global)
         gradient += left * (upwind_flux_left
             - self.get_discontinuous_flux(self.x_left()))
         gradient += right * (upwind_flux_right
@@ -226,7 +227,7 @@ class LegendreFR(LegendreDG):
                 x_global, upwind_flux_left, upwind_flux_right, extra_viscous)
             column = self.divide_mass_matrix(column)
             return column
-        values = self.expansion.integrator.fixed_quad_global(
+        values = self.expansion().integrator().fixed_quad_global(
             integrand, self.n_term())
         return values
 

@@ -160,7 +160,7 @@ class TestLagrangeFR(unittest.TestCase):
             r_next[:,k] = residual[first : last]
         assert isinstance(cell_curr, element.LagrangeFR)
         mat_b, mat_c, mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices(
-            cell_prev.expansion, cell_next.expansion)
+            cell_prev.expansion(), cell_next.expansion())
         self.assertAlmostEqual(0.0,
             np.linalg.norm((r_curr - s_curr) / nu - (mat_b - mat_c + mat_d)))
         self.assertAlmostEqual(0.0,

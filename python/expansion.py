@@ -43,11 +43,11 @@ class Taylor(Expansion):
         return self.n_term() - 1
 
     def approximate(self, function: callable):
-        x_center = self.coordinate.x_center()
+        x_center = self.x_center()
         self._taylor_coeff[0] = function(x_center)
         for k in range(1, self.n_term()):
             df_dx = nd.Derivative(function, n=k,
-                step=self.coordinate.length()/100, order=4)
+                step=self.length()/100, order=4)
             derivative = df_dx(x_center)
             # print(derivative)
             self._taylor_coeff[k] = derivative / Taylor._factorials[k]
@@ -55,17 +55,17 @@ class Taylor(Expansion):
     def get_average(self):
         def integrand(x_global):
             return self.global_to_value(x_global)
-        n_point = 1 + (self.degree() + self.coordinate.jacobian_degree()) // 2
-        return self.integrator.average(integrand, n_point)
+        n_point = 1 + (self.degree() + self.coordinate().jacobian_degree()) // 2
+        return self.integrator().average(integrand, n_point)
 
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
         def function(x_global):
-            return (x_global - self.coordinate.x_center())**i_basis
+            return (x_global - self.x_center())**i_basis
         return function
 
     def get_basis_values(self, x_global):
-        x_global -= self.coordinate.x_center()
+        x_global -= self.x_center()
         values = np.ndarray(self.n_term())
         x_power = 1.0
         values[0] = 1.0
@@ -75,7 +75,7 @@ class Taylor(Expansion):
         return values
 
     def get_basis_gradients(self, x_global: float):
-        x_global -= self.coordinate.x_center()
+        x_global -= self.x_center()
         values = np.ndarray(self.n_term())
         x_power = 1.0
         values[0] = 0
@@ -85,7 +85,7 @@ class Taylor(Expansion):
         return values
 
     def get_basis_hessians(self, x_global: float):
-        x_global -= self.coordinate.x_center()
+        x_global -= self.x_center()
         values = np.ndarray(self.n_term())
         x_power = 1.0
         values[0] = 0
@@ -101,7 +101,7 @@ class Taylor(Expansion):
 
         values[k][l] = the k-th derivative of (x-c)^{l}.
         """
-        x_global -= self.coordinate.x_center()
+        x_global -= self.x_center()
         values = np.zeros((self.n_term(), self.n_term()))
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
@@ -114,7 +114,7 @@ class Taylor(Expansion):
             column = self.get_basis_values(x_global)
             matrix = np.tensordot(column, column, axes=0)
             return matrix
-        mass_matrix = self.integrator.fixed_quad_global(integrand,
+        mass_matrix = self.integrator().fixed_quad_global(integrand,
             self.n_term())
         # mass_matrix[i][j] := inner-product of basis[i] and basis[j]
         return mass_matrix
@@ -167,7 +167,7 @@ class Taylor(Expansion):
 
     def convert_to(self, Expansion):
         assert issubclass(Expansion, Taylor)
-        that = Expansion(self.degree(), self.coordinate, self._value_type)
+        that = Expansion(self.degree(), self.coordinate(), self._value_type)
         that.approximate(lambda x: self.global_to_value(x))
         return that
 
@@ -189,7 +189,7 @@ class Lagrange(Taylor):
         # Build the basis and sample points.
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
-        self._sample_points = self.coordinate.local_to_global(roots)
+        self._sample_points = self.coordinate().local_to_global(roots)
         # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
         base_rows = np.ndarray((self.n_term(), self.n_term()))
         for k in range(self.n_term()):
@@ -243,12 +243,12 @@ class Lagrange(Taylor):
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
         def function(x_global):
-            x_local = self.coordinate.global_to_local(x_global)
+            x_local = self.coordinate().global_to_local(x_global)
             return self._basis[i_basis].local_to_value(x_local)
         return function
 
     def get_basis_values(self, x_global):
-        x_local = self.coordinate.global_to_local(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         values = self._basis.local_to_value(x_local)
         return values
 
@@ -281,8 +281,8 @@ class Legendre(Taylor):
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
         # Legendre polynoamials are only orthogonal for 1-degree coordinate map,
         # whose Jacobian determinant is constant over [-1, 1].
-        assert self.coordinate.jacobian_degree() == 0
-        jacobian = self.coordinate.local_to_jacobian(0)
+        assert self.coordinate().jacobian_degree() == 0
+        jacobian = self.coordinate().local_to_jacobian(0)
         # Mode weights are defined as the inner-products of each basis,
         # which can be explicitly integrated here:
         self._mode_weights = jacobian * 2 / (2 * np.arange(degree+1) + 1)
@@ -343,10 +343,10 @@ class Legendre(Taylor):
         for k in range(self.n_term()):
             def integrand(x_local):
                 value = special.eval_legendre(k, x_local)
-                value *= function(self.coordinate.local_to_global(x_local))
-                value *= self.coordinate.local_to_jacobian(x_local)
+                value *= function(self.coordinate().local_to_global(x_local))
+                value *= self.coordinate().local_to_jacobian(x_local)
                 return value
-            self._mode_coeffs[k] = self.integrator.fixed_quad_local(integrand,
+            self._mode_coeffs[k] = self.integrator().fixed_quad_local(integrand,
                 self.n_term())
             self._mode_coeffs[k] /= self._mode_weights[k]
         self.set_taylor_coeff()
@@ -354,12 +354,12 @@ class Legendre(Taylor):
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
         def function(x_global):
-            x_local = self.coordinate.global_to_local(x_global)
+            x_local = self.coordinate().global_to_local(x_global)
             return special.eval_legendre(i_basis, x_local)
         return function
 
     def get_basis_values(self, x_global):
-        x_local = self.coordinate.global_to_local(x_global)
+        x_local = self.coordinate().global_to_local(x_global)
         values = np.ndarray(self.n_term())
         for k in range(self.n_term()):
             values[k] = special.eval_legendre(k, x_local)
@@ -385,7 +385,7 @@ class TruncatedLegendre(Taylor):
     def __init__(self, degree: int, that: Legendre) -> None:
         assert 0 <= degree <= that.degree()
         assert isinstance(that, Legendre)
-        Taylor.__init__(self, degree, that.coordinate, that._value_type)
+        Taylor.__init__(self, degree, that.coordinate(), that._value_type)
         n_term = degree + 1
         self._taylor_coeff[:] = deepcopy(that._taylor_coeff[0:n_term])
         assert isinstance(that, Legendre) # TODO: relax to Taylor

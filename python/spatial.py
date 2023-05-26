@@ -53,7 +53,7 @@ class FiniteElement(concept.SpatialScheme):
                 viscous += max(self._viscous.get_coeff(i),
                                self._viscous.get_coeff(i-1))
             interface_fluxes[i] = self._riemann.get_interface_flux(
-                prev.expansion, curr.expansion, viscous)
+                prev.expansion(), curr.expansion(), viscous)
         if self.is_periodic():
             i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
@@ -63,7 +63,7 @@ class FiniteElement(concept.SpatialScheme):
                 viscous += max(self._viscous.get_coeff(0),
                                self._viscous.get_coeff(i_prev))
             interface_fluxes[0] = self._riemann.get_interface_flux(
-                prev.expansion, curr.expansion, viscous)
+                prev.expansion(), curr.expansion(), viscous)
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
             assert False
@@ -205,12 +205,12 @@ class FluxReconstruction(FiniteElement):
         right = self.get_element_by_index(curr)
         left = self.get_element_by_index(curr-1)
         upwind_flux_left = self._riemann.get_interface_flux(
-            left.expansion, right.expansion, viscous)
+            left.expansion(), right.expansion(), viscous)
         # solve riemann problem at the right end of curr element
         left = self.get_element_by_index(curr)
         right = self.get_element_by_index((curr + 1) % self.n_element())
         upwind_flux_right = self._riemann.get_interface_flux(
-            left.expansion, right.expansion, viscous)
+            left.expansion(), right.expansion(), viscous)
         assert (isinstance(left, element.LagrangeFR)
             or isinstance(left, element.LegendreFR))
         return left.get_continuous_flux(point,

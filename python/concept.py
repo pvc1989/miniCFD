@@ -62,7 +62,7 @@ class Coordinate(abc.ABC):
     def x_center(self):
         """Get the coordinate of this element's centroid.
         """
-        return self.local_to_global(0)
+        return (self.x_right() + self.x_left()) / 2
 
     def length(self):
         """Get the length of this element.
@@ -77,7 +77,12 @@ class Integrator(abc.ABC):
 
     def __init__(self, coordinate: Coordinate) -> None:
         assert isinstance(coordinate, Coordinate)
-        self.coordinate = coordinate
+        self._coordinate = coordinate
+
+    def coordinate(self) -> Coordinate:
+        """Get the underlying coordinate mapping object.
+        """
+        return self._coordinate
 
     @abc.abstractmethod
     def get_quadrature_points(self, n_point: int) -> np.ndarray:
@@ -92,8 +97,8 @@ class Integrator(abc.ABC):
         """Integrate a function defined in global coordinates with a given number of quadrature points."""
         n_point = max(1, n_point)
         def integrand(x_local):
-            x_global = self.coordinate.local_to_global(x_local)
-            jacobian = self.coordinate.local_to_jacobian(x_local)
+            x_global = self.coordinate().local_to_global(x_local)
+            jacobian = self.coordinate().local_to_jacobian(x_local)
             return function(x_global) * jacobian
         return self.fixed_quad_local(integrand, n_point)
 
@@ -101,7 +106,7 @@ class Integrator(abc.ABC):
         """Get the average value of a function on this element.
         """
         integral = self.fixed_quad_global(function, n_point)
-        return integral / self.coordinate.length()
+        return integral / self.coordinate().length()
 
     def norm_1(self, function: callable, n_point: int):
         """Get the L_1 norm of a function on this element.
@@ -123,7 +128,7 @@ class Integrator(abc.ABC):
         """Get the (approximate) L_infty norm of a function on this element.
         """
         points = np.linspace(
-            self.coordinate.x_left(), self.coordinate.x_right(), n_point)
+            self.coordinate().x_left(), self.coordinate().x_right(), n_point)
         # Alternatively, quadrature points can be used:
         # points = self.get_quadrature_points(n_point)
         value = 0.0
@@ -143,20 +148,30 @@ class Expansion(abc.ABC):
     """
 
     def __init__(self, coordinate: Coordinate, integrator: Integrator) -> None:
-        self.coordinate = coordinate
-        self.integrator = integrator
+        self._coordinate = coordinate
+        self._integrator = integrator
+
+    def coordinate(self) -> Coordinate:
+        """Get a refenece to the underlying Coordinate object.
+        """
+        return self._coordinate
+
+    def integrator(self) -> Integrator:
+        """Get a refenece to the underlying Integrator object.
+        """
+        return self._integrator
 
     def x_left(self):
-        return self.coordinate.x_left()
+        return self.coordinate().x_left()
 
     def x_right(self):
-        return self.coordinate.x_right()
+        return self.coordinate().x_right()
 
     def x_center(self):
-        return self.coordinate.x_center()
+        return self.coordinate().x_center()
 
     def length(self):
-        return self.coordinate.length()
+        return self.coordinate().length()
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -313,35 +328,52 @@ class Element(abc.ABC):
         assert isinstance(riemann, RiemannSolver)
         assert isinstance(coordinate, Coordinate)
         self._riemann = riemann
-        self.coordinate = coordinate
-        self.integrator = expansion.integrator
-        self.expansion = expansion
+        self._coordinate = coordinate
+        self._integrator = expansion.integrator()
+        self._expansion = expansion
         self._value_type = value_type
 
     def equation(self) -> Equation:
+        """Get a refenece to the underlying Equation object.
+        """
         return self._riemann.equation()
 
+    def coordinate(self) -> Coordinate:
+        """Get a refenece to the underlying Coordinate object.
+        """
+        return self._coordinate
+
+    def integrator(self) -> Integrator:
+        """Get a refenece to the underlying Integrator object.
+        """
+        return self._integrator
+
+    def expansion(self) -> Expansion:
+        """Get a refenece to the underlying Expansion object.
+        """
+        return self._expansion
+
     def x_left(self):
-        return self.coordinate.x_left()
+        return self.coordinate().x_left()
 
     def x_right(self):
-        return self.coordinate.x_right()
+        return self.coordinate().x_right()
 
     def x_center(self):
-        return self.coordinate.x_center()
+        return self.coordinate().x_center()
 
     def length(self):
-        return self.coordinate.length()
+        return self.coordinate().length()
 
     def degree(self):
         """The highest degree of the approximated solution.
         """
-        return self.expansion.degree()
+        return self.expansion().degree()
 
     def n_term(self):
         """Number of terms in the approximated function.
         """
-        return self.expansion.n_term()
+        return self.expansion().n_term()
 
     def n_dof(self):
         """Count degrees of freedom in current object.
@@ -351,28 +383,28 @@ class Element(abc.ABC):
     def approximate(self, function: callable):
         """Approximate a general function as u^h.
         """
-        self.expansion.approximate(function)
+        self.expansion().approximate(function)
 
     def fixed_quad_global(self, function: callable, n_point: int):
-        return self.integrator.fixed_quad_global(function, n_point)
+        return self.integrator().fixed_quad_global(function, n_point)
 
     def get_basis_values(self, x_global: float) -> np.ndarray:
         """Get the values of basis at a given point.
         """
-        return self.expansion.get_basis_values(x_global)
+        return self.expansion().get_basis_values(x_global)
 
     def get_basis_gradients(self, x_global: float) -> np.ndarray:
         """Get the gradients of basis at a given point.
         """
-        return self.expansion.get_basis_gradients(x_global)
+        return self.expansion().get_basis_gradients(x_global)
 
     def get_basis_hessians(self, x_global: float) -> np.ndarray:
         """Get the hessians of basis at a given point.
         """
-        return self.expansion.get_basis_hessians(x_global)
+        return self.expansion().get_basis_hessians(x_global)
 
     def _build_mass_matrix(self):
-        mass_matrix = self.expansion.get_basis_innerproducts()
+        mass_matrix = self.expansion().get_basis_innerproducts()
         assert self.n_term() == self.n_dof()
         # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix
@@ -388,7 +420,7 @@ class Element(abc.ABC):
         """
         u_approx = self.get_solution_value(x_global)
         flux = self.equation().get_convective_flux(u_approx)
-        du_approx = self.expansion.global_to_gradient(x_global)
+        du_approx = self.expansion().global_to_gradient(x_global)
         flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
         flux -= extra_viscous * du_approx
         return flux
@@ -396,12 +428,12 @@ class Element(abc.ABC):
     def get_solution_value(self, x_global: float):
         """Get the value of u^h at a given point.
         """
-        return self.expansion.global_to_value(x_global)
+        return self.expansion().global_to_value(x_global)
 
     def get_solution_gradient(self, x_global: float):
         """Get the gradient value of u^h at a given point.
         """
-        return self.expansion.global_to_gradient(x_global)
+        return self.expansion().global_to_gradient(x_global)
 
     def set_solution_coeff(self, column):
         """Set coefficients of the solution's expansion.
@@ -409,7 +441,7 @@ class Element(abc.ABC):
         The element is responsible for the column-to-coeff conversion.
         """
         assert self.equation().n_component() == 1
-        self.expansion.set_coeff(column)
+        self.expansion().set_coeff(column)
 
     def get_solution_column(self) -> np.ndarray:
         """Get coefficients of the solution's expansion.
@@ -417,7 +449,7 @@ class Element(abc.ABC):
         The element is responsible for the coeff-to-column conversion.
         """
         assert self.equation().n_component() == 1
-        return self.expansion.get_coeff_ref()
+        return self.expansion().get_coeff_ref()
 
     @abc.abstractmethod
     def divide_mass_matrix(self, column: np.ndarray):
