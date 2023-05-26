@@ -93,7 +93,7 @@ class ZhongShu2013(CompactWENO):
         that_average = this.integrator().average(
             lambda x_this: that.global_to_value(x_this + x_shift),
             n_point=this.degree())
-        borrowed.approximate(lambda x_this: this.get_average() - that_average
+        borrowed.approximate(lambda x_this: this.average() - that_average
             + that.global_to_value(x_this + x_shift))
         return borrowed
 
@@ -156,7 +156,7 @@ class LiWangRen2020(CompactWENO):
         assert isinstance(that, expansion.Taylor)
         borrowed = expansion.Legendre(1, this.coordinate(), this._value_type)
         coeff = np.ndarray(2, dtype=this._value_type)
-        this_average = this.get_average()
+        this_average = this.average()
         coeff[0] = this_average
         x_shift = self._x_shift(curr, neighbor)
         def psi(x_that):
@@ -264,11 +264,11 @@ class Xu2023(CompactWENO):
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         curr_expansion = curr.expansion()
-        curr_average = curr_expansion.get_average()
+        curr_average = curr_expansion.average()
         u_max = curr_average
         u_min = u_max
         for cell in neighbors:
-            average = cell.expansion().get_average()
+            average = cell.expansion().average()
             u_max = max(u_max, average)
             u_min = min(u_min, average)
         big_a = self._alpha * min(u_max - curr_average, curr_average - u_min)

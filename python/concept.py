@@ -194,7 +194,7 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_average(self):
+    def average(self):
         """Get the average value of the approximated function.
         """
 

@@ -52,7 +52,7 @@ class Taylor(Expansion):
             # print(derivative)
             self._taylor_coeff[k] = derivative / Taylor._factorials[k]
 
-    def get_average(self):
+    def average(self):
         def integrand(x_global):
             return self.global_to_value(x_global)
         n_point = 1 + (self.degree() + self.coordinate().jacobian_degree()) // 2
@@ -313,7 +313,7 @@ class Legendre(Taylor):
         """
         return self._mode_weights[k] * self._mode_coeffs[k]**2
 
-    def get_average(self):
+    def average(self):
         return self._mode_coeffs[0]
 
     def set_taylor_coeff(self):
@@ -406,8 +406,8 @@ class TruncatedLegendre(Taylor):
     def get_coeff_ref(self):
         return Legendre.get_coeff_ref(self)
 
-    def get_average(self):
-        return Legendre.get_average(self)
+    def average(self):
+        return Legendre.average(self)
 
     def get_basis(self, i_basis: int) -> callable:
         return Legendre.get_basis(self, i_basis)

@@ -111,7 +111,7 @@ class LiRen2011(SmoothnessBased):
         for i_curr in range(n_cell):
             curr = elements[i_curr]
             assert isinstance(curr, concept.Element)
-            averages[i_curr] = np.abs(curr.expansion().get_average())
+            averages[i_curr] = np.abs(curr.expansion().average())
         # Averaging is trivial for finite-volume and Legendre-based schems,
         # but might be expansive for Lagrange-based schemes.
         smoothness_values = np.ndarray(n_cell)

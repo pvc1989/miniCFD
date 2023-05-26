@@ -215,14 +215,14 @@ class TestLegendre(unittest.TestCase):
         # plt.show()
         plt.savefig("expansion_on_legendre.pdf")
 
-    def test_get_average(self):
+    def test_average(self):
         """Test the method for getting average values.
         """
         functions = [np.sin, np.cos, np.arctan]
         for function in functions:
             self._expansion.approximate(function)
             integral, _ = integrate.quad(function, self._x_left, self._x_right)
-            self.assertAlmostEqual(self._expansion.get_average(),
+            self.assertAlmostEqual(self._expansion.average(),
                 integral/(self._x_right - self._x_left), places=3)
 
     def test_get_basis_values_and_gradients(self):
