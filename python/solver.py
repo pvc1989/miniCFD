@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as mpla
 from scipy import optimize
+import vtk
 
 import concept
 import riemann
@@ -90,21 +91,77 @@ class SolverBase(abc.ABC):
                 element_i.integrator().norm_infty(error, n_point*2))
         return error_1, np.sqrt(error_2), error_infty
 
-    def snapshot(self, t_start: float, t_stop: float,  n_step: int):
-        """Solve the problem in a given time range and snapshot the results.
+    def _should_plot(self, i_step: int, n_step: int, n_frame: int):
+        return i_step % (n_step // n_frame) == 0
+
+    def _write_frame(self, filename: str, binary=True):
+        grid = vtk.vtkUnstructuredGrid()
+        vtk_points = vtk.vtkPoints()
+        scalar_on_points = vtk.vtkFloatArray()
+        scalar_on_points.SetName("U")
+        scalar_on_points.SetNumberOfComponents(1)
+        global_point_id = 0
+        for i_cell in range(self._spatial.n_element()):
+            cell_i = self._spatial.get_element_by_index(i_cell)
+            vtk_cell = vtk.vtkCubicLine()
+            points = np.linspace(cell_i.x_left(), cell_i.x_right(), 4)
+            vtk_id_list = vtk_cell.GetPointIds()
+            for local_point_id in (0, 3, 1, 2):
+                vtk_id_list.SetId(local_point_id, global_point_id)
+                x = points[local_point_id]
+                vtk_points.InsertNextPoint((x, 0, 0))
+                u = cell_i.get_solution_value(x)
+                scalar_on_points.InsertNextValue(u)
+                global_point_id += 1
+            grid.InsertNextCell(vtk_cell.GetCellType(), vtk_id_list)
+        grid.SetPoints(vtk_points)
+        grid.GetPointData().SetScalars(scalar_on_points)
+        writer = vtk.vtkXMLDataSetWriter()
+        writer.SetInputData(grid)
+        writer.SetFileName(filename)
+        if binary:
+            writer.SetDataModeToBinary()
+        else:
+            writer.SetDataModeToAscii()
+        writer.Write()
+
+    def write_to_vtu(self, t_start: float, t_stop: float,  n_step: int,
+            n_frame: int):
+        """Solve the problem in a given time range and write to vtu files.
         """
         delta_t = (t_stop - t_start) / n_step
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         n_step = int(np.ceil((t_stop - t_start) / delta_t))
         delta_t = (t_stop - t_start) / n_step
-        plot_steps = n_step // 4
+        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
+            num=201)
+        i_frame = 0
+        for i_step in range(n_step + 1):
+            t_curr = t_start + i_step * delta_t
+            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
+            if  self._should_plot(i_step, n_step, n_frame):
+                print(f'i_frame = {i_frame}')
+                self._write_frame(f'Frame{i_frame}.vtu')
+                i_frame += 1
+            if i_step < n_step:
+                self._ode_solver.update(self._spatial, delta_t, t_curr)
+        assert i_frame == n_frame + 1
+
+    def write_to_pdf(self, t_start: float, t_stop: float,  n_step: int,
+            n_frame: int):
+        """Solve the problem in a given time range and write to pdf files.
+        """
+        delta_t = (t_stop - t_start) / n_step
+        self._spatial.initialize(lambda x_global: self.u_init(x_global))
+        n_step = int(np.ceil((t_stop - t_start) / delta_t))
+        delta_t = (t_stop - t_start) / n_step
         points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             num=201)
         for i_step in range(n_step + 1):
             t_curr = t_start + i_step * delta_t
             print(f'step {i_step} / {n_step}, t = {t_curr:g}')
             expect_solution, approx_solution = self._get_ydata(t_curr, points)
-            if i_step % plot_steps == 0:
+            if  self._should_plot(i_step, n_step, n_frame):
                 fig = self._get_figure()
                 plt.plot(points, approx_solution, 'b-',
                     label=self.solver_name())
@@ -358,7 +415,13 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--wave_number',
         default=1, type=int,
         help='number of waves in the domain')
-    parser.add_argument('--animate', action='store_true')
+    parser.add_argument('--output',
+        choices=['fig', 'pdf', 'vtu'],
+        default='fig',
+        help='type of output')
+    parser.add_argument('--n_frame',
+        default=10, type=int,
+        help='number of frames to be written')
     args = parser.parse_args()
     print(args)
     if args.method == 'LagrangeDG':
@@ -429,8 +492,12 @@ if __name__ == '__main__':
             args.degree, args.n_element, args.x_left, args.x_right),
         the_detector, the_limiter, the_viscous,
         ode_solver=temporal.RungeKutta(args.rk_order))
-    if args.animate:
+    if args.output == 'fig':
         solver.animate(args.t_begin, args.t_end, args.n_step)
+    elif args.output == 'pdf':
+        solver.write_to_pdf(args.t_begin, args.t_end, args.n_step, args.n_frame)
+    elif args.output == 'vtu':
+        solver.write_to_vtu(args.t_begin, args.t_end, args.n_step, args.n_frame)
     else:
-        solver.snapshot(args.t_begin, args.t_end, args.n_step)
+        assert False
 
