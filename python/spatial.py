@@ -139,6 +139,9 @@ class DiscontinuousGalerkin(FiniteElement):
         assert i_dof == self.n_dof()
         return column
 
+    def get_flux_value(self, point):
+        return self.get_discontinuous_flux(point)
+
 
 class LegendreDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Legendre expansion.
@@ -216,6 +219,9 @@ class FluxReconstruction(FiniteElement):
             or isinstance(left, element.LegendreFR))
         return left.get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
+
+    def get_flux_value(self, point):
+        return self.get_continuous_flux(point)
 
 
 class LagrangeFR(FluxReconstruction):

@@ -628,6 +628,16 @@ class SpatialScheme(OdeSystem):
         """
 
     @abc.abstractmethod
+    def get_solution_value(self, point):
+        """Get the solution value at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_flux_value(self, point):
+        """Get the flux value at a given point.
+        """
+
+    @abc.abstractmethod
     def get_element_index(self, point) -> int:
         """Get the index of the element in which the given point locates.
         """
