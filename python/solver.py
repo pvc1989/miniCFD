@@ -32,6 +32,8 @@ class SolverBase(abc.ABC):
         if not isinstance(v, viscous.Off):
             self._solver_name += f', viscous={v.name()}'
         self._animation = None
+        self._output_points = np.linspace(self._spatial.x_left(),
+            self._spatial.x_right(), 201)
 
     @abc.abstractmethod
     def problem_name(self) -> str:
@@ -100,20 +102,10 @@ class SolverBase(abc.ABC):
         scalar_on_points = vtk.vtkFloatArray()
         scalar_on_points.SetName("U")
         scalar_on_points.SetNumberOfComponents(1)
-        global_point_id = 0
-        for i_cell in range(self._spatial.n_element()):
-            cell_i = self._spatial.get_element_by_index(i_cell)
-            vtk_cell = vtk.vtkCubicLine()
-            points = np.linspace(cell_i.x_left(), cell_i.x_right(), 4)
-            vtk_id_list = vtk_cell.GetPointIds()
-            for local_point_id in (0, 3, 1, 2):
-                vtk_id_list.SetId(local_point_id, global_point_id)
-                x = points[local_point_id]
-                vtk_points.InsertNextPoint((x, 0, 0))
-                u = cell_i.get_solution_value(x)
-                scalar_on_points.InsertNextValue(u)
-                global_point_id += 1
-            grid.InsertNextCell(vtk_cell.GetCellType(), vtk_id_list)
+        for x in self._output_points:
+            vtk_points.InsertNextPoint((x, 0, 0))
+            value = self._spatial.get_solution_value(x)
+            scalar_on_points.InsertNextValue(value)
         grid.SetPoints(vtk_points)
         grid.GetPointData().SetScalars(scalar_on_points)
         writer = vtk.vtkXMLDataSetWriter()
@@ -133,8 +125,6 @@ class SolverBase(abc.ABC):
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         n_step = int(np.ceil((t_stop - t_start) / delta_t))
         delta_t = (t_stop - t_start) / n_step
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            num=201)
         i_frame = 0
         for i_step in range(n_step + 1):
             t_curr = t_start + i_step * delta_t
@@ -155,8 +145,7 @@ class SolverBase(abc.ABC):
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         n_step = int(np.ceil((t_stop - t_start) / delta_t))
         delta_t = (t_stop - t_start) / n_step
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            num=201)
+        points = self._output_points
         for i_step in range(n_step + 1):
             t_curr = t_start + i_step * delta_t
             print(f'step {i_step} / {n_step}, t = {t_curr:g}')
@@ -194,8 +183,7 @@ class SolverBase(abc.ABC):
         approx_line, = plt.plot([], [], 'b-', label=self.solver_name())
         expect_line, = plt.plot([], [], 'r-.',
             label=f'Exact Solution of {self.problem_name()}')
-        points = np.linspace(self._spatial.x_left(), self._spatial.x_right(),
-            num=201)
+        points = self._output_points
         # initialize animation
         def init_func():
             self._spatial.initialize(lambda x_global: self.u_init(x_global))
