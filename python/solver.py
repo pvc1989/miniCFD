@@ -24,13 +24,13 @@ class SolverBase(abc.ABC):
         self._spatial = spatial_scheme
         self._spatial.set_detector_and_limiter(d, l, v)
         self._ode_solver = ode_solver
-        self._solver_name = f'scheme={self._spatial.name()}'
+        self._solver_name = f'spatial.{self._spatial.name()}'
         if not isinstance(d, detector.Off):
-            self._solver_name += f', detector={d.name()}'
+            self._solver_name += f', detector.{d.name()}'
         if not isinstance(l, limiter.Off):
-            self._solver_name += f', limiter={l.name()}'
+            self._solver_name += f', limiter.{l.name()}'
         if not isinstance(v, viscous.Off):
-            self._solver_name += f', viscous={v.name()}'
+            self._solver_name += f', viscous.{v.name()}'
         self._animation = None
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)

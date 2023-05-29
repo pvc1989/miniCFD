@@ -61,7 +61,7 @@ class Krivodonova2004(SmoothnessBased):
         if verbose:
             return 'Krivodonova et al. (2004)'
         else:
-            return 'KXCRF (2004)'
+            return 'KXRCF (2004)'
 
     def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
         n_cell = len(elements)

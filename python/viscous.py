@@ -49,12 +49,12 @@ class Persson2006(concept.Viscous):
         return "Persson (2006)"
 
     def _get_viscous_coeff(self, cell: concept.Element):
-        u_approx = cell.expansion
+        u_approx = cell.expansion()
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
         s_gap = np.log10(smoothness) - s_0
         print(s_gap)
-        nu = u_approx.coordinate.length() / u_approx.degree()
+        nu = u_approx.length() / u_approx.degree()
         if s_gap > self._kappa:
             pass
         elif s_gap > -self._kappa:
@@ -73,13 +73,13 @@ class Persson2006(concept.Viscous):
 
 class Energy(concept.Viscous):
 
-    def __init__(self, delta_t=0.01) -> None:
+    def __init__(self, tau=0.01) -> None:
         super().__init__()
-        self._delta_t = delta_t
+        self._tau = tau
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
-        return 'Energy (' + r'$\Delta t=$' + f'{self._delta_t})'
+        return 'Energy (' + r'$\tau=$' + f'{self._tau})'
 
     def _get_extra_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
@@ -113,7 +113,7 @@ class Energy(concept.Viscous):
         assert isinstance(right, element.LagrangeFR)
         if i_curr not in self._index_to_matrices:
             self._index_to_matrices[i_curr] = curr.get_dissipation_matrices(
-                left.expansion, right.expansion)
+                left.expansion(), right.expansion())
         mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
         curr_column = curr.get_solution_column()
         dissipation = (mat_b - mat_c + mat_d) @ curr_column
@@ -122,9 +122,9 @@ class Energy(concept.Viscous):
         dissipation = curr_column.transpose() @ dissipation
         # assert dissipation < 0
         # print(f'dissipation = {dissipation:.2e}')
-        extra_energy = self._get_extra_energy(curr.expansion, left.expansion,
-            right.expansion)
-        return extra_energy / (-dissipation * self._delta_t)
+        extra_energy = self._get_extra_energy(curr.expansion(),
+            left.expansion(), right.expansion())
+        return extra_energy / (-dissipation * self._tau)
 
     def generate(self, troubled_cell_indices, elements, periodic: bool):
         self._index_to_coeff.clear()
