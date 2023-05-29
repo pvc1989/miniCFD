@@ -458,23 +458,24 @@ class Element(abc.ABC):
         Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
         """
 
-    def suggest_delta_t(self, extra_viscous):
+    @abc.abstractmethod
+    def suggest_cfl(self, rk_order: int) -> float:
+        """Suggest a CFL number for explicit RK time stepping.
+        """
+
+    def suggest_delta_t(self, extra_viscous: float):
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
+        spatial_factor = 16
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
             a = self.equation().get_convective_speed(u)
-            a = np.abs(a)
+            lambda_c = np.abs(a)
             b = self.equation().get_diffusive_coeff(u) + extra_viscous
-            if a == 0:
-                delta_t = min(delta_t, h**2 / b / 2)
-            elif b == 0:
-                delta_t = min(delta_t, h / a)
-            else:
-                re = a * h / b
-                delta_t = min(delta_t, h / a / (1 + 2 / re))
-        return delta_t / (1 + 2 * self.degree())
+            lambda_d = b / h
+            delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
+        return delta_t * self.suggest_cfl(3)
 
 
 class Detector(abc.ABC):

@@ -11,6 +11,12 @@ class LagrangeDG(Element):
     """Element for implement the DG scheme using a Lagrange expansion.
     """
 
+    # See Cockburn and Shu, "Runge–Kutta Discontinuous Galerkin Methods for Convection-Dominated Problems", Journal of Scientific Computing 16, 3 (2001), pp. 173--261.
+    _cfl = np.ones((9, 5))
+    _cfl[:, 2] = (1.000, 0.333, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
+    _cfl[:, 3] = (1.256, 0.409, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
+    _cfl[:, 4] = (1.392, 0.464, 0.235, 0.145, 0.100, 0.073, 0.056, 0.045, 0.037)
+
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
         Element.__init__(self, riemann, coordinate,
@@ -22,6 +28,9 @@ class LagrangeDG(Element):
 
     def get_sample_points(self) -> np.ndarray:
         return self.expansion().get_sample_points()
+
+    def suggest_cfl(self, rk_order: int) -> float:
+        return self._cfl[self.degree()][rk_order]
 
 
 class LegendreDG(Element):
@@ -41,6 +50,9 @@ class LegendreDG(Element):
         for k in range(self.n_term()):
             column[k] /= self.expansion().get_mode_weight(k)
         return column
+
+    def suggest_cfl(self, rk_order: int) -> float:
+        return LagrangeDG._cfl[self.degree()][rk_order]
 
 
 class LagrangeFR(LagrangeDG):
@@ -177,6 +189,9 @@ class LagrangeFR(LagrangeDG):
         # print('F =\n', mat_f)
         return (mat_b, mat_c, mat_d, mat_e, mat_f)
 
+    def suggest_cfl(self, rk_order: int) -> float:
+        return 2 * LagrangeDG.suggest_cfl(self, rk_order)
+
 
 class LegendreFR(LegendreDG):
     """Element for implement the FR scheme using a Legendre expansion.
@@ -230,6 +245,9 @@ class LegendreFR(LegendreDG):
         values = self.expansion().integrator().fixed_quad_global(
             integrand, self.n_term())
         return values
+
+    def suggest_cfl(self, rk_order: int) -> float:
+        return 2 * LegendreDG.suggest_cfl(self, rk_order)
 
 
 if __name__ == '__main__':
