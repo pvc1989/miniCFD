@@ -167,17 +167,12 @@ class SolverBase(abc.ABC):
             if i_step < n_step:
                 self._ode_solver.update(self._spatial, delta_t, t_curr)
 
-    def animate(self, t_start: float, t_stop: float,  n_step: int):
+    def write_to_fig(self, t_start: float, t_stop: float,  n_step: int,
+            n_frame: int):
         """Solve the problem in a given time range and animate the results.
         """
-        delta_x = self._spatial.delta_x(0)
-        delta_t = (t_stop - t_start) / n_step
-        cfl = self.a_max() * delta_t / delta_x
-        viscous = self._spatial.equation().get_diffusive_coeff()
-        cell_reynolds = self.a_max() * delta_x / (viscous + 1e-18)
-        cfl_max = 1 / (1 + 2 / cell_reynolds) / (1 + 2 * self._spatial.degree())
-        print(f"delta_x = {delta_x}, delta_t = {delta_t}, CFL = {cfl:g},",
-            f'CFL_DG(p)_RK(p+1) = {cfl_max:g}')
+        dt_max = (t_stop - t_start) / n_step
+        dt_per_frame = (t_stop - t_start) / n_frame
         fig = self._get_figure()
         # initialize line-plot objects
         approx_line, = plt.plot([], [], 'b-', label=self.solver_name())
@@ -194,10 +189,19 @@ class SolverBase(abc.ABC):
             expect_solution, approx_solution = self._get_ydata(t_curr, points)
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
-            plt.title(r'$t$'+f' = {t_curr:.2f}')
+            print(f't = {t_curr:.3f}')
+            plt.title(r'$t=$'+f'{t_curr:.2f}')
             plt.legend(loc='upper right')
-            self._ode_solver.update(self._spatial, delta_t, t_curr)
-        frames = np.linspace(t_start, t_stop, n_step)
+            t_next = min(t_stop, t_curr + dt_per_frame)
+            while t_curr < t_next:
+                dt_suggested = self._spatial.suggest_delta_t(t_next - t_curr)
+                dt_actual = min(dt_max, dt_suggested)
+                print(f't = {t_curr:.3f}, dt_max = {dt_max:.2e}',
+                    f', dt_suggested = {dt_suggested:.2e}',
+                    f', dt_actual = {dt_actual:.2e}')
+                self._ode_solver.update(self._spatial, dt_actual, t_curr)
+                t_curr += dt_actual
+        frames = np.linspace(t_start, t_stop, n_frame+1)
         self._animation = mpla.FuncAnimation(
             plt.gcf(), update_func, frames, init_func, interval=5)
         plt.show()
@@ -408,7 +412,7 @@ if __name__ == '__main__':
         default='fig',
         help='type of output')
     parser.add_argument('--n_frame',
-        default=10, type=int,
+        default=100, type=int,
         help='number of frames to be written')
     args = parser.parse_args()
     print(args)
@@ -481,7 +485,7 @@ if __name__ == '__main__':
         the_detector, the_limiter, the_viscous,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':
-        solver.animate(args.t_begin, args.t_end, args.n_step)
+        solver.write_to_fig(args.t_begin, args.t_end, args.n_step, args.n_frame)
     elif args.output == 'pdf':
         solver.write_to_pdf(args.t_begin, args.t_end, args.n_step, args.n_frame)
     elif args.output == 'vtu':

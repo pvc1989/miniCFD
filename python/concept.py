@@ -458,6 +458,24 @@ class Element(abc.ABC):
         Solve the system of linear equations Ax = b, in which A is the mass matrix of this element.
         """
 
+    def suggest_delta_t(self, extra_viscous):
+        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
+        h = self.length()
+        delta_t = np.infty
+        for x in points:
+            u = self.get_solution_value(x)
+            a = self.equation().get_convective_speed(u)
+            a = np.abs(a)
+            b = self.equation().get_diffusive_coeff(u) + extra_viscous
+            if a == 0:
+                delta_t = min(delta_t, h**2 / b / 2)
+            elif b == 0:
+                delta_t = min(delta_t, h / a)
+            else:
+                re = a * h / b
+                delta_t = min(delta_t, h / a / (1 + 2 / re))
+        return delta_t / (1 + 2 * self.degree())
+
 
 class Detector(abc.ABC):
     """An object that detects jumps on an element.
@@ -670,6 +688,14 @@ class SpatialScheme(OdeSystem):
             if isinstance(self._viscous, Viscous):
                 self._viscous.generate(indices,
                     self._elements, self.is_periodic())
+
+    def suggest_delta_t(self, delta_t):
+        for i_cell in range(self.n_element()):
+            cell_i = self.get_element_by_index(i_cell)
+            if isinstance(self._viscous, Viscous):
+                extra_viscous = self._viscous.get_coeff(i_cell)
+            delta_t = min(delta_t, cell_i.suggest_delta_t(extra_viscous))
+        return delta_t
 
 
 if __name__ == '__main__':
