@@ -185,11 +185,15 @@ class Lagrange(Taylor):
         # delta = 2.0 / n_point / 2
         # roots = np.linspace(delta - 1, 1 - delta, n_point)
         # Or, use zeros of special polynomials.
-        roots, _ = special.roots_legendre(degree + 1)
+        roots, local_weights = special.roots_legendre(degree + 1)
         # Build the basis and sample points.
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
         self._sample_points = self.coordinate().local_to_global(roots)
+        self._global_weights = np.ndarray(n_point)
+        for k in range(self.n_term()):
+            jacobian = self.coordinate().local_to_jacobian(roots[k])
+            self._global_weights[k] = local_weights[k] * jacobian
         # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
         base_rows = np.ndarray((self.n_term(), self.n_term()))
         for k in range(self.n_term()):
@@ -214,6 +218,11 @@ class Lagrange(Taylor):
     def get_sample_points(self) -> np.ndarray:
         """Get the global coordinates of all sample points."""
         return self._sample_points
+
+    def get_node_weight(self, k: int) -> float:
+        """Get the gloabl quadrature weight of the kth node.
+        """
+        return self._global_weights[k]
 
     def set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.

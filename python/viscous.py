@@ -84,22 +84,23 @@ class Energy(concept.Viscous):
     def _get_extra_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         points = curr.get_sample_points()
-        left_values = np.ndarray(len(points))
-        right_values = np.ndarray(len(points))
+        left_jumps = np.ndarray(len(points))
+        right_jumps = np.ndarray(len(points))
         left_shift = left.x_right() - curr.x_left()
         right_shift = right.x_left() - curr.x_right()
         for i in range(len(points)):
             x_curr = points[i]
             curr_value = curr.global_to_value(x_curr)
-            left_values[i] = curr_value - left.global_to_value(
+            left_jumps[i] = curr_value - left.global_to_value(
                 x_curr + left_shift)
-            right_values[i] = curr_value - right.global_to_value(
+            right_jumps[i] = curr_value - right.global_to_value(
                 x_curr + right_shift)
-        extra_energy = min(np.linalg.norm(left_values),
-            np.linalg.norm(right_values))**2 / 2
-        # print(left_values, '\n', right_values)
-        # print(f'extra_energy = {extra_energy:.2e}')
-        return extra_energy
+        def jumps_to_energy(jumps: np.ndarray):
+            energy = 0.0
+            for k in range(curr.n_term()):
+                energy += curr.get_node_weight(k) * jumps[k]**2 / 2
+            return energy
+        return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
 
     def _get_viscous_coeff(self, elements, i_curr):
         i_left = i_curr - 1
@@ -119,6 +120,8 @@ class Energy(concept.Viscous):
         dissipation = (mat_b - mat_c + mat_d) @ curr_column
         dissipation += mat_e @ left.get_solution_column()
         dissipation += mat_f @ right.get_solution_column()
+        for k in range(curr.n_term()):
+            dissipation[k] *= curr.expansion().get_node_weight(k)
         dissipation = curr_column.transpose() @ dissipation
         # assert dissipation < 0
         # print(f'dissipation = {dissipation:.2e}')

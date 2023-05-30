@@ -183,6 +183,22 @@ class TestLagrange(unittest.TestCase):
                 self._expansion.global_to_value(x),
                 expansion.Taylor.global_to_value(self._expansion, x))
 
+    def test_node_weights(self):
+        n_term = self._expansion.n_term()
+        polynomial_coeff = np.random.rand(n_term)
+        def function(x):
+            x -= self._expansion.x_center()
+            powers = x ** np.arange(n_term)
+            return polynomial_coeff.dot(powers)
+        self._expansion.approximate(function)
+        integral = self._expansion.integrator().fixed_quad_global(
+            function, n_term)
+        weights = np.ndarray(n_term)
+        for k in range(n_term):
+            weights[k] = self._expansion.get_node_weight(k)
+        product = self._expansion.get_coeff_ref().dot(weights)
+        self.assertAlmostEqual(integral, product)
+
 
 class TestLegendre(unittest.TestCase):
     """Test the Legendre class.
