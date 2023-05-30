@@ -76,6 +76,7 @@ class Energy(concept.Viscous):
     def __init__(self, tau=0.01) -> None:
         super().__init__()
         self._tau = tau
+        self._nu_max = 0.1
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
@@ -115,15 +116,15 @@ class Energy(concept.Viscous):
         if i_curr not in self._index_to_matrices:
             self._index_to_matrices[i_curr] = curr.get_dissipation_matrices(
                 left.expansion(), right.expansion())
-        mat_b, mat_c, mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
+        mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
         curr_column = curr.get_solution_column()
-        dissipation = (mat_b - mat_c + mat_d) @ curr_column
-        dissipation += mat_e @ left.get_solution_column()
-        dissipation += mat_f @ right.get_solution_column()
+        dissipation = mat_d @ curr_column
+        # dissipation += mat_e @ left.get_solution_column()
+        # dissipation += mat_f @ right.get_solution_column()
         for k in range(curr.n_term()):
             dissipation[k] *= curr.expansion().get_node_weight(k)
         dissipation = curr_column.transpose() @ dissipation
-        # assert dissipation < 0
+        assert dissipation < 0
         # print(f'dissipation = {dissipation:.2e}')
         extra_energy = self._get_extra_energy(curr.expansion(),
             left.expansion(), right.expansion())
@@ -133,6 +134,7 @@ class Energy(concept.Viscous):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(elements, i_cell)
+            coeff = min(coeff, self._nu_max)
             print(f'ν[{i_cell}] = {coeff:.2e}')
             self._index_to_coeff[i_cell] = coeff
 

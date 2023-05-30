@@ -187,7 +187,8 @@ class LagrangeFR(LagrangeDG):
             mat_f[k] = correction_gradients_right[k] * d_plus_right
         # print('E =\n', mat_e)
         # print('F =\n', mat_f)
-        return (mat_b, mat_c, mat_d, mat_e, mat_f)
+        mat_d += mat_b - mat_c
+        return mat_d, mat_e, mat_f
 
     def suggest_cfl(self, rk_order: int) -> float:
         return 2 * LagrangeDG.suggest_cfl(self, rk_order)
