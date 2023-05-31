@@ -466,7 +466,17 @@ class Element(abc.ABC):
     def suggest_delta_t(self, extra_viscous: float):
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
-        spatial_factor = 16
+        p = self.degree()
+        if p == 0:
+            spatial_factor = 1
+        elif p == 1:
+            spatial_factor = 4
+        elif p == 2:
+            spatial_factor = 6
+        elif p == 3:
+            spatial_factor = 12
+        else:
+            spatial_factor = 16
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
