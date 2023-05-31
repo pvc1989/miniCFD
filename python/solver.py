@@ -88,10 +88,26 @@ class SolverBase(abc.ABC):
                 element_i.integrator().norm_infty(error, n_point*2))
         return error_1, np.sqrt(error_2), error_infty
 
-    def _should_plot(self, i_step: int, n_step: int, n_frame: int):
-        return i_step % (n_step // n_frame) == 0
+    def _write_to_pdf(self, filename: str, t_curr: float):
+        """Solve the problem in a given time range and write to pdf files.
+        """
+        points = self._output_points
+        expect_solution, approx_solution = self._get_ydata(t_curr, points)
+        fig = self._get_figure()
+        plt.plot(points, approx_solution, 'b-',
+            label=self.solver_name())
+        plt.plot(points, expect_solution, 'r--',
+            label=f'Exact Solution of {self.problem_name()}')
+        plt.title(r'$t$'+f' = {t_curr:.2f}')
+        plt.legend(loc='upper right')
+        plt.tight_layout()
+        # plt.show()
+        plt.savefig(filename)
+        error_1, error_2, error_infty = self._measure_errors(t_curr)
+        print('t_curr, error_1, error_2, error_∞ =',
+            f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
 
-    def _write_frame(self, filename: str, binary=True):
+    def _write_to_vtu(self, filename: str, binary=True):
         grid = vtk.vtkUnstructuredGrid()
         vtk_points = vtk.vtkPoints()
         scalar_on_points = vtk.vtkFloatArray()
@@ -112,57 +128,35 @@ class SolverBase(abc.ABC):
             writer.SetDataModeToAscii()
         writer.Write()
 
-    def write_to_vtu(self, t_start: float, t_stop: float,  n_step: int,
-            n_frame: int):
-        """Solve the problem in a given time range and write to vtu files.
+    def solve_and_write(self, t_start: float, t_stop: float,  n_step: int,
+            n_frame: int, output: str):
+        """Solve the problem in a given time range and write to vtu/pdf files.
         """
-        delta_t = (t_stop - t_start) / n_step
+        dt_max = (t_stop - t_start) / n_step
+        dt_per_frame = (t_stop - t_start) / n_frame
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
-        n_step = int(np.ceil((t_stop - t_start) / delta_t))
-        delta_t = (t_stop - t_start) / n_step
-        i_frame = 0
-        for i_step in range(n_step + 1):
-            t_curr = t_start + i_step * delta_t
-            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
-            if  self._should_plot(i_step, n_step, n_frame):
-                print(f'i_frame = {i_frame}')
-                self._write_frame(f'Frame{i_frame}.vtu')
-                i_frame += 1
-            if i_step < n_step:
-                self._ode_solver.update(self._spatial, delta_t, t_curr)
-        assert i_frame == n_frame + 1
+        t_curr = t_start
+        for i_frame in range(n_frame+1):
+            print(f'i_frame = {i_frame}, t = {t_curr:.2f}')
+            if output == 'pdf':
+                self._write_to_pdf(f'Frame{i_frame}.pdf', t_curr)
+            elif output == 'vtu':
+                self._write_to_vtu(f'Frame{i_frame}.vtu')
+            else:
+                assert False
+            if i_frame == n_frame:
+                break
+            t_next = t_curr + dt_per_frame
+            while t_curr < t_next:
+                dt_suggested = self._spatial.suggest_delta_t(t_next - t_curr)
+                dt_actual = min(dt_max, dt_suggested)
+                print(f't = {t_curr:.3f}, dt_max = {dt_max:.2e}',
+                    f', dt_suggested = {dt_suggested:.2e}',
+                    f', dt_actual = {dt_actual:.2e}')
+                self._ode_solver.update(self._spatial, dt_actual, t_curr)
+                t_curr += dt_actual
 
-    def write_to_pdf(self, t_start: float, t_stop: float,  n_step: int,
-            n_frame: int):
-        """Solve the problem in a given time range and write to pdf files.
-        """
-        delta_t = (t_stop - t_start) / n_step
-        self._spatial.initialize(lambda x_global: self.u_init(x_global))
-        n_step = int(np.ceil((t_stop - t_start) / delta_t))
-        delta_t = (t_stop - t_start) / n_step
-        points = self._output_points
-        for i_step in range(n_step + 1):
-            t_curr = t_start + i_step * delta_t
-            print(f'step {i_step} / {n_step}, t = {t_curr:g}')
-            expect_solution, approx_solution = self._get_ydata(t_curr, points)
-            if  self._should_plot(i_step, n_step, n_frame):
-                fig = self._get_figure()
-                plt.plot(points, approx_solution, 'b-',
-                    label=self.solver_name())
-                plt.plot(points, expect_solution, 'r--',
-                    label=f'Exact Solution of {self.problem_name()}')
-                plt.title(r'$t$'+f' = {t_curr:.2f}')
-                plt.legend(loc='upper right')
-                plt.tight_layout()
-                # plt.show()
-                plt.savefig(f't={t_curr:.2f}.pdf')
-                error_1, error_2, error_infty = self._measure_errors(t_curr)
-                print('t_curr, error_1, error_2, error_∞ =',
-                    f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
-            if i_step < n_step:
-                self._ode_solver.update(self._spatial, delta_t, t_curr)
-
-    def write_to_fig(self, t_start: float, t_stop: float,  n_step: int,
+    def animate(self, t_start: float, t_stop: float,  n_step: int,
             n_frame: int):
         """Solve the problem in a given time range and animate the results.
         """
@@ -363,7 +357,7 @@ if __name__ == '__main__':
         default='LagrangeFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['Off', 'All', 'KXCRF', 'Li2011', 'Li2022', 'Zhu', 'Persson'],
+        choices=['Off', 'All', 'KXRCF', 'Li2011', 'Li2022', 'Zhu', 'Persson'],
         default='Off',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
@@ -416,7 +410,7 @@ if __name__ == '__main__':
         the_detector = detector.Off()
     elif args.detector == 'All':
         the_detector = detector.All()
-    elif args.detector == 'KXCRF':
+    elif args.detector == 'KXRCF':
         the_detector = detector.Krivodonova2004()
     elif args.detector == 'Li2011':
         the_detector = detector.LiRen2011()
@@ -471,11 +465,8 @@ if __name__ == '__main__':
         the_detector, the_limiter, the_viscous,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':
-        solver.write_to_fig(args.t_begin, args.t_end, args.n_step, args.n_frame)
-    elif args.output == 'pdf':
-        solver.write_to_pdf(args.t_begin, args.t_end, args.n_step, args.n_frame)
-    elif args.output == 'vtu':
-        solver.write_to_vtu(args.t_begin, args.t_end, args.n_step, args.n_frame)
+        solver.animate(args.t_begin, args.t_end, args.n_step, args.n_frame)
     else:
-        assert False
+        solver.solve_and_write(args.t_begin, args.t_end, args.n_step,
+            args.n_frame, args.output)
 

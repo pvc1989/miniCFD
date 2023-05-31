@@ -135,7 +135,7 @@ class Energy(concept.Viscous):
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(elements, i_cell)
             coeff = min(coeff, self._nu_max)
-            print(f'ν[{i_cell}] = {coeff:.2e}')
+            # print(f'ν[{i_cell}] = {coeff:.2e}')
             self._index_to_coeff[i_cell] = coeff
 
 
