@@ -1,14 +1,16 @@
 """Implement elements for spatial scheme.
 """
+import abc
 import numpy as np
 
-from concept import Element, RiemannSolver, Coordinate
+from concept import Expansion, Element, RiemannSolver, Coordinate
 from polynomial import Vincent
-import expansion
+from expansion import Lagrange as LagrangeExpansion
+from expansion import Legendre as LegendreExpansion
 
 
-class LagrangeDG(Element):
-    """Element for implement the DG scheme using a Lagrange expansion.
+class DiscontinuousGalerkin(Element):
+    """Element for implement DG schemes.
     """
 
     # See Cockburn and Shu, "Runge–Kutta Discontinuous Galerkin Methods for Convection-Dominated Problems", Journal of Scientific Computing 16, 3 (2001), pp. 173--261.
@@ -17,11 +19,25 @@ class LagrangeDG(Element):
     _cfl[:, 3] = (1.256, 0.409, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
     _cfl[:, 4] = (1.392, 0.464, 0.235, 0.145, 0.100, 0.073, 0.056, 0.045, 0.037)
 
+    def __init__(self, r: RiemannSolver, e: Expansion, value_type) -> None:
+        Element.__init__(self, r, e.coordinate(), e, value_type)
+
+    def suggest_cfl(self, rk_order: int) -> float:
+        return DiscontinuousGalerkin._cfl[self.degree()][rk_order]
+
+
+class LagrangeDG(DiscontinuousGalerkin):
+    """Element for implement the DG scheme using a Lagrange expansion.
+    """
+
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        Element.__init__(self, riemann, coordinate,
-            expansion.Lagrange(degree, coordinate, value_type), value_type)
+        e = LagrangeExpansion(degree, coordinate, value_type)
+        DiscontinuousGalerkin.__init__(self, riemann, e, value_type)
         self._mass_matrix = self._build_mass_matrix()
+
+    def expansion(self) -> LagrangeExpansion:
+        return Element.expansion(self)
 
     def divide_mass_matrix(self, column: np.ndarray):
         return np.linalg.solve(self._mass_matrix, column)
@@ -29,42 +45,40 @@ class LagrangeDG(Element):
     def get_sample_points(self) -> np.ndarray:
         return self.expansion().get_sample_points()
 
-    def suggest_cfl(self, rk_order: int) -> float:
-        return self._cfl[self.degree()][rk_order]
 
-
-class LegendreDG(Element):
+class LegendreDG(DiscontinuousGalerkin):
     """Element for implement the DG scheme based on Legendre polynomials.
 
     Since flux is not explicitly approximated, it's just a wrapper of the
-    expansion.Legendre class.
+    LegendreExpansion class.
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        Element.__init__(self, riemann, coordinate,
-            expansion.Legendre(degree, coordinate, value_type), value_type)
+        e = LegendreExpansion(degree, coordinate, value_type)
+        DiscontinuousGalerkin.__init__(self, riemann, e, value_type)
+
+    def expansion(self) -> LegendreExpansion:
+        return Element.expansion(self)
 
     def divide_mass_matrix(self, column: np.ndarray):
-        assert isinstance(self.expansion(), expansion.Legendre)
         for k in range(self.n_term()):
             column[k] /= self.expansion().get_mode_weight(k)
         return column
 
+
+class FluxReconstruction(Element):
+
+    def __init__(self, r: RiemannSolver, e: Expansion, value_type) -> None:
+        Element.__init__(self, r, e.coordinate(), e, value_type)
+        self._correction = Vincent(e.degree(), Vincent.huyhn_lump_lobatto)
+
     def suggest_cfl(self, rk_order: int) -> float:
-        return LagrangeDG._cfl[self.degree()][rk_order]
-
-
-class LagrangeFR(LagrangeDG):
-    """Element for implement the FR scheme using a Lagrange expansion.
-    """
-
-    def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate, value_type=float) -> None:
-        LagrangeDG.__init__(self, riemann, degree, coordinate, value_type)
-        self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
+        return 2 * DiscontinuousGalerkin.suggest_cfl(self, rk_order)
 
     def get_correction_gradients(self, x_global):
+        """Get the gradients of the correction functions at a given point.
+        """
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_gradient(x_local)
         jacobian = self.coordinate().local_to_jacobian(x_local)
@@ -72,10 +86,46 @@ class LagrangeFR(LagrangeDG):
         right /= jacobian
         return left, right
 
+    @abc.abstractmethod
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
         """Get the value of the reconstructed continuous flux at a given point.
         """
+
+    @abc.abstractmethod
+    def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
+        """Get the gradient value of the reconstructed continuous flux at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
+        """Get the gradients of the continuous flux at all nodes.
+        """
+
+
+class LagrangeFR(FluxReconstruction):
+    """Element for implement the FR scheme using a Lagrange expansion.
+    """
+
+    def __init__(self, riemann: RiemannSolver, degree: int,
+            coordinate: Coordinate, value_type=float) -> None:
+        e = LagrangeExpansion(degree, coordinate, value_type)
+        FluxReconstruction.__init__(self, riemann, e, value_type)
+        self._mass_matrix = LagrangeDG._build_mass_matrix(self)
+
+    def expansion(self) -> LagrangeExpansion:
+        return Element.expansion(self)
+
+    def get_sample_points(self) -> np.ndarray:
+        return LagrangeDG.get_sample_points(self)
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        return LagrangeDG.divide_mass_matrix(self, column)
+
+    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
+            extra_viscous=0.0):
         flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
@@ -91,9 +141,7 @@ class LagrangeFR(LagrangeDG):
         basis_gradients = self.get_basis_gradients(x_global)
         flux_gradient = 0.0
         i_sample = 0
-        my_expansion = self.expansion()
-        assert isinstance(my_expansion, expansion.Lagrange)
-        for x_sample in my_expansion.get_sample_points():
+        for x_sample in self.expansion().get_sample_points():
             u_sample = self.get_solution_value(x_sample)
             du_sample = self.get_solution_gradient(x_sample)
             f_sample = self.equation().get_convective_flux(u_sample)
@@ -105,8 +153,6 @@ class LagrangeFR(LagrangeDG):
 
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        """Get the gradient value of the reconstructed continuous flux at a given point.
-        """
         gradient = self._get_flux_gradient(x_global, extra_viscous)
         left, right = self.get_correction_gradients(x_global)
         gradient += left * (upwind_flux_left
@@ -117,18 +163,14 @@ class LagrangeFR(LagrangeDG):
 
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        """Get the gradients of the continuous flux at all nodes.
-        """
-        my_expansion = self.expansion()
-        assert isinstance(my_expansion, expansion.Lagrange)
-        nodes = my_expansion.get_sample_points()
+        nodes = self.expansion().get_sample_points()
         values = np.ndarray(len(nodes), self._value_type)
         for i in range(len(nodes)):
             values[i] = self.get_flux_gradient(nodes[i],
                 upwind_flux_left, upwind_flux_right, extra_viscous)
         return values
 
-    def get_dissipation_matrices(self, left: expansion.Lagrange, right: expansion.Lagrange):
+    def get_dissipation_matrices(self, left: LagrangeExpansion, right: LagrangeExpansion):
         n_term = self.n_term()
         shape = (n_term, n_term)
         points = self.get_sample_points()
@@ -190,23 +232,24 @@ class LagrangeFR(LagrangeDG):
         mat_d += mat_b - mat_c
         return mat_d, mat_e, mat_f
 
-    def suggest_cfl(self, rk_order: int) -> float:
-        return 2 * LagrangeDG.suggest_cfl(self, rk_order)
 
-
-class LegendreFR(LegendreDG):
+class LegendreFR(FluxReconstruction):
     """Element for implement the FR scheme using a Legendre expansion.
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate, value_type=float) -> None:
-        LegendreDG.__init__(self, riemann, degree, coordinate, value_type)
-        self._correction = Vincent(degree, Vincent.huyhn_lump_lobatto)
+        e = LegendreExpansion(degree, coordinate, value_type)
+        FluxReconstruction.__init__(self, riemann, e, value_type)
+
+    def expansion(self) -> LegendreExpansion:
+        return Element.expansion(self)
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        return LegendreDG.divide_mass_matrix(self, column)
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        """Get the value of the reconstructed continuous flux at a given point.
-        """
         flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
@@ -218,8 +261,6 @@ class LegendreFR(LegendreDG):
 
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        """Get the gradient value of the reconstructed continuous flux at a given point.
-        """
         u_approx = self.get_solution_value(x_global)
         a_approx = self.equation().get_convective_speed(u_approx)
         gradient = a_approx * self.expansion().global_to_gradient(x_global)
@@ -235,8 +276,6 @@ class LegendreFR(LegendreDG):
 
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        """Get the gradients of the continuous flux at all modes.
-        """
         # TODO: project grad-correction on the Legendre basis in init.
         def integrand(x_global):
             column = self.get_basis_values(x_global) * self.get_flux_gradient(
@@ -246,9 +285,6 @@ class LegendreFR(LegendreDG):
         values = self.expansion().integrator().fixed_quad_global(
             integrand, self.n_term())
         return values
-
-    def suggest_cfl(self, rk_order: int) -> float:
-        return 2 * LegendreDG.suggest_cfl(self, rk_order)
 
 
 if __name__ == '__main__':
