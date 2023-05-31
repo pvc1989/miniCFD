@@ -43,11 +43,6 @@ class SolverBase(abc.ABC):
         return self._solver_name
 
     @abc.abstractmethod
-    def a_max(self):
-        """The maximum phase speed.
-        """
-
-    @abc.abstractmethod
     def u_init(self, x_global):
         """Initial condition of the problem."""
 
@@ -228,9 +223,6 @@ class LinearSmooth(SolverBase):
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
         return my_name
 
-    def a_max(self):
-        return np.abs(self._a_const)
-
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
@@ -284,9 +276,6 @@ class InviscidBurgers(SolverBase):
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
         return my_name
 
-    def a_max(self):
-        return self._spatial.equation().get_convective_speed(u=1.0)
-
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
@@ -332,9 +321,6 @@ class EulerRiemann(SolverBase):
         self._value_right = self._riemann.equation().primitive_to_conservative(
               rho=0.125, u=0, p=0.1)
         self._riemann.set_initial(self._value_left, self._value_right)
-
-    def a_max(self):
-        return 1.0
 
     def u_init(self, x_global):
         if x_global < self._x_mid:
@@ -398,12 +384,12 @@ if __name__ == '__main__':
         choices=['Smooth', 'Jumps', 'Burgers', 'Euler'],
         default='Smooth',
         help='problem to be solved')
-    parser.add_argument('-a', '--phase_speed',
+    parser.add_argument('-a', '--convection_speed',
         default=1.0, type=float,
         help='phase speed of the wave')
-    parser.add_argument('-v', '--viscous_coeff',
+    parser.add_argument('-v', '--physical_viscosity',
         default=0.0, type=float,
-        help='viscous coeff of the equation')
+        help='physical viscous coeff of the equation')
     parser.add_argument('-k', '--wave_number',
         default=1, type=int,
         help='number of waves in the domain')
@@ -466,14 +452,14 @@ if __name__ == '__main__':
         assert False
     if args.problem == 'Smooth':
         SolverClass = LinearSmooth
-        the_riemann = riemann.LinearAdvectionDiffusion(args.phase_speed,
-            args.viscous_coeff)
+        the_riemann = riemann.LinearAdvectionDiffusion(args.convection_speed,
+            args.physical_viscosity)
     elif args.problem == 'Jumps':
         SolverClass = LinearJumps
-        the_riemann = riemann.LinearAdvection(args.phase_speed)
+        the_riemann = riemann.LinearAdvection(args.convection_speed)
     elif args.problem == 'Burgers':
         SolverClass = InviscidBurgers
-        the_riemann = riemann.InviscidBurgers(args.phase_speed)
+        the_riemann = riemann.InviscidBurgers(args.convection_speed)
     elif args.problem == 'Euler':
         SolverClass = EulerRiemann
         the_riemann = riemann.Euler(gamma=1.4)
