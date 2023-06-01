@@ -82,7 +82,7 @@ class Energy(concept.Viscous):
     def name(self, verbose=False) -> str:
         return 'Energy (' + r'$\tau=$' + f'{self._tau})'
 
-    def _get_extra_energy(self, curr: expansion.Lagrange,
+    def _get_extra_energy_p(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         """Compare with polynomials on neighbors.
         """
@@ -135,6 +135,28 @@ class Energy(concept.Viscous):
                 energy += curr.get_node_weight(k) * jumps[k]**2 / 2
             return energy
         return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
+
+    def _get_extra_energy(self, curr: expansion.Lagrange,
+            left: expansion.Lagrange, right: expansion.Lagrange):
+        """Compute derivative jumps on interfaces.
+        """
+        # build left_jumps
+        left_jumps = left.get_derivative_values(left.x_right())
+        left_jumps -= curr.get_derivative_values(curr.x_left())
+        # build right_jumps
+        right_jumps = right.get_derivative_values(right.x_left())
+        right_jumps -= curr.get_derivative_values(curr.x_right())
+        # build energy
+        weights = (1, 0.2)
+        def jumps_to_energy(jumps: np.ndarray, distance):
+            energy = 0.0
+            for k in range(min(len(weights), len(jumps))):
+                energy += (jumps[k] * distance**k * weights[k])**2
+            return energy
+        left_distance = (left.length() + curr.length()) / 2
+        right_distance = (right.length() + curr.length()) / 2
+        return min(jumps_to_energy(left_jumps, left_distance),
+            jumps_to_energy(right_jumps, right_distance))
 
     def _get_viscous_coeff(self, elements, i_curr):
         i_left = i_curr - 1

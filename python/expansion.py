@@ -103,6 +103,7 @@ class Taylor(Expansion):
         """
         x_global -= self.x_center()
         values = np.zeros((self.n_term(), self.n_term()))
+        values[0] = self.get_basis_values(x_global)
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
                 values[k][l] = x_global**(l-k) * (Taylor._factorials[l]
@@ -135,7 +136,7 @@ class Taylor(Expansion):
         # TODO: evaluate the k-th derivative only
         basis_derivatives = Taylor.get_basis_derivatives(self, x_global)
         values = np.zeros(self.n_term(), dtype=self._value_type)
-        # values[0] = global_to_value(x_global)
+        values[0] = self.global_to_value(x_global)
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
                 values[k] += basis_derivatives[k][l] * self._taylor_coeff[l]

@@ -476,7 +476,7 @@ class Element(abc.ABC):
         elif p == 3:
             spatial_factor = 12
         else:
-            spatial_factor = 16
+            spatial_factor = 26
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
