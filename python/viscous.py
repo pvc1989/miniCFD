@@ -84,6 +84,8 @@ class Energy(concept.Viscous):
 
     def _get_extra_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
+        """Compare with polynomials on neighbors.
+        """
         points = curr.get_sample_points()
         left_jumps = np.ndarray(len(points))
         right_jumps = np.ndarray(len(points))
@@ -96,6 +98,37 @@ class Energy(concept.Viscous):
                 x_curr + left_shift)
             right_jumps[i] = curr_value - right.global_to_value(
                 x_curr + right_shift)
+        def jumps_to_energy(jumps: np.ndarray):
+            energy = 0.0
+            for k in range(curr.n_term()):
+                energy += curr.get_node_weight(k) * jumps[k]**2 / 2
+            return energy
+        return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
+
+    def _get_extra_energy_p1(self, curr: expansion.Lagrange,
+            left: expansion.Lagrange, right: expansion.Lagrange):
+        """Compare with p=1 polynomials borrowed from neighbors.
+        """
+        curr_p1 = expansion.Legendre(1, curr.coordinate())
+        points = curr.get_sample_points()
+        curr_values = np.ndarray(len(points))
+        for i in range(len(points)):
+            curr_values[i] = curr.global_to_value(points[i])
+        # build left_jumps
+        left_jumps = np.ndarray(len(points))
+        left_shift = left.x_right() - curr.x_left()
+        curr_p1.approximate(lambda x_curr:
+            left.global_to_value(x_curr + left_shift))
+        for i in range(len(points)):
+            left_jumps[i] = curr_values[i] - curr_p1.global_to_value(points[i])
+        # build right_jumps
+        right_jumps = np.ndarray(len(points))
+        right_shift = right.x_left() - curr.x_right()
+        curr_p1.approximate(lambda x_curr:
+            right.global_to_value(x_curr + right_shift))
+        for i in range(len(points)):
+            right_jumps[i] = curr_values[i] - curr_p1.global_to_value(points[i])
+        # build energy
         def jumps_to_energy(jumps: np.ndarray):
             energy = 0.0
             for k in range(curr.n_term()):
