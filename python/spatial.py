@@ -67,7 +67,10 @@ class FiniteElement(concept.SpatialScheme):
                 prev.expansion(), curr.expansion(), viscous)
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
-            assert False
+            curr = self.get_element_by_index(0)
+            interface_fluxes[0] = curr.get_discontinuous_flux(curr.x_left())
+            curr = self.get_element_by_index(-1)
+            interface_fluxes[-1] = curr.get_discontinuous_flux(curr.x_right())
         return interface_fluxes
 
     def get_solution_value(self, point):
