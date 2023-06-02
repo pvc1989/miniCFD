@@ -76,7 +76,7 @@ class TestDetectors(unittest.TestCase):
         plt.plot(x_values, u_approx, 'g--', label=r'$p=4$')
         plt.legend()
         plt.title('Jumps Approximated by '+scheme.name(False))
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$u^h$')
         plt.grid()
         plt.subplot(3,1,(2,3))
@@ -93,7 +93,7 @@ class TestDetectors(unittest.TestCase):
         ]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
         plt.legend()
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$Smoothness$')
         plt.grid()
         plt.tight_layout()
@@ -132,7 +132,7 @@ class TestDetectors(unittest.TestCase):
         k2_h = k2 * scheme.delta_x(0)
         plt.title(r'$kh=$'+f'({k1_h:.2f}, {k2_h:.2f})' +
             ' Approximated by '+scheme.name(False))
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$u^h$')
         plt.grid()
         ax = fig.add_subplot(3,1,(2,3))
@@ -146,7 +146,7 @@ class TestDetectors(unittest.TestCase):
             scheme.x_left() / scheme.delta_x(0),
             scheme.x_right() / scheme.delta_x(0)]
         plt.plot(x_values, [1, 1], label=r'$Smoothness=1$')
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$Smoothness$')
         plt.legend()
         plt.grid()
@@ -185,7 +185,7 @@ class TestDetectors(unittest.TestCase):
                 f'-{markers[i]}', label=detectors[i].name())
         plt.legend()
         plt.title(r'On $1+\sin(\kappa x)$ Approximated by '+scheme.name())
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.xlabel(r'$\kappa h\,/\,\pi$')
         plt.ylabel('Troubled Cell Count (%)')
         plt.grid()
         plt.tight_layout()

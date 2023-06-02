@@ -96,7 +96,7 @@ class TestLimiters(unittest.TestCase):
         axins2.plot(x_values, y_values, '-')
         ax.indicate_inset_zoom(axins1, edgecolor="gray")
         ax.indicate_inset_zoom(axins2, edgecolor="gray")
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$u^h$')
         plt.title(r'$p=$'+f'{degree}, '+r'$h=$'+f'{scheme.delta_x(0):.3f}')
         plt.legend()
@@ -146,7 +146,7 @@ class TestLimiters(unittest.TestCase):
         plt.plot(x_values, y_values, '-', label='Exact Solution')
         axins.plot(x_values, y_values, '-')
         ax.indicate_inset_zoom(axins, edgecolor="gray")
-        plt.xlabel(r'$x/h$')
+        plt.xlabel(r'$x\,/\,h$')
         plt.ylabel(r'$u^h$')
         plt.title(scheme.name() +
             r', $(\kappa h)_\mathrm{L}=$'+f'{k1*scheme.delta_x(0):.2f}'

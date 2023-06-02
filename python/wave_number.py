@@ -62,7 +62,7 @@ class WaveNumberDisplayer:
         for i_sample in range(n_sample):
             kappa_h = sampled_wavenumbers[i_sample]
             matrix = self.get_spatial_matrix(scheme, kappa_h)
-            matrix *= 1j * scheme.delta_x() / self._a
+            matrix *= 1j * scheme.delta_x(0) / self._a
             modified_wavenumbers[i_sample, :] = np.linalg.eigvals(matrix)
         return modified_wavenumbers
 
@@ -109,7 +109,7 @@ class WaveNumberDisplayer:
         plt.figure(figsize=(6,9))
         plt.subplot(3,1,1)
         plt.ylabel(r'$\Re(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.xlabel(r'$\kappa h\,/\,\pi$')
         plt.plot(sampled_wavenumbers, modified_wavenumbers.real, 'k.')
         plt.plot(sampled_wavenumbers, physical_eigvals.real, 'ro', label='Physical')
         plt.plot([kh_min, kh_max], [kh_min, kh_max], '-', label='Exact')
@@ -118,7 +118,7 @@ class WaveNumberDisplayer:
         plt.legend()
         plt.subplot(3,1,2)
         plt.ylabel(r'$\Im(\tilde{\kappa}h)$')
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.xlabel(r'$\kappa h\,/\,\pi$')
         plt.plot(sampled_wavenumbers, modified_wavenumbers.imag, 'k.')
         plt.plot(sampled_wavenumbers, physical_eigvals.imag, 'ro', label='Physical')
         plt.plot([kh_min, kh_max], [0, 0], '-', label='Exact')
@@ -127,7 +127,7 @@ class WaveNumberDisplayer:
         plt.legend()
         plt.subplot(3,1,3)
         plt.ylabel(r'$|\tilde{\kappa}h|$')
-        plt.xlabel(r'$\kappa h/\pi$')
+        plt.xlabel(r'$\kappa h\,/\,\pi$')
         norms = np.sqrt(modified_wavenumbers.real**2 + modified_wavenumbers.imag**2)
         plt.plot(sampled_wavenumbers, norms, 'k.')
         norms = np.sqrt(physical_eigvals.real**2 + physical_eigvals.imag**2)
@@ -141,7 +141,7 @@ class WaveNumberDisplayer:
         scheme = self.build_scheme(method, degree)
         plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.pdf')
 
-    def compare_schemes(self, methods, degrees, n_sample: int,
+    def compare_wave_numbers(self, methods, degrees, n_sample: int,
             compressed=False):
         linestyles = [
             ('dotted',                (0, (1, 1))),
@@ -162,11 +162,11 @@ class WaveNumberDisplayer:
             divisor = r'$\pi$'
         plt.figure(figsize=(6,9))
         plt.subplot(2,1,1)
-        plt.ylabel(r'$\Re(\tilde{\kappa}h)/$'+divisor)
-        plt.xlabel(r'$\kappa h/$'+divisor)
+        plt.ylabel(r'$\Re(\tilde{\kappa}h)\,/\,$'+divisor)
+        plt.xlabel(r'$\kappa h\,/\,$'+divisor)
         plt.subplot(2,1,2)
-        plt.ylabel(r'$\Im(\tilde{\kappa}h/$'+divisor)
-        plt.xlabel(r'$\kappa h/$'+divisor)
+        plt.ylabel(r'$\Im(\tilde{\kappa}h)\,/\,$'+divisor)
+        plt.xlabel(r'$\kappa h\,/\,$'+divisor)
         i = 0
         for degree in degrees:
             kh_max = (degree + 1) * np.pi
@@ -196,7 +196,7 @@ class WaveNumberDisplayer:
         plt.legend(handlelength=4)
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f'compare_schemes.pdf')
+        plt.savefig(f'compare_wave_numbers.pdf')
 
 
 if __name__ == '__main__':
@@ -237,6 +237,6 @@ if __name__ == '__main__':
         assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
     wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
-    wnd.compare_schemes(methods=[spatial.LegendreDG, spatial.LagrangeFR,
+    wnd.compare_wave_numbers(methods=[spatial.LegendreDG, spatial.LagrangeFR,
         spatial.LegendreFR], degrees=[1, 3, 5], n_sample=args.n_sample,
         compressed=args.compressed)
