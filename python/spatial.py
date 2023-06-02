@@ -51,7 +51,7 @@ class FiniteElement(concept.SpatialScheme):
             prev = self.get_element_by_index(i-1)
             viscous = self.equation().get_diffusive_coeff()
             if self._viscous:
-                viscous += max(self._viscous.get_coeff(i),
+                viscous += min(self._viscous.get_coeff(i),
                                self._viscous.get_coeff(i-1))
             interface_fluxes[i] = self._riemann.get_interface_flux(
                 prev.expansion(), curr.expansion(), viscous)
@@ -61,7 +61,7 @@ class FiniteElement(concept.SpatialScheme):
             prev = self.get_element_by_index(i_prev)
             viscous = self.equation().get_diffusive_coeff()
             if self._viscous:
-                viscous += max(self._viscous.get_coeff(0),
+                viscous += min(self._viscous.get_coeff(0),
                                self._viscous.get_coeff(i_prev))
             interface_fluxes[0] = self._riemann.get_interface_flux(
                 prev.expansion(), curr.expansion(), viscous)

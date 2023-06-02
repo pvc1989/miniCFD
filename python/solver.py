@@ -106,6 +106,7 @@ class SolverBase(abc.ABC):
         error_1, error_2, error_infty = self._measure_errors(t_curr)
         print('t_curr, error_1, error_2, error_∞ =',
             f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
+        plt.close(fig)
 
     def _write_to_vtu(self, filename: str, binary=True):
         grid = vtk.vtkUnstructuredGrid()
@@ -439,8 +440,6 @@ if __name__ == '__main__':
     elif args.viscous_model == 'Persson':
         the_viscous = viscous.Persson2006(args.viscous_model_const)
     elif args.viscous_model == 'Energy':
-        dt = (args.t_end - args.t_begin) / args.n_step
-        args.viscous_model_const *= dt
         the_viscous = viscous.Energy(args.viscous_model_const)
     else:
         assert False

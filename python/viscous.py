@@ -82,7 +82,7 @@ class Energy(concept.Viscous):
     def name(self, verbose=False) -> str:
         return 'Energy (' + r'$\tau=$' + f'{self._tau})'
 
-    def _get_extra_energy_p(self, curr: expansion.Lagrange,
+    def _get_oscillation_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         """Compare with polynomials on neighbors.
         """
@@ -105,7 +105,7 @@ class Energy(concept.Viscous):
             return energy
         return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
 
-    def _get_extra_energy_p1(self, curr: expansion.Lagrange,
+    def _get_oscillation_energy_p1(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
@@ -136,7 +136,7 @@ class Energy(concept.Viscous):
             return energy
         return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
 
-    def _get_extra_energy(self, curr: expansion.Lagrange,
+    def _get_oscillation_energy_jumps(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):
         """Compute derivative jumps on interfaces.
         """
@@ -181,9 +181,9 @@ class Energy(concept.Viscous):
         dissipation = curr_column.transpose() @ dissipation
         assert dissipation < 0
         # print(f'dissipation = {dissipation:.2e}')
-        extra_energy = self._get_extra_energy(curr.expansion(),
+        oscillation_energy = self._get_oscillation_energy(curr.expansion(),
             left.expansion(), right.expansion())
-        return extra_energy / (-dissipation * self._tau)
+        return oscillation_energy / (-dissipation * self._tau)
 
     def generate(self, troubled_cell_indices, elements, periodic: bool):
         self._index_to_coeff.clear()
