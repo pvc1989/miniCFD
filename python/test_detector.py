@@ -58,9 +58,9 @@ class TestDetectors(unittest.TestCase):
             scheme.x_right() - scheme.delta_x(0), self._n_element)
         detectors = [
           detector.Krivodonova2004(),
-          detector.LiRen2011(),
-          detector.ZhuShuQiu2021(),
-          detector.LiRen2022(),
+          detector.LiWanAi2011(),
+          detector.ZhuJun2021(),
+          detector.LiYanHui2022(),
           detector.Persson2006(),
         ]
         plt.figure(figsize=(6,6))
@@ -111,9 +111,9 @@ class TestDetectors(unittest.TestCase):
             scheme.x_right() - scheme.delta_x(0), self._n_element)
         detectors = [
           detector.Krivodonova2004(),
-          detector.LiRen2011(),
-          detector.ZhuShuQiu2021(),
-          detector.LiRen2022(),
+          detector.LiWanAi2011(),
+          detector.ZhuJun2021(),
+          detector.LiYanHui2022(),
           detector.Persson2006(),
         ]
         fig = plt.figure(figsize=(6,6))
@@ -159,9 +159,9 @@ class TestDetectors(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreDG, degree)
         detectors = [
           detector.Krivodonova2004(),
-          detector.LiRen2011(),
-          detector.ZhuShuQiu2021(),
-          detector.LiRen2022(),
+          detector.LiWanAi2011(),
+          detector.ZhuJun2021(),
+          detector.LiYanHui2022(),
           detector.Persson2006(),
         ]
         k_max = int((degree+1) * scheme.n_element() / 2)

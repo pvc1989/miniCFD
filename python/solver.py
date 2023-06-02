@@ -30,7 +30,7 @@ class SolverBase(abc.ABC):
         if not isinstance(l, limiter.Off):
             self._solver_name += f', limiter.{l.name()}'
         if not isinstance(v, viscous.Off):
-            self._solver_name += f', viscous.{v.name()}'
+            self._solver_name += f', viscous.{v.name(True)}'
         self._animation = None
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)
@@ -358,11 +358,11 @@ if __name__ == '__main__':
         default='LagrangeFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['Off', 'All', 'KXRCF', 'Li2011', 'Li2022', 'Zhu', 'Persson'],
+        choices=['Off', 'All', 'KXRCF', 'LWA', 'LYH', 'ZJ', 'Persson'],
         default='Off',
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['Off', 'Li', 'Zhong', 'Xu'],
+        choices=['Off', 'LWA', 'ZXH', 'XXR'],
         default='Off',
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscous_model',
@@ -413,22 +413,22 @@ if __name__ == '__main__':
         the_detector = detector.All()
     elif args.detector == 'KXRCF':
         the_detector = detector.Krivodonova2004()
-    elif args.detector == 'Li2011':
-        the_detector = detector.LiRen2011()
-    elif args.detector == 'Li2022':
-        the_detector = detector.LiRen2022()
-    elif args.detector == 'Zhu':
-        the_detector = detector.ZhuShuQiu2021()
+    elif args.detector == 'LWA':
+        the_detector = detector.LiWanAi2011()
+    elif args.detector == 'LYH':
+        the_detector = detector.LiYanHui2022()
+    elif args.detector == 'ZJ':
+        the_detector = detector.ZhuJun2021()
     elif args.detector == 'Persson':
         the_detector = detector.Persson2006()
     else:
         assert False
-    if args.limiter == 'Li':
-        the_limiter = limiter.LiWangRen2020()
-    elif args.limiter == 'Zhong':
-        the_limiter = limiter.ZhongShu2013()
-    elif args.limiter == 'Xu':
-        the_limiter = limiter.Xu2023()
+    if args.limiter == 'LWA':
+        the_limiter = limiter.LiWanAi2020()
+    elif args.limiter == 'ZXH':
+        the_limiter = limiter.ZhongXingHui2013()
+    elif args.limiter == 'XXR':
+        the_limiter = limiter.XuXiaoRui2023()
     elif args.limiter == 'Off':
         the_limiter = limiter.Off()
     else:

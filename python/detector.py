@@ -61,7 +61,7 @@ class Krivodonova2004(SmoothnessBased):
         if verbose:
             return 'Krivodonova et al. (2004)'
         else:
-            return 'KXRCF (2004)'
+            return 'KXRCF'
 
     def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
         n_cell = len(elements)
@@ -93,7 +93,7 @@ class Krivodonova2004(SmoothnessBased):
         return smoothness_values
 
 
-class LiRen2011(SmoothnessBased):
+class LiWanAi2011(SmoothnessBased):
     """A jump detector for high-order finite volume schemes.
 
     See Li and Ren, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
@@ -103,7 +103,7 @@ class LiRen2011(SmoothnessBased):
         if verbose:
             return 'Li–Ren (2011)'
         else:
-            return 'Li (2011)'
+            return 'LWA'
 
     def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
         n_cell = len(elements)
@@ -153,7 +153,7 @@ class LiRen2011(SmoothnessBased):
         return 1 + 2*(curr.degree() > 2)
 
 
-class ZhuShuQiu2021(SmoothnessBased):
+class ZhuJun2021(SmoothnessBased):
     """A jump detector for high-order DG schemes.
 
     See Zhu and Shu and Qiu, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
@@ -161,9 +161,9 @@ class ZhuShuQiu2021(SmoothnessBased):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Zhu–Shu–Qiu (2011)'
+            return 'Zhu–Shu–Qiu (2021)'
         else:
-            return 'Zhu (2021)'
+            return 'ZJ'
 
     def get_smoothness_values(self, elements, periodic: bool) -> np.ndarray:
         n_cell = len(elements)
@@ -212,7 +212,7 @@ class ZhuShuQiu2021(SmoothnessBased):
         return np.abs(integral)
 
 
-class LiRen2022(concept.Detector):
+class LiYanHui2022(concept.Detector):
     """A jump detector for high-order FD schemes.
 
     See Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770.
@@ -228,7 +228,7 @@ class LiRen2022(concept.Detector):
         if verbose:
             return 'Li–Ren (2022)'
         else:
-            return 'Li (2022)'
+            return 'LYH'
 
     def get_troubled_cell_indices(self, elements, periodic: bool) -> np.ndarray:
         troubled_cell_indices = []
@@ -290,7 +290,10 @@ class Persson2006(SmoothnessBased):
     """
 
     def name(self, verbose=False):
-        return 'Persson (2006)'
+        if verbose:
+            return 'Persson (2006)'
+        else:
+            return 'Persson'
 
     @staticmethod
     def get_smoothness_value(u_approx: expansion.Taylor):

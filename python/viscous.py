@@ -25,7 +25,10 @@ class Constant(concept.Viscous):
         self._const = const
 
     def name(self, verbose=False) -> str:
-        return 'Constant (' + r'$\nu=$' + f'{self._const})'
+        if verbose:
+            return 'Constant (' + r'$\nu=$' + f'{self._const})'
+        else:
+            return 'Constant'
 
     def generate(self, troubled_cell_indices, elements, periodic: bool):
         self._index_to_coeff.clear()
@@ -46,7 +49,10 @@ class Persson2006(concept.Viscous):
         self._kappa = kappa
 
     def name(self, verbose=False) -> str:
-        return "Persson (2006)"
+        if verbose:
+            return "Persson (2006)"
+        else:
+            return 'Persson'
 
     def _get_viscous_coeff(self, cell: concept.Element):
         u_approx = cell.expansion()
@@ -73,14 +79,18 @@ class Persson2006(concept.Viscous):
 
 class Energy(concept.Viscous):
 
-    def __init__(self, tau=0.01) -> None:
+    def __init__(self, tau=0.01, nu_max=0.1) -> None:
         super().__init__()
         self._tau = tau
-        self._nu_max = 0.1
+        self._nu_max = nu_max
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
-        return 'Energy (' + r'$\tau=$' + f'{self._tau})'
+        if verbose:
+            return 'Energy (' + r'$\tau=$' + f'{self._tau}' \
+                + r', $\nu_\max=$' + f'{self._nu_max}' + ')'
+        else:
+            return 'Energy'
 
     def _get_oscillation_energy(self, curr: expansion.Lagrange,
             left: expansion.Lagrange, right: expansion.Lagrange):

@@ -60,7 +60,7 @@ class CompactWENO(concept.Limiter):
         return x_shift
 
 
-class ZhongShu2013(CompactWENO):
+class ZhongXingHui2013(CompactWENO):
     """A high-order compact WENO limiter, which is simple (just borrowing immediate neighbors' expansions).
 
     See Zhong and Shu, "A simple weighted essentially nonoscillatory limiter for Runge–Kutta discontinuous Galerkin methods", Journal of Computational Physics 232, 1 (2013), pp. 397--415.
@@ -74,7 +74,7 @@ class ZhongShu2013(CompactWENO):
         if verbose:
             return 'Zhong–Shu (2013)'
         else:
-            return 'Zhong (2013)'
+            return 'ZXH'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
@@ -131,7 +131,7 @@ class ZhongShu2013(CompactWENO):
         return coeff
 
 
-class LiWangRen2020(CompactWENO):
+class LiWanAi2020(CompactWENO):
     """A high-order compact WENO limiter, whose linear weights are related to candidates' degrees.
 
     See Li and Wang and Ren, "A p-weighted limiter for the discontinuous Galerkin method on one-dimensional and two-dimensional triangular grids", Journal of Computational Physics 407 (2020), pp. 109246.
@@ -146,7 +146,7 @@ class LiWangRen2020(CompactWENO):
         if verbose:
             return r'Li–Wang–Ren (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
         else:
-            return r'Li (2020, $K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
+            return r'LWA($K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
     def _borrow_expansion(self, curr: concept.Element,
             neighbor: concept.Element) -> expansion.Legendre:
@@ -251,7 +251,7 @@ class LiWangRen2020(CompactWENO):
         return new_coeff
 
 
-class Xu2023(CompactWENO):
+class XuXiaoRui2023(CompactWENO):
     """A limiter using min-max compression.
     """
 
@@ -259,7 +259,10 @@ class Xu2023(CompactWENO):
         self._alpha = alpha
 
     def name(self, verbose=False):
-        return 'Xu (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
+        if verbose:
+            return 'Xu (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
+        else:
+            return 'XXR'
 
     def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
         curr_expansion = curr.expansion()

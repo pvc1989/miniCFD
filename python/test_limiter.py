@@ -53,13 +53,13 @@ class TestLimiters(unittest.TestCase):
         scheme = self.build_scheme(spatial.LegendreFR, degree)
         u_init = jumps
         limiters = [
-            limiter.ZhongShu2013(),
-            limiter.LiWangRen2020(k_trunc=0),
-            limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e1),
-            # limiter.Xu2023(alpha=0.1),
-            # limiter.Xu2023(alpha=1e0),
-            # limiter.Xu2023(alpha=1e1),
+            limiter.ZhongXingHui2013(),
+            limiter.LiWanAi2020(k_trunc=0),
+            limiter.LiWanAi2020(k_trunc=1e0),
+            limiter.LiWanAi2020(k_trunc=1e1),
+            # limiter.XuXiaoRui2023(alpha=0.1),
+            # limiter.XuXiaoRui2023(alpha=1e0),
+            # limiter.XuXiaoRui2023(alpha=1e1),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
@@ -111,13 +111,13 @@ class TestLimiters(unittest.TestCase):
         def u_init(x):
             return smooth(x, k1, k2)
         limiters = [
-            limiter.ZhongShu2013(),
-            limiter.LiWangRen2020(k_trunc=0),
-            limiter.LiWangRen2020(k_trunc=1e0),
-            limiter.LiWangRen2020(k_trunc=1e1),
-            # limiter.Xu2023(alpha=0.1),
-            # limiter.Xu2023(alpha=1e0),
-            # limiter.Xu2023(alpha=1e1),
+            limiter.ZhongXingHui2013(),
+            limiter.LiWanAi2020(k_trunc=0),
+            limiter.LiWanAi2020(k_trunc=1e0),
+            limiter.LiWanAi2020(k_trunc=1e1),
+            # limiter.XuXiaoRui2023(alpha=0.1),
+            # limiter.XuXiaoRui2023(alpha=1e0),
+            # limiter.XuXiaoRui2023(alpha=1e1),
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
