@@ -211,6 +211,8 @@ class LiYanHui2022(concept.Detector):
         self._psi_c = 0.4
         self._epsilon = (0.9 * self._psi_c) / (1 - 0.9 * self._psi_c)
         self._epsilon *= self._xi**2
+        self._sample_points = []
+        self._sample_values = None
 
     def name(self, verbose=False):
         if verbose:
@@ -219,26 +221,26 @@ class LiYanHui2022(concept.Detector):
             return 'LYH'
 
     def get_troubled_cell_indices(self, elements, periodic: bool) -> np.ndarray:
+        # TODO: support nonuniform grid
         troubled_cell_indices = []
         n_cell = len(elements)
         n_node_per_cell = elements[0].n_term()
         n_node = n_cell * n_node_per_cell
-        u_values = np.ndarray(n_node)
+        if self._sample_values is None:
+            self._sample_values = np.ndarray(n_node)
+        u_values = self._sample_values
         i_node = 0
         for i_cell in range(n_cell):
             curr_element = elements[i_cell]
             assert isinstance(curr_element, concept.Element)
-            if isinstance(curr_element.expansion(), expansion.Lagrange):
-                for u_value in curr_element.get_solution_column():
-                    u_values[i_node] = u_value
-                    i_node += 1
-            else:
+            if len(self._sample_points) == i_cell:
                 delta = curr_element.length() / curr_element.n_term() / 2
                 points = np.linspace(curr_element.x_left() + delta,
                     curr_element.x_right() - delta, curr_element.n_term())
-                for x in points:
-                    u_values[i_node] = curr_element.get_solution_value(x)
-                    i_node += 1
+                self._sample_points.append(points)
+            for x in self._sample_points[i_cell]:
+                u_values[i_node] = curr_element.get_solution_value(x)
+                i_node += 1
         assert i_node == n_node
         psi_values = np.ndarray(n_node)
         for i_node in range(n_node):
