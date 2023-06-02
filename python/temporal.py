@@ -7,12 +7,16 @@ class ExplicitEuler(OdeSolver):
     """The explicit Euler method.
     """
 
-    def update(self, ode_system: OdeSystem, delta_t, t_curr):
+    def u_next(self, ode_system: OdeSystem, delta_t, t_curr):
         ode_system.set_time(t_curr)
         u_curr = ode_system.get_solution_column()
         residual = ode_system.get_residual_column()
         u_next = u_curr
         u_next += residual * delta_t
+        return u_next
+
+    def update(self, ode_system: OdeSystem, delta_t: float, t_curr: float):
+        u_next = self.u_next(ode_system, delta_t, t_curr)
         ode_system.set_solution_column(u_next)
 
 
@@ -48,8 +52,8 @@ class RungeKutta(OdeSolver):
         u_curr = ode_system.get_solution_column()  # u_curr == U_{n}
         RungeKutta._euler.update(ode_system, delta_t, t_curr)
         # Now, ode_system holds U_{n + 1/2}
-        RungeKutta._euler.update(ode_system, delta_t, t_curr + delta_t)
-        u_next = ode_system.get_solution_column()
+        t_temp = t_curr + delta_t
+        u_next = RungeKutta._euler.u_next(ode_system, delta_t, t_temp)
         # Now, u_next == U_{n + 1/2} + R_{n + 1/2} * delta_t
         u_next += u_curr
         u_next /= 2
@@ -61,15 +65,15 @@ class RungeKutta(OdeSolver):
         u_curr = ode_system.get_solution_column()  # u_curr == U_{n}
         RungeKutta._euler.update(ode_system, delta_t, t_curr)
         # Now, ode_system holds U_{n + 1/3}
-        RungeKutta._euler.update(ode_system, delta_t, t_curr + delta_t)
-        u_next = ode_system.get_solution_column()
+        t_temp = t_curr + delta_t
+        u_next = RungeKutta._euler.u_next(ode_system, delta_t, t_temp)
         # Now, u_next == U_{n + 1/3} + R_{n + 1/3} * dt
         u_next += u_curr * 3
         u_next /= 4
         # Now, u_next == U_{n + 2/3}.
         ode_system.set_solution_column(u_next)
-        RungeKutta._euler.update(ode_system, delta_t, t_curr + delta_t / 2.0)
-        u_next = ode_system.get_solution_column()
+        t_temp = t_curr + delta_t / 2
+        u_next = RungeKutta._euler.u_next(ode_system, delta_t, t_temp)
         # Now, u_next == U_{n + 2/3} + R_{n + 2/3} * dt
         u_next *= 2
         u_next += u_curr
