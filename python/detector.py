@@ -4,19 +4,7 @@ import numpy as np
 import abc
 
 import concept
-from spatial import FiniteElement
 import expansion
-
-
-class Off(concept.Detector):
-    """A jump detector that reports no cell as troubled.
-    """
-
-    def name(self, verbose=False):
-        return 'Off'
-
-    def get_troubled_cell_indices(self, elements, periodic: bool):
-        return []
 
 
 class All(concept.Detector):

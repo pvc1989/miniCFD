@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 import spatial
 import element
 import riemann
-import detector, limiter, viscous
 
 
 class TestLagrangeFR(unittest.TestCase):
@@ -97,15 +96,12 @@ class TestLagrangeFR(unittest.TestCase):
     def test_dissipation_matrices(self):
         x_left, x_right = -1.0, 1.0
         n_element = 23
-        a_const = 1.0
+        i_prev, i_curr, i_next = 10, 11, 12
         for degree in range(2, 10):
+            # turn off viscous
             scheme = spatial.LagrangeFR(
-                riemann.LinearAdvection(a_const),
+                riemann.LinearAdvection(a_const=1.0),
                 degree, n_element, x_left, x_right)
-            nu = np.random.rand()
-            scheme.set_detector_and_limiter(detector.All(), limiter.Off(),
-                viscous.Constant(nu))
-            i_prev, i_curr, i_next = 10, 11, 12
             cell_prev = scheme.get_element_by_index(i_prev)
             cell_curr = scheme.get_element_by_index(i_curr)
             cell_next = scheme.get_element_by_index(i_next)
@@ -113,7 +109,6 @@ class TestLagrangeFR(unittest.TestCase):
             shape = (n_term, n_term)
             first, last = i_curr*n_term, i_next*n_term
             zeros = np.zeros(n_term)
-            # turn off viscous
             s_prev = np.ndarray(shape)
             s_curr = np.ndarray(shape)
             s_next = np.ndarray(shape)
@@ -136,7 +131,18 @@ class TestLagrangeFR(unittest.TestCase):
                 residual = scheme.get_residual_column()
                 s_next[:,k] = residual[first : last]
             # turn on viscous
-            scheme.suppress_oscillations()
+            # TODO: define as method of spatial
+            nu = np.random.rand()
+            scheme = spatial.LagrangeFR(
+                riemann.LinearAdvectionDiffusion(a_const=1.0, b_const=nu),
+                degree, n_element, x_left, x_right)
+            cell_prev = scheme.get_element_by_index(i_prev)
+            cell_curr = scheme.get_element_by_index(i_curr)
+            cell_next = scheme.get_element_by_index(i_next)
+            n_term = cell_curr.n_term()
+            shape = (n_term, n_term)
+            first, last = i_curr*n_term, i_next*n_term
+            zeros = np.zeros(n_term)
             r_prev = np.ndarray(shape)
             r_curr = np.ndarray(shape)
             r_next = np.ndarray(shape)

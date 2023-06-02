@@ -8,20 +8,6 @@ import concept
 import expansion
 
 
-class Off(concept.Limiter):
-    """A dummy limiter for comparison, which keeps the given object unchanged.
-    """
-
-    def name(self, verbose=False):
-        return 'Off'
-
-    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
-        pass
-
-    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
-        return curr.expansion().get_coeff_ref()
-
-
 class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """

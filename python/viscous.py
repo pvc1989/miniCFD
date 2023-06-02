@@ -6,18 +6,6 @@ import element
 import detector
 
 
-class Off(concept.Viscous):
-
-    def __init__(self) -> None:
-        super().__init__()
-
-    def name(self, verbose=False) -> str:
-        return "Off"
-
-    def generate(self, troubled_cell_indices, elements, periodic: bool):
-        pass
-
-
 class Constant(concept.Viscous):
 
     def __init__(self, const=0.0) -> None:

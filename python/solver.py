@@ -25,11 +25,11 @@ class SolverBase(abc.ABC):
         self._spatial.set_detector_and_limiter(d, l, v)
         self._ode_solver = ode_solver
         self._solver_name = f'spatial.{self._spatial.name()}'
-        if not isinstance(d, detector.Off):
+        if d:
             self._solver_name += f', detector.{d.name()}'
-        if not isinstance(l, limiter.Off):
+        if l:
             self._solver_name += f', limiter.{l.name()}'
-        if not isinstance(v, viscous.Off):
+        if v:
             self._solver_name += f', viscous.{v.name(True)}'
         self._animation = None
         self._output_points = np.linspace(self._spatial.x_left(),
@@ -358,16 +358,13 @@ if __name__ == '__main__':
         default='LagrangeFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
-        choices=['Off', 'All', 'KXRCF', 'LWA', 'LYH', 'ZJ', 'Persson'],
-        default='Off',
+        choices=['All', 'KXRCF', 'LWA', 'LYH', 'ZJ', 'Persson'],
         help='method for detecting jumps')
     parser.add_argument('--limiter',
-        choices=['Off', 'LWA', 'ZXH', 'XXR'],
-        default='Off',
+        choices=['LWA', 'ZXH', 'XXR'],
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscous_model',
-        choices=['Off', 'Constant', 'Persson', 'Energy'],
-        default='Off',
+        choices=['Constant', 'Persson', 'Energy'],
         help='method for adding artificial viscosity')
     parser.add_argument('--viscous_model_const',
         default=0.0, type=float,
@@ -407,9 +404,7 @@ if __name__ == '__main__':
         SpatialClass = spatial.LegendreFR
     else:
         assert False
-    if args.detector == 'Off':
-        the_detector = detector.Off()
-    elif args.detector == 'All':
+    if args.detector == 'All':
         the_detector = detector.All()
     elif args.detector == 'KXRCF':
         the_detector = detector.Krivodonova2004()
@@ -422,27 +417,23 @@ if __name__ == '__main__':
     elif args.detector == 'Persson':
         the_detector = detector.Persson2006()
     else:
-        assert False
+        the_detector = None
     if args.limiter == 'LWA':
         the_limiter = limiter.LiWanAi2020()
     elif args.limiter == 'ZXH':
         the_limiter = limiter.ZhongXingHui2013()
     elif args.limiter == 'XXR':
         the_limiter = limiter.XuXiaoRui2023()
-    elif args.limiter == 'Off':
-        the_limiter = limiter.Off()
     else:
-        assert False
-    if args.viscous_model == 'Off':
-        the_viscous = viscous.Off()
-    elif args.viscous_model == 'Constant':
+        the_limiter = None
+    if args.viscous_model == 'Constant':
         the_viscous = viscous.Constant(args.viscous_model_const)
     elif args.viscous_model == 'Persson':
         the_viscous = viscous.Persson2006(args.viscous_model_const)
     elif args.viscous_model == 'Energy':
         the_viscous = viscous.Energy(args.viscous_model_const)
     else:
-        assert False
+        the_viscous = None
     if args.problem == 'Smooth':
         SolverClass = LinearSmooth
         the_riemann = riemann.LinearAdvectionDiffusion(args.convection_speed,

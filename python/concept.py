@@ -682,28 +682,29 @@ class SpatialScheme(OdeSystem):
         return self._elements[self.get_element_index(point)]
 
     def set_detector_and_limiter(self, detector, limiter, viscous):
-        assert isinstance(detector, Detector)
-        assert isinstance(limiter, Limiter)
-        assert isinstance(viscous, Viscous)
-        self._detector = detector
-        self._limiter = limiter
-        self._viscous = viscous
+        if isinstance(detector, Detector):
+            self._detector = detector
+        if isinstance(limiter, Limiter):
+            self._limiter = limiter
+        if isinstance(viscous, Viscous):
+            self._viscous = viscous
 
     def suppress_oscillations(self):
-        if isinstance(self._detector, Detector):
+        if self._detector:
             indices = self._detector.get_troubled_cell_indices(
                 self._elements, self.is_periodic())
-            if isinstance(self._limiter, Limiter):
+            if self._limiter:
                 self._limiter.reconstruct(indices,
                     self._elements, self.is_periodic())
-            if isinstance(self._viscous, Viscous):
+            if self._viscous:
                 self._viscous.generate(indices,
                     self._elements, self.is_periodic())
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):
             cell_i = self.get_element_by_index(i_cell)
-            if isinstance(self._viscous, Viscous):
+            extra_viscous = 0.0
+            if self._viscous:
                 extra_viscous = self._viscous.get_coeff(i_cell)
             delta_t = min(delta_t, cell_i.suggest_delta_t(extra_viscous))
         return delta_t
