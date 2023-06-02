@@ -93,77 +93,59 @@ class TestLagrangeFR(unittest.TestCase):
         # plt.show()
         plt.savefig("compare_resolutions.pdf")
 
+    def _get_spatial_matrices(self, scheme: spatial.FiniteElement, i_cell: int):
+        i_prev = i_cell - 1
+        i_next = (i_cell + 1) % scheme.n_element()
+        cell_prev = scheme.get_element_by_index(i_prev)
+        cell_curr = scheme.get_element_by_index(i_cell)
+        cell_next = scheme.get_element_by_index(i_next)
+        n_term = cell_curr.n_term()
+        shape = (n_term, n_term)
+        first, last = i_cell*n_term, i_next*n_term
+        zeros = np.zeros(n_term)
+        s_prev = np.ndarray(shape)
+        s_curr = np.ndarray(shape)
+        s_next = np.ndarray(shape)
+        for k in range(n_term):
+            k_only = np.zeros(n_term)
+            k_only[k] = 1
+            cell_prev.set_solution_coeff(k_only)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            s_prev[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(k_only)
+            cell_next.set_solution_coeff(zeros)
+            residual = scheme.get_residual_column()
+            s_curr[:,k] = residual[first : last]
+            cell_prev.set_solution_coeff(zeros)
+            cell_curr.set_solution_coeff(zeros)
+            cell_next.set_solution_coeff(k_only)
+            residual = scheme.get_residual_column()
+            s_next[:,k] = residual[first : last]
+        return s_prev, s_curr, s_next
+
     def test_dissipation_matrices(self):
         x_left, x_right = -1.0, 1.0
         n_element = 23
-        i_prev, i_curr, i_next = 10, 11, 12
+        i_curr = n_element // 2
         for degree in range(2, 10):
-            # turn off viscous
+            # inviscid
             scheme = spatial.LagrangeFR(
                 riemann.LinearAdvection(a_const=1.0),
                 degree, n_element, x_left, x_right)
-            cell_prev = scheme.get_element_by_index(i_prev)
-            cell_curr = scheme.get_element_by_index(i_curr)
-            cell_next = scheme.get_element_by_index(i_next)
-            n_term = cell_curr.n_term()
-            shape = (n_term, n_term)
-            first, last = i_curr*n_term, i_next*n_term
-            zeros = np.zeros(n_term)
-            s_prev = np.ndarray(shape)
-            s_curr = np.ndarray(shape)
-            s_next = np.ndarray(shape)
-            for k in range(n_term):
-                k_only = np.zeros(n_term)
-                k_only[k] = 1
-                cell_prev.set_solution_coeff(k_only)
-                cell_curr.set_solution_coeff(zeros)
-                cell_next.set_solution_coeff(zeros)
-                residual = scheme.get_residual_column()
-                s_prev[:,k] = residual[first : last]
-                cell_prev.set_solution_coeff(zeros)
-                cell_curr.set_solution_coeff(k_only)
-                cell_next.set_solution_coeff(zeros)
-                residual = scheme.get_residual_column()
-                s_curr[:,k] = residual[first : last]
-                cell_prev.set_solution_coeff(zeros)
-                cell_curr.set_solution_coeff(zeros)
-                cell_next.set_solution_coeff(k_only)
-                residual = scheme.get_residual_column()
-                s_next[:,k] = residual[first : last]
-            # turn on viscous
-            # TODO: define as method of spatial
+            s_prev, s_curr, s_next = self._get_spatial_matrices(scheme, i_curr)
+            # viscous
             nu = np.random.rand()
             scheme = spatial.LagrangeFR(
                 riemann.LinearAdvectionDiffusion(a_const=1.0, b_const=nu),
                 degree, n_element, x_left, x_right)
-            cell_prev = scheme.get_element_by_index(i_prev)
+            r_prev, r_curr, r_next = self._get_spatial_matrices(scheme, i_curr)
+            # compare
             cell_curr = scheme.get_element_by_index(i_curr)
-            cell_next = scheme.get_element_by_index(i_next)
-            n_term = cell_curr.n_term()
-            shape = (n_term, n_term)
-            first, last = i_curr*n_term, i_next*n_term
-            zeros = np.zeros(n_term)
-            r_prev = np.ndarray(shape)
-            r_curr = np.ndarray(shape)
-            r_next = np.ndarray(shape)
-            for k in range(n_term):
-                k_only = np.zeros(n_term)
-                k_only[k] = 1
-                cell_prev.set_solution_coeff(k_only)
-                cell_curr.set_solution_coeff(zeros)
-                cell_next.set_solution_coeff(zeros)
-                residual = scheme.get_residual_column()
-                r_prev[:,k] = residual[first : last]
-                cell_prev.set_solution_coeff(zeros)
-                cell_curr.set_solution_coeff(k_only)
-                cell_next.set_solution_coeff(zeros)
-                residual = scheme.get_residual_column()
-                r_curr[:,k] = residual[first : last]
-                cell_prev.set_solution_coeff(zeros)
-                cell_curr.set_solution_coeff(zeros)
-                cell_next.set_solution_coeff(k_only)
-                residual = scheme.get_residual_column()
-                r_next[:,k] = residual[first : last]
+            cell_prev = scheme.get_element_by_index(i_curr-1)
+            cell_next = scheme.get_element_by_index(i_curr+1)
             assert isinstance(cell_curr, element.LagrangeFR)
             mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices(
                 cell_prev.expansion(), cell_next.expansion())
