@@ -18,7 +18,7 @@ class SolverBase(abc.ABC):
     """Define common methods for all solvers.
     """
 
-    def __init__(self, spatial_scheme: concept.SpatialScheme,
+    def __init__(self, u_mean: float, spatial_scheme: concept.SpatialScheme,
             d: concept.Detector, l: concept.Limiter, v: concept.Viscous,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
@@ -34,6 +34,7 @@ class SolverBase(abc.ABC):
         self._animation = None
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)
+        self._u_mean = u_mean
 
     @abc.abstractmethod
     def problem_name(self) -> str:
@@ -54,7 +55,7 @@ class SolverBase(abc.ABC):
         fig = plt.figure(figsize=(8, 6))
         plt.xlabel(r'$x$')
         plt.ylabel(r'$u$')
-        plt.ylim([-1.4, 1.6])
+        plt.ylim([self._u_mean-1.2, self._u_mean+1.4])
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
@@ -201,12 +202,10 @@ class LinearSmooth(SolverBase):
     """Demo the usage of LinearAdvection related classes for smooth IC.
     """
 
-    def __init__(self, wave_number: int,
-            spatial_scheme: concept.SpatialScheme,
-            detector: concept.Detector, limiter: concept.Limiter,
-            viscous: concept.Viscous,
-            ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        super().__init__(u_mean, s, d, l, v, ode_solver)
         self._a_const = self._spatial.equation().get_convective_speed()
         self._b_const = self._spatial.equation().get_diffusive_coeff()
         self._k_const = wave_number
@@ -216,12 +215,14 @@ class LinearSmooth(SolverBase):
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
+        if self._u_mean:
+            my_name += f' + {self._u_mean}'
         return my_name
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
-        return value
+        return value + self._u_mean
 
     def u_exact(self, x_global, t_curr):
         ratio = np.exp(-t_curr * self._b_const * self._wave_number**2)
@@ -232,22 +233,22 @@ class LinearJumps(LinearSmooth):
     """Demo the usage of LinearAdvection related classes for IC with jumps.
     """
 
-    def __init__(self, wave_number: int,
-            spatial_scheme: concept.SpatialScheme,
-            detector: concept.Detector, limiter: concept.Limiter,
-            viscous: concept.Viscous,
-            ode_solver: concept.OdeSolver) -> None:
-        LinearSmooth.__init__(self, wave_number, spatial_scheme,
-            detector, limiter, viscous, ode_solver)
+    def __init__(self, u_mean: float, k: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        LinearSmooth.__init__(self, u_mean, k, s, d, l, v, ode_solver)
 
     def u_init(self, x_global):
-        value = LinearSmooth.u_init(self, x_global)
-        return np.sign(value)
+        x_global = x_global - self._spatial.x_left()
+        value = np.sin(x_global * self._wave_number)
+        return np.sign(value) + self._u_mean
 
     def problem_name(self):
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=$sign$(\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$))$'
+        if self._u_mean:
+            my_name += f' + {self._u_mean}'
         return my_name
 
 
@@ -255,12 +256,11 @@ class InviscidBurgers(SolverBase):
     """Demo the usage of InviscidBurgers related classes.
     """
 
-    def __init__(self, wave_number: int,
-            spatial_scheme: concept.SpatialScheme,
-            detector: concept.Detector, limiter: concept.Limiter,
-            viscous: concept.Viscous,
-            ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        super().__init__(u_mean, s, d, l, v, ode_solver)
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
         self._u_prev = dict()
@@ -269,18 +269,26 @@ class InviscidBurgers(SolverBase):
         my_name = self._spatial.equation().name() + r', $u(x,t=0)=\sin($'
         length = self._spatial.length() / 2
         my_name += f'{self._k_const:g}' + r'$\pi x/$' + f'{length:g}' + r'$)$'
+        if self._u_mean:
+            my_name += f' + {self._u_mean}'
         return my_name
 
     def u_init(self, x_global):
         x_global = x_global - self._spatial.x_left()
         value = np.sin(x_global * self._wave_number)
-        return value
+        return value + self._u_mean
 
     def u_exact(self, x_global, t_curr):
         """ Solve u_curr from u_curr = u_init(x - a(u_curr) * t_curr).
 
         Currently, the solution is only correct for standing waves in t <= 10.
+
+        To product for general cases, it's better to use a higher order scheme with a fine grid, e.g.:
+
+            python3 solver.py --t_end 2.0 --method LagrangeFR --degree 2 --problem Burgers --detector KXRCF --limiter LWA --n_element 201 --output vtu --n_frame 100
         """
+        if self._u_mean:
+            return np.nan
         def func(u_curr):
             ku = self._spatial.equation().get_convective_speed(u_curr)
             return u_curr - self.u_init(x_global - ku * t_curr)
@@ -303,12 +311,10 @@ class EulerRiemann(SolverBase):
     """Demo the usage of Euler related classes.
     """
 
-    def __init__(self,
-            spatial_scheme: concept.SpatialScheme,
-            detector: concept.Detector, limiter: concept.Limiter,
-            viscous: concept.Viscous,
-            ode_solver: concept.OdeSolver) -> None:
-        super().__init__(spatial_scheme, detector, limiter, viscous, ode_solver)
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        super().__init__(u_mean, s, d, l, v, ode_solver)
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
         self._riemann = riemann.Euler(gamma=1.4)
         self._value_left = self._riemann.equation().primitive_to_conservative(
@@ -376,6 +382,9 @@ if __name__ == '__main__':
         choices=['Smooth', 'Jumps', 'Burgers', 'Euler'],
         default='Smooth',
         help='problem to be solved')
+    parser.add_argument('--u_mean',
+        default=0.0, type=float,
+        help='mean of initial values')
     parser.add_argument('-a', '--convection_speed',
         default=1.0, type=float,
         help='phase speed of the wave')
@@ -449,7 +458,7 @@ if __name__ == '__main__':
         the_riemann = riemann.Euler(gamma=1.4)
     else:
         assert False
-    solver = SolverClass(args.wave_number,
+    solver = SolverClass(args.u_mean, args.wave_number,
         SpatialClass(the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
         the_detector, the_limiter, the_viscous,
