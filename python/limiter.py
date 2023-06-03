@@ -14,6 +14,7 @@ class CompactWENO(concept.Limiter):
 
     def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
         new_coeffs = []
+        # print('WENO on', troubled_cell_indices)
         for i_curr in troubled_cell_indices:
             curr = elements[i_curr]
             neighbors = []
@@ -35,10 +36,14 @@ class CompactWENO(concept.Limiter):
         assert i_new == len(new_coeffs)
 
     def _x_shift(self, this: concept.Element, that: concept.Element):
+        """Get the value of x_shift such that x_this == x_that + x_shift, in which
+            x_this is the value of x taken by a function defined on this, and
+            x_that is the value of x taken by a function defined on that.
+        """
         x_shift = 0.0
-        if this.x_right() < that.x_left() - that.length():  # this << that
+        if this.x_center() < that.x_left() - this.length():  # this << that
             x_shift = that.x_right() - this.x_left()
-        elif this.x_left() > that.x_right() + that.length():  # that << this
+        elif this.x_center() > that.x_right() + this.length():  # that << this
             x_shift = that.x_left() - this.x_right()
         else:
             assert np.abs((this.x_right() - that.x_left())
@@ -66,8 +71,6 @@ class ZhongXingHui2013(CompactWENO):
             neighbor: concept.Element) -> expansion.Legendre:
         this = curr.expansion()
         that = neighbor.expansion()
-        assert isinstance(this, expansion.Taylor)
-        assert isinstance(that, expansion.Taylor)
         if isinstance(this, expansion.Lagrange):
             Expansion = expansion.Lagrange
         elif isinstance(this, expansion.Legendre):
