@@ -77,7 +77,7 @@ class ZhongXingHui2013(CompactWENO):
             Expansion = expansion.Legendre
         else:
             assert False
-        borrowed = Expansion(this.degree(), this.coordinate(), this._value_type)
+        borrowed = Expansion(this.degree(), this.coordinate(), this.value_type())
         x_shift = self._x_shift(curr, neighbor)
         that_average = this.integrator().average(
             lambda x_this: that.global_to_value(x_this + x_shift),
@@ -142,8 +142,8 @@ class LiWanAi2020(CompactWENO):
         this = curr.expansion()
         that = neighbor.expansion()
         assert isinstance(that, expansion.Taylor)
-        borrowed = expansion.Legendre(1, this.coordinate(), this._value_type)
-        coeff = np.ndarray(2, dtype=this._value_type)
+        borrowed = expansion.Legendre(1, this.coordinate(), this.value_type())
+        coeff = np.ndarray(2, this.value_type())
         this_average = this.average()
         coeff[0] = this_average
         x_shift = self._x_shift(curr, neighbor)
@@ -177,7 +177,7 @@ class LiWanAi2020(CompactWENO):
         curr_legendre = curr.expansion()
         if not isinstance(curr_legendre, expansion.Legendre):
             curr_legendre = expansion.Legendre(curr.degree(),
-                curr.coordinate(), curr._value_type)
+                curr.coordinate(), curr.value_type())
             curr_legendre.approximate(lambda x: curr.get_solution_value(x))
         for degree in range(curr.degree(), 0, -1):
             candidates.append(
@@ -228,10 +228,11 @@ class LiWanAi2020(CompactWENO):
         # Legendre to Lagrange, if necessary:
         if isinstance(curr.expansion(), expansion.Lagrange):
             new_legendre = expansion.Legendre(curr.degree(),
-                curr.coordinate(), curr._value_type)
+                curr.coordinate(), curr.value_type())
             new_legendre.set_coeff(new_coeff)
+            print('hhh')
             new_lagrange = expansion.Lagrange(curr.degree(),
-                curr.coordinate(), curr._value_type)
+                curr.coordinate(), curr.value_type())
             new_lagrange.approximate(lambda x:
                 new_legendre.global_to_value(x))
             new_coeff = new_lagrange.get_coeff_ref()

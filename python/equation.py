@@ -7,6 +7,9 @@ import gas
 class ConservationLaw(concept.Equation):
     # \pdv{U}{t} + \pdv{F}{x} = 0
 
+    def __init__(self, value_type) -> None:
+        concept.Equation.__init__(self, value_type)
+
     def get_diffusive_coeff(self, u=0.0):
         return 0
 
@@ -20,8 +23,12 @@ class ConservationLaw(concept.Equation):
 class LinearAdvection(ConservationLaw):
     # ∂u/∂t + a * ∂u/∂x = 0
 
-    def __init__(self, a_const):
+    def __init__(self, a_const, value_type=float):
+        ConservationLaw.__init__(self, value_type)
         self._a = a_const
+
+    def n_component(self):
+        return 1
 
     def name(self, verbose=True) -> str:
         my_name = r'$\partial u/\partial t$+' + f'{self._a} '
@@ -38,8 +45,8 @@ class LinearAdvection(ConservationLaw):
 class LinearAdvectionDiffusion(LinearAdvection):
     # ∂u/∂t + a * ∂u/∂x = (∂/∂x)(b * ∂u/∂x)
 
-    def __init__(self, a_const, b_const):
-        super().__init__(a_const)
+    def __init__(self, a_const, b_const, value_type=float):
+        LinearAdvection.__init__(self, a_const, value_type)
         self._b = b_const
 
     def name(self, verbose=True) -> str:
@@ -56,8 +63,12 @@ class InviscidBurgers(ConservationLaw):
     # ∂u/∂t + k * u * ∂u/∂x = 0
 
     def __init__(self, k=1.0):
+        ConservationLaw.__init__(self, float)
         assert k > 0.0
         self._k = k
+
+    def n_component(self):
+        return 1
 
     def name(self, verbose=True) -> str:
         my_name = r'$\partial u/\partial t+$' + f'{self._k} u '
@@ -76,7 +87,7 @@ class Burgers(InviscidBurgers):
 
     def __init__(self, k_const=1.0, nu_const=0.0):
         assert k_const > 0.0 and nu_const >= 0.0
-        super().__init__(k_const)
+        InviscidBurgers.__init__(self, k_const, float)
         self._nu = nu_const
 
     def name(self, verbose=True) -> str:
@@ -91,24 +102,32 @@ class Burgers(InviscidBurgers):
 
 class LinearSystem(ConservationLaw):
 
-    def __init__(self, A_const):
+    def __init__(self, A_const: np.ndarray):
+        ConservationLaw.__init__(self, np.ndarray)
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
+
+    def n_component(self):
+        return len(self._A)
 
     def name(self, verbose=True) -> str:
         return "LinearSystem"
 
-    def get_convective_flux(self, U):
+    def get_convective_flux(self, U: np.ndarray) -> np.ndarray:
         return self._A.dot(U)
 
-    def get_convective_speed(self, U):
+    def get_convective_speed(self, U: np.ndarray) -> np.ndarray:
         return self._A
 
 
 class Euler(ConservationLaw):
 
     def __init__(self, gamma=1.4):
+        ConservationLaw.__init__(self, np.ndarray)
         self._gas = gas.Ideal(gamma)
+
+    def n_component(self):
+        return 3
 
     def name(self, verbose=True) -> str:
         return "Euler"

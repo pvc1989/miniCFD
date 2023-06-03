@@ -147,9 +147,16 @@ class Expansion(abc.ABC):
     """The polynomial approximation of a general function.
     """
 
-    def __init__(self, coordinate: Coordinate, integrator: Integrator) -> None:
+    def __init__(self, coordinate: Coordinate, integrator: Integrator,
+            value_type=float) -> None:
         self._coordinate = coordinate
         self._integrator = integrator
+        self._value_type = value_type
+
+    def value_type(self):
+        """Get the type of value.
+        """
+        return self._value_type
 
     def coordinate(self) -> Coordinate:
         """Get a refenece to the underlying Coordinate object.
@@ -248,10 +255,18 @@ class Equation(abc.ABC):
     """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
     """
 
+    def __init__(self, value_type) -> None:
+        self._value_type = value_type
+
+    def value_type(self):
+        """Get the type of value.
+        """
+        return self._value_type
+
+    @abc.abstractmethod
     def n_component(self):
         """Number of scalar components in U.
         """
-        return 1
 
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
@@ -288,10 +303,14 @@ class RiemannSolver(abc.ABC):
     """An exact or approximate solver for the Riemann problem of an Equation.
     """
 
-    @abc.abstractmethod
+    def __init__(self, equation: Equation) -> None:
+        self._equation = equation
+
     def equation(self) -> Equation:
-        """Get a reference to the underlying Equation object.
-        """
+        return self._equation
+
+    def value_type(self):
+        return self.equation().value_type()
 
     @abc.abstractmethod
     def get_value(self, x_global, t_curr):
@@ -323,20 +342,20 @@ class Element(abc.ABC):
     """
     # TODO: rename to PhysicalElement
 
-    def __init__(self, riemann: RiemannSolver, coordinate: Coordinate,
-            expansion: Expansion, value_type=float) -> None:
+    def __init__(self, riemann: RiemannSolver, expansion: Expansion) -> None:
         assert isinstance(riemann, RiemannSolver)
-        assert isinstance(coordinate, Coordinate)
         self._riemann = riemann
-        self._coordinate = coordinate
-        self._integrator = expansion.integrator()
         self._expansion = expansion
-        self._value_type = value_type
+        self._coordinate = expansion.coordinate()
+        self._integrator = expansion.integrator()
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
         """
         return self._riemann.equation()
+
+    def value_type(self):
+        return self.equation().value_type()
 
     def coordinate(self) -> Coordinate:
         """Get a refenece to the underlying Coordinate object.
@@ -602,6 +621,9 @@ class SpatialScheme(OdeSystem):
         self._detector = detector
         self._limiter = limiter
         self._viscous = viscous
+
+    def value_type(self):
+        return self._riemann.value_type()
 
     def degree(self):
         """Get the degree of the polynomial approximation.

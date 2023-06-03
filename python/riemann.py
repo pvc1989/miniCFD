@@ -92,8 +92,8 @@ class Solver(concept.RiemannSolver):
 
 class LinearAdvection(Solver):
 
-    def __init__(self, a_const):
-        self._equation = equation.LinearAdvection(a_const)
+    def __init__(self, a_const: float, value_type=float):
+        self._equation = equation.LinearAdvection(a_const, value_type)
 
     def equation(self) -> concept.Equation:
         return self._equation

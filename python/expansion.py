@@ -25,10 +25,10 @@ class Taylor(Expansion):
         assert 0 <= degree < 20
         self._n_term = degree + 1
         Expansion.__init__(self, coordinate,
-            integrator.GaussLegendre(coordinate))
+            integrator.GaussLegendre(coordinate),
+            value_type)
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
-        self._value_type = value_type
 
     def name(self, verbose) -> str:
         my_name = 'Taylor'
@@ -135,7 +135,7 @@ class Taylor(Expansion):
         """
         # TODO: evaluate the k-th derivative only
         basis_derivatives = Taylor.get_basis_derivatives(self, x_global)
-        values = np.zeros(self.n_term(), dtype=self._value_type)
+        values = np.zeros(self.n_term(), self.value_type())
         values[0] = self.global_to_value(x_global)
         for k in range(1, self.n_term()):
             for l in range(k, self.n_term()):
@@ -168,7 +168,7 @@ class Taylor(Expansion):
 
     def convert_to(self, Expansion):
         assert issubclass(Expansion, Taylor)
-        that = Expansion(self.degree(), self.coordinate(), self._value_type)
+        that = Expansion(self.degree(), self.coordinate(), self.value_type())
         that.approximate(lambda x: self.global_to_value(x))
         return that
 
@@ -395,7 +395,7 @@ class TruncatedLegendre(Taylor):
     def __init__(self, degree: int, that: Legendre) -> None:
         assert 0 <= degree <= that.degree()
         assert isinstance(that, Legendre)
-        Taylor.__init__(self, degree, that.coordinate(), that._value_type)
+        Taylor.__init__(self, degree, that.coordinate(), that.value_type())
         n_term = degree + 1
         self._taylor_coeff[:] = deepcopy(that._taylor_coeff[0:n_term])
         assert isinstance(that, Legendre) # TODO: relax to Taylor

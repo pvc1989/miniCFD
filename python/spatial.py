@@ -15,7 +15,7 @@ class FiniteElement(concept.SpatialScheme):
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
-            ElementType: concept.Element, value_type=float) -> None:
+            ElementType: concept.Element) -> None:
         concept.SpatialScheme.__init__(self, riemann,
             n_element, x_left, x_right)
         assert degree >= 0
@@ -27,11 +27,10 @@ class FiniteElement(concept.SpatialScheme):
             self._x_left_sorted[i_element] = x_left_i
             x_right_i = x_left_i + delta_x
             element_i = ElementType(riemann, degree,
-                LinearCoordinate(x_left_i, x_right_i), value_type)
+                LinearCoordinate(x_left_i, x_right_i))
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
-        self._value_type = value_type
 
     def n_dof(self):
         return self.n_element() * self.get_element_by_index(0).n_dof()
@@ -44,7 +43,7 @@ class FiniteElement(concept.SpatialScheme):
     def get_interface_fluxes(self):
         """Get the interface flux at each element interface.
         """
-        interface_fluxes = np.ndarray(self.n_element() + 1, self._value_type)
+        interface_fluxes = np.ndarray(self.n_element() + 1, self.value_type())
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
@@ -91,7 +90,7 @@ class FiniteElement(concept.SpatialScheme):
         self.suppress_oscillations()
 
     def get_solution_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
+        column = np.zeros(self.n_dof(), self.value_type())
         first = 0
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
@@ -113,7 +112,7 @@ class DiscontinuousGalerkin(FiniteElement):
     """
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
+        column = np.zeros(self.n_dof(), self.value_type())
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self.n_element()):
@@ -151,10 +150,9 @@ class LegendreDG(DiscontinuousGalerkin):
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
-            value_type=float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
         FiniteElement.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LegendreDG, value_type)
+            n_element, x_left, x_right, element.LegendreDG)
 
     def name(self, verbose=True):
         my_name = 'LegendreDG'
@@ -168,10 +166,9 @@ class LagrangeDG(DiscontinuousGalerkin):
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
-            value_type=float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LagrangeDG, value_type)
+            n_element, x_left, x_right, element.LagrangeDG)
 
     def name(self, verbose=True):
         my_name = 'LagrangeDG'
@@ -185,7 +182,7 @@ class FluxReconstruction(FiniteElement):
     """
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self._value_type)
+        column = np.zeros(self.n_dof(), self.value_type())
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
@@ -232,10 +229,9 @@ class LagrangeFR(FluxReconstruction):
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
-            value_type=float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LagrangeFR, value_type)
+            n_element, x_left, x_right, element.LagrangeFR)
 
     def name(self, verbose=True):
         my_name = 'LagrangeFR'
@@ -249,10 +245,9 @@ class LegendreFR(FluxReconstruction):
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
-            value_type=float) -> None:
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LegendreFR, value_type)
+            n_element, x_left, x_right, element.LegendreFR)
 
     def name(self, verbose=True):
         my_name = 'LegendreFR'

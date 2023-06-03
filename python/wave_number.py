@@ -14,20 +14,21 @@ class WaveNumberDisplayer:
 
     def __init__(self, x_left, x_right, n_element) -> None:
         self._a = 1.0
-        self._riemann = riemann.LinearAdvection(self._a)
+        self._riemann = riemann.LinearAdvection(self._a, complex)
         self._x_left = x_left
         self._x_right = x_right
         self._n_element = n_element
 
-    def build_scheme(self, method: spatial.FiniteElement, degree: int):
-        scheme = method(self._riemann,
-            degree, self._n_element, self._x_left, self._x_right, complex)
+    def build_scheme(self, Method, degree: int):
+        assert issubclass(Method, spatial.FiniteElement)
+        scheme = Method(self._riemann,
+            degree, self._n_element, self._x_left, self._x_right)
         return scheme
 
-    def get_spatial_matrix(self, scheme: spatial.FiniteElement,
-            kappa_h: float):
+    def get_spatial_matrix(self, scheme: spatial.FiniteElement, kappa_h: float):
         """Get the spatial matrix of a FiniteElement scheme.
         """
+        assert isinstance(scheme, spatial.FiniteElement)
         # kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
         n_term = scheme.degree() + 1
         matrices = np.zeros((self._n_element, n_term, n_term), dtype=complex)
@@ -51,14 +52,14 @@ class WaveNumberDisplayer:
                 matrix[:, col] /= np.exp(1j * i_element * kappa_h)
         return matrices[-1]
 
-    def get_modified_wavenumbers(self, method: spatial.FiniteElement,
-            degree: int, sampled_wavenumbers: np.ndarray):
+    def get_modified_wavenumbers(self, Method, degree: int,
+            sampled_wavenumbers: np.ndarray):
         """Get the eigenvalues of a scheme at a given set of wavenumbers.
         """
         n_sample = len(sampled_wavenumbers)
         n_term = degree + 1
         modified_wavenumbers = np.ndarray((n_sample, n_term), dtype=complex)
-        scheme = self.build_scheme(method, degree)
+        scheme = self.build_scheme(Method, degree)
         for i_sample in range(n_sample):
             kappa_h = sampled_wavenumbers[i_sample]
             matrix = self.get_spatial_matrix(scheme, kappa_h)
@@ -93,8 +94,7 @@ class WaveNumberDisplayer:
             physical_eigvals[i_sample] = pairs[i_mode][0]
         return physical_eigvals
 
-    def plot_modified_wavenumbers(self, method: spatial.FiniteElement,
-            degree: int, n_sample: int):
+    def plot_modified_wavenumbers(self, Method, degree: int, n_sample: int):
         """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
         """
         xticks_labels = np.linspace(-degree-1, degree+1, 2*degree+3, dtype=int)
@@ -102,7 +102,7 @@ class WaveNumberDisplayer:
         xticks_ticks = xticks_labels * np.pi
         kh_min, kh_max = xticks_ticks[0], xticks_ticks[-1]
         sampled_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
-        modified_wavenumbers = self.get_modified_wavenumbers(method,
+        modified_wavenumbers = self.get_modified_wavenumbers(Method,
             degree, sampled_wavenumbers)
         physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
             modified_wavenumbers)
@@ -138,7 +138,7 @@ class WaveNumberDisplayer:
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        scheme = self.build_scheme(method, degree)
+        scheme = self.build_scheme(Method, degree)
         plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.pdf')
 
     def compare_wave_numbers(self, methods, degrees, n_sample: int,

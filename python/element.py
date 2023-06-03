@@ -19,8 +19,8 @@ class DiscontinuousGalerkin(Element):
     _cfl[:, 3] = (1.256, 0.409, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
     _cfl[:, 4] = (1.392, 0.464, 0.235, 0.145, 0.100, 0.073, 0.056, 0.045, 0.037)
 
-    def __init__(self, r: RiemannSolver, e: Expansion, value_type) -> None:
-        Element.__init__(self, r, e.coordinate(), e, value_type)
+    def __init__(self, r: RiemannSolver, e: Expansion) -> None:
+        Element.__init__(self, r, e)
 
     def suggest_cfl(self, rk_order: int) -> float:
         return DiscontinuousGalerkin._cfl[self.degree()][rk_order]
@@ -31,9 +31,9 @@ class LagrangeDG(DiscontinuousGalerkin):
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate, value_type=float) -> None:
-        e = LagrangeExpansion(degree, coordinate, value_type)
-        DiscontinuousGalerkin.__init__(self, riemann, e, value_type)
+            coordinate: Coordinate) -> None:
+        e = LagrangeExpansion(degree, coordinate, riemann.value_type())
+        DiscontinuousGalerkin.__init__(self, riemann, e)
         self._mass_matrix = self._build_mass_matrix()
 
     def expansion(self) -> LagrangeExpansion:
@@ -54,9 +54,9 @@ class LegendreDG(DiscontinuousGalerkin):
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate, value_type=float) -> None:
-        e = LegendreExpansion(degree, coordinate, value_type)
-        DiscontinuousGalerkin.__init__(self, riemann, e, value_type)
+            coordinate: Coordinate) -> None:
+        e = LegendreExpansion(degree, coordinate, riemann.value_type())
+        DiscontinuousGalerkin.__init__(self, riemann, e)
 
     def expansion(self) -> LegendreExpansion:
         return Element.expansion(self)
@@ -69,8 +69,8 @@ class LegendreDG(DiscontinuousGalerkin):
 
 class FluxReconstruction(Element):
 
-    def __init__(self, r: RiemannSolver, e: Expansion, value_type) -> None:
-        Element.__init__(self, r, e.coordinate(), e, value_type)
+    def __init__(self, r: RiemannSolver, e: Expansion) -> None:
+        Element.__init__(self, r, e)
         self._correction = Vincent(e.degree(), Vincent.huyhn_lump_lobatto)
 
     def suggest_cfl(self, rk_order: int) -> float:
@@ -110,9 +110,9 @@ class LagrangeFR(FluxReconstruction):
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate, value_type=float) -> None:
-        e = LagrangeExpansion(degree, coordinate, value_type)
-        FluxReconstruction.__init__(self, riemann, e, value_type)
+            coordinate: Coordinate) -> None:
+        e = LagrangeExpansion(degree, coordinate, riemann.value_type())
+        FluxReconstruction.__init__(self, riemann, e)
         self._mass_matrix = LagrangeDG._build_mass_matrix(self)
 
     def expansion(self) -> LagrangeExpansion:
@@ -164,7 +164,7 @@ class LagrangeFR(FluxReconstruction):
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
         nodes = self.expansion().get_sample_points()
-        values = np.ndarray(len(nodes), self._value_type)
+        values = np.ndarray(len(nodes), self.value_type())
         for i in range(len(nodes)):
             values[i] = self.get_flux_gradient(nodes[i],
                 upwind_flux_left, upwind_flux_right, extra_viscous)
@@ -238,9 +238,9 @@ class LegendreFR(FluxReconstruction):
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate, value_type=float) -> None:
-        e = LegendreExpansion(degree, coordinate, value_type)
-        FluxReconstruction.__init__(self, riemann, e, value_type)
+            coordinate: Coordinate) -> None:
+        e = LegendreExpansion(degree, coordinate, riemann.value_type())
+        FluxReconstruction.__init__(self, riemann, e)
 
     def expansion(self) -> LegendreExpansion:
         return Element.expansion(self)
