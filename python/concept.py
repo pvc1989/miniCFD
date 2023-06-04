@@ -507,6 +507,52 @@ class Element(abc.ABC):
         return delta_t * self.suggest_cfl(3)
 
 
+class Grid(abc.ABC):
+
+    def __init__(self, n_element: int):
+        self._elements = np.ndarray(n_element, Element)
+
+    @abc.abstractmethod
+    def get_element_index(self, point) -> int:
+        """Get the index of the element in which the given point locates.
+        """
+
+    def get_element_by_index(self, index: int) -> Element:
+        """Get the index of the element in which the point locates.
+        """
+        return self._elements[index]
+
+    def get_element(self, point) -> Element:
+        """Get the element in which the given point locates.
+        """
+        return self._elements[self.get_element_index(point)]
+
+    def x_left(self):
+        """Get the coordinate of this object's left boundary.
+        """
+        return self.get_element_by_index(0).x_left()
+
+    def x_right(self):
+        """Get the coordinate of this object's right boundary.
+        """
+        return self.get_element_by_index(-1).x_right()
+
+    def length(self):
+        """Get the length of this object.
+        """
+        return self.x_right() - self.x_left()
+
+    def n_element(self):
+        """Count elements in this object.
+        """
+        return len(self._elements)
+
+    def delta_x(self, i_cell: int):
+        """Get the length of the i-th element.
+        """
+        return self.get_element_by_index(i_cell).length()
+
+
 class Detector(abc.ABC):
     """An object that detects jumps on an element.
     """
@@ -517,7 +563,7 @@ class Detector(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_troubled_cell_indices(self, elements, periodic: bool):
+    def get_troubled_cell_indices(self, grid: Grid, periodic: bool):
         """Whether the current element is troubled.
         """
 
@@ -532,7 +578,7 @@ class Limiter(abc.ABC):
         """
 
     @abc.abstractmethod
-    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
+    def reconstruct(self, troubled_cell_indices, grid: Grid, periodic: bool):
         """Reconstruct the expansion on each troubled cell.
         """
 
@@ -555,7 +601,7 @@ class Viscous(abc.ABC):
         """
 
     @abc.abstractmethod
-    def generate(self, troubled_cell_indices, elements, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: Grid, periodic: bool):
         """Generate artificial viscosity for each troubled cell.
         """
 
@@ -607,7 +653,7 @@ class OdeSolver(abc.ABC):
         """
 
 
-class SpatialScheme(OdeSystem):
+class SpatialScheme(Grid, OdeSystem):
     """An ODE system given by some spatial scheme.
     """
 
@@ -616,8 +662,8 @@ class SpatialScheme(OdeSystem):
             detector=None, limiter=None, viscous=None) -> None:
         assert x_left < x_right
         assert n_element > 1
+        Grid.__init__(self, n_element)
         self._riemann = riemann
-        self._elements = np.ndarray(n_element, Element)
         self._detector = detector
         self._limiter = limiter
         self._viscous = viscous
@@ -637,31 +683,6 @@ class SpatialScheme(OdeSystem):
     def name(self, verbose: bool) -> str:
         """Get the compact string representation of the method.
         """
-
-    def x_left(self):
-        """Get the coordinate of this object's left boundary.
-        """
-        return self.get_element_by_index(0).x_left()
-
-    def x_right(self):
-        """Get the coordinate of this object's right boundary.
-        """
-        return self.get_element_by_index(-1).x_right()
-
-    def length(self):
-        """Get the length of this object.
-        """
-        return self.x_right() - self.x_left()
-
-    def n_element(self):
-        """Count elements in this object.
-        """
-        return len(self._elements)
-
-    def delta_x(self, i_cell: int):
-        """Get the length of the i-th element.
-        """
-        return self.get_element_by_index(i_cell).length()
 
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
@@ -688,21 +709,6 @@ class SpatialScheme(OdeSystem):
         """Get the flux value at a given point.
         """
 
-    @abc.abstractmethod
-    def get_element_index(self, point) -> int:
-        """Get the index of the element in which the given point locates.
-        """
-
-    def get_element_by_index(self, index: int) -> Element:
-        """Get the index of the element in which the point locates.
-        """
-        return self._elements[index]
-
-    def get_element(self, point) -> Element:
-        """Get the element in which the given point locates.
-        """
-        return self._elements[self.get_element_index(point)]
-
     def set_detector_and_limiter(self, detector, limiter, viscous):
         if isinstance(detector, Detector):
             self._detector = detector
@@ -714,13 +720,11 @@ class SpatialScheme(OdeSystem):
     def suppress_oscillations(self):
         if self._detector:
             indices = self._detector.get_troubled_cell_indices(
-                self._elements, self.is_periodic())
+                self, self.is_periodic())
             if self._limiter:
-                self._limiter.reconstruct(indices,
-                    self._elements, self.is_periodic())
+                self._limiter.reconstruct(indices, self, self.is_periodic())
             if self._viscous:
-                self._viscous.generate(indices,
-                    self._elements, self.is_periodic())
+                self._viscous.generate(indices, self, self.is_periodic())
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):

@@ -79,9 +79,9 @@ class TestLimiters(unittest.TestCase):
         for i in range(len(limiters)):
             scheme.initialize(u_init)
             indices = self._detector.get_troubled_cell_indices(
-                scheme._elements, scheme.is_periodic())
+                scheme, scheme.is_periodic())
             limiters[i].reconstruct(indices,
-                scheme._elements, scheme.is_periodic())
+                scheme, scheme.is_periodic())
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
@@ -132,9 +132,9 @@ class TestLimiters(unittest.TestCase):
         for i in range(len(limiters)):
             scheme.initialize(u_init)
             indices = self._detector.get_troubled_cell_indices(
-                scheme._elements, scheme.is_periodic())
+                scheme, scheme.is_periodic())
             limiters[i].reconstruct(indices,
-                scheme._elements, scheme.is_periodic())
+                scheme, scheme.is_periodic())
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],

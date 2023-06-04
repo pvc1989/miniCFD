@@ -18,7 +18,7 @@ class Constant(concept.Viscous):
         else:
             return 'Constant'
 
-    def generate(self, troubled_cell_indices, elements, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._const
@@ -57,10 +57,10 @@ class Persson2006(concept.Viscous):
             nu = 0.0
         return nu
 
-    def generate(self, troubled_cell_indices, elements, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
-            coeff = self._get_viscous_coeff(elements[i_cell])
+            coeff = self._get_viscous_coeff(grid.get_element_by_index(i_cell))
             print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
@@ -156,12 +156,12 @@ class Energy(concept.Viscous):
         return min(jumps_to_energy(left_jumps, left_distance),
             jumps_to_energy(right_jumps, right_distance))
 
-    def _get_viscous_coeff(self, elements, i_curr):
+    def _get_viscous_coeff(self, grid: concept.Grid, i_curr):
         i_left = i_curr - 1
-        i_right = (i_curr + 1) % len(elements)
-        curr = elements[i_curr]
-        left = elements[i_left]
-        right = elements[i_right]
+        i_right = (i_curr + 1) % grid.n_element()
+        curr = grid.get_element_by_index(i_curr)
+        left = grid.get_element_by_index(i_left)
+        right = grid.get_element_by_index(i_right)
         # TODO: move to element.LagrangeFR
         assert isinstance(curr, element.LagrangeFR)
         assert isinstance(left, element.LagrangeFR)
@@ -183,10 +183,10 @@ class Energy(concept.Viscous):
             left.expansion(), right.expansion())
         return oscillation_energy / (-dissipation * self._tau)
 
-    def generate(self, troubled_cell_indices, elements, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
-            coeff = self._get_viscous_coeff(elements, i_cell)
+            coeff = self._get_viscous_coeff(grid, i_cell)
             coeff = min(coeff, self._nu_max)
             # print(f'ν[{i_cell}] = {coeff:.2e}')
             self._index_to_coeff[i_cell] = coeff

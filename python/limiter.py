@@ -12,24 +12,24 @@ class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """
 
-    def reconstruct(self, troubled_cell_indices, elements, periodic: bool):
+    def reconstruct(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
         new_coeffs = []
         # print('WENO on', troubled_cell_indices)
         for i_curr in troubled_cell_indices:
-            curr = elements[i_curr]
+            curr = grid.get_element_by_index(i_curr)
             neighbors = []
             if periodic or i_curr > 0:
                 i_prev = i_curr - 1
-                neighbors.append(elements[i_prev])
-            if periodic or i_curr + 1 < len(elements):
-                i_next = (i_curr + 1) % len(elements)
-                neighbors.append(elements[i_next])
+                neighbors.append(grid.get_element_by_index(i_prev))
+            if periodic or i_curr + 1 < grid.n_element():
+                i_next = (i_curr + 1) % grid.n_element()
+                neighbors.append(grid.get_element_by_index(i_next))
             coeff = self.get_new_coeff(curr, neighbors)
             new_coeffs.append(coeff)
         assert len(new_coeffs) == len(troubled_cell_indices)
         i_new = 0
         for i_curr in troubled_cell_indices:
-            curr = elements[i_curr]
+            curr = grid.get_element_by_index(i_curr)
             assert isinstance(curr, concept.Element)
             curr.set_solution_coeff(new_coeffs[i_new])
             i_new += 1
