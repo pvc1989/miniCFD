@@ -27,7 +27,7 @@ class LinearAdvection(object):
         self._fr = spatial.LagrangeFR(riemann_object,
             degree, n_element, x_left, x_right)
         self._length = self._dg.length()
-        self._delta_x = self._dg.delta_x()
+        self._delta_x = self._dg.delta_x(0)
         self._kappa_low = k_low * np.pi / self._delta_x
         self._kappa_high = k_high * np.pi / self._delta_x
         self._ode_solver = ode_solver

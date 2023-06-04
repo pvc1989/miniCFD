@@ -29,7 +29,7 @@ class WaveNumberDisplayer:
         """Get the spatial matrix of a FiniteElement scheme.
         """
         assert isinstance(scheme, spatial.FiniteElement)
-        # kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x()
+        # kappa_h = k_int * 2 * np.pi / scheme.length() * scheme.delta_x(0)
         n_term = scheme.degree() + 1
         matrices = np.zeros((self._n_element, n_term, n_term), dtype=complex)
         for col in range(n_term):

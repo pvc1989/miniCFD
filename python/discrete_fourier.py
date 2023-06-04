@@ -49,7 +49,7 @@ class DiscreteFourierAnalysis:
         ode_solver = temporal.RungeKutta(3)
         for k in range(1, 1 + k_max):
             kappa = k * np.pi / (spatial_scheme.length() / 2)
-            reduced_wavenumbers[k-1] = kappa * spatial_scheme.delta_x()
+            reduced_wavenumbers[k-1] = kappa * spatial_scheme.delta_x(0)
             def u_init(x):
                 return np.exp(1.0j * kappa * x)
             kth_fourier_of_u_init = 0.0j
@@ -69,7 +69,7 @@ class DiscreteFourierAnalysis:
             kth_fourier_of_u_tau += 1j * self.get_kth_fourier_coeff(k,
                 lambda x: spatial_scheme.get_solution_value(x))
             # put together
-            modified_wavenumbers[k-1] = (1.0j * spatial_scheme.delta_x()
+            modified_wavenumbers[k-1] = (1.0j * spatial_scheme.delta_x(0)
                 / (self._a * self._tau)
                 * np.log(kth_fourier_of_u_tau / kth_fourier_of_u_init))
         return reduced_wavenumbers, modified_wavenumbers
