@@ -283,7 +283,7 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def set_coeff(self, coeff):
+    def set_coeff(self, coeff: np.ndarray):
         """Set the coefficient for each basis.
         """
 
@@ -291,6 +291,64 @@ class Expansion(abc.ABC):
     def get_coeff_ref(self) -> np.ndarray:
         """Get the reference to the coefficient for each basis.
         """
+
+
+class ShiftedExpansion(Expansion):
+    """An wrapper that acts as if a given expansion is shifted along x-axis by a given amount.
+    """
+
+    def __init__(self, expansion: Expansion, x_shift: float):
+        Expansion.__init__(self,
+            ShiftedCoordinate(expansion.coordinate(), x_shift),
+            None, expansion.value_type())
+        self._unshifted_expansion = expansion
+        self._x_shift = x_shift
+
+    def name(self, verbose: bool) -> str:
+        return self._unshifted_expansion.name(verbose)
+
+    def n_term(self):
+        return self._unshifted_expansion.n_term()
+
+    def degree(self):
+        return self._unshifted_expansion.degree()
+
+    def global_to_value(self, x_global: float):
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_value(x_unshifted)
+
+    def global_to_gradient(self, x_global: float):
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_gradient(x_unshifted)
+
+    def get_coeff_ref(self) -> np.ndarray:
+        return self._unshifted_expansion.get_coeff_ref()
+
+    # The following methods are banned for this wrapper.
+
+    def approximate(self, function: callable):
+        assert False
+
+    def average(self):
+        assert False
+
+    def get_basis(self, i_basis: int) -> callable:
+        assert False 
+
+    def get_basis_values(self, x_global: float) -> np.ndarray:
+        assert False
+
+    def get_basis_gradients(self, x_global: float) -> np.ndarray:
+        assert False
+
+    def get_basis_hessians(self, x_global: float) -> np.ndarray:
+        assert False
+
+    def get_basis_innerproducts(self):
+        assert False
+
+    def set_coeff(self, coeff: np.ndarray):
+        assert False
 
 
 class Equation(abc.ABC):

@@ -6,6 +6,7 @@ from scipy import integrate
 from matplotlib import pyplot as plt
 
 import expansion
+from concept import ShiftedExpansion
 from coordinate import LinearCoordinate
 
 
@@ -87,6 +88,26 @@ class TestTaylor(unittest.TestCase):
         plt.ylim([-1.5, 2.0])
         # plt.show()
         plt.savefig("expansion_on_taylor.pdf")
+
+    def test_consistency_with_shifted(self):
+        """Test consistency with a shifted Expansion.
+        """
+        self._expansion.approximate(np.sin)
+        x_shift = np.random.rand()
+        shifted = ShiftedExpansion(self._expansion, x_shift)
+        expected = expansion.Taylor(self._expansion.degree(),
+            LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
+            self._expansion.value_type())
+        expected.approximate(lambda x: np.sin(x - x_shift))
+        self.assertAlmostEqual(0.0, np.linalg.norm(shifted.get_coeff_ref() -
+            expected.get_coeff_ref()))
+        points = np.linspace(-1.0, 1.0, num=201)
+        for x_local in points:
+            x_global = expected.coordinate().local_to_global(x_local)
+            self.assertAlmostEqual(shifted.global_to_value(x_global),
+                expected.global_to_value(x_global))
+            self.assertAlmostEqual(shifted.global_to_gradient(x_global),
+                expected.global_to_gradient(x_global))
 
 
 class TestLagrange(unittest.TestCase):
@@ -199,6 +220,26 @@ class TestLagrange(unittest.TestCase):
         product = self._expansion.get_coeff_ref().dot(weights)
         self.assertAlmostEqual(integral, product)
 
+    def test_consistency_with_shifted(self):
+        """Test consistency with a shifted Expansion.
+        """
+        self._expansion.approximate(np.sin)
+        x_shift = np.random.rand()
+        shifted = ShiftedExpansion(self._expansion, x_shift)
+        expected = expansion.Lagrange(self._expansion.degree(),
+            LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
+            self._expansion.value_type())
+        expected.approximate(lambda x: np.sin(x - x_shift))
+        self.assertAlmostEqual(0.0, np.linalg.norm(shifted.get_coeff_ref() -
+            expected.get_coeff_ref()))
+        points = np.linspace(-1.0, 1.0, num=201)
+        for x_local in points:
+            x_global = expected.coordinate().local_to_global(x_local)
+            self.assertAlmostEqual(shifted.global_to_value(x_global),
+                expected.global_to_value(x_global))
+            self.assertAlmostEqual(shifted.global_to_gradient(x_global),
+                expected.global_to_gradient(x_global))
+
 
 class TestLegendre(unittest.TestCase):
     """Test the Legendre class.
@@ -309,6 +350,26 @@ class TestLegendre(unittest.TestCase):
             self.assertAlmostEqual(
                 self._expansion.global_to_value(x),
                 expansion.Taylor.global_to_value(self._expansion, x))
+
+    def test_consistency_with_shifted(self):
+        """Test consistency with a shifted Expansion.
+        """
+        self._expansion.approximate(np.sin)
+        x_shift = np.random.rand()
+        shifted = ShiftedExpansion(self._expansion, x_shift)
+        expected = expansion.Legendre(self._expansion.degree(),
+            LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
+            self._expansion.value_type())
+        expected.approximate(lambda x: np.sin(x - x_shift))
+        self.assertAlmostEqual(0.0, np.linalg.norm(shifted.get_coeff_ref() -
+            expected.get_coeff_ref()))
+        points = np.linspace(-1.0, 1.0, num=201)
+        for x_local in points:
+            x_global = expected.coordinate().local_to_global(x_local)
+            self.assertAlmostEqual(shifted.global_to_value(x_global),
+                expected.global_to_value(x_global))
+            self.assertAlmostEqual(shifted.global_to_gradient(x_global),
+                expected.global_to_gradient(x_global))
 
 
 class TestTruncatedLegendre(unittest.TestCase):
