@@ -61,7 +61,7 @@ class TestTaylor(unittest.TestCase):
             return np.exp(1j * x) * (1j)**k
         taylor.approximate(function)
         for x in points:
-            values = taylor.get_derivative_values(x)
+            values = taylor.global_to_derivatives(x)
             self.assertAlmostEqual(taylor.global_to_gradient(x), values[1])
             for k in range(1, taylor.n_term()):
                 self.assertAlmostEqual(values[k], derivative(x, k),
@@ -108,6 +108,9 @@ class TestTaylor(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
+            self.assertAlmostEqual(0.0, np.linalg.norm(
+                shifted.global_to_derivatives(x_global) -
+                expected.global_to_derivatives(x_global)), places=5)
 
 
 class TestLagrange(unittest.TestCase):
@@ -239,6 +242,9 @@ class TestLagrange(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
+            self.assertAlmostEqual(0.0, np.linalg.norm(
+                shifted.global_to_derivatives(x_global) -
+                expected.global_to_derivatives(x_global)))
 
 
 class TestLegendre(unittest.TestCase):
@@ -370,6 +376,9 @@ class TestLegendre(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
+            self.assertAlmostEqual(0.0, np.linalg.norm(
+                shifted.global_to_derivatives(x_global) -
+                expected.global_to_derivatives(x_global)))
 
 
 class TestTruncatedLegendre(unittest.TestCase):
@@ -391,8 +400,8 @@ class TestTruncatedLegendre(unittest.TestCase):
             for x in points:
                 self.assertAlmostEqual(legendre_low.global_to_value(x),
                     legendre_trunc.global_to_value(x))
-                diff = (legendre_low.get_derivative_values(x)
-                    - legendre_trunc.get_derivative_values(x))
+                diff = (legendre_low.global_to_derivatives(x)
+                    - legendre_trunc.global_to_derivatives(x))
                 self.assertEqual(np.linalg.norm(diff), 0)
                 diff = (legendre_low.get_basis_values(x)
                     - legendre_trunc.get_basis_values(x))

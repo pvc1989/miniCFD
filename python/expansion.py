@@ -128,7 +128,7 @@ class Taylor(Expansion):
         taylor_basis_gradients = Taylor.get_basis_gradients(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_gradients)
 
-    def get_derivative_values(self, x_global: float):
+    def global_to_derivatives(self, x_global: float) -> np.ndarray:
         """Get all non-zero-in-general derivatives of u^h.
 
         values[k] = the k-th derivative of u^h.

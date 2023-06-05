@@ -2,7 +2,6 @@
 """
 import abc
 import numpy as np
-# from collections.abc import Tuple
 
 
 class Polynomial(abc.ABC):
@@ -284,6 +283,11 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
+    def global_to_derivatives(self, x_global: float):
+        """Evaluate the derivatives of the approximation and return-by-value the result.
+        """
+
+    @abc.abstractmethod
     def set_coeff(self, coeff: np.ndarray):
         """Set the coefficient for each basis.
         """
@@ -299,9 +303,10 @@ class ShiftedExpansion(Expansion):
     """
 
     def __init__(self, expansion: Expansion, x_shift: float):
-        Expansion.__init__(self,
-            ShiftedCoordinate(expansion.coordinate(), x_shift),
-            None, expansion.value_type())
+        shifted_coordinate = ShiftedCoordinate(expansion.coordinate(), x_shift)
+        IntegtatorType = type(expansion.integrator())
+        Expansion.__init__(self, shifted_coordinate,
+            IntegtatorType(shifted_coordinate), expansion.value_type())
         self._unshifted_expansion = expansion
         self._x_shift = x_shift
 
@@ -322,30 +327,37 @@ class ShiftedExpansion(Expansion):
         x_unshifted = x_global - self._x_shift
         return self._unshifted_expansion.global_to_gradient(x_unshifted)
 
+    def global_to_derivatives(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_derivatives(x_unshifted)
+
+    def get_basis_values(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_values(x_unshifted)
+
+    def get_basis_gradients(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_gradients(x_unshifted)
+
+    def get_basis_hessians(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_hessians(x_unshifted)
+
     def get_coeff_ref(self) -> np.ndarray:
         return self._unshifted_expansion.get_coeff_ref()
+
+    def average(self):
+        return self._unshifted_expansion.average()
+
+    def get_basis_innerproducts(self):
+        return self._unshifted_expansion.get_basis_innerproducts()
 
     # The following methods are banned for this wrapper.
 
     def approximate(self, function: callable):
         assert False
 
-    def average(self):
-        assert False
-
     def get_basis(self, i_basis: int) -> callable:
-        assert False 
-
-    def get_basis_values(self, x_global: float) -> np.ndarray:
-        assert False
-
-    def get_basis_gradients(self, x_global: float) -> np.ndarray:
-        assert False
-
-    def get_basis_hessians(self, x_global: float) -> np.ndarray:
-        assert False
-
-    def get_basis_innerproducts(self):
         assert False
 
     def set_coeff(self, coeff: np.ndarray):

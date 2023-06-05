@@ -70,7 +70,7 @@ class Solver(concept.RiemannSolver):
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
         if expansion_left.degree() > 1:
-            derivatives = expansion_left.get_derivative_values(x_left)
+            derivatives = expansion_left.global_to_derivatives(x_left)
             du_left, ddu_left = derivatives[1], derivatives[2]
         elif expansion_left.degree() == 1:
             du_left = expansion_left.global_to_gradient(x_left)
@@ -78,7 +78,7 @@ class Solver(concept.RiemannSolver):
             pass
         du_right, ddu_right = 0, 0
         if expansion_right.degree() > 1:
-            derivatives = expansion_right.get_derivative_values(x_right)
+            derivatives = expansion_right.global_to_derivatives(x_right)
             du_right, ddu_right = derivatives[1], derivatives[2]
         elif expansion_right.degree() == 1:
             du_right = expansion_right.global_to_gradient(x_right)
