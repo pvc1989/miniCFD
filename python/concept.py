@@ -70,6 +70,48 @@ class Coordinate(abc.ABC):
         return self.x_right() - self.x_left()
 
 
+class ShiftedCoordinate(Coordinate):
+    """An wrapper that acts as if a given coordinate is shifted along x-axis by a given amount.
+    """
+
+    def __init__(self, coordinate: Coordinate, x_shift: float):
+        self._unshifed_coordinate = coordinate
+        self._x_shift = x_shift
+
+    def jacobian_degree(self) -> int:
+        return self._unshifed_coordinate.jacobian_degree()
+
+    def local_to_global(self, x_local: float) -> float:
+        x_unshifted = self._unshifed_coordinate.local_to_global(x_local)
+        return x_unshifted + self._x_shift
+
+    def global_to_local(self, x_global: float) -> float:
+        x_unshifed = x_global - self._x_shift
+        return self._unshifed_coordinate.global_to_local(x_unshifed)
+
+    def local_to_jacobian(self, x_local: float) -> float:
+        return self._unshifed_coordinate.local_to_jacobian(x_local)
+
+    def global_to_jacobian(self, x_global: float) -> float:
+        x_unshifed = x_global - self._x_shift
+        return self._unshifed_coordinate.global_to_jacobian(x_unshifed)
+
+    def x_left(self):
+        x_unshifted = self._unshifed_coordinate.x_left()
+        return x_unshifted + self._x_shift
+
+    def x_right(self):
+        x_unshifted = self._unshifed_coordinate.x_right()
+        return x_unshifted + self._x_shift
+
+    def x_center(self):
+        x_unshifted = self._unshifed_coordinate.x_center()
+        return x_unshifted + self._x_shift
+
+    def length(self):
+        return self._unshifed_coordinate.length()
+
+
 class Integrator(abc.ABC):
     """A cell-like object that performs integrations on it.
     """
