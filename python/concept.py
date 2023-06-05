@@ -696,12 +696,12 @@ class Limiter(abc.ABC):
         """
 
     @abc.abstractmethod
-    def reconstruct(self, troubled_cell_indices, grid: Grid, periodic: bool):
+    def reconstruct(self, troubled_cell_indices, grid: Grid):
         """Reconstruct the expansion on each troubled cell.
         """
 
     @abc.abstractmethod
-    def get_new_coeff(self, curr: Element, neighbors) -> np.ndarray:
+    def get_new_coeff(self, curr: Element) -> np.ndarray:
         """Reconstruct the expansion on a troubled cell.
         """
 
@@ -719,7 +719,7 @@ class Viscous(abc.ABC):
         """
 
     @abc.abstractmethod
-    def generate(self, troubled_cell_indices, grid: Grid, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: Grid):
         """Generate artificial viscosity for each troubled cell.
         """
 
@@ -814,12 +814,16 @@ class SpatialScheme(Grid, OdeSystem):
     def link_neighbors(self):
         """Link each element to its neighbors' expansions.
         """
+        self.get_element_by_index(0)._right_expansion = \
+            self.get_element_by_index(1).expansion()
         for i_cell in range(1, self.n_element() - 1):
             cell_i = self.get_element_by_index(i_cell)
             cell_i._left_expansion = \
                 self.get_element_by_index(i_cell - 1).expansion()
             cell_i._right_expansion = \
                 self.get_element_by_index(i_cell + 1).expansion()
+        self.get_element_by_index(-1)._left_expansion = \
+            self.get_element_by_index(-2).expansion()
         if self.is_periodic():
             self.get_element_by_index(0)._left_expansion = \
                 self._get_shifted_expansion(-1, -self.length())
@@ -856,12 +860,11 @@ class SpatialScheme(Grid, OdeSystem):
 
     def suppress_oscillations(self):
         if self._detector:
-            indices = self._detector.get_troubled_cell_indices(
-                self, self.is_periodic())
+            indices = self._detector.get_troubled_cell_indices(self)
             if self._limiter:
-                self._limiter.reconstruct(indices, self, self.is_periodic())
+                self._limiter.reconstruct(indices, self)
             if self._viscous:
-                self._viscous.generate(indices, self, self.is_periodic())
+                self._viscous.generate(indices, self)
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):

@@ -18,7 +18,7 @@ class Constant(concept.Viscous):
         else:
             return 'Constant'
 
-    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._const
@@ -57,7 +57,7 @@ class Persson2006(concept.Viscous):
             nu = 0.0
         return nu
 
-    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(grid.get_element_by_index(i_cell))
@@ -80,22 +80,21 @@ class Energy(concept.Viscous):
         else:
             return 'Energy'
 
-    def _get_oscillation_energy(self, curr: expansion.Lagrange,
-            left: expansion.Lagrange, right: expansion.Lagrange):
+    def _get_oscillation_energy(self, cell: element.LagrangeFR):
         """Compare with polynomials on neighbors.
         """
+        curr = cell.expansion()
+        left, right = cell.neighbor_expansions()
         points = curr.get_sample_points()
-        left_jumps = np.ndarray(len(points))
-        right_jumps = np.ndarray(len(points))
-        left_shift = left.x_right() - curr.x_left()
-        right_shift = right.x_left() - curr.x_right()
+        left_jumps = np.zeros(len(points))
+        right_jumps = np.zeros(len(points))
         for i in range(len(points)):
             x_curr = points[i]
             curr_value = curr.global_to_value(x_curr)
-            left_jumps[i] = curr_value - left.global_to_value(
-                x_curr + left_shift)
-            right_jumps[i] = curr_value - right.global_to_value(
-                x_curr + right_shift)
+            if left:
+                left_jumps[i] = curr_value - left.global_to_value(x_curr)
+            if right:
+                right_jumps[i] = curr_value - right.global_to_value(x_curr)
         def jumps_to_energy(jumps: np.ndarray):
             energy = 0.0
             for k in range(curr.n_term()):
@@ -103,29 +102,30 @@ class Energy(concept.Viscous):
             return energy
         return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
 
-    def _get_oscillation_energy_p1(self, curr: expansion.Lagrange,
-            left: expansion.Lagrange, right: expansion.Lagrange):
+    def _get_oscillation_energy_p1(self, cell: element.LagrangeFR):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
+        curr = cell.expansion()
+        left, right = cell.neighbor_expansions()
         curr_p1 = expansion.Legendre(1, curr.coordinate())
         points = curr.get_sample_points()
         curr_values = np.ndarray(len(points))
         for i in range(len(points)):
             curr_values[i] = curr.global_to_value(points[i])
         # build left_jumps
-        left_jumps = np.ndarray(len(points))
-        left_shift = left.x_right() - curr.x_left()
-        curr_p1.approximate(lambda x_curr:
-            left.global_to_value(x_curr + left_shift))
-        for i in range(len(points)):
-            left_jumps[i] = curr_values[i] - curr_p1.global_to_value(points[i])
+        left_jumps = np.zeros(len(points))
+        if left:
+            curr_p1.approximate(lambda x: left.global_to_value(x))
+            for i in range(len(points)):
+                left_jumps[i] = curr_values[i] \
+                    - curr_p1.global_to_value(points[i])
         # build right_jumps
-        right_jumps = np.ndarray(len(points))
-        right_shift = right.x_left() - curr.x_right()
-        curr_p1.approximate(lambda x_curr:
-            right.global_to_value(x_curr + right_shift))
-        for i in range(len(points)):
-            right_jumps[i] = curr_values[i] - curr_p1.global_to_value(points[i])
+        right_jumps = np.zeros(len(points))
+        if right:
+            curr_p1.approximate(lambda x: right.global_to_value(x))
+            for i in range(len(points)):
+                right_jumps[i] = curr_values[i] \
+                    - curr_p1.global_to_value(points[i])
         # build energy
         def jumps_to_energy(jumps: np.ndarray):
             energy = 0.0
@@ -134,41 +134,43 @@ class Energy(concept.Viscous):
             return energy
         return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
 
-    def _get_oscillation_energy_jumps(self, curr: expansion.Lagrange,
-            left: expansion.Lagrange, right: expansion.Lagrange):
+    def _get_oscillation_energy_by_jumps(self, cell: element.LagrangeFR):
         """Compute derivative jumps on interfaces.
         """
-        # build left_jumps
-        left_jumps = left.get_derivative_values(left.x_right())
-        left_jumps -= curr.get_derivative_values(curr.x_left())
-        # build right_jumps
-        right_jumps = right.get_derivative_values(right.x_left())
-        right_jumps -= curr.get_derivative_values(curr.x_right())
-        # build energy
+        curr = cell.expansion()
+        left, right = cell.neighbor_expansions()
         weights = (1, 0.2)
         def jumps_to_energy(jumps: np.ndarray, distance):
             energy = 0.0
             for k in range(min(len(weights), len(jumps))):
                 energy += (jumps[k] * distance**k * weights[k])**2
             return energy
-        left_distance = (left.length() + curr.length()) / 2
-        right_distance = (right.length() + curr.length()) / 2
-        return min(jumps_to_energy(left_jumps, left_distance),
-            jumps_to_energy(right_jumps, right_distance))
+        # build left_energy
+        if left:
+            jumps = left.global_to_derivatives(left.x_right())
+            jumps -= curr.global_to_derivatives(curr.x_left())
+            distance = (left.length() + curr.length()) / 2
+            left_energy = jumps_to_energy(jumps, distance)
+        # build right_energy
+        if right:
+            jumps = right.global_to_derivatives(right.x_left())
+            jumps -= curr.global_to_derivatives(curr.x_right())
+            distance = (right.length() + curr.length()) / 2
+            right_energy = jumps_to_energy(jumps, distance)
+        # build energy
+        if left and right:
+            return min(left_energy, right_energy)
+        elif left:
+            return left_energy
+        else:
+            return right_energy
 
-    def _get_viscous_coeff(self, grid: concept.Grid, i_curr):
-        i_left = i_curr - 1
-        i_right = (i_curr + 1) % grid.n_element()
+    def _get_viscous_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
-        left = grid.get_element_by_index(i_left)
-        right = grid.get_element_by_index(i_right)
-        # TODO: move to element.LagrangeFR
         assert isinstance(curr, element.LagrangeFR)
-        assert isinstance(left, element.LagrangeFR)
-        assert isinstance(right, element.LagrangeFR)
+        # TODO: move to element.LagrangeFR
         if i_curr not in self._index_to_matrices:
-            self._index_to_matrices[i_curr] = curr.get_dissipation_matrices(
-                left.expansion(), right.expansion())
+            self._index_to_matrices[i_curr] = curr.get_dissipation_matrices()
         mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
         curr_column = curr.get_solution_column()
         dissipation = mat_d @ curr_column
@@ -179,11 +181,10 @@ class Energy(concept.Viscous):
         dissipation = curr_column.transpose() @ dissipation
         assert dissipation < 0
         # print(f'dissipation = {dissipation:.2e}')
-        oscillation_energy = self._get_oscillation_energy(curr.expansion(),
-            left.expansion(), right.expansion())
+        oscillation_energy = self._get_oscillation_energy(curr)
         return oscillation_energy / (-dissipation * self._tau)
 
-    def generate(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
+    def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_viscous_coeff(grid, i_cell)

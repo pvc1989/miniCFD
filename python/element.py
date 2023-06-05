@@ -170,7 +170,8 @@ class LagrangeFR(FluxReconstruction):
                 upwind_flux_left, upwind_flux_right, extra_viscous)
         return values
 
-    def get_dissipation_matrices(self, left: LagrangeExpansion, right: LagrangeExpansion):
+    def get_dissipation_matrices(self):
+        left, right = self.neighbor_expansions()
         n_term = self.n_term()
         shape = (n_term, n_term)
         points = self.get_sample_points()
@@ -196,32 +197,40 @@ class LagrangeFR(FluxReconstruction):
                 a += correction_gradients_left[k] * basis_values_curr_left[l]
                 mat_c[k] += a * mat_a[l]
         # print('C =\n', mat_c)
-        d_minus_right = self._riemann.get_interface_gradient(
-            self.length(), right.length(),
-            u_jump = -basis_values_curr_right,
-            du_mean = 0.5 * self.get_basis_gradients(self.x_right()),
-            ddu_jump = -self.get_basis_hessians(self.x_right()))
-        d_minus_left = self._riemann.get_interface_gradient(
-            left.length(), self.length(),
-            u_jump = +basis_values_curr_left,
-            du_mean = 0.5 * self.get_basis_gradients(self.x_left()),
-            ddu_jump = +self.get_basis_hessians(self.x_left()))
+        d_minus_left = 0.0
+        if left:
+            d_minus_left = self._riemann.get_interface_gradient(
+                left.length(), self.length(),
+                u_jump = +basis_values_curr_left,
+                du_mean = 0.5 * self.get_basis_gradients(self.x_left()),
+                ddu_jump = +self.get_basis_hessians(self.x_left()))
+        d_minus_right = 0.0
+        if right:
+            d_minus_right = self._riemann.get_interface_gradient(
+                self.length(), right.length(),
+                u_jump = -basis_values_curr_right,
+                du_mean = 0.5 * self.get_basis_gradients(self.x_right()),
+                ddu_jump = -self.get_basis_hessians(self.x_right()))
         mat_d = np.ndarray(shape)
         for k in range(n_term):
             mat_d[k] = correction_gradients_right[k] * d_minus_right
             mat_d[k] += correction_gradients_left[k] * d_minus_left
         # print('D- =\n', mat_d)
         # print('D =\n', mat_b - mat_c + mat_d)
-        d_plus_right = self._riemann.get_interface_gradient(
-            self.length(), right.length(),
-            u_jump = +right.get_basis_values(right.x_left()),
-            du_mean = 0.5 * right.get_basis_gradients(right.x_left()),
-            ddu_jump = +right.get_basis_hessians(right.x_left()))
-        d_plus_left = self._riemann.get_interface_gradient(
-            left.length(), self.length(),
-            u_jump = -left.get_basis_values(left.x_right()),
-            du_mean = 0.5 * left.get_basis_gradients(left.x_right()),
-            ddu_jump = -left.get_basis_hessians(left.x_right()))
+        d_plus_left = 0.0
+        if left:
+            d_plus_left = self._riemann.get_interface_gradient(
+                left.length(), self.length(),
+                u_jump = -left.get_basis_values(left.x_right()),
+                du_mean = 0.5 * left.get_basis_gradients(left.x_right()),
+                ddu_jump = -left.get_basis_hessians(left.x_right()))
+        d_plus_right = 0.0
+        if right:
+            d_plus_right = self._riemann.get_interface_gradient(
+                self.length(), right.length(),
+                u_jump = +right.get_basis_values(right.x_left()),
+                du_mean = 0.5 * right.get_basis_gradients(right.x_left()),
+                ddu_jump = +right.get_basis_hessians(right.x_left()))
         mat_e = np.ndarray(shape)
         mat_f = np.ndarray(shape)
         for k in range(n_term):

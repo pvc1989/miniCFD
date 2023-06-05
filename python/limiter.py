@@ -12,43 +12,19 @@ class CompactWENO(concept.Limiter):
     """A high-order WENO limiter, which is compact (using only immediate neighbors).
     """
 
-    def reconstruct(self, troubled_cell_indices, grid: concept.Grid, periodic: bool):
+    def reconstruct(self, troubled_cell_indices, grid: concept.Grid):
         new_coeffs = []
         # print('WENO on', troubled_cell_indices)
-        for i_curr in troubled_cell_indices:
-            curr = grid.get_element_by_index(i_curr)
-            neighbors = []
-            if periodic or i_curr > 0:
-                i_prev = i_curr - 1
-                neighbors.append(grid.get_element_by_index(i_prev))
-            if periodic or i_curr + 1 < grid.n_element():
-                i_next = (i_curr + 1) % grid.n_element()
-                neighbors.append(grid.get_element_by_index(i_next))
-            coeff = self.get_new_coeff(curr, neighbors)
-            new_coeffs.append(coeff)
+        for i_cell in troubled_cell_indices:
+            cell_i = grid.get_element_by_index(i_cell)
+            new_coeffs.append(self.get_new_coeff(cell_i))
         assert len(new_coeffs) == len(troubled_cell_indices)
         i_new = 0
-        for i_curr in troubled_cell_indices:
-            curr = grid.get_element_by_index(i_curr)
-            assert isinstance(curr, concept.Element)
-            curr.set_solution_coeff(new_coeffs[i_new])
+        for i_cell in troubled_cell_indices:
+            cell_i = grid.get_element_by_index(i_cell)
+            cell_i.set_solution_coeff(new_coeffs[i_new])
             i_new += 1
         assert i_new == len(new_coeffs)
-
-    def _x_shift(self, this: concept.Element, that: concept.Element):
-        """Get the value of x_shift such that x_this == x_that + x_shift, in which
-            x_this is the value of x taken by a function defined on this, and
-            x_that is the value of x taken by a function defined on that.
-        """
-        x_shift = 0.0
-        if this.x_center() < that.x_left() - this.length():  # this << that
-            x_shift = that.x_right() - this.x_left()
-        elif this.x_center() > that.x_right() + this.length():  # that << this
-            x_shift = that.x_left() - this.x_right()
-        else:
-            assert np.abs((this.x_right() - that.x_left())
-                * (this.x_left() - that.x_right())) < 1e-10
-        return x_shift
 
 
 class ZhongXingHui2013(CompactWENO):
@@ -68,28 +44,22 @@ class ZhongXingHui2013(CompactWENO):
             return 'ZXH'
 
     def _borrow_expansion(self, curr: concept.Element,
-            neighbor: concept.Element) -> expansion.Legendre:
+            that: concept.Expansion) -> expansion.Legendre:
         this = curr.expansion()
-        that = neighbor.expansion()
-        if isinstance(this, expansion.Lagrange):
-            Expansion = expansion.Lagrange
-        elif isinstance(this, expansion.Legendre):
-            Expansion = expansion.Legendre
-        else:
-            assert False
-        borrowed = Expansion(this.degree(), this.coordinate(), this.value_type())
-        x_shift = self._x_shift(curr, neighbor)
+        Type = type(this)
+        borrowed = Type(this.degree(), this.coordinate(), this.value_type())
+        this_average = this.average()
         that_average = this.integrator().average(
-            lambda x_this: that.global_to_value(x_this + x_shift),
+            lambda x: that.global_to_value(x),
             n_point=this.degree())
-        borrowed.approximate(lambda x_this: this.average() - that_average
-            + that.global_to_value(x_this + x_shift))
+        borrowed.approximate(lambda x: that.global_to_value(x)
+            + this_average - that_average)
         return borrowed
 
     def _get_smoothness_value(self, taylor: expansion.Taylor):
         beta = 0.0
         def integrand(x_global):
-            return taylor.get_derivative_values(x_global)**2
+            return taylor.global_to_derivatives(x_global)**2
         norms = taylor.integrator().fixed_quad_global(integrand,
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
@@ -98,16 +68,17 @@ class ZhongXingHui2013(CompactWENO):
             beta += norms[k] * scale
         return beta
 
-    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
         candidates = []
         candidates.append(curr.expansion())
-        for neighbor in neighbors:
-            candidates.append(self._borrow_expansion(curr, neighbor))
+        for neighbor in curr.neighbor_expansions():
+            if neighbor:
+                candidates.append(self._borrow_expansion(curr, neighbor))
         # evaluate weights for each candidate
         weights = np.ndarray(len(candidates))
         for i in range(len(candidates)):
             if i == 0:
-                linear_weight = 1 - len(neighbors) * self._w_small
+                linear_weight = 1 - (len(candidates)-1) * self._w_small
             else:
                 linear_weight = self._w_small
             smoothness = self._get_smoothness_value(candidates[i])
@@ -138,19 +109,15 @@ class LiWanAi2020(CompactWENO):
             return r'LWA($K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
     def _borrow_expansion(self, curr: concept.Element,
-            neighbor: concept.Element) -> expansion.Legendre:
+            that: concept.Expansion) -> expansion.Legendre:
         this = curr.expansion()
-        that = neighbor.expansion()
-        assert isinstance(that, expansion.Taylor)
         borrowed = expansion.Legendre(1, this.coordinate(), this.value_type())
         coeff = np.ndarray(2, this.value_type())
         this_average = this.average()
         coeff[0] = this_average
-        x_shift = self._x_shift(curr, neighbor)
         def psi(x_that):
             return that.global_to_value(x_that) - this_average
-        def phi(x_that):
-            return borrowed.get_basis(1)(x_that - x_shift)
+        phi = borrowed.get_basis(1)
         coeff[1] = (that.integrator().inner_product(phi, psi, that.degree())
             / that.integrator().norm_2(phi, that.degree()))
         borrowed.set_coeff(coeff)
@@ -158,7 +125,7 @@ class LiWanAi2020(CompactWENO):
 
     def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
-            return taylor.get_derivative_values(x_global)**2
+            return taylor.global_to_derivatives(x_global)**2
         norms = taylor.integrator().fixed_quad_global(integrand,
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
@@ -171,7 +138,7 @@ class LiWanAi2020(CompactWENO):
         norms = self._get_derivative_norms(taylor)
         return np.sum(norms[1:])
 
-    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
         candidates = []
         # Get candidates by projecting to lower-order spaces:
         curr_legendre = curr.expansion()
@@ -183,9 +150,9 @@ class LiWanAi2020(CompactWENO):
             candidates.append(
                 expansion.TruncatedLegendre(degree, curr_legendre))
         # Get candidates by borrowing from neighbors:
-        for neighbor in neighbors:
-            candidates.append(self._borrow_expansion(curr, neighbor))
-        assert len(candidates) == curr.degree() + len(neighbors)
+        for neighbor in curr.neighbor_expansions():
+            if neighbor:
+                candidates.append(self._borrow_expansion(curr, neighbor))
         # Get smoothness values: (TODO: use quadrature-free implementation)
         # process 1-degree candidates
         i_candidate = curr.degree() - 1
@@ -254,15 +221,16 @@ class XuXiaoRui2023(CompactWENO):
         else:
             return 'XXR'
 
-    def get_new_coeff(self, curr: concept.Element, neighbors) -> np.ndarray:
+    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
         curr_expansion = curr.expansion()
         curr_average = curr_expansion.average()
         u_max = curr_average
         u_min = u_max
-        for cell in neighbors:
-            average = cell.expansion().average()
-            u_max = max(u_max, average)
-            u_min = min(u_min, average)
+        for neighbor in curr.neighbor_expansions():
+            if neighbor:
+                average = neighbor.average()
+                u_max = max(u_max, average)
+                u_min = min(u_min, average)
         big_a = self._alpha * min(u_max - curr_average, curr_average - u_min)
         if big_a == 0:
             old_coeff = deepcopy(curr_expansion.get_coeff_ref())

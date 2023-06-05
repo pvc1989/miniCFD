@@ -144,11 +144,8 @@ class TestLagrangeFR(unittest.TestCase):
             r_prev, r_curr, r_next = self._get_spatial_matrices(scheme, i_curr)
             # compare
             cell_curr = scheme.get_element_by_index(i_curr)
-            cell_prev = scheme.get_element_by_index(i_curr-1)
-            cell_next = scheme.get_element_by_index(i_curr+1)
             assert isinstance(cell_curr, element.LagrangeFR)
-            mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices(
-                cell_prev.expansion(), cell_next.expansion())
+            mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices()
             self.assertAlmostEqual(0.0,
                 np.linalg.norm((r_curr - s_curr) / nu - mat_d))
             self.assertAlmostEqual(0.0,

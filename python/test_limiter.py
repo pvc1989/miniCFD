@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
+import concept
 import riemann
 import spatial
 import detector
@@ -77,15 +78,15 @@ class TestLimiters(unittest.TestCase):
         x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
+            limiter_i = limiters[i]
+            assert isinstance(limiter_i, concept.Limiter)
             scheme.initialize(u_init)
-            indices = self._detector.get_troubled_cell_indices(
-                scheme, scheme.is_periodic())
-            limiters[i].reconstruct(indices,
-                scheme, scheme.is_periodic())
+            indices = self._detector.get_troubled_cell_indices(scheme)
+            limiter_i.reconstruct(indices, scheme)
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
-                label=f'{limiters[i].name()}')
+                label=f'{limiter_i.name()}')
             axins1.plot(x_values, y_values, marker=markers[i])
             axins2.plot(x_values, y_values, marker=markers[i])
         scheme.initialize(u_init)
@@ -130,15 +131,15 @@ class TestLimiters(unittest.TestCase):
         x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
         for i in range(len(limiters)):
+            limiter_i = limiters[i]
+            assert isinstance(limiter_i, concept.Limiter)
             scheme.initialize(u_init)
-            indices = self._detector.get_troubled_cell_indices(
-                scheme, scheme.is_periodic())
-            limiters[i].reconstruct(indices,
-                scheme, scheme.is_periodic())
+            indices = self._detector.get_troubled_cell_indices(scheme)
+            limiter_i.reconstruct(indices, scheme)
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
-                label=f'{limiters[i].name()}')
+                label=f'{limiter_i.name()}')
             axins.plot(x_values, y_values, marker=markers[i])
         scheme.initialize(u_init)
         for i in range(len(points)):
