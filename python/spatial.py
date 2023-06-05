@@ -31,6 +31,7 @@ class FiniteElement(concept.SpatialScheme):
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)
+        self.link_neighbors()
 
     def n_dof(self):
         return self.n_element() * self.get_element_by_index(0).n_dof()

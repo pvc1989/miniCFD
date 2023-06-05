@@ -14,14 +14,14 @@ class All(concept.Detector):
     def name(self, verbose=False):
         return 'All'
 
-    def get_troubled_cell_indices(self, grid: concept.Grid, periodic: bool):
+    def get_troubled_cell_indices(self, grid: concept.Grid):
         return range(grid.n_element())
 
 
 class SmoothnessBased(concept.Detector):
 
     @abc.abstractmethod
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         """Get the values of smoothness for each element.
         """
 
@@ -30,11 +30,12 @@ class SmoothnessBased(concept.Detector):
         """
         return 1.0
 
-    def get_troubled_cell_indices(self, grid: concept.Grid, periodic: bool) -> list:
+    def get_troubled_cell_indices(self, grid: concept.Grid) -> list:
         troubled_cell_indices = []
-        smoothness_values = self.get_smoothness_values(grid, periodic)
+        smoothness_values = self.get_smoothness_values(grid)
         for i in range(grid.n_element()):
-            if smoothness_values[i] > self.max_smoothness(grid.get_element_by_index(i)):
+            cell_i = grid.get_element_by_index(i)
+            if smoothness_values[i] > self.max_smoothness(cell_i):
                 troubled_cell_indices.append(i)
         return troubled_cell_indices
 
@@ -51,7 +52,7 @@ class Krivodonova2004(SmoothnessBased):
         else:
             return 'KXRCF'
 
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         smoothness_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -61,20 +62,14 @@ class Krivodonova2004(SmoothnessBased):
             curr_norm = curr.integrator().norm_infty(function, curr.n_term())
             curr_norm += 1e-8  # avoid division-by-zero
             ratio = curr.length()**((curr.degree() + 1) / 2)
-            left, right = None, None
-            if periodic or i_curr > 0:
-                left = grid.get_element_by_index(i_curr)
-            if periodic or i_curr + 1 < n_cell:
-                right = grid.get_element_by_index((i_curr + 1) % n_cell)
+            left, right = curr.neighbor_expansions()
             dividend = 0.0
-            if (curr.get_convective_speed(curr.x_left()) > 0 and
-                    isinstance(left, concept.Element)):
+            if curr.get_convective_speed(curr.x_left()) > 0 and left:
                 dividend += np.abs(curr.get_solution_value(curr.x_left())
-                    - left.get_solution_value(left.x_right()))
-            if (curr.get_convective_speed(curr.x_right()) < 0 and
-                    isinstance(right, concept.Element)):
+                    - left.global_to_value(left.x_right()))
+            if curr.get_convective_speed(curr.x_right()) < 0 and right:
                 dividend += np.abs(curr.get_solution_value(curr.x_right())
-                    - right.get_solution_value(right.x_left()))
+                    - right.global_to_value(right.x_left()))
             divisor = ratio * curr_norm
             smoothness_values[i_curr] = dividend / divisor
         return smoothness_values
@@ -92,7 +87,7 @@ class LiWanAi2011(SmoothnessBased):
         else:
             return 'LWA'
 
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         averages = np.ndarray(n_cell)
         for i_curr in range(n_cell):
@@ -104,27 +99,21 @@ class LiWanAi2011(SmoothnessBased):
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
             curr_value = curr.get_solution_value(curr.x_center())
-            left_value = curr_value
-            right_value = curr_value
             max_average = averages[i_curr]
             n_neighbor = 0
             dividend = 0.0
-            left, right = None, None
-            if periodic or i_curr > 0:
+            left, right = curr.neighbor_expansions()
+            if left:
                 i_left = i_curr - 1
-                left = grid.get_element_by_index(i_left)
                 n_neighbor += 1
                 max_average = max(max_average, averages[i_left])
-                curr_center = left.x_right() + curr.length() / 2
-                left_value = left.get_solution_value(curr_center)
+                left_value = left.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - left_value)
-            if periodic or i_curr + 1 < n_cell:
+            if right:
                 i_right = (i_curr + 1) % n_cell
-                right = grid.get_element_by_index(i_right)
                 n_neighbor += 1
                 max_average = max(max_average, averages[i_right])
-                curr_center = right.x_left() - curr.length() / 2
-                right_value = right.get_solution_value(curr_center)
+                right_value = right.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - right_value)
             ratio = n_neighbor * curr.length()**((curr.degree() + 1) / 2)
             max_average += 1e-8  # avoid division-by-zero
@@ -148,31 +137,28 @@ class ZhuJun2021(SmoothnessBased):
         else:
             return 'ZJ'
 
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         norms = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
-            assert isinstance(curr, concept.Element)
             def function(x_global):
                 return curr.get_solution_value(x_global)
             norms[i_curr] = curr.integrator().norm_1(function, curr.n_term())
         smoothness_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
-            assert isinstance(curr, concept.Element)
+            left, right = curr.neighbor_expansions()
             dividend = 0.0
             min_norm = norms[i_curr]
-            if periodic or i_curr > 0:
+            if left:
                 i_left = i_curr - 1
-                neighbor = grid.get_element_by_index(i_left)
-                integral = self._integrate(curr, neighbor, True)
+                integral = self._integrate(curr, left)
                 dividend = max(dividend, integral)
                 min_norm = min(min_norm, norms[i_left])
-            if periodic or i_curr + 1 < n_cell:
+            if right:
                 i_right = (i_curr + 1) % n_cell
-                neighbor = grid.get_element_by_index(i_right)
-                integral = self._integrate(curr, neighbor, False)
+                integral = self._integrate(curr, right)
                 dividend = max(dividend, integral)
                 min_norm = min(min_norm, norms[i_right])
             min_norm += 1e-8  # avoid division-by-zero
@@ -180,19 +166,9 @@ class ZhuJun2021(SmoothnessBased):
             smoothness_values[i_curr] = dividend / divisor
         return smoothness_values
 
-    def _integrate(self, curr: concept.Element, that: concept.Element,
-            left: bool):
-        def integrand(x_curr):
-            value = curr.get_solution_value(x_curr)
-            if left:
-                x_left = that.x_right() + (x_curr - curr.x_left())
-                value -= that.get_solution_value(x_left)
-                return value
-            else:
-                x_right = that.x_left() - (curr.x_right() - x_curr)
-                value -= that.get_solution_value(x_right)
-            return value
-        integral = curr.integrator().fixed_quad_global(integrand,
+    def _integrate(self, curr: concept.Element, that: concept.Expansion):
+        integral = curr.integrator().fixed_quad_global(
+            lambda x: curr.get_solution_value(x) - that.global_to_value(x),
             curr.n_term())
         return np.abs(integral)
 
@@ -217,7 +193,7 @@ class LiYanHui2022(concept.Detector):
         else:
             return 'LYH'
 
-    def get_troubled_cell_indices(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_troubled_cell_indices(self, grid: concept.Grid) -> np.ndarray:
         # TODO: support nonuniform grid
         troubled_cell_indices = []
         n_cell = grid.n_element()
@@ -260,10 +236,10 @@ class LiYanHui2022(concept.Detector):
                     break
         return troubled_cell_indices
 
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         """Not necessary for detecting, just for comparison.
         """
-        troubled_cell_indices = self.get_troubled_cell_indices(grid, periodic)
+        troubled_cell_indices = self.get_troubled_cell_indices(grid)
         smoothness_values = np.zeros(grid.n_element()) + 1e-2
         for i_cell in troubled_cell_indices:
             smoothness_values[i_cell] = 1e2
@@ -303,7 +279,7 @@ class Persson2006(SmoothnessBased):
             pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
         return pth_mode_energy / all_modes_energy
 
-    def get_smoothness_values(self, grid: concept.Grid, periodic: bool) -> np.ndarray:
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         smoothness_values = np.ndarray(n_cell)
         for i_cell in range(n_cell):

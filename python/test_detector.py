@@ -83,8 +83,7 @@ class TestDetectors(unittest.TestCase):
         plt.semilogy()
         x_values = centers / scheme.delta_x(0)
         for i in range(len(detectors)):
-            y_values = detectors[i].get_smoothness_values(
-                scheme, scheme.is_periodic())
+            y_values = detectors[i].get_smoothness_values(scheme)
             plt.plot(x_values, y_values, markers[i],
                 label=detectors[i].name())
         x_values = [
@@ -138,8 +137,7 @@ class TestDetectors(unittest.TestCase):
         ax = fig.add_subplot(3,1,(2,3))
         plt.semilogy()
         for i in range(len(detectors)):
-            y_values = detectors[i].get_smoothness_values(
-                scheme, scheme.is_periodic())
+            y_values = detectors[i].get_smoothness_values(scheme)
             plt.plot(centers/scheme.delta_x(0), y_values, markers[i],
                 label=detectors[i].name())
         x_values = [
@@ -176,8 +174,8 @@ class TestDetectors(unittest.TestCase):
             for i in range(len(detectors)):
                 detector_i = detectors[i]
                 assert isinstance(detector_i, concept.Detector)
-                troubled_cell_indices = detector_i.get_troubled_cell_indices(
-                    scheme, scheme.is_periodic())
+                troubled_cell_indices = \
+                    detector_i.get_troubled_cell_indices(scheme)
                 active_counts[i][k] = len(troubled_cell_indices)
         plt.figure()
         for i in range(len(detectors)):

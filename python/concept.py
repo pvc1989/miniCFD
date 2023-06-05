@@ -2,6 +2,7 @@
 """
 import abc
 import numpy as np
+# from collections.abc import Tuple
 
 
 class Polynomial(abc.ABC):
@@ -448,6 +449,8 @@ class Element(abc.ABC):
         self._expansion = expansion
         self._coordinate = expansion.coordinate()
         self._integrator = expansion.integrator()
+        self._left_expansion = None
+        self._right_expansion = None
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
@@ -471,6 +474,9 @@ class Element(abc.ABC):
         """Get a refenece to the underlying Expansion object.
         """
         return self._expansion
+
+    def neighbor_expansions(self) -> tuple[Expansion, Expansion]:
+        return self._left_expansion, self._right_expansion
 
     def x_left(self):
         return self.coordinate().x_left()
@@ -663,7 +669,7 @@ class Detector(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_troubled_cell_indices(self, grid: Grid, periodic: bool):
+    def get_troubled_cell_indices(self, grid: Grid):
         """Whether the current element is troubled.
         """
 
@@ -788,6 +794,25 @@ class SpatialScheme(Grid, OdeSystem):
         """Whether a periodic boundary condition is applied.
         """
         return True
+
+    def _get_shifted_expansion(self, i_cell: int, x_shift: float):
+        cell_i = self.get_element_by_index(i_cell)
+        return ShiftedExpansion(cell_i.expansion(), x_shift)
+
+    def link_neighbors(self):
+        """Link each element to its neighbors' expansions.
+        """
+        for i_cell in range(1, self.n_element() - 1):
+            cell_i = self.get_element_by_index(i_cell)
+            cell_i._left_expansion = \
+                self.get_element_by_index(i_cell - 1).expansion()
+            cell_i._right_expansion = \
+                self.get_element_by_index(i_cell + 1).expansion()
+        if self.is_periodic():
+            self.get_element_by_index(0)._left_expansion = \
+                self._get_shifted_expansion(-1, -self.length())
+            self.get_element_by_index(-1)._right_expansion = \
+                self._get_shifted_expansion(0, +self.length())
 
     @abc.abstractmethod
     def n_dof(self):
