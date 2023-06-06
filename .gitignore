@@ -1,7 +1,7 @@
 .DS_Store
 *.pdf
+*.vtu
 python/stats
-python/*.vtu
 
 ### Python.gitignore ###
 # Byte-compiled / optimized / DLL files

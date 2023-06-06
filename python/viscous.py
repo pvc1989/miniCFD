@@ -42,7 +42,7 @@ class Persson2006(concept.Viscous):
         else:
             return 'Persson'
 
-    def _get_viscous_coeff(self, cell: concept.Element):
+    def _get_constant_coeff(self, cell: concept.Element):
         u_approx = cell.expansion()
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
@@ -60,7 +60,7 @@ class Persson2006(concept.Viscous):
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
-            coeff = self._get_viscous_coeff(grid.get_element_by_index(i_cell))
+            coeff = self._get_constant_coeff(grid.get_element_by_index(i_cell))
             print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
@@ -71,6 +71,7 @@ class Energy(concept.Viscous):
         super().__init__()
         self._tau = tau
         self._nu_max = nu_max
+        self._index_to_nu = dict()
         self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
@@ -134,14 +135,15 @@ class Energy(concept.Viscous):
         for i in range(len(points)):
             values[i] = cell.get_solution_value(points[i])
         return min(self._get_oscillation_energy_low(cell, points, values),
-            self._get_oscillation_energy_high(cell, points, values))
+            self._get_oscillation_energy_high(cell, points, values),
+            self._get_oscillation_energy_by_iji(cell))
 
     def _get_oscillation_energy_by_iji(self, cell: element.LagrangeFR):
         """Compute derivative jumps on interfaces.
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        weights = (1, 0.2)
+        weights = (1,)
         def jumps_to_energy(jumps: np.ndarray, distance):
             energy = 0.0
             for k in range(min(len(weights), len(jumps))):
@@ -167,7 +169,7 @@ class Energy(concept.Viscous):
         else:
             return right_energy
 
-    def _get_viscous_coeff(self, grid: concept.Grid, i_curr: int):
+    def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
         assert isinstance(curr, element.LagrangeFR)
         # TODO: move to element.LagrangeFR
@@ -186,12 +188,50 @@ class Energy(concept.Viscous):
         oscillation_energy = self._get_oscillation_energy(curr)
         return oscillation_energy / (-dissipation * self._tau)
 
+    def _get_nu(self, i_cell: int):
+        if i_cell in self._index_to_nu:
+            return self._index_to_nu[i_cell]
+        else:
+            return 0.0
+
+    def _get_quadratic_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+        cell = grid.get_element_by_index(i_cell)
+        a = np.eye(3)
+        a[1][0] = a[2][0] = 1.0
+        b = np.ndarray(3)
+        assert i_cell in self._index_to_nu
+        b[0] = self._index_to_nu[i_cell]
+        left, right = cell.neighbor_expansions()
+        if left:
+            h = cell.x_center() - left.x_center()
+            b[1] = self._get_nu(i_cell - 1)
+        else:
+            h = cell.length()
+            b[1] = b[0]
+        a[1][1] = -h
+        a[1][2] = h*h
+        if right:
+            h = right.x_center() - cell.x_center()
+            b[2] = self._get_nu((i_cell + 1) % grid.n_element())
+        else:
+            h = cell.length()
+            b[2] = b[0]
+        a[2][1] = h
+        a[2][2] = h*h
+        c = np.linalg.solve(a, b)
+        def coeff(x_global: float):
+            x = x_global - cell.x_center()
+            return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
+        return coeff
+
     def generate(self, troubled_cell_indices, grid: concept.Grid):
+        self._index_to_nu.clear()
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
-            coeff = self._get_viscous_coeff(grid, i_cell)
-            coeff = min(coeff, self._nu_max)
-            # print(f'ν[{i_cell}] = {coeff:.2e}')
+            nu = self._get_constant_coeff(grid, i_cell)
+            self._index_to_nu[i_cell] = nu  # min(nu, self._nu_max)
+        for i_cell in troubled_cell_indices:
+            coeff = self._get_quadratic_coeff(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
 
 
