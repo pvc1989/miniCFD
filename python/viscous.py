@@ -32,9 +32,10 @@ class Persson2006(concept.Viscous):
     See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
     """
 
-    def __init__(self, kappa=0.1) -> None:
+    def __init__(self, kappa=2.0, nu_max=0.1) -> None:
         super().__init__()
         self._kappa = kappa
+        self._nu_max = nu_max
 
     def name(self, verbose=False) -> str:
         if verbose:
@@ -47,7 +48,7 @@ class Persson2006(concept.Viscous):
         s_0 = -4 * np.log10(u_approx.degree())
         smoothness = detector.Persson2006.get_smoothness_value(u_approx)
         s_gap = np.log10(smoothness) - s_0
-        print(s_gap)
+        # print(smoothness, s_gap)
         nu = u_approx.length() / u_approx.degree()
         if s_gap > self._kappa:
             pass
@@ -55,13 +56,13 @@ class Persson2006(concept.Viscous):
             nu *= 0.5 * (1 + np.sin(s_gap / self._kappa * np.pi / 2))
         else:
             nu = 0.0
-        return nu
+        return min(nu, self._nu_max)
 
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_constant_coeff(grid.get_element_by_index(i_cell))
-            print(f'nu[{i_cell}] = {coeff}')
+            # print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
 
