@@ -129,8 +129,10 @@ class SolverBase(abc.ABC):
             value = self._spatial.get_solution_value(x)
             solution.InsertNextValue(value)
             if self._spatial.viscous():
-                value = self._spatial.viscous().get_coeff(i_cell)
-                viscosity.InsertNextValue(value)
+                coeff = self._spatial.viscous().get_coeff(i_cell)
+                if callable(coeff):
+                    coeff = coeff(x)
+                viscosity.InsertNextValue(coeff)
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
         grid.GetPointData().SetScalars(solution)

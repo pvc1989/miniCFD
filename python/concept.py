@@ -552,13 +552,15 @@ class Element(abc.ABC):
         return self.equation().get_convective_speed(
               self.get_solution_value(x_global))
 
-    def get_discontinuous_flux(self, x_global, extra_viscous=0.0):
+    def get_discontinuous_flux(self, x_global, extra_viscous):
         """Get the value of f(u^h) at a given point.
         """
         u_approx = self.get_solution_value(x_global)
         flux = self.equation().get_convective_flux(u_approx)
         du_approx = self.expansion().global_to_gradient(x_global)
         flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
+        if callable(extra_viscous):
+            extra_viscous = extra_viscous(x_global)
         flux -= extra_viscous * du_approx
         return flux
 
@@ -600,7 +602,7 @@ class Element(abc.ABC):
         """Suggest a CFL number for explicit RK time stepping.
         """
 
-    def suggest_delta_t(self, extra_viscous: float):
+    def suggest_delta_t(self, extra_viscous):
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
         p = self.degree()
@@ -619,6 +621,8 @@ class Element(abc.ABC):
             u = self.get_solution_value(x)
             a = self.equation().get_convective_speed(u)
             lambda_c = np.abs(a)
+            if callable(extra_viscous):
+                extra_viscous = extra_viscous(x)
             b = self.equation().get_diffusive_coeff(u) + extra_viscous
             lambda_d = b / h
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))

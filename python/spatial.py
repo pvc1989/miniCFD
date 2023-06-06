@@ -51,8 +51,13 @@ class FiniteElement(concept.SpatialScheme):
             prev = self.get_element_by_index(i-1)
             viscous = self.equation().get_diffusive_coeff()
             if self._viscous:
-                viscous += min(self._viscous.get_coeff(i),
-                               self._viscous.get_coeff(i-1))
+                nu_curr = self._viscous.get_coeff(i)
+                if callable(nu_curr):
+                    nu_curr = nu_curr(curr.x_left())
+                nu_prev = self._viscous.get_coeff(i-1)
+                if callable(nu_prev):
+                    nu_prev = nu_prev(prev.x_right())
+                viscous += min(nu_curr, nu_prev)
             interface_fluxes[i] = self._riemann.get_interface_flux(
                 prev.expansion(), curr.expansion(), viscous)
         if self.is_periodic():
@@ -61,8 +66,13 @@ class FiniteElement(concept.SpatialScheme):
             prev = self.get_element_by_index(i_prev)
             viscous = self.equation().get_diffusive_coeff()
             if self._viscous:
-                viscous += min(self._viscous.get_coeff(0),
-                               self._viscous.get_coeff(i_prev))
+                nu_curr = self._viscous.get_coeff(0)
+                if callable(nu_curr):
+                    nu_curr = nu_curr(curr.x_left())
+                nu_prev = self._viscous.get_coeff(i_prev)
+                if callable(nu_prev):
+                    nu_prev = nu_prev(prev.x_right())
+                viscous += min(nu_curr, nu_prev)
             interface_fluxes[0] = self._riemann.get_interface_flux(
                 prev.expansion(), curr.expansion(), viscous)
             interface_fluxes[-1] = interface_fluxes[0]
