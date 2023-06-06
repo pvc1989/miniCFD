@@ -3,6 +3,7 @@
 import unittest
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import axes
 
 import concept
 import riemann
@@ -39,7 +40,7 @@ class TestLimiters(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = -np.pi * 4
         self._x_right = np.pi * 4
-        self._n_element = 53
+        self._n_element = 63
         self._riemann = riemann.LinearAdvection(1.0)
         self._detector = detector.All()
 
@@ -48,6 +49,17 @@ class TestLimiters(unittest.TestCase):
         scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme
+
+    def set_xticks(self, axins: axes.Axes, scheme: spatial.FiniteElement,
+            xmin, xmax):
+        xticks = []
+        for i in range(scheme.n_element()):
+            cell_i = scheme.get_element_by_index(i)
+            x = cell_i.x_left() / cell_i.length()
+            if xmin < x and x < xmax:
+                xticks.append(x)
+        axins.set_xticks(xticks)
+        axins.grid(visible=True, axis='x')
 
     def test_limiters_on_jumps(self):
         degree = 4
@@ -64,16 +76,17 @@ class TestLimiters(unittest.TestCase):
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
-        axins1 = ax.inset_axes([0.1, 0.08, 0.20, 0.20])
-        xmin = -1 / 73 * self._n_element
-        xmax = +1 / 73 * self._n_element
+        axins1 = ax.inset_axes([0.08, 0.55, 0.18, 0.40])
+        xmin, xmax = -0.7, +0.7
         axins1.set_xlim(xmin, xmax)
-        axins1.set_ylim(-4.2, -1.2)
-        axins2 = ax.inset_axes([0.80, 0.08, 0.18, 0.30])
-        xmin = +6 / 53 * self._n_element
-        xmax = +8 / 53 * self._n_element
+        axins1.set_ylim(-12.5, +13.5)
+        self.set_xticks(axins1, scheme, xmin, xmax)
+        axins2 = ax.inset_axes([0.75, 0.08, 0.23, 0.30])
+        xmin = np.pi * scheme.n_element() / scheme.length() - 1
+        xmax = xmin + 2
         axins2.set_xlim(xmin, xmax)
-        axins2.set_ylim(-7.5, -3.5)
+        axins2.set_ylim(-8.0, +7.5)
+        self.set_xticks(axins2, scheme, xmin, xmax)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
@@ -122,11 +135,12 @@ class TestLimiters(unittest.TestCase):
         ]
         markers = ['1', '2', '3', '4', '+']
         _, ax = plt.subplots(figsize=[6, 5])
-        axins = ax.inset_axes([0.35, 0.10, 0.35, 0.25])
-        xmin = -28 / 73 * self._n_element
-        xmax = -18 / 73 * self._n_element
+        axins = ax.inset_axes([0.32, 0.10, 0.40, 0.25])
+        xmin = -9 * scheme.n_element() / scheme.length()
+        xmax = -7 * scheme.n_element() / scheme.length()
         axins.set_xlim(xmin, xmax)
         axins.set_ylim(-1.1, +1.1)
+        self.set_xticks(axins, scheme, xmin, xmax)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
         x_values = points / scheme.delta_x(0)
         y_values = np.ndarray(len(points))
