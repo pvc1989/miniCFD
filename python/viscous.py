@@ -80,61 +80,63 @@ class Energy(concept.Viscous):
         else:
             return 'Energy'
 
-    def _get_oscillation_energy(self, cell: element.LagrangeFR):
+    @staticmethod
+    def _jumps_to_energy(jumps: np.ndarray, curr: expansion.Lagrange):
+        energy = 0.0
+        for k in range(len(jumps)):
+            energy += curr.get_node_weight(k) * jumps[k]**2 / 2
+        return energy
+
+    def _get_oscillation_energy_high(self, cell: element.LagrangeFR,
+            points: np.ndarray, values: np.ndarray):
         """Compare with polynomials on neighbors.
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        points = curr.get_sample_points()
         left_jumps = np.zeros(len(points))
         right_jumps = np.zeros(len(points))
         for i in range(len(points)):
             x_curr = points[i]
-            curr_value = curr.global_to_value(x_curr)
             if left:
-                left_jumps[i] = curr_value - left.global_to_value(x_curr)
+                left_jumps[i] = values[i] - left.global_to_value(x_curr)
             if right:
-                right_jumps[i] = curr_value - right.global_to_value(x_curr)
-        def jumps_to_energy(jumps: np.ndarray):
-            energy = 0.0
-            for k in range(curr.n_term()):
-                energy += curr.get_node_weight(k) * jumps[k]**2 / 2
-            return energy
-        return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
+                right_jumps[i] = values[i] - right.global_to_value(x_curr)
+        return min(Energy._jumps_to_energy(left_jumps, curr),
+                   Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_oscillation_energy_p1(self, cell: element.LagrangeFR):
+    def _get_oscillation_energy_low(self, cell: element.LagrangeFR,
+            points: np.ndarray, values: np.ndarray):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        curr_p1 = expansion.Legendre(1, curr.coordinate())
-        points = curr.get_sample_points()
-        curr_values = np.ndarray(len(points))
-        for i in range(len(points)):
-            curr_values[i] = curr.global_to_value(points[i])
+        curr_low = expansion.Legendre(1, curr.coordinate())
         # build left_jumps
         left_jumps = np.zeros(len(points))
         if left:
-            curr_p1.approximate(lambda x: left.global_to_value(x))
+            curr_low.approximate(lambda x: left.global_to_value(x))
             for i in range(len(points)):
-                left_jumps[i] = curr_values[i] \
-                    - curr_p1.global_to_value(points[i])
+                left_jumps[i] = values[i] - curr_low.global_to_value(points[i])
         # build right_jumps
         right_jumps = np.zeros(len(points))
         if right:
-            curr_p1.approximate(lambda x: right.global_to_value(x))
+            curr_low.approximate(lambda x: right.global_to_value(x))
             for i in range(len(points)):
-                right_jumps[i] = curr_values[i] \
-                    - curr_p1.global_to_value(points[i])
-        # build energy
-        def jumps_to_energy(jumps: np.ndarray):
-            energy = 0.0
-            for k in range(curr.n_term()):
-                energy += curr.get_node_weight(k) * jumps[k]**2 / 2
-            return energy
-        return min(jumps_to_energy(left_jumps), jumps_to_energy(right_jumps))
+                right_jumps[i] = values[i] - curr_low.global_to_value(points[i])
+        return min(Energy._jumps_to_energy(left_jumps, curr),
+                   Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_oscillation_energy_by_jumps(self, cell: element.LagrangeFR):
+    def _get_oscillation_energy(self, cell: element.LagrangeFR):
+        """Compare with four polynomials borrowed from neighbors.
+        """
+        points = cell.get_sample_points()
+        values = np.ndarray(len(points))
+        for i in range(len(points)):
+            values[i] = cell.get_solution_value(points[i])
+        return min(self._get_oscillation_energy_low(cell, points, values),
+            self._get_oscillation_energy_high(cell, points, values))
+
+    def _get_oscillation_energy_by_iji(self, cell: element.LagrangeFR):
         """Compute derivative jumps on interfaces.
         """
         curr = cell.expansion()
