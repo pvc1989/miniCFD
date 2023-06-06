@@ -112,15 +112,31 @@ class SolverBase(abc.ABC):
     def _write_to_vtu(self, filename: str, binary=True):
         grid = vtk.vtkUnstructuredGrid()
         vtk_points = vtk.vtkPoints()
-        scalar_on_points = vtk.vtkFloatArray()
-        scalar_on_points.SetName("U")
-        scalar_on_points.SetNumberOfComponents(1)
+        solution = vtk.vtkFloatArray()
+        solution.SetName("U")
+        solution.SetNumberOfComponents(1)
+        if self._spatial.viscous():
+            viscosity = vtk.vtkFloatArray()
+            viscosity.SetName("Viscosity")
+            viscosity.SetNumberOfComponents(1)
+        i_cell = 0
+        cell_i = self._spatial.get_element_by_index(i_cell)
         for x in self._output_points:
             vtk_points.InsertNextPoint((x, 0, 0))
+            if x > cell_i.x_right():
+                i_cell += 1
+                cell_i = self._spatial.get_element_by_index(i_cell)
             value = self._spatial.get_solution_value(x)
-            scalar_on_points.InsertNextValue(value)
+            solution.InsertNextValue(value)
+            if self._spatial.viscous():
+                value = self._spatial.viscous().get_coeff(i_cell)
+                viscosity.InsertNextValue(value)
+        assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
-        grid.GetPointData().SetScalars(scalar_on_points)
+        grid.GetPointData().SetScalars(solution)
+        if self._spatial.viscous():
+            grid.GetPointData().SetActiveScalars("Viscosity")
+            grid.GetPointData().SetScalars(viscosity)
         writer = vtk.vtkXMLDataSetWriter()
         writer.SetInputData(grid)
         writer.SetFileName(filename)

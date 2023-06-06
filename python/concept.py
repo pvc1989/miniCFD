@@ -850,6 +850,11 @@ class SpatialScheme(Grid, OdeSystem):
         """Get the flux value at a given point.
         """
 
+    def viscous(self) -> Viscous:
+        """Get a reference to the underlying viscous model.
+        """
+        return self._viscous
+
     def set_detector_and_limiter(self, detector, limiter, viscous):
         if isinstance(detector, Detector):
             self._detector = detector
