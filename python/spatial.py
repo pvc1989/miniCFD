@@ -78,16 +78,29 @@ class FiniteElement(concept.SpatialScheme):
             interface_fluxes[-1] = interface_fluxes[0]
         else:  # TODO: support other boundary condtions
             curr = self.get_element_by_index(0)
-            interface_fluxes[0] = curr.get_discontinuous_flux(curr.x_left())
+            viscous = 0.0
+            if self._viscous:
+                viscous = self._viscous.get_coeff(0)
+            interface_fluxes[0] = \
+                curr.get_discontinuous_flux(curr.x_left(), viscous)
             curr = self.get_element_by_index(-1)
-            interface_fluxes[-1] = curr.get_discontinuous_flux(curr.x_right())
+            viscous = 0.0
+            if self._viscous:
+                viscous = self._viscous.get_coeff(-1)
+            interface_fluxes[-1] = \
+                curr.get_discontinuous_flux(curr.x_right(), viscous)
         return interface_fluxes
 
     def get_solution_value(self, point):
         return self.get_element(point).get_solution_value(point)
 
     def get_discontinuous_flux(self, point):
-        return self.get_element(point).get_discontinuous_flux(point)
+        i_cell = self.get_element_index(point)
+        cell_i = self.get_element_by_index(i_cell)
+        viscous = 0.0
+        if self._viscous:
+            viscous = self._viscous.get_coeff(i_cell)
+        return cell_i.get_discontinuous_flux(point, viscous)
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()

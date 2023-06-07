@@ -39,7 +39,7 @@ class TestLagrangeFR(unittest.TestCase):
         for i in range(n_point):
             point_i = points[i]
             discontinuous_flux[i] = self._element.get_discontinuous_flux(
-                point_i)
+                point_i, 0.0)
             continuous_flux[i] = self._element.get_continuous_flux(
                 point_i, upwind_flux_left, upwind_flux_right)
         plt.figure()
@@ -57,7 +57,7 @@ class TestLagrangeFR(unittest.TestCase):
         """Test the values of the discontinuous flux.
         """
         for x_global in self._test_points:
-            flux_actual = self._element.get_discontinuous_flux(x_global)
+            flux_actual = self._element.get_discontinuous_flux(x_global, 0.0)
             # discontinuous_flux = a * u
             u_approx = self._element.get_solution_value(x_global)
             flux_expect = self._equation.get_convective_flux(u_approx)
@@ -79,13 +79,13 @@ class TestLagrangeFR(unittest.TestCase):
             flux_actual = self._element.get_continuous_flux(x_global,
                 upwind_flux_left, upwind_flux_right)
             # continuous_flux = discontinuous_flux + correction
-            flux_expect = self._element.get_discontinuous_flux(x_global)
+            flux_expect = self._element.get_discontinuous_flux(x_global, 0.0)
             x_local = self.coordinate.global_to_local(x_global)
             left, right = vincent.local_to_value(x_local)
             flux_expect += left * (upwind_flux_left
-                - self._element.get_discontinuous_flux(self._x_left))
+                - self._element.get_discontinuous_flux(self._x_left, 0.0))
             flux_expect += right * (upwind_flux_right
-                - self._element.get_discontinuous_flux(self._x_right))
+                - self._element.get_discontinuous_flux(self._x_right, 0.0))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
     def test_get_flux_gradient(self):

@@ -126,13 +126,13 @@ class LagrangeFR(FluxReconstruction):
 
     def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
-        flux = self.get_discontinuous_flux(x_global)
+        flux = self.get_discontinuous_flux(x_global, extra_viscous)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left()))
+            - self.get_discontinuous_flux(self.x_left(), extra_viscous))
         flux += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right()))
+            - self.get_discontinuous_flux(self.x_right(), extra_viscous))
         return flux
 
     def _get_flux_gradient(self, x_global, extra_viscous):
