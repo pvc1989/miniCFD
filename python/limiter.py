@@ -197,7 +197,6 @@ class LiWanAi2020(CompactWENO):
             new_legendre = expansion.Legendre(curr.degree(),
                 curr.coordinate(), curr.value_type())
             new_legendre.set_coeff(new_coeff)
-            print('hhh')
             new_lagrange = expansion.Lagrange(curr.degree(),
                 curr.coordinate(), curr.value_type())
             new_lagrange.approximate(lambda x:

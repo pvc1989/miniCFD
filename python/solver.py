@@ -109,7 +109,7 @@ class SolverBase(abc.ABC):
             f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
         plt.close(fig)
 
-    def _write_to_vtu(self, filename: str, binary=True):
+    def _write_to_vtu(self, filename: str, t_curr: float, binary=True):
         grid = vtk.vtkUnstructuredGrid()
         vtk_points = vtk.vtkPoints()
         solution = vtk.vtkFloatArray()
@@ -121,18 +121,23 @@ class SolverBase(abc.ABC):
             viscosity.SetNumberOfComponents(1)
         i_cell = 0
         cell_i = self._spatial.get_element_by_index(i_cell)
+        # expect_solution, _ = self._get_ydata(t_curr, self._output_points)
+        # i_solution = 0
         for x in self._output_points:
             vtk_points.InsertNextPoint((x, 0, 0))
             if x > cell_i.x_right():
                 i_cell += 1
                 cell_i = self._spatial.get_element_by_index(i_cell)
             value = self._spatial.get_solution_value(x)
+            # value = expect_solution[i_solution]
+            # i_solution += 1
             solution.InsertNextValue(value)
             if self._spatial.viscous():
                 coeff = self._spatial.viscous().get_coeff(i_cell)
                 if callable(coeff):
                     coeff = coeff(x)
                 viscosity.InsertNextValue(coeff)
+        # assert i_solution == len(expect_solution)
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
         grid.GetPointData().SetScalars(solution)
@@ -161,7 +166,7 @@ class SolverBase(abc.ABC):
             if output == 'pdf':
                 self._write_to_pdf(f'Frame{i_frame}.pdf', t_curr)
             elif output == 'vtu':
-                self._write_to_vtu(f'Frame{i_frame}.vtu')
+                self._write_to_vtu(f'Frame{i_frame}.vtu', t_curr)
             else:
                 assert False
             if i_frame == n_frame:
