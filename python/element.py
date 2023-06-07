@@ -114,6 +114,7 @@ class LagrangeFR(FluxReconstruction):
         e = LagrangeExpansion(degree, coordinate, riemann.value_type())
         FluxReconstruction.__init__(self, riemann, e)
         self._mass_matrix = LagrangeDG._build_mass_matrix(self)
+        self._disspation_matrices = None
 
     def expansion(self) -> LagrangeExpansion:
         return Element.expansion(self)
@@ -240,8 +241,26 @@ class LagrangeFR(FluxReconstruction):
             mat_f[k] = correction_gradients_right[k] * d_plus_right
         # print('E =\n', mat_e)
         # print('F =\n', mat_f)
-        mat_d += mat_b - mat_c
-        return mat_d, mat_e, mat_f
+        return mat_b, mat_c, mat_d, mat_e, mat_f
+
+    def get_dissipation_rate(self):
+        if not self._disspation_matrices:
+            mat_b, mat_c, mat_d, mat_e, mat_f = self.get_dissipation_matrices()
+            mat_d += mat_b - mat_c
+            mat_w = np.eye(self.n_term())
+            for k in range(self.n_term()):
+                mat_w[k][k] = self.expansion().get_node_weight(k)
+            self._disspation_matrices = (mat_w@mat_d, mat_w@mat_e, mat_w@mat_f)
+        mat_d, mat_e, mat_f = self._disspation_matrices
+        curr_column = self.get_solution_column()
+        dissipation = mat_d @ curr_column
+        # left, right = self.neighbor_expansions()
+        # dissipation += mat_e @ left.get_coeff_ref()
+        # dissipation += mat_f @ right.get_coeff_ref()
+        dissipation = curr_column.transpose() @ dissipation
+        assert dissipation < 0
+        # print(f'dissipation = {dissipation:.2e}')
+        return dissipation
 
 
 class LegendreFR(FluxReconstruction):

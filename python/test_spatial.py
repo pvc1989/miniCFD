@@ -145,7 +145,8 @@ class TestLagrangeFR(unittest.TestCase):
             # compare
             cell_curr = scheme.get_element_by_index(i_curr)
             assert isinstance(cell_curr, element.LagrangeFR)
-            mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices()
+            mat_b, mat_c, mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices()
+            mat_d += mat_b - mat_c
             self.assertAlmostEqual(0.0,
                 np.linalg.norm((r_curr - s_curr) / nu - mat_d))
             self.assertAlmostEqual(0.0,

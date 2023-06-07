@@ -73,7 +73,6 @@ class Energy(concept.Viscous):
         self._tau = tau
         self._nu_max = nu_max
         self._index_to_nu = dict()
-        self._index_to_matrices = dict()
 
     def name(self, verbose=False) -> str:
         if verbose:
@@ -173,19 +172,7 @@ class Energy(concept.Viscous):
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
         assert isinstance(curr, element.LagrangeFR)
-        # TODO: move to element.LagrangeFR
-        if i_curr not in self._index_to_matrices:
-            self._index_to_matrices[i_curr] = curr.get_dissipation_matrices()
-        mat_d, mat_e, mat_f = self._index_to_matrices[i_curr]
-        curr_column = curr.get_solution_column()
-        dissipation = mat_d @ curr_column
-        # dissipation += mat_e @ left.get_solution_column()
-        # dissipation += mat_f @ right.get_solution_column()
-        for k in range(curr.n_term()):
-            dissipation[k] *= curr.expansion().get_node_weight(k)
-        dissipation = curr_column.transpose() @ dissipation
-        assert dissipation < 0
-        # print(f'dissipation = {dissipation:.2e}')
+        dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
         return oscillation_energy / (-dissipation * self._tau)
 
