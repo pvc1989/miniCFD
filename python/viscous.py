@@ -223,6 +223,90 @@ class Energy(concept.Viscous):
             return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
         return coeff
 
+    def _get_quadratic_by_extend_to_interface(self, grid: concept.Grid,
+            i_cell: int) -> callable:
+        cell = grid.get_element_by_index(i_cell)
+        b = np.ndarray(3)
+        assert i_cell in self._index_to_nu
+        b[0] = self._index_to_nu[i_cell]
+        left, right = cell.neighbor_expansions()
+        if left:
+            b[1] = self._get_nu(i_cell - 1)
+        else:
+            b[1] = b[0]
+        if right:
+            b[2] = self._get_nu((i_cell + 1) % grid.n_element())
+        else:
+            b[2] = b[0]
+        if b[0] != max(b):  # only build quad for max
+            return lambda x: b[0]
+        if i_cell not in self._index_to_a_inv:
+            a = np.eye(3)
+            a[1][0] = a[2][0] = 1.0
+            h = cell.length() / 2
+            a[1][1] = -h
+            a[2][1] = h
+            a[1][2] = a[2][2] = h*h
+            a_inv = np.linalg.inv(a)
+            self._index_to_a_inv[i_cell] = a_inv
+        else:
+            a_inv = self._index_to_a_inv[i_cell]
+        c = a_inv @ b
+        def coeff(x_global: float):
+            x = x_global - cell.x_center()
+            return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
+        return coeff
+
+    def _get_quadratic_by_keep_average(self, grid: concept.Grid,
+            i_cell: int) -> callable:
+        cell = grid.get_element_by_index(i_cell)
+        b = np.ndarray(3)
+        assert i_cell in self._index_to_nu
+        b[0] = self._index_to_nu[i_cell]
+        left, right = cell.neighbor_expansions()
+        if left:
+            b[1] = self._get_nu(i_cell - 1)
+        else:
+            b[1] = b[0]
+        if right:
+            b[2] = self._get_nu((i_cell + 1) % grid.n_element())
+        else:
+            b[2] = b[0]
+        if b[0] != max(b):  # only build quad for max
+            return lambda x: b[0]
+        if i_cell not in self._index_to_a_inv:
+            a = np.ndarray((3,3))
+            a[0][0] = cell.length()
+            a[0][1] = 0
+            a[0][2] = (cell.length() / 2)**3 * 2 / 3
+            if left:
+                x_left = left.x_left() - cell.x_center()
+                x_right = left.x_right() - cell.x_center()
+            else:
+                x_left = cell.x_left() - cell.length()
+                x_right = cell.x_right() - cell.length()
+            for p in (0,1,2):
+                q = p + 1
+                a[1][p] = (x_right**q - x_left**q) / q
+            if right:
+                x_left = right.x_left() - cell.x_center()
+                x_right = right.x_right() - cell.x_center()
+            else:
+                x_left = cell.x_left() + cell.length()
+                x_right = cell.x_right() + cell.length()
+            for p in (0,1,2):
+                q = p + 1
+                a[2][p] = (x_right**q - x_left**q) / q
+            a_inv = np.linalg.inv(a)
+            self._index_to_a_inv[i_cell] = a_inv
+        else:
+            a_inv = self._index_to_a_inv[i_cell]
+        c = a_inv @ b
+        def coeff(x_global: float):
+            x = x_global - cell.x_center()
+            return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
+        return coeff
+
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_nu.clear()
         self._index_to_coeff.clear()
@@ -230,7 +314,7 @@ class Energy(concept.Viscous):
             nu = self._get_constant_coeff(grid, i_cell)
             self._index_to_nu[i_cell] = nu  # min(nu, self._nu_max)
         for i_cell in troubled_cell_indices:
-            coeff = self._get_quadratic_by_extend_to_center(grid, i_cell)
+            coeff = self._get_quadratic_by_keep_average(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
 
 
