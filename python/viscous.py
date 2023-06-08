@@ -73,6 +73,7 @@ class Energy(concept.Viscous):
         self._tau = tau
         self._nu_max = nu_max
         self._index_to_nu = dict()
+        self._index_to_a_inv = dict()
 
     def name(self, verbose=False) -> str:
         if verbose:
@@ -135,8 +136,8 @@ class Energy(concept.Viscous):
         for i in range(len(points)):
             values[i] = cell.get_solution_value(points[i])
         return min(self._get_oscillation_energy_low(cell, points, values),
-            self._get_oscillation_energy_high(cell, points, values),
-            self._get_oscillation_energy_by_iji(cell))
+            self._get_oscillation_energy_high(cell, points, values))
+            # self._get_oscillation_energy_by_iji(cell))
 
     def _get_oscillation_energy_by_iji(self, cell: element.LagrangeFR):
         """Compute derivative jumps on interfaces.
@@ -182,10 +183,12 @@ class Energy(concept.Viscous):
         else:
             return 0.0
 
-    def _get_quadratic_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+    def _get_quadratic_by_extend_to_center(self, grid: concept.Grid,
+            i_cell: int) -> callable:
         cell = grid.get_element_by_index(i_cell)
-        a = np.eye(3)
-        a[1][0] = a[2][0] = 1.0
+        if i_cell not in self._index_to_a_inv:
+            a = np.eye(3)
+            a[1][0] = a[2][0] = 1.0
         b = np.ndarray(3)
         assert i_cell in self._index_to_nu
         b[0] = self._index_to_nu[i_cell]
@@ -196,17 +199,25 @@ class Energy(concept.Viscous):
         else:
             h = cell.length()
             b[1] = b[0]
-        a[1][1] = -h
-        a[1][2] = h*h
+        if i_cell not in self._index_to_a_inv:
+            a[1][1] = -h
+            a[1][2] = h*h
         if right:
             h = right.x_center() - cell.x_center()
             b[2] = self._get_nu((i_cell + 1) % grid.n_element())
         else:
             h = cell.length()
             b[2] = b[0]
-        a[2][1] = h
-        a[2][2] = h*h
-        c = np.linalg.solve(a, b)
+        if b[0] != max(b):  # only build quad for max
+            return lambda x: b[0]
+        if i_cell not in self._index_to_a_inv:
+            a[2][1] = h
+            a[2][2] = h*h
+            a_inv = np.linalg.inv(a)
+            self._index_to_a_inv[i_cell] = a_inv
+        else:
+            a_inv = self._index_to_a_inv[i_cell]
+        c = a_inv @ b
         def coeff(x_global: float):
             x = x_global - cell.x_center()
             return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
@@ -219,7 +230,7 @@ class Energy(concept.Viscous):
             nu = self._get_constant_coeff(grid, i_cell)
             self._index_to_nu[i_cell] = nu  # min(nu, self._nu_max)
         for i_cell in troubled_cell_indices:
-            coeff = self._get_quadratic_coeff(grid, i_cell)
+            coeff = self._get_quadratic_by_extend_to_center(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
 
 
