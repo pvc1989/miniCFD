@@ -14,9 +14,14 @@ class Solver(concept.RiemannSolver):
     # DDG constants:
     _beta_0, _beta_1 = 3.0, 1.0 / 12
 
+    def __init__(self, equation: concept.Equation) -> None:
+        super().__init__(equation)
+        self._value_left = None
+        self._value_right = None
+
     def set_initial(self, u_left, u_right):
-        self._u_left = u_left
-        self._u_right = u_right
+        self._value_left = u_left
+        self._value_right = u_right
         self._determine_wave_structure()
 
     @abc.abstractmethod
@@ -26,18 +31,16 @@ class Solver(concept.RiemannSolver):
         pass
 
     def get_value(self, x, t):
-        U = 0.0
         if t == 0:
             if x <= 0:
-                U = self._u_left
+                return self._value_left
             else:
-                U = self._u_right
+                return self._value_right
         else:  # t > 0
-            U = self._U(slope=x/t)
-        return U
+            return self._get_value(slope=x/t)
 
     @abc.abstractmethod
-    def _U(self, slope):
+    def _get_value(self, slope):
         """Get the self-similar solution on x / t.
         """
 
@@ -93,7 +96,8 @@ class Solver(concept.RiemannSolver):
 class LinearAdvection(Solver):
 
     def __init__(self, a_const: float, value_type=float):
-        self._equation = equation.LinearAdvection(a_const, value_type)
+        e = equation.LinearAdvection(a_const, value_type)
+        Solver.__init__(self, e)
 
     def equation(self) -> concept.Equation:
         return self._equation
@@ -101,70 +105,71 @@ class LinearAdvection(Solver):
     def _determine_wave_structure(self):
         pass
 
-    def _U(self, slope):
-        U = 0.0
+    def _get_value(self, slope):
         if slope <= self.equation().get_convective_speed():
-            U = self._u_left
+            return self._value_left
         else:
-            U = self._u_right
-        return U
+            return self._value_right
 
 
 class LinearAdvectionDiffusion(LinearAdvection):
 
     def __init__(self, a_const, b_const):
-        self._equation = equation.LinearAdvectionDiffusion(a_const, b_const)
+        e = equation.LinearAdvectionDiffusion(a_const, b_const)
+        Solver.__init__(self, e)
 
 
 class InviscidBurgers(Solver):
 
     def __init__(self, k=1.0):
-        self._equation = equation.InviscidBurgers(k)
+        Solver.__init__(self, equation.InviscidBurgers(k))
 
     def equation(self) -> equation.InviscidBurgers:
         return self._equation
 
     def _determine_wave_structure(self):
         self._slope_left, self._slope_right = 0, 0
-        if self._u_left <= self._u_right:  # rarefaction
-            self._slope_left = self._equation.get_convective_speed(self._u_left)
-            self._slope_right = self._equation.get_convective_speed(self._u_right)
+        if self._value_left <= self._value_right:  # rarefaction
+            self._slope_left = \
+                self._equation.get_convective_speed(self._value_left)
+            self._slope_right = \
+                self._equation.get_convective_speed(self._value_right)
         else:  # shock
-            u_mean = (self._u_left + self._u_right) / 2
+            u_mean = (self._value_left + self._value_right) / 2
             slope = self._equation.get_convective_speed(u_mean) 
             self._slope_left, self._slope_right = slope, slope
 
-    def _U(self, slope):
+    def _get_value(self, slope):
         if slope <= self._slope_left:
-            return self._u_left
+            return self._value_left
         elif slope >= self._slope_right:
-            return self._u_right
+            return self._value_right
         else:  # slope_left < slope < slope_right, u = a^{-1}(slope)
-            k = (self._slope_right - self._slope_left) / (self._u_right - self._u_left)
+            k = (self._slope_right - self._slope_left) / (self._value_right - self._value_left)
             return slope / k
 
 
 class Burgers(InviscidBurgers):
 
     def __init__(self, k=1.0, nu=0.0):
-        self._equation = equation.Burgers(k, nu)
+        Solver.__init__(self, equation.Burgers(k, nu))
 
 
 class Euler(Solver):
 
     def __init__(self, gamma=1.4):
         self._gas = gas.Ideal(gamma)
-        self._equation = equation.Euler(gamma)
+        Solver.__init__(self, equation.Euler(gamma))
 
-    def equation(self) -> concept.Equation:
+    def equation(self) -> equation.Euler:
         return self._equation
 
     def _determine_wave_structure(self):
         # set states in unaffected regions
-        rho_left, u_left, p_left = self._equation.conservative_to_primitive(
-            self._u_left)
-        rho_right, u_right, p_right = self._equation.conservative_to_primitive(
-            self._u_right)
+        rho_left, u_left, p_left = \
+            self.equation().conservative_to_primitive(self._value_left)
+        rho_right, u_right, p_right = \
+            self.equation().conservative_to_primitive(self._value_right)
         assert p_left*p_right != 0, (p_left, p_right)
         self._u_left, self._u_right = u_left, u_right
         self._p_left, self._p_right = p_left, p_right
@@ -240,8 +245,8 @@ class Euler(Solver):
             self._rho_2_right = rho_2
             self._slope_3_left = slope_left
             self._slope_3_right = slope_right
-        print(f'p2 = {self._p_2:5f}, u2 = {self._u_2:5f},',
-            f'rho2L = {self._rho_2_left:5f}, rho2R = {self._rho_2_right:5f}')
+        # print(f'p2 = {self._p_2:5f}, u2 = {self._u_2:5f},',
+        #     f'rho2L = {self._rho_2_left:5f}, rho2R = {self._rho_2_right:5f}')
 
     def _exist_vacuum(self):
         exist = False
@@ -285,7 +290,7 @@ class Euler(Solver):
 
     def _P(self, p_1, p_2):
         return (p_1 * self._gas.gamma_minus_1() +
-                        p_2 * self._gas.gamma_plus_1()) / 2
+                p_2 * self._gas.gamma_plus_1()) / 2
 
     def _guess(self, p, func):
         while func(p) > 0:
@@ -300,7 +305,7 @@ class Euler(Solver):
         rho_2 = rho_1 * (u_1 - slope) / (u_2 - slope)
         return rho_2, slope, slope
 
-    def _U(self, slope):
+    def _get_value(self, slope):
         u, p, rho = 0, 0, 0
         if slope < self._slope_2:
             if slope <= self._slope_1_left:
@@ -330,7 +335,7 @@ class Euler(Solver):
                 rho = a**2 / self._gas.gamma() / self._riemann_invariants_right[0]
                 rho = rho**self._gas.one_over_gamma_minus_1()
                 p = a**2 * rho / self._gas.gamma()
-        return self._equation.primitive_to_conservative(rho, u, p)
+        return self.equation().primitive_to_conservative(rho, u, p)
 
 
 if __name__ == '__main__':
