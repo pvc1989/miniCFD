@@ -64,10 +64,10 @@ class Krivodonova2004(SmoothnessBased):
             ratio = curr.length()**((curr.degree() + 1) / 2)
             left, right = curr.neighbor_expansions()
             dividend = 0.0
-            if curr.get_convective_speed(curr.x_left()) > 0 and left:
+            if curr.equation().get_convective_speed(curr.x_left()) > 0 and left:
                 dividend += np.abs(curr.get_solution_value(curr.x_left())
                     - left.global_to_value(left.x_right()))
-            if curr.get_convective_speed(curr.x_right()) < 0 and right:
+            if curr.equation().get_convective_speed(curr.x_right()) < 0 and right:
                 dividend += np.abs(curr.get_solution_value(curr.x_right())
                     - right.global_to_value(right.x_left()))
             divisor = ratio * curr_norm

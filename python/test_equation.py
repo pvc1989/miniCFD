@@ -15,43 +15,58 @@ class TestEquations(unittest.TestCase):
         """Test methods of a LinearAdvection object."""
         a_const = rand()
         advection = equation.LinearAdvection(a_const)
-        unknown = rand()
-        self.assertEqual(advection.get_convective_flux(unknown), a_const*unknown)
-        self.assertEqual(advection.get_convective_speed(unknown), a_const)
+        u_given = rand()
+        self.assertEqual(advection.get_convective_flux(u_given), a_const*u_given)
+        self.assertEqual(advection.get_convective_jacobian(u_given), a_const)
+        self.assertEqual(advection.get_convective_eigvals(u_given)[0], a_const)
+        self.assertEqual(advection.get_convective_speed(u_given), a_const)
 
     def test_inviscid_burgers(self):
         """Test methods of an InviscidBurgers object."""
-        burgers = equation.InviscidBurgers()
-        unknown = rand()
-        self.assertEqual(burgers.get_convective_flux(unknown), unknown**2/2)
-        self.assertEqual(burgers.get_convective_speed(unknown), unknown)
+        k_const = rand()
+        burgers = equation.InviscidBurgers(k_const)
+        u_given = rand()
+        speed = k_const * u_given
+        flux = k_const * u_given**2 / 2
+        self.assertEqual(burgers.get_convective_flux(u_given), flux)
+        self.assertEqual(burgers.get_convective_jacobian(u_given), speed)
+        self.assertEqual(burgers.get_convective_eigvals(u_given)[0], speed)
+        self.assertEqual(burgers.get_convective_speed(u_given), speed)
 
     def test_linear_system(self):
         """Test methods of a LinearSystem object."""
         a_const = rand(3, 3)
         system = equation.LinearSystem(a_const)
-        unknown = rand(3, 1)
-        norm = np.linalg.norm(system.get_convective_flux(unknown)
-            - a_const.dot(unknown))
+        u_given = rand(3, 1)
+        norm = np.linalg.norm(system.get_convective_flux(u_given)
+            - a_const.dot(u_given))
         self.assertEqual(norm, 0.0)
-        norm = np.linalg.norm(system.get_convective_speed(unknown) - a_const)
+        norm = np.linalg.norm(system.get_convective_jacobian(u_given) - a_const)
+        self.assertEqual(norm, 0.0)
+        norm = np.linalg.norm(system.get_convective_eigvals(u_given)
+                              - np.linalg.eigvals(a_const))
         self.assertEqual(norm, 0.0)
 
     def test_euler_1d(self):
         """Test methods of an Euler object."""
         euler = equation.Euler(gamma=1.4)
-        # If unknown is an array of ints, small number will be rounded to 0.
         rho_given, u_given, p_given = rand(), rand(), rand()
-        unknown = euler.primitive_to_conservative(rho_given, u_given, p_given)
-        rho_actual, u_actual, p_actual = euler.conservative_to_primitive(
-            unknown)
+        given = euler.primitive_to_conservative(rho_given, u_given, p_given)
+        rho_actual, u_actual, p_actual = euler.conservative_to_primitive(given)
         self.assertAlmostEqual(rho_actual, rho_given)
         self.assertAlmostEqual(u_actual, u_given)
         self.assertAlmostEqual(p_actual, p_given)
-        # test unknown-property
-        norm = np.linalg.norm(euler.get_convective_flux(unknown)
-            - euler.get_convective_speed(unknown).dot(unknown))
+        # test F(U) == A(U) @ U
+        jacobian = euler.get_convective_jacobian(given)
+        norm = np.linalg.norm(euler.get_convective_flux(given)
+            - jacobian.dot(given))
         self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(euler.get_convective_eigvals(given)
+            - np.sort(np.linalg.eigvals(jacobian)))
+        self.assertAlmostEqual(norm, 0.0)
+        self.assertEqual(
+            euler.get_convective_eigvals(given)[1],
+            euler.get_convective_speed(given))
 
 
 if __name__ == '__main__':

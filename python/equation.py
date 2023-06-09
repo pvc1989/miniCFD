@@ -4,6 +4,16 @@ import concept
 import gas
 
 
+class Scalar(concept.Equation):
+
+    def get_convective_jacobian(self, u_given) -> np.ndarray:
+        speed = self.get_convective_speed(u_given)
+        return np.array([speed])
+
+    def get_convective_eigvals(self, u_given) -> tuple:
+        return (self.get_convective_speed(u_given),)
+
+
 class ConservationLaw(concept.Equation):
     # \pdv{U}{t} + \pdv{F}{x} = 0
 
@@ -20,7 +30,7 @@ class ConservationLaw(concept.Equation):
         return u * 0
 
 
-class LinearAdvection(ConservationLaw):
+class LinearAdvection(ConservationLaw, Scalar):
     # ∂u/∂t + a * ∂u/∂x = 0
 
     def __init__(self, a_const, value_type=float):
@@ -59,7 +69,7 @@ class LinearAdvectionDiffusion(LinearAdvection):
         return self._b
 
 
-class InviscidBurgers(ConservationLaw):
+class InviscidBurgers(ConservationLaw, Scalar):
     # ∂u/∂t + k * u * ∂u/∂x = 0
 
     def __init__(self, k=1.0):
@@ -106,6 +116,8 @@ class LinearSystem(ConservationLaw):
         ConservationLaw.__init__(self, np.ndarray)
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
+        eigvals = np.linalg.eigvals(A_const)
+        self._eigvals = (eigvals[0], eigvals[1], eigvals[2])
 
     def n_component(self):
         return len(self._A)
@@ -116,8 +128,14 @@ class LinearSystem(ConservationLaw):
     def get_convective_flux(self, U: np.ndarray) -> np.ndarray:
         return self._A.dot(U)
 
-    def get_convective_speed(self, U: np.ndarray) -> np.ndarray:
+    def get_convective_jacobian(self, U: np.ndarray) -> np.ndarray:
         return self._A
+
+    def get_convective_eigvals(self, u_given) -> np.ndarray:
+        return self._eigvals
+
+    def get_convective_speed(self, u_given):
+        assert False
 
 
 class Euler(ConservationLaw):
@@ -156,7 +174,7 @@ class Euler(ConservationLaw):
         F[2] += p*u
         return F
 
-    def get_convective_speed(self, U):
+    def get_convective_jacobian(self, U):
         A = np.zeros((3, 3))
         A[0][1] = 1.0
         u = U[1] / U[0]
@@ -170,6 +188,14 @@ class Euler(ConservationLaw):
         A[2][1] = gamma_times_e_total - 3*e_kinetic*self._gas.gamma_minus_1()
         A[2][2] = u * self._gas.gamma()
         return A
+
+    def get_convective_eigvals(self, u_given) -> tuple:
+        rho, u, p = self.conservative_to_primitive(u_given)
+        a = np.sqrt(self._gas.gamma() * p / rho)
+        return (u-a, u, u+a)
+
+    def get_convective_speed(self, u_given):
+        return u_given[1] / u_given[0]
 
 
 if __name__ == '__main__':

@@ -392,8 +392,18 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_convective_speed(self, u_given):
+    def get_convective_jacobian(self, u_given) -> np.ndarray:
         """Get the value of ∂F(U)/∂U for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_convective_eigvals(self, u_given) -> tuple:
+        """Get the eigenvalues of ∂F(U)/∂U for a given U.
+        """
+
+    @abc.abstractmethod
+    def get_convective_speed(self, u_given):
+        """Get the value of convective speed for a given U.
         """
 
     @abc.abstractmethod
@@ -544,12 +554,6 @@ class Element(abc.ABC):
         mass_matrix = self.expansion().get_basis_innerproducts()
         return mass_matrix
 
-    def get_convective_speed(self, x_global: float):
-        """Get the value of a(u^h) at a given point.
-        """
-        return self.equation().get_convective_speed(
-              self.get_solution_value(x_global))
-
     def get_discontinuous_flux(self, x_global, extra_viscous):
         """Get the value of f(u^h) at a given point.
         """
@@ -617,8 +621,10 @@ class Element(abc.ABC):
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
-            a = self.equation().get_convective_speed(u)
-            lambda_c = np.abs(a)
+            eigvals = self.equation().get_convective_eigvals(u)
+            lambda_c = 1e-16
+            for val in eigvals:
+                lambda_c = max(lambda_c, np.abs(val))
             if callable(extra_viscous):
                 extra_viscous = extra_viscous(x)
             b = self.equation().get_diffusive_coeff(u) + extra_viscous

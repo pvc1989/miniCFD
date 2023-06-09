@@ -292,8 +292,8 @@ class LegendreFR(FluxReconstruction):
     def get_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
             extra_viscous=0.0):
         u_approx = self.get_solution_value(x_global)
-        a_approx = self.equation().get_convective_speed(u_approx)
-        gradient = a_approx * self.expansion().global_to_gradient(x_global)
+        a_approx = self.equation().get_convective_jacobian(u_approx)
+        gradient = a_approx @ self.expansion().global_to_gradient(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_gradient(x_local)
         left /= self.coordinate().global_to_jacobian(x_global)
