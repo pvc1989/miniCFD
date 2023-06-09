@@ -69,8 +69,13 @@ class SolverBase(abc.ABC):
         approx_solution = np.ndarray(n_point)
         for i in range(n_point):
             point_i = points[i]
-            approx_solution[i] = self._spatial.get_solution_value(point_i)
-            expect_solution[i] = self.u_exact(point_i, t_curr)
+            approx_i = self._spatial.get_solution_value(point_i)
+            expect_i = self.u_exact(point_i, t_curr)
+            if isinstance(approx_i, np.ndarray):
+                approx_i = approx_i[0]
+                expect_i = expect_i[0]
+            approx_solution[i] = approx_i
+            expect_solution[i] = expect_i
         return expect_solution, approx_solution
 
     def _measure_errors(self, t_curr):
@@ -104,10 +109,11 @@ class SolverBase(abc.ABC):
         plt.tight_layout()
         # plt.show()
         plt.savefig(filename)
-        error_1, error_2, error_infty = self._measure_errors(t_curr)
-        print('t_curr, error_1, error_2, error_∞ =',
-            f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
         plt.close(fig)
+        if self._spatial.equation().n_component() == 1:
+            error_1, error_2, error_infty = self._measure_errors(t_curr)
+            print('t_curr, error_1, error_2, error_∞ =',
+                f'[ {t_curr}, {error_1:6e}, {error_2:6e}, {error_infty:6e} ],')
 
     def _write_to_vtu(self, filename: str, t_curr: float, binary=True):
         grid = vtk.vtkUnstructuredGrid()
@@ -339,12 +345,14 @@ class EulerRiemann(SolverBase):
             v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
-        self._riemann = riemann.Euler(gamma=1.4)
-        self._value_left = self._riemann.equation().primitive_to_conservative(
-              rho=1.0, u=0, p=1.0)
-        self._value_right = self._riemann.equation().primitive_to_conservative(
-              rho=0.125, u=0, p=0.1)
-        self._riemann.set_initial(self._value_left, self._value_right)
+        r = self._spatial._riemann
+        assert isinstance(r, riemann.Euler)
+        e = r.equation()
+        self._value_left = e.primitive_to_conservative(rho=1.0, u=0, p=1.0)
+        self._value_right = e.primitive_to_conservative(rho=0.125, u=0, p=0.1)
+
+    def problem_name(self):
+        return 'Sod'
 
     def u_init(self, x_global):
         if x_global < self._x_mid:
@@ -353,7 +361,15 @@ class EulerRiemann(SolverBase):
             return self._value_right
 
     def u_exact(self, x_global, t_curr):
-        return self._riemann.U(x_global - self._x_mid, t_curr)
+        r = self._spatial._riemann
+        value = r.get_value(x_global - self._x_mid, t_curr)
+        return value
+
+    def _get_ydata(self, t_curr, points):
+        r = self._spatial._riemann
+        assert isinstance(r, riemann.Euler)
+        r.set_initial(self._value_left, self._value_right)
+        return super()._get_ydata(t_curr, points)
 
 
 if __name__ == '__main__':

@@ -542,8 +542,6 @@ class Element(abc.ABC):
 
     def _build_mass_matrix(self):
         mass_matrix = self.expansion().get_basis_innerproducts()
-        assert self.n_term() == self.n_dof()
-        # Otherwise, it should be spanned to a block diagonal matrix.
         return mass_matrix
 
     def get_convective_speed(self, x_global: float):
