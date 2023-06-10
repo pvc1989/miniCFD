@@ -210,6 +210,7 @@ class FluxReconstruction(FiniteElement):
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
+        is_scalar = (self.value_type() == self.scalar_type())
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
             assert (isinstance(element_i, element.LagrangeFR)
@@ -221,9 +222,17 @@ class FluxReconstruction(FiniteElement):
             upwind_flux_right = interface_fluxes[i+1]
             values = -element_i.get_flux_gradients(
                 upwind_flux_left, upwind_flux_right, extra_viscous)
-            column[i_dof:i_dof+len(values)] = values
-            i_dof += len(values)
-        assert i_dof == self.n_dof()
+            n_row = len(values)
+            if is_scalar:
+                column[i_dof:i_dof+n_row] = values
+                i_dof += n_row
+            else:
+                n_col = len(values[0])
+                for i_col in range(n_col):
+                    for i_row in range(n_row):
+                        column[i_dof] = values[i_row][i_col]
+                        i_dof += 1
+        assert i_dof == self.n_dof(), (i_dof, self.n_dof())
         return column
 
     def get_continuous_flux(self, point):

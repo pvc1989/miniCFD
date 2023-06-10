@@ -592,16 +592,42 @@ class Element(abc.ABC):
 
         The element is responsible for the column-to-coeff conversion.
         """
-        assert self.equation().n_component() == 1
-        self.expansion().set_coeff(column)
+        dtype = self.scalar_type()
+        if dtype == self.value_type():
+            self.expansion().set_coeff(column)
+        else:
+            n_row = self.n_term()
+            n_col = self.equation().n_component()
+            coeff = np.ndarray(n_row, np.ndarray)
+            for i_row in range(n_row):
+                coeff[i_row] = np.ndarray(n_col, dtype)
+            i_dof = 0
+            for i_col in range(n_col):
+                for i_row in range(n_row):
+                    coeff[i_row][i_col] = column[i_dof]
+                    i_dof += 1
+            assert i_dof == len(column)
+            self.expansion().set_coeff(coeff)
 
     def get_solution_column(self) -> np.ndarray:
         """Get coefficients of the solution's expansion.
 
         The element is responsible for the coeff-to-column conversion.
         """
-        assert self.equation().n_component() == 1
-        return self.expansion().get_coeff_ref()
+        coeff = self.expansion().get_coeff_ref()
+        if coeff.dtype == np.ndarray:
+            column = np.ndarray(self.n_dof(), self.scalar_type())
+            n_row = len(coeff)
+            n_col = len(coeff[0])
+            i_dof = 0
+            for i_col in range(n_col):
+                for i_row in range(n_row):
+                    column[i_dof] = coeff[i_row][i_col]
+                    i_dof += 1
+            assert i_dof == len(column)
+            return column
+        else:
+            return coeff
 
     @abc.abstractmethod
     def divide_mass_matrix(self, column: np.ndarray):
