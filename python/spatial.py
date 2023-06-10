@@ -114,7 +114,7 @@ class FiniteElement(concept.SpatialScheme):
         self.suppress_oscillations()
 
     def get_solution_column(self):
-        column = np.zeros(self.n_dof(), self.value_type())
+        column = np.zeros(self.n_dof(), self.scalar_type())
         first = 0
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
@@ -136,7 +136,7 @@ class DiscontinuousGalerkin(FiniteElement):
     """
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self.value_type())
+        column = np.zeros(self.n_dof(), self.scalar_type())
         interface_fluxes = self.get_interface_fluxes()
         i_dof = 0
         for i in range(self.n_element()):
@@ -206,7 +206,7 @@ class FluxReconstruction(FiniteElement):
     """
 
     def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self.value_type())
+        column = np.zeros(self.n_dof(), self.scalar_type())
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0

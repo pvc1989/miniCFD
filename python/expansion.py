@@ -30,6 +30,13 @@ class Taylor(Expansion):
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
 
+    def scalar_type(self):
+        value = self._taylor_coeff[0]
+        if np.isscalar(value):
+            return type(value)
+        else:
+            return type(value[0])
+
     def name(self, verbose) -> str:
         my_name = 'Taylor'
         if verbose:

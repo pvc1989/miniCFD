@@ -200,6 +200,11 @@ class Expansion(abc.ABC):
         """
         return self._value_type
 
+    @abc.abstractmethod
+    def scalar_type(self):
+        """Get the type of scalars.
+        """
+
     def coordinate(self) -> Coordinate:
         """Get a refenece to the underlying Coordinate object.
         """
@@ -309,6 +314,9 @@ class ShiftedExpansion(Expansion):
             IntegtatorType(shifted_coordinate), expansion.value_type())
         self._unshifted_expansion = expansion
         self._x_shift = x_shift
+
+    def scalar_type(self):
+        return self._unshifted_expansion.scalar_type()
 
     def name(self, verbose: bool) -> str:
         return self._unshifted_expansion.name(verbose)
@@ -480,7 +488,10 @@ class Element(abc.ABC):
         return self._riemann.equation()
 
     def value_type(self):
-        return self.equation().value_type()
+        return self.expansion().value_type()
+
+    def scalar_type(self):
+        return self.expansion().scalar_type()
 
     def coordinate(self) -> Coordinate:
         """Get a refenece to the underlying Coordinate object.
@@ -795,7 +806,10 @@ class SpatialScheme(Grid, OdeSystem):
         self._viscous = viscous
 
     def value_type(self):
-        return self._riemann.value_type()
+        return self.get_element_by_index(0).value_type()
+
+    def scalar_type(self):
+        return self.get_element_by_index(0).scalar_type()
 
     def degree(self):
         """Get the degree of the polynomial approximation.
