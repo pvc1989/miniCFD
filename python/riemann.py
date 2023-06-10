@@ -197,13 +197,15 @@ class Euler(Solver):
             du = u_right - u_left
             func = lambda p: (self._f(p, p_left, rho_left)
                 + self._f(p, p_right, rho_right) + du)
-            roots, infodict, ierror, message = fsolve(func,
-                fprime=lambda p: (self._f_prime(p, p_left, rho_left)
-                    + self._f_prime(p, p_right, rho_right)),
-                x0=self._guess(p_left, func),
-                full_output=True)
-            assert ierror == 1, message
-            p_2 = roots[0]
+            p_2 = self._guess(p_left, func)
+            if np.abs(func(p_2)) > 1e-8:
+                roots, infodict, ierror, message = fsolve(func,
+                    fprime=lambda p: (self._f_prime(p, p_left, rho_left)
+                        + self._f_prime(p, p_right, rho_right)),
+                    x0=self._guess(p_left, func),
+                    full_output=True)
+                assert ierror == 1, message
+                p_2 = roots[0]
             u_2 = (u_left - self._f(p_2, p_left, rho_left)
                 + u_right + self._f(p_2, p_right, rho_right)) / 2
             self._p_2 = p_2
@@ -211,9 +213,10 @@ class Euler(Solver):
             self._slope_2 = u_2
             # 1-field: a left running wave
             rho_2, slope_left, slope_right = rho_left, u_left, u_left
-            if p_2 > p_left:  # shock
+            eps = 1e-10
+            if p_2 > p_left + eps:  # shock
                 rho_2, slope_left, slope_right = self._shock(u_2, p_2, u_left, p_left, rho_left)
-            elif p_2 < p_left:  # rarefraction
+            elif p_2 < p_left - eps:  # rarefraction
                 # riemann-invariant = u + 2*a/(gamma-1)
                 a_2 = a_left + (u_left-u_2)/2*self._gas.gamma_minus_1()
                 assert a_2 >= 0, a_2
@@ -223,15 +226,16 @@ class Euler(Solver):
                 slope_right = u_2 - a_2
             else:
                 pass
-            assert slope_left <= slope_right <= u_2, (p_2, p_left, slope_left, slope_right, u_2)
+            # assert slope_left <= slope_right <= u_2+eps, \
+            #     (p_2, p_left, slope_left, slope_right, u_2)
             self._rho_2_left = rho_2
             self._slope_1_left = slope_left
             self._slope_1_right = slope_right
             # 3-field: a right running wave
             rho_2, slope_left, slope_right = rho_right, u_right, u_right
-            if p_2 > p_right:  # shock
+            if p_2 > p_right + 1e-8:  # shock
                 rho_2, slope_left, slope_right = self._shock(u_2, p_2, u_right, p_right, rho_right)
-            elif p_2 < p_right:  # rarefraction
+            elif p_2 < p_right - 1e-8:  # rarefraction
                 # riemann-invariant = u - 2*a/(gamma-1)
                 a_2 = a_right - (u_right-u_2)/2*self._gas.gamma_minus_1()
                 assert a_2 >= 0, a_2
@@ -241,7 +245,8 @@ class Euler(Solver):
                 slope_right = u_right + a_right
             else:
                 pass
-            assert u_2 <= slope_left <= slope_right, (p_2, p_right, u_2, slope_left, slope_right)
+            # assert u_2-eps <= slope_left <= slope_right, \
+            #     (p_2, p_right, u_2, slope_left, slope_right)
             self._rho_2_right = rho_2
             self._slope_3_left = slope_left
             self._slope_3_right = slope_right

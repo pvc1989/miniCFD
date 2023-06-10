@@ -2,6 +2,7 @@
 """
 import unittest
 
+import numpy as np
 from numpy.random import rand
 
 import riemann
@@ -139,6 +140,17 @@ class TestInviscidBurgers(unittest.TestCase):
         self.assertEqual(solver.get_value(x=-1, t=0), u_left)
         self.assertEqual(solver.get_value(x=+1, t=0), u_right)
         self.assertIn(solver.get_value(x=0, t=0), (u_left, u_right))
+
+class TestEuler(unittest.TestCase):
+
+    def test_consistency(self):
+        u_left = np.array([1.0, 0.0, 1.0])
+        u_right = u_left
+        solver = riemann.Euler()
+        self.assertAlmostEqual(0.0, np.linalg.norm(
+            solver.get_upwind_flux(u_left, u_right) -
+            solver.equation().get_convective_flux(u_left)))
+
 
 if __name__ == '__main__':
     unittest.main()
