@@ -124,6 +124,19 @@ class FiniteElement(concept.SpatialScheme):
         assert first == self.n_dof()
         return column
 
+    def _write_to_column(self, column: np.ndarray, values: np.ndarray, i_dof):
+        n_row = len(values)
+        if np.isscalar(values[0]):
+            column[i_dof:i_dof+n_row] = values
+            i_dof += n_row
+        else:
+            n_col = len(values[0])
+            for i_col in range(n_col):
+                for i_row in range(n_row):
+                    column[i_dof] = values[i_row][i_col]
+                    i_dof += 1
+        return i_dof
+
     def initialize(self, function: callable):
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
@@ -141,27 +154,30 @@ class DiscontinuousGalerkin(FiniteElement):
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
-            n_dof = element_i.n_dof()
             # build element_i's residual column
             # 1st: evaluate the internal integral
             extra_viscous = 0.0
             if self._viscous:
                 extra_viscous = self._viscous.get_coeff(i)
             def integrand(x_global):
-                column = element_i.get_basis_gradients(x_global)
-                gradient = element_i.get_discontinuous_flux(x_global, extra_viscous)
-                return column * gradient
+                return np.tensordot(
+                    element_i.get_basis_gradients(x_global),
+                    element_i.get_discontinuous_flux(x_global, extra_viscous),
+                    0)
             values = element_i.fixed_quad_global(integrand, element_i.degree())
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
-            values += upwind_flux_left * element_i.get_basis_values(element_i.x_left())
-            values -= upwind_flux_right * element_i.get_basis_values(element_i.x_right())
+            values += np.tensordot(
+                element_i.get_basis_values(element_i.x_left()),
+                upwind_flux_left, 0)
+            values -= np.tensordot(
+                element_i.get_basis_values(element_i.x_right()),
+                upwind_flux_right, 0)
             # 3rd: multiply the inverse of the mass matrix
             values = element_i.divide_mass_matrix(values)
             # write to the global column
-            column[i_dof:i_dof+n_dof] = values
-            i_dof += n_dof
+            i_dof = self._write_to_column(column, values, i_dof)
         assert i_dof == self.n_dof()
         return column
 
@@ -210,7 +226,6 @@ class FluxReconstruction(FiniteElement):
         interface_fluxes = self.get_interface_fluxes()
         # evaluate flux gradients
         i_dof = 0
-        is_scalar = (self.value_type() == self.scalar_type())
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
             assert (isinstance(element_i, element.LagrangeFR)
@@ -222,16 +237,7 @@ class FluxReconstruction(FiniteElement):
             upwind_flux_right = interface_fluxes[i+1]
             values = -element_i.get_flux_gradients(
                 upwind_flux_left, upwind_flux_right, extra_viscous)
-            n_row = len(values)
-            if is_scalar:
-                column[i_dof:i_dof+n_row] = values
-                i_dof += n_row
-            else:
-                n_col = len(values[0])
-                for i_col in range(n_col):
-                    for i_row in range(n_row):
-                        column[i_dof] = values[i_row][i_col]
-                        i_dof += 1
+            i_dof = self._write_to_column(column, values, i_dof)
         assert i_dof == self.n_dof(), (i_dof, self.n_dof())
         return column
 
