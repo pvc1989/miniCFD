@@ -1,11 +1,17 @@
 """Concrete implementations of limiters.
 """
+import abc
 import numpy as np
 from scipy import special
 from copy import deepcopy
 
 import concept
 import expansion
+import equation
+
+
+def _get_candidate_coeff(candidate: concept.Expansion):
+    return candidate.get_coeff_ref()
 
 
 class CompactWENO(concept.Limiter):
@@ -25,6 +31,21 @@ class CompactWENO(concept.Limiter):
             cell_i.set_solution_coeff(new_coeffs[i_new])
             i_new += 1
         assert i_new == len(new_coeffs)
+
+    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
+        candidates = self.get_candidates(curr)
+        if isinstance(curr.equation(), equation.Scalar):
+            return self.get_scalar_coeff(candidates, curr)
+        else:
+            assert False
+
+    @abc.abstractmethod
+    def get_candidates(self, curr: concept.Element) -> list:
+        """"""
+
+    @abc.abstractmethod
+    def get_scalar_coeff(self, candidates, curr: concept.Element) -> np.ndarray:
+        """"""
 
 
 class ZhongXingHui2013(CompactWENO):
@@ -68,12 +89,15 @@ class ZhongXingHui2013(CompactWENO):
             beta += norms[k] * scale
         return beta
 
-    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
+    def get_candidates(self, curr: concept.Element) -> list:
         candidates = []
         candidates.append(curr.expansion())
         for neighbor in curr.neighbor_expansions():
             if neighbor:
                 candidates.append(self._borrow_expansion(curr, neighbor))
+        return candidates
+
+    def get_scalar_coeff(self, candidates: list, curr: concept.Element):
         # evaluate weights for each candidate
         weights = np.ndarray(len(candidates))
         for i in range(len(candidates)):
@@ -85,9 +109,9 @@ class ZhongXingHui2013(CompactWENO):
             weights[i] = linear_weight / (self._epsilon + smoothness)**2
         weights /= np.sum(weights)
         # weight the coeffs
-        coeff = candidates[0].get_coeff_ref() * weights[0]
+        coeff = _get_candidate_coeff(candidates[0]) * weights[0]
         for i in range(1, len(candidates)):
-            coeff += candidates[i].get_coeff_ref() * weights[i]
+            coeff += _get_candidate_coeff(candidates[i]) * weights[i]
         return coeff
 
 
@@ -138,7 +162,7 @@ class LiWanAi2020(CompactWENO):
         norms = self._get_derivative_norms(taylor)
         return np.sum(norms[1:])
 
-    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
+    def get_candidates(self, curr: concept.Element) -> list:
         candidates = []
         # Get candidates by projecting to lower-order spaces:
         curr_legendre = curr.expansion()
@@ -153,6 +177,9 @@ class LiWanAi2020(CompactWENO):
         for neighbor in curr.neighbor_expansions():
             if neighbor:
                 candidates.append(self._borrow_expansion(curr, neighbor))
+        return candidates
+
+    def get_scalar_coeff(self, candidates: list, curr: concept.Element):
         # Get smoothness values: (TODO: use quadrature-free implementation)
         # process 1-degree candidates
         i_candidate = curr.degree() - 1
@@ -189,7 +216,7 @@ class LiWanAi2020(CompactWENO):
         # Average the coeffs:
         new_coeff = np.zeros(curr.degree()+1)
         for i_candidate in range(len(weights)):
-            coeff = candidates[i_candidate].get_coeff_ref()
+            coeff = _get_candidate_coeff(candidates[i_candidate])
             weight = weights[i_candidate] / weight_sum
             new_coeff[0:len(coeff)] += coeff * weight
         # Legendre to Lagrange, if necessary:
