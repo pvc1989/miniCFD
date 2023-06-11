@@ -9,7 +9,7 @@ from scipy import optimize
 import vtk
 
 import concept
-import riemann
+import equation, riemann
 import spatial, detector, limiter, viscous
 import temporal
 
@@ -35,6 +35,7 @@ class SolverBase(abc.ABC):
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)
         self._u_mean = u_mean
+        self._ylim = (u_mean - 1.2, u_mean + 1.4)
 
     @abc.abstractmethod
     def problem_name(self) -> str:
@@ -55,7 +56,7 @@ class SolverBase(abc.ABC):
         fig = plt.figure(figsize=(8, 6))
         plt.xlabel(r'$x$')
         plt.ylabel(r'$u$')
-        plt.ylim([self._u_mean-1.2, self._u_mean+1.4])
+        plt.ylim(self._ylim)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
             self._spatial.n_element() + 1), minor=True)
         plt.xticks(np.linspace(self._spatial.x_left(), self._spatial.x_right(),
@@ -336,23 +337,18 @@ class InviscidBurgers(SolverBase):
         return root
 
 
-class EulerRiemann(SolverBase):
+class ShockTube(SolverBase):
     """Demo the usage of Euler related classes.
     """
 
-    def __init__(self, u_mean: float, wave_number: int,
+    def __init__(self, value_left: np.ndarray, value_right: np.ndarray,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
             v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        u_mean = (value_left[0] + value_right[0]) / 2
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
-        r = self._spatial._riemann
-        assert isinstance(r, riemann.Euler)
-        e = r.equation()
-        self._value_left = e.primitive_to_conservative(rho=1.0, u=0, p=1.0)
-        self._value_right = e.primitive_to_conservative(rho=0.125, u=0, p=0.1)
-
-    def problem_name(self):
-        return 'Sod'
+        self._value_left = value_left
+        self._value_right = value_right
 
     def u_init(self, x_global):
         if x_global < self._x_mid:
@@ -370,6 +366,38 @@ class EulerRiemann(SolverBase):
         assert isinstance(r, riemann.Euler)
         r.set_initial(self._value_left, self._value_right)
         return super()._get_ydata(t_curr, points)
+
+
+class Sod(ShockTube):
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        e = s.equation()
+        assert isinstance(e, equation.Euler)
+        left = e.primitive_to_conservative(rho=1.0, u=0, p=1.0)
+        right = e.primitive_to_conservative(rho=0.125, u=0, p=0.1)
+        ShockTube.__init__(self, left, right, s, d, l, v, ode_solver)
+        self._ylim = (0, 1.1)
+
+    def problem_name(self):
+        return 'Sod'
+
+
+class Lax(ShockTube):
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+        e = s.equation()
+        assert isinstance(e, equation.Euler)
+        left = e.primitive_to_conservative(rho=0.445, u=0.698, p=3.528)
+        right = e.primitive_to_conservative(rho=0.5, u=0, p=0.571)
+        ShockTube.__init__(self, left, right, s, d, l, v, ode_solver)
+        self._ylim = (0.3, 1.4)
+
+    def problem_name(self):
+        return 'Lax'
 
 
 if __name__ == '__main__':
@@ -418,7 +446,7 @@ if __name__ == '__main__':
         default=2, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
-        choices=['Smooth', 'Jumps', 'Burgers', 'Euler'],
+        choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax'],
         default='Smooth',
         help='problem to be solved')
     parser.add_argument('--u_mean',
@@ -492,8 +520,11 @@ if __name__ == '__main__':
     elif args.problem == 'Burgers':
         SolverClass = InviscidBurgers
         the_riemann = riemann.InviscidBurgers(args.convection_speed)
-    elif args.problem == 'Euler':
-        SolverClass = EulerRiemann
+    elif args.problem == 'Sod':
+        SolverClass = Sod
+        the_riemann = riemann.Euler(gamma=1.4)
+    elif args.problem == 'Lax':
+        SolverClass = Lax
         the_riemann = riemann.Euler(gamma=1.4)
     else:
         assert False
