@@ -28,16 +28,51 @@ class CompactWENO(concept.Limiter):
         i_new = 0
         for i_cell in troubled_cell_indices:
             cell_i = grid.get_element_by_index(i_cell)
-            cell_i.set_solution_coeff(new_coeffs[i_new])
+            cell_i.expansion().set_coeff(new_coeffs[i_new])
             i_new += 1
         assert i_new == len(new_coeffs)
 
     def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
         candidates = self.get_candidates(curr)
-        if isinstance(curr.equation(), equation.Scalar):
+        eq = curr.equation()
+        if isinstance(eq, equation.Scalar):
             return self.get_scalar_coeff(candidates, curr)
-        else:
-            assert False
+        elif isinstance(eq, equation.Euler):
+            average = curr.expansion().average()
+            left, right = eq.get_convective_eigmats(average)
+            vector_coeffs = []
+            vector_candidates = candidates
+            for vector_poly in vector_candidates:
+                old_coeff = _get_candidate_coeff(vector_poly)
+                new_coeff = np.ndarray(old_coeff.shape, old_coeff.dtype)
+                for i_term in range(len(new_coeff)):
+                    new_coeff[i_term] = left @ old_coeff[i_term]
+                vector_coeffs.append(new_coeff)
+            old_coeff = curr.expansion().get_coeff_ref()
+            new_coeff = np.ndarray((curr.n_term(), eq.n_component()), curr.scalar_type())
+            for i_comp in range(eq.n_component()):
+                scalar_candidates = []
+                for i_candidate in range(len(vector_candidates)):
+                    vector_poly = vector_candidates[i_candidate]
+                    assert isinstance(vector_poly, concept.Expansion)
+                    Type = type(vector_poly)
+                    if Type == expansion.TruncatedLegendre:
+                        Type = expansion.Legendre
+                    vector_coeff = vector_coeffs[i_candidate]
+                    n_term = len(vector_coeff)
+                    scalar_coeff = np.ndarray(n_term, curr.scalar_type())
+                    for i_term in range(n_term):
+                        scalar_coeff[i_term] = vector_coeff[i_term][i_comp]
+                    scalar_poly = Type(vector_poly.degree(),
+                        curr.coordinate(), curr.scalar_type())
+                    scalar_poly.set_coeff(scalar_coeff)
+                    scalar_candidates.append(scalar_poly)
+                scalar_coeff = self.get_scalar_coeff(scalar_candidates, curr)
+                for i_term in range(len(scalar_coeff)):
+                    new_coeff[i_term][i_comp] = scalar_coeff[i_term]
+            for i_term in range(len(new_coeff)):
+                new_coeff[i_term] = right @ new_coeff[i_term]
+            return new_coeff
 
     @abc.abstractmethod
     def get_candidates(self, curr: concept.Element) -> list:
