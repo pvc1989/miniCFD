@@ -61,12 +61,28 @@ class TestEquations(unittest.TestCase):
         norm = np.linalg.norm(euler.get_convective_flux(given)
             - jacobian.dot(given))
         self.assertAlmostEqual(norm, 0.0)
-        norm = np.linalg.norm(euler.get_convective_eigvals(given)
-            - np.sort(np.linalg.eigvals(jacobian)))
+        eigvals = euler.get_convective_eigvals(given)
+        norm = np.linalg.norm(eigvals - np.sort(np.linalg.eigvals(jacobian)))
         self.assertAlmostEqual(norm, 0.0)
         self.assertEqual(
             euler.get_convective_eigvals(given)[1],
             euler.get_convective_speed(given))
+        # test A = R * lambdas * L
+        lambdas = np.eye(3)
+        lambdas[0][0] = eigvals[0]
+        lambdas[1][1] = eigvals[1]
+        lambdas[2][2] = eigvals[2]
+        left, right = euler.get_convective_eigmats(given)
+        norm = np.linalg.norm(np.eye(3) - right @ left)
+        self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(np.eye(3) - left @ right)
+        self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(jacobian @ right - right @ lambdas)
+        self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(left @ jacobian - lambdas @ left)
+        self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(jacobian - right @ lambdas @ left)
+        self.assertAlmostEqual(norm, 0.0)
 
 
 if __name__ == '__main__':

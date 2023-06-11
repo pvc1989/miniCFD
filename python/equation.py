@@ -194,6 +194,37 @@ class Euler(ConservationLaw):
         a = np.sqrt(self._gas.gamma() * p / rho)
         return (u-a, u, u+a)
 
+    def get_convective_eigmats(self, u_given) -> tuple[np.ndarray, np.ndarray]:
+        rho, u, p = self.conservative_to_primitive(u_given)
+        aa = self._gas.gamma() * p / rho
+        a = np.sqrt(aa)
+        right = np.ndarray((3, 3))
+        right[0][0] = 1
+        right[0][1] = 1
+        right[0][2] = 1
+        right[1][0] = u - a
+        right[1][1] = u
+        right[1][2] = u + a
+        ua = u * a
+        ke = 0.5 * u * u
+        h0 = aa / self._gas.gamma_minus_1() + ke
+        right[2][0] = h0 - ua
+        right[2][1] = ke
+        right[2][2] = h0 + ua
+        b1 = self._gas.gamma_minus_1() / aa
+        b2 = b1 * ke
+        left = np.ndarray((3, 3))
+        left[0][0] = (b2 + u / a) / 2
+        left[0][1] = -(b1 * u + 1 / a) / 2
+        left[0][2] = b1 / 2
+        left[1][0] = 1 - b2
+        left[1][1] = b1 * u
+        left[1][2] = -b1
+        left[2][0] = (b2 - u / a) / 2
+        left[2][1] = -(b1 * u - 1 / a) / 2
+        left[2][2] = b1 / 2
+        return (left, right)
+
     def get_convective_speed(self, u_given):
         return u_given[1] / u_given[0]
 
