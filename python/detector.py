@@ -5,6 +5,7 @@ import abc
 
 import concept
 import expansion
+import equation
 
 
 class All(concept.Detector):
@@ -63,15 +64,26 @@ class Krivodonova2004(SmoothnessBased):
             curr_norm += 1e-8  # avoid division-by-zero
             ratio = curr.length()**((curr.degree() + 1) / 2)
             left, right = curr.neighbor_expansions()
-            dividend = 0.0
-            if curr.equation().get_convective_speed(curr.x_left()) > 0 and left:
-                dividend += np.abs(curr.get_solution_value(curr.x_left())
-                    - left.global_to_value(left.x_right()))
-            if curr.equation().get_convective_speed(curr.x_right()) < 0 and right:
-                dividend += np.abs(curr.get_solution_value(curr.x_right())
-                    - right.global_to_value(right.x_left()))
+            if np.isscalar(curr_norm):
+                dividend = 0.0
+            else:
+                dividend = np.zeros(len(curr_norm))
+            if left:
+                value = curr.get_solution_value(curr.x_left())
+                if curr.equation().get_convective_speed(value) >= 0:
+                    dividend += np.abs(value
+                        - left.global_to_value(left.x_right()))
+            if right:
+                value = curr.get_solution_value(curr.x_right())
+                if curr.equation().get_convective_speed(value) <= 0:
+                    dividend += np.abs(value
+                        - right.global_to_value(right.x_left()))
             divisor = ratio * curr_norm
-            smoothness_values[i_curr] = dividend / divisor
+            if isinstance(curr.equation(), equation.Scalar):
+                smoothness_values[i_curr] = dividend / divisor
+            elif isinstance(curr.equation(), equation.Euler):
+                smoothness_values[i_curr] = max(
+                    dividend[0] / divisor[0], dividend[-1] / divisor[-1])
         return smoothness_values
 
 

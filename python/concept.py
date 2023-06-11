@@ -173,9 +173,15 @@ class Integrator(abc.ABC):
             self.coordinate().x_left(), self.coordinate().x_right(), n_point)
         # Alternatively, quadrature points can be used:
         # points = self.get_quadrature_points(n_point)
-        value = 0.0
-        for x_global in points:
-            value = max(value, np.abs(function(x_global)))
+        value = np.abs(function(points[0]))
+        if np.isscalar(value):
+            for i in range(1, len(points)):
+                value = max(value, np.abs(function(points[i])))
+        else:
+            for i in range(1, len(points)):
+                new_value = np.abs(function(points[i]))
+                for j in range(len(value)):
+                    value[j] = max(value[j], new_value[j])
         return value
 
     def inner_product(self, phi: callable, psi: callable, n_point):
