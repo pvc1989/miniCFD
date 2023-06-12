@@ -2,7 +2,6 @@
 """
 import abc
 import numpy as np
-from scipy import special
 from copy import deepcopy
 
 import concept
@@ -10,8 +9,8 @@ import expansion
 import equation
 
 
-def _get_candidate_coeff(candidate: concept.Expansion):
-    return candidate.get_coeff_ref()
+def _get_taylor_coeff(candidate: concept.Expansion):
+    return expansion.Taylor.get_coeff_ref(candidate)
 
 
 class CompactWENO(concept.Limiter):
@@ -19,67 +18,66 @@ class CompactWENO(concept.Limiter):
     """
 
     def reconstruct(self, troubled_cell_indices, grid: concept.Grid):
-        new_coeffs = []
+        new_taylor_coeffs = []
         # print('WENO on', troubled_cell_indices)
         for i_cell in troubled_cell_indices:
             cell_i = grid.get_element_by_index(i_cell)
-            new_coeffs.append(self.get_new_coeff(cell_i))
-        assert len(new_coeffs) == len(troubled_cell_indices)
+            new_taylor_coeffs.append(self.get_new_taylor_coeff(cell_i))
+        assert len(new_taylor_coeffs) == len(troubled_cell_indices)
         i_new = 0
         for i_cell in troubled_cell_indices:
-            cell_i = grid.get_element_by_index(i_cell)
-            cell_i.expansion().set_coeff(new_coeffs[i_new])
+            expansion_i = grid.get_element_by_index(i_cell).expansion()
+            assert isinstance(expansion_i, expansion.Taylor)
+            expansion_i.set_taylor_coeff(new_taylor_coeffs[i_new])
             i_new += 1
-        assert i_new == len(new_coeffs)
+        assert i_new == len(new_taylor_coeffs)
 
-    def get_new_coeff(self, curr: concept.Element) -> np.ndarray:
+    def get_new_taylor_coeff(self, curr: concept.Element) -> np.ndarray:
         candidates = self.get_candidates(curr)
         eq = curr.equation()
         if isinstance(eq, equation.Scalar):
-            return self.get_scalar_coeff(candidates, curr)
+            return self.get_scalar_taylor_coeff(candidates)
         elif isinstance(eq, equation.Euler):
             average = curr.expansion().average()
             left, right = eq.get_convective_eigmats(average)
-            vector_coeffs = []
+            vector_taylor_coeffs = []
             vector_candidates = candidates
             for vector_poly in vector_candidates:
-                old_coeff = _get_candidate_coeff(vector_poly)
-                new_coeff = np.ndarray(old_coeff.shape, old_coeff.dtype)
-                for i_term in range(len(new_coeff)):
-                    new_coeff[i_term] = left @ old_coeff[i_term]
-                vector_coeffs.append(new_coeff)
-            old_coeff = curr.expansion().get_coeff_ref()
-            new_coeff = np.ndarray((curr.n_term(), eq.n_component()), curr.scalar_type())
+                old_taylor_coeff = _get_taylor_coeff(vector_poly)
+                new_taylor_coeff = np.ndarray(old_taylor_coeff.shape,
+                                              old_taylor_coeff.dtype)
+                for i_term in range(len(new_taylor_coeff)):
+                    new_taylor_coeff[i_term] = left @ old_taylor_coeff[i_term]
+                vector_taylor_coeffs.append(new_taylor_coeff)
+            new_taylor_coeff = np.ndarray((curr.n_term(), eq.n_component()),
+                curr.scalar_type())
             for i_comp in range(eq.n_component()):
-                scalar_candidates = []
+                scalar_taylors = []
                 for i_candidate in range(len(vector_candidates)):
                     vector_poly = vector_candidates[i_candidate]
                     assert isinstance(vector_poly, concept.Expansion)
-                    Type = type(vector_poly)
-                    if Type == expansion.TruncatedLegendre:
-                        Type = expansion.Legendre
-                    vector_coeff = vector_coeffs[i_candidate]
+                    vector_coeff = vector_taylor_coeffs[i_candidate]
                     n_term = len(vector_coeff)
                     scalar_coeff = np.ndarray(n_term, curr.scalar_type())
                     for i_term in range(n_term):
                         scalar_coeff[i_term] = vector_coeff[i_term][i_comp]
-                    scalar_poly = Type(vector_poly.degree(),
+                    scalar_taylor = expansion.Taylor(vector_poly.degree(),
                         curr.coordinate(), curr.scalar_type())
-                    scalar_poly.set_coeff(scalar_coeff)
-                    scalar_candidates.append(scalar_poly)
-                scalar_coeff = self.get_scalar_coeff(scalar_candidates, curr)
+                    scalar_taylor.set_coeff(scalar_coeff)
+                    scalar_taylors.append(scalar_taylor)
+                scalar_coeff = self.get_scalar_taylor_coeff(scalar_taylors)
                 for i_term in range(len(scalar_coeff)):
-                    new_coeff[i_term][i_comp] = scalar_coeff[i_term]
-            for i_term in range(len(new_coeff)):
-                new_coeff[i_term] = right @ new_coeff[i_term]
-            return new_coeff
+                    new_taylor_coeff[i_term][i_comp] = scalar_coeff[i_term]
+            for i_term in range(len(new_taylor_coeff)):
+                new_taylor_coeff[i_term] = right @ new_taylor_coeff[i_term]
+            return new_taylor_coeff
 
     @abc.abstractmethod
     def get_candidates(self, curr: concept.Element) -> list:
         """"""
 
     @abc.abstractmethod
-    def get_scalar_coeff(self, candidates, curr: concept.Element) -> np.ndarray:
+    def get_scalar_taylor_coeff(self, candidates, curr: concept.Element) -> np.ndarray:
         """"""
 
 
@@ -120,7 +118,7 @@ class ZhongXingHui2013(CompactWENO):
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
             length = taylor.length()
-            scale = length**(2*k-1) / (special.factorial(k))**2
+            scale = length**(2*k-1) / expansion.Taylor._factorials[k]**2
             beta += norms[k] * scale
         return beta
 
@@ -132,7 +130,7 @@ class ZhongXingHui2013(CompactWENO):
                 candidates.append(self._borrow_expansion(curr, neighbor))
         return candidates
 
-    def get_scalar_coeff(self, candidates: list, curr: concept.Element):
+    def get_scalar_taylor_coeff(self, candidates: list):
         # evaluate weights for each candidate
         weights = np.ndarray(len(candidates))
         for i in range(len(candidates)):
@@ -144,9 +142,9 @@ class ZhongXingHui2013(CompactWENO):
             weights[i] = linear_weight / (self._epsilon + smoothness)**2
         weights /= np.sum(weights)
         # weight the coeffs
-        coeff = _get_candidate_coeff(candidates[0]) * weights[0]
+        coeff = _get_taylor_coeff(candidates[0]) * weights[0]
         for i in range(1, len(candidates)):
-            coeff += _get_candidate_coeff(candidates[i]) * weights[i]
+            coeff += _get_taylor_coeff(candidates[i]) * weights[i]
         return coeff
 
 
@@ -189,7 +187,7 @@ class LiWanAi2020(CompactWENO):
             n_point=taylor.degree())
         for k in range(1, taylor.degree()+1):
             jacobian = taylor.length() / 2
-            scale = jacobian**(2*k-1) / (special.factorial(k-1))**2
+            scale = jacobian**(2*k-1) / expansion.Taylor._factorials[k-1]**2
             norms[k] *= scale
         return norms
 
@@ -214,10 +212,11 @@ class LiWanAi2020(CompactWENO):
                 candidates.append(self._borrow_expansion(curr, neighbor))
         return candidates
 
-    def get_scalar_coeff(self, candidates: list, curr: concept.Element):
+    def get_scalar_taylor_coeff(self, candidates: list):
+        curr_degree = candidates[0].degree()
         # Get smoothness values: (TODO: use quadrature-free implementation)
         # process 1-degree candidates
-        i_candidate = curr.degree() - 1
+        i_candidate = curr_degree - 1
         beta_curr = self._get_smoothness_value(candidates[i_candidate])
         assert i_candidate+2 <= len(candidates)  # at least 1 candidate
         beta_left = self._get_smoothness_value(candidates[i_candidate+1])
@@ -226,7 +225,7 @@ class LiWanAi2020(CompactWENO):
         # Get non-linear weights:
         weights = []
         i_candidate = 0
-        for degree in range(curr.degree(), 1, -1):  # from p to 2
+        for degree in range(curr_degree, 1, -1):  # from p to 2
             norms = self._get_derivative_norms(candidates[i_candidate])
             beta = np.sum(norms[1:])
             linear_weight = 10**(degree+1)
@@ -234,7 +233,7 @@ class LiWanAi2020(CompactWENO):
             i_candidate += 1
             if beta_mean > self._k_trunc / (degree-1) * (beta - norms[1]):
                 break
-        if i_candidate == curr.degree() - 1:  # p = 1, no truncation
+        if i_candidate == curr_degree - 1:  # p = 1, no truncation
             epsilon = self._epsilon + self._k_epsilon * (beta_left**2
                 + beta_right**2) / 2
             weights.append(10 / (beta_curr**2 + epsilon))
@@ -249,24 +248,12 @@ class LiWanAi2020(CompactWENO):
         assert i_candidate == len(weights)
         weight_sum = np.sum(weights)
         # Average the coeffs:
-        new_coeff = np.zeros(curr.degree()+1)
+        new_taylor_coeff = np.zeros(curr_degree + 1)
         for i_candidate in range(len(weights)):
-            coeff = _get_candidate_coeff(candidates[i_candidate])
+            coeff = _get_taylor_coeff(candidates[i_candidate])
             weight = weights[i_candidate] / weight_sum
-            new_coeff[0:len(coeff)] += coeff * weight
-        # Legendre to Lagrange, if necessary:
-        if isinstance(curr.expansion(), expansion.Lagrange):
-            new_legendre = expansion.Legendre(curr.degree(),
-                curr.coordinate(), curr.value_type())
-            new_legendre.set_coeff(new_coeff)
-            new_lagrange = expansion.Lagrange(curr.degree(),
-                curr.coordinate(), curr.value_type())
-            new_lagrange.approximate(lambda x:
-                new_legendre.global_to_value(x))
-            new_coeff = new_lagrange.get_coeff_ref()
-        else:
-            assert isinstance(curr.expansion(), expansion.Legendre)
-        return new_coeff
+            new_taylor_coeff[0:len(coeff)] += coeff * weight
+        return new_taylor_coeff
 
 
 class XuXiaoRui2023(CompactWENO):

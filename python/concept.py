@@ -751,11 +751,6 @@ class Limiter(abc.ABC):
         """Reconstruct the expansion on each troubled cell.
         """
 
-    @abc.abstractmethod
-    def get_new_coeff(self, curr: Element) -> np.ndarray:
-        """Reconstruct the expansion on a troubled cell.
-        """
-
 
 class Viscous(abc.ABC):
     """An object that adds artificial viscosity to a spatial scheme.

@@ -3,7 +3,6 @@
 import numpy as np
 from scipy import special
 import numdifftools as nd
-from copy import deepcopy
 
 from concept import Expansion, Coordinate
 import integrator
@@ -150,7 +149,8 @@ class Taylor(Expansion):
         return values
 
     def set_coeff(self, coeff):
-        self._taylor_coeff[:] = deepcopy(coeff)
+        for i_row in range(self.n_term()):
+            self._taylor_coeff[i_row] = coeff[i_row]
 
     def get_coeff_ref(self):
         return self._taylor_coeff
@@ -423,11 +423,10 @@ class TruncatedLegendre(Taylor):
         assert isinstance(that, Legendre)
         Taylor.__init__(self, degree, that.coordinate(), that.value_type())
         n_term = degree + 1
-        self._taylor_coeff[:] = deepcopy(that._taylor_coeff[0:n_term])
-        assert isinstance(that, Legendre) # TODO: relax to Taylor
-        self._mode_coeffs = deepcopy(that._mode_coeffs[0:n_term])
-        self._legendre_to_taylor = deepcopy(
-            that._legendre_to_taylor[0:n_term, 0:n_term])
+        self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
+        self._mode_coeffs = that._mode_coeffs[0:n_term]
+        self._legendre_to_taylor = \
+            that._legendre_to_taylor[0:n_term, 0:n_term]
         Legendre._set_taylor_coeff(self)
 
     def name(self, verbose) -> str:
