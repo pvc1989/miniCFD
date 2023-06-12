@@ -146,10 +146,10 @@ class TestEuler(unittest.TestCase):
     def test_consistency(self):
         u_left = np.array([1.0, 0.0, 1.0])
         u_right = u_left
-        solver = riemann.Euler()
-        self.assertAlmostEqual(0.0, np.linalg.norm(
-            solver.get_upwind_flux(u_left, u_right) -
-            solver.equation().get_convective_flux(u_left)))
+        for solver in (riemann.Euler(), riemann.Roe()):
+            self.assertAlmostEqual(0.0, np.linalg.norm(
+                solver.get_upwind_flux(u_left, u_right) -
+                solver.equation().get_convective_flux(u_left)))
 
 
 if __name__ == '__main__':

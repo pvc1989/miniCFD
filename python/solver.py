@@ -349,6 +349,7 @@ class ShockTube(SolverBase):
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
         self._value_left = value_left
         self._value_right = value_right
+        self._exact_riemann = riemann.Euler()
 
     def u_init(self, x_global):
         if x_global < self._x_mid:
@@ -357,14 +358,11 @@ class ShockTube(SolverBase):
             return self._value_right
 
     def u_exact(self, x_global, t_curr):
-        r = self._spatial._riemann
-        value = r.get_value(x_global - self._x_mid, t_curr)
+        value = self._exact_riemann.get_value(x_global - self._x_mid, t_curr)
         return value
 
     def _get_ydata(self, t_curr, points):
-        r = self._spatial._riemann
-        assert isinstance(r, riemann.Euler)
-        r.set_initial(self._value_left, self._value_right)
+        self._exact_riemann.set_initial(self._value_left, self._value_right)
         return super()._get_ydata(t_curr, points)
 
 
@@ -522,10 +520,10 @@ if __name__ == '__main__':
         the_riemann = riemann.InviscidBurgers(args.convection_speed)
     elif args.problem == 'Sod':
         SolverClass = Sod
-        the_riemann = riemann.Euler(gamma=1.4)
+        the_riemann = riemann.Roe(gamma=1.4)
     elif args.problem == 'Lax':
         SolverClass = Lax
-        the_riemann = riemann.Euler(gamma=1.4)
+        the_riemann = riemann.Roe(gamma=1.4)
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,

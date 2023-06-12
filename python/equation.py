@@ -167,6 +167,11 @@ class Euler(ConservationLaw):
         # print(U, '->', rho, u, p)
         return rho, u, p
 
+    def primitive_to_total_enthalpy(self, rho, u, p):
+        aa = self._gas.gamma() * p / rho
+        enthalpy = aa / self._gas.gamma_minus_1()
+        return enthalpy + u*u/2
+
     def get_convective_flux(self, U):
         rho, u, p = self.conservative_to_primitive(U)
         F = U * u

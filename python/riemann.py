@@ -343,6 +343,58 @@ class Euler(Solver):
         return self.equation().primitive_to_conservative(rho, u, p)
 
 
+class Roe(Solver):
+
+    def __init__(self, gamma=1.4):
+        self._gas = gas.Ideal(gamma)
+        Solver.__init__(self, equation.Euler(gamma))
+
+    def equation(self) -> equation.Euler:
+        return self._equation
+
+    def get_upwind_flux(self, value_left, value_right):
+        # algebraic averaging
+        eq = self.equation()
+        flux = eq.get_convective_flux(value_left)
+        flux += eq.get_convective_flux(value_right)
+        flux /= 2
+        # Roe averaging
+        rho_left, u_left, p_left = eq.conservative_to_primitive(value_left)
+        rho_right, u_right, p_right = eq.conservative_to_primitive(value_right)
+        h0_left = eq.primitive_to_total_enthalpy(rho_left, u_left, p_left)
+        h0_right = eq.primitive_to_total_enthalpy(rho_right, u_right, p_right)
+        rho_left_sqrt = np.sqrt(rho_left)
+        rho_right_sqrt = np.sqrt(rho_right)
+        rho_sqrt_sum = rho_left_sqrt + rho_right_sqrt
+        rho = rho_left_sqrt * rho_right_sqrt
+        u = (rho_left_sqrt * u_left + rho_right_sqrt * u_right) / rho_sqrt_sum
+        ke = u * u / 2  # kinetic energy
+        h0 = (rho_left_sqrt * h0_left + rho_right_sqrt * h0_right) / rho_sqrt_sum
+        aa = eq._gas.gamma_minus_1() * (h0 - ke)
+        a = np.sqrt(aa)
+        ua = u * a
+        # 1st wave
+        p_jump = p_right - p_left
+        u_jump = u_right - u_left
+        alpha = (p_jump - rho * a * u_jump) / (2 * aa)
+        flux -= 0.5 * alpha * np.abs(u - a) * \
+            np.array([1, u - a, h0 - ua])
+        # 2nd wave
+        alpha = (rho_right - rho_left) - p_jump / aa
+        flux -= 0.5 * alpha * np.abs(u) * np.array([1, u, ke])
+        # 3rd wave
+        alpha = (p_jump + rho * a * u_jump) / (2 * aa)
+        flux -= 0.5 * alpha * np.abs(u + a) * \
+            np.array([1, u + a, h0 + ua])
+        return flux
+
+    def _determine_wave_structure(self):
+        assert False
+
+    def _get_value(self, slope):
+        assert False
+
+
 if __name__ == '__main__':
     from matplotlib import pyplot as plt
 
