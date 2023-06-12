@@ -155,7 +155,7 @@ class Taylor(Expansion):
     def get_coeff_ref(self):
         return self._taylor_coeff
 
-    def set_taylor_coeff(self, points: np.ndarray):
+    def _set_taylor_coeff(self, points: np.ndarray):
         """Transform another polynomial expansion onto its Taylor basis.
 
         Store basis values in a row, and coefficients in a column, one has
@@ -172,6 +172,11 @@ class Taylor(Expansion):
         this_col = self.get_coeff_ref()
         base_col = np.linalg.solve(mat_a, this_col)
         Taylor.set_coeff(self, base_col)
+
+    def set_taylor_coeff(self, taylor_coeff: np.ndarray):
+        """Update the Expansion by setting its Taylor coeff.
+        """
+        Taylor.set_coeff(self, taylor_coeff)
 
     def convert_to(self, Expansion):
         assert issubclass(Expansion, Taylor)
@@ -209,13 +214,14 @@ class Lagrange(Taylor):
             base_rows[k] = Taylor.get_basis_values(self, x_global)
         """
         Since
-            base_rows * matrix_on_taylor = lagrange_basis_rows = eye,
+            base_rows * lagrange_to_taylor = lagrange_basis_rows = eye,
         we have
-            matrix_on_taylor = base_rows^{-1},
+            lagrange_to_taylor = base_rows^{-1},
         which can be used in
-            taylor_coeff_col = matrix_on_taylor * lagrange_coeff_col.
+            taylor_coeff_col = lagrange_to_taylor * lagrange_coeff_col.
         """
-        self._matrix_on_taylor = np.linalg.inv(base_rows)
+        self._taylor_to_lagrange = base_rows
+        self._lagrange_to_taylor = np.linalg.inv(base_rows)
 
     def name(self, verbose) -> str:
         my_name = 'Lagrange'
@@ -232,12 +238,18 @@ class Lagrange(Taylor):
         """
         return self._global_weights[k]
 
-    def set_taylor_coeff(self):
+    def _set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.
         """
         lagrange_col = self.get_coeff_ref()
-        taylor_col = self._matrix_on_taylor.dot(lagrange_col)
+        taylor_col = self._lagrange_to_taylor.dot(lagrange_col)
         Taylor.set_coeff(self, taylor_col)
+
+    def set_taylor_coeff(self, taylor_coeff: np.ndarray):
+        Taylor.set_coeff(self, taylor_coeff)
+        lagrange_coeff = self._taylor_to_lagrange @ taylor_coeff
+        for i in range(len(lagrange_coeff)):
+            self._sample_values[i] = lagrange_coeff[i]
 
     def set_coeff(self, values):
         """Set values at sample points.
@@ -247,7 +259,7 @@ class Lagrange(Taylor):
         assert len(values) == self._basis.n_term()
         for i in range(len(values)):
             self._sample_values[i] = values[i]
-        self.set_taylor_coeff()
+        self._set_taylor_coeff()
 
     def get_coeff_ref(self):
         return self._sample_values
@@ -255,7 +267,7 @@ class Lagrange(Taylor):
     def approximate(self, function):
         for i in range(self._basis.n_term()):
             self._sample_values[i] = function(self._sample_points[i])
-        self.set_taylor_coeff()
+        self._set_taylor_coeff()
 
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
@@ -272,20 +284,20 @@ class Lagrange(Taylor):
     def get_basis_gradients(self, x_global):
         """
         Since
-            taylor_basis_row * matrix_on_taylor = lagrange_basis_row,
+            taylor_basis_row * lagrange_to_taylor = lagrange_basis_row,
         we have
-            taylor_gradient_row * matrix_on_taylor = lagrange_gradient_row.
+            taylor_gradient_row * lagrange_to_taylor = lagrange_gradient_row.
         """
         taylor_gradients = Taylor.get_basis_gradients(self, x_global)
-        return taylor_gradients.dot(self._matrix_on_taylor)
+        return taylor_gradients.dot(self._lagrange_to_taylor)
 
     def get_basis_hessians(self, x_global: float):
         taylor_hessians = Taylor.get_basis_hessians(self, x_global)
-        return taylor_hessians.dot(self._matrix_on_taylor)
+        return taylor_hessians.dot(self._lagrange_to_taylor)
 
     def get_basis_derivatives(self, x_global: float):
         taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
-        return taylor_derivatives.dot(self._matrix_on_taylor)
+        return taylor_derivatives.dot(self._lagrange_to_taylor)
 
 
 class Legendre(Taylor):
@@ -303,16 +315,17 @@ class Legendre(Taylor):
         # Mode weights are defined as the inner-products of each basis,
         # which can be explicitly integrated here:
         self._mode_weights = jacobian * 2 / (2 * np.arange(degree+1) + 1)
-        # taylor_basis_row * matrix_on_taylor = legendre_basis_row
-        self._matrix_on_taylor = np.eye(self._n_term)
+        # taylor_basis_row * _legendre_to_taylor = legendre_basis_row
+        self._legendre_to_taylor = np.eye(self._n_term)
         for k in range(2, self._n_term):
-            self._matrix_on_taylor[1:k+1, k] = ((2*k-1) / k
-                * self._matrix_on_taylor[0:k, k-1])
-            self._matrix_on_taylor[0:k-1, k] -= ((k-1) / k
-                * self._matrix_on_taylor[0:k-1, k-2])
+            self._legendre_to_taylor[1:k+1, k] = ((2*k-1) / k
+                * self._legendre_to_taylor[0:k, k-1])
+            self._legendre_to_taylor[0:k-1, k] -= ((k-1) / k
+                * self._legendre_to_taylor[0:k-1, k-2])
         # Taylor basis is dimensional, but Legendre basis is dimensionless...
         for k in range(1, self._n_term):
-            self._matrix_on_taylor[k] /= jacobian**k
+            self._legendre_to_taylor[k] /= jacobian**k
+        self._taylor_to_legendre = np.linalg.inv(self._legendre_to_taylor)
 
     def name(self, verbose) -> str:
         my_name = 'Legendre'
@@ -333,17 +346,23 @@ class Legendre(Taylor):
     def average(self):
         return self._mode_coeffs[0]
 
-    def set_taylor_coeff(self):
+    def _set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.
         
         For Legendre basis, there is
-            taylor_basis_row * matrix_on_taylor = legendre_basis_row
+            taylor_basis_row * legendre_to_taylor = legendre_basis_row
         So
-            taylor_coeff_col = matrix_on_taylor * legendre_coeff_col.
+            taylor_coeff_col = legendre_to_taylor * legendre_coeff_col.
         """
         legendre_coeff_col = self.get_coeff_ref()
-        taylor_coeff_col = self._matrix_on_taylor.dot(legendre_coeff_col)
+        taylor_coeff_col = self._legendre_to_taylor.dot(legendre_coeff_col)
         Taylor.set_coeff(self, taylor_coeff_col)
+
+    def set_taylor_coeff(self, taylor_coeff: np.ndarray):
+        Taylor.set_coeff(self, taylor_coeff)
+        legendre_coeff = self._taylor_to_legendre @ taylor_coeff
+        for i in range(len(legendre_coeff)):
+            self._mode_coeffs[i] = legendre_coeff[i]
 
     def set_coeff(self, coeffs):
         """Set coefficient for each mode.
@@ -351,7 +370,7 @@ class Legendre(Taylor):
         assert len(coeffs) == self.n_term()
         for i in range(len(coeffs)):
             self._mode_coeffs[i] = coeffs[i]
-        self.set_taylor_coeff()
+        self._set_taylor_coeff()
 
     def get_coeff_ref(self):
         return self._mode_coeffs
@@ -366,7 +385,7 @@ class Legendre(Taylor):
             self._mode_coeffs[k] = self.integrator().fixed_quad_local(integrand,
                 self.n_term())
             self._mode_coeffs[k] /= self._mode_weights[k]
-        self.set_taylor_coeff()
+        self._set_taylor_coeff()
 
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
@@ -384,15 +403,15 @@ class Legendre(Taylor):
 
     def get_basis_gradients(self, x_global):
         taylor_gradients = Taylor.get_basis_gradients(self, x_global)
-        return taylor_gradients.dot(self._matrix_on_taylor)
+        return taylor_gradients.dot(self._legendre_to_taylor)
 
     def get_basis_hessians(self, x_global: float):
         taylor_hessians = Taylor.get_basis_hessians(self, x_global)
-        return taylor_hessians.dot(self._matrix_on_taylor)
+        return taylor_hessians.dot(self._legendre_to_taylor)
 
     def get_basis_derivatives(self, x_global: float):
         taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
-        return taylor_derivatives.dot(self._matrix_on_taylor)
+        return taylor_derivatives.dot(self._legendre_to_taylor)
 
 
 class TruncatedLegendre(Taylor):
@@ -407,9 +426,9 @@ class TruncatedLegendre(Taylor):
         self._taylor_coeff[:] = deepcopy(that._taylor_coeff[0:n_term])
         assert isinstance(that, Legendre) # TODO: relax to Taylor
         self._mode_coeffs = deepcopy(that._mode_coeffs[0:n_term])
-        self._matrix_on_taylor = deepcopy(
-            that._matrix_on_taylor[0:n_term, 0:n_term])
-        Legendre.set_taylor_coeff(self)
+        self._legendre_to_taylor = deepcopy(
+            that._legendre_to_taylor[0:n_term, 0:n_term])
+        Legendre._set_taylor_coeff(self)
 
     def name(self, verbose) -> str:
         my_name = 'TruncatedLegendre'
@@ -417,7 +436,10 @@ class TruncatedLegendre(Taylor):
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
 
-    def set_coeff(self):
+    def set_coeff(self, coeff):
+        assert False
+
+    def set_taylor_coeff(self, taylor_coeff):
         assert False
 
     def get_coeff_ref(self):

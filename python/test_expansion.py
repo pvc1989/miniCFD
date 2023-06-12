@@ -207,6 +207,22 @@ class TestLagrange(unittest.TestCase):
                 self._expansion.global_to_value(x),
                 expansion.Taylor.global_to_value(self._expansion, x))
 
+    def test_coeff_setting(self):
+        self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
+        # set by Lagrange.set_coeff
+        lagrange = expansion.Lagrange(self._expansion.degree(),
+            self._expansion.coordinate(), self._expansion.value_type())
+        lagrange.set_coeff(self._expansion.get_coeff_ref())
+        taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
+        diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
+        self.assertEqual(0.0, np.linalg.norm(diff))
+        # set by Lagrange.set_taylor_coeff
+        lagrange = expansion.Lagrange(self._expansion.degree(),
+            self._expansion.coordinate(), self._expansion.value_type())
+        lagrange.set_taylor_coeff(taylor_coeff)
+        diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
+        self.assertAlmostEqual(0.0, np.linalg.norm(diff))
+
     def test_node_weights(self):
         n_term = self._expansion.n_term()
         polynomial_coeff = np.random.rand(n_term)
@@ -356,6 +372,22 @@ class TestLegendre(unittest.TestCase):
             self.assertAlmostEqual(
                 self._expansion.global_to_value(x),
                 expansion.Taylor.global_to_value(self._expansion, x))
+
+    def test_coeff_setting(self):
+        self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
+        # set by Legendre.set_coeff
+        lagrange = expansion.Legendre(self._expansion.degree(),
+            self._expansion.coordinate(), self._expansion.value_type())
+        lagrange.set_coeff(self._expansion.get_coeff_ref())
+        taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
+        diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
+        self.assertEqual(0.0, np.linalg.norm(diff))
+        # set by Lagrange.set_taylor_coeff
+        lagrange = expansion.Legendre(self._expansion.degree(),
+            self._expansion.coordinate(), self._expansion.value_type())
+        lagrange.set_taylor_coeff(taylor_coeff)
+        diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
+        self.assertAlmostEqual(0.0, np.linalg.norm(diff))
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.
