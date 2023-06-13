@@ -831,6 +831,7 @@ class SpatialScheme(Grid, OdeSystem):
         self._detector = detector
         self._limiter = limiter
         self._viscous = viscous
+        self._is_periodic = True
 
     def value_type(self):
         return self.get_element_by_index(0).value_type()
@@ -854,7 +855,7 @@ class SpatialScheme(Grid, OdeSystem):
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
         """
-        return True
+        return self._is_periodic
 
     def _get_shifted_expansion(self, i_cell: int, x_shift: float):
         cell_i = self.get_element_by_index(i_cell)

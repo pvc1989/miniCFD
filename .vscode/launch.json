@@ -34,7 +34,13 @@
       "name": "Python: File",
       "type": "python",
       "request": "launch",
-      "program": "${file}",
+      "program": "${workspaceFolder}/python/solver.py",
+      "args": [
+        "--problem", "Sod", "--t_end", "0.5",
+        "--method", "LagrangeFR", "--degree", "3",
+        "--detector", "KXRCF", "--limiter", "LWA",
+        "--output", "pdf",
+      ],
       "justMyCode": true
     }
   ]

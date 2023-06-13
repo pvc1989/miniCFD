@@ -346,6 +346,7 @@ class ShockTube(SolverBase):
             v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
         u_mean = (value_left[0] + value_right[0]) / 2
         super().__init__(u_mean, s, d, l, v, ode_solver)
+        self._spatial._is_periodic = False
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
         self._value_left = value_left
         self._value_right = value_right
