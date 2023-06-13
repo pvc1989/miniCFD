@@ -143,10 +143,17 @@ class TestInviscidBurgers(unittest.TestCase):
 
 class TestEuler(unittest.TestCase):
 
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+        self._solvers = [
+            riemann.Euler(), riemann.Roe(), riemann.LaxFriedrichs()
+        ]
+
     def test_consistency(self):
         u_left = np.array([1.0, 0.0, 1.0])
         u_right = u_left
-        for solver in (riemann.Euler(), riemann.Roe()):
+        for solver in self._solvers:
+            assert isinstance(solver, riemann.Euler)
             self.assertAlmostEqual(0.0, np.linalg.norm(
                 solver.get_upwind_flux(u_left, u_right) -
                 solver.equation().get_convective_flux(u_left)))

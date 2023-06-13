@@ -343,14 +343,19 @@ class Euler(Solver):
         return self.equation().primitive_to_conservative(rho, u, p)
 
 
-class Roe(Solver):
+class ApproximateEuler(Euler):
+
+    def _determine_wave_structure(self):
+        assert False
+
+    def _get_value(self, slope):
+        assert False
+
+
+class Roe(ApproximateEuler):
 
     def __init__(self, gamma=1.4):
-        self._gas = gas.Ideal(gamma)
-        Solver.__init__(self, equation.Euler(gamma))
-
-    def equation(self) -> equation.Euler:
-        return self._equation
+        Euler.__init__(self, gamma)
 
     def get_upwind_flux(self, value_left, value_right):
         # algebraic averaging
@@ -388,11 +393,23 @@ class Roe(Solver):
             np.array([1, u + a, h0 + ua])
         return flux
 
-    def _determine_wave_structure(self):
-        assert False
 
-    def _get_value(self, slope):
-        assert False
+class LaxFriedrichs(ApproximateEuler):
+
+    def __init__(self, gamma=1.4):
+        Euler.__init__(self, gamma)
+
+    def get_upwind_flux(self, value_left, value_right):
+        eq = self.equation()
+        flux = eq.get_convective_flux(value_right)
+        flux += eq.get_convective_flux(value_left)
+        flux /= 2
+        lambdas = eq.get_convective_eigvals(value_left)
+        lambda_max = max(np.abs(lambdas[0]), np.abs(lambdas[2]))
+        lambdas = eq.get_convective_eigvals(value_right)
+        lambda_max = max(lambda_max, np.abs(lambdas[0]), np.abs(lambdas[2]))
+        flux -= lambda_max / 2 * (value_right - value_left)
+        return flux
 
 
 if __name__ == '__main__':
