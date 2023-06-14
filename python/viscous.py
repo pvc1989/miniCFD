@@ -4,7 +4,8 @@ import concept
 import expansion
 import element
 import detector
-
+from coordinate import LinearCoordinate
+from integrator import GaussLegendre
 
 class Constant(concept.Viscous):
 
@@ -131,9 +132,9 @@ class Energy(concept.Viscous):
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_half_min_energy(self, cell: element.LagrangeFR,
+    def _get_half_by_half_energy(self, cell: element.LagrangeFR,
             points: np.ndarray, values: np.ndarray):
-        """Compare with p=k and p=1 extensions from neighbors in the closer half.
+        """Compare with p=k and p=1 extensions from neighbors in the closer half using the integrator on cell.
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
@@ -170,6 +171,38 @@ class Energy(concept.Viscous):
                 Energy._jumps_to_energy(high_jumps, curr, indices))
         return left_energy + right_energy
 
+    def _get_half_exact_energy(self, cell: element.LagrangeFR):
+        """Same as _get_half_by_half_energy, but using integrators on subcells.
+        """
+        def get_energy(coord: concept.Coordinate,
+                this: concept.Expansion, that: concept.Expansion):
+            degree = max(this.degree(), that.degree()) * 2
+            degree += coord.jacobian_degree()
+            integrator = GaussLegendre(coord)
+            def diff_sq(x):
+                value = this.global_to_value(x) - that.global_to_value(x)
+                return value**2
+            return integrator.fixed_quad_global(diff_sq, degree // 2 + 1) / 2
+        curr = cell.expansion()
+        left, right = cell.neighbor_expansions()
+        # build left_energy
+        left_energy = 0
+        if left:
+            left_coord = LinearCoordinate(curr.x_left(), curr.x_center())
+            left_low = expansion.Legendre(1, left_coord)
+            left_low.approximate(lambda x: left.global_to_value(x))
+            left_energy = min(get_energy(left_coord, curr, left),
+                              get_energy(left_coord, curr, left_low))
+        # build right_energy
+        right_energy = 0
+        if right:
+            right_coord = LinearCoordinate(curr.x_center(), curr.x_right())
+            right_low = expansion.Legendre(1, right_coord)
+            right_low.approximate(lambda x: right.global_to_value(x))
+            right_energy = min(get_energy(right_coord, curr, right),
+                               get_energy(right_coord, curr, right_low))
+        return left_energy + right_energy
+
     def _get_interface_jump_energy(self, cell: element.LagrangeFR):
         """Compute derivative jumps on interfaces.
         """
@@ -204,16 +237,17 @@ class Energy(concept.Viscous):
     def _get_oscillation_energy(self, cell: element.LagrangeFR):
         """Compare with four polynomials borrowed from neighbors.
         """
-        points = cell.get_sample_points()
-        values = np.ndarray(len(points))
-        for i in range(len(points)):
-            values[i] = cell.get_solution_value(points[i])
+        # points = cell.get_sample_points()
+        # values = np.ndarray(len(points))
+        # for i in range(len(points)):
+        #     values[i] = cell.get_solution_value(points[i])
         # return self._get_high_order_energy(cell, points, values)
         # return self._get_low_order_energy(cell, points, values)
         # return self._get_interface_jump_energy(cell, points, values)
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
-        return self._get_half_min_energy(cell, points, values)
+        # return self._get_half_by_half_energy(cell, points, values)
+        return self._get_half_exact_energy(cell)
 
     @staticmethod
     def _nu_max(cell: concept.Element):
