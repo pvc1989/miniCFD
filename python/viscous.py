@@ -268,7 +268,7 @@ class Energy(concept.Viscous):
         else:
             return 0.0
 
-    def _build_a_on_centers(self, cell: element.LagrangeFR) -> callable:
+    def _build_a_on_centers(self, cell: element.LagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         left, right = cell.neighbor_expansions()
@@ -285,7 +285,7 @@ class Energy(concept.Viscous):
         a[2][2] = h*h
         return a
 
-    def _build_a_on_intefaces(self, cell: element.LagrangeFR) -> callable:
+    def _build_a_on_interfaces(self, cell: element.LagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         h = cell.length() / 2
@@ -294,7 +294,7 @@ class Energy(concept.Viscous):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_on_intefaces_with_mean(self, cell: element.LagrangeFR) -> callable:
+    def _build_a_on_interfaces_with_average(self, cell: element.LagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         a[0][0] = cell.length()
@@ -305,7 +305,7 @@ class Energy(concept.Viscous):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_by_averages(self, cell: element.LagrangeFR) -> callable:
+    def _build_a_with_averages(self, cell: element.LagrangeFR):
         left, right = cell.neighbor_expansions()
         a = np.ndarray((3,3))
         a[0][0] = cell.length()
@@ -348,7 +348,7 @@ class Energy(concept.Viscous):
         if b[0] != max(b):  # only build quad for max
             return lambda x: b[0]
         if i_cell not in self._index_to_a_inv:
-            a_inv = np.linalg.inv(self._build_a_on_intefaces(cell))
+            a_inv = np.linalg.inv(self._build_a_on_interfaces(cell))
             self._index_to_a_inv[i_cell] = a_inv
         else:
             a_inv = self._index_to_a_inv[i_cell]
