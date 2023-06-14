@@ -215,12 +215,18 @@ class Energy(concept.Viscous):
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         return self._get_half_min_energy(cell, points, values)
 
+    @staticmethod
+    def _nu_max(cell: concept.Element):
+        return cell.length() / cell.degree() * 2
+
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
         assert isinstance(curr, element.LagrangeFR)
         dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
-        return oscillation_energy / (-dissipation * self._tau)
+        nu = oscillation_energy / (-dissipation * self._tau)
+        assert nu >= 0, (nu)
+        return min(nu, Energy._nu_max(curr))
 
     def _get_nu(self, i_cell: int):
         if i_cell in self._index_to_nu:
@@ -315,7 +321,8 @@ class Energy(concept.Viscous):
         c = a_inv @ b
         def coeff(x_global: float):
             x = x_global - cell.x_center()
-            return min(self._nu_max, max(0, c[0] + c[1] * x + c[2] * x * x))
+            nu = max(0, c[0] + c[1] * x + c[2] * x * x)
+            return min(nu, Energy._nu_max(cell))
         return coeff
 
     def generate(self, troubled_cell_indices, grid: concept.Grid):
@@ -323,11 +330,11 @@ class Energy(concept.Viscous):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             nu = self._get_constant_coeff(grid, i_cell)
-            self._index_to_nu[i_cell] = min(nu, self._nu_max)
-            # self._index_to_coeff[i_cell] = min(nu, self._nu_max)
+            self._index_to_nu[i_cell] = nu
         for i_cell in troubled_cell_indices:
             coeff = self._get_quadratic_coeff(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
+            # self._index_to_coeff[i_cell] = nu
 
 
 if __name__ == '__main__':
