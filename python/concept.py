@@ -668,9 +668,11 @@ class Element(abc.ABC):
             lambda_c = 1e-16
             for val in eigvals:
                 lambda_c = max(lambda_c, np.abs(val))
+            b = self.equation().get_diffusive_coeff(u)
             if callable(extra_viscous):
-                extra_viscous = extra_viscous(x)
-            b = self.equation().get_diffusive_coeff(u) + extra_viscous
+                b += extra_viscous(x)
+            else:
+                b += extra_viscous
             lambda_d = b / h
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
         return delta_t * self.suggest_cfl(3)

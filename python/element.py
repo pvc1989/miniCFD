@@ -148,8 +148,9 @@ class LagrangeFR(FluxReconstruction):
             f_sample = self.equation().get_convective_flux(u_sample)
             f_sample -= self.equation().get_diffusive_flux(u_sample, du_sample)
             if callable(extra_viscous):
-                extra_viscous = extra_viscous(x_sample)
-            f_sample -= extra_viscous * du_sample
+                f_sample -= du_sample * extra_viscous(x_sample)
+            else:
+                f_sample -= du_sample * extra_viscous
             flux_gradient += f_sample * basis_gradients[i_sample]
             i_sample += 1
         return flux_gradient
