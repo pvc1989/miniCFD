@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <cstring>
 #include <type_traits>
 #include <utility>
@@ -20,7 +21,7 @@ namespace gauss {
  * @tparam Scalar 
  * @tparam kPoints 
  */
-template <typename Scalar, int kPoints>
+template <std::floating_point Scalar, int kPoints>
 class Tetrahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
@@ -210,25 +211,25 @@ class Tetrahedron : public Cell<Scalar> {
   }
 };
 
-template <typename Scalar, int kPoints>
+template <std::floating_point Scalar, int kPoints>
 class TetrahedronBuilder;
 
-template <typename Scalar, int kPoints>
+template <std::floating_point Scalar, int kPoints>
 const std::array<typename Tetrahedron<Scalar, kPoints>::LocalCoord, kPoints>
 Tetrahedron<Scalar, kPoints>::local_coords_
     = TetrahedronBuilder<Scalar, kPoints>::BuildLocalCoords();
 
-template <typename Scalar, int kPoints>
+template <std::floating_point Scalar, int kPoints>
 const std::array<Scalar, kPoints>
 Tetrahedron<Scalar, kPoints>::local_weights_
     = TetrahedronBuilder<Scalar, kPoints>::BuildLocalWeights();
 
-template <typename Scalar, int kPoints>
+template <std::floating_point Scalar, int kPoints>
 const std::array<std::array<int, 3>, 4>
 Tetrahedron<Scalar, kPoints>::faces_
     = Tetrahedron<Scalar, kPoints>::BuildFaces();
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 1> {
   static constexpr int kPoints = 1;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
@@ -246,7 +247,7 @@ class TetrahedronBuilder<Scalar, 1> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 4> {
   static constexpr int kPoints = 4;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
@@ -273,7 +274,7 @@ class TetrahedronBuilder<Scalar, 4> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 14> {
   static constexpr int kPoints = 14;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
@@ -320,7 +321,7 @@ class TetrahedronBuilder<Scalar, 14> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 15> {
   static constexpr int kPoints = 15;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
@@ -373,7 +374,7 @@ class TetrahedronBuilder<Scalar, 15> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
@@ -430,7 +431,7 @@ class TetrahedronBuilder<Scalar, 24> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 46> {
   static constexpr int kPoints = 46;
   using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;

@@ -2,12 +2,14 @@
 #ifndef MINI_GEOMETRY_INTERSECT_HPP_
 #define MINI_GEOMETRY_INTERSECT_HPP_
 
+#include <concepts>
+
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
 namespace geometry {
 
-template <typename Point, typename Scalar>
+template <typename Point, std::floating_point Scalar>
 void Intersect(Point const &pa, Point const &pb, Point const &pc,
     Point const &pq, Scalar *ratio) {
   mini::algebra::Matrix<Scalar, 3, 3> mat;

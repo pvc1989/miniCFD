@@ -5,6 +5,7 @@
 #include <cassert>
 #include <iostream>
 #include <utility>
+#include <concepts>
 
 #include "mini/aircraft/airfoil.hpp"
 #include "mini/geometry/frame.hpp"
@@ -12,10 +13,10 @@
 namespace mini {
 namespace aircraft {
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Blade;
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Section {
  public:
   using Blade = mini::aircraft::Blade<Scalar>;
@@ -117,7 +118,7 @@ class Section {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 std::ostream &operator<<(std::ostream &out, const Section<Scalar> &section) {
   out << "frame = " << section.GetFrame() << "\n";
   out << "origin = " << section.GetOrigin().transpose() << "\n";

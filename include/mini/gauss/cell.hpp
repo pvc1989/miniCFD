@@ -2,12 +2,14 @@
 #ifndef MINI_GAUSS_CELL_HPP_
 #define MINI_GAUSS_CELL_HPP_
 
+#include <concepts>
+
 #include "mini/gauss/function.hpp"
 
 namespace mini {
 namespace gauss {
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Cell {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;

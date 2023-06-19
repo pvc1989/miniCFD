@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <utility>
 #include <vector>
+#include <concepts>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"
@@ -21,7 +22,7 @@ namespace aircraft {
  * @tparam P 
  * @tparam Scalar 
  */
-template <typename P, typename Scalar>
+template <typename P, std::floating_point Scalar>
 class Rotorcraft {
  public:
   using Part = P;

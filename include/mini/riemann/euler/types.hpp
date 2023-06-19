@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
+#include <concepts>
 
 #include "mini/algebra/eigen.hpp"
 
@@ -12,7 +13,7 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-template <class ScalarType, int kDimensions>
+template <std::floating_point ScalarType, int kDimensions>
 class Tuple : public algebra::Vector<ScalarType, kDimensions+2> {
   using Base = algebra::Vector<ScalarType, kDimensions+2>;
 
@@ -65,10 +66,10 @@ class Tuple : public algebra::Vector<ScalarType, kDimensions+2> {
   }
 };
 
-template <class Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class Converter;
 
-template <class Scalar>
+template <std::floating_point Scalar>
 class Converter<Scalar, 1> {
  public:
   static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 1> *tuple) {
@@ -79,7 +80,7 @@ class Converter<Scalar, 1> {
   }
 };
 
-template <class Scalar>
+template <std::floating_point Scalar>
 class Converter<Scalar, 2> {
  public:
   static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 2> *tuple) {
@@ -92,7 +93,7 @@ class Converter<Scalar, 2> {
   }
 };
 
-template <class Scalar>
+template <std::floating_point Scalar>
 class Converter<Scalar, 3> {
  public:
   static void VelocityToMomentum(Scalar rho, Tuple<Scalar, 3> *tuple) {
@@ -108,7 +109,7 @@ class Converter<Scalar, 3> {
 };
 
 
-template <class ScalarType, int kDimensions>
+template <std::floating_point ScalarType, int kDimensions>
 class FluxTuple : public Tuple<ScalarType, kDimensions> {
   using Mat5x1 = algebra::Matrix<ScalarType, 5, 1>;
 
@@ -123,7 +124,7 @@ class FluxTuple : public Tuple<ScalarType, kDimensions> {
   using Base::Base;
 };
 
-template <class ScalarType, int kDimensions>
+template <std::floating_point ScalarType, int kDimensions>
 class Primitives : public Tuple<ScalarType, kDimensions> {
   using Base = Tuple<ScalarType, kDimensions>;
 
@@ -172,7 +173,7 @@ class Primitives : public Tuple<ScalarType, kDimensions> {
   }
 };
 
-template <class ScalarType, int kDimensions>
+template <std::floating_point ScalarType, int kDimensions>
 struct Conservatives : public Tuple<ScalarType, kDimensions> {
   using Base = Tuple<ScalarType, kDimensions>;
 
@@ -183,7 +184,7 @@ struct Conservatives : public Tuple<ScalarType, kDimensions> {
   using Base::Base;
 };
 
-template <class ScalarType, int kInteger = 1, int kDecimal = 4>
+template <std::floating_point ScalarType, int kInteger = 1, int kDecimal = 4>
 class IdealGas {
  public:
   using Scalar = ScalarType;

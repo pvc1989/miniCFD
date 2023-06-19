@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <fstream>
 #include <iostream>
 #include <ios>
@@ -77,7 +78,7 @@ struct CellInfo {
   Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
-template <typename Int, typename Scalar>
+template <typename Int, std::floating_point Scalar>
 struct NodeGroup {
   Int head_, size_;
   ShiftedVector<Int> metis_id_;

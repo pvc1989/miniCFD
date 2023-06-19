@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <concepts>
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
@@ -22,7 +23,7 @@ namespace gauss {
  * @tparam Qy 
  * @tparam Qz 
  */
-template <typename Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
+template <std::floating_point Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;
@@ -280,29 +281,29 @@ class Hexahedron : public Cell<Scalar> {
     return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
 Hexahedron<Scalar, Qx, Qy, Qz>::x_local_i_ = {-1, +1, +1, -1, -1, +1, +1, -1};
 
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
 Hexahedron<Scalar, Qx, Qy, Qz>::y_local_i_ = {-1, -1, +1, +1, -1, -1, +1, +1};
 
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 typename Hexahedron<Scalar, Qx, Qy, Qz>::Arr1x8 const
 Hexahedron<Scalar, Qx, Qy, Qz>::z_local_i_ = {-1, -1, -1, -1, +1, +1, +1, +1};
 
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 std::array<typename Hexahedron<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
 Hexahedron<Scalar, Qx, Qy, Qz>::local_coords_
     = Hexahedron<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
 
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 std::array<Scalar, Qx * Qy * Qz> const
 Hexahedron<Scalar, Qx, Qy, Qz>::local_weights_
     = Hexahedron<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
 
-template <typename Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz>
 std::array<std::array<int, 4>, 6> const
 Hexahedron<Scalar, Qx, Qy, Qz>::faces_
     = Hexahedron<Scalar, Qx, Qy, Qz>::BuildFaces();

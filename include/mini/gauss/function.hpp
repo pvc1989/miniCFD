@@ -3,6 +3,7 @@
 #define MINI_GAUSS_FUNCTION_HPP_
 
 #include <cmath>
+#include <concepts>
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
@@ -16,9 +17,8 @@ namespace gauss {
  * @tparam Scalar the type of the scalar
  * @param s the address of the scalar
  */
-template <class Scalar>
+template <std::floating_point Scalar>
 inline void SetZero(Scalar *s) {
-  static_assert(std::is_scalar_v<Scalar>);
   *s = 0;
 }
 
@@ -30,7 +30,7 @@ inline void SetZero(Scalar *s) {
  * @tparam N the number of columns of the matrix
  * @param m the address of the matrix
  */
-template <class Scalar, int M, int N>
+template <std::floating_point Scalar, int M, int N>
 inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
   m->setZero();
 }

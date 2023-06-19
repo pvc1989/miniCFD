@@ -4,14 +4,15 @@
 
 #include <array>
 #include <cmath>
+#include <concepts>
 
 namespace mini {
 namespace gauss {
 
-template <typename Scalar = double, int Q = 4>
+template <std::floating_point Scalar = double, int Q = 4>
 struct GaussLegendre;
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 struct GaussLegendre<Scalar, 1> {
   using Array = std::array<Scalar, 1>;
   static const Array points;
@@ -23,16 +24,16 @@ struct GaussLegendre<Scalar, 1> {
     return { 2.0 };
   }
 };
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 1>::Array const
 GaussLegendre<Scalar, 1>::points =
     GaussLegendre<Scalar, 1>::BuildPoints();
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 1>::Array const
 GaussLegendre<Scalar, 1>::weights =
     GaussLegendre<Scalar, 1>::BuildWeights();
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 struct GaussLegendre<Scalar, 2> {
   using Array = std::array<Scalar, 2>;
   static const Array points;
@@ -44,16 +45,16 @@ struct GaussLegendre<Scalar, 2> {
     return { 1.0, 1.0 };
   }
 };
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 2>::Array const
 GaussLegendre<Scalar, 2>::points =
     GaussLegendre<Scalar, 2>::BuildPoints();
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 2>::Array const
 GaussLegendre<Scalar, 2>::weights =
     GaussLegendre<Scalar, 2>::BuildWeights();
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 struct GaussLegendre<Scalar, 3> {
   using Array = std::array<Scalar, 3>;
   static const Array points;
@@ -65,16 +66,16 @@ struct GaussLegendre<Scalar, 3> {
     return { 5.0/9.0, 8.0/9.0, 5.0/9.0 };
   }
 };
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 3>::Array const
 GaussLegendre<Scalar, 3>::points =
     GaussLegendre<Scalar, 3>::BuildPoints();
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 3>::Array const
 GaussLegendre<Scalar, 3>::weights =
     GaussLegendre<Scalar, 3>::BuildWeights();
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 struct GaussLegendre<Scalar, 4> {
   using Array = std::array<Scalar, 4>;
   static const Array points;
@@ -96,16 +97,16 @@ struct GaussLegendre<Scalar, 4> {
     };
   }
 };
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 4>::Array const
 GaussLegendre<Scalar, 4>::points =
     GaussLegendre<Scalar, 4>::BuildPoints();
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 4>::Array const
 GaussLegendre<Scalar, 4>::weights =
     GaussLegendre<Scalar, 4>::BuildWeights();
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 struct GaussLegendre<Scalar, 5> {
   using Array = std::array<Scalar, 5>;
   static const Array points;
@@ -129,11 +130,11 @@ struct GaussLegendre<Scalar, 5> {
     };
   }
 };
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 5>::Array const
 GaussLegendre<Scalar, 5>::points =
     GaussLegendre<Scalar, 5>::BuildPoints();
-template <typename Scalar>
+template <std::floating_point Scalar>
 typename GaussLegendre<Scalar, 5>::Array const
 GaussLegendre<Scalar, 5>::weights =
     GaussLegendre<Scalar, 5>::BuildWeights();

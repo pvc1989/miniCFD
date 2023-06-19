@@ -3,6 +3,7 @@
 #ifndef MINI_RIEMANN_ROTATED_EULER_HPP_
 #define MINI_RIEMANN_ROTATED_EULER_HPP_
 
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
@@ -13,10 +14,10 @@ namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <typename Scalar = double, int kDimensions = 3>
+template <std::floating_point Scalar = double, int kDimensions = 3>
 class Cartesian;
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Cartesian<Scalar, 2> {
   static constexpr int x{0}, y{1}, n{0}, t{1};
 
@@ -48,10 +49,9 @@ class Cartesian<Scalar, 2> {
 
  private:
   Vector nu_{1.0, 0.0};
-  static_assert(std::is_scalar_v<Scalar>);
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Cartesian<Scalar, 3> {
   static constexpr int x = 0, y = 1, z = 2;
 
@@ -89,7 +89,6 @@ class Cartesian<Scalar, 3> {
 
  private:
   Vector nu_{1, 0, 0}, sigma_{0, 1, 0}, pi_{0, 0, 1};
-  static_assert(std::is_scalar_v<Scalar>);
 
  public:
   const Vector& nu() const {

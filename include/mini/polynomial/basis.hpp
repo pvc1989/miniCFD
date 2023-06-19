@@ -3,6 +3,7 @@
 #define MINI_POLYNOMIAL_BASIS_HPP_
 
 #include <cmath>
+#include <concepts>
 #include <iostream>
 #include <type_traits>
 
@@ -15,10 +16,10 @@
 namespace mini {
 namespace polynomial {
 
-template <typename Scalar, int kDimensions, int kDegrees>
+template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Raw;
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 2, 1> {
  public:
   static constexpr int N = 3;  // the number of components
@@ -31,7 +32,7 @@ class Raw<Scalar, 2, 1> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;  // the number of components
@@ -45,7 +46,7 @@ class Raw<Scalar, 2, 2> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 2, 3> {
  public:
   static constexpr int N = 10;  // the number of components
@@ -61,7 +62,7 @@ class Raw<Scalar, 2, 3> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 3, 0> {
  public:
   static constexpr int N = 1;  // the number of components
@@ -95,7 +96,7 @@ class Raw<Scalar, 3, 0> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 3, 1> {
  public:
   static constexpr int N = 4;  // the number of components
@@ -138,7 +139,7 @@ class Raw<Scalar, 3, 1> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
@@ -233,7 +234,7 @@ class Raw<Scalar, 3, 2> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Raw<Scalar, 3, 3> {
   static constexpr int X{1}, Y{2}, Z{3};
   static constexpr int XX{4}, XY{5}, XZ{6}, YY{7}, YZ{8}, ZZ{9};
@@ -449,7 +450,7 @@ class Raw<Scalar, 3, 3> {
  * @tparam kDimensions the dimension of the underlying physical space
  * @tparam kDegrees the degree of completeness
  */
-template <typename Scalar, int kDimensions, int kDegrees>
+template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Linear {
   using RB = Raw<Scalar, kDimensions, kDegrees>;
 
@@ -505,7 +506,7 @@ class Linear {
   MatNxN coeff_;
 };
 
-template <typename Scalar, int kDimensions, int kDegrees>
+template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class OrthoNormal {
   using RB = Raw<Scalar, kDimensions, kDegrees>;
   using LB = Linear<Scalar, kDimensions, kDegrees>;

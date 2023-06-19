@@ -4,20 +4,21 @@
 
 #include <array>
 #include <cmath>
+#include <concepts>
 
 namespace mini {
 namespace aircraft {
 namespace airfoil {
 
 // TODO(PVC): Interpolate by (AoA, Mach) in a C81 table.
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Abstract {
  public:
   virtual Scalar Lift(Scalar deg) const = 0;
   virtual Scalar Drag(Scalar deg) const = 0;
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Linear : public Abstract<Scalar> {
   Scalar c_lift_, c_drag_;
 
@@ -33,7 +34,7 @@ class Linear : public Abstract<Scalar> {
   }
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class SC1095 : public Abstract<Scalar> {
   static constexpr std::array<Scalar, 181> lift_{
       0.0, 0.25667, 0.5133, 0.77, 0.755,

@@ -5,17 +5,18 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include <concepts>
 
 #include "mini/aircraft/section.hpp"
 
 namespace mini {
 namespace aircraft {
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Rotor;
 
 // TODO(PVC): Support swept blades.
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Blade {
  public:
   using Rotor = mini::aircraft::Rotor<Scalar>;

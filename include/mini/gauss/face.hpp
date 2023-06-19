@@ -2,12 +2,14 @@
 #ifndef MINI_GAUSS_FACE_HPP_
 #define MINI_GAUSS_FACE_HPP_
 
+#include <concepts>
+
 #include "mini/gauss/function.hpp"
 
 namespace mini {
 namespace gauss {
 
-template <typename Scalar, int D>
+template <std::floating_point Scalar, int D>
 class Face {
   using Mat2x2 = algebra::Matrix<Scalar, 2, 2>;
   using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;

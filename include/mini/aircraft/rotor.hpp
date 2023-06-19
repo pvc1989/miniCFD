@@ -5,6 +5,7 @@
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <concepts>
 
 #include "mini/geometry/pi.hpp"
 #include "mini/aircraft/blade.hpp"
@@ -12,7 +13,7 @@
 namespace mini {
 namespace aircraft {
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Rotor {
  public:
   using Blade = mini::aircraft::Blade<Scalar>;

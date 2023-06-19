@@ -2,6 +2,7 @@
 #ifndef MINI_GEOMETRY_FRAME_HPP_
 #define MINI_GEOMETRY_FRAME_HPP_
 
+#include <concepts>
 #include <iostream>
 #include <utility>
 
@@ -11,7 +12,7 @@
 namespace mini {
 namespace geometry {
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 class Frame {
  public:
   using Vector = mini::algebra::Matrix<Scalar, 3, 1>;
@@ -55,7 +56,7 @@ class Frame {
   Vector x_{1, 0, 0}, y_{0, 1, 0}, z_{0, 0, 1};
 };
 
-template <typename Scalar>
+template <std::floating_point Scalar>
 std::ostream &operator<<(std::ostream &out, const Frame<Scalar> &frame) {
   out << "[" << frame.X().transpose() << "] ";
   out << "[" << frame.Y().transpose() << "] ";

@@ -3,6 +3,7 @@
 #define MINI_GAUSS_QUADRANGLE_HPP_
 
 #include <cmath>
+#include <concepts>
 
 #include "mini/algebra/eigen.hpp"
 
@@ -20,7 +21,7 @@ namespace gauss {
  * @tparam Qx 
  * @tparam Qy 
  */
-template <typename Scalar = double, int kDimensions = 2, int Qx = 4, int Qy = 4>
+template <std::floating_point Scalar = double, int kDimensions = 2, int Qx = 4, int Qy = 4>
 class Quadrangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
 
@@ -214,20 +215,20 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   }
 };
 
-template <typename Scalar, int D, int Qx, int Qy>
+template <std::floating_point Scalar, int D, int Qx, int Qy>
 typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
 Quadrangle<Scalar, D, Qx, Qy>::x_local_i_ = {-1, +1, +1, -1};
 
-template <typename Scalar, int D, int Qx, int Qy>
+template <std::floating_point Scalar, int D, int Qx, int Qy>
 typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
 Quadrangle<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
-template <typename Scalar, int D, int Qx, int Qy>
+template <std::floating_point Scalar, int D, int Qx, int Qy>
 std::array<typename Quadrangle<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
 Quadrangle<Scalar, D, Qx, Qy>::local_coords_
     = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalCoords();
 
-template <typename Scalar, int D, int Qx, int Qy>
+template <std::floating_point Scalar, int D, int Qx, int Qy>
 std::array<Scalar, Qx * Qy> const
 Quadrangle<Scalar, D, Qx, Qy>::local_weights_
     = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalWeights();

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <cstring>
 #include <type_traits>
 
@@ -19,7 +20,7 @@ namespace gauss {
  * @tparam Scalar 
  * @tparam kPoints 
  */
-template <typename Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kDimensions, int kPoints>
 class Triangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
   using Arr1x3 = algebra::Array<Scalar, 1, 3>;
@@ -175,21 +176,21 @@ class Triangle : public Face<Scalar, kDimensions> {
   virtual ~Triangle() noexcept = default;
 };
 
-template <typename Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kDimensions, int kPoints>
 class TriangleBuilder;
 
-template <typename Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kDimensions, int kPoints>
 std::array<typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord,
     kPoints> const
 Triangle<Scalar, kDimensions, kPoints>::local_coords_
     = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalCoords();
 
-template <typename Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kDimensions, int kPoints>
 const std::array<Scalar, kPoints>
 Triangle<Scalar, kDimensions, kPoints>::local_weights_
     = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalWeights();
 
-template <typename Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 1> {
   static constexpr int kPoints = 1;
   using LocalCoord =
@@ -208,7 +209,7 @@ class TriangleBuilder<Scalar, kDimensions, 1> {
   }
 };
 
-template <typename Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 3> {
   static constexpr int kPoints = 3;
   using LocalCoord =
@@ -239,7 +240,7 @@ class TriangleBuilder<Scalar, kDimensions, 3> {
   }
 };
 
-template <typename Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 6> {
   static constexpr int kPoints = 6;
   using LocalCoord =
@@ -274,7 +275,7 @@ class TriangleBuilder<Scalar, kDimensions, 6> {
   }
 };
 
-template <typename Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 12> {
   static constexpr int kPoints = 12;
   using LocalCoord =
@@ -322,7 +323,7 @@ class TriangleBuilder<Scalar, kDimensions, 12> {
   }
 };
 
-template <typename Scalar, int kDimensions>
+template <std::floating_point Scalar, int kDimensions>
 class TriangleBuilder<Scalar, kDimensions, 16> {
   static constexpr int kPoints = 16;
   using LocalCoord =
