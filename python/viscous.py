@@ -95,14 +95,18 @@ class Energy(concept.Viscous):
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        left_jumps = np.zeros(len(points))
-        right_jumps = np.zeros(len(points))
+        left_jumps = np.ndarray(len(points))
+        right_jumps = np.ndarray(len(points))
         for i in range(len(points)):
             x_curr = points[i]
             if left:
                 left_jumps[i] = values[i] - left.global_to_value(x_curr)
+            else:
+                left_jumps[i] = np.infty
             if right:
                 right_jumps[i] = values[i] - right.global_to_value(x_curr)
+            else:
+                right_jumps[i] = np.infty
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
@@ -112,19 +116,26 @@ class Energy(concept.Viscous):
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        curr_low = expansion.Legendre(1, curr.coordinate())
         # build left_jumps
-        left_jumps = np.zeros(len(points))
+        left_jumps = np.ndarray(len(points))
         if left:
-            curr_low.approximate(lambda x: left.global_to_value(x))
+            left_low = expansion.Legendre(1, left.coordinate())
+            left_low.approximate(lambda x: left.global_to_value(x))
             for i in range(len(points)):
-                left_jumps[i] = values[i] - curr_low.global_to_value(points[i])
+                left_jumps[i] = values[i] - left_low.global_to_value(points[i])
+        else:
+            for i in range(len(points)):
+                left_jumps[i] = np.infty
         # build right_jumps
-        right_jumps = np.zeros(len(points))
+        right_jumps = np.ndarray(len(points))
         if right:
-            curr_low.approximate(lambda x: right.global_to_value(x))
+            right_low = expansion.Legendre(1, right.coordinate())
+            right_low.approximate(lambda x: right.global_to_value(x))
             for i in range(len(points)):
-                right_jumps[i] = values[i] - curr_low.global_to_value(points[i])
+                right_jumps[i] = values[i] - right_low.global_to_value(points[i])
+        else:
+            for i in range(len(points)):
+                right_jumps[i] = np.infty
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
@@ -233,17 +244,17 @@ class Energy(concept.Viscous):
     def _get_oscillation_energy(self, cell: element.LagrangeFR):
         """Compare with four polynomials borrowed from neighbors.
         """
-        # points = cell.get_sample_points()
-        # values = np.ndarray(len(points))
-        # for i in range(len(points)):
-        #     values[i] = cell.get_solution_value(points[i])
+        points = cell.get_sample_points()
+        values = np.ndarray(len(points))
+        for i in range(len(points)):
+            values[i] = cell.get_solution_value(points[i])
         # return self._get_high_order_energy(cell, points, values)
         # return self._get_low_order_energy(cell, points, values)
         # return self._get_interface_jump_energy(cell, points, values)
-        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
+        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         # return self._get_half_by_half_energy(cell, points, values)
-        return self._get_half_exact_energy(cell)
+        # return self._get_half_exact_energy(cell)
 
     @staticmethod
     def _nu_max(cell: concept.Element):
