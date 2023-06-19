@@ -15,7 +15,7 @@ class Constant(concept.Viscous):
 
     def name(self, verbose=False) -> str:
         if verbose:
-            return 'Constant (' + r'$\nu=$' + f'{self._const})'
+            return 'Constant(' + r'$\nu=$' + f'{self._const})'
         else:
             return 'Constant'
 
@@ -33,14 +33,13 @@ class Persson2006(concept.Viscous):
     See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
     """
 
-    def __init__(self, kappa=2.0, nu_max=0.1) -> None:
+    def __init__(self, kappa=2.0) -> None:
         super().__init__()
         self._kappa = kappa
-        self._nu_max = nu_max
 
     def name(self, verbose=False) -> str:
         if verbose:
-            return "Persson (2006)"
+            return 'Persson(2006, ' + r'$\kappa=$' + f'{self._kappa})'
         else:
             return 'Persson'
 
@@ -57,29 +56,26 @@ class Persson2006(concept.Viscous):
             nu *= 0.5 * (1 + np.sin(s_gap / self._kappa * np.pi / 2))
         else:
             nu = 0.0
-        return min(nu, self._nu_max)
+        return nu
 
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_coeff.clear()
         for i_cell in troubled_cell_indices:
             coeff = self._get_constant_coeff(grid.get_element_by_index(i_cell))
-            # print(f'nu[{i_cell}] = {coeff}')
             self._index_to_coeff[i_cell] = coeff
 
 
 class Energy(concept.Viscous):
 
-    def __init__(self, tau=0.01, nu_max=0.1) -> None:
+    def __init__(self, tau=0.01) -> None:
         super().__init__()
         self._tau = tau
-        self._nu_max = nu_max
         self._index_to_nu = dict()
         self._index_to_a_inv = dict()
 
     def name(self, verbose=False) -> str:
         if verbose:
-            return 'Energy (' + r'$\tau=$' + f'{self._tau}' \
-                + r', $\nu_\max=$' + f'{self._nu_max}' + ')'
+            return 'Energy(' + r'$\tau=$' + f'{self._tau})'
         else:
             return 'Energy'
 
