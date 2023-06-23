@@ -6,6 +6,7 @@ import numpy as np
 from concept import Expansion, Element, RiemannSolver, Coordinate
 from polynomial import Vincent
 from expansion import Lagrange as LagrangeExpansion
+from expansion import GaussLagrange as GaussLagrangeExpansion
 from expansion import Legendre as LegendreExpansion
 
 
@@ -44,6 +45,27 @@ class LagrangeDG(DiscontinuousGalerkin):
 
     def get_sample_points(self) -> np.ndarray:
         return self.expansion().get_sample_points()
+
+
+class GaussLagrangeDG(LagrangeDG):
+    """Specialized LagrangeDG element using Gaussian quadrature points as nodes.
+    """
+
+    def __init__(self, riemann: RiemannSolver, degree: int,
+            coordinate: Coordinate) -> None:
+        e = GaussLagrangeExpansion(degree, coordinate, riemann.value_type())
+        DiscontinuousGalerkin.__init__(self, riemann, e)
+        self._mass_matrix_diag = np.ndarray(self.n_term())
+        for k in range(self.n_term()):
+            self._mass_matrix_diag[k] = self.expansion().get_sample_weight(k)
+
+    def expansion(self) -> GaussLagrangeExpansion:
+        return Element.expansion(self)
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        for k in range(self.n_term()):
+            column[k] /= self._mass_matrix_diag[k]
+        return column
 
 
 class LegendreDG(DiscontinuousGalerkin):
@@ -244,13 +266,51 @@ class LagrangeFR(FluxReconstruction):
         # print('F =\n', mat_f)
         return mat_b, mat_c, mat_d, mat_e, mat_f
 
+
+class GaussLagrangeFR(LagrangeFR):
+    """Element for implement the FR scheme using a GaussLagrange expansion.
+    """
+
+    def __init__(self, riemann: RiemannSolver, degree: int,
+            coordinate: Coordinate) -> None:
+        e = GaussLagrangeExpansion(degree, coordinate, riemann.value_type())
+        FluxReconstruction.__init__(self, riemann, e)
+        self._mass_matrix_diag = GaussLagrangeDG._build_mass_matrix(self)
+        self._disspation_matrices = None
+
+    def expansion(self) -> GaussLagrangeExpansion:
+        return Element.expansion(self)
+
+    def divide_mass_matrix(self, column: np.ndarray):
+        return GaussLagrangeDG.divide_mass_matrix(self, column)
+
+    def _get_flux_gradient(self, x_global, extra_viscous):
+        """Get the gradient value of the discontinuous flux at a given point.
+        """
+        basis_gradients = self.get_basis_gradients(x_global)
+        flux_gradient = 0.0
+        points = self.expansion().get_sample_points()
+        values = self.expansion().get_coeff_ref()
+        for i_sample in range(len(points)):
+            x_sample = points[i_sample]
+            u_sample = values[i_sample]  # O(p) -> O(1)
+            du_sample = self.get_solution_gradient(x_sample)
+            f_sample = self.equation().get_convective_flux(u_sample)
+            f_sample -= self.equation().get_diffusive_flux(u_sample, du_sample)
+            if callable(extra_viscous):
+                f_sample -= du_sample * extra_viscous(x_sample)
+            else:
+                f_sample -= du_sample * extra_viscous
+            flux_gradient += f_sample * basis_gradients[i_sample]
+        return flux_gradient
+
     def get_dissipation_rate(self):
         if not self._disspation_matrices:
             mat_b, mat_c, mat_d, mat_e, mat_f = self.get_dissipation_matrices()
             mat_d += mat_b - mat_c
             mat_w = np.eye(self.n_term())
             for k in range(self.n_term()):
-                mat_w[k][k] = self.expansion().get_node_weight(k)
+                mat_w[k][k] = self.expansion().get_sample_weight(k)
             self._disspation_matrices = (mat_w@mat_d, mat_w@mat_e, mat_w@mat_f)
         mat_d, mat_e, mat_f = self._disspation_matrices
         curr_column = self.get_solution_column()

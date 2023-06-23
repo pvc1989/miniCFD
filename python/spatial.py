@@ -229,6 +229,7 @@ class FluxReconstruction(FiniteElement):
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
             assert (isinstance(element_i, element.LagrangeFR)
+                or isinstance(element_i, element.GaussLagrangeFR)
                 or isinstance(element_i, element.LegendreFR))
             extra_viscous = 0.0
             if self._viscous:
@@ -255,6 +256,7 @@ class FluxReconstruction(FiniteElement):
         upwind_flux_right = self._riemann.get_interface_flux(
             left.expansion(), right.expansion(), viscous)
         assert (isinstance(left, element.LagrangeFR)
+            or isinstance(left, element.GaussLagrangeFR)
             or isinstance(left, element.LegendreFR))
         return left.get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
@@ -274,6 +276,22 @@ class LagrangeFR(FluxReconstruction):
 
     def name(self, verbose=True):
         my_name = 'LagrangeFR'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+
+class GaussLagrangeFR(FluxReconstruction):
+    """The ODE system given by Huyhn's FR method.
+    """
+
+    def __init__(self, riemann: concept.RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        FluxReconstruction.__init__(self, riemann, degree,
+            n_element, x_left, x_right, element.GaussLagrangeFR)
+
+    def name(self, verbose=True):
+        my_name = 'GaussLagrangeFR'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name

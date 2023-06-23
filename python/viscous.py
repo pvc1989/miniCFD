@@ -80,16 +80,16 @@ class Energy(concept.Viscous):
             return 'Energy'
 
     @staticmethod
-    def _jumps_to_energy(jumps: np.ndarray, curr: expansion.Lagrange,
+    def _jumps_to_energy(jumps: np.ndarray, curr: expansion.GaussLagrange,
             indices=None):
         energy = 0.0
         if not indices:
             indices = range(len(jumps))
         for k in indices:
-            energy += curr.get_node_weight(k) * jumps[k]**2 / 2
+            energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
         return energy
 
-    def _get_high_order_energy(self, cell: element.LagrangeFR,
+    def _get_high_order_energy(self, cell: element.GaussLagrangeFR,
             points: np.ndarray, values: np.ndarray):
         """Compare with polynomials on neighbors.
         """
@@ -110,7 +110,7 @@ class Energy(concept.Viscous):
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_low_order_energy(self, cell: element.LagrangeFR,
+    def _get_low_order_energy(self, cell: element.GaussLagrangeFR,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
@@ -139,7 +139,7 @@ class Energy(concept.Viscous):
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_half_by_half_energy(self, cell: element.LagrangeFR,
+    def _get_half_by_half_energy(self, cell: element.GaussLagrangeFR,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=k and p=1 extensions from neighbors in the closer half using the integrator on cell.
         """
@@ -178,7 +178,7 @@ class Energy(concept.Viscous):
                 Energy._jumps_to_energy(high_jumps, curr, indices))
         return left_energy + right_energy
 
-    def _get_half_exact_energy(self, cell: element.LagrangeFR):
+    def _get_half_exact_energy(self, cell: element.GaussLagrangeFR):
         """Same as _get_half_by_half_energy, but using integrators on subcells.
         """
         def get_energy(coord: concept.Coordinate,
@@ -210,7 +210,7 @@ class Energy(concept.Viscous):
                                get_energy(right_coord, curr, right_low))
         return left_energy + right_energy
 
-    def _get_interface_jump_energy(self, cell: element.LagrangeFR):
+    def _get_interface_jump_energy(self, cell: element.GaussLagrangeFR):
         """Compute derivative jumps on interfaces.
         """
         curr = cell.expansion()
@@ -241,7 +241,7 @@ class Energy(concept.Viscous):
         else:
             return right_energy
 
-    def _get_oscillation_energy(self, cell: element.LagrangeFR):
+    def _get_oscillation_energy(self, cell: element.GaussLagrangeFR):
         """Compare with four polynomials borrowed from neighbors.
         """
         points = cell.get_sample_points()
@@ -262,7 +262,7 @@ class Energy(concept.Viscous):
 
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
-        assert isinstance(curr, element.LagrangeFR)
+        assert isinstance(curr, element.GaussLagrangeFR)
         dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
@@ -275,7 +275,7 @@ class Energy(concept.Viscous):
         else:
             return 0.0
 
-    def _build_a_on_centers(self, cell: element.LagrangeFR):
+    def _build_a_on_centers(self, cell: element.GaussLagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         left, right = cell.neighbor_expansions()
@@ -292,7 +292,7 @@ class Energy(concept.Viscous):
         a[2][2] = h*h
         return a
 
-    def _build_a_on_interfaces(self, cell: element.LagrangeFR):
+    def _build_a_on_interfaces(self, cell: element.GaussLagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         h = cell.length() / 2
@@ -301,7 +301,7 @@ class Energy(concept.Viscous):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_on_interfaces_with_average(self, cell: element.LagrangeFR):
+    def _build_a_on_interfaces_with_average(self, cell: element.GaussLagrangeFR):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         a[0][0] = cell.length()
@@ -312,7 +312,7 @@ class Energy(concept.Viscous):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_with_averages(self, cell: element.LagrangeFR):
+    def _build_a_with_averages(self, cell: element.GaussLagrangeFR):
         left, right = cell.neighbor_expansions()
         a = np.ndarray((3,3))
         a[0][0] = cell.length()
