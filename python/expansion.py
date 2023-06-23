@@ -189,24 +189,23 @@ class Lagrange(Taylor):
     """The Lagrange expansion of a general function.
     """
 
+    @staticmethod
+    def _get_roots(n_point):
+        # Sample points evenly distributed in the element.
+        delta = 2.0 / n_point / 2
+        roots = np.linspace(delta - 1, 1 - delta, n_point)
+        return roots
+
     def __init__(self, degree: int, coordinate: Coordinate,
-            value_type=float) -> None:
+            value_type=float, get_roots=_get_roots) -> None:
         Taylor.__init__(self, degree, coordinate, value_type)
         n_point = degree + 1
         assert n_point >= 1
-        # Sample points evenly distributed in the element.
-        # delta = 2.0 / n_point / 2
-        # roots = np.linspace(delta - 1, 1 - delta, n_point)
-        # Or, use zeros of special polynomials.
-        roots, local_weights = special.roots_legendre(degree + 1)
+        roots = get_roots(n_point)
         # Build the basis and sample points.
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
         self._sample_points = self.coordinate().local_to_global(roots)
-        self._global_weights = np.ndarray(n_point)
-        for k in range(self.n_term()):
-            jacobian = self.coordinate().local_to_jacobian(roots[k])
-            self._global_weights[k] = local_weights[k] * jacobian
         # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
         base_rows = np.ndarray((self.n_term(), self.n_term()))
         for k in range(self.n_term()):
@@ -232,11 +231,6 @@ class Lagrange(Taylor):
     def get_sample_points(self) -> np.ndarray:
         """Get the global coordinates of all sample points."""
         return self._sample_points
-
-    def get_node_weight(self, k: int) -> float:
-        """Get the gloabl quadrature weight of the kth node.
-        """
-        return self._global_weights[k]
 
     def _set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.
@@ -298,6 +292,33 @@ class Lagrange(Taylor):
     def get_basis_derivatives(self, x_global: float):
         taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
         return taylor_derivatives.dot(self._lagrange_to_taylor)
+
+
+class GaussLagrange(Lagrange):
+    """Specialized Lagrange expansion using Gaussian quadrature points as nodes.
+    """
+
+    def __init__(self, degree: int, coordinate: Coordinate,
+            value_type=float) -> None:
+        n_point = degree + 1
+        roots, local_weights = special.roots_legendre(n_point)
+        Lagrange.__init__(self, degree, coordinate, value_type,
+            get_roots=lambda n_point: roots)
+        self._sample_weights = np.ndarray(n_point)
+        for k in range(self.n_term()):
+            jacobian = self.coordinate().local_to_jacobian(roots[k])
+            self._sample_weights[k] = local_weights[k] * jacobian
+
+    def name(self, verbose) -> str:
+        my_name = 'GaussLagrange'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+    def get_sample_weight(self, k: int) -> float:
+        """Get the gloabl quadrature weight of the kth node.
+        """
+        return self._sample_weights[k]
 
 
 class Legendre(Taylor):
