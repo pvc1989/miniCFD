@@ -26,6 +26,16 @@ class DiscontinuousGalerkin(Element):
     def suggest_cfl(self, rk_order: int) -> float:
         return DiscontinuousGalerkin._cfl[self.degree()][rk_order]
 
+    def get_interior_residual(self, extra_viscous):
+        """Get the residual column by evaluating the internal integral.
+        """
+        def integrand(x_global):
+            return np.tensordot(
+                self.get_basis_gradients(x_global),
+                self.get_discontinuous_flux(x_global, extra_viscous),
+                0)
+        return self.fixed_quad_global(integrand, self.degree())
+
 
 class LagrangeDG(DiscontinuousGalerkin):
     """Element for implement the DG scheme using a Lagrange expansion.
@@ -46,6 +56,9 @@ class LagrangeDG(DiscontinuousGalerkin):
     def get_sample_points(self) -> np.ndarray:
         return self.expansion().get_sample_points()
 
+    def get_sample_values(self) -> np.ndarray:
+        return self.expansion().get_sample_values()
+
 
 class GaussLagrangeDG(LagrangeDG):
     """Specialized LagrangeDG element using Gaussian quadrature points as nodes.
@@ -56,8 +69,11 @@ class GaussLagrangeDG(LagrangeDG):
         e = GaussLagrangeExpansion(degree, coordinate, riemann.value_type())
         DiscontinuousGalerkin.__init__(self, riemann, e)
         self._mass_matrix_diag = np.ndarray(self.n_term())
+        self._basis_gradients = np.ndarray(self.n_term(), np.ndarray)
+        points = self.get_sample_points()
         for k in range(self.n_term()):
             self._mass_matrix_diag[k] = self.expansion().get_sample_weight(k)
+            self._basis_gradients[k] = self.get_basis_gradients(points[k])
 
     def expansion(self) -> GaussLagrangeExpansion:
         return Element.expansion(self)
@@ -66,6 +82,25 @@ class GaussLagrangeDG(LagrangeDG):
         for k in range(self.n_term()):
             column[k] /= self._mass_matrix_diag[k]
         return column
+
+    def get_interior_residual(self, extra_viscous):
+        """Get the residual column by evaluating the internal integral.
+
+        For GaussLagrangeDG, which is a spetral element scheme, the integral can be reduced to a weighted sum of nodal values.
+        """
+        points = self.get_sample_points()
+        values = self.get_sample_values()
+        gauss = self.expansion()
+        residual = np.tensordot(self._basis_gradients[0],
+            self.get_discontinuous_flux(points[0], extra_viscous,
+                values[0], values.dot(self._basis_gradients[0])),
+            0) * gauss.get_sample_weight(0)
+        for k in range(1, self.n_term()):
+            residual += np.tensordot(self._basis_gradients[k],
+                self.get_discontinuous_flux(points[k], extra_viscous,
+                    values[k], values.dot(self._basis_gradients[k])),
+                0) * gauss.get_sample_weight(k)
+        return residual
 
 
 class LegendreDG(DiscontinuousGalerkin):

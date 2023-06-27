@@ -232,6 +232,10 @@ class Lagrange(Taylor):
         """Get the global coordinates of all sample points."""
         return self._sample_points
 
+    def get_sample_values(self) -> np.ndarray:
+        """Get the sampled values on each sample point."""
+        return self.get_coeff_ref()
+
     def _set_taylor_coeff(self):
         """Transform a Lagrage expansion onto its Taylor basis.
         """

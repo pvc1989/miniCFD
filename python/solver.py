@@ -426,7 +426,8 @@ if __name__ == '__main__':
         default=500, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['LagrangeDG', 'LagrangeFR', 'GaussLagrangeFR', 'LegendreDG', 'LegendreFR'],
+        choices=['LagrangeDG', 'GaussLagrangeDG', 'LegendreDG',
+                 'LagrangeFR', 'GaussLagrangeFR', 'LegendreFR'],
         default='GaussLagrangeFR',
         help='method for spatial discretization')
     parser.add_argument('--detector',
@@ -471,12 +472,14 @@ if __name__ == '__main__':
     print(args)
     if args.method == 'LagrangeDG':
         SpatialClass = spatial.LagrangeDG
+    elif args.method == 'GaussLagrangeDG':
+        SpatialClass = spatial.GaussLagrangeDG
+    elif args.method == 'LegendreDG':
+        SpatialClass = spatial.LegendreDG
     elif args.method == 'LagrangeFR':
         SpatialClass = spatial.LagrangeFR
     elif args.method == 'GaussLagrangeFR':
         SpatialClass = spatial.GaussLagrangeFR
-    elif args.method == 'LegendreDG':
-        SpatialClass = spatial.LegendreDG
     elif args.method == 'LegendreFR':
         SpatialClass = spatial.LegendreFR
     else:

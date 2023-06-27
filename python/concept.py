@@ -571,12 +571,19 @@ class Element(abc.ABC):
         mass_matrix = self.expansion().get_basis_innerproducts()
         return mass_matrix
 
-    def get_discontinuous_flux(self, x_global, extra_viscous):
-        """Get the value of f(u^h) at a given point.
+    def get_discontinuous_flux(self, x_global, extra_viscous,
+            u_given=None, du_given=None):
+        """Get the value of f(u^h, du^h) at a given point.
         """
-        u_approx = self.get_solution_value(x_global)
+        if u_given:
+            u_approx = u_given
+        else:
+            u_approx = self.get_solution_value(x_global)
         flux = self.equation().get_convective_flux(u_approx)
-        du_approx = self.expansion().global_to_gradient(x_global)
+        if du_given:
+            du_approx = du_given
+        else:
+            du_approx = self.expansion().global_to_gradient(x_global)
         flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
         if callable(extra_viscous):
             extra_viscous = extra_viscous(x_global)

@@ -154,17 +154,13 @@ class DiscontinuousGalerkin(FiniteElement):
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
+            assert isinstance(element_i, element.DiscontinuousGalerkin)
             # build element_i's residual column
             # 1st: evaluate the internal integral
             extra_viscous = 0.0
             if self._viscous:
                 extra_viscous = self._viscous.get_coeff(i)
-            def integrand(x_global):
-                return np.tensordot(
-                    element_i.get_basis_gradients(x_global),
-                    element_i.get_discontinuous_flux(x_global, extra_viscous),
-                    0)
-            values = element_i.fixed_quad_global(integrand, element_i.degree())
+            values = element_i.get_interior_residual(extra_viscous)
             # 2nd: evaluate the boundary integral
             upwind_flux_left = interface_fluxes[i]
             upwind_flux_right = interface_fluxes[i+1]
@@ -212,6 +208,22 @@ class LagrangeDG(DiscontinuousGalerkin):
 
     def name(self, verbose=True):
         my_name = 'LagrangeDG'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+
+class GaussLagrangeDG(DiscontinuousGalerkin):
+    """The ODE system given by the DG method using a GaussLagrange expansion.
+    """
+
+    def __init__(self, riemann: concept.RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        DiscontinuousGalerkin.__init__(self, riemann, degree,
+            n_element, x_left, x_right, element.GaussLagrangeDG)
+
+    def name(self, verbose=True):
+        my_name = 'GaussLagrangeDG'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
