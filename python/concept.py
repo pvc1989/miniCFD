@@ -654,10 +654,14 @@ class Element(abc.ABC):
         """Suggest a CFL number for explicit RK time stepping.
         """
 
-    def suggest_delta_t(self, extra_viscous):
+    def _suggest_dt_by_blazek(self, extra_viscous):
+        """See Eq. (6.20) in Blazek (2015).
+        """
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
         p = self.degree()
+        spatial_factor = 3 * p**2  # may be too large
+        # The following values are tested for nu <= 1.0 and t <= 1.0.
         if p == 0:
             spatial_factor = 1
         elif p == 1:
@@ -666,8 +670,12 @@ class Element(abc.ABC):
             spatial_factor = 6
         elif p == 3:
             spatial_factor = 12
-        else:
+        elif p == 4:
             spatial_factor = 26
+        elif p == 5:
+            spatial_factor = 50
+        elif p == 6:
+            spatial_factor = 90
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
@@ -683,6 +691,31 @@ class Element(abc.ABC):
             lambda_d = b / h
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
         return delta_t * self.suggest_cfl(3)
+
+    def _suggest_dt_by_klockner(self, extra_viscous):
+        """See Eq. (2.1) in Klöckner (2011).
+        """
+        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
+        h = self.length()
+        p2 = self.degree()**2
+        delta_t = np.infty
+        for x in points:
+            u = self.get_solution_value(x)
+            eigvals = self.equation().get_convective_eigvals(u)
+            lambda_c = 1e-16
+            for val in eigvals:
+                lambda_c = max(lambda_c, np.abs(val))
+            b = self.equation().get_diffusive_coeff(u)
+            if callable(extra_viscous):
+                b += extra_viscous(x)
+            else:
+                b += extra_viscous
+            lambda_d = b / h
+            delta_t = min(delta_t, h / p2 / (lambda_c + p2 * lambda_d))
+        return delta_t
+
+    def suggest_delta_t(self, extra_viscous):
+        return self._suggest_dt_by_blazek(extra_viscous)
 
 
 class Grid(abc.ABC):
