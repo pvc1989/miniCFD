@@ -31,7 +31,6 @@ class SolverBase(abc.ABC):
             self._solver_name += f', limiter.{l.name()}'
         if v:
             self._solver_name += f', viscous.{v.name(True)}'
-        self._animation = None
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)
         self._u_mean = u_mean
@@ -223,8 +222,8 @@ class SolverBase(abc.ABC):
                 self._ode_solver.update(self._spatial, dt_actual, t_curr)
                 t_curr += dt_actual
         frames = np.linspace(t_start, t_stop, n_frame+1)
-        self._animation = mpla.FuncAnimation(
-            plt.gcf(), update_func, frames, init_func, interval=5)
+        animation = mpla.FuncAnimation(
+            fig, update_func, frames, init_func, interval=5)
         plt.show()
 
 
