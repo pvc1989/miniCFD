@@ -459,6 +459,7 @@ class RiemannSolver(abc.ABC):
         """Get the value of the convective flux on the interface.
         """
 
+    # TODO: move to a DDG class
     @abc.abstractmethod
     def get_interface_gradient(self, h_left: float, h_right: float,
             u_jump, du_mean, ddu_jump):
@@ -466,12 +467,21 @@ class RiemannSolver(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
+    def get_interface_flux_and_bjump(self, u_left: Expansion, u_right: Expansion,
             viscous: float):
-        """Get the value of F - G on the interface.
+        """Get the value of (F - G) and half-jump of b = nu*U on the interface.
         
         It is assumed G is in the form of nu * ∂U/∂x.
         """
+
+    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
+            viscous: float):
+        """Get the value of (F - G) on the interface.
+        
+        It is assumed G is in the form of nu * ∂U/∂x.
+        """
+        flux, _ = self.get_interface_flux_and_bjump(u_left, u_right, viscous)
+        return flux
 
 
 class Element(abc.ABC):

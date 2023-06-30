@@ -44,11 +44,13 @@ class DiscontinuousGalerkin(Element):
 
     def add_inteface_correction(self, left_jump, right_jump, residual: np.ndarray):
         """See Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564.
+
+        The jumps passed in have already been divided by 2.
         """
         residual -= np.tensordot(
-            self.get_basis_gradients(self.x_left()), left_jump / 2, 0)
+            self.get_basis_gradients(self.x_left()), left_jump, 0)
         residual -= np.tensordot(
-            self.get_basis_gradients(self.x_right()), right_jump / 2, 0)
+            self.get_basis_gradients(self.x_right()), right_jump, 0)
 
 
 class LagrangeDG(DiscontinuousGalerkin):

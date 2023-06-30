@@ -41,20 +41,14 @@ class FiniteElement(concept.SpatialScheme):
         # bisect_right(a, x) gives such an i that a[:i] <= x < a[i:]
         return i_element - 1
 
-    def get_interface_jumps(self):
-        """Get the jumps at each element interface.
-        """
-        interface_jumps = np.zeros(self.n_element() + 1, self.value_type())
-        return interface_jumps
-
-    def get_interface_fluxes(self):
-        """Get the flux at each element interface.
-        """
+    def get_interface_fluxes_and_bjumps(self):
         interface_fluxes = np.ndarray(self.n_element() + 1, self.value_type())
+        interface_bjumps = np.ndarray(self.n_element() + 1, self.value_type())
         # interface_flux[i] := flux on interface(element[i-1], element[i])
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
             prev = self.get_element_by_index(i-1)
+            # TODO: distinguish left & right viscosity
             viscous = self.equation().get_diffusive_coeff()
             if self._viscous:
                 nu_curr = self._viscous.get_coeff(i)
@@ -64,8 +58,9 @@ class FiniteElement(concept.SpatialScheme):
                 if callable(nu_prev):
                     nu_prev = nu_prev(prev.x_right())
                 viscous += min(nu_curr, nu_prev)
-            interface_fluxes[i] = self._riemann.get_interface_flux(
-                prev.expansion(), curr.expansion(), viscous)
+            interface_fluxes[i], interface_bjumps[i] = \
+                self._riemann.get_interface_flux_and_bjump(
+                    prev.expansion(), curr.expansion(), viscous)
         if self.is_periodic():
             i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
@@ -79,9 +74,11 @@ class FiniteElement(concept.SpatialScheme):
                 if callable(nu_prev):
                     nu_prev = nu_prev(prev.x_right())
                 viscous += min(nu_curr, nu_prev)
-            interface_fluxes[0] = self._riemann.get_interface_flux(
+            interface_fluxes[0], interface_bjumps[0] = \
+                self._riemann.get_interface_flux_and_bjump(
                 prev.expansion(), curr.expansion(), viscous)
             interface_fluxes[-1] = interface_fluxes[0]
+            interface_bjumps[-1] = interface_bjumps[0]
         else:  # TODO: support other boundary condtions
             curr = self.get_element_by_index(0)
             viscous = 0.0
@@ -89,13 +86,15 @@ class FiniteElement(concept.SpatialScheme):
                 viscous = self._viscous.get_coeff(0)
             interface_fluxes[0] = \
                 curr.get_discontinuous_flux(curr.x_left(), viscous)
+            interface_bjumps[0] *= 0
             curr = self.get_element_by_index(-1)
             viscous = 0.0
             if self._viscous:
                 viscous = self._viscous.get_coeff(-1)
             interface_fluxes[-1] = \
                 curr.get_discontinuous_flux(curr.x_right(), viscous)
-        return interface_fluxes
+            interface_bjumps[-1] *= 0
+        return interface_fluxes, interface_bjumps
 
     def get_solution_value(self, point):
         return self.get_element(point).get_solution_value(point)
@@ -156,8 +155,8 @@ class DiscontinuousGalerkin(FiniteElement):
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
-        interface_fluxes = self.get_interface_fluxes()
-        interface_jumps = self.get_interface_jumps()
+        interface_fluxes, interface_jumps = \
+            self.get_interface_fluxes_and_bjumps()
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
@@ -238,7 +237,7 @@ class FluxReconstruction(FiniteElement):
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
-        interface_fluxes = self.get_interface_fluxes()
+        interface_fluxes, _ = self.get_interface_fluxes_and_bjumps()
         # evaluate flux gradients
         i_dof = 0
         for i in range(self.n_element()):

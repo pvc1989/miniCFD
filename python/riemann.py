@@ -60,7 +60,7 @@ class Solver(concept.RiemannSolver):
         du += du_mean
         return du
 
-    def get_interface_flux(self, expansion_left: expansion.Taylor,
+    def get_interface_flux_and_bjump(self, expansion_left: expansion.Taylor,
             expansion_right: expansion.Taylor, viscous: float):
         # Get the convective flux on the interface:
         x_left = expansion_left.x_right()
@@ -69,7 +69,7 @@ class Solver(concept.RiemannSolver):
         u_right = expansion_right.global_to_value(x_right)
         flux = self.get_upwind_flux(u_left, u_right)
         if viscous == 0:
-            return flux
+            return flux, u_left - u_left
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
         if expansion_left.degree() > 1:
@@ -87,10 +87,11 @@ class Solver(concept.RiemannSolver):
             du_right = expansion_right.global_to_gradient(x_right)
         else:
             pass
+        u_jump = u_right - u_left
         du = self.get_interface_gradient(expansion_left.length(), 
-            expansion_right.length(), u_right - u_left,
+            expansion_right.length(), u_jump,
             (du_left + du_right) / 2, ddu_right - ddu_left)
-        return flux - viscous * du
+        return flux - viscous * du, viscous / 2 * u_jump
 
 
 class LinearAdvection(Solver):
