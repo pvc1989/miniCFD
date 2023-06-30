@@ -36,6 +36,20 @@ class DiscontinuousGalerkin(Element):
                 0)
         return self.fixed_quad_global(integrand, self.degree())
 
+    def add_inteface_residual(self, left_flux, right_flux, residual):
+        residual += np.tensordot(
+            self.get_basis_values(self.x_left()), left_flux, 0)
+        residual -= np.tensordot(
+            self.get_basis_values(self.x_right()), right_flux, 0)
+
+    def add_inteface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        """See Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564.
+        """
+        residual -= np.tensordot(
+            self.get_basis_gradients(self.x_left()), left_jump / 2, 0)
+        residual -= np.tensordot(
+            self.get_basis_gradients(self.x_right()), right_jump / 2, 0)
+
 
 class LagrangeDG(DiscontinuousGalerkin):
     """Element for implement the DG scheme using a Lagrange expansion.

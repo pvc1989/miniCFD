@@ -41,8 +41,14 @@ class FiniteElement(concept.SpatialScheme):
         # bisect_right(a, x) gives such an i that a[:i] <= x < a[i:]
         return i_element - 1
 
+    def get_interface_jumps(self):
+        """Get the jumps at each element interface.
+        """
+        interface_jumps = np.zeros(self.n_element() + 1, self.value_type())
+        return interface_jumps
+
     def get_interface_fluxes(self):
-        """Get the interface flux at each element interface.
+        """Get the flux at each element interface.
         """
         interface_fluxes = np.ndarray(self.n_element() + 1, self.value_type())
         # interface_flux[i] := flux on interface(element[i-1], element[i])
@@ -151,6 +157,7 @@ class DiscontinuousGalerkin(FiniteElement):
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
         interface_fluxes = self.get_interface_fluxes()
+        interface_jumps = self.get_interface_jumps()
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
@@ -160,20 +167,16 @@ class DiscontinuousGalerkin(FiniteElement):
             extra_viscous = 0.0
             if self._viscous:
                 extra_viscous = self._viscous.get_coeff(i)
-            values = element_i.get_interior_residual(extra_viscous)
+            residual = element_i.get_interior_residual(extra_viscous)
             # 2nd: evaluate the boundary integral
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values += np.tensordot(
-                element_i.get_basis_values(element_i.x_left()),
-                upwind_flux_left, 0)
-            values -= np.tensordot(
-                element_i.get_basis_values(element_i.x_right()),
-                upwind_flux_right, 0)
+            element_i.add_inteface_residual(
+                interface_fluxes[i], interface_fluxes[i+1], residual)
+            element_i.add_inteface_correction(
+                interface_jumps[i], interface_jumps[i+1], residual)
             # 3rd: multiply the inverse of the mass matrix
-            values = element_i.divide_mass_matrix(values)
+            residual = element_i.divide_mass_matrix(residual)
             # write to the global column
-            i_dof = self._write_to_column(column, values, i_dof)
+            i_dof = self._write_to_column(column, residual, i_dof)
         assert i_dof == self.n_dof()
         return column
 
