@@ -660,6 +660,21 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_interior_residual(self, extra_viscous=0.0) -> np.ndarray:
+        """Get the residual given by the flux in the element.
+        """
+
+    @abc.abstractmethod
+    def add_inteface_residual(self, extra_viscous, left_flux, right_flux, residual: np.ndarray):
+        """Add the residual given by the flux on the interface.
+        """
+
+    def add_inteface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        """Add the residual given by the inteface correction.
+        """
+        pass
+
+    @abc.abstractmethod
     def suggest_cfl(self, rk_order: int) -> float:
         """Suggest a CFL number for explicit RK time stepping.
         """

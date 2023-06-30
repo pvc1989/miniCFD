@@ -9,8 +9,8 @@ from  coordinate import LinearCoordinate
 import element
 
 
-class FiniteElement(concept.SpatialScheme):
-    """The base of all finite element schemes for conservation laws.
+class DiscontinuousGalerkin(concept.SpatialScheme):
+    """An mid-level class that defines common methods for all DG schemes.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
@@ -148,11 +148,6 @@ class FiniteElement(concept.SpatialScheme):
             element_i.approximate(function)
         self.suppress_oscillations()
 
-
-class DiscontinuousGalerkin(FiniteElement):
-    """An mid-level class that defines common methods for all DG schemes.
-    """
-
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
         interface_fluxes, interface_jumps = \
@@ -160,7 +155,6 @@ class DiscontinuousGalerkin(FiniteElement):
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
-            assert isinstance(element_i, element.DiscontinuousGalerkin)
             # build element_i's residual column
             # 1st: evaluate the internal integral
             extra_viscous = 0.0
@@ -168,7 +162,7 @@ class DiscontinuousGalerkin(FiniteElement):
                 extra_viscous = self._viscous.get_coeff(i)
             residual = element_i.get_interior_residual(extra_viscous)
             # 2nd: evaluate the boundary integral
-            element_i.add_inteface_residual(
+            element_i.add_inteface_residual(extra_viscous,
                 interface_fluxes[i], interface_fluxes[i+1], residual)
             element_i.add_inteface_correction(
                 interface_jumps[i], interface_jumps[i+1], residual)
@@ -189,7 +183,7 @@ class LegendreDG(DiscontinuousGalerkin):
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
-        FiniteElement.__init__(self, riemann, degree,
+        DiscontinuousGalerkin.__init__(self, riemann, degree,
             n_element, x_left, x_right, element.LegendreDG)
 
     def name(self, verbose=True):
@@ -231,30 +225,9 @@ class GaussLagrangeDG(DiscontinuousGalerkin):
         return my_name
 
 
-class FluxReconstruction(FiniteElement):
+class FluxReconstruction(DiscontinuousGalerkin):
     """An mid-level class that defines common methods for all FR schemes.
     """
-
-    def get_residual_column(self):
-        column = np.zeros(self.n_dof(), self.scalar_type())
-        interface_fluxes, _ = self.get_interface_fluxes_and_bjumps()
-        # evaluate flux gradients
-        i_dof = 0
-        for i in range(self.n_element()):
-            element_i = self.get_element_by_index(i)
-            assert (isinstance(element_i, element.LagrangeFR)
-                or isinstance(element_i, element.GaussLagrangeFR)
-                or isinstance(element_i, element.LegendreFR))
-            extra_viscous = 0.0
-            if self._viscous:
-                extra_viscous = self._viscous.get_coeff(i)
-            upwind_flux_left = interface_fluxes[i]
-            upwind_flux_right = interface_fluxes[i+1]
-            values = -element_i.get_flux_gradients(
-                upwind_flux_left, upwind_flux_right, extra_viscous)
-            i_dof = self._write_to_column(column, values, i_dof)
-        assert i_dof == self.n_dof(), (i_dof, self.n_dof())
-        return column
 
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)
