@@ -138,6 +138,7 @@ struct Face {
   using Gauss = gauss::Face<Scalar, kDimensions>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Cell = cgns::Cell<Int, kDegrees, Riemann>;
+  using Coord = typename Cell::Coord;
 
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
@@ -157,6 +158,9 @@ struct Face {
 
   Gauss const &gauss() const {
     return *gauss_ptr_;
+  }
+  Coord const &center() const {
+    return gauss().center();
   }
   Scalar area() const {
     return gauss_ptr_->area();
@@ -1418,7 +1422,7 @@ class Part {
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
         // the face's normal vector always point from holder to the exterior
         assert((face_uptr->center() - holder_ptr->center()).dot(
-            face_uptr->GetNormalFrame(0).col(0)) > 0);
+            face_uptr->gauss().GetNormalFrame(0).col(0)) > 0);
         // holder_ptr->adj_faces_.emplace_back(face_uptr.get());
         faces.emplace_back(std::move(face_uptr));
       }
