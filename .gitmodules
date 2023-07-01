@@ -12,5 +12,5 @@
 	branch = tip
 [submodule "ThirdParty/eigen"]
 	path = ThirdParty/eigen
-	url = https://gitlab.com/pvc1989/eigen.git
+	url = https://gitlab.com/libeigen/eigen.git
   branch = master
