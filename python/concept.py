@@ -665,12 +665,23 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_inteface_residual(self, extra_viscous, left_flux, right_flux, residual: np.ndarray):
+    def add_interface_residual(self, extra_viscous, left_flux, right_flux, residual: np.ndarray):
         """Add the residual given by the flux on the interface.
         """
 
-    def add_inteface_correction(self, left_jump, right_jump, residual: np.ndarray):
-        """Add the residual given by the inteface correction.
+    def get_interface_correction(self, left_jump, right_jump) -> np.ndarray:
+        """Get interface correction given by Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564.
+
+        The jumps passed in have already been divided by 2.
+        """
+        correction = np.tensordot(
+            self.get_basis_gradients(self.x_left()), left_jump, 0)
+        correction += np.tensordot(
+            self.get_basis_gradients(self.x_right()), right_jump, 0)
+        return correction
+
+    def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        """Add the interface correction to the residual.
         """
         pass
 

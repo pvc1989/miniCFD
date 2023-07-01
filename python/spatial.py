@@ -162,9 +162,9 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
                 extra_viscous = self._viscous.get_coeff(i)
             residual = element_i.get_interior_residual(extra_viscous)
             # 2nd: evaluate the boundary integral
-            element_i.add_inteface_residual(extra_viscous,
+            element_i.add_interface_residual(extra_viscous,
                 interface_fluxes[i], interface_fluxes[i+1], residual)
-            element_i.add_inteface_correction(
+            element_i.add_interface_correction(
                 interface_jumps[i], interface_jumps[i+1], residual)
             # 3rd: multiply the inverse of the mass matrix
             residual = element_i.divide_mass_matrix(residual)

@@ -36,21 +36,15 @@ class DiscontinuousGalerkin(Element):
                 0)
         return self.fixed_quad_global(integrand, self.degree())
 
-    def add_inteface_residual(self, extra_viscous, left_flux, right_flux, residual):
+    def add_interface_residual(self, extra_viscous, left_flux, right_flux, residual):
         residual += np.tensordot(
             self.get_basis_values(self.x_left()), left_flux, 0)
         residual -= np.tensordot(
             self.get_basis_values(self.x_right()), right_flux, 0)
 
-    def add_inteface_correction(self, left_jump, right_jump, residual: np.ndarray):
-        """See Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564.
-
-        The jumps passed in have already been divided by 2.
-        """
-        residual -= np.tensordot(
-            self.get_basis_gradients(self.x_left()), left_jump, 0)
-        residual -= np.tensordot(
-            self.get_basis_gradients(self.x_right()), right_jump, 0)
+    def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        correction = self.get_interface_correction(left_jump, right_jump)
+        residual -= correction
 
 
 class LagrangeDG(DiscontinuousGalerkin):
@@ -242,7 +236,7 @@ class LagrangeFR(FluxReconstruction):
         gradient += right_grad * right_flux_gap
         return gradient
 
-    def add_inteface_residual(self, extra_viscous, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
+    def add_interface_residual(self, extra_viscous, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
         left_flux_gap = upwind_flux_left - \
             self.get_discontinuous_flux(self.x_left(), extra_viscous)
         right_flux_gap = upwind_flux_right - \
@@ -367,7 +361,7 @@ class GaussLagrangeFR(LagrangeFR):
             residual[i] = -f_samples.dot(self._basis_gradients[i])
         return residual
 
-    def add_inteface_residual(self, extra_viscous, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
+    def add_interface_residual(self, extra_viscous, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
         left_flux_gap = upwind_flux_left - \
             self.get_discontinuous_flux(self.x_left(), extra_viscous)
         right_flux_gap = upwind_flux_right - \
@@ -377,6 +371,12 @@ class GaussLagrangeFR(LagrangeFR):
             residual[i_sample] -= left * left_flux_gap
             residual[i_sample] -= right * right_flux_gap
         return residual
+
+    def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        correction = self.get_interface_correction(left_jump, right_jump)
+        e = self.expansion()
+        for k in range(self.n_term()):
+            residual[k] -= correction[k] / e.get_sample_weight(k)
 
     def get_dissipation_rate(self):
         if not self._disspation_matrices:
