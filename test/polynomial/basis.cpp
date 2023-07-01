@@ -1,6 +1,7 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
 #include <iostream>
+#include <cstdlib>
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/tetrahedron.hpp"
@@ -11,12 +12,16 @@
 
 #include "gtest/gtest.h"
 
+double rand_f() {
+  return std::rand() / float(RAND_MAX);
+}
+
 class TestRawBasis : public ::testing::Test {
 };
 TEST_F(TestRawBasis, In2dSpace) {
   using Basis = mini::polynomial::Raw<double, 2, 2>;
   static_assert(Basis::N == 6);
-  double x, y;
+  double x{rand_f()}, y{rand_f()};
   typename Basis::MatNx1 res;
   res = Basis::GetValue({x, y});
   EXPECT_EQ(res[0], 1);
@@ -37,7 +42,7 @@ TEST_F(TestRawBasis, In2dSpace) {
 TEST_F(TestRawBasis, In3dSpace) {
   using Basis = mini::polynomial::Raw<double, 3, 2>;
   static_assert(Basis::N == 10);
-  double x, y, z;
+  double x{rand_f()}, y{rand_f()}, z{rand_f()};
   typename Basis::MatNx1 res;
   res = Basis::GetValue({x, y, z});
   EXPECT_EQ(res[0], 1);
@@ -70,7 +75,7 @@ TEST_F(TestLinearBasis, In2dSpace) {
   using Basis = mini::polynomial::Linear<double, 2, 2>;
   auto basis = Basis({0, 0});
   static_assert(Basis::N == 6);
-  double x, y;
+  double x{rand_f()}, y{rand_f()};
   typename Basis::MatNx1 res;
   res = basis({x, y});
   EXPECT_EQ(res[0], 1);
@@ -92,7 +97,7 @@ TEST_F(TestLinearBasis, In3dSpace) {
   using Basis = mini::polynomial::Linear<double, 3, 2>;
   auto basis = Basis({0, 0, 0});
   static_assert(Basis::N == 10);
-  double x, y, z;
+  double x{rand_f()}, y{rand_f()}, z{rand_f()};
   typename Basis::MatNx1 res;
   res = basis({x, y, z});
   EXPECT_EQ(res[0], 1);
@@ -136,7 +141,7 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  auto diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
 }
@@ -155,7 +160,7 @@ TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  auto diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
@@ -174,7 +179,7 @@ TEST_F(TestOrthoNormalBasis, OnTetrahedronhedron) {
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  auto diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
@@ -194,7 +199,7 @@ TEST_F(TestOrthoNormalBasis, OnHexahedronhedron) {
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  auto diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }

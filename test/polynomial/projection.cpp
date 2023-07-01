@@ -69,6 +69,7 @@ TEST_F(TestProjection, VectorFunction) {
 }
 TEST_F(TestProjection, CoeffConsistency) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 5>;
+  using Coeff = typename ProjFunc::Coeff;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
@@ -78,7 +79,7 @@ TEST_F(TestProjection, CoeffConsistency) {
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
-  auto coeff_diff = projection.GetCoeffOnRawBasis()
+  Coeff coeff_diff = projection.GetCoeffOnRawBasis()
       - projection.GetCoeffOnOrthoNormalBasis() * basis.coeff();
   std::cout << projection.GetCoeffOnRawBasis() << std::endl;
   EXPECT_NEAR(coeff_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
