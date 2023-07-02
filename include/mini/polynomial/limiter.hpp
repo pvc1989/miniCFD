@@ -2,6 +2,7 @@
 #ifndef MINI_POLYNOMIAL_LIMITER_HPP_
 #define MINI_POLYNOMIAL_LIMITER_HPP_
 
+#include <cassert>
 #include <cmath>
 #include <iomanip>
 #include <iostream>

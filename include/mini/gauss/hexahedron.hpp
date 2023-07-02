@@ -3,6 +3,7 @@
 #define MINI_GAUSS_HEXAHEDRON_HPP_
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstring>
 #include <concepts>
@@ -61,7 +62,7 @@ class Hexahedron : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountVertices() const {
+  int CountVertices() const override {
     return 8;
   }
   int CountQuadraturePoints() const override {

@@ -3,6 +3,7 @@
 #define MINI_GAUSS_TETRAHEDRON_HPP_
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <cstring>
@@ -52,7 +53,7 @@ class Tetrahedron : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountVertices() const {
+  int CountVertices() const override {
     return 4;
   }
   int CountQuadraturePoints() const override {

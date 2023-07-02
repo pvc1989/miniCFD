@@ -2,6 +2,7 @@
 #ifndef MINI_POLYNOMIAL_BASIS_HPP_
 #define MINI_POLYNOMIAL_BASIS_HPP_
 
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <iostream>

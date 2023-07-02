@@ -159,7 +159,7 @@ struct Face {
   Gauss const &gauss() const {
     return *gauss_ptr_;
   }
-  Coord const &center() const {
+  Coord center() const {
     return gauss().center();
   }
   Scalar area() const {

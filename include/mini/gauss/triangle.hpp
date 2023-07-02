@@ -3,6 +3,7 @@
 #define MINI_GAUSS_TRIANGLE_HPP_
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <cstring>
