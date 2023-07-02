@@ -23,7 +23,7 @@ namespace mini {
 namespace mesh {
 
 idx_t n_parts = 4;
-char case_name[33] = "double_mach";
+char case_name[33] = "simple_cube";
 
 class ShufflerTest : public ::testing::Test {
  protected:
