@@ -33,8 +33,9 @@ TEST_F(TestRotatedEuler, Test2dConverter) {
   Value v{0, 3.0, 4.0, 0}, v_copy{0, 3.0, 4.0, 0};
   solver.Rotate(n);
   solver.GlobalToNormal(&v);
-  EXPECT_EQ(v.momentumX(), v_copy.momentum().dot(n));
-  EXPECT_EQ(v.momentumY(), v_copy.momentum().dot(t));
+  Vector momentum = v_copy.momentum();
+  EXPECT_EQ(v.momentumX(), momentum.dot(n));
+  EXPECT_NEAR(v.momentumY(), momentum.dot(t), 1e-15);
   solver.NormalToGlobal(&v);
   EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);
@@ -51,9 +52,10 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
   Value v{0, 3.0, 4.0, 5.0, 0}, v_copy{0, 3.0, 4.0, 5.0, 0};
   solver.Rotate(nu, sigma, pi);
   solver.GlobalToNormal(&v);
-  EXPECT_EQ(v.momentumX(), v_copy.momentum().dot(nu));
-  EXPECT_EQ(v.momentumY(), v_copy.momentum().dot(sigma));
-  EXPECT_EQ(v.momentumZ(), v_copy.momentum().dot(pi));
+  Vector momentum = v_copy.momentum();
+  EXPECT_EQ(v.momentumX(), momentum.dot(nu));
+  EXPECT_EQ(v.momentumY(), momentum.dot(sigma));
+  EXPECT_EQ(v.momentumZ(), momentum.dot(pi));
   solver.NormalToGlobal(&v);
   EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);

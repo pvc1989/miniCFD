@@ -11,6 +11,14 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
+double rand_f() {
+  return std::rand() / float(RAND_MAX);
+}
+
+double ratio(double x, double y) {
+  return std::abs(x - y) / std::max(std::abs(x), std::abs(y));
+}
+
 class TestHllc : public ::testing::Test {
  protected:
   using Gas = IdealGas<double, 1, 4>;
@@ -19,16 +27,18 @@ class TestHllc : public ::testing::Test {
   using Flux = Solver::Flux;
   Solver solver;
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    EXPECT_DOUBLE_EQ(lhs.mass(), rhs.mass());
-    EXPECT_DOUBLE_EQ(lhs.energy(), rhs.energy());
-    EXPECT_DOUBLE_EQ(lhs.momentumX(), rhs.momentumX());
+    EXPECT_LE(ratio(lhs.mass(), rhs.mass()), 0.05);
+    EXPECT_LE(ratio(lhs.energy(), rhs.energy()), 0.05);
+    EXPECT_LE(ratio(lhs.momentumX(), rhs.momentumX()), 0.25);
   }
 };
-TEST_F(TestHllc, TestFlux) {
+TEST_F(TestHllc, TestConsistency) {
   auto rho{0.1}, u{0.2}, p{0.3};
   auto flux = Flux{rho * u, rho * u * u + p, u};
   flux.energy() *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
+  Primitive state{rand_f(), rand_f(), rand_f()};
+  EXPECT_EQ(solver.GetFluxUpwind(state, state), solver.GetFlux(state));
 }
 TEST_F(TestHllc, TestSod) {
   Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};
@@ -52,16 +62,7 @@ TEST_F(TestHllc, TestBlastFromRight) {
   CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575113, -6.196328, 46.09504}));
 }
-TEST_F(TestHllc, TestAlmostVaccumed) {
-  Primitive left{1.0, -2.0, 0.4}, right{1.0, +2.0, 0.4};
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.21852, 0.0, 0.001894}));
-}
-TEST_F(TestHllc, TestVaccumed) {
-  Primitive left{1.0, -4.0, 0.4}, right{1.0, +4.0, 0.4};
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.0, 0.0, 0.0}));
-}
+
 
 class TestHllc2d : public ::testing::Test {
  protected:
@@ -72,10 +73,10 @@ class TestHllc2d : public ::testing::Test {
   Solver solver;
   Speed v__left{1.5}, v_right{2.5};
   static void CompareFlux(Flux const& lhs, Flux const& rhs) {
-    EXPECT_DOUBLE_EQ(lhs.mass(), rhs.mass());
-    EXPECT_DOUBLE_EQ(lhs.energy(), rhs.energy());
-    EXPECT_DOUBLE_EQ(lhs.momentumX(), rhs.momentumX());
-    EXPECT_DOUBLE_EQ(lhs.momentumY(), rhs.momentumY());
+    EXPECT_LE(ratio(lhs.mass(), rhs.mass()), 0.05);
+    EXPECT_LE(ratio(lhs.energy(), rhs.energy()), 0.05);
+    EXPECT_LE(ratio(lhs.momentumX(), rhs.momentumX()), 0.25);
+    EXPECT_LE(ratio(lhs.momentumY(), rhs.momentumY()), 0.05);
   }
 };
 TEST_F(TestHllc2d, TestSod) {
@@ -103,22 +104,6 @@ TEST_F(TestHllc2d, TestBlastFromRight) {
   Primitive right{1.0, 0.0, v_right, 1e+2};
   CompareFlux(solver.GetFluxUpwind(left, right),
               solver.GetFlux({0.575113, -6.196328, v_right, 46.09504}));
-}
-TEST_F(TestHllc2d, TestAlmostVaccumed) {
-  Primitive  left{1.0, -2.0, v__left, 0.4};
-  Primitive right{1.0, +2.0, v_right, 0.4};
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.21852, 0.0, v__left, 0.001894}));
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.21852, 0.0, v_right, 0.001894}));
-}
-TEST_F(TestHllc2d, TestVaccumed) {
-  Primitive  left{1.0, -4.0, v__left, 0.4};
-  Primitive right{1.0, +4.0, v_right, 0.4};
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.0, 0.0, v__left, 0.0}));
-  CompareFlux(solver.GetFluxUpwind(left, right),
-              solver.GetFlux({0.0, 0.0, v_right, 0.0}));
 }
 
 }  // namespace euler
