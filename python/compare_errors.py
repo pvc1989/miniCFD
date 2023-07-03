@@ -29,7 +29,7 @@ def read(folder, degree_range, n_element_range) -> dict:
     return errors
 
 
-def plot(errors: dict, figname: str):
+def plot_slope(errors: dict):
     fig = plt.figure(figsize=(9, 6))
     markers = ['1', '2', '3', '4']
     ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
@@ -56,9 +56,34 @@ def plot(errors: dict, figname: str):
         plt.grid()
     plt.tight_layout()
     # plt.show()
-    plt.savefig(figname)
+    plt.savefig('compare_error_slopes.pdf')
+
+
+def plot_history(errors: dict):
+    fig = plt.figure(figsize=(9, 6))
+    markers = ['1', '2', '3', '4']
+    ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
+        r'$\Vert u^h - u\Vert_\infty$' ]
+    for i_error in (1, 2, 3):
+        plt.subplot(1, 3, i_error)
+        for degree, subdict in errors.items():
+            assert isinstance(subdict, dict)
+            for n_element, data in subdict.items():
+                xdata = data[:, 0]
+                ydata = data[:, i_error]
+                plt.plot(xdata, ydata,
+                    label=r'$p=$'+f'{degree}, '+r'$h=2/$'+f'{n_element}')
+        plt.xlabel(r'$t$')
+        plt.ylabel(ylabels[i_error])
+        plt.semilogy()
+        plt.legend()
+        plt.grid()
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('compare_error_histories.pdf')
 
 
 if __name__ == '__main__':
     errors = read(sys.argv[1], (2, 3, 4), (10, 20, 40, 80))
-    plot(errors, 'compare_errors.pdf')
+    plot_slope(errors)
+    plot_history(errors)
