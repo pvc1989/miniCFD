@@ -83,7 +83,36 @@ def plot_history(errors: dict):
     plt.savefig('compare_error_histories.pdf')
 
 
+def compare_schemes(scheme_to_errors: dict):
+    fig = plt.figure(figsize=(9, 6))
+    markers = ['1', '2', '3', '4']
+    ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
+        r'$\Vert u^h - u\Vert_\infty$' ]
+    for i_error in (1, 2, 3):
+        plt.subplot(1, 3, i_error)
+        for scheme, errors in scheme_to_errors.items():
+            assert isinstance(errors, dict)
+            for degree, subdict in errors.items():
+                assert isinstance(subdict, dict)
+                for n_element, data in subdict.items():
+                    xdata = data[:, 0]
+                    ydata = data[:, i_error]
+                    plt.plot(xdata, ydata, label=r'$p=$'+f'{degree}, '+r'$h=2/$'+f'{n_element}, '+scheme)
+        plt.xlabel(r'$t$')
+        plt.ylabel(ylabels[i_error])
+        plt.semilogy()
+        plt.legend()
+        plt.grid()
+    plt.tight_layout()
+    # plt.show()
+    plt.savefig('compare_schemes.pdf')
+
+
 if __name__ == '__main__':
-    errors = read(sys.argv[1], (2, 3, 4), (10, 20, 40, 80))
-    plot_slope(errors)
-    plot_history(errors)
+    degree_range = (3,4)
+    n_element_range =(20,40)
+    scheme_to_errors = dict()
+    scheme_to_errors['DG'] = read(sys.argv[1], degree_range, n_element_range)
+    scheme_to_errors['FR'] = read(sys.argv[2], degree_range, n_element_range)
+    compare_schemes(scheme_to_errors)
+    plot_history(scheme_to_errors['FR'])
