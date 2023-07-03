@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import axes
 from scipy import stats
 import sys
 
@@ -60,25 +61,27 @@ def plot_slope(errors: dict):
 
 
 def plot_history(errors: dict):
-    fig = plt.figure(figsize=(9, 6))
-    markers = ['1', '2', '3', '4']
+    fig, axs = plt.subplots(1, 4, width_ratios=(0.29, 0.29, 0.29, 0.13), figsize=(10, 5))
     ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
         r'$\Vert u^h - u\Vert_\infty$' ]
     for i_error in (1, 2, 3):
-        plt.subplot(1, 3, i_error)
+        ax = axs[i_error - 1]
+        assert isinstance(ax, axes.Axes)
         for degree, subdict in errors.items():
             assert isinstance(subdict, dict)
             for n_element, data in subdict.items():
                 xdata = data[:, 0]
                 ydata = data[:, i_error]
-                plt.plot(xdata, ydata,
-                    label=r'$p=$'+f'{degree}, '+r'$h=2/$'+f'{n_element}')
-        plt.xlabel(r'$t$')
-        plt.ylabel(ylabels[i_error])
-        plt.semilogy()
-        plt.legend()
-        plt.grid()
-    plt.tight_layout()
+                label = r'$p=$'+f'{degree}, '+r'$h=2/$'+f'{n_element}'
+                ax.plot(xdata, ydata, label=label)
+        ax.set_xlabel(r'$t$')
+        ax.set_ylabel(ylabels[i_error])
+        ax.semilogy()
+        ax.grid()
+    axs[-1].set_axis_off()
+    lines, labels = axs[0].get_legend_handles_labels()
+    fig.tight_layout()
+    fig.legend(lines, labels, loc='upper right')
     # plt.show()
     plt.savefig('compare_error_histories.pdf')
 
