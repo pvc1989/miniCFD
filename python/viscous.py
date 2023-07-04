@@ -275,7 +275,12 @@ class Energy(concept.Viscous):
         assert nu >= 0, (nu)
         return min(nu, Energy._nu_max(curr))
 
-    def _get_nu(self, i_cell: int):
+    def _get_nu(self, i_cell: int, n_cell: int):
+        assert -1 <= i_cell <= n_cell
+        if i_cell < 0:
+            i_cell += n_cell
+        if i_cell == n_cell:
+            i_cell = 0
         if i_cell in self._index_to_nu:
             return self._index_to_nu[i_cell]
         else:
@@ -344,22 +349,25 @@ class Energy(concept.Viscous):
             a[2][p] = (x_right**q - x_left**q) / q
         return a
 
-    def _get_quadratic_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+    def _get_smooth_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
         cell = grid.get_element_by_index(i_cell)
+        n_cell = grid.n_element()
         b = np.ndarray(3)
         assert i_cell in self._index_to_nu
         b[0] = self._index_to_nu[i_cell]
         left, right = cell.neighbor_expansions()
         if left:
-            b[1] = self._get_nu(i_cell - 1)
+            b[1] = (b[0] + self._get_nu(i_cell - 1, n_cell)) / 2
         else:
             b[1] = b[0]
         if right:
-            b[2] = self._get_nu((i_cell + 1) % grid.n_element())
+            b[2] = (b[0] + self._get_nu(i_cell + 1, n_cell)) / 2
         else:
             b[2] = b[0]
-        if b[0] != max(b):  # only build quad for max
-            return lambda x: b[0]
+        if b[0] != max(b):  # build linear for non-max
+            return lambda x: b[1] + (b[2] - b[1]) * (x - cell.x_left()) / cell.length()
+        else:  # build quad for max
+            pass
         if i_cell not in self._index_to_a_inv:
             a_inv = np.linalg.inv(self._build_a_on_interfaces(cell))
             self._index_to_a_inv[i_cell] = a_inv
@@ -379,9 +387,8 @@ class Energy(concept.Viscous):
             nu = self._get_constant_coeff(grid, i_cell)
             self._index_to_nu[i_cell] = nu
         for i_cell in troubled_cell_indices:
-            coeff = self._get_quadratic_coeff(grid, i_cell)
+            coeff = self._get_smooth_coeff(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
-            # self._index_to_coeff[i_cell] = nu
 
 
 if __name__ == '__main__':
