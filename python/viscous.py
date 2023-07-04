@@ -257,8 +257,14 @@ class Energy(concept.Viscous):
         # return self._get_half_exact_energy(cell)
 
     @staticmethod
-    def _nu_max(cell: concept.Element):
-        return cell.length() / cell.degree() * 2
+    def _nu_max(cell: element.LagrangeFR):
+        a_max = 0
+        u_samples = cell.expansion().get_sample_values()
+        for u in u_samples:
+            eigvals = cell.equation().get_convective_eigvals(u)
+            for val in eigvals:
+                a_max = max(a_max, np.abs(val))
+        return cell.length() / cell.degree() * a_max
 
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
