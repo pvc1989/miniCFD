@@ -87,7 +87,7 @@ class TestTaylor(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.Taylor.pdf")
+        plt.savefig("expansion.Taylor.svg")
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.
@@ -142,7 +142,7 @@ class TestLagrange(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.Lagrange.pdf")
+        plt.savefig("expansion.Lagrange.svg")
 
     def test_values_at_sample_points(self):
         """Test values at sample points.
@@ -276,7 +276,7 @@ class TestGaussLagrange(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.GaussLagrange.pdf")
+        plt.savefig("expansion.GaussLagrange.svg")
 
     def test_values_at_sample_points(self):
         """Test values at sample points.
@@ -426,7 +426,7 @@ class TestLegendre(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.Legendre.pdf")
+        plt.savefig("expansion.Legendre.svg")
 
     def test_average(self):
         """Test the method for getting average values.

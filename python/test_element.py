@@ -51,7 +51,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
             label='Upwind Flux At Right')
         plt.legend()
         # plt.show()
-        plt.savefig("GaussLagrangeFRbyRadau.pdf")
+        plt.savefig("GaussLagrangeFRbyRadau.svg")
 
     def test_get_discontinuous_flux(self):
         """Test the values of the discontinuous flux.

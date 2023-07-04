@@ -65,7 +65,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig("GaussLagrangeFR.pdf")
+        plt.savefig("GaussLagrangeFR.svg")
 
     def test_resolution(self):
         degree = 4
@@ -91,7 +91,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
             plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig("compare_resolutions.pdf")
+        plt.savefig("compare_resolutions.svg")
 
     def _get_spatial_matrices(self, scheme: spatial.FiniteElement, i_cell: int):
         i_prev = i_cell - 1

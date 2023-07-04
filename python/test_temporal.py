@@ -159,7 +159,7 @@ class TestRungeKutta(unittest.TestCase):
         plt.plot(time_values, exact_values, label='Exact')
         plt.legend()
         # plt.show()
-        plt.savefig('compare_runge_kutta.pdf')
+        plt.savefig('compare_runge_kutta.svg')
 
 
 if __name__ == '__main__':

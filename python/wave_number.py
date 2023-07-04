@@ -139,7 +139,7 @@ class WaveNumberDisplayer:
         plt.tight_layout()
         # plt.show()
         scheme = self.build_scheme(Method, degree)
-        plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.pdf')
+        plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.svg')
 
     def compare_wave_numbers(self, methods, degrees, n_sample: int,
             compressed=False):
@@ -196,7 +196,7 @@ class WaveNumberDisplayer:
         plt.legend(handlelength=4)
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f'compare_wave_numbers.pdf')
+        plt.savefig(f'compare_wave_numbers.svg')
 
 
 if __name__ == '__main__':

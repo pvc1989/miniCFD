@@ -116,7 +116,7 @@ class TestLimiters(unittest.TestCase):
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_limiters_on_jumps.pdf')
+        plt.savefig('compare_limiters_on_jumps.svg')
 
     def test_limiters_on_smooth(self):
         degree = 4
@@ -169,7 +169,7 @@ class TestLimiters(unittest.TestCase):
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_limiters_on_smooth.pdf')
+        plt.savefig('compare_limiters_on_smooth.svg')
 
 
 if __name__ == '__main__':

@@ -171,6 +171,8 @@ class SolverBase(abc.ABC):
             print(f'i_frame = {i_frame}, t = {t_curr:.2f}')
             if output == 'pdf':
                 self._write_to_pdf(f'Frame{i_frame}.pdf', t_curr)
+            elif output == 'svg':
+                self._write_to_pdf(f'Frame{i_frame}.svg', t_curr)
             elif output == 'vtu':
                 self._write_to_vtu(f'Frame{i_frame}.vtu', t_curr)
             else:
@@ -461,7 +463,7 @@ if __name__ == '__main__':
         default=1, type=int,
         help='number of waves in the domain')
     parser.add_argument('--output',
-        choices=['fig', 'pdf', 'vtu'],
+        choices=['fig', 'pdf', 'svg', 'vtu'],
         default='fig',
         help='type of output')
     parser.add_argument('--n_frame',

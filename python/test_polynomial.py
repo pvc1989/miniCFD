@@ -56,7 +56,7 @@ class TestRadau(unittest.TestCase):
         plt.plot(points, right_derivatives, 'b-', label= r'$dg_{-1}/d\xi$')
         plt.legend()
         # plt.show()
-        plt.savefig("radau.pdf")
+        plt.savefig("radau.svg")
 
 
 class TestVincent(unittest.TestCase):
@@ -132,7 +132,7 @@ class TestVincent(unittest.TestCase):
         plt.plot(points, right_derivatives, 'b-', label= r'$dg_{+1}/d\xi$')
         plt.legend()
         # plt.show()
-        plt.savefig("huyhn.pdf")
+        plt.savefig("huyhn.svg")
 
 
 class TestLagrangeBasis(unittest.TestCase):
@@ -159,7 +159,7 @@ class TestLagrangeBasis(unittest.TestCase):
             plt.plot(points, values[:, i], label=f'$L_{i}$')
         plt.legend()
         # plt.show()
-        plt.savefig("lagrange.pdf")
+        plt.savefig("lagrange.svg")
 
     def test_delta_property(self):
         """Test the delta_property, i.e. L_i(x_j) = delta_{ij}.

@@ -97,7 +97,7 @@ class TestDetectors(unittest.TestCase):
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_smoothness_on_jumps.pdf')
+        plt.savefig('compare_smoothness_on_jumps.svg')
 
     def test_smoothness_on_smooth(self):
         degree = 4
@@ -150,7 +150,7 @@ class TestDetectors(unittest.TestCase):
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_smoothness_on_smooth.pdf')
+        plt.savefig('compare_smoothness_on_smooth.svg')
 
     def test_detectors_on_smooth(self):
         degree = 4
@@ -188,7 +188,7 @@ class TestDetectors(unittest.TestCase):
         plt.grid()
         plt.tight_layout()
         # plt.show()
-        plt.savefig('compare_detectors_on_smooth.pdf')
+        plt.savefig('compare_detectors_on_smooth.svg')
 
 
 if __name__ == '__main__':

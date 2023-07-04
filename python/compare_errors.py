@@ -57,7 +57,7 @@ def plot_slope(errors: dict):
         plt.grid()
     plt.tight_layout()
     # plt.show()
-    plt.savefig('compare_error_slopes.pdf')
+    plt.savefig('compare_error_slopes.svg')
 
 
 def plot_history(errors: dict):
@@ -83,7 +83,7 @@ def plot_history(errors: dict):
     fig.tight_layout()
     fig.legend(lines, labels, loc='upper right')
     # plt.show()
-    plt.savefig('compare_error_histories.pdf')
+    plt.savefig('compare_error_histories.svg')
 
 
 def compare_schemes(scheme_to_errors: dict):
@@ -108,7 +108,7 @@ def compare_schemes(scheme_to_errors: dict):
         plt.grid()
     plt.tight_layout()
     # plt.show()
-    plt.savefig('compare_schemes.pdf')
+    plt.savefig('compare_schemes.svg')
 
 
 if __name__ == '__main__':

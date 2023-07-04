@@ -477,4 +477,4 @@ if __name__ == '__main__':
             plt.plot(x_vec*l+l/2, y_data[i], '.', markersize='3')
         plt.tight_layout()
         # plt.show()
-        plt.savefig(name+'.pdf')
+        plt.savefig(name+'.svg')
