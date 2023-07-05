@@ -351,6 +351,11 @@ class Energy(concept.Viscous):
             a[2][p] = (x_right**q - x_left**q) / q
         return a
 
+    @staticmethod
+    def _common(a, b):
+        # return (a + b) / 2
+        return min(a, b)
+
     def _get_smooth_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
         cell = grid.get_element_by_index(i_cell)
         n_cell = grid.n_element()
@@ -359,11 +364,11 @@ class Energy(concept.Viscous):
         b[0] = self._index_to_nu[i_cell]
         left, right = cell.neighbor_expansions()
         if left:
-            b[1] = (b[0] + self._get_nu(i_cell - 1, n_cell)) / 2
+            b[1] = Energy._common(b[0], self._get_nu(i_cell - 1, n_cell))
         else:
             b[1] = b[0]
         if right:
-            b[2] = (b[0] + self._get_nu(i_cell + 1, n_cell)) / 2
+            b[2] = Energy._common(b[0], self._get_nu(i_cell + 1, n_cell))
         else:
             b[2] = b[0]
         if b[0] != max(b):  # build linear for non-max
