@@ -256,7 +256,8 @@ class Energy(concept.Viscous):
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         # return self._get_half_by_half_energy(cell, points, values)
         # return self._get_half_exact_energy(cell)
-        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_by_half_energy(cell, points, values))
+        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_by_half_energy(cell, points, values))
+        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_exact_energy(cell))
 
     @staticmethod
     def _nu_max(cell: element.LagrangeFR):
