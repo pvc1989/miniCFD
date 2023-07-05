@@ -11,10 +11,10 @@ def read(folder, degree_range, n_element_range) -> dict:
     Suppose degree_range = (2,3,4), n_element_range = (10,20,40,80), then the CSV files could be obtained by running the following commands in shell:
 
     1. Solve a problem with various (p, n) combinations:
-        for p in {2,3,4,5} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method GaussLagrangeDG --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --physical_viscosity 0.01 --output pdf > p=$p_n=$n.log & ; done ; done
+        for p in {2,3,4} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method GaussLagrangeDG --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --physical_viscosity 0.01 --output pdf > p=${p}_n=${n}.log & ; done ; done
 
     2. Filter out the errors:
-        for x in *.log ; do cat $x | grep error > ${x:0:8}.csv ; done
+        for x in *.log ; do cat $x | grep error > ${x%.log}.csv ; done
 
     3. Replace string:
         for x in *0.csv ; do sed -i 's/\ ],//g' $x ; done
@@ -25,7 +25,7 @@ def read(folder, degree_range, n_element_range) -> dict:
         errors[degree] = dict()
         for n_element in n_element_range:
             name = f'{folder}/p={degree}_n={n_element}.csv'
-            data = np.loadtxt(name, delimiter=',', skiprows=0)
+            data = np.loadtxt(name, delimiter=',', skiprows=1)
             errors[degree][n_element] = data
     return errors
 
@@ -35,7 +35,7 @@ def plot_slope(errors: dict):
     markers = ['1', '2', '3', '4']
     ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
         r'$\Vert u^h - u\Vert_\infty$' ]
-    i_frame = -1
+    i_frame = 33
     for i_error in (1, 2, 3):
         plt.subplot(1, 3, i_error)
         for degree, subdict in errors.items():
@@ -61,7 +61,7 @@ def plot_slope(errors: dict):
 
 
 def plot_history(errors: dict):
-    fig, axs = plt.subplots(1, 4, width_ratios=(0.29, 0.29, 0.29, 0.13), figsize=(10, 5))
+    fig, axs = plt.subplots(1, 4, width_ratios=(2,2,2,1), figsize=(10, 5))
     ylabels = ['', r'$\Vert u^h - u\Vert_1$', r'$\Vert u^h - u\Vert_2$',
         r'$\Vert u^h - u\Vert_\infty$' ]
     for i_error in (1, 2, 3):
