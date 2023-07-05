@@ -145,16 +145,16 @@ class Energy(concept.Viscous):
         """
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
-        curr_low = expansion.Legendre(1, curr.coordinate())
         low_jumps = np.zeros(len(points))
         high_jumps = np.zeros(len(points))
         # build left_energy
         left_energy = np.infty
         if left:
-            curr_low.approximate(lambda x: left.global_to_value(x))
+            left_low = expansion.Legendre(1, left.coordinate())
+            left_low.approximate(lambda x: left.global_to_value(x))
             indices = range((1 + len(points)) // 2)
             for i in indices:
-                low_jumps[i] = values[i] - curr_low.global_to_value(points[i])
+                low_jumps[i] = values[i] - left_low.global_to_value(points[i])
                 high_jumps[i] = values[i] - left.global_to_value(points[i])
             if len(points) % 2:
                 low_jumps[indices[-1]] /= np.sqrt(2)
@@ -165,10 +165,11 @@ class Energy(concept.Viscous):
         # build right_energy
         right_energy = np.infty
         if right:
-            curr_low.approximate(lambda x: right.global_to_value(x))
+            right_low = expansion.Legendre(1, right.coordinate())
+            right_low.approximate(lambda x: right.global_to_value(x))
             indices = range(len(points) // 2, len(points))
             for i in indices:
-                low_jumps[i] = values[i] - curr_low.global_to_value(points[i])
+                low_jumps[i] = values[i] - right_low.global_to_value(points[i])
                 high_jumps[i] = values[i] - right.global_to_value(points[i])
             if len(points) % 2:
                 low_jumps[indices[0]] /= np.sqrt(2)
@@ -251,10 +252,11 @@ class Energy(concept.Viscous):
         # return self._get_high_order_energy(cell, points, values)
         # return self._get_low_order_energy(cell, points, values)
         # return self._get_interface_jump_energy(cell, points, values)
-        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
+        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         # return self._get_half_by_half_energy(cell, points, values)
         # return self._get_half_exact_energy(cell)
+        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_by_half_energy(cell, points, values))
 
     @staticmethod
     def _nu_max(cell: element.LagrangeFR):
