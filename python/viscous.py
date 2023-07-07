@@ -139,7 +139,7 @@ class Energy(concept.Viscous):
         return min(Energy._jumps_to_energy(left_jumps, curr),
                    Energy._jumps_to_energy(right_jumps, curr))
 
-    def _get_half_by_half_energy(self, cell: element.GaussLagrangeFR,
+    def _get_lazy_half_energy(self, cell: element.GaussLagrangeFR,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=k and p=1 extensions from neighbors in the closer half using the integrator on cell.
         """
@@ -179,8 +179,8 @@ class Energy(concept.Viscous):
                 Energy._jumps_to_energy(high_jumps, curr, indices))
         return left_energy + right_energy
 
-    def _get_half_exact_energy(self, cell: element.GaussLagrangeFR):
-        """Same as _get_half_by_half_energy, but using integrators on subcells.
+    def _get_exact_half_energy(self, cell: element.GaussLagrangeFR):
+        """Same as _get_lazy_half_energy, but using integrators on subcells.
         """
         def get_energy(coord: concept.Coordinate,
                 this: concept.Expansion, that: concept.Expansion):
@@ -254,10 +254,10 @@ class Energy(concept.Viscous):
         # return self._get_interface_jump_energy(cell, points, values)
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
-        # return self._get_half_by_half_energy(cell, points, values)
-        # return self._get_half_exact_energy(cell)
-        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_by_half_energy(cell, points, values))
-        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_half_exact_energy(cell))
+        # return self._get_lazy_half_energy(cell, points, values)
+        # return self._get_exact_half_energy(cell)
+        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
+        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
 
     @staticmethod
     def _nu_max(cell: element.LagrangeFR):
