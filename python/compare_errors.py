@@ -11,7 +11,7 @@ def read(folder, degree_range, n_element_range) -> dict:
     Suppose degree_range = (2,3,4), n_element_range = (10,20,40,80), then the CSV files could be obtained by running the following commands in shell:
 
     1. Solve a problem with various (p, n) combinations:
-        for p in {2,3,4} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method GaussLagrangeDG --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --physical_viscosity 0.01 --output pdf > p=${p}_n=${n}.log & ; done ; done
+        for p in {2,3,4,5} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method GaussLagrangeFR --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --physical_viscosity 0.01 --output pdf > p=${p}_n=${n}.log & ; done ; done
 
     2. Filter out the errors:
         for x in *.log ; do cat $x | grep error > ${x%.log}.csv ; done
@@ -53,6 +53,7 @@ def plot_slope(errors: dict):
         plt.ylabel(ylabels[i_error])
         plt.loglog()
         plt.axis('equal')
+        plt.ylim(1e-12, 1e-1)
         plt.legend()
         plt.grid()
     plt.tight_layout()
@@ -76,6 +77,7 @@ def plot_history(errors: dict):
                 ax.plot(xdata, ydata, label=label)
         ax.set_xlabel(r'$t$')
         ax.set_ylabel(ylabels[i_error])
+        ax.set_ylim(1e-12, 1e-1)
         ax.semilogy()
         ax.grid()
     axs[-1].set_axis_off()
@@ -112,10 +114,11 @@ def compare_schemes(scheme_to_errors: dict):
 
 
 if __name__ == '__main__':
-    degree_range = (3,4)
-    n_element_range =(20,40)
+    degree_range = (2,3,4,5)
+    n_element_range =(10,20,40,80)
     scheme_to_errors = dict()
-    scheme_to_errors['DG'] = read(sys.argv[1], degree_range, n_element_range)
+    # scheme_to_errors['DG'] = read(sys.argv[1], degree_range, n_element_range)
     scheme_to_errors['FR'] = read(sys.argv[2], degree_range, n_element_range)
-    compare_schemes(scheme_to_errors)
+    # compare_schemes(scheme_to_errors)
     plot_history(scheme_to_errors['FR'])
+    plot_slope(scheme_to_errors['FR'])
