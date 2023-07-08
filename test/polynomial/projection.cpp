@@ -11,7 +11,7 @@
 
 class TestProjection : public ::testing::Test {
  protected:
-  using Raw = mini::polynomial::Raw<double, 3, 2>;
+  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
@@ -48,7 +48,7 @@ TEST_F(TestProjection, VectorFunction) {
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
-  auto v_expect = Raw::GetValue({0.3, 0.4, 0.5});
+  auto v_expect = Taylor::GetValue({0.3, 0.4, 0.5});
   MatKx1 res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
@@ -79,17 +79,17 @@ TEST_F(TestProjection, CoeffConsistency) {
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
-  Coeff coeff_diff = projection.GetCoeffOnRawBasis()
+  Coeff coeff_diff = projection.GetCoeffOnTaylorBasis()
       - projection.GetCoeffOnOrthoNormalBasis() * basis.coeff();
-  std::cout << projection.GetCoeffOnRawBasis() << std::endl;
+  std::cout << projection.GetCoeffOnTaylorBasis() << std::endl;
   EXPECT_NEAR(coeff_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using Raw = mini::polynomial::Raw<double, 3, 2>;
+  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
-    return Raw::GetValue(point);
+    return Taylor::GetValue(point);
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);
@@ -99,7 +99,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto point = Coord{ x, y, z };
   auto pdv_actual = projection.GetPdvValue(point);
   auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
-  auto pdv_expect = Raw::GetPdvValue(point, coeff);
+  auto pdv_expect = Taylor::GetPdvValue(point, coeff);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
   auto pdv_values = ProjFunc::MatKxN(); pdv_values.setZero();
@@ -125,10 +125,10 @@ TEST_F(TestProjection, PartialDerivatives) {
 }
 TEST_F(TestProjection, Smoothness) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using Raw = mini::polynomial::Raw<double, 3, 2>;
+  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
-    return Raw::GetValue(point);
+    return Taylor::GetValue(point);
   };
   auto basis = Basis(gauss_);
   auto projection = ProjFunc(func, basis);

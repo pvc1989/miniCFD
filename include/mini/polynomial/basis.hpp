@@ -18,10 +18,10 @@ namespace mini {
 namespace polynomial {
 
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
-class Raw;
+class Taylor;
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 2, 1> {
+class Taylor<Scalar, 2, 1> {
  public:
   static constexpr int N = 3;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -34,7 +34,7 @@ class Raw<Scalar, 2, 1> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 2, 2> {
+class Taylor<Scalar, 2, 2> {
  public:
   static constexpr int N = 6;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -48,7 +48,7 @@ class Raw<Scalar, 2, 2> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 2, 3> {
+class Taylor<Scalar, 2, 3> {
  public:
   static constexpr int N = 10;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -64,7 +64,7 @@ class Raw<Scalar, 2, 3> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 3, 0> {
+class Taylor<Scalar, 3, 0> {
  public:
   static constexpr int N = 1;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -98,7 +98,7 @@ class Raw<Scalar, 3, 0> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 3, 1> {
+class Taylor<Scalar, 3, 1> {
  public:
   static constexpr int N = 4;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -141,7 +141,7 @@ class Raw<Scalar, 3, 1> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 3, 2> {
+class Taylor<Scalar, 3, 2> {
  public:
   static constexpr int N = 10;  // the number of components
   using MatNx1 = algebra::Matrix<Scalar, N, 1>;
@@ -236,7 +236,7 @@ class Raw<Scalar, 3, 2> {
 };
 
 template <std::floating_point Scalar>
-class Raw<Scalar, 3, 3> {
+class Taylor<Scalar, 3, 3> {
   static constexpr int X{1}, Y{2}, Z{3};
   static constexpr int XX{4}, XY{5}, XZ{6}, YY{7}, YZ{8}, ZZ{9};
   static constexpr int XXX{10}, XXY{11}, XXZ{12}, XYY{13}, XYZ{14}, XZZ{15};
@@ -453,12 +453,12 @@ class Raw<Scalar, 3, 3> {
  */
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Linear {
-  using RB = Raw<Scalar, kDimensions, kDegrees>;
+  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
 
  public:
-  static constexpr int N = RB::N;
-  using Coord = typename RB::Coord;
-  using MatNx1 = typename RB::MatNx1;
+  static constexpr int N = TaylorBasis::N;
+  using Coord = typename TaylorBasis::Coord;
+  using MatNx1 = typename TaylorBasis::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
   using Gauss = std::conditional_t<kDimensions == 2,
       gauss::Face<Scalar, 2>, gauss::Cell<Scalar>>;
@@ -479,7 +479,7 @@ class Linear {
   ~Linear() noexcept = default;
 
   MatNx1 operator()(Coord const &point) const {
-    MatNx1 col = RB::GetValue(point - center_);
+    MatNx1 col = TaylorBasis::GetValue(point - center_);
     MatNx1 res = algebra::GetLowerTriangularView(coeff_) * col;
     return res;
   }
@@ -509,15 +509,15 @@ class Linear {
 
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class OrthoNormal {
-  using RB = Raw<Scalar, kDimensions, kDegrees>;
-  using LB = Linear<Scalar, kDimensions, kDegrees>;
+  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
+  using LinearBasis = Linear<Scalar, kDimensions, kDegrees>;
 
  public:
-  static constexpr int N = LB::N;
-  using Coord = typename LB::Coord;
-  using Gauss = typename LB::Gauss;
-  using MatNx1 = typename LB::MatNx1;
-  using MatNxN = typename LB::MatNxN;
+  static constexpr int N = LinearBasis::N;
+  using Coord = typename LinearBasis::Coord;
+  using Gauss = typename LinearBasis::Gauss;
+  using MatNx1 = typename LinearBasis::MatNx1;
+  using MatNxN = typename LinearBasis::MatNxN;
   using MatNxD = algebra::Matrix<Scalar, N, kDimensions>;
 
  public:
@@ -545,7 +545,7 @@ class OrthoNormal {
   MatNx1 operator()(const Coord &global) const {
     auto local = global;
     local -= center();
-    MatNx1 col = RB::GetValue(local);
+    MatNx1 col = TaylorBasis::GetValue(local);
     return coeff() * col;
   }
   Scalar Measure() const {
@@ -555,7 +555,7 @@ class OrthoNormal {
   MatNxD GetGradValue(const Coord &global) const {
     auto local = global;
     local -= center();
-    return RB::GetGradValue(local, coeff());
+    return TaylorBasis::GetGradValue(local, coeff());
   }
 
  private:

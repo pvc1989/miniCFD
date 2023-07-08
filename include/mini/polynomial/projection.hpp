@@ -70,7 +70,7 @@ class Projection {
 
   MatKx1 operator()(Coord const &global) const {
     Coord local = global; local -= center();
-    MatNx1 col = Raw<Scalar, kDimensions, kDegrees>::GetValue(local);
+    MatNx1 col = Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
@@ -84,7 +84,7 @@ class Projection {
     }
     return mat_x;
   }
-  MatKxN const &GetCoeffOnRawBasis() const {
+  MatKxN const &GetCoeffOnTaylorBasis() const {
     return coeff_;
   }
   Coord const &center() const {
@@ -98,7 +98,7 @@ class Projection {
   }
   MatKxN GetPdvValue(Coord const &global) const {
     auto local = global; local -= center();
-    return Raw<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
+    return Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
   }
   MatKx1 GetAverage() const {
     auto const &mat_a = basis_ptr_->coeff();
@@ -114,7 +114,7 @@ class Projection {
     };
     auto integral = gauss::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
-    return Raw<Scalar, kDimensions, kDegrees>::GetSmoothness(integral, volume);
+    return Taylor<Scalar, kDimensions, kDegrees>::GetSmoothness(integral, volume);
   }
   template <typename Callable>
   void Project(Callable &&func, const Basis &basis) {

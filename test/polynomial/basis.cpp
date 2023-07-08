@@ -16,10 +16,10 @@ double rand_f() {
   return std::rand() / float(RAND_MAX);
 }
 
-class TestRawBasis : public ::testing::Test {
+class TestTaylorBasis : public ::testing::Test {
 };
-TEST_F(TestRawBasis, In2dSpace) {
-  using Basis = mini::polynomial::Raw<double, 2, 2>;
+TEST_F(TestTaylorBasis, In2dSpace) {
+  using Basis = mini::polynomial::Taylor<double, 2, 2>;
   static_assert(Basis::N == 6);
   double x{rand_f()}, y{rand_f()};
   typename Basis::MatNx1 res;
@@ -39,8 +39,8 @@ TEST_F(TestRawBasis, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestRawBasis, In3dSpace) {
-  using Basis = mini::polynomial::Raw<double, 3, 2>;
+TEST_F(TestTaylorBasis, In3dSpace) {
+  using Basis = mini::polynomial::Taylor<double, 3, 2>;
   static_assert(Basis::N == 10);
   double x{rand_f()}, y{rand_f()}, z{rand_f()};
   typename Basis::MatNx1 res;
