@@ -9,6 +9,12 @@
 namespace mini {
 namespace gauss {
 
+/**
+ * @brief Abstract numerical integrators on surface elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam kDimensions  Dimension of the physical space.
+ */
 template <std::floating_point Scalar, int kDimensions>
 class Face {
   static constexpr int D = kDimensions;

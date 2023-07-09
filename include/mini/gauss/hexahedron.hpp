@@ -17,12 +17,12 @@
 namespace mini {
 namespace gauss {
 /**
- * @brief 
+ * @brief Numerical integrators on hexahedral elements.
  * 
- * @tparam Scalar 
- * @tparam Qx 
- * @tparam Qy 
- * @tparam Qz 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
+ * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
+ * @tparam Qz  Number of qudrature points in the \f$\zeta\f$ direction.
  */
 template <std::floating_point Scalar, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {

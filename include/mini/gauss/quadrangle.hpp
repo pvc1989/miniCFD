@@ -14,12 +14,12 @@ namespace mini {
 namespace gauss {
 
 /**
- * @brief 
+ * @brief Numerical integrators on quadrilateral elements.
  * 
- * @tparam Scalar 
- * @tparam D the dim of the physical space
- * @tparam Qx 
- * @tparam Qy 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam kDimensions  Dimension of the physical space.
+ * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
+ * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
  */
 template <std::floating_point Scalar, int kDimensions, int Qx = 4, int Qy = 4>
 class Quadrangle : public Face<Scalar, kDimensions> {

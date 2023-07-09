@@ -9,6 +9,11 @@
 namespace mini {
 namespace gauss {
 
+/**
+ * @brief Abstract numerical integrators on volume elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ */
 template <std::floating_point Scalar>
 class Cell {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;

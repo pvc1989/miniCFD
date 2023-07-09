@@ -17,10 +17,10 @@ namespace mini {
 namespace gauss {
 
 /**
- * @brief 
+ * @brief Numerical integrators on tetrahedral elements.
  * 
- * @tparam Scalar 
- * @tparam kPoints 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam kPoints  Number of qudrature points.
  */
 template <std::floating_point Scalar, int kPoints>
 class Tetrahedron : public Cell<Scalar> {

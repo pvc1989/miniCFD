@@ -16,10 +16,11 @@ namespace mini {
 namespace gauss {
 
 /**
- * @brief 
+ * @brief Numerical integrators on triangular elements.
  * 
- * @tparam Scalar 
- * @tparam kPoints 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam kDimensions  Dimension of the physical space.
+ * @tparam kPoints  Number of qudrature points.
  */
 template <std::floating_point Scalar, int kDimensions, int kPoints>
 class Triangle : public Face<Scalar, kDimensions> {
