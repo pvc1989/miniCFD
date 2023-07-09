@@ -147,13 +147,13 @@ class Tetrahedron : public Cell<Scalar> {
     xyz_global_3x4_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Tetrahedron(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2,
-      Mat3x1 const &p3) {
+  Tetrahedron(GlobalCoord const &p0, GlobalCoord const &p1,
+      GlobalCoord const &p2, GlobalCoord const &p3) {
     xyz_global_3x4_.col(0) = p0; xyz_global_3x4_.col(1) = p1;
     xyz_global_3x4_.col(2) = p2; xyz_global_3x4_.col(3) = p3;
     BuildQuadraturePoints();
   }
-  Tetrahedron(std::initializer_list<Mat3x1> il) {
+  Tetrahedron(std::initializer_list<GlobalCoord> il) {
     assert(il.size() == 4);
     auto p = il.begin();
     for (int i = 0; i < 4; ++i) {
@@ -174,7 +174,7 @@ class Tetrahedron : public Cell<Scalar> {
   Tetrahedron &operator=(Tetrahedron &&) noexcept = default;
   virtual ~Tetrahedron() noexcept = default;
 
-  Mat3x1 center() const override {
+  GlobalCoord center() const override {
     Mat3x1 c = xyz_global_3x4_.col(0);
     for (int i = 1; i < 4; ++i)
       c += xyz_global_3x4_.col(i);
@@ -194,8 +194,8 @@ class Tetrahedron : public Cell<Scalar> {
   Mat3x3 Jacobian(const LocalCoord &xyz_local) const override {
     return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
-  LocalCoord global_to_local_3x1(Scalar x_global, Scalar y_global,
-      Scalar z_global) const {
+  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global,
+      Scalar z_global) const override {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
@@ -207,8 +207,8 @@ class Tetrahedron : public Cell<Scalar> {
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord global_to_local_3x1(GlobalCoord const &xyz_global) const {
-    return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
+  LocalCoord GlobalToLocal(GlobalCoord const &xyz_global) const override {
+    return GlobalToLocal(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
 

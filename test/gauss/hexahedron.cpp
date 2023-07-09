@@ -41,9 +41,9 @@ TEST_F(TestHexahedronGauss, CommonMethods) {
   EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Mat3x1(10, 10, 10));
   EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Mat3x1(15, 15, 15));
   EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Mat3x1(30, 40, 50));
-  EXPECT_EQ(hexa.global_to_local_3x1(30, 40, 20), Mat3x1(3, 4, 2));
-  EXPECT_EQ(hexa.global_to_local_3x1(40, 55, 25), Mat3x1(4, 5.5, 2.5));
-  EXPECT_EQ(hexa.global_to_local_3x1(70, 130, 60), Mat3x1(7, 13, 6));
+  EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Mat3x1(3, 4, 2));
+  EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Mat3x1(4, 5.5, 2.5));
+  EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Mat3x1(7, 13, 6));
   EXPECT_DOUBLE_EQ(Quadrature([](Mat3x1 const&){ return 2.0; }, hexa), 16.0);
   EXPECT_NEAR(Integrate([](Mat3x1 const&){ return 2.0; }, hexa), 16000, 1e-10);
   auto f = [](Mat3x1 const& xyz){ return xyz[0]; };

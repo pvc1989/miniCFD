@@ -25,6 +25,8 @@ class Cell {
   using GlobalCoord = Mat3x1;
 
   virtual GlobalCoord LocalToGlobal(const LocalCoord &) const = 0;
+  virtual LocalCoord GlobalToLocal(const GlobalCoord &) const = 0;
+  virtual LocalCoord GlobalToLocal(Scalar, Scalar, Scalar) const = 0;
   virtual Mat3x3 Jacobian(const LocalCoord &) const = 0;
   virtual int CountVertices() const = 0;
   virtual int CountQuadraturePoints() const = 0;

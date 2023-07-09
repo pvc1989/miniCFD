@@ -37,10 +37,10 @@ TEST_F(TestTetrahedronGauss, CommonMethods) {
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 0), Mat3x1(0, 0, 3));
-  EXPECT_EQ(tetra.global_to_local_3x1(0, 0, 0), Mat3x1(1, 0, 0));
-  EXPECT_EQ(tetra.global_to_local_3x1(3, 0, 0), Mat3x1(0, 1, 0));
-  EXPECT_EQ(tetra.global_to_local_3x1(0, 3, 0), Mat3x1(0, 0, 1));
-  EXPECT_EQ(tetra.global_to_local_3x1(0, 0, 3), Mat3x1(0, 0, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 0), Mat3x1(1, 0, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(3, 0, 0), Mat3x1(0, 1, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 3, 0), Mat3x1(0, 0, 1));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 3), Mat3x1(0, 0, 0));
   EXPECT_NEAR(Quadrature([](Mat3x1 const&){ return 6.0; }, tetra), 1.0, 1e-14);
   EXPECT_NEAR(Integrate([](Mat3x1 const&){ return 6.0; }, tetra), 27.0, 1e-13);
   auto f = [](Mat3x1 const& xyz){ return xyz[0]; };

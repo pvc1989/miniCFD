@@ -212,15 +212,17 @@ class Hexahedron : public Cell<Scalar> {
     xyz_global_3x8_ = xyz_global;
     BuildQuadraturePoints();
   }
-  Hexahedron(Mat3x1 const &p0, Mat3x1 const &p1, Mat3x1 const &p2, Mat3x1 const &p3,
-       Mat3x1 const &p4, Mat3x1 const &p5, Mat3x1 const &p6, Mat3x1 const &p7) {
+  Hexahedron(GlobalCoord const &p0, GlobalCoord const &p1,
+      GlobalCoord const &p2, GlobalCoord const &p3,
+      GlobalCoord const &p4, GlobalCoord const &p5,
+      GlobalCoord const &p6, GlobalCoord const &p7) {
     xyz_global_3x8_.col(0) = p0; xyz_global_3x8_.col(1) = p1;
     xyz_global_3x8_.col(2) = p2; xyz_global_3x8_.col(3) = p3;
     xyz_global_3x8_.col(4) = p4; xyz_global_3x8_.col(5) = p5;
     xyz_global_3x8_.col(6) = p6; xyz_global_3x8_.col(7) = p7;
     BuildQuadraturePoints();
   }
-  Hexahedron(std::initializer_list<Mat3x1> il) {
+  Hexahedron(std::initializer_list<GlobalCoord> il) {
     assert(il.size() == 8);
     auto p = il.begin();
     for (int i = 0; i < 8; ++i) {
@@ -245,7 +247,7 @@ class Hexahedron : public Cell<Scalar> {
   Hexahedron &operator=(Hexahedron &&) noexcept = default;
   virtual ~Hexahedron() noexcept = default;
 
-  Mat3x1 center() const override {
+  GlobalCoord center() const override {
     Mat3x1 c = xyz_global_3x8_.col(0);
     for (int i = 1; i < 8; ++i)
       c += xyz_global_3x8_.col(i);
@@ -265,8 +267,8 @@ class Hexahedron : public Cell<Scalar> {
   Mat3x3 Jacobian(const LocalCoord &xyz_local) const override {
     return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
   }
-  LocalCoord global_to_local_3x1(Scalar x_global, Scalar y_global,
-      Scalar z_global) const {
+  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global,
+      Scalar z_global) const override {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
@@ -278,8 +280,8 @@ class Hexahedron : public Cell<Scalar> {
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord global_to_local_3x1(GlobalCoord const &xyz_global) const {
-    return global_to_local_3x1(xyz_global[0], xyz_global[1], xyz_global[2]);
+  LocalCoord GlobalToLocal(GlobalCoord const &xyz_global) const override {
+    return GlobalToLocal(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
 template <std::floating_point Scalar, int Qx, int Qy, int Qz>
