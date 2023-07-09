@@ -24,7 +24,7 @@ namespace gauss {
  * @tparam Qy 
  * @tparam Qz 
  */
-template <std::floating_point Scalar = double, int Qx = 4, int Qy = 4, int Qz = 4>
+template <std::floating_point Scalar, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;

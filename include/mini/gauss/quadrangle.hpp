@@ -21,7 +21,7 @@ namespace gauss {
  * @tparam Qx 
  * @tparam Qy 
  */
-template <std::floating_point Scalar = double, int kDimensions = 2, int Qx = 4, int Qy = 4>
+template <std::floating_point Scalar, int kDimensions, int Qx = 4, int Qy = 4>
 class Quadrangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
 

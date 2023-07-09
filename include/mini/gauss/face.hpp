@@ -9,8 +9,10 @@
 namespace mini {
 namespace gauss {
 
-template <std::floating_point Scalar, int D>
+template <std::floating_point Scalar, int kDimensions>
 class Face {
+  static constexpr int D = kDimensions;
+
   using Mat2x2 = algebra::Matrix<Scalar, 2, 2>;
   using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
   using MatDx1 = algebra::Matrix<Scalar, D, 1>;
