@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "mini/gauss/cell.hpp"
+#include "mini/lagrange/tetrahedron.hpp"
 
 namespace mini {
 namespace gauss {
@@ -22,7 +23,8 @@ namespace gauss {
  * @tparam kPoints  Number of qudrature points.
  */
 template <std::floating_point Scalar, int kPoints>
-class Tetrahedron : public Cell<Scalar> {
+class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
+    public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
   using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
@@ -36,6 +38,7 @@ class Tetrahedron : public Cell<Scalar> {
   using Arr4x3 = algebra::Array<Scalar, 4, 3>;
 
   using Base = Cell<Scalar>;
+  using LagrangeBase = lagrange::Tetrahedron<Scalar>;
 
  public:
   using typename Base::Real;
@@ -46,40 +49,21 @@ class Tetrahedron : public Cell<Scalar> {
  private:
   static const std::array<LocalCoord, kPoints> local_coords_;
   static const std::array<Scalar, kPoints> local_weights_;
-  static const std::array<std::array<int, 3>, 4> faces_;
-  Mat3x4 xyz_global_3x4_;
   std::array<GlobalCoord, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
   Scalar volume_;
+  LagrangeBase const *lagrange_;
 
  public:
-  int CountVertices() const override {
-    return 4;
-  }
   int CountNodes() const override {
-    return 4;
+    return lagrange_->CountNodes();
   }
   int CountQuadraturePoints() const override {
     return kPoints;
   }
   template <typename T, typename U>
   static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
-    int cnt = 0, nid = 0, sum = 0;
-    while (cnt < 3) {
-      auto curr_node = cell_nodes[nid];
-      for (int i = 0; i < 3; ++i) {
-        if (face_nodes[i] == curr_node) {
-          sum += nid;
-          ++cnt;
-          break;
-        }
-      }
-      ++nid;
-    }
-    int i_face = sum - 3;
-    for (int i = 0; i < 3; ++i) {
-      face_nodes[i] = cell_nodes[faces_[i_face][i]];
-    }
+    LagrangeBase::SortNodesOnFace(cell_nodes, face_nodes);
   }
 
  private:
@@ -87,40 +71,11 @@ class Tetrahedron : public Cell<Scalar> {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int q = 0; q < n; ++q) {
-      const Base *const_this = this;
-      auto det_j = const_this->LocalToJacobian(GetLocalCoord(q)).determinant();
+      auto det_j = lagrange_->LocalToJacobian(GetLocalCoord(q)).determinant();
       global_weights_[q] = local_weights_[q] * std::abs(det_j);
       volume_ += global_weights_[q];
-      global_coords_[q] = const_this->LocalToGlobal(GetLocalCoord(q));
+      global_coords_[q] = lagrange_->LocalToGlobal(GetLocalCoord(q));
     }
-  }
-  static constexpr auto BuildFaces() {
-    std::array<std::array<int, 3>, 4> faces{
-      // Faces can be distinguished by the sum of the three minimum node ids.
-      0, 2, 1/* 3 */, 0, 1, 3/* 4 */, 2, 0, 3/* 5 */, 1, 2, 3/* 6 */
-    };
-    return faces;
-  }
-  static Mat4x1 shape_4x1(Mat3x1 const &xyz_local) {
-    return shape_4x1(xyz_local[0], xyz_local[1], xyz_local[2]);
-  }
-  static Mat4x1 shape_4x1(Scalar x_local, Scalar y_local, Scalar z_local) {
-    Mat4x1 n_4x1{
-      x_local, y_local, z_local, 1.0 - x_local - y_local - z_local
-    };
-    return n_4x1;
-  }
-  static Mat4x3 diff_shape_local_4x3(Scalar x_local, Scalar y_local,
-      Scalar z_local) {
-    Arr4x3 dn;
-    dn.col(0) << 1, 0, 0, -1;
-    dn.col(1) << 0, 1, 0, -1;
-    dn.col(2) << 0, 0, 1, -1;
-    return dn;
-  }
-  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
-      const override {
-    return xyz_global_3x4_ * diff_shape_local_4x3(x_local, y_local, z_local);
   }
 
  public:
@@ -138,29 +93,8 @@ class Tetrahedron : public Cell<Scalar> {
   }
 
  public:
-  explicit Tetrahedron(Mat3x4 const &xyz_global) {
-    xyz_global_3x4_ = xyz_global;
-    BuildQuadraturePoints();
-  }
-  Tetrahedron(GlobalCoord const &p0, GlobalCoord const &p1,
-      GlobalCoord const &p2, GlobalCoord const &p3) {
-    xyz_global_3x4_.col(0) = p0; xyz_global_3x4_.col(1) = p1;
-    xyz_global_3x4_.col(2) = p2; xyz_global_3x4_.col(3) = p3;
-    BuildQuadraturePoints();
-  }
-  Tetrahedron(std::initializer_list<GlobalCoord> il) {
-    assert(il.size() == 4);
-    auto p = il.begin();
-    for (int i = 0; i < 4; ++i) {
-      xyz_global_3x4_[i] = p[i];
-    }
-    BuildQuadraturePoints();
-  }
-  Tetrahedron() {
-    xyz_global_3x4_.col(0) << 0, 0, 0;
-    xyz_global_3x4_.col(1) << 1, 0, 0;
-    xyz_global_3x4_.col(2) << 0, 1, 0;
-    xyz_global_3x4_.col(3) << 0, 0, 1;
+  explicit Tetrahedron(LagrangeBase const &lagrange)
+      : lagrange_(&lagrange) {
     BuildQuadraturePoints();
   }
   Tetrahedron(const Tetrahedron &) = default;
@@ -169,19 +103,16 @@ class Tetrahedron : public Cell<Scalar> {
   Tetrahedron &operator=(Tetrahedron &&) noexcept = default;
   virtual ~Tetrahedron() noexcept = default;
 
-  GlobalCoord center() const override {
-    Mat3x1 c = xyz_global_3x4_.col(0);
-    for (int i = 1; i < 4; ++i)
-      c += xyz_global_3x4_.col(i);
-    c /= 4;
-    return c;
-  }
   Scalar volume() const override {
     return volume_;
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
       Scalar z_local) const override {
-    return xyz_global_3x4_ * shape_4x1(x_local, y_local, z_local);
+    return lagrange_->LocalToGlobal(x_local, y_local, z_local);
+  }
+  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
+      const override {
+    return lagrange_->LocalToJacobian(x_local, y_local, z_local);
   }
 };
 
@@ -197,11 +128,6 @@ template <std::floating_point Scalar, int kPoints>
 const std::array<Scalar, kPoints>
 Tetrahedron<Scalar, kPoints>::local_weights_
     = TetrahedronBuilder<Scalar, kPoints>::BuildLocalWeights();
-
-template <std::floating_point Scalar, int kPoints>
-const std::array<std::array<int, 3>, 4>
-Tetrahedron<Scalar, kPoints>::faces_
-    = Tetrahedron<Scalar, kPoints>::BuildFaces();
 
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 1> {

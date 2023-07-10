@@ -16,7 +16,7 @@ namespace gauss {
  * @tparam Scalar  Type of scalar variables.
  */
 template <std::floating_point Scalar>
-class Cell : public lagrange::Cell<Scalar> {
+class Cell : public virtual lagrange::Cell<Scalar> {
   using Base = lagrange::Cell<Scalar>;
 
  public:

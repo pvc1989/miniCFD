@@ -4,23 +4,22 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/tetrahedron.hpp"
+#include "mini/lagrange/tetrahedron.hpp"
 
 #include "gtest/gtest.h"
 
 class TestTetrahedronGauss : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
-  using Tetrahedron = mini::gauss::Tetrahedron<double, kPoints>;
-  using Mat1x4 = mini::algebra::Matrix<double, 1, 4>;
-  using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
+  using Lagrange = mini::lagrange::Tetrahedron4<double>;
+  using Gauss = mini::gauss::Tetrahedron<double, kPoints>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+  Lagrange lagrange{
+    Mat3x1(0, 0, 0), Mat3x1(3, 0, 0), Mat3x1(0, 3, 0), Mat3x1(0, 0, 3)
+  };
 };
 TEST_F(TestTetrahedronGauss, VirtualMethods) {
-  Mat3x4 xyz_global_i;
-  xyz_global_i.row(0) << 0, 3, 0, 0;
-  xyz_global_i.row(1) << 0, 0, 3, 0;
-  xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = Tetrahedron(xyz_global_i);
+  auto tetra = Gauss(lagrange);
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
@@ -28,11 +27,7 @@ TEST_F(TestTetrahedronGauss, VirtualMethods) {
   EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
 }
 TEST_F(TestTetrahedronGauss, CommonMethods) {
-  Mat3x4 xyz_global_i;
-  xyz_global_i.row(0) << 0, 3, 0, 0;
-  xyz_global_i.row(1) << 0, 0, 3, 0;
-  xyz_global_i.row(2) << 0, 0, 0, 3;
-  auto tetra = Tetrahedron(xyz_global_i);
+  auto tetra = Gauss(lagrange);
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));
