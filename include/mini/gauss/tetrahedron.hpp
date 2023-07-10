@@ -91,6 +91,12 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   Scalar const &GetLocalWeight(int q) const override {
     return local_weights_[q];
   }
+  GlobalCoord const &GetGlobalCoordL(int q) const override {
+    return lagrange_->GetGlobalCoordL(q);
+  }
+  LocalCoord const &GetLocalCoordL(int q) const override {
+    return lagrange_->GetLocalCoordL(q);
+  }
 
  public:
   explicit Tetrahedron(LagrangeBase const &lagrange)
@@ -106,13 +112,13 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   Scalar volume() const override {
     return volume_;
   }
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
+  std::vector<Scalar> LocalToShapeFunctions(Scalar x_local, Scalar y_local,
       Scalar z_local) const override {
-    return lagrange_->LocalToGlobal(x_local, y_local, z_local);
+    return lagrange_->LocalToShapeFunctions(x_local, y_local, z_local);
   }
-  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
+  std::vector<LocalCoord> LocalToShapeGradients(Scalar x_local, Scalar y_local, Scalar z_local)
       const override {
-    return lagrange_->LocalToJacobian(x_local, y_local, z_local);
+    return lagrange_->LocalToShapeGradients(x_local, y_local, z_local);
   }
 };
 

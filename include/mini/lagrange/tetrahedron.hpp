@@ -48,10 +48,6 @@ class Tetrahedron : public virtual Cell<Scalar> {
  */
 template <std::floating_point Scalar>
 class Tetrahedron4 : public Tetrahedron<Scalar> {
-  using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
-  using Mat3x4 = algebra::Matrix<Scalar, 3, 4>;
-  using Mat4x3 = algebra::Matrix<Scalar, 4, 3>;
-
   using Base = Tetrahedron<Scalar>;
 
  public:
@@ -92,34 +88,30 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
     }
   }
 
- private:
-  static Mat4x1 LocalToShapeFunctions(Scalar x_local, Scalar y_local, Scalar z_local) {
-    Mat4x1 n_4x1{
+ public:
+  std::vector<Scalar> LocalToShapeFunctions(
+      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+    return {
       x_local, y_local, z_local, 1.0 - x_local - y_local - z_local
     };
-    return n_4x1;
   }
-  static Mat4x3 LocalToShapeGradients(Scalar x_local, Scalar y_local,
-      Scalar z_local) {
-    Mat4x3 dn;
-    dn.col(0) << 1, 0, 0, -1;
-    dn.col(1) << 0, 1, 0, -1;
-    dn.col(2) << 0, 0, 1, -1;
-    return dn;
+  std::vector<LocalCoord> LocalToShapeGradients(
+      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+    return {
+      LocalCoord(1, 0, 0), LocalCoord(0, 1, 0), LocalCoord(0, 0, 1),
+      LocalCoord(-1, -1, -1)
+    };
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
+  GlobalCoord const &GetGlobalCoordL(int q) const override {
     return global_coords_[q];
   }
-  LocalCoord const &GetLocalCoord(int q) const override {
+  LocalCoord const &GetLocalCoordL(int q) const override {
     return local_coords_[q];
   }
 
  public:
-  explicit Tetrahedron4(Mat3x4 const &xyz_global) {
-    global_coords_ = xyz_global;
-  }
   Tetrahedron4(
       GlobalCoord const &p0, GlobalCoord const &p1,
       GlobalCoord const &p2, GlobalCoord const &p3) {
@@ -127,36 +119,11 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
     global_coords_[2] = p2; global_coords_[3] = p3;
   }
   Tetrahedron4(std::initializer_list<GlobalCoord> il) {
-    assert(il.size() == 4);
+    assert(il.size() == kNodes);
     auto p = il.begin();
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < kNodes; ++i) {
       global_coords_[i] = p[i];
     }
-  }
-  Tetrahedron4() {
-    global_coords_[0] = GlobalCoord(0, 0, 0);
-    global_coords_[1] = GlobalCoord(1, 0, 0);
-    global_coords_[2] = GlobalCoord(0, 1, 0);
-    global_coords_[3] = GlobalCoord(0, 0, 1);
-  }
-
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
-      Scalar z_local) const override {
-    Mat4x1 shapes = LocalToShapeFunctions(x_local, y_local, z_local);
-    GlobalCoord sum = global_coords_[0] * shapes[0];
-    for (int i = 1; i < kNodes; ++i) {
-      sum += global_coords_[i] * shapes[i];
-    }
-    return sum;
-  }
-  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
-      const override {
-    Mat4x3 shapes = LocalToShapeGradients(x_local, y_local, z_local);
-    Jacobian sum = global_coords_[0] * shapes.row(0);
-    for (int i = 1; i < kNodes; ++i) {
-      sum += global_coords_[i] * shapes.row(i);
-    }
-    return sum;
   }
 };
 // initialization of static const members:

@@ -24,12 +24,12 @@ class Cell {
   using Jacobian = Mat3x3;
 
   virtual ~Cell() noexcept = default;
-  virtual GlobalCoord LocalToGlobal(Scalar, Scalar, Scalar) const = 0;
-  virtual Jacobian LocalToJacobian(Scalar, Scalar, Scalar) const = 0;
+  virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
+  virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
   virtual int CountVertices() const = 0;
   virtual int CountNodes() const = 0;
-  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
+  virtual const LocalCoord &GetLocalCoordL(int i) const = 0;
+  virtual const GlobalCoord &GetGlobalCoordL(int i) const = 0;
   virtual GlobalCoord center() const = 0;
 
   static constexpr int CellDim() {
@@ -39,15 +39,32 @@ class Cell {
     return 3;
   }
 
+  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
+      const {
+    auto shapes = LocalToShapeFunctions(x_local, y_local, z_local);
+    GlobalCoord sum = GetGlobalCoordL(0) * shapes[0];
+    for (int i = 1; i < CountNodes(); ++i) {
+      sum += GetGlobalCoordL(i) * shapes[i];
+    }
+    return sum;
+  }
   GlobalCoord LocalToGlobal(const LocalCoord &xyz) const {
     return LocalToGlobal(xyz[0], xyz[1], xyz[2]);
+  }
+
+  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
+      const {
+    auto shapes = LocalToShapeGradients(x_local, y_local, z_local);
+    Jacobian sum = GetGlobalCoordL(0) * shapes[0].transpose();
+    for (int i = 1; i < CountNodes(); ++i) {
+      sum += GetGlobalCoordL(i) * shapes[i].transpose();
+    }
+    return sum;
   }
   Jacobian LocalToJacobian(const LocalCoord &xyz) const {
     return LocalToJacobian(xyz[0], xyz[1], xyz[2]);
   }
-  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
-    return GlobalToLocal(xyz[0], xyz[1], xyz[2]);
-  }
+
   LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
       const {
     Mat3x1 xyz_global = {x_global, y_global, z_global};
@@ -60,6 +77,9 @@ class Cell {
     };
     Mat3x1 xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
+  }
+  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
+    return GlobalToLocal(xyz[0], xyz[1], xyz[2]);
   }
 
  private:
