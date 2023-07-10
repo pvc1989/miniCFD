@@ -10,7 +10,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "mini/algebra/eigen.hpp"
 #include "mini/gauss/cell.hpp"
 
 namespace mini {
@@ -42,6 +41,7 @@ class Tetrahedron : public Cell<Scalar> {
   using typename Base::Real;
   using typename Base::LocalCoord;
   using typename Base::GlobalCoord;
+  using typename Base::Jacobian;
 
  private:
   static const std::array<LocalCoord, kPoints> local_coords_;
@@ -54,6 +54,9 @@ class Tetrahedron : public Cell<Scalar> {
 
  public:
   int CountVertices() const override {
+    return 4;
+  }
+  int CountNodes() const override {
     return 4;
   }
   int CountQuadraturePoints() const override {
@@ -84,10 +87,11 @@ class Tetrahedron : public Cell<Scalar> {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int q = 0; q < n; ++q) {
-      auto det_j = Jacobian(GetLocalCoord(q)).determinant();
+      const Base *const_this = this;
+      auto det_j = const_this->LocalToJacobian(GetLocalCoord(q)).determinant();
       global_weights_[q] = local_weights_[q] * std::abs(det_j);
       volume_ += global_weights_[q];
-      global_coords_[q] = LocalToGlobal(GetLocalCoord(q));
+      global_coords_[q] = const_this->LocalToGlobal(GetLocalCoord(q));
     }
   }
   static constexpr auto BuildFaces() {
@@ -114,18 +118,9 @@ class Tetrahedron : public Cell<Scalar> {
     dn.col(2) << 0, 0, 1, -1;
     return dn;
   }
-  Mat3x3 Jacobian(Scalar x_local, Scalar y_local, Scalar z_local) const {
+  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
+      const override {
     return xyz_global_3x4_ * diff_shape_local_4x3(x_local, y_local, z_local);
-  }
-  template <typename Callable, typename MatJ>
-  static Mat3x1 root(
-      Callable &&func, Mat3x1 x, MatJ &&matj, Scalar xtol = 1e-5) {
-    Mat3x1 res;
-    do {
-      res = matj(x).partialPivLu().solve(func(x));
-      x -= res;
-    } while (res.norm() > xtol);
-    return x;
   }
 
  public:
@@ -185,30 +180,8 @@ class Tetrahedron : public Cell<Scalar> {
     return volume_;
   }
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
-      Scalar z_local) const {
+      Scalar z_local) const override {
     return xyz_global_3x4_ * shape_4x1(x_local, y_local, z_local);
-  }
-  GlobalCoord LocalToGlobal(LocalCoord const &xyz_local) const override {
-    return xyz_global_3x4_ * shape_4x1(xyz_local);
-  }
-  Mat3x3 Jacobian(const LocalCoord &xyz_local) const override {
-    return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
-  }
-  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global,
-      Scalar z_global) const override {
-    Mat3x1 xyz_global = {x_global, y_global, z_global};
-    auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
-      auto res = LocalToGlobal(xyz_local);
-      return res -= xyz_global;
-    };
-    auto jac = [this](LocalCoord const &xyz_local) {
-      return Jacobian(xyz_local);
-    };
-    Mat3x1 xyz0 = {0, 0, 0};
-    return root(func, xyz0, jac);
-  }
-  LocalCoord GlobalToLocal(GlobalCoord const &xyz_global) const override {
-    return GlobalToLocal(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
 

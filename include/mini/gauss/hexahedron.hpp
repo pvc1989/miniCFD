@@ -9,8 +9,6 @@
 #include <concepts>
 #include <type_traits>
 
-#include "mini/algebra/eigen.hpp"
-
 #include "mini/gauss/gauss.hpp"
 #include "mini/gauss/cell.hpp"
 
@@ -48,6 +46,7 @@ class Hexahedron : public Cell<Scalar> {
   using typename Base::Real;
   using typename Base::LocalCoord;
   using typename Base::GlobalCoord;
+  using typename Base::Jacobian;
 
  private:
   static const std::array<LocalCoord, Qx * Qy * Qz> local_coords_;
@@ -63,6 +62,9 @@ class Hexahedron : public Cell<Scalar> {
 
  public:
   int CountVertices() const override {
+    return 8;
+  }
+  int CountNodes() const override {
     return 8;
   }
   int CountQuadraturePoints() const override {
@@ -109,10 +111,11 @@ class Hexahedron : public Cell<Scalar> {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
-      auto det_j = Jacobian(GetLocalCoord(i)).determinant();
+      const Base *const_this = this;
+      auto det_j = const_this->LocalToJacobian(GetLocalCoord(i)).determinant();
       global_weights_[i] = local_weights_[i] * det_j;
       volume_ += global_weights_[i];
-      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+      global_coords_[i] = const_this->LocalToGlobal(GetLocalCoord(i));
     }
   }
   static constexpr auto BuildLocalCoords() {
@@ -179,18 +182,9 @@ class Hexahedron : public Cell<Scalar> {
     dn /= 8.0;
     return dn;
   }
-  Mat3x3 Jacobian(Scalar x_local, Scalar y_local, Scalar z_local) const {
+  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
+      const override {
     return xyz_global_3x8_ * diff_shape_local_8x3(x_local, y_local, z_local);
-  }
-  template <typename Callable, typename MatJ>
-  static Mat3x1 root(
-      Callable &&func, Mat3x1 x, MatJ &&matj, Scalar xtol = 1e-5) {
-    Mat3x1 res;
-    do {
-      res = matj(x).partialPivLu().solve(func(x));
-      x -= res;
-    } while (res.norm() > xtol);
-    return x;
   }
 
  public:
@@ -257,31 +251,9 @@ class Hexahedron : public Cell<Scalar> {
   Scalar volume() const override {
     return volume_;
   }
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local,
-      Scalar z_local) const {
+  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
+      const override {
     return xyz_global_3x8_ * shape_8x1(x_local, y_local, z_local);
-  }
-  GlobalCoord LocalToGlobal(LocalCoord const &xyz_local) const override {
-    return xyz_global_3x8_ * shape_8x1(xyz_local);
-  }
-  Mat3x3 Jacobian(const LocalCoord &xyz_local) const override {
-    return Jacobian(xyz_local[0], xyz_local[1], xyz_local[2]);
-  }
-  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global,
-      Scalar z_global) const override {
-    Mat3x1 xyz_global = {x_global, y_global, z_global};
-    auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
-      auto res = LocalToGlobal(xyz_local);
-      return res -= xyz_global;
-    };
-    auto jac = [this](LocalCoord const &xyz_local) {
-      return Jacobian(xyz_local);
-    };
-    Mat3x1 xyz0 = {0, 0, 0};
-    return root(func, xyz0, jac);
-  }
-  LocalCoord GlobalToLocal(GlobalCoord const &xyz_global) const override {
-    return GlobalToLocal(xyz_global[0], xyz_global[1], xyz_global[2]);
   }
 };
 template <std::floating_point Scalar, int Qx, int Qy, int Qz>
