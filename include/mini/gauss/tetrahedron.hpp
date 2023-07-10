@@ -23,8 +23,7 @@ namespace gauss {
  * @tparam kPoints  Number of qudrature points.
  */
 template <std::floating_point Scalar, int kPoints>
-class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
-    public Cell<Scalar> {
+class Tetrahedron : public Cell<Scalar> {
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
   using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
   using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
@@ -38,7 +37,7 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   using Arr4x3 = algebra::Array<Scalar, 4, 3>;
 
   using Base = Cell<Scalar>;
-  using LagrangeBase = lagrange::Tetrahedron<Scalar>;
+  using Lagrange = lagrange::Tetrahedron<Scalar>;
 
  public:
   using typename Base::Real;
@@ -52,18 +51,15 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   std::array<GlobalCoord, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
   Scalar volume_;
-  LagrangeBase const *lagrange_;
+  Lagrange const *lagrange_;
 
  public:
-  int CountNodes() const override {
-    return lagrange_->CountNodes();
-  }
   int CountQuadraturePoints() const override {
     return kPoints;
   }
   template <typename T, typename U>
   static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
-    LagrangeBase::SortNodesOnFace(cell_nodes, face_nodes);
+    Lagrange::SortNodesOnFace(cell_nodes, face_nodes);
   }
 
  private:
@@ -91,15 +87,9 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   Scalar const &GetLocalWeight(int q) const override {
     return local_weights_[q];
   }
-  GlobalCoord const &GetGlobalCoordL(int q) const override {
-    return lagrange_->GetGlobalCoordL(q);
-  }
-  LocalCoord const &GetLocalCoordL(int q) const override {
-    return lagrange_->GetLocalCoordL(q);
-  }
 
  public:
-  explicit Tetrahedron(LagrangeBase const &lagrange)
+  explicit Tetrahedron(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
     BuildQuadraturePoints();
   }
@@ -109,16 +99,12 @@ class Tetrahedron : public lagrange::Tetrahedron<Scalar>,
   Tetrahedron &operator=(Tetrahedron &&) noexcept = default;
   virtual ~Tetrahedron() noexcept = default;
 
+  const Lagrange &lagrange() const override {
+    return *lagrange_;
+  }
+
   Scalar volume() const override {
     return volume_;
-  }
-  std::vector<Scalar> LocalToShapeFunctions(Scalar x_local, Scalar y_local,
-      Scalar z_local) const override {
-    return lagrange_->LocalToShapeFunctions(x_local, y_local, z_local);
-  }
-  std::vector<LocalCoord> LocalToShapeGradients(Scalar x_local, Scalar y_local, Scalar z_local)
-      const override {
-    return lagrange_->LocalToShapeGradients(x_local, y_local, z_local);
   }
 };
 

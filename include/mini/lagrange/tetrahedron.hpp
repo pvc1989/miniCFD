@@ -22,7 +22,7 @@ namespace lagrange {
  * @tparam Scalar  Type of scalar variables.
  */
 template <std::floating_point Scalar>
-class Tetrahedron : public virtual Cell<Scalar> {
+class Tetrahedron : public Cell<Scalar> {
   using Base = Cell<Scalar>;
 
  public:
@@ -34,11 +34,16 @@ class Tetrahedron : public virtual Cell<Scalar> {
   int CountVertices() const override final {
     return 4;
   }
-  GlobalCoord center() const override final {
-    Scalar a = 1.0 / 4;
-    return this->LocalToGlobal(a, a, a);
+  const GlobalCoord &center() const override final {
+    return center_;
   }
 
+ protected:
+  GlobalCoord center_;
+  void BuildCenter() {
+    Scalar a = 1.0 / 4;
+    center_ = this->LocalToGlobal(a, a, a);
+  }
 };
 
 /**
@@ -104,10 +109,10 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
   }
 
  public:
-  GlobalCoord const &GetGlobalCoordL(int q) const override {
+  GlobalCoord const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  LocalCoord const &GetLocalCoordL(int q) const override {
+  LocalCoord const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
 
@@ -117,6 +122,7 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
       GlobalCoord const &p2, GlobalCoord const &p3) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
+    this->BuildCenter();
   }
   Tetrahedron4(std::initializer_list<GlobalCoord> il) {
     assert(il.size() == kNodes);
@@ -124,6 +130,7 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
     for (int i = 0; i < kNodes; ++i) {
       global_coords_[i] = p[i];
     }
+    this->BuildCenter();
   }
 };
 // initialization of static const members:

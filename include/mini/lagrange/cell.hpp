@@ -28,9 +28,9 @@ class Cell {
   virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
   virtual int CountVertices() const = 0;
   virtual int CountNodes() const = 0;
-  virtual const LocalCoord &GetLocalCoordL(int i) const = 0;
-  virtual const GlobalCoord &GetGlobalCoordL(int i) const = 0;
-  virtual GlobalCoord center() const = 0;
+  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
+  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
+  virtual const GlobalCoord &center() const = 0;
 
   static constexpr int CellDim() {
     return 3;
@@ -42,9 +42,9 @@ class Cell {
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeFunctions(x_local, y_local, z_local);
-    GlobalCoord sum = GetGlobalCoordL(0) * shapes[0];
+    GlobalCoord sum = GetGlobalCoord(0) * shapes[0];
     for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoordL(i) * shapes[i];
+      sum += GetGlobalCoord(i) * shapes[i];
     }
     return sum;
   }
@@ -55,9 +55,9 @@ class Cell {
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeGradients(x_local, y_local, z_local);
-    Jacobian sum = GetGlobalCoordL(0) * shapes[0].transpose();
+    Jacobian sum = GetGlobalCoord(0) * shapes[0].transpose();
     for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoordL(i) * shapes[i].transpose();
+      sum += GetGlobalCoord(i) * shapes[i].transpose();
     }
     return sum;
   }
