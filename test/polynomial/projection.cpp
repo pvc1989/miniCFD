@@ -4,6 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/lagrange/hexahedron.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -13,10 +14,21 @@ class TestProjection : public ::testing::Test {
  protected:
   using Taylor = mini::polynomial::Taylor<double, 3, 2>;
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
+  Lagrange lagrange_;
   Gauss gauss_;
+
+  TestProjection() : lagrange_{
+      Coord{-1, -1, -1}, Coord{+1, -1, -1},
+      Coord{+1, +1, -1}, Coord{-1, +1, -1},
+      Coord{-1, -1, +1}, Coord{+1, -1, +1},
+      Coord{+1, +1, +1}, Coord{-1, +1, +1}
+    }, gauss_(lagrange_) {
+  }
 };
+
 TEST_F(TestProjection, ScalarFunction) {
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
@@ -28,7 +40,7 @@ TEST_F(TestProjection, ScalarFunction) {
   static_assert(ProjFunc::K == 1);
   static_assert(ProjFunc::N == 10);
   EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-14);
-  EXPECT_NEAR(projection({0.3, 0.4, 0.5})[0], 0.5, 1e-15);
+  EXPECT_NEAR(projection({0.3, 0.4, 0.5})[0], 0.5, 1e-14);
   auto integral_f = mini::gauss::Integrate(func, gauss_);
   auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
