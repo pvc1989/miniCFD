@@ -4,22 +4,27 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/lagrange/hexahedron.hpp"
 
 #include "gtest/gtest.h"
 
 class TestHexahedronGauss : public ::testing::Test {
  protected:
-  using Hexahedron = mini::gauss::Hexahedron<double, 4, 4, 4>;
+  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
   using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  
 };
 TEST_F(TestHexahedronGauss, VirtualMethods) {
-  Mat3x8 xyz_global_i;
-  xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
-  xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
-  xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
-  auto hexa = Hexahedron(xyz_global_i);
+  auto lagrange = Lagrange {
+    Mat3x1(-1, -1, -1), Mat3x1(+1, -1, -1),
+    Mat3x1(+1, +1, -1), Mat3x1(-1, +1, -1),
+    Mat3x1(-1, -1, +1), Mat3x1(+1, -1, +1),
+    Mat3x1(+1, +1, +1), Mat3x1(-1, +1, +1)
+  };
+  auto hexa = Gauss(lagrange);
   static_assert(hexa.CellDim() == 3);
   static_assert(hexa.PhysDim() == 3);
   EXPECT_NEAR(hexa.volume(), 8.0, 1e-14);
@@ -32,12 +37,13 @@ TEST_F(TestHexahedronGauss, VirtualMethods) {
   EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
 TEST_F(TestHexahedronGauss, CommonMethods) {
-  Mat3x8 xyz_global_i;
-  xyz_global_i.row(0) << -1, +1, +1, -1, -1, +1, +1, -1;
-  xyz_global_i.row(1) << -1, -1, +1, +1, -1, -1, +1, +1;
-  xyz_global_i.row(2) << -1, -1, -1, -1, +1, +1, +1, +1;
-  xyz_global_i.array() *= 10.0;
-  auto hexa = Hexahedron(xyz_global_i);
+  auto lagrange = Lagrange {
+    Mat3x1(-10, -10, -10), Mat3x1(+10, -10, -10),
+    Mat3x1(+10, +10, -10), Mat3x1(-10, +10, -10),
+    Mat3x1(-10, -10, +10), Mat3x1(+10, -10, +10),
+    Mat3x1(+10, +10, +10), Mat3x1(-10, +10, +10)
+  };
+  auto hexa = Gauss(lagrange);
   EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Mat3x1(10, 10, 10));
   EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Mat3x1(15, 15, 15));
   EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Mat3x1(30, 40, 50));
