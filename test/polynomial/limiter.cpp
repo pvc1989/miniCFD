@@ -19,6 +19,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/lagrange/hexahedron.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/limiter.hpp"
 #include "mini/riemann/rotated/single.hpp"
@@ -30,9 +31,10 @@
 class TestWenoLimiters : public ::testing::Test {
  protected:
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::GlobalCoord;
-  Gauss gauss_;
+
   std::string const test_input_dir_{TEST_INPUT_DIR};
 };
 TEST_F(TestWenoLimiters, ReconstructScalar) {
@@ -83,19 +85,21 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     return (x-1.5)*(x-1.5) + (y-1.5)*(y-1.5) + 10*(x < y ? 2. : 0.);
   };
-  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-    Mat3x8 coords;
+    auto coords = std::array<Coord, 8>();
     const cgsize_t* array;  // head of 1-based-node-id list
     array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
     for (int i = 0; i < 8; ++i) {
       auto i_node = array[i] - 1;
-      coords(0, i) = x[i_node];
-      coords(1, i) = y[i_node];
-      coords(2, i) = z[i_node];
+      coords[i][0] = x[i_node];
+      coords[i][1] = y[i_node];
+      coords[i][2] = z[i_node];
     }
-    auto hexa_ptr = std::make_unique<Gauss>(coords);
-    cells.emplace_back(std::move(hexa_ptr), i_cell);
+    auto lagrange_uptr = std::make_unique<Lagrange>(
+        coords[0], coords[1], coords[2], coords[3],
+        coords[4], coords[5], coords[6], coords[7]);
+    auto gauss_ptr = std::make_unique<Gauss>(*lagrange_uptr);
+    cells.emplace_back(std::move(lagrange_uptr), std::move(gauss_ptr), i_cell);
     assert(&(cells[i_cell]) == &(cells.back()));
     cells[i_cell].Project(func);
   }

@@ -31,6 +31,7 @@ class Cell {
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
   virtual const GlobalCoord &center() const = 0;
+  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const = 0;
 
   static constexpr int CellDim() {
     return 3;

@@ -62,10 +62,6 @@ class Hexahedron : public Cell<Scalar> {
   int CountQuadraturePoints() const override {
     return Qx * Qy * Qz;
   }
-  template <typename T, typename U>
-  static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
-    Lagrange::SortNodesOnFace(cell_nodes, face_nodes);
-  }
 
  private:
   void BuildQuadraturePoints() {

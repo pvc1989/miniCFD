@@ -75,8 +75,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   int CountNodes() const override {
     return kNodes;
   }
-  template <typename T, typename U>
-  static void SortNodesOnFace(const T *cell_nodes, U *face_nodes) {
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const override {
     int cnt = 0, nid = 0, sum = 0;
     while (cnt < 3) {
       auto curr_node = cell_nodes[nid];

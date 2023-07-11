@@ -22,6 +22,10 @@
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns.hpp"
+#include "mini/lagrange/cell.hpp"
+#include "mini/lagrange/tetrahedron.hpp"
+#include "mini/lagrange/hexahedron.hpp"
+#include "mini/gauss/cell.hpp"
 #include "mini/gauss/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/gauss/tetrahedron.hpp"
@@ -183,6 +187,8 @@ struct Cell {
   constexpr static int kDimensions = Riemann::kDimensions;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
+  using Lagrange = lagrange::Cell<Scalar>;
+  using LagrangeUptr = std::unique_ptr<Lagrange>;
   using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegrees>;
   using Projection = polynomial::
       Projection<Scalar, kDimensions, kDegrees, kComponents>;
@@ -197,13 +203,15 @@ struct Cell {
   std::vector<Cell *> adj_cells_;
   std::vector<Face *> adj_faces_;
   Basis basis_;
+  LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Projection projection_;
   Int metis_id{-1}, id_{-1};
   bool inner_ = true;
 
-  Cell(GaussUptr &&gauss_ptr, Int m_cell)
-      : basis_(*gauss_ptr), gauss_ptr_(std::move(gauss_ptr)),
+  Cell(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr, Int m_cell)
+      : basis_(*gauss_ptr), lagrange_ptr_(std::move(lagrange_ptr)),
+        gauss_ptr_(std::move(gauss_ptr)),
         metis_id(m_cell), projection_(basis_) {
   }
   Cell() = default;
@@ -216,6 +224,7 @@ struct Cell {
     adj_cells_ = std::move(that.adj_cells_);
     adj_faces_ = std::move(that.adj_faces_);
     basis_ = std::move(that.basis_);
+    lagrange_ptr_ = std::move(that.lagrange_ptr_);
     gauss_ptr_ = std::move(that.gauss_ptr_);
     projection_ = std::move(that.projection_);
     projection_.basis_ptr_ = &basis_;  //
@@ -240,6 +249,9 @@ struct Cell {
   }
   Gauss const &gauss() const {
     return *gauss_ptr_;
+  }
+  Lagrange const &lagrange() const {
+    return gauss().lagrange();
   }
   Coord LocalToGlobal(const Coord &local) const {
     return gauss().LocalToGlobal(local);
@@ -413,6 +425,8 @@ class Part {
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
     gauss::Hexahedron<Scalar, 4, 4, 4>>;
+  using LagrangeOnTetrahedron = mini::lagrange::Tetrahedron4<Scalar>;
+  using LagrangeOnHexahedron = mini::lagrange::Hexahedron8<Scalar>;
 
  public:
   Part(std::string const &directory, int rank)
@@ -605,30 +619,38 @@ class Part {
       }
     }
   }
-  auto BuildTetrahedronUptr(int i_zone, Int const *i_node_list) const {
-    return std::make_unique<GaussOnTetrahedron>(
+  std::pair< std::unique_ptr<LagrangeOnTetrahedron>,
+             std::unique_ptr<GaussOnTetrahedron> >
+  BuildTetrahedronUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnTetrahedron>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+    auto gauss = std::make_unique<GaussOnTetrahedron>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
   }
-  auto BuildHexahedronUptr(int i_zone, Int const *i_node_list) const {
-    return std::make_unique<GaussOnHexahedron>(
+  std::pair< std::unique_ptr<LagrangeOnHexahedron>,
+             std::unique_ptr<GaussOnHexahedron> >
+  BuildHexahedronUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnHexahedron>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
         GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
+    auto gauss = std::make_unique<GaussOnHexahedron>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
   }
-  auto BuildGaussForCell(int npe, int i_zone, Int const *i_node_list) const {
-    std::unique_ptr<gauss::Cell<Scalar>> gauss_uptr;
+  std::pair< typename Cell::LagrangeUptr, typename Cell::GaussUptr >
+  BuildGaussForCell(int npe, int i_zone, Int const *i_node_list) const {
     switch (npe) {
       case 4:
-        gauss_uptr = BuildTetrahedronUptr(i_zone, i_node_list); break;
+        return BuildTetrahedronUptr(i_zone, i_node_list); break;
       case 8:
-        gauss_uptr = BuildHexahedronUptr(i_zone, i_node_list); break;
+        return BuildHexahedronUptr(i_zone, i_node_list); break;
       default:
         assert(false);
         break;
     }
-    return gauss_uptr;
+    return {nullptr, nullptr};
   }
   auto BuildTriangleUptr(int i_zone, Int const *i_node_list) const {
     auto gauss_uptr = std::make_unique<GaussOnTriangle>(
@@ -656,19 +678,6 @@ class Part {
         break;
     }
     return gauss_uptr;
-  }
-  static void SortNodesOnFace(int npe, Int const *cell, Int *face) {
-    switch (npe) {
-      case 4:
-        GaussOnTetrahedron::SortNodesOnFace(cell, face);
-        break;
-      case 8:
-        GaussOnHexahedron::SortNodesOnFace(cell, face);
-        break;
-      default:
-        assert(false);
-        break;
-    }
   }
   void BuildLocalCells(std::ifstream &istrm, int i_file) {
     char line[kLineWidth];
@@ -717,8 +726,8 @@ class Part {
       local_cells_[i_zone][i_sect] = std::move(cell_group);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto *i_node_list = &nodes[(i_cell - head) * npe];
-        auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = Cell(std::move(gauss_uptr), metis_ids[i_cell]);
+        auto [lagrange_uptr, gauss_uptr] = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = Cell(std::move(lagrange_uptr), std::move(gauss_uptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
@@ -838,8 +847,8 @@ class Part {
         m_to_recv_cells[m_cell].npe = npe;
         int i_zone = recv_buf[index++];
         auto *i_node_list = &recv_buf[index];
-        auto gauss_uptr = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = Cell(std::move(gauss_uptr), m_cell);
+        auto [lagrange_uptr, gauss_uptr] = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = Cell(std::move(lagrange_uptr), std::move(gauss_uptr), m_cell);
         ghost_cells_[m_cell] = std::move(cell);
         index += npe;
       }
@@ -874,6 +883,35 @@ class Part {
     assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
     requests_.resize(send_coeffs_.size() + recv_coeffs_.size());
   }
+  template<std::integral T, std::integral U>
+  static void SortNodesOnFace(const Cell &holder, const T *cell_nodes, U *face_nodes) {
+    auto &lagrange = holder.lagrange();
+    size_t *cell_node_list, *face_node_list;
+    if (sizeof(T) == sizeof(size_t)) {
+      cell_node_list = (size_t *)(cell_nodes);
+    } else {
+      int n_byte = sizeof(size_t) * lagrange.CountNodes();
+      cell_node_list = static_cast<size_t *>(std::malloc(n_byte));
+      std::memcpy(cell_node_list, cell_nodes, n_byte);
+    }
+    if (sizeof(U) == sizeof(size_t)) {
+      face_node_list = (size_t *)(face_nodes);
+    } else {
+      int n_byte = sizeof(size_t) * 4;
+      face_node_list = static_cast<size_t *>(std::malloc(n_byte));
+      std::memcpy(face_node_list, face_nodes, n_byte);
+    }
+    lagrange.SortNodesOnFace(cell_node_list, face_node_list);
+    if (sizeof(T) != sizeof(size_t)) {
+      std::free(cell_node_list);
+    }
+    if (sizeof(U) != sizeof(size_t)) {
+      for (int i = 0; i < 4; ++i) {
+        face_nodes[i] = face_node_list[i];
+      }
+      std::free(face_node_list);
+    }
+  }
   void BuildLocalFaces() {
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
@@ -907,7 +945,7 @@ class Part {
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
       auto *i_node_list = common_nodes.data();
-      SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
+      SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
       auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer, local_faces_.size());
@@ -950,7 +988,7 @@ class Part {
       auto &sharer = ghost_cells_.at(m_sharer);
       holder.adj_cells_.emplace_back(&sharer);
       auto *i_node_list = common_nodes.data();
-      SortNodesOnFace(holder_info.npe, &holder_nodes[holder_head], i_node_list);
+      SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
       auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer,
@@ -1409,11 +1447,11 @@ class Part {
           if (cnt == npe) {  // this cell holds this face
             auto &info = m_to_cell_info_[m_cell];
             Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
-            holder_ptr = &(local_cells_.at(z).at(s).at(c));
+            auto &holder = local_cells_.at(z).at(s).at(c);
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            SortNodesOnFace(info.npe, &holder_nodes[holder_head], i_node_list);
+            SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
             break;
           }
         }
