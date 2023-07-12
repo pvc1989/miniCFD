@@ -46,7 +46,11 @@ auto run() {
 
 class TestPerformance : public ::testing::Test {
  public:
-  int n = 1000000;
+#ifdef NDEBUG
+  int n = 1'000'000;
+#else
+  int n = 100'000;
+#endif
 };
 TEST_F(TestPerformance, TestAusm) {
   for (int i = 0; i < n; ++i) {
