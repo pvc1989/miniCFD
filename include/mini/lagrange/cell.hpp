@@ -2,6 +2,7 @@
 #ifndef MINI_LAGRANGE_CELL_HPP_
 #define MINI_LAGRANGE_CELL_HPP_
 
+#include <algorithm>
 #include <concepts>
 
 namespace mini {
@@ -103,6 +104,46 @@ class Cell {
   }
 
 };
+
+/**
+ * @brief A generic wrapper of the virtual SortNodesOnFace method.
+ * 
+ * @tparam Scalar  Same as Cell::Scalar.
+ * @tparam T  Type of integers in the 1st list.
+ * @tparam U  Type of integers in the 2nd list.
+ * @param cell  The Cell holding the Face.
+ * @param cell_nodes  The node id list of the Cell.
+ * @param face_nodes  The node id list of the Face.
+ * @param face_n_node  Number of nodes on the Face.
+ */
+template<std::floating_point Scalar, std::integral T, std::integral U>
+void SortNodesOnFace(const Cell<Scalar> &cell, const T *cell_nodes,
+    U *face_nodes, int face_n_node) {
+  size_t *cell_node_list, *face_node_list;
+  if (sizeof(T) == sizeof(size_t)) {
+    cell_node_list = (size_t *)(cell_nodes);
+  } else {
+    int n_nodes = cell.CountNodes();
+    cell_node_list = new size_t[n_nodes];
+    std::copy_n(cell_nodes, n_nodes, cell_node_list);
+  }
+  if (sizeof(U) == sizeof(size_t)) {
+    face_node_list = (size_t *)(face_nodes);
+  } else {
+    face_node_list = new size_t[face_n_node];
+    std::copy_n(face_nodes, face_n_node, face_node_list);
+  }
+  // Delegate the real work or sorting to the virtual function.
+  cell.SortNodesOnFace(cell_node_list, face_node_list);
+  if (sizeof(T) != sizeof(size_t)) {
+    delete[] cell_node_list;
+  }
+  if (sizeof(U) != sizeof(size_t)) {
+    std::copy_n(face_node_list, face_n_node, face_nodes);
+    delete[] face_node_list;
+  }
+}
+
 
 }  // namespace lagrange
 }  // namespace mini

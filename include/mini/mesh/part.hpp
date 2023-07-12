@@ -883,33 +883,6 @@ class Part {
     assert(recv_cell_ptrs_.size() == recv_coeffs_.size());
     requests_.resize(send_coeffs_.size() + recv_coeffs_.size());
   }
-  template<std::integral T, std::integral U>
-  static void SortNodesOnFace(const Cell &holder, const T *cell_nodes,
-      U *face_nodes, int face_npe) {
-    auto &lagrange = holder.lagrange();
-    size_t *cell_node_list, *face_node_list;
-    if (sizeof(T) == sizeof(size_t)) {
-      cell_node_list = (size_t *)(cell_nodes);
-    } else {
-      int n_nodes = lagrange.CountNodes();
-      cell_node_list = new size_t[n_nodes];
-      std::copy_n(cell_nodes, n_nodes, cell_node_list);
-    }
-    if (sizeof(U) == sizeof(size_t)) {
-      face_node_list = (size_t *)(face_nodes);
-    } else {
-      face_node_list = new size_t[face_npe];
-      std::copy_n(face_nodes, face_npe, face_node_list);
-    }
-    lagrange.SortNodesOnFace(cell_node_list, face_node_list);
-    if (sizeof(T) != sizeof(size_t)) {
-      delete[] cell_node_list;
-    }
-    if (sizeof(U) != sizeof(size_t)) {
-      std::copy_n(face_node_list, face_npe, face_nodes);
-      delete[] face_node_list;
-    }
-  }
   void BuildLocalFaces() {
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
@@ -943,7 +916,7 @@ class Part {
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
       auto *face_node_list = common_nodes.data();
-      SortNodesOnFace(holder, &holder_nodes[holder_head],
+      lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
       auto face_uptr = std::make_unique<Face>(
@@ -981,13 +954,12 @@ class Part {
       }
       int face_npe = common_nodes.size();
       // let the normal vector point from holder to sharer
-      // see http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png
       auto &zone = local_cells_[i_zone];
       auto &holder = zone[holder_info.i_sect][holder_info.i_cell];
       auto &sharer = ghost_cells_.at(m_sharer);
       holder.adj_cells_.emplace_back(&sharer);
       auto *face_node_list = common_nodes.data();
-      SortNodesOnFace(holder, &holder_nodes[holder_head],
+      lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
       auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
       auto face_uptr = std::make_unique<Face>(
@@ -1451,8 +1423,8 @@ class Part {
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            SortNodesOnFace(holder, &holder_nodes[holder_head],
-                face_node_list, npe);
+            lagrange::SortNodesOnFace(holder.lagrange(),
+                &holder_nodes[holder_head], face_node_list, npe);
             break;
           }
         }
