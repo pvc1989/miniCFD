@@ -884,32 +884,30 @@ class Part {
     requests_.resize(send_coeffs_.size() + recv_coeffs_.size());
   }
   template<std::integral T, std::integral U>
-  static void SortNodesOnFace(const Cell &holder, const T *cell_nodes, U *face_nodes) {
+  static void SortNodesOnFace(const Cell &holder, const T *cell_nodes,
+      U *face_nodes, int face_npe) {
     auto &lagrange = holder.lagrange();
     size_t *cell_node_list, *face_node_list;
     if (sizeof(T) == sizeof(size_t)) {
       cell_node_list = (size_t *)(cell_nodes);
     } else {
-      int n_byte = sizeof(size_t) * lagrange.CountNodes();
-      cell_node_list = static_cast<size_t *>(std::malloc(n_byte));
-      std::memcpy(cell_node_list, cell_nodes, n_byte);
+      int n_nodes = lagrange.CountNodes();
+      cell_node_list = new size_t[n_nodes];
+      std::copy_n(cell_nodes, n_nodes, cell_node_list);
     }
     if (sizeof(U) == sizeof(size_t)) {
       face_node_list = (size_t *)(face_nodes);
     } else {
-      int n_byte = sizeof(size_t) * 4;
-      face_node_list = static_cast<size_t *>(std::malloc(n_byte));
-      std::memcpy(face_node_list, face_nodes, n_byte);
+      face_node_list = new size_t[face_npe];
+      std::copy_n(face_nodes, face_npe, face_node_list);
     }
     lagrange.SortNodesOnFace(cell_node_list, face_node_list);
     if (sizeof(T) != sizeof(size_t)) {
-      std::free(cell_node_list);
+      delete[] cell_node_list;
     }
     if (sizeof(U) != sizeof(size_t)) {
-      for (int i = 0; i < 4; ++i) {
-        face_nodes[i] = face_node_list[i];
-      }
-      std::free(face_node_list);
+      std::copy_n(face_node_list, face_npe, face_nodes);
+      delete[] face_node_list;
     }
   }
   void BuildLocalFaces() {
@@ -932,7 +930,7 @@ class Part {
       for (int i = 0; i < sharer_info.npe; ++i)
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
       auto common_nodes = std::vector<Int>();
-      common_nodes.reserve(4);
+      common_nodes.reserve(9/* at most 9 nodes on a Face */);
       for (auto [i_node, cnt] : i_node_cnt)
         if (cnt == 2)
           common_nodes.emplace_back(i_node);
@@ -944,9 +942,10 @@ class Part {
       auto &sharer = zone[sharer_info.i_sect][sharer_info.i_cell];
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
-      auto *i_node_list = common_nodes.data();
-      SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
-      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
+      auto *face_node_list = common_nodes.data();
+      SortNodesOnFace(holder, &holder_nodes[holder_head],
+          face_node_list, face_npe);
+      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
       auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer, local_faces_.size());
       holder.adj_faces_.emplace_back(face_uptr.get());
@@ -987,9 +986,10 @@ class Part {
       auto &holder = zone[holder_info.i_sect][holder_info.i_cell];
       auto &sharer = ghost_cells_.at(m_sharer);
       holder.adj_cells_.emplace_back(&sharer);
-      auto *i_node_list = common_nodes.data();
-      SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
-      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, i_node_list);
+      auto *face_node_list = common_nodes.data();
+      SortNodesOnFace(holder, &holder_nodes[holder_head],
+          face_node_list, face_npe);
+      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
       auto face_uptr = std::make_unique<Face>(
           std::move(gauss_uptr), &holder, &sharer,
           local_faces_.size() + ghost_faces_.size());
@@ -1434,7 +1434,7 @@ class Part {
       }
       auto &n_to_m_cells = z_n_to_m_cells.at(i_zone);
       for (int i_face = head; i_face < tail; ++i_face) {
-        auto *i_node_list = &nodes[(i_face - head) * npe];
+        auto *face_node_list = &nodes[(i_face - head) * npe];
         auto cell_cnt = std::unordered_map<int, int>();
         for (int i = index.at(i_face); i < index.at(i_face+1); ++i) {
           for (auto m_cell : n_to_m_cells[nodes[i]]) {
@@ -1451,11 +1451,12 @@ class Part {
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            SortNodesOnFace(holder, &holder_nodes[holder_head], i_node_list);
+            SortNodesOnFace(holder, &holder_nodes[holder_head],
+                face_node_list, npe);
             break;
           }
         }
-        auto gauss_uptr = BuildGaussForFace(npe, i_zone, i_node_list);
+        auto gauss_uptr = BuildGaussForFace(npe, i_zone, face_node_list);
         auto face_uptr = std::make_unique<Face>(
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
         // the face's normal vector always point from holder to the exterior

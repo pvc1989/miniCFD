@@ -31,6 +31,13 @@ class Cell {
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
   virtual const GlobalCoord &center() const = 0;
+
+  /**
+   * @brief Sort `cell_nodes` by `face_nodes`, so that the right-hand normal of the Face point out from the Cell.
+   * 
+   * @param cell_nodes  The node id list of a Cell.
+   * @param face_nodes  The node id list of a Face.
+   */
   virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const = 0;
 
   static constexpr int CellDim() {
