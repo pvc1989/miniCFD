@@ -145,7 +145,7 @@ const std::array<std::array<int, 3>, 4>
 Tetrahedron4<Scalar>::faces_{
   // See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/tetra_4.png for node numbering.
   // Faces can be distinguished by the sum of the three minimum node ids.
-  0, 2, 1/* 3 */, 0, 1, 3/* 4 */, 2, 0, 3/* 5 */, 1, 2, 3/* 6 */
+  0, 2, 1/* 3 */, 0, 1, 3/* 4 */, 0, 3, 2/* 5 */, 1, 2, 3/* 6 */
 };
 
 

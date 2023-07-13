@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "mini/lagrange/cell.hpp"
 #include "mini/lagrange/hexahedron.hpp"
 
 #include "gtest/gtest.h"
@@ -26,6 +27,76 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
+}
+TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
+  using mini::lagrange::SortNodesOnFace;
+  auto cell = Lagrange{
+    Coord(-10, -10, -10), Coord(+10, -10, -10),
+    Coord(+10, +10, -10), Coord(-10, +10, -10),
+    Coord(-10, -10, +10), Coord(+10, -10, +10),
+    Coord(+10, +10, +10), Coord(-10, +10, +10)
+  };
+  int face_n_node = 4;
+  // test the version without conversion:
+  {
+    using Vector = std::vector<size_t>;
+    Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 00 };
+    Vector face_nodes, face_nodes_expect;
+    face_nodes = { 11, 22, 33, 44, 0 };
+    face_nodes_expect = { 11, 44, 33, 22, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 22, 55, 66, 0 };
+    face_nodes_expect = { 11, 22, 66, 55, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 44, 55, 88, 0 };
+    face_nodes_expect = { 11, 55, 88, 44, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 22, 33, 66, 77, 0 };
+    face_nodes_expect = { 22, 33, 77, 66, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 33, 44, 77, 88, 0 };
+    face_nodes_expect = { 33, 44, 88, 77, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 55, 66, 77, 88, 0 };
+    face_nodes_expect = { 55, 66, 77, 88, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+  }
+  // test the version with conversion:
+  {
+    using Vector = std::vector<short>;
+    Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 00 };
+    Vector face_nodes, face_nodes_expect;
+    face_nodes = { 11, 22, 33, 44, 0 };
+    face_nodes_expect = { 11, 44, 33, 22, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 22, 55, 66, 0 };
+    face_nodes_expect = { 11, 22, 66, 55, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 44, 55, 88, 0 };
+    face_nodes_expect = { 11, 55, 88, 44, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 22, 33, 66, 77, 0 };
+    face_nodes_expect = { 22, 33, 77, 66, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 33, 44, 77, 88, 0 };
+    face_nodes_expect = { 33, 44, 88, 77, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 55, 66, 77, 88, 0 };
+    face_nodes_expect = { 55, 66, 77, 88, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+  }
 }
 
 int main(int argc, char* argv[]) {
