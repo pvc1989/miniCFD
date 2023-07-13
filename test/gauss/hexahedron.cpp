@@ -8,16 +8,14 @@
 
 #include "gtest/gtest.h"
 
-class TestHexahedronGauss : public ::testing::Test {
+class TestGaussHexahedron : public ::testing::Test {
  protected:
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
-  using Mat1x8 = mini::algebra::Matrix<double, 1, 8>;
-  using Mat3x8 = mini::algebra::Matrix<double, 3, 8>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   
 };
-TEST_F(TestHexahedronGauss, VirtualMethods) {
+TEST_F(TestGaussHexahedron, OnStandardElement) {
   auto lagrange = Lagrange {
     Mat3x1(-1, -1, -1), Mat3x1(+1, -1, -1),
     Mat3x1(+1, +1, -1), Mat3x1(-1, +1, -1),
@@ -36,7 +34,7 @@ TEST_F(TestHexahedronGauss, VirtualMethods) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(hexa.GetLocalWeight(0), w1d * w1d * w1d);
 }
-TEST_F(TestHexahedronGauss, CommonMethods) {
+TEST_F(TestGaussHexahedron, OnScaledElement) {
   auto lagrange = Lagrange {
     Mat3x1(-10, -10, -10), Mat3x1(+10, -10, -10),
     Mat3x1(+10, +10, -10), Mat3x1(-10, +10, -10),

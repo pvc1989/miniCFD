@@ -8,26 +8,23 @@
 
 #include "gtest/gtest.h"
 
-class TestTetrahedronGauss : public ::testing::Test {
+class TestGaussTetrahedron : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
   using Gauss = mini::gauss::Tetrahedron<double, kPoints>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  Lagrange lagrange{
+};
+TEST_F(TestGaussTetrahedron, OnStandardElement) {
+  auto lagrange = Lagrange{
     Mat3x1(0, 0, 0), Mat3x1(3, 0, 0), Mat3x1(0, 3, 0), Mat3x1(0, 0, 3)
   };
-};
-TEST_F(TestTetrahedronGauss, VirtualMethods) {
   auto tetra = Gauss(lagrange);
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
-}
-TEST_F(TestTetrahedronGauss, CommonMethods) {
-  auto tetra = Gauss(lagrange);
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));
