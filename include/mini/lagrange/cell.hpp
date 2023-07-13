@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <concepts>
 
+#include "mini/algebra/eigen.hpp"
+
 namespace mini {
 namespace lagrange {
 
@@ -119,28 +121,25 @@ class Cell {
 template<std::floating_point Scalar, std::integral T, std::integral U>
 void SortNodesOnFace(const Cell<Scalar> &cell, const T *cell_nodes,
     U *face_nodes, int face_n_node) {
+  size_t cell_nodes_copy[64], face_nodes_copy[32];
   size_t *cell_node_list, *face_node_list;
   if (sizeof(T) == sizeof(size_t)) {
     cell_node_list = (size_t *)(cell_nodes);
   } else {
-    int n_nodes = cell.CountNodes();
-    cell_node_list = new size_t[n_nodes];
+    cell_node_list = cell_nodes_copy;
+    auto n_nodes = cell.CountNodes();
     std::copy_n(cell_nodes, n_nodes, cell_node_list);
   }
   if (sizeof(U) == sizeof(size_t)) {
     face_node_list = (size_t *)(face_nodes);
   } else {
-    face_node_list = new size_t[face_n_node];
+    face_node_list = face_nodes_copy;
     std::copy_n(face_nodes, face_n_node, face_node_list);
   }
   // Delegate the real work or sorting to the virtual function.
   cell.SortNodesOnFace(cell_node_list, face_node_list);
-  if (sizeof(T) != sizeof(size_t)) {
-    delete[] cell_node_list;
-  }
   if (sizeof(U) != sizeof(size_t)) {
     std::copy_n(face_node_list, face_n_node, face_nodes);
-    delete[] face_node_list;
   }
 }
 
