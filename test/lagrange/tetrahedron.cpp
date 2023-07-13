@@ -1,6 +1,8 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
 
 #include <vector>
+#include <algorithm>
+#include <cstdlib>
 
 #include "mini/lagrange/cell.hpp"
 #include "mini/lagrange/tetrahedron.hpp"
@@ -13,7 +15,7 @@ class TestLagrangeTetrahedron4 : public ::testing::Test {
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
   using Coord = typename Lagrange::GlobalCoord;
 };
-TEST_F(TestLagrangeTetrahedron4, OnStandardElement) {
+TEST_F(TestLagrangeTetrahedron4, CoordinateMap) {
   auto tetra = Lagrange{
     Coord(0, 0, 0), Coord(3, 0, 0), Coord(0, 3, 0), Coord(0, 0, 3)
   };
@@ -28,6 +30,24 @@ TEST_F(TestLagrangeTetrahedron4, OnStandardElement) {
   EXPECT_EQ(tetra.GlobalToLocal(3, 0, 0), Coord(0, 1, 0));
   EXPECT_EQ(tetra.GlobalToLocal(0, 3, 0), Coord(0, 0, 1));
   EXPECT_EQ(tetra.GlobalToLocal(0, 0, 3), Coord(0, 0, 0));
+  mini::lagrange::Cell<typename Lagrange::Real> &cell = tetra;
+  // test the partition-of-unity property:
+  std::srand(31415926);
+  auto rand = [](){ return std::rand() / (1.0 + RAND_MAX); };
+  for (int i = 0; i < 1'000'000; ++i) {
+    auto x = rand(), y = rand(), z = rand();
+    auto shapes = cell.LocalToShapeFunctions(x, y, z);
+    auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
+    EXPECT_EQ(sum, 1.0);
+  }
+  // test the Kronecker-delta and property:
+  for (int i = 0, n = cell.CountNodes(); i < n; ++i) {
+    auto local_i = cell.GetLocalCoord(i);
+    auto shapes = cell.LocalToShapeFunctions(local_i);
+    for (int j = 0; j < n; ++j) {
+      EXPECT_EQ(shapes[j], i == j);
+    }
+  }
 }
 TEST_F(TestLagrangeTetrahedron4, SortNodesOnFace) {
   using mini::lagrange::SortNodesOnFace;

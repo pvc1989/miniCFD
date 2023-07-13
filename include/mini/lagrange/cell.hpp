@@ -35,6 +35,15 @@ class Cell {
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
   virtual const GlobalCoord &center() const = 0;
 
+  std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xyz)
+      const {
+    return LocalToShapeFunctions(xyz[0], xyz[1], xyz[2]);
+  }
+  std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xyz)
+      const {
+    return LocalToShapeGradients(xyz[0], xyz[1], xyz[2]);
+  }
+
   /**
    * @brief Sort `cell_nodes` by `face_nodes`, so that the right-hand normal of the Face point out from the Cell.
    * 

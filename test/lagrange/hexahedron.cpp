@@ -27,6 +27,24 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
+  mini::lagrange::Cell<typename Lagrange::Real> &cell = hexa;
+  // test the partition-of-unity property:
+  std::srand(31415926);
+  auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
+  for (int i = 0; i < 1'000'000; ++i) {
+    auto x = rand(), y = rand(), z = rand();
+    auto shapes = cell.LocalToShapeFunctions(x, y, z);
+    auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
+    EXPECT_NEAR(sum, 1.0, 1e-15);
+  }
+  // test the Kronecker-delta and property:
+  for (int i = 0, n = cell.CountNodes(); i < n; ++i) {
+    auto local_i = cell.GetLocalCoord(i);
+    auto shapes = cell.LocalToShapeFunctions(local_i);
+    for (int j = 0; j < n; ++j) {
+      EXPECT_EQ(shapes[j], i == j);
+    }
+  }
 }
 TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
   using mini::lagrange::SortNodesOnFace;
