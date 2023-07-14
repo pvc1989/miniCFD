@@ -1,4 +1,6 @@
 set (cases
+  triangle
+  quadrangle
   tetrahedron
   hexahedron
 )
