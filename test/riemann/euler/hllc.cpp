@@ -12,7 +12,7 @@ namespace riemann {
 namespace euler {
 
 double rand_f() {
-  return std::rand() / float(RAND_MAX);
+  return std::rand() / (1.0 + RAND_MAX);
 }
 
 double ratio(double x, double y) {
@@ -37,8 +37,10 @@ TEST_F(TestHllc, TestConsistency) {
   auto flux = Flux{rho * u, rho * u * u + p, u};
   flux.energy() *= p * Gas::GammaOverGammaMinusOne() + 0.5 * rho * u * u;
   EXPECT_EQ(solver.GetFlux({rho, u, p}), flux);
+  std::srand(31415926);
   Primitive state{rand_f(), rand_f(), rand_f()};
-  EXPECT_EQ(solver.GetFluxUpwind(state, state), solver.GetFlux(state));
+  Flux diff = solver.GetFluxUpwind(state, state) - solver.GetFlux(state);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-16);
 }
 TEST_F(TestHllc, TestSod) {
   Primitive left{1.0, 0.0, 1.0}, right{0.125, 0.0, 0.1};

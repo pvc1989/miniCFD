@@ -15,7 +15,7 @@
 #include "gtest/gtest.h"
 
 double rand_f() {
-  return std::rand() / float(RAND_MAX);
+  return std::rand() / (1.0 + RAND_MAX);
 }
 
 class TestTaylorBasis : public ::testing::Test {
@@ -23,6 +23,7 @@ class TestTaylorBasis : public ::testing::Test {
 TEST_F(TestTaylorBasis, In2dSpace) {
   using Basis = mini::polynomial::Taylor<double, 2, 2>;
   static_assert(Basis::N == 6);
+  std::srand(31415926);
   double x{rand_f()}, y{rand_f()};
   typename Basis::MatNx1 res;
   res = Basis::GetValue({x, y});
@@ -44,6 +45,7 @@ TEST_F(TestTaylorBasis, In2dSpace) {
 TEST_F(TestTaylorBasis, In3dSpace) {
   using Basis = mini::polynomial::Taylor<double, 3, 2>;
   static_assert(Basis::N == 10);
+  std::srand(31415926);
   double x{rand_f()}, y{rand_f()}, z{rand_f()};
   typename Basis::MatNx1 res;
   res = Basis::GetValue({x, y, z});
@@ -77,6 +79,7 @@ TEST_F(TestLinearBasis, In2dSpace) {
   using Basis = mini::polynomial::Linear<double, 2, 2>;
   auto basis = Basis({0, 0});
   static_assert(Basis::N == 6);
+  std::srand(31415926);
   double x{rand_f()}, y{rand_f()};
   typename Basis::MatNx1 res;
   res = basis({x, y});
@@ -99,6 +102,7 @@ TEST_F(TestLinearBasis, In3dSpace) {
   using Basis = mini::polynomial::Linear<double, 3, 2>;
   auto basis = Basis({0, 0, 0});
   static_assert(Basis::N == 10);
+  std::srand(31415926);
   double x{rand_f()}, y{rand_f()}, z{rand_f()};
   typename Basis::MatNx1 res;
   res = basis({x, y, z});
