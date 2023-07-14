@@ -36,8 +36,8 @@ class Cell {
 
   virtual const Lagrange &lagrange() const = 0;
 
-  int CountVertices() const {
-    return lagrange().CountVertices();
+  int CountCorners() const {
+    return lagrange().CountCorners();
   }
   int CountNodes() const {
     return lagrange().CountNodes();

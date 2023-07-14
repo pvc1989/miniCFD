@@ -53,7 +53,7 @@ class Rotorcraft {
       }
       const auto &gauss = face->gauss();
       // Currently, only triangle is supported.
-      assert(gauss.CountVertices() == 3);
+      assert(gauss.CountCorners() == 3);
       Coord pa = gauss.GetVertex(0) - p;
       Coord pb = gauss.GetVertex(1) - p;
       Coord pc = gauss.GetVertex(2) - p;

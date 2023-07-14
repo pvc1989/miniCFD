@@ -29,7 +29,7 @@ class Cell {
   virtual ~Cell() noexcept = default;
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
   virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
-  virtual int CountVertices() const = 0;
+  virtual int CountCorners() const = 0;
   virtual int CountNodes() const = 0;
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;

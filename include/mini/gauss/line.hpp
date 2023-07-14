@@ -34,7 +34,7 @@ class Line {
   MatDx2 pq_;
 
  public:
-  static int CountVertices() {
+  static int CountCorners() {
     return 2;
   }
   static int CountQuadraturePoints() {

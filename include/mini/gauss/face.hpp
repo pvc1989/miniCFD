@@ -33,7 +33,7 @@ class Face {
   virtual GlobalCoord LocalToGlobal(const LocalCoord &) const = 0;
   virtual MatDx2 Jacobian(const LocalCoord &) const = 0;
   virtual int CountQuadraturePoints() const = 0;
-  virtual int CountVertices() const = 0;
+  virtual int CountCorners() const = 0;
   virtual const GlobalCoord &GetVertex(int i) const = 0;
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;

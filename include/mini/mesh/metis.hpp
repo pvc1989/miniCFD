@@ -42,7 +42,7 @@ class SparseMatrix {
   Int const &index(Int i) const {
     return index_[i];
   }
-  Int CountVertices() const {
+  Int CountCorners() const {
     return range_.size() - 1;
   }
   Int CountEdges() const {
@@ -93,7 +93,7 @@ class Mesh : private SparseMatrix<Int> {
     return this->index(i);
   }
   Int CountCells() const {
-    return this->CountVertices();
+    return this->CountCorners();
   }
   Int CountNodes() const {
     return n_nodes_;
@@ -157,7 +157,7 @@ class SparseGraphWithDeleter {
   Int const &index(Int i) const {
     return index_[i];
   }
-  Int CountVertices() const {
+  Int CountCorners() const {
     return size_;
   }
   Int CountEdges() const {
@@ -205,7 +205,7 @@ std::vector<Int> PartGraph(
     const std::vector<Int> &options = {}) {
   static_assert(sizeof(Int) == sizeof(idx_t),
       "`Int` and `idx_t` must have the same size.");
-  Int n_vertices = graph.CountVertices();
+  Int n_vertices = graph.CountCorners();
   auto vertex_parts = std::vector<Int>(n_vertices);
   if (n_parts == 1)
     return vertex_parts;

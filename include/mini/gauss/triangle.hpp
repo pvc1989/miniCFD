@@ -52,7 +52,7 @@ class Triangle : public Face<Scalar, kDimensions> {
   Scalar area_;
 
  public:
-  int CountVertices() const override {
+  int CountCorners() const override {
     return 3;
   }
   const GlobalCoord &GetVertex(int i) const override {

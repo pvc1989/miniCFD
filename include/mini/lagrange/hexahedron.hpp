@@ -31,7 +31,7 @@ class Hexahedron : public Cell<Scalar> {
   using typename Base::GlobalCoord;
   using typename Base::Jacobian;
 
-  int CountVertices() const override final {
+  int CountCorners() const override final {
     return 8;
   }
   const GlobalCoord &center() const override final {

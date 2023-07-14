@@ -259,8 +259,8 @@ struct Cell {
   Value GetValue(const Coord &global) const {
     return projection_(global);
   }
-  int CountVertices() const {
-    return gauss().CountVertices();
+  int CountCorners() const {
+    return gauss().CountCorners();
   }
 
   template <class Callable>

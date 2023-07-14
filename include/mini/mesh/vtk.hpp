@@ -64,7 +64,7 @@ class Writer {
 
   static void PrepareData(const Cell &cell, std::vector<CellType> *types,
       std::vector<Coord> *coords, std::vector<Value> *values) {
-    auto type = GetCellType(cell.CountVertices());
+    auto type = GetCellType(cell.CountCorners());
     types->push_back(type);
     // TODO(PVC): dispatch by virtual functions?
     switch (type) {

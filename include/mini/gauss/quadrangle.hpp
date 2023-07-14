@@ -57,7 +57,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   Scalar area_;
 
  public:
-  int CountVertices() const override {
+  int CountCorners() const override {
     return 4;
   }
   const GlobalCoord &GetVertex(int i) const override {

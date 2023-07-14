@@ -31,7 +31,7 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   using typename Base::GlobalCoord;
   using typename Base::Jacobian;
 
-  int CountVertices() const override final {
+  int CountCorners() const override final {
     return 4;
   }
   const GlobalCoord &center() const override final {

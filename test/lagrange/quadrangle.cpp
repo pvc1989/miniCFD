@@ -19,7 +19,7 @@ TEST_F(TestLagrangeQuadrangle4, ThreeDimensional) {
   };
   static_assert(quadrangle.CellDim() == 2);
   static_assert(quadrangle.PhysDim() == 3);
-  EXPECT_EQ(quadrangle.CountVertices(), 4);
+  EXPECT_EQ(quadrangle.CountCorners(), 4);
   EXPECT_EQ(quadrangle.CountNodes(), 4);
   EXPECT_EQ(quadrangle.center(), Coord(0, 5, 5));
   EXPECT_EQ(quadrangle.LocalToGlobal(quadrangle.GetLocalCoord(0)),
