@@ -54,7 +54,6 @@ class Quadrangle : public Face<Scalar, kDimensions> {
 template <std::floating_point Scalar, int kDimensions>
 class Quadrangle4 : public Quadrangle<Scalar, kDimensions> {
   using Base = Quadrangle<Scalar, kDimensions>;
-  static constexpr int X{0}, Y{1}, Z{2};
 
  public:
   using typename Base::Real;

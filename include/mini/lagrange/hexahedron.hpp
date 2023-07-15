@@ -55,8 +55,6 @@ template <std::floating_point Scalar>
 class Hexahedron8 : public Hexahedron<Scalar> {
   using Base = Hexahedron<Scalar>;
 
-  static constexpr int X{0}, Y{1}, Z{2};
-
  public:
   using typename Base::Real;
   using typename Base::LocalCoord;

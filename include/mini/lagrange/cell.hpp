@@ -6,6 +6,7 @@
 #include <concepts>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/lagrange/element.hpp"
 
 namespace mini {
 namespace lagrange {
@@ -17,14 +18,12 @@ namespace lagrange {
  */
 template <std::floating_point Scalar>
 class Cell {
-  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
-  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
 
  public:
   using Real = Scalar;
-  using LocalCoord = Mat3x1;
-  using GlobalCoord = Mat3x1;
-  using Jacobian = Mat3x3;
+  using LocalCoord = algebra::Matrix<Scalar, 3, 1>;
+  using GlobalCoord = algebra::Matrix<Scalar, 3, 1>;
+  using Jacobian = algebra::Matrix<Scalar, 3, 3>;
 
   virtual ~Cell() noexcept = default;
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
@@ -37,11 +36,11 @@ class Cell {
 
   std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xyz)
       const {
-    return LocalToShapeFunctions(xyz[0], xyz[1], xyz[2]);
+    return LocalToShapeFunctions(xyz[X], xyz[Y], xyz[Z]);
   }
   std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xyz)
       const {
-    return LocalToShapeGradients(xyz[0], xyz[1], xyz[2]);
+    return LocalToShapeGradients(xyz[X], xyz[Y], xyz[Z]);
   }
 
   /**
@@ -69,7 +68,7 @@ class Cell {
     return sum;
   }
   GlobalCoord LocalToGlobal(const LocalCoord &xyz) const {
-    return LocalToGlobal(xyz[0], xyz[1], xyz[2]);
+    return LocalToGlobal(xyz[X], xyz[Y], xyz[Z]);
   }
 
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
@@ -82,31 +81,31 @@ class Cell {
     return sum;
   }
   Jacobian LocalToJacobian(const LocalCoord &xyz) const {
-    return LocalToJacobian(xyz[0], xyz[1], xyz[2]);
+    return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 
   LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
       const {
-    Mat3x1 xyz_global = {x_global, y_global, z_global};
-    auto func = [this, &xyz_global](Mat3x1 const &xyz_local) {
+    GlobalCoord xyz_global = {x_global, y_global, z_global};
+    auto func = [this, &xyz_global](LocalCoord const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
       return res -= xyz_global;
     };
     auto jac = [this](LocalCoord const &xyz_local) {
       return LocalToJacobian(xyz_local);
     };
-    Mat3x1 xyz0 = {0, 0, 0};
+    GlobalCoord xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
   LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
-    return GlobalToLocal(xyz[0], xyz[1], xyz[2]);
+    return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
 
  private:
   template <typename Callable, typename MatJ>
-  static Mat3x1 root(
-      Callable &&func, Mat3x1 x, MatJ &&matj, Scalar xtol = 1e-5) {
-    Mat3x1 res;
+  static GlobalCoord root(
+      Callable &&func, GlobalCoord x, MatJ &&matj, Scalar xtol = 1e-5) {
+    GlobalCoord res;
     do {
       res = matj(x).partialPivLu().solve(func(x));
       x -= res;

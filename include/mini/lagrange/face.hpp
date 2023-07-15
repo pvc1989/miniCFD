@@ -7,6 +7,7 @@
 #include <concepts>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/lagrange/element.hpp"
 
 namespace mini {
 namespace lagrange {
@@ -21,8 +22,6 @@ template <std::floating_point Scalar, int kDimensions>
 class Face {
   static constexpr int D = kDimensions;
   static_assert(D == 2 || D == 3);
-
-  static constexpr int X{0}, Y{1}, Z{2};
 
  public:
   using Real = Scalar;
