@@ -5,6 +5,7 @@
 #include <concepts>
 
 #include "mini/lagrange/cell.hpp"
+#include "mini/gauss/element.hpp"
 #include "mini/gauss/function.hpp"
 
 namespace mini {
@@ -17,16 +18,15 @@ namespace gauss {
  */
 template <std::floating_point Scalar>
 class Cell {
-  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
-  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using Lagrange = lagrange::Cell<Scalar>;
 
  public:
+  using Lagrange = lagrange::Cell<Scalar>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
   using Jacobian = typename Lagrange::Jacobian;
 
+  virtual ~Cell() noexcept = default;
   virtual int CountQuadraturePoints() const = 0;
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
@@ -52,7 +52,7 @@ class Cell {
     return lagrange().LocalToGlobal(x_local, y_local, z_local);
   }
   GlobalCoord LocalToGlobal(const LocalCoord &xyz) const {
-    return LocalToGlobal(xyz[0], xyz[1], xyz[2]);
+    return LocalToGlobal(xyz[X], xyz[Y], xyz[Z]);
   }
 
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
@@ -60,7 +60,7 @@ class Cell {
     return lagrange().LocalToJacobian(x_local, y_local, z_local);
   }
   Jacobian LocalToJacobian(const LocalCoord &xyz) const {
-    return LocalToJacobian(xyz[0], xyz[1], xyz[2]);
+    return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 
   LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
@@ -68,7 +68,7 @@ class Cell {
     return lagrange().GlobalToLocal(x_global, y_global, z_global);
   }
   LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
-    return GlobalToLocal(xyz[0], xyz[1], xyz[2]);
+    return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
 
   static constexpr int CellDim() {
@@ -77,8 +77,6 @@ class Cell {
   static constexpr int PhysDim() {
     return 3;
   }
-
-  virtual ~Cell() noexcept = default;
 };
 
 }  // namespace gauss

@@ -25,30 +25,16 @@ namespace gauss {
  */
 template <std::floating_point Scalar, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {
-  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
-  using Mat1x8 = algebra::Matrix<Scalar, 1, 8>;
-  using Mat8x1 = algebra::Matrix<Scalar, 8, 1>;
-  using Mat3x8 = algebra::Matrix<Scalar, 3, 8>;
-  using Mat8x3 = algebra::Matrix<Scalar, 8, 3>;
-  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-
-  using Arr1x8 = algebra::Array<Scalar, 1, 8>;
-  using Arr8x1 = algebra::Array<Scalar, 8, 1>;
-  using Arr3x8 = algebra::Array<Scalar, 3, 8>;
-  using Arr8x3 = algebra::Array<Scalar, 8, 3>;
-
   using GaussX = GaussLegendre<Scalar, Qx>;
   using GaussY = GaussLegendre<Scalar, Qy>;
   using GaussZ = GaussLegendre<Scalar, Qz>;
 
-  using Base = Cell<Scalar>;
-  using Lagrange = lagrange::Hexahedron<Scalar>;
-
  public:
-  using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
-  using typename Base::Jacobian;
+  using Lagrange = lagrange::Hexahedron<Scalar>;
+  using Real = typename Lagrange::Real;
+  using LocalCoord = typename Lagrange::LocalCoord;
+  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Jacobian = typename Lagrange::Jacobian;
 
  private:
   static const std::array<LocalCoord, Qx * Qy * Qz> local_coords_;
@@ -68,11 +54,10 @@ class Hexahedron : public Cell<Scalar> {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int i = 0; i < n; ++i) {
-      const Base *const_this = this;
-      auto det_j = const_this->LocalToJacobian(GetLocalCoord(i)).determinant();
+      auto det_j = lagrange().LocalToJacobian(GetLocalCoord(i)).determinant();
       global_weights_[i] = local_weights_[i] * det_j;
       volume_ += global_weights_[i];
-      global_coords_[i] = const_this->LocalToGlobal(GetLocalCoord(i));
+      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
     }
   }
   static constexpr auto BuildLocalCoords() {

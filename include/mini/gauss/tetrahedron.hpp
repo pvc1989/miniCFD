@@ -24,26 +24,12 @@ namespace gauss {
  */
 template <std::floating_point Scalar, int kPoints>
 class Tetrahedron : public Cell<Scalar> {
-  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
-  using Mat1x4 = algebra::Matrix<Scalar, 1, 4>;
-  using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
-  using Mat3x4 = algebra::Matrix<Scalar, 3, 4>;
-  using Mat4x3 = algebra::Matrix<Scalar, 4, 3>;
-  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-
-  using Arr1x4 = algebra::Array<Scalar, 1, 4>;
-  using Arr4x1 = algebra::Array<Scalar, 4, 1>;
-  using Arr3x4 = algebra::Array<Scalar, 3, 4>;
-  using Arr4x3 = algebra::Array<Scalar, 4, 3>;
-
-  using Base = Cell<Scalar>;
-  using Lagrange = lagrange::Tetrahedron<Scalar>;
-
  public:
-  using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
-  using typename Base::Jacobian;
+  using Lagrange = lagrange::Tetrahedron<Scalar>;
+  using Real = typename Lagrange::Real;
+  using LocalCoord = typename Lagrange::LocalCoord;
+  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Jacobian = typename Lagrange::Jacobian;
 
  private:
   static const std::array<LocalCoord, kPoints> local_coords_;
@@ -63,10 +49,10 @@ class Tetrahedron : public Cell<Scalar> {
     int n = CountQuadraturePoints();
     volume_ = 0.0;
     for (int q = 0; q < n; ++q) {
-      auto det_j = lagrange_->LocalToJacobian(GetLocalCoord(q)).determinant();
+      auto det_j = lagrange().LocalToJacobian(GetLocalCoord(q)).determinant();
       global_weights_[q] = local_weights_[q] * std::abs(det_j);
       volume_ += global_weights_[q];
-      global_coords_[q] = lagrange_->LocalToGlobal(GetLocalCoord(q));
+      global_coords_[q] = lagrange().LocalToGlobal(GetLocalCoord(q));
     }
   }
 

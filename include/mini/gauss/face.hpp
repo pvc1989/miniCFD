@@ -4,6 +4,7 @@
 
 #include <concepts>
 
+#include "mini/gauss/element.hpp"
 #include "mini/gauss/function.hpp"
 
 namespace mini {
