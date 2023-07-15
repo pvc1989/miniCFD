@@ -9,8 +9,8 @@
 #include <cstring>
 #include <type_traits>
 
-#include "mini/algebra/eigen.hpp"
 #include "mini/gauss/face.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 
 namespace mini {
 namespace gauss {
@@ -25,89 +25,42 @@ namespace gauss {
 template <std::floating_point Scalar, int kDimensions, int kPoints>
 class Triangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
-  using Arr1x3 = algebra::Array<Scalar, 1, 3>;
-  using Arr3x1 = algebra::Array<Scalar, 3, 1>;
-  using Arr3x2 = algebra::Array<Scalar, 3, 2>;
-
-  using MatDx3 = algebra::Matrix<Scalar, D, 3>;
-  using MatDx2 = algebra::Matrix<Scalar, D, 2>;
-  using MatDx1 = algebra::Matrix<Scalar, D, 1>;
-  using MatDxD = algebra::Matrix<Scalar, D, D>;
-  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using Mat3x2 = algebra::Matrix<Scalar, 3, 2>;
-  using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
 
  public:
-  using Real = Scalar;
-  using LocalCoord = Mat2x1;
-  using GlobalCoord = MatDx1;
+  using Lagrange = lagrange::Quadrangle<Scalar, kDimensions>;
+  using Real = typename Lagrange::Real;
+  using LocalCoord = typename Lagrange::LocalCoord;
+  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Jacobian = typename Lagrange::Jacobian;
+  using Frame = typename Lagrange::Frame;
 
  private:
-  static const std::array<Scalar, kPoints> local_weights_;
   static const std::array<LocalCoord, kPoints> local_coords_;
-  std::array<GlobalCoord, 3> xyz_global_Dx3_;
-  std::array<Scalar, kPoints> global_weights_;
+  static const std::array<Scalar, kPoints> local_weights_;
   std::array<GlobalCoord, kPoints> global_coords_;
-  std::array<MatDxD, kPoints> normal_frames_;
+  std::array<Scalar, kPoints> global_weights_;
+  std::array<Frame, Qx * Qy> normal_frames_;
+  Lagrange const *lagrange_;
   Scalar area_;
 
  public:
-  int CountCorners() const override {
-    return 3;
-  }
-  const GlobalCoord &GetVertex(int i) const override {
-    return xyz_global_Dx3_[i];
-  }
   int CountQuadraturePoints() const override {
     return kPoints;
-  }
-  void BuildNormalFrames() {
-    static_assert(D == 3);
-    int n = CountQuadraturePoints();
-    for (int q = 0; q < n; ++q) {
-      MatDx2 dr = Jacobian(GetLocalCoord(q));
-      auto &frame = normal_frames_[q];
-      frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
-      frame.col(2) = dr.col(1).normalized();
-      frame.col(1) = frame.col(2).cross(frame.col(0));
-    }
   }
 
  private:
   void BuildQuadraturePoints() {
     int n = CountQuadraturePoints();
     area_ = 0.0;
-    for (int q = 0; q < n; ++q) {
-      auto mat_j = Jacobian(GetLocalCoord(q));
+    for (int i = 0; i < n; ++i) {
+      auto mat_j = lagrange().LocalToJacobian(GetLocalCoord(i));
       auto det_j = this->CellDim() < this->PhysDim()
           ? std::sqrt((mat_j.transpose() * mat_j).determinant())
           : mat_j.determinant();
-      global_weights_[q] = local_weights_[q] * std::abs(det_j);
-      area_ += global_weights_[q];
-      global_coords_[q] = LocalToGlobal(GetLocalCoord(q));
+      global_weights_[i] = local_weights_[i] * det_j;
+      area_ += global_weights_[i];
+      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
     }
-  }
-  static Mat3x1 shape_3x1(Mat2x1 const &xy_local) {
-    return shape_3x1(xy_local[0], xy_local[1]);
-  }
-  static Mat3x1 shape_3x1(Scalar x_local, Scalar y_local) {
-    Mat3x1 n_3x1{
-      x_local, y_local, 1.0 - x_local - y_local
-    };
-    return n_3x1;
-  }
-  static Mat3x2 diff_shape_local_3x2(Scalar x_local, Scalar y_local) {
-    Arr3x2 dn;
-    dn.col(0) << 1, 0, -1;
-    dn.col(1) << 0, 1, -1;
-    return dn;
-  }
-  MatDx2 Jacobian(Scalar x_local, Scalar y_local) const {
-    auto dn = diff_shape_local_3x2(x_local, y_local);
-    MatDx2 dr = xyz_global_Dx3_[0] * dn.row(0);
-    dr +=  xyz_global_Dx3_[1] * dn.row(1);
-    dr +=  xyz_global_Dx3_[2] * dn.row(2);
-    return dr;
   }
 
  public:
@@ -123,59 +76,27 @@ class Triangle : public Face<Scalar, kDimensions> {
   Scalar const &GetLocalWeight(int q) const override {
     return local_weights_[q];
   }
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
-    auto shape = shape_3x1(x_local, y_local);
-    GlobalCoord product = xyz_global_Dx3_[0] * shape[0];
-    product += xyz_global_Dx3_[1] * shape[1];
-    product += xyz_global_Dx3_[2] * shape[2];
-    return product;
-  }
-  GlobalCoord LocalToGlobal(LocalCoord const &xy_local) const override {
-    return LocalToGlobal(xy_local[0], xy_local[1]);
-  }
-  MatDx2 Jacobian(const LocalCoord &xy_local) const override {
-    return Jacobian(xy_local[0], xy_local[1]);
-  }
-  GlobalCoord center() const override {
-    GlobalCoord c = xyz_global_Dx3_[0];
-    c += xyz_global_Dx3_[1];
-    c += xyz_global_Dx3_[2];
-    c /= 3;
-    return c;
-  }
-  Scalar area() const override {
-    return area_;
-  }
-  const MatDxD &GetNormalFrame(int q) const override {
+  const Frame &GetNormalFrame(int q) const override {
     return normal_frames_[q];
+  }
+  Frame &GetNormalFrame(int i) override {
+    return normal_frames_[i];
   }
 
  public:
-  explicit Triangle(MatDx3 const &xyz_global) {
-    xyz_global_Dx3_[0] = xyz_global.col(0);
-    xyz_global_Dx3_[1] = xyz_global.col(1);
-    xyz_global_Dx3_[2] = xyz_global.col(2);
+  explicit Triangle(Lagrange const &lagrange)
+      : lagrange_(&lagrange) {
     BuildQuadraturePoints();
+    NormalFrameBuilder<Scalar, kDimensions>::Build(this);
   }
-  Triangle(MatDx1 const &p0, MatDx1 const &p1, MatDx1 const &p2) {
-    xyz_global_Dx3_[0] = p0;
-    xyz_global_Dx3_[1] = p1;
-    xyz_global_Dx3_[2] = p2;
-    BuildQuadraturePoints();
+
+  const Lagrange &lagrange() const override {
+    return *lagrange_;
   }
-  Triangle(std::initializer_list<MatDx1> il) {
-    assert(il.size() == 3);
-    auto p = il.begin();
-    xyz_global_Dx3_[0] = p[0];
-    xyz_global_Dx3_[1] = p[1];
-    xyz_global_Dx3_[2] = p[2];
-    BuildQuadraturePoints();
+
+  Scalar area() const override {
+    return area_;
   }
-  Triangle(const Triangle &) = default;
-  Triangle &operator=(const Triangle &) = default;
-  Triangle(Triangle &&) noexcept = default;
-  Triangle &operator=(Triangle &&) noexcept = default;
-  virtual ~Triangle() noexcept = default;
 };
 
 template <std::floating_point Scalar, int kDimensions, int kPoints>

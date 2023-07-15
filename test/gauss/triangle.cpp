@@ -4,78 +4,72 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/triangle.hpp"
+#include "mini/lagrange/triangle.hpp"
 
 #include "gtest/gtest.h"
 
-class TestTriangleGauss : public ::testing::Test {
- protected:
-  using Triangle2D = mini::gauss::Triangle<double, 2, 16>;
-  using Triangle3D = mini::gauss::Triangle<double, 3, 16>;
-  using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
-  using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
-  using Mat3x3 = mini::algebra::Matrix<double, 3, 3>;
-  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+class TestGaussTriangle : public ::testing::Test {
 };
-TEST_F(TestTriangleGauss, VirtualMethods) {
-  Mat2x3 xy_global_i;
-  xy_global_i.row(0) << 0, 2, 2;
-  xy_global_i.row(1) << 0, 0, 2;
-  auto tri = Triangle2D(xy_global_i);
-  EXPECT_EQ(tri.CountQuadraturePoints(), 16);
+TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
+  using Gauss = mini::gauss::Triangle<double, 2, 16>;
+  using Lagrange = mini::lagrange::Triangle3<double, 2>;
+  using Coord = typename Lagrange::GlobalCoord;
+  auto lagrange = Lagrange(
+    Coord(0, 0), Coord(2, 0), Coord(2, 2)
+  );
+  auto gauss = Gauss(lagrange);
+  EXPECT_EQ(gauss.CountQuadraturePoints(), 16);
+  static_assert(gauss.CellDim() == 2);
+  static_assert(gauss.PhysDim() == 2);
+  EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
+  EXPECT_EQ(gauss.center(), Mat2x1(4./3, 2./3));
+  EXPECT_EQ(gauss.LocalToGlobal(1, 0), Coord(0, 0));
+  EXPECT_EQ(gauss.LocalToGlobal(0, 1), Coord(2, 0));
+  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Coord(2, 2));
+  EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, gauss), 1.0);
+  EXPECT_DOUBLE_EQ(Integrate([](Coord const&){ return 2.0; }, gauss), 4.0);
+  auto f = [](Coord const& xy){ return xy[0]; };
+  auto g = [](Coord const& xy){ return xy[1]; };
+  auto h = [](Coord const& xy){ return xy[0] * xy[1]; };
+  EXPECT_DOUBLE_EQ(Innerprod(f, g, gauss), Integrate(h, gauss));
+  EXPECT_DOUBLE_EQ(Norm(f, gauss), std::sqrt(Innerprod(f, f, gauss)));
+  EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
 }
-TEST_F(TestTriangleGauss, In2dSpace) {
-  Mat2x3 xy_global_i;
-  xy_global_i.row(0) << 0, 2, 2;
-  xy_global_i.row(1) << 0, 0, 2;
-  auto tri = Triangle2D(xy_global_i);
-  static_assert(tri.CellDim() == 2);
-  static_assert(tri.PhysDim() == 2);
-  EXPECT_DOUBLE_EQ(tri.area(), 2.0);
-  EXPECT_EQ(tri.center(), Mat2x1(4./3, 2./3));
-  EXPECT_EQ(tri.LocalToGlobal(1, 0), Mat2x1(0, 0));
-  EXPECT_EQ(tri.LocalToGlobal(0, 1), Mat2x1(2, 0));
-  EXPECT_EQ(tri.LocalToGlobal(0, 0), Mat2x1(2, 2));
-  EXPECT_DOUBLE_EQ(Quadrature([](Mat2x1 const&){ return 2.0; }, tri), 1.0);
-  EXPECT_DOUBLE_EQ(Integrate([](Mat2x1 const&){ return 2.0; }, tri), 4.0);
-  auto f = [](Mat2x1 const& xy){ return xy[0]; };
-  auto g = [](Mat2x1 const& xy){ return xy[1]; };
-  auto h = [](Mat2x1 const& xy){ return xy[0] * xy[1]; };
-  EXPECT_DOUBLE_EQ(Innerprod(f, g, tri), Integrate(h, tri));
-  EXPECT_DOUBLE_EQ(Norm(f, tri), std::sqrt(Innerprod(f, f, tri)));
-  EXPECT_DOUBLE_EQ(Norm(g, tri), std::sqrt(Innerprod(g, g, tri)));
-}
-TEST_F(TestTriangleGauss, In3dSpace) {
-  Mat3x3 xyz_global_i;
-  xyz_global_i.row(0) << 0, 2, 2;
-  xyz_global_i.row(1) << 0, 0, 2;
-  xyz_global_i.row(2) << 2, 2, 2;
-  auto tri = Triangle3D(xyz_global_i);
-  static_assert(tri.CellDim() == 2);
-  static_assert(tri.PhysDim() == 3);
-  EXPECT_DOUBLE_EQ(tri.area(), 2.0);
-  EXPECT_EQ(tri.center(), Mat3x1(4./3, 2./3, 2.));
-  EXPECT_EQ(tri.LocalToGlobal(1, 0), Mat3x1(0, 0, 2));
-  EXPECT_EQ(tri.LocalToGlobal(0, 1), Mat3x1(2, 0, 2));
-  EXPECT_EQ(tri.LocalToGlobal(0, 0), Mat3x1(2, 2, 2));
+TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
+  using Gauss = mini::gauss::Triangle<double, 3, 16>;
+  using Lagrange = mini::lagrange::Triangle3<double, 3>;
+  using Local = typename Lagrange::LocalCoord;
+  using Global = typename Lagrange::GlobalCoord;
+  auto lagrange = Lagrange(
+    Global(0, 0, 2), Global(2, 0, 2), Global(2, 2, 2)
+  );
+  auto gauss = Gauss(lagrange);
+  static_assert(gauss.CellDim() == 2);
+  static_assert(gauss.PhysDim() == 3);
+  EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
+  EXPECT_EQ(gauss.center(), Global(4./3, 2./3, 2.));
+  EXPECT_EQ(gauss.LocalToGlobal(1, 0), Global(0, 0, 2));
+  EXPECT_EQ(gauss.LocalToGlobal(0, 1), Global(2, 0, 2));
+  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
   EXPECT_DOUBLE_EQ(
-      Quadrature([](Mat2x1 const&){ return 2.0; }, tri), 1.0);
+      Quadrature([](Mat2x1 const&){ return 2.0; }, gauss), 1.0);
   EXPECT_DOUBLE_EQ(
-      Integrate([](Mat3x1 const&){ return 2.0; }, tri), 4.0);
-  auto f = [](Mat3x1 const& xyz){ return xyz[0]; };
-  auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
-  auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
-  EXPECT_DOUBLE_EQ(Innerprod(f, g, tri), Integrate(h, tri));
-  EXPECT_DOUBLE_EQ(Norm(f, tri), std::sqrt(Innerprod(f, f, tri)));
-  EXPECT_DOUBLE_EQ(Norm(g, tri), std::sqrt(Innerprod(g, g, tri)));
+      Integrate([](Global const&){ return 2.0; }, gauss), 4.0);
+  auto f = [](Global const& xyz){ return xyz[0]; };
+  auto g = [](Global const& xyz){ return xyz[1]; };
+  auto h = [](Global const& xyz){ return xyz[0] * xyz[1]; };
+  EXPECT_DOUBLE_EQ(Innerprod(f, g, gauss), Integrate(h, gauss));
+  EXPECT_DOUBLE_EQ(Norm(f, gauss), std::sqrt(Innerprod(f, f, gauss)));
+  EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
   // test normal frames
-  tri.BuildNormalFrames();
-  for (int q = 0; q < tri.CountQuadraturePoints(); ++q) {
-    auto &frame = tri.GetNormalFrame(q);
+  gauss.BuildNormalFrames();
+  for (int q = 0; q < gauss.CountQuadraturePoints(); ++q) {
+    auto &frame = gauss.GetNormalFrame(q);
     auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
     EXPECT_EQ(nu, sigma.cross(pi));
     EXPECT_EQ(sigma, pi.cross(nu));
     EXPECT_EQ(pi, nu.cross(sigma));
-    EXPECT_EQ(nu, Mat3x1(0, 0, 1));
+    EXPECT_EQ(nu, Global(0, 0, 1));
   }
 }
 

@@ -9,6 +9,7 @@
 
 #include "mini/gauss/gauss.hpp"
 #include "mini/gauss/face.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 
 namespace mini {
 namespace gauss {
@@ -25,57 +26,29 @@ template <std::floating_point Scalar, int kDimensions, int Qx = 4, int Qy = 4>
 class Quadrangle : public Face<Scalar, kDimensions> {
   static constexpr int D = kDimensions;
 
-  using Arr1x4 = algebra::Array<Scalar, 1, 4>;
-  using Arr4x1 = algebra::Array<Scalar, 4, 1>;
-  using Arr4x2 = algebra::Array<Scalar, 4, 2>;
-
-  using MatDx4 = algebra::Matrix<Scalar, D, 4>;
-  using MatDx2 = algebra::Matrix<Scalar, D, 2>;
-  using MatDx1 = algebra::Matrix<Scalar, D, 1>;
-  using MatDxD = algebra::Matrix<Scalar, D, D>;
-  using Mat4x1 = algebra::Matrix<Scalar, 4, 1>;
-  using Mat4x2 = algebra::Matrix<Scalar, 4, 2>;
-  using Mat2x1 = algebra::Matrix<Scalar, 2, 1>;
-
   using GaussX = GaussLegendre<Scalar, Qx>;
   using GaussY = GaussLegendre<Scalar, Qy>;
 
  public:
-  using Real = Scalar;
-  using LocalCoord = Mat2x1;
-  using GlobalCoord = MatDx1;
+  using Lagrange = lagrange::Quadrangle<Scalar, kDimensions>;
+  using Real = typename Lagrange::Real;
+  using LocalCoord = typename Lagrange::LocalCoord;
+  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Jacobian = typename Lagrange::Jacobian;
+  using Frame = typename Lagrange::Frame;
 
  private:
-  static const Arr1x4 x_local_i_;
-  static const Arr1x4 y_local_i_;
-  static const std::array<Scalar, Qx * Qy> local_weights_;
   static const std::array<LocalCoord, Qx * Qy> local_coords_;
-  std::array<GlobalCoord, 4> xyz_global_Dx4_;
-  std::array<Scalar, Qx * Qy> global_weights_;
+  static const std::array<Scalar, Qx * Qy> local_weights_;
   std::array<GlobalCoord, Qx * Qy> global_coords_;
-  std::array<MatDxD, Qx * Qy> normal_frames_;
+  std::array<Scalar, Qx * Qy> global_weights_;
+  std::array<Frame, Qx * Qy> normal_frames_;
+  Lagrange const *lagrange_;
   Scalar area_;
 
  public:
-  int CountCorners() const override {
-    return 4;
-  }
-  const GlobalCoord &GetVertex(int i) const override {
-    return xyz_global_Dx4_[i];
-  }
   int CountQuadraturePoints() const override {
     return Qx * Qy;
-  }
-  void BuildNormalFrames() {
-    static_assert(D == 3);
-    int n = CountQuadraturePoints();
-    for (int q = 0; q < n; ++q) {
-      MatDx2 dr = Jacobian(GetLocalCoord(q));
-      auto &frame = normal_frames_[q];
-      frame.col(0) = dr.col(0).cross(dr.col(1)).normalized();
-      frame.col(2) = dr.col(1).normalized();
-      frame.col(1) = frame.col(2).cross(frame.col(0));
-    }
   }
 
  private:
@@ -83,13 +56,13 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     int n = CountQuadraturePoints();
     area_ = 0.0;
     for (int i = 0; i < n; ++i) {
-      auto mat_j = Jacobian(GetLocalCoord(i));
+      auto mat_j = lagrange().LocalToJacobian(GetLocalCoord(i));
       auto det_j = this->CellDim() < this->PhysDim()
           ? std::sqrt((mat_j.transpose() * mat_j).determinant())
           : mat_j.determinant();
       global_weights_[i] = local_weights_[i] * det_j;
       area_ += global_weights_[i];
-      global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
+      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
     }
   }
   static constexpr auto BuildLocalCoords() {
@@ -114,37 +87,6 @@ class Quadrangle : public Face<Scalar, kDimensions> {
     }
     return weights;
   }
-  static Mat4x1 shape_4x1(Mat2x1 xy_local) {
-    Arr1x4 n_1x4;
-    n_1x4  = (1 + x_local_i_ * xy_local[0]);
-    n_1x4 *= (1 + y_local_i_ * xy_local[1]);
-    n_1x4 /= 4.0;
-    return n_1x4.transpose();
-  }
-  static Mat4x1 shape_4x1(Scalar x, Scalar y) {
-    Arr1x4 n_1x4;
-    n_1x4  = (1 + x_local_i_ * x);
-    n_1x4 *= (1 + y_local_i_ * y);
-    n_1x4 /= 4.0;
-    return n_1x4.transpose();
-  }
-  static Mat4x2 diff_shape_local_4x2(Scalar x_local, Scalar y_local) {
-    Arr4x2 dn;
-    Arr4x1 factor_x = x_local_i_.transpose() * x_local; factor_x += 1;
-    Arr4x1 factor_y = y_local_i_.transpose() * y_local; factor_y += 1;
-    dn.col(0) << x_local_i_.transpose() * factor_y;
-    dn.col(1) << y_local_i_.transpose() * factor_x;
-    dn /= 4.0;
-    return dn;
-  }
-  MatDx2 Jacobian(Scalar x_local, Scalar y_local) const {
-    auto dn = diff_shape_local_4x2(x_local, y_local);
-    MatDx2 dr = xyz_global_Dx4_[0] * dn.row(0);
-    dr +=  xyz_global_Dx4_[1] * dn.row(1);
-    dr +=  xyz_global_Dx4_[2] * dn.row(2);
-    dr +=  xyz_global_Dx4_[3] * dn.row(3);
-    return dr;
-  }
 
  public:
   GlobalCoord const &GetGlobalCoord(int i) const override {
@@ -159,69 +101,28 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   Scalar const &GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
-  GlobalCoord LocalToGlobal(const Mat2x1 &xy_local) const override {
-    return LocalToGlobal(xy_local[0], xy_local[1]);
+  const Frame &GetNormalFrame(int i) const override {
+    return normal_frames_[i];
   }
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
-    auto shape = shape_4x1(x_local, y_local);
-    GlobalCoord product = xyz_global_Dx4_[0] * shape[0];
-    product += xyz_global_Dx4_[1] * shape[1];
-    product += xyz_global_Dx4_[2] * shape[2];
-    product += xyz_global_Dx4_[3] * shape[3];
-    return product;
-  }
-  MatDx2 Jacobian(const LocalCoord &xy_local) const override {
-    return Jacobian(xy_local[0], xy_local[1]);
-  }
-  GlobalCoord center() const override {
-    GlobalCoord c = xyz_global_Dx4_[0];
-    c += xyz_global_Dx4_[1];
-    c += xyz_global_Dx4_[2];
-    c += xyz_global_Dx4_[3];
-    c /= 4;
-    return c;
-  }
-  Scalar area() const override {
-    return area_;
-  }
-  const MatDxD &GetNormalFrame(int i) const override {
+  Frame &GetNormalFrame(int i) override {
     return normal_frames_[i];
   }
 
  public:
-  explicit Quadrangle(MatDx4 const &xyz_global) {
-    xyz_global_Dx4_[0] = xyz_global.col(0);
-    xyz_global_Dx4_[1] = xyz_global.col(1);
-    xyz_global_Dx4_[2] = xyz_global.col(2);
-    xyz_global_Dx4_[3] = xyz_global.col(3);
+  explicit Quadrangle(Lagrange const &lagrange)
+      : lagrange_(&lagrange) {
     BuildQuadraturePoints();
+    NormalFrameBuilder<Scalar, kDimensions>::Build(this);
   }
-  Quadrangle(GlobalCoord const &p0, GlobalCoord const &p1,
-      GlobalCoord const &p2, GlobalCoord const &p3) {
-    xyz_global_Dx4_[0] = p0;
-    xyz_global_Dx4_[1] = p1;
-    xyz_global_Dx4_[2] = p2;
-    xyz_global_Dx4_[3] = p3;
-    BuildQuadraturePoints();
+
+  const Lagrange &lagrange() const override {
+    return *lagrange_;
   }
-  Quadrangle(std::initializer_list<GlobalCoord> il) {
-    assert(il.size() == 4);
-    auto p = il.begin();
-    xyz_global_Dx4_[0] = p[0];
-    xyz_global_Dx4_[1] = p[1];
-    xyz_global_Dx4_[2] = p[2];
-    xyz_global_Dx4_[3] = p[3];
-    BuildQuadraturePoints();
+
+  Scalar area() const override {
+    return area_;
   }
 };
-
-template <std::floating_point Scalar, int D, int Qx, int Qy>
-typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
-Quadrangle<Scalar, D, Qx, Qy>::x_local_i_ = {-1, +1, +1, -1};
-
-template <std::floating_point Scalar, int D, int Qx, int Qy>
-typename Quadrangle<Scalar, D, Qx, Qy>::Arr1x4 const
-Quadrangle<Scalar, D, Qx, Qy>::y_local_i_ = {-1, -1, +1, +1};
 
 template <std::floating_point Scalar, int D, int Qx, int Qy>
 std::array<typename Quadrangle<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
