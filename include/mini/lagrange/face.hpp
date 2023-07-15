@@ -7,19 +7,18 @@
 #include <concepts>
 #include <type_traits>
 
-#include "mini/algebra/eigen.hpp"
 #include "mini/lagrange/element.hpp"
 
 namespace mini {
 namespace lagrange {
 
-template <std::floating_point Scalar, int kDimensions>
+template <std::floating_point Scalar, int kPhysDim>
 class Face;
 
-template <std::floating_point Scalar, int kDimensions>
+template <std::floating_point Scalar, int kPhysDim>
 struct NormalFrameBuilder {
-  using Frame = typename Face<Scalar, kDimensions>::Frame;
-  static Frame Build(const Face<Scalar, kDimensions> &face,
+  using Frame = typename Face<Scalar, kPhysDim>::Frame;
+  static Frame Build(const Face<Scalar, kPhysDim> &face,
       Scalar x_local, Scalar y_local) {
     return Frame();
   }
@@ -29,73 +28,62 @@ struct NormalFrameBuilder {
  * @brief Abstract coordinate map on surface elements.
  * 
  * @tparam Scalar  Type of scalar variables.
- * @tparam kDimensions  Dimension of the physical space.
+ * @tparam kPhysDim  Dimension of the physical space.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Face {
-  static constexpr int D = kDimensions;
+template <std::floating_point Scalar, int kPhysDim>
+class Face : public Element<Scalar, kPhysDim, 2> {
+  static constexpr int D = kPhysDim;
   static_assert(D == 2 || D == 3);
 
+  using Base = Element<Scalar, kPhysDim, 2>;
+
  public:
-  using Real = Scalar;
-  using LocalCoord = algebra::Matrix<Scalar, 2, 1>;
-  using GlobalCoord = algebra::Matrix<Scalar, D, 1>;
-  using Jacobian = algebra::Matrix<Scalar, D, 2>;
+  using Real = typename Base::Real;
+  using LocalCoord = typename Base::LocalCoord;
+  using GlobalCoord = typename Base::GlobalCoord;
+  using Jacobian = typename Base::Jacobian;
   using Frame = std::conditional_t<D == 3, std::array<GlobalCoord, 3>, int>;
 
-  virtual ~Face() noexcept = default;
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar) const = 0;
   virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar) const = 0;
-  virtual int CountCorners() const = 0;
-  virtual int CountNodes() const = 0;
-  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
-  virtual const GlobalCoord &center() const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xy)
-      const {
+      const override {
     return LocalToShapeFunctions(xy[X], xy[Y]);
   }
   std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xy)
-      const {
+      const override {
     return LocalToShapeGradients(xy[X], xy[Y]);
   }
   Frame LocalToNormalFrame(Scalar x_local, Scalar y_local) const {
-    return NormalFrameBuilder<Scalar, kDimensions>
+    return NormalFrameBuilder<Scalar, kPhysDim>
         ::Build(*this, x_local, y_local);
   }
   Frame LocalToNormalFrame(const LocalCoord &xy) const {
     return LocalToNormalFrame(xy[X], xy[Y]);
   }
 
-  static constexpr int CellDim() {
-    return 2;
-  }
-  static constexpr int PhysDim() {
-    return D;
-  }
-
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
     auto shapes = LocalToShapeFunctions(x_local, y_local);
-    GlobalCoord sum = GetGlobalCoord(0) * shapes[0];
-    for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoord(i) * shapes[i];
+    GlobalCoord sum = this->GetGlobalCoord(0) * shapes[0];
+    for (int i = 1, n = this->CountNodes(); i < n; ++i) {
+      sum += this->GetGlobalCoord(i) * shapes[i];
     }
     return sum;
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &xy) const {
+  GlobalCoord LocalToGlobal(const LocalCoord &xy) const override {
     return LocalToGlobal(xy[X], xy[Y]);
   }
 
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local) const {
     auto shapes = LocalToShapeGradients(x_local, y_local);
-    Jacobian sum = GetGlobalCoord(0) * shapes[0].transpose();
-    for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoord(i) * shapes[i].transpose();
+    Jacobian sum = this->GetGlobalCoord(0) * shapes[0].transpose();
+    for (int i = 1, n = this->CountNodes(); i < n; ++i) {
+      sum += this->GetGlobalCoord(i) * shapes[i].transpose();
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const LocalCoord &xy) const {
+  Jacobian LocalToJacobian(const LocalCoord &xy) const override {
     return LocalToJacobian(xy[X], xy[Y]);
   }
 

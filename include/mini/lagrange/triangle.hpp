@@ -21,9 +21,9 @@ namespace lagrange {
  * 
  * @tparam Scalar  Type of scalar variables.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Triangle : public Face<Scalar, kDimensions> {
-  using Base = Face<Scalar, kDimensions>;
+template <std::floating_point Scalar, int kPhysDim>
+class Triangle : public Face<Scalar, kPhysDim> {
+  using Base = Face<Scalar, kPhysDim>;
 
  public:
   using typename Base::Real;
@@ -51,9 +51,9 @@ class Triangle : public Face<Scalar, kDimensions> {
  * 
  * @tparam Scalar  Type of scalar variables.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Triangle3 : public Triangle<Scalar, kDimensions> {
-  using Base = Triangle<Scalar, kDimensions>;
+template <std::floating_point Scalar, int kPhysDim>
+class Triangle3 : public Triangle<Scalar, kPhysDim> {
+  using Base = Triangle<Scalar, kPhysDim>;
 
  public:
   using typename Base::Real;
@@ -112,9 +112,9 @@ class Triangle3 : public Triangle<Scalar, kDimensions> {
   }
 };
 // initialization of static const members:
-template <std::floating_point Scalar, int kDimensions>
-const std::array<typename Triangle3<Scalar, kDimensions>::LocalCoord, 3>
-Triangle3<Scalar, kDimensions>::local_coords_{
+template <std::floating_point Scalar, int kPhysDim>
+const std::array<typename Triangle3<Scalar, kPhysDim>::LocalCoord, 3>
+Triangle3<Scalar, kPhysDim>::local_coords_{
   Triangle3::LocalCoord(1, 0), Triangle3::LocalCoord(0, 1),
   Triangle3::LocalCoord(0, 0)
 };

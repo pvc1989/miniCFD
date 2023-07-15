@@ -19,15 +19,15 @@ namespace gauss {
  * @brief Numerical integrators on triangular elements.
  * 
  * @tparam Scalar  Type of scalar variables.
- * @tparam kDimensions  Dimension of the physical space.
+ * @tparam kPhysDim  Dimension of the physical space.
  * @tparam kPoints  Number of qudrature points.
  */
-template <std::floating_point Scalar, int kDimensions, int kPoints>
-class Triangle : public Face<Scalar, kDimensions> {
-  static constexpr int D = kDimensions;
+template <std::floating_point Scalar, int kPhysDim, int kPoints>
+class Triangle : public Face<Scalar, kPhysDim> {
+  static constexpr int D = kPhysDim;
 
  public:
-  using Lagrange = lagrange::Quadrangle<Scalar, kDimensions>;
+  using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
@@ -48,34 +48,26 @@ class Triangle : public Face<Scalar, kDimensions> {
     return kPoints;
   }
 
- private:
-  void BuildQuadraturePoints() {
-    int n = CountQuadraturePoints();
-    area_ = 0.0;
-    for (int i = 0; i < n; ++i) {
-      auto mat_j = lagrange().LocalToJacobian(GetLocalCoord(i));
-      auto det_j = this->CellDim() < this->PhysDim()
-          ? std::sqrt((mat_j.transpose() * mat_j).determinant())
-          : mat_j.determinant();
-      global_weights_[i] = local_weights_[i] * det_j;
-      area_ += global_weights_[i];
-      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
-    }
+ public:
+  const GlobalCoord &GetGlobalCoord(int i) const override {
+    return global_coords_[i];
+  }
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
+  }
+  const Scalar &GetGlobalWeight(int i) const override {
+    return global_weights_[i];
+  }
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
+  }
+  const LocalCoord &GetLocalCoord(int i) const override {
+    return local_coords_[i];
+  }
+  const Scalar &GetLocalWeight(int i) const override {
+    return local_weights_[i];
   }
 
- public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
-    return global_coords_[q];
-  }
-  Scalar const &GetGlobalWeight(int q) const override {
-    return global_weights_[q];
-  }
-  LocalCoord const &GetLocalCoord(int q) const override {
-    return local_coords_[q];
-  }
-  Scalar const &GetLocalWeight(int q) const override {
-    return local_weights_[q];
-  }
   const Frame &GetNormalFrame(int q) const override {
     return normal_frames_[q];
   }
@@ -86,8 +78,8 @@ class Triangle : public Face<Scalar, kDimensions> {
  public:
   explicit Triangle(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    BuildQuadraturePoints();
-    NormalFrameBuilder<Scalar, kDimensions>::Build(this);
+    area_ = BuildQuadraturePoints();
+    NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 
   const Lagrange &lagrange() const override {
@@ -99,25 +91,25 @@ class Triangle : public Face<Scalar, kDimensions> {
   }
 };
 
-template <std::floating_point Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kPhysDim, int kPoints>
 class TriangleBuilder;
 
-template <std::floating_point Scalar, int kDimensions, int kPoints>
-std::array<typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord,
+template <std::floating_point Scalar, int kPhysDim, int kPoints>
+std::array<typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord,
     kPoints> const
-Triangle<Scalar, kDimensions, kPoints>::local_coords_
-    = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalCoords();
+Triangle<Scalar, kPhysDim, kPoints>::local_coords_
+    = TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalCoords();
 
-template <std::floating_point Scalar, int kDimensions, int kPoints>
+template <std::floating_point Scalar, int kPhysDim, int kPoints>
 const std::array<Scalar, kPoints>
-Triangle<Scalar, kDimensions, kPoints>::local_weights_
-    = TriangleBuilder<Scalar, kDimensions, kPoints>::BuildLocalWeights();
+Triangle<Scalar, kPhysDim, kPoints>::local_weights_
+    = TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalWeights();
 
-template <std::floating_point Scalar, int kDimensions>
-class TriangleBuilder<Scalar, kDimensions, 1> {
+template <std::floating_point Scalar, int kPhysDim>
+class TriangleBuilder<Scalar, kPhysDim, 1> {
   static constexpr int kPoints = 1;
   using LocalCoord =
-      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -132,11 +124,11 @@ class TriangleBuilder<Scalar, kDimensions, 1> {
   }
 };
 
-template <std::floating_point Scalar, int kDimensions>
-class TriangleBuilder<Scalar, kDimensions, 3> {
+template <std::floating_point Scalar, int kPhysDim>
+class TriangleBuilder<Scalar, kPhysDim, 3> {
   static constexpr int kPoints = 3;
   using LocalCoord =
-      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -163,11 +155,11 @@ class TriangleBuilder<Scalar, kDimensions, 3> {
   }
 };
 
-template <std::floating_point Scalar, int kDimensions>
-class TriangleBuilder<Scalar, kDimensions, 6> {
+template <std::floating_point Scalar, int kPhysDim>
+class TriangleBuilder<Scalar, kPhysDim, 6> {
   static constexpr int kPoints = 6;
   using LocalCoord =
-      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -198,11 +190,11 @@ class TriangleBuilder<Scalar, kDimensions, 6> {
   }
 };
 
-template <std::floating_point Scalar, int kDimensions>
-class TriangleBuilder<Scalar, kDimensions, 12> {
+template <std::floating_point Scalar, int kPhysDim>
+class TriangleBuilder<Scalar, kPhysDim, 12> {
   static constexpr int kPoints = 12;
   using LocalCoord =
-      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {
@@ -246,11 +238,11 @@ class TriangleBuilder<Scalar, kDimensions, 12> {
   }
 };
 
-template <std::floating_point Scalar, int kDimensions>
-class TriangleBuilder<Scalar, kDimensions, 16> {
+template <std::floating_point Scalar, int kPhysDim>
+class TriangleBuilder<Scalar, kPhysDim, 16> {
   static constexpr int kPoints = 16;
   using LocalCoord =
-      typename Triangle<Scalar, kDimensions, kPoints>::LocalCoord;
+      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
 
  public:
   static constexpr auto BuildLocalCoords() {

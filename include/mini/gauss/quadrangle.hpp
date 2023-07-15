@@ -18,19 +18,19 @@ namespace gauss {
  * @brief Numerical integrators on quadrilateral elements.
  * 
  * @tparam Scalar  Type of scalar variables.
- * @tparam kDimensions  Dimension of the physical space.
+ * @tparam kPhysDim  Dimension of the physical space.
  * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
  * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
  */
-template <std::floating_point Scalar, int kDimensions, int Qx = 4, int Qy = 4>
-class Quadrangle : public Face<Scalar, kDimensions> {
-  static constexpr int D = kDimensions;
+template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4>
+class Quadrangle : public Face<Scalar, kPhysDim> {
+  static constexpr int D = kPhysDim;
 
   using GaussX = GaussLegendre<Scalar, Qx>;
   using GaussY = GaussLegendre<Scalar, Qy>;
 
  public:
-  using Lagrange = lagrange::Quadrangle<Scalar, kDimensions>;
+  using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
@@ -52,19 +52,6 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   }
 
  private:
-  void BuildQuadraturePoints() {
-    int n = CountQuadraturePoints();
-    area_ = 0.0;
-    for (int i = 0; i < n; ++i) {
-      auto mat_j = lagrange().LocalToJacobian(GetLocalCoord(i));
-      auto det_j = this->CellDim() < this->PhysDim()
-          ? std::sqrt((mat_j.transpose() * mat_j).determinant())
-          : mat_j.determinant();
-      global_weights_[i] = local_weights_[i] * det_j;
-      area_ += global_weights_[i];
-      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
-    }
-  }
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, Qx * Qy> points;
     int k = 0;
@@ -89,18 +76,25 @@ class Quadrangle : public Face<Scalar, kDimensions> {
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int i) const override {
+  const GlobalCoord &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
-  Scalar const &GetGlobalWeight(int i) const override {
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
+  }
+  const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  LocalCoord const &GetLocalCoord(int i) const override {
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
+  }
+  const LocalCoord &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
-  Scalar const &GetLocalWeight(int i) const override {
+  const Scalar &GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
+
   const Frame &GetNormalFrame(int i) const override {
     return normal_frames_[i];
   }
@@ -111,8 +105,8 @@ class Quadrangle : public Face<Scalar, kDimensions> {
  public:
   explicit Quadrangle(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    BuildQuadraturePoints();
-    NormalFrameBuilder<Scalar, kDimensions>::Build(this);
+    area_ = BuildQuadraturePoints();
+    NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 
   const Lagrange &lagrange() const override {

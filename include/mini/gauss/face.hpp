@@ -11,12 +11,12 @@
 namespace mini {
 namespace gauss {
 
-template <std::floating_point Scalar, int kDimensions>
+template <std::floating_point Scalar, int kPhysDim>
 class Face;
 
-template <std::floating_point Scalar, int kDimensions>
+template <std::floating_point Scalar, int kPhysDim>
 struct NormalFrameBuilder {
-  static void Build(Face<Scalar, kDimensions> *face) {
+  static void Build(Face<Scalar, kPhysDim> *face) {
   }
 };
 
@@ -24,15 +24,15 @@ struct NormalFrameBuilder {
  * @brief Abstract numerical integrators on surface elements.
  * 
  * @tparam Scalar  Type of scalar variables.
- * @tparam kDimensions  Dimension of the physical space.
+ * @tparam kPhysDim  Dimension of the physical space.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Face {
-  static constexpr int D = kDimensions;
+template <std::floating_point Scalar, int kPhysDim>
+class Face : public Element<Scalar, kPhysDim, 2> {
+  static constexpr int D = kPhysDim;
   static_assert(D == 2 || D == 3);
 
  public:
-  using Lagrange = lagrange::Face<Scalar, kDimensions>;
+  using Lagrange = lagrange::Face<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
@@ -40,49 +40,17 @@ class Face {
   using Frame = typename Lagrange::Frame;
 
   virtual ~Face() noexcept = default;
-  virtual int CountQuadraturePoints() const = 0;
-  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
-  virtual Real const &GetLocalWeight(int i) const = 0;
-  virtual Real const &GetGlobalWeight(int i) const = 0;
   virtual const Frame &GetNormalFrame(int i) const = 0;
   virtual Frame &GetNormalFrame(int i) = 0;
   virtual Scalar area() const = 0;
-
-  virtual const Lagrange &lagrange() const = 0;
-
-  int CountCorners() const {
-    return lagrange().CountCorners();
-  }
-  int CountNodes() const {
-    return lagrange().CountNodes();
-  }
-
-  const GlobalCoord &center() const {
-    return lagrange().center();
-  }
 
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local)
       const {
     return lagrange().LocalToGlobal(x_local, y_local);
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &xy) const {
-    return LocalToGlobal(xy[X], xy[Y]);
-  }
-
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local)
       const {
     return lagrange().LocalToJacobian(x_local, y_local);
-  }
-  Jacobian LocalToJacobian(const LocalCoord &xy) const {
-    return LocalToJacobian(xy[X], xy[Y]);
-  }
-
-  static constexpr int CellDim() {
-    return 2;
-  }
-  static constexpr int PhysDim() {
-    return D;
   }
 };
 

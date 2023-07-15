@@ -21,9 +21,9 @@ namespace lagrange {
  * 
  * @tparam Scalar  Type of scalar variables.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Quadrangle : public Face<Scalar, kDimensions> {
-  using Base = Face<Scalar, kDimensions>;
+template <std::floating_point Scalar, int kPhysDim>
+class Quadrangle : public Face<Scalar, kPhysDim> {
+  using Base = Face<Scalar, kPhysDim>;
 
  public:
   using typename Base::Real;
@@ -51,9 +51,9 @@ class Quadrangle : public Face<Scalar, kDimensions> {
  * 
  * @tparam Scalar  Type of scalar variables.
  */
-template <std::floating_point Scalar, int kDimensions>
-class Quadrangle4 : public Quadrangle<Scalar, kDimensions> {
-  using Base = Quadrangle<Scalar, kDimensions>;
+template <std::floating_point Scalar, int kPhysDim>
+class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
+  using Base = Quadrangle<Scalar, kPhysDim>;
 
  public:
   using typename Base::Real;
@@ -127,9 +127,9 @@ class Quadrangle4 : public Quadrangle<Scalar, kDimensions> {
   }
 };
 // initialization of static const members:
-template <std::floating_point Scalar, int kDimensions>
-const std::array<typename Quadrangle4<Scalar, kDimensions>::LocalCoord, 4>
-Quadrangle4<Scalar, kDimensions>::local_coords_{
+template <std::floating_point Scalar, int kPhysDim>
+const std::array<typename Quadrangle4<Scalar, kPhysDim>::LocalCoord, 4>
+Quadrangle4<Scalar, kPhysDim>::local_coords_{
   Quadrangle4::LocalCoord(-1, -1), Quadrangle4::LocalCoord(+1, -1),
   Quadrangle4::LocalCoord(+1, +1), Quadrangle4::LocalCoord(-1, +1)
 };

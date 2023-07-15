@@ -44,36 +44,30 @@ class Tetrahedron : public Cell<Scalar> {
     return kPoints;
   }
 
- private:
-  void BuildQuadraturePoints() {
-    int n = CountQuadraturePoints();
-    volume_ = 0.0;
-    for (int q = 0; q < n; ++q) {
-      auto det_j = lagrange().LocalToJacobian(GetLocalCoord(q)).determinant();
-      global_weights_[q] = local_weights_[q] * std::abs(det_j);
-      volume_ += global_weights_[q];
-      global_coords_[q] = lagrange().LocalToGlobal(GetLocalCoord(q));
-    }
-  }
-
  public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
-    return global_coords_[q];
+  const GlobalCoord &GetGlobalCoord(int i) const override {
+    return global_coords_[i];
   }
-  Scalar const &GetGlobalWeight(int q) const override {
-    return global_weights_[q];
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
   }
-  LocalCoord const &GetLocalCoord(int q) const override {
-    return local_coords_[q];
+  const Scalar &GetGlobalWeight(int i) const override {
+    return global_weights_[i];
   }
-  Scalar const &GetLocalWeight(int q) const override {
-    return local_weights_[q];
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
+  }
+  const LocalCoord &GetLocalCoord(int i) const override {
+    return local_coords_[i];
+  }
+  const Scalar &GetLocalWeight(int i) const override {
+    return local_weights_[i];
   }
 
  public:
   explicit Tetrahedron(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    BuildQuadraturePoints();
+    volume_ = BuildQuadraturePoints();
   }
   Tetrahedron(const Tetrahedron &) = default;
   Tetrahedron &operator=(const Tetrahedron &) = default;

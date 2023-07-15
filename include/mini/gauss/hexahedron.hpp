@@ -50,16 +50,6 @@ class Hexahedron : public Cell<Scalar> {
   }
 
  private:
-  void BuildQuadraturePoints() {
-    int n = CountQuadraturePoints();
-    volume_ = 0.0;
-    for (int i = 0; i < n; ++i) {
-      auto det_j = lagrange().LocalToJacobian(GetLocalCoord(i)).determinant();
-      global_weights_[i] = local_weights_[i] * det_j;
-      volume_ += global_weights_[i];
-      global_coords_[i] = lagrange().LocalToGlobal(GetLocalCoord(i));
-    }
-  }
   static constexpr auto BuildLocalCoords() {
     std::array<LocalCoord, Qx * Qy * Qz> points;
     int n = 0;
@@ -90,23 +80,29 @@ class Hexahedron : public Cell<Scalar> {
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int i) const override {
+  const GlobalCoord &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
-  Scalar const &GetGlobalWeight(int i) const override {
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
+  }
+  const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  LocalCoord const &GetLocalCoord(int i) const override {
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
+  }
+  const LocalCoord &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
-  Scalar const &GetLocalWeight(int i) const override {
+  const Scalar &GetLocalWeight(int i) const override {
     return local_weights_[i];
   }
 
  public:
   explicit Hexahedron(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    BuildQuadraturePoints();
+    volume_ = BuildQuadraturePoints();
   }
   Hexahedron(const Hexahedron &) = default;
   Hexahedron &operator=(const Hexahedron &) = default;

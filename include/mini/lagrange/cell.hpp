@@ -5,7 +5,6 @@
 #include <algorithm>
 #include <concepts>
 
-#include "mini/algebra/eigen.hpp"
 #include "mini/lagrange/element.hpp"
 
 namespace mini {
@@ -17,22 +16,17 @@ namespace lagrange {
  * @tparam Scalar  Type of scalar variables.
  */
 template <std::floating_point Scalar>
-class Cell {
+class Cell : public Element<Scalar, 3, 3> {
+  using Base = Element<Scalar, kPhysDim, 2>;
 
  public:
-  using Real = Scalar;
-  using LocalCoord = algebra::Matrix<Scalar, 3, 1>;
-  using GlobalCoord = algebra::Matrix<Scalar, 3, 1>;
-  using Jacobian = algebra::Matrix<Scalar, 3, 3>;
+  using Real = typename Base::Real;
+  using LocalCoord = typename Base::LocalCoord;
+  using GlobalCoord = typename Base::GlobalCoord;
+  using Jacobian = typename Base::Jacobian;
 
-  virtual ~Cell() noexcept = default;
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
   virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
-  virtual int CountCorners() const = 0;
-  virtual int CountNodes() const = 0;
-  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
-  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
-  virtual const GlobalCoord &center() const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xyz)
       const {
@@ -41,21 +35,6 @@ class Cell {
   std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xyz)
       const {
     return LocalToShapeGradients(xyz[X], xyz[Y], xyz[Z]);
-  }
-
-  /**
-   * @brief Sort `cell_nodes` by `face_nodes`, so that the right-hand normal of the Face point out from the Cell.
-   * 
-   * @param cell_nodes  The node id list of a Cell.
-   * @param face_nodes  The node id list of a Face.
-   */
-  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const = 0;
-
-  static constexpr int CellDim() {
-    return 3;
-  }
-  static constexpr int PhysDim() {
-    return 3;
   }
 
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
@@ -67,7 +46,7 @@ class Cell {
     }
     return sum;
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &xyz) const {
+  GlobalCoord LocalToGlobal(const LocalCoord &xyz) const override {
     return LocalToGlobal(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -80,7 +59,7 @@ class Cell {
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const LocalCoord &xyz) const {
+  Jacobian LocalToJacobian(const LocalCoord &xyz) const override {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -97,9 +76,17 @@ class Cell {
     GlobalCoord xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
+  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const override {
     return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
+
+  /**
+   * @brief Sort `cell_nodes` by `face_nodes`, so that the right-hand normal of the Face point out from the Cell.
+   * 
+   * @param cell_nodes  The node id list of a Cell.
+   * @param face_nodes  The node id list of a Face.
+   */
+  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const = 0;
 
  private:
   template <typename Callable, typename MatJ>
