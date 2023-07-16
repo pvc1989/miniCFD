@@ -16,7 +16,7 @@ static constexpr int X{0}, Y{1}, Z{2};
  * @tparam kPhysDim  Dimension of the underlying physical space.
  * @tparam kCellDim  Dimension of the element as a manifold.
  */
-template <std::floating_point Scalar>
+template <std::floating_point Scalar, int kPhysDim, int kCellDim>
 class Element {
  public:
   using Lagrange = lagrange::Element<Scalar, kPhysDim, kCellDim>;
@@ -29,13 +29,51 @@ class Element {
   static constexpr int PhysDim() { return kPhysDim; }
 
   virtual ~Element() noexcept = default;
+
+  /**
+   * @brief Get the number of quadrature points on this element.
+   * 
+   * @return int  Number of quadrature points on this element.
+   */
   virtual int CountQuadraturePoints() const = 0;
+
+  /**
+   * @brief Get the LocalCoord of the i-th quadrature point.
+   * 
+   * @param i  0-based index of the i-th quadrature point.
+   * @return const LocalCoord &  LocalCoord of the i-th quadrature point.
+   */
   virtual const LocalCoord &GetLocalCoord(int i) const = 0;
+
+  /**
+   * @brief Get the GlobalCoord of the i-th quadrature point.
+   * 
+   * @param i  0-based index of the i-th quadrature point.
+   * @return const GlobalCoord &  GlobalCoord of the i-th quadrature point.
+   */
   virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
-  virtual       GlobalCoord &GetGlobalCoord(int i) = 0;
+
+  /**
+   * @brief Get the local (without Jacobian) weight of the i-th quadrature point.
+   * 
+   * @param i  0-based index of the i-th quadrature point.
+   * @return const Real &  Local weight of the i-th quadrature point.
+   */
   virtual const Real &GetLocalWeight(int i) const = 0;
+
+  /**
+   * @brief Get the global (with Jacobian) weight of the i-th quadrature point.
+   * 
+   * @param i  0-based index of the i-th quadrature point.
+   * @return const Real &  Global weight of the i-th quadrature point.
+   */
   virtual const Real &GetGlobalWeight(int i) const = 0;
-  virtual       Real &GetGlobalWeight(int i) = 0;
+
+  /**
+   * @brief Get a reference to the lagrange::Element object it uses for coordinate mapping.
+   * 
+   * @return const Lagrange &  Reference to the lagrange::Element object it uses for coordinate mapping.
+   */
   virtual const Lagrange &lagrange() const = 0;
 
   int CountCorners() const {
@@ -55,6 +93,8 @@ class Element {
   }
 
  protected:
+  virtual GlobalCoord &GetGlobalCoord(int i) = 0;
+  virtual Real &GetGlobalWeight(int i) = 0;
   Real BuildQuadraturePoints() {
     Real sum = 0.0;
     for (int i = 0, n = CountQuadraturePoints(); i < n; ++i) {

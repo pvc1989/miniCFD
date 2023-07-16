@@ -52,13 +52,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   const GlobalCoord &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
-  GlobalCoord &GetGlobalCoord(int i) override {
-    return global_coords_[i];
-  }
   const Scalar &GetGlobalWeight(int i) const override {
-    return global_weights_[i];
-  }
-  Scalar &GetGlobalWeight(int i) override {
     return global_weights_[i];
   }
   const LocalCoord &GetLocalCoord(int i) const override {
@@ -68,6 +62,15 @@ class Triangle : public Face<Scalar, kPhysDim> {
     return local_weights_[i];
   }
 
+ protected:
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
+  }
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
+  }
+
+ public:
   const Frame &GetNormalFrame(int q) const override {
     return normal_frames_[q];
   }

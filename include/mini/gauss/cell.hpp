@@ -17,11 +17,9 @@ namespace gauss {
  * @tparam Scalar  Type of scalar variables.
  */
 template <std::floating_point Scalar>
-class Cell : public: Element<Scalar, 3, 3> {
-  using Base = Element<Scalar, 3, 3>;
-
+class Cell : public Element<Scalar, 3, 3> {
  public:
-  using Lagrange = lagrange::Face<Scalar, kPhysDim>;
+  using Lagrange = lagrange::Cell<Scalar>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
@@ -29,8 +27,6 @@ class Cell : public: Element<Scalar, 3, 3> {
 
   virtual ~Cell() noexcept = default;
   virtual Real volume() const = 0;
-
-  virtual const Lagrange &lagrange() const = 0;
 
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {

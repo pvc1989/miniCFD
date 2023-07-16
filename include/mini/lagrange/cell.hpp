@@ -17,7 +17,7 @@ namespace lagrange {
  */
 template <std::floating_point Scalar>
 class Cell : public Element<Scalar, 3, 3> {
-  using Base = Element<Scalar, kPhysDim, 2>;
+  using Base = Element<Scalar, 3, 3>;
 
  public:
   using Real = typename Base::Real;

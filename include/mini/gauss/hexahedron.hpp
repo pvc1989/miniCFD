@@ -83,13 +83,7 @@ class Hexahedron : public Cell<Scalar> {
   const GlobalCoord &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
-  GlobalCoord &GetGlobalCoord(int i) override {
-    return global_coords_[i];
-  }
   const Scalar &GetGlobalWeight(int i) const override {
-    return global_weights_[i];
-  }
-  Scalar &GetGlobalWeight(int i) override {
     return global_weights_[i];
   }
   const LocalCoord &GetLocalCoord(int i) const override {
@@ -97,6 +91,14 @@ class Hexahedron : public Cell<Scalar> {
   }
   const Scalar &GetLocalWeight(int i) const override {
     return local_weights_[i];
+  }
+
+ protected:
+  GlobalCoord &GetGlobalCoord(int i) override {
+    return global_coords_[i];
+  }
+  Scalar &GetGlobalWeight(int i) override {
+    return global_weights_[i];
   }
 
  public:
