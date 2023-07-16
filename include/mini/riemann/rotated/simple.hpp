@@ -27,7 +27,7 @@ class Simple {
   using Conservative = MatKx1;
   using Flux = MatKx1;
   using FluxMatrix = algebra::Matrix<Scalar, K, D>;
-  using Frame3d = mini::algebra::Matrix<Scalar, 3, 3>;
+  using Frame3d = std::array<Vector, 3>;
   using Jacobi = typename Base::Jacobi;
   using Coefficient = typename Base::Coefficient;
 
@@ -54,7 +54,7 @@ class Simple {
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
   void Rotate(const Frame3d &frame) {
-    const auto &nu = frame.col(0);
+    const auto &nu = frame[0];
     Rotate(nu[x], nu[y], nu[z]);
   }
   Flux GetFluxUpwind(const Conservative& left,

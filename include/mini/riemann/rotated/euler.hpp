@@ -68,8 +68,8 @@ class Cartesian<Scalar, 3> {
   void Rotate(const Vector& nu, const Vector& sigma, const Vector& pi) {
     nu_ = nu; sigma_ = sigma; pi_ = pi;
   }
-  void Rotate(const mini::algebra::Matrix<Scalar, 3, 3> &frame) {
-    auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
+  void Rotate(const std::array<Vector, 3> &frame) {
+    auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
     nu_[x] = nu[x]; sigma_[x] = sigma[x]; pi_[x] = pi[x];
     nu_[y] = nu[y]; sigma_[y] = sigma[y]; pi_[y] = pi[y];
     nu_[z] = nu[z]; sigma_[z] = sigma[z]; pi_[z] = pi[z];

@@ -65,6 +65,7 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
 }
 TEST_F(TestRotatedEuler, Test3dSolver) {
   using Solver = Euler<euler::Exact<Gas, 3>>;
+  using Vector = Solver::Vector;
   using Scalar = Solver::Scalar;
   using Primitive = Solver::Primitive;
   using Speed = Scalar;
@@ -80,13 +81,13 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
   };
 
   Solver solver;
-  auto frame = algebra::Matrix<Scalar, 3, 3>();
+  auto frame = std::array<Vector, 3>();
   Speed v__left{1.5}, v_right{2.5};
   Speed w__left{1.5}, w_right{0.5};
 
-  frame.col(0) << 1, 0, 0;
-  frame.col(1) << 0, 1, 0;
-  frame.col(2) << 0, 0, 1;
+  frame[0] = { 1, 0, 0 };
+  frame[1] = { 0, 1, 0 };
+  frame[2] = { 0, 0, 1 };
   solver.Rotate(frame);
   Primitive  left{1.000, 0.0, v__left, w__left, 1.0};
   Primitive right{0.125, 0.0, v_right, w_right, 0.1};
@@ -97,9 +98,8 @@ TEST_F(TestRotatedEuler, Test3dSolver) {
   CompareFlux(solver.GetFluxUpwind(right_c, left_c),
       solver.GetFlux({0.426319, -0.927453, v__left, w__left, 0.303130}));
 
-  frame.col(0) << 1, 0, 0;
-  frame.col(1) << 0, -1, 0;
-  frame.col(2) << 0, 0, -1;
+  frame[1] = { 0, -1, 0 };
+  frame[2] = { 0, 0, -1 };
   solver.Rotate(frame);
   CompareFlux(solver.GetFluxUpwind(left_c, right_c),
       solver.GetFlux({0.426319, +0.927453, v__left, w__left, 0.303130}));

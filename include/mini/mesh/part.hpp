@@ -138,20 +138,24 @@ struct Face {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDimensions = Riemann::kDimensions;
-  using Gauss = gauss::Face<Scalar, kDimensions>;
+  constexpr static int kPhysDim = Riemann::kDimensions;
+  using Gauss = gauss::Face<Scalar, kPhysDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
+  using Lagrange = lagrange::Face<Scalar, kPhysDim>;
+  using LagrangeUptr = std::unique_ptr<Lagrange>;
   using Cell = cgns::Cell<Int, kDegrees, Riemann>;
   using Coord = typename Cell::Coord;
 
+  LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
   Riemann riemann_;
   Int id_{-1};
 
-  Face(GaussUptr &&gauss_ptr, Cell *holder, Cell *sharer, Int id = 0)
-      : gauss_ptr_(std::move(gauss_ptr)), holder_(holder), sharer_(sharer),
-        id_(id) {
+  Face(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr,
+      Cell *holder, Cell *sharer, Int id = 0)
+      : lagrange_ptr_(std::move(lagrange_ptr)), gauss_ptr_(std::move(gauss_ptr)),
+        holder_(holder), sharer_(sharer), id_(id) {
     riemann_.Rotate(gauss_ptr_->GetNormalFrame(0));
   }
   Face(const Face &) = delete;
@@ -184,14 +188,14 @@ struct Cell {
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDimensions = Riemann::kDimensions;
+  constexpr static int kPhysDim = Riemann::kDimensions;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Basis = polynomial::OrthoNormal<Scalar, kDimensions, kDegrees>;
+  using Basis = polynomial::OrthoNormal<Scalar, kPhysDim, kDegrees>;
   using Projection = polynomial::
-      Projection<Scalar, kDimensions, kDegrees, kComponents>;
+      Projection<Scalar, kPhysDim, kDegrees, kComponents>;
   using Coord = typename Projection::Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
@@ -254,7 +258,7 @@ struct Cell {
     return gauss().lagrange();
   }
   Coord LocalToGlobal(const Coord &local) const {
-    return gauss().LocalToGlobal(local);
+    return lagrange().LocalToGlobal(local);
   }
   Value GetValue(const Coord &global) const {
     return projection_(global);
@@ -378,7 +382,7 @@ class Part {
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
   constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kDimensions = Riemann::kDimensions;
+  constexpr static int kPhysDim = Riemann::kDimensions;
 
  private:
   struct Connectivity {
@@ -405,16 +409,18 @@ class Part {
   static const MPI_Datatype kMpiRealType;
 
  private:
+  using LagrangeOnTriangle = lagrange::Triangle3<Scalar, kPhysDim>;
   using GaussOnTriangle = mini::select_t<kDegrees,
-    gauss::Triangle<Scalar, kDimensions, 1>,
-    gauss::Triangle<Scalar, kDimensions, 3>,
-    gauss::Triangle<Scalar, kDimensions, 6>,
-    gauss::Triangle<Scalar, kDimensions, 12>>;
+    gauss::Triangle<Scalar, kPhysDim, 1>,
+    gauss::Triangle<Scalar, kPhysDim, 3>,
+    gauss::Triangle<Scalar, kPhysDim, 6>,
+    gauss::Triangle<Scalar, kPhysDim, 12>>;
+  using LagrangeOnQuadrangle = lagrange::Quadrangle4<Scalar, kPhysDim>;
   using GaussOnQuadrangle = mini::select_t<kDegrees,
-    gauss::Quadrangle<Scalar, kDimensions, 1, 1>,
-    gauss::Quadrangle<Scalar, kDimensions, 2, 2>,
-    gauss::Quadrangle<Scalar, kDimensions, 3, 3>,
-    gauss::Quadrangle<Scalar, kDimensions, 4, 4>>;
+    gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
+    gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
+    gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
+    gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
   using GaussOnTetrahedron = mini::select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
@@ -652,32 +658,36 @@ class Part {
     }
     return {nullptr, nullptr};
   }
-  auto BuildTriangleUptr(int i_zone, Int const *i_node_list) const {
-    auto gauss_uptr = std::make_unique<GaussOnTriangle>(
+  std::pair< std::unique_ptr<LagrangeOnTriangle>,
+             std::unique_ptr<GaussOnTriangle> >
+  BuildTriangleUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnTriangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]));
-    gauss_uptr->BuildNormalFrames();
-    return gauss_uptr;
+    auto gauss = std::make_unique<GaussOnTriangle>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
   }
-  auto BuildQuadrangleUptr(int i_zone, Int const *i_node_list) const {
-    auto gauss_uptr = std::make_unique<GaussOnQuadrangle>(
+  std::pair< std::unique_ptr<LagrangeOnQuadrangle>,
+             std::unique_ptr<GaussOnQuadrangle> >
+  BuildQuadrangleUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnQuadrangle>(
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
-    gauss_uptr->BuildNormalFrames();
-    return gauss_uptr;
+    auto gauss = std::make_unique<GaussOnQuadrangle>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
   }
-  auto BuildGaussForFace(int npe, int i_zone, Int const *i_node_list) const {
-    std::unique_ptr<gauss::Face<Scalar, kDimensions>> gauss_uptr;
+  std::pair< typename Face::LagrangeUptr, typename Face::GaussUptr >
+  BuildGaussForFace(int npe, int i_zone, Int const *i_node_list) const {
     switch (npe) {
       case 3:
-        gauss_uptr = BuildTriangleUptr(i_zone, i_node_list); break;
+        return BuildTriangleUptr(i_zone, i_node_list); break;
       case 4:
-        gauss_uptr = BuildQuadrangleUptr(i_zone, i_node_list); break;
+        return BuildQuadrangleUptr(i_zone, i_node_list); break;
       default:
         assert(false);
         break;
     }
-    return gauss_uptr;
+    return { nullptr, nullptr };
   }
   void BuildLocalCells(std::ifstream &istrm, int i_file) {
     char line[kLineWidth];
@@ -918,8 +928,9 @@ class Part {
       auto *face_node_list = common_nodes.data();
       lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
-      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
-      auto face_uptr = std::make_unique<Face>(
+      auto [lagrange_uptr, gauss_uptr]
+          = BuildGaussForFace(face_npe, i_zone, face_node_list);
+      auto face_uptr = std::make_unique<Face>(std::move(lagrange_uptr),
           std::move(gauss_uptr), &holder, &sharer, local_faces_.size());
       holder.adj_faces_.emplace_back(face_uptr.get());
       sharer.adj_faces_.emplace_back(face_uptr.get());
@@ -961,8 +972,9 @@ class Part {
       auto *face_node_list = common_nodes.data();
       lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
-      auto gauss_uptr = BuildGaussForFace(face_npe, i_zone, face_node_list);
-      auto face_uptr = std::make_unique<Face>(
+      auto [lagrange_uptr, gauss_uptr]
+          = BuildGaussForFace(face_npe, i_zone, face_node_list);
+      auto face_uptr = std::make_unique<Face>(std::move(lagrange_uptr),
           std::move(gauss_uptr), &holder, &sharer,
           local_faces_.size() + ghost_faces_.size());
       holder.adj_faces_.emplace_back(face_uptr.get());
@@ -1428,12 +1440,13 @@ class Part {
             break;
           }
         }
-        auto gauss_uptr = BuildGaussForFace(npe, i_zone, face_node_list);
-        auto face_uptr = std::make_unique<Face>(
+        auto [lagrange_uptr, gauss_uptr]
+            = BuildGaussForFace(npe, i_zone, face_node_list);
+        auto face_uptr = std::make_unique<Face>(std::move(lagrange_uptr),
             std::move(gauss_uptr), holder_ptr, nullptr, face_id++);
         // the face's normal vector always point from holder to the exterior
         assert((face_uptr->center() - holder_ptr->center()).dot(
-            face_uptr->gauss().GetNormalFrame(0).col(0)) > 0);
+            face_uptr->gauss().GetNormalFrame(0)[0]) > 0);
         // holder_ptr->adj_faces_.emplace_back(face_uptr.get());
         faces.emplace_back(std::move(face_uptr));
       }
