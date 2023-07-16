@@ -56,9 +56,9 @@ class Hexahedron : public Cell<Scalar> {
     for (int i = 0; i < Qx; ++i) {
       for (int j = 0; j < Qy; ++j) {
         for (int k = 0; k < Qz; ++k) {
-          points[n][0] = GaussX::points[i];
-          points[n][1] = GaussY::points[j];
-          points[n][2] = GaussZ::points[k];
+          points[n][X] = GaussX::points[i];
+          points[n][Y] = GaussY::points[j];
+          points[n][Z] = GaussZ::points[k];
           n++;
         }
       }
@@ -104,7 +104,7 @@ class Hexahedron : public Cell<Scalar> {
  public:
   explicit Hexahedron(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    volume_ = BuildQuadraturePoints();
+    volume_ = this->BuildQuadraturePoints();
   }
   Hexahedron(const Hexahedron &) = default;
   Hexahedron &operator=(const Hexahedron &) = default;

@@ -10,7 +10,7 @@
 #include <type_traits>
 
 #include "mini/gauss/face.hpp"
-#include "mini/lagrange/quadrangle.hpp"
+#include "mini/lagrange/triangle.hpp"
 
 namespace mini {
 namespace gauss {
@@ -27,7 +27,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
 
  public:
-  using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
+  using Lagrange = lagrange::Triangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using LocalCoord = typename Lagrange::LocalCoord;
   using GlobalCoord = typename Lagrange::GlobalCoord;
@@ -39,7 +39,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   static const std::array<Scalar, kPoints> local_weights_;
   std::array<GlobalCoord, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
-  std::array<Frame, Qx * Qy> normal_frames_;
+  std::array<Frame, kPoints> normal_frames_;
   Lagrange const *lagrange_;
   Scalar area_;
 
@@ -81,7 +81,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
  public:
   explicit Triangle(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    area_ = BuildQuadraturePoints();
+    area_ = this->BuildQuadraturePoints();
     NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 

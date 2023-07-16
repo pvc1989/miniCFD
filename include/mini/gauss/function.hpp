@@ -73,9 +73,10 @@ auto Integrate(Callable &&f_in_global, Element &&element) {
   using GlobalCoord = typename E::GlobalCoord;
   decltype(f_in_global(GlobalCoord())) sum; SetZero(&sum);
   auto n = element.CountQuadraturePoints();
+  auto const &gauss = element;
   for (int i = 0; i < n; ++i) {
-    auto f_val = f_in_global(element.GetGlobalCoord(i));
-    f_val *= element.GetGlobalWeight(i);
+    auto f_val = f_in_global(gauss.GetGlobalCoord(i));
+    f_val *= gauss.GetGlobalWeight(i);
     sum += f_val;
   }
   return sum;

@@ -22,7 +22,7 @@ TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 2);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
-  EXPECT_EQ(gauss.center(), Mat2x1(4./3, 2./3));
+  EXPECT_NEAR((gauss.center() - Coord(4./3, 2./3)).norm(), 0, 1e-15);
   EXPECT_EQ(gauss.LocalToGlobal(1, 0), Coord(0, 0));
   EXPECT_EQ(gauss.LocalToGlobal(0, 1), Coord(2, 0));
   EXPECT_EQ(gauss.LocalToGlobal(0, 0), Coord(2, 2));
@@ -47,12 +47,12 @@ TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
-  EXPECT_EQ(gauss.center(), Global(4./3, 2./3, 2.));
+  EXPECT_NEAR((gauss.center() - Global(4./3, 2./3, 2.)).norm(), 0, 1e-15);
   EXPECT_EQ(gauss.LocalToGlobal(1, 0), Global(0, 0, 2));
   EXPECT_EQ(gauss.LocalToGlobal(0, 1), Global(2, 0, 2));
   EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
   EXPECT_DOUBLE_EQ(
-      Quadrature([](Mat2x1 const&){ return 2.0; }, gauss), 1.0);
+      Quadrature([](Local const&){ return 2.0; }, gauss), 1.0);
   EXPECT_DOUBLE_EQ(
       Integrate([](Global const&){ return 2.0; }, gauss), 4.0);
   auto f = [](Global const& xyz){ return xyz[0]; };
@@ -62,14 +62,14 @@ TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   EXPECT_DOUBLE_EQ(Norm(f, gauss), std::sqrt(Innerprod(f, f, gauss)));
   EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
   // test normal frames
-  gauss.BuildNormalFrames();
+  Global normal = Global(0, 0, 1).normalized();
   for (int q = 0; q < gauss.CountQuadraturePoints(); ++q) {
     auto &frame = gauss.GetNormalFrame(q);
-    auto &nu = frame.col(0), &sigma = frame.col(1), &pi = frame.col(2);
-    EXPECT_EQ(nu, sigma.cross(pi));
-    EXPECT_EQ(sigma, pi.cross(nu));
-    EXPECT_EQ(pi, nu.cross(sigma));
-    EXPECT_EQ(nu, Global(0, 0, 1));
+    auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
+    EXPECT_NEAR((nu - normal).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((nu - sigma.cross(pi)).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((sigma - pi.cross(nu)).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((pi - nu.cross(sigma)).norm(), 0.0, 1e-15);
   }
 }
 

@@ -36,8 +36,8 @@ class Tetrahedron : public Cell<Scalar> {
   static const std::array<Scalar, kPoints> local_weights_;
   std::array<GlobalCoord, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
-  Scalar volume_;
   Lagrange const *lagrange_;
+  Scalar volume_;
 
  public:
   int CountQuadraturePoints() const override {
@@ -69,7 +69,7 @@ class Tetrahedron : public Cell<Scalar> {
  public:
   explicit Tetrahedron(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
-    volume_ = BuildQuadraturePoints();
+    volume_ = this->BuildQuadraturePoints();
   }
   Tetrahedron(const Tetrahedron &) = default;
   Tetrahedron &operator=(const Tetrahedron &) = default;

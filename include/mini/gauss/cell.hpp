@@ -28,6 +28,13 @@ class Cell : public Element<Scalar, 3, 3> {
   virtual ~Cell() noexcept = default;
   virtual Real volume() const = 0;
 
+  /**
+   * @brief Get a reference to the lagrange::Cell object it uses for coordinate mapping.
+   * 
+   * @return const Lagrange &  Reference to the lagrange::Cell object it uses for coordinate mapping.
+   */
+  virtual const Lagrange &lagrange() const = 0;
+
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     return lagrange().LocalToGlobal(x_local, y_local, z_local);

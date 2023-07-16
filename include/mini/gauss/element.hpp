@@ -98,13 +98,14 @@ class Element {
   Real BuildQuadraturePoints() {
     Real sum = 0.0;
     for (int i = 0, n = CountQuadraturePoints(); i < n; ++i) {
-      auto mat_j = lagrange().LocalToJacobian(GetLocalCoord(i));
-      auto det_j = this->CellDim() < this->PhysDim()
+      auto &local_i = GetLocalCoord(i);
+      GetGlobalCoord(i) = lagrange().LocalToGlobal(local_i);
+      auto mat_j = lagrange().LocalToJacobian(local_i);
+      auto det_j = CellDim() < PhysDim()
           ? std::sqrt((mat_j.transpose() * mat_j).determinant())
-          : mat_j.determinant();
+          : std::abs(mat_j.determinant());
       GetGlobalWeight(i) = GetLocalWeight(i) * det_j;
       sum += GetGlobalWeight(i);
-      GetGlobaCoord(i) = lagrange().LocalToGlobal(lagrange().GetLocalCoord(i));
     }
     return sum;
   }

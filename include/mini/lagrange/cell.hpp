@@ -29,20 +29,20 @@ class Cell : public Element<Scalar, 3, 3> {
   virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xyz)
-      const {
+      const override {
     return LocalToShapeFunctions(xyz[X], xyz[Y], xyz[Z]);
   }
   std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xyz)
-      const {
+      const override {
     return LocalToShapeGradients(xyz[X], xyz[Y], xyz[Z]);
   }
 
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeFunctions(x_local, y_local, z_local);
-    GlobalCoord sum = GetGlobalCoord(0) * shapes[0];
-    for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoord(i) * shapes[i];
+    GlobalCoord sum = this->GetGlobalCoord(0) * shapes[0];
+    for (int i = 1, n = this->CountNodes(); i < n; ++i) {
+      sum += this->GetGlobalCoord(i) * shapes[i];
     }
     return sum;
   }
@@ -53,9 +53,9 @@ class Cell : public Element<Scalar, 3, 3> {
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeGradients(x_local, y_local, z_local);
-    Jacobian sum = GetGlobalCoord(0) * shapes[0].transpose();
-    for (int i = 1; i < CountNodes(); ++i) {
-      sum += GetGlobalCoord(i) * shapes[i].transpose();
+    Jacobian sum = this->GetGlobalCoord(0) * shapes[0].transpose();
+    for (int i = 1, n = this->CountNodes(); i < n; ++i) {
+      sum += this->GetGlobalCoord(i) * shapes[i].transpose();
     }
     return sum;
   }
@@ -76,7 +76,7 @@ class Cell : public Element<Scalar, 3, 3> {
     GlobalCoord xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const override {
+  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
     return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
 

@@ -44,6 +44,13 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   virtual Frame &GetNormalFrame(int i) = 0;
   virtual Scalar area() const = 0;
 
+  /**
+   * @brief Get a reference to the lagrange::Face object it uses for coordinate mapping.
+   * 
+   * @return const Lagrange &  Reference to the lagrange::Face object it uses for coordinate mapping.
+   */
+  virtual const Lagrange &lagrange() const = 0;
+
   GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local)
       const {
     return lagrange().LocalToGlobal(x_local, y_local);
