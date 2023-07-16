@@ -9,7 +9,9 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/lagrange/hexahedron.hpp"
 #include "mini/gauss/triangle.hpp"
+#include "mini/lagrange/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 #include "mini/polynomial/basis.hpp"
 
 #include "gtest/gtest.h"
@@ -133,10 +135,12 @@ TEST_F(TestLinearBasis, In3dSpace) {
 class TestOrthoNormalBasis : public ::testing::Test {
 };
 TEST_F(TestOrthoNormalBasis, OnTriangle) {
+  using Lagrange = mini::lagrange::Triangle3<double, 2>;
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
-  auto gauss = Gauss(p0, p1, p2);
+  auto lagrange = Lagrange(p0, p1, p2);
+  auto gauss = Gauss(lagrange);
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
@@ -152,10 +156,12 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
   EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
 }
 TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
+  using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Coord = Gauss::GlobalCoord;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
-  auto gauss = Gauss(p0, p1, p2, p3);
+  auto lagrange = Lagrange(p0, p1, p2, p3);
+  auto gauss = Gauss(lagrange);
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());

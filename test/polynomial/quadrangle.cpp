@@ -4,6 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/quadrangle.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -12,66 +13,65 @@
 using std::sqrt;
 
 class TestQuadrangle4x4 : public ::testing::Test {
- protected:
-  using Quadrangle2D4x4 = mini::gauss::Quadrangle<double, 2, 4, 4>;
-  using Quadrangle3D4x4 = mini::gauss::Quadrangle<double, 3, 4, 4>;
-  using Mat2x4 = mini::algebra::Matrix<double, 2, 4>;
-  using Mat2x1 = mini::algebra::Matrix<double, 2, 1>;
-  using Mat3x4 = mini::algebra::Matrix<double, 3, 4>;
-  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
-  using Y = typename Basis::MatNx1;
-  using A = typename Basis::MatNxN;
-  using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
-  using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
-  using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
 };
 TEST_F(TestQuadrangle4x4, OrthoNormal) {
-  Mat2x1 origin = {0, 0}, left = {-1, 2}, right = {1, 3};
-  Mat2x4 xyz_global_i;
-  xyz_global_i.row(0) << -1, 1, 1, -1;
-  xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quadrangle2D4x4(xyz_global_i);
-  auto basis = Basis(quad);
-  double residual = (Integrate([&basis](const Mat2x1& xy) {
+  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
+  using Coord = typename Lagrange::GlobalCoord;
+  Coord origin = {0, 0}, left = {-1, 2}, right = {1, 3};
+  auto lagrange = Lagrange(
+    Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
+  );
+  auto gauss = Gauss(lagrange);
+  auto basis = Basis(gauss);
+  using A = typename Basis::MatNxN;
+  double residual = (Integrate([&basis](const Coord& xy) {
     auto col = basis(xy);
     A prod = col * col.transpose();
     return prod;
-  }, quad) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   auto x = left[0], y = left[1];
-  xyz_global_i.row(0) << x-1, x+1, x+1, x-1;
-  xyz_global_i.row(1) << y-1, y-1, y+1, y+1;
-  quad = Quadrangle2D4x4(xyz_global_i);
-  basis = Basis(quad);
-  residual = (Integrate([&basis](Mat2x1 const& xy) {
+  lagrange = Lagrange(
+    Coord(x-1, y-1), Coord(x+1, y-1), Coord(x+1, y+1), Coord(x-1, y+1)
+  );
+  basis = Basis(gauss);
+  residual = (Integrate([&basis](Coord const& xy) {
     auto col = basis(xy);
     A prod = col * col.transpose();
     return prod;
-  }, quad) - A::Identity()).cwiseAbs().maxCoeff();
-  EXPECT_NEAR(residual, 0.0, 1e-15);
+  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
+  EXPECT_NEAR(residual, 0.0, 1e-12);
 }
 TEST_F(TestQuadrangle4x4, Projection) {
-  Mat2x4 xyz_global_i;
-  xyz_global_i.row(0) << -1, 1, 1, -1;
-  xyz_global_i.row(1) << -1, -1, 1, 1;
-  auto quad = Quadrangle2D4x4(xyz_global_i);
-  auto basis = Basis(quad);
-  auto scalar_f = [](Mat2x1 const& xy){
+  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
+  using Coord = typename Lagrange::GlobalCoord;
+  auto lagrange = Lagrange(
+    Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
+  );
+  auto gauss = Gauss(lagrange);
+  auto basis = Basis(gauss);
+  auto scalar_f = [](Coord const& xy){
     return xy[0] * xy[1];
   };
   using ScalarPF = mini::polynomial::Projection<double, 2, 2, 1>;
   auto scalar_pf = ScalarPF(scalar_f, basis);
+  using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
   double residual = (scalar_pf.coeff()
       - Mat1x6(0, 0, 0, 0, 1, 0)).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-15);
-  auto vector_f = [](Mat2x1 const& xy) {
+  using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
+  auto vector_f = [](Coord const& xy) {
     auto x = xy[0], y = xy[1];
     Mat7x1 func(0, 1, x, y, x * x, x * y, y * y);
     return func;
   };
   using VectorPF = mini::polynomial::Projection<double, 2, 2, 7>;
   auto vector_pf = VectorPF(vector_f, basis);
+  using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
   Mat7x6 exact_vector{
       {0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
       {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},

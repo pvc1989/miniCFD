@@ -4,6 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/triangle.hpp"
+#include "mini/lagrange/triangle.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -12,41 +13,41 @@
 using std::sqrt;
 
 class TestTriangle : public ::testing::Test {
- protected:
-  using Triangle = mini::gauss::Triangle<double, 2, 12>;
-  using Mat2x3 = mini::algebra::Matrix<double, 2, 3>;
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
-  using Coord = typename Basis::Coord;
-  using A = typename Basis::MatNxN;
 };
 TEST_F(TestTriangle, OrthoNormal) {
+  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Gauss = mini::gauss::Triangle<double, 2, 12>;
+  using Lagrange = mini::lagrange::Triangle3<double, 2>;
+  using Coord = typename Lagrange::GlobalCoord;
   // build a triangle-gauss
-  Mat2x3 xy_global_i;
-  xy_global_i.row(0) << 10, 0, 0;
-  xy_global_i.row(1) << 0, 10, 0;
-  auto triangle = Triangle(xy_global_i);
+  auto lagrange = Lagrange(
+    Coord(10, 0), Coord(0, 10), Coord(0, 0)
+  );
+  auto gauss = Gauss(lagrange);
   // build an orthonormal basis on it
-  auto basis = Basis(triangle);
+  auto basis = Basis(gauss);
   // check orthonormality
+  using A = typename Basis::MatNxN;
   double residual = (Integrate([&basis](const Coord& xyz) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, triangle) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another triangle-gauss
   Coord shift = {10, 20};
-  xy_global_i.col(0) += shift;
-  xy_global_i.col(1) += shift;
-  triangle = Triangle(xy_global_i);
+  lagrange = Lagrange(
+    Coord(10, 0) + shift, Coord(0, 10) + shift, Coord(0, 0) + shift
+  );
+  gauss = Gauss(lagrange);
   // build another orthonormal basis on it
-  basis = Basis(triangle);
+  basis = Basis(gauss);
   // check orthonormality
   residual = (Integrate([&basis](const Coord& xyz) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, triangle) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 
