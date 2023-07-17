@@ -39,19 +39,19 @@ class Face : public Element<Scalar, kPhysDim, 2> {
 
  public:
   using Real = typename Base::Real;
-  using LocalCoord = typename Base::LocalCoord;
-  using GlobalCoord = typename Base::GlobalCoord;
+  using Local = typename Base::Local;
+  using Global = typename Base::Global;
   using Jacobian = typename Base::Jacobian;
-  using Frame = std::conditional_t<D == 3, std::array<GlobalCoord, 3>, int>;
+  using Frame = std::conditional_t<D == 3, std::array<Global, 3>, int>;
 
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar) const = 0;
-  virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar) const = 0;
+  virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar) const = 0;
 
-  std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xy)
+  std::vector<Scalar> LocalToShapeFunctions(const Local &xy)
       const override {
     return LocalToShapeFunctions(xy[X], xy[Y]);
   }
-  std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xy)
+  std::vector<Local> LocalToShapeGradients(const Local &xy)
       const override {
     return LocalToShapeGradients(xy[X], xy[Y]);
   }
@@ -59,19 +59,19 @@ class Face : public Element<Scalar, kPhysDim, 2> {
     return NormalFrameBuilder<Scalar, kPhysDim>
         ::Build(*this, x_local, y_local);
   }
-  Frame LocalToNormalFrame(const LocalCoord &xy) const {
+  Frame LocalToNormalFrame(const Local &xy) const {
     return LocalToNormalFrame(xy[X], xy[Y]);
   }
 
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local) const {
+  Global LocalToGlobal(Scalar x_local, Scalar y_local) const {
     auto shapes = LocalToShapeFunctions(x_local, y_local);
-    GlobalCoord sum = this->GetGlobalCoord(0) * shapes[0];
+    Global sum = this->GetGlobalCoord(0) * shapes[0];
     for (int i = 1, n = this->CountNodes(); i < n; ++i) {
       sum += this->GetGlobalCoord(i) * shapes[i];
     }
     return sum;
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &xy) const override {
+  Global LocalToGlobal(const Local &xy) const override {
     return LocalToGlobal(xy[X], xy[Y]);
   }
 
@@ -83,7 +83,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const LocalCoord &xy) const override {
+  Jacobian LocalToJacobian(const Local &xy) const override {
     return LocalToJacobian(xy[X], xy[Y]);
   }
 

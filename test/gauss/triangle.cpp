@@ -13,7 +13,7 @@ class TestGaussTriangle : public ::testing::Test {
 TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Lagrange = mini::lagrange::Triangle3<double, 2>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
   auto lagrange = Lagrange(
     Coord(0, 0), Coord(2, 0), Coord(2, 2)
   );
@@ -38,8 +38,8 @@ TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
 TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   using Gauss = mini::gauss::Triangle<double, 3, 16>;
   using Lagrange = mini::lagrange::Triangle3<double, 3>;
-  using Local = typename Lagrange::LocalCoord;
-  using Global = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   auto lagrange = Lagrange(
     Global(0, 0, 2), Global(2, 0, 2), Global(2, 2, 2)
   );

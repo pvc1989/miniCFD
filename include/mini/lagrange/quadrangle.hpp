@@ -27,19 +27,19 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   int CountCorners() const override final {
     return 4;
   }
-  const GlobalCoord &center() const override final {
+  const Global &center() const override final {
     return center_;
   }
 
  protected:
-  GlobalCoord center_;
+  Global center_;
   void BuildCenter() {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a);
@@ -57,15 +57,15 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   static constexpr int kNodes = 4;
 
  private:
-  std::array<GlobalCoord, kNodes> global_coords_;
-  static const std::array<LocalCoord, kNodes> local_coords_;
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
 
  public:
   int CountNodes() const override {
@@ -83,9 +83,9 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
     }
     return shapes;
   }
-  std::vector<LocalCoord> LocalToShapeGradients(Scalar x_local, Scalar y_local)
+  std::vector<Local> LocalToShapeGradients(Scalar x_local, Scalar y_local)
       const override {
-    auto shapes = std::vector<LocalCoord>(kNodes);
+    auto shapes = std::vector<Local>(kNodes);
     std::array<Scalar, kNodes> factor_x, factor_y;
     for (int i = 0; i < kNodes; ++i) {
       auto &local_i = GetLocalCoord(i);
@@ -102,22 +102,22 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
+  Global const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  LocalCoord const &GetLocalCoord(int q) const override {
+  Local const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
 
  public:
   Quadrangle4(
-      GlobalCoord const &p0, GlobalCoord const &p1,
-      GlobalCoord const &p2, GlobalCoord const &p3) {
+      Global const &p0, Global const &p1,
+      Global const &p2, Global const &p3) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
     this->BuildCenter();
   }
-  Quadrangle4(std::initializer_list<GlobalCoord> il) {
+  Quadrangle4(std::initializer_list<Global> il) {
     assert(il.size() == kNodes);
     auto p = il.begin();
     for (int i = 0; i < kNodes; ++i) {
@@ -128,10 +128,10 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
 };
 // initialization of static const members:
 template <std::floating_point Scalar, int kPhysDim>
-const std::array<typename Quadrangle4<Scalar, kPhysDim>::LocalCoord, 4>
+const std::array<typename Quadrangle4<Scalar, kPhysDim>::Local, 4>
 Quadrangle4<Scalar, kPhysDim>::local_coords_{
-  Quadrangle4::LocalCoord(-1, -1), Quadrangle4::LocalCoord(+1, -1),
-  Quadrangle4::LocalCoord(+1, +1), Quadrangle4::LocalCoord(-1, +1)
+  Quadrangle4::Local(-1, -1), Quadrangle4::Local(+1, -1),
+  Quadrangle4::Local(+1, +1), Quadrangle4::Local(-1, +1)
 };
 
 }  // namespace lagrange

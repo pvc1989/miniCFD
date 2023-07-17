@@ -137,7 +137,7 @@ class TestOrthoNormalBasis : public ::testing::Test {
 TEST_F(TestOrthoNormalBasis, OnTriangle) {
   using Lagrange = mini::lagrange::Triangle3<double, 2>;
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
-  using Coord = Gauss::GlobalCoord;
+  using Coord = Gauss::Global;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
   auto lagrange = Lagrange(p0, p1, p2);
   auto gauss = Gauss(lagrange);
@@ -158,7 +158,7 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
 TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
-  using Coord = Gauss::GlobalCoord;
+  using Coord = Gauss::Global;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
   auto lagrange = Lagrange(p0, p1, p2, p3);
   auto gauss = Gauss(lagrange);
@@ -179,7 +179,7 @@ TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
 TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
   using Gauss = mini::gauss::Tetrahedron<double, 24>;
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
-  using Coord = Gauss::GlobalCoord;
+  using Coord = Gauss::Global;
   Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
   auto lagrange = Lagrange(p0, p1, p2, p3);
   auto gauss = Gauss(lagrange);
@@ -200,7 +200,7 @@ TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
 TEST_F(TestOrthoNormalBasis, OnHexahedron) {
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
-  using Coord = Gauss::GlobalCoord;
+  using Coord = Gauss::Global;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
         p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};
   auto lagrange = Lagrange(p0, p1, p2, p3, p4, p5, p6, p7);

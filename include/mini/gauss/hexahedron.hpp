@@ -32,14 +32,14 @@ class Hexahedron : public Cell<Scalar> {
  public:
   using Lagrange = lagrange::Hexahedron<Scalar>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
 
  private:
-  static const std::array<LocalCoord, Qx * Qy * Qz> local_coords_;
+  static const std::array<Local, Qx * Qy * Qz> local_coords_;
   static const std::array<Scalar, Qx * Qy * Qz> local_weights_;
-  std::array<GlobalCoord, Qx * Qy * Qz> global_coords_;
+  std::array<Global, Qx * Qy * Qz> global_coords_;
   std::array<Scalar, Qx * Qy * Qz> global_weights_;
   Lagrange const *lagrange_;
   Scalar volume_;
@@ -51,7 +51,7 @@ class Hexahedron : public Cell<Scalar> {
 
  private:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, Qx * Qy * Qz> points;
+    std::array<Local, Qx * Qy * Qz> points;
     int n = 0;
     for (int i = 0; i < Qx; ++i) {
       for (int j = 0; j < Qy; ++j) {
@@ -80,13 +80,13 @@ class Hexahedron : public Cell<Scalar> {
   }
 
  public:
-  const GlobalCoord &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  const LocalCoord &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
@@ -94,7 +94,7 @@ class Hexahedron : public Cell<Scalar> {
   }
 
  protected:
-  GlobalCoord &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) override {
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
@@ -122,7 +122,7 @@ class Hexahedron : public Cell<Scalar> {
 };
 
 template <std::floating_point Scalar, int Qx, int Qy, int Qz>
-std::array<typename Hexahedron<Scalar, Qx, Qy, Qz>::LocalCoord, Qx * Qy * Qz> const
+std::array<typename Hexahedron<Scalar, Qx, Qy, Qz>::Local, Qx * Qy * Qz> const
 Hexahedron<Scalar, Qx, Qy, Qz>::local_coords_
     = Hexahedron<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
 

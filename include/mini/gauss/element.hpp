@@ -21,8 +21,8 @@ class Element {
  public:
   using Lagrange = lagrange::Element<Scalar, kPhysDim, kCellDim>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
 
   static constexpr int CellDim() { return kCellDim; }
@@ -38,20 +38,20 @@ class Element {
   virtual int CountQuadraturePoints() const = 0;
 
   /**
-   * @brief Get the LocalCoord of the i-th quadrature point.
+   * @brief Get the Local of the i-th quadrature point.
    * 
    * @param i  0-based index of the i-th quadrature point.
-   * @return const LocalCoord &  LocalCoord of the i-th quadrature point.
+   * @return const Local &  Local of the i-th quadrature point.
    */
-  virtual const LocalCoord &GetLocalCoord(int i) const = 0;
+  virtual const Local &GetLocalCoord(int i) const = 0;
 
   /**
-   * @brief Get the GlobalCoord of the i-th quadrature point.
+   * @brief Get the Global of the i-th quadrature point.
    * 
    * @param i  0-based index of the i-th quadrature point.
-   * @return const GlobalCoord &  GlobalCoord of the i-th quadrature point.
+   * @return const Global &  Global of the i-th quadrature point.
    */
-  virtual const GlobalCoord &GetGlobalCoord(int i) const = 0;
+  virtual const Global &GetGlobalCoord(int i) const = 0;
 
   /**
    * @brief Get the local (without Jacobian) weight of the i-th quadrature point.
@@ -82,18 +82,18 @@ class Element {
   int CountNodes() const {
     return lagrange().CountNodes();
   }
-  const GlobalCoord &center() const {
+  const Global &center() const {
     return lagrange().center();
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &local) const {
+  Global LocalToGlobal(const Local &local) const {
     return lagrange().LocalToGlobal(local);
   }
-  Jacobian LocalToJacobian(const LocalCoord &local) const {
+  Jacobian LocalToJacobian(const Local &local) const {
     return lagrange().LocalToJacobian(local);
   }
 
  protected:
-  virtual GlobalCoord &GetGlobalCoord(int i) = 0;
+  virtual Global &GetGlobalCoord(int i) = 0;
   virtual Real &GetGlobalWeight(int i) = 0;
   Real BuildQuadraturePoints() {
     Real sum = 0.0;

@@ -34,8 +34,8 @@ class Face : public Element<Scalar, kPhysDim, 2> {
  public:
   using Lagrange = lagrange::Face<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
   using Frame = typename Lagrange::Frame;
 
@@ -51,7 +51,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
    */
   virtual const Lagrange &lagrange() const = 0;
 
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local)
+  Global LocalToGlobal(Scalar x_local, Scalar y_local)
       const {
     return lagrange().LocalToGlobal(x_local, y_local);
   }

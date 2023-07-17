@@ -16,7 +16,7 @@ class TestProjection : public ::testing::Test {
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
-  using Coord = typename Gauss::GlobalCoord;
+  using Coord = typename Gauss::Global;
   Lagrange lagrange_;
   Gauss gauss_;
 

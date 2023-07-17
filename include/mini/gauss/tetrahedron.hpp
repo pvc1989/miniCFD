@@ -27,14 +27,14 @@ class Tetrahedron : public Cell<Scalar> {
  public:
   using Lagrange = lagrange::Tetrahedron<Scalar>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
 
  private:
-  static const std::array<LocalCoord, kPoints> local_coords_;
+  static const std::array<Local, kPoints> local_coords_;
   static const std::array<Scalar, kPoints> local_weights_;
-  std::array<GlobalCoord, kPoints> global_coords_;
+  std::array<Global, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
   Lagrange const *lagrange_;
   Scalar volume_;
@@ -45,13 +45,13 @@ class Tetrahedron : public Cell<Scalar> {
   }
 
  public:
-  const GlobalCoord &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  const LocalCoord &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
@@ -59,7 +59,7 @@ class Tetrahedron : public Cell<Scalar> {
   }
 
  protected:
-  GlobalCoord &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) override {
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
@@ -90,7 +90,7 @@ template <std::floating_point Scalar, int kPoints>
 class TetrahedronBuilder;
 
 template <std::floating_point Scalar, int kPoints>
-const std::array<typename Tetrahedron<Scalar, kPoints>::LocalCoord, kPoints>
+const std::array<typename Tetrahedron<Scalar, kPoints>::Local, kPoints>
 Tetrahedron<Scalar, kPoints>::local_coords_
     = TetrahedronBuilder<Scalar, kPoints>::BuildLocalCoords();
 
@@ -102,12 +102,12 @@ Tetrahedron<Scalar, kPoints>::local_weights_
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 1> {
   static constexpr int kPoints = 1;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
     Scalar a = 0.25;
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     points[0] = { a, a, a };
     return points;
   }
@@ -120,11 +120,11 @@ class TetrahedronBuilder<Scalar, 1> {
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 4> {
   static constexpr int kPoints = 4;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the only S31 orbit
     Scalar a = 0.13819660112501051517954131656343619;
@@ -147,11 +147,11 @@ class TetrahedronBuilder<Scalar, 4> {
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 14> {
   static constexpr int kPoints = 14;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the two S31 orbits
     Scalar a_s31[] = {
@@ -194,11 +194,11 @@ class TetrahedronBuilder<Scalar, 14> {
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 15> {
   static constexpr int kPoints = 15;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     {  // the only S4 orbit
       Scalar a = 0.25;
@@ -247,11 +247,11 @@ class TetrahedronBuilder<Scalar, 15> {
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the three S31 orbits
     Scalar a_s31[] = {
@@ -304,11 +304,11 @@ class TetrahedronBuilder<Scalar, 24> {
 template <std::floating_point Scalar>
 class TetrahedronBuilder<Scalar, 46> {
   static constexpr int kPoints = 46;
-  using LocalCoord = typename Tetrahedron<Scalar, kPoints>::LocalCoord;
+  using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the four S31 orbits
     Scalar a_s31[] = {

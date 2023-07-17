@@ -21,8 +21,8 @@ class Cell : public Element<Scalar, 3, 3> {
  public:
   using Lagrange = lagrange::Cell<Scalar>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
 
   virtual ~Cell() noexcept = default;
@@ -35,7 +35,7 @@ class Cell : public Element<Scalar, 3, 3> {
    */
   virtual const Lagrange &lagrange() const = 0;
 
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
+  Global LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     return lagrange().LocalToGlobal(x_local, y_local, z_local);
   }
@@ -43,11 +43,11 @@ class Cell : public Element<Scalar, 3, 3> {
       const {
     return lagrange().LocalToJacobian(x_local, y_local, z_local);
   }
-  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
+  Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
       const {
     return lagrange().GlobalToLocal(x_global, y_global, z_global);
   }
-  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
+  Local GlobalToLocal(const Global &xyz) const {
     return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
 };

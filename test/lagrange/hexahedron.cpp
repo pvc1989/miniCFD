@@ -10,7 +10,7 @@
 class TestLagrangeHexahedron8 : public ::testing::Test {
  protected:
   using Lagrange = mini::lagrange::Hexahedron8<double>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   auto hexa = Lagrange {

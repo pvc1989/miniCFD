@@ -18,7 +18,7 @@ TEST_F(TestTriangle, OrthoNormal) {
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   using Gauss = mini::gauss::Triangle<double, 2, 12>;
   using Lagrange = mini::lagrange::Triangle3<double, 2>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
   // build a triangle-gauss
   auto lagrange = Lagrange(
     Coord(10, 0), Coord(0, 10), Coord(0, 0)

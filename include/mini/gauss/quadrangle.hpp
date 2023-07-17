@@ -32,15 +32,15 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
  public:
   using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
   using Frame = typename Lagrange::Frame;
 
  private:
-  static const std::array<LocalCoord, Qx * Qy> local_coords_;
+  static const std::array<Local, Qx * Qy> local_coords_;
   static const std::array<Scalar, Qx * Qy> local_weights_;
-  std::array<GlobalCoord, Qx * Qy> global_coords_;
+  std::array<Global, Qx * Qy> global_coords_;
   std::array<Scalar, Qx * Qy> global_weights_;
   std::array<Frame, Qx * Qy> normal_frames_;
   Lagrange const *lagrange_;
@@ -53,7 +53,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
 
  private:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, Qx * Qy> points;
+    std::array<Local, Qx * Qy> points;
     int k = 0;
     for (int i = 0; i < Qx; ++i) {
       for (int j = 0; j < Qy; ++j) {
@@ -76,13 +76,13 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   }
 
  public:
-  const GlobalCoord &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  const LocalCoord &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
@@ -90,7 +90,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   }
 
  protected:
-  GlobalCoord &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) override {
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
@@ -122,7 +122,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
 };
 
 template <std::floating_point Scalar, int D, int Qx, int Qy>
-std::array<typename Quadrangle<Scalar, D, Qx, Qy>::LocalCoord, Qx * Qy> const
+std::array<typename Quadrangle<Scalar, D, Qx, Qy>::Local, Qx * Qy> const
 Quadrangle<Scalar, D, Qx, Qy>::local_coords_
     = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalCoords();
 

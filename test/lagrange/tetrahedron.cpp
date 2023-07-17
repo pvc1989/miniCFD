@@ -13,7 +13,7 @@ class TestLagrangeTetrahedron4 : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeTetrahedron4, CoordinateMap) {
   auto tetra = Lagrange{

@@ -47,8 +47,8 @@ inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
 template <typename Callable, typename Element>
 auto Quadrature(Callable &&f_in_local, Element &&element) {
   using E = std::remove_reference_t<Element>;
-  using LocalCoord = typename E::LocalCoord;
-  decltype(f_in_local(LocalCoord())) sum; SetZero(&sum);
+  using Local = typename E::Local;
+  decltype(f_in_local(Local())) sum; SetZero(&sum);
   auto n = element.CountQuadraturePoints();
   for (int i = 0; i < n; ++i) {
     auto f_val = f_in_local(element.GetLocalCoord(i));
@@ -70,8 +70,8 @@ auto Quadrature(Callable &&f_in_local, Element &&element) {
 template <typename Callable, typename Element>
 auto Integrate(Callable &&f_in_global, Element &&element) {
   using E = std::remove_reference_t<Element>;
-  using GlobalCoord = typename E::GlobalCoord;
-  decltype(f_in_global(GlobalCoord())) sum; SetZero(&sum);
+  using Global = typename E::Global;
+  decltype(f_in_global(Global())) sum; SetZero(&sum);
   auto n = element.CountQuadraturePoints();
   auto const &gauss = element;
   for (int i = 0; i < n; ++i) {
@@ -96,8 +96,8 @@ auto Integrate(Callable &&f_in_global, Element &&element) {
 template <typename Func1, typename Func2, typename Element>
 auto Innerprod(Func1 &&f1, Func2 &&f2, Element &&element) {
   using E = std::remove_reference_t<Element>;
-  using GlobalCoord = typename E::GlobalCoord;
-  return Integrate([&f1, &f2](const GlobalCoord &xyz_global){
+  using Global = typename E::Global;
+  return Integrate([&f1, &f2](const Global &xyz_global){
     return f1(xyz_global) * f2(xyz_global);
   }, element);
 }
@@ -128,7 +128,7 @@ template <class Basis, class Element>
 void OrthoNormalize(Basis *basis, const Element &elem) {
   constexpr int N = Basis::N;
   using MatNxN = typename Basis::MatNxN;
-  using MatDx1 = typename Element::GlobalCoord;
+  using MatDx1 = typename Element::Global;
   using Scalar = typename Element::Real;
   MatNxN S; S.setIdentity();
   auto A = Integrate([basis](const MatDx1 &xyz){

@@ -18,19 +18,19 @@ class Line {
 
  public:
   using Scalar = S;
-  using LocalCoord = Scalar;
-  using GlobalCoord = std::conditional_t<(D > 1), MatDx1, Scalar>;
+  using Local = Scalar;
+  using Global = std::conditional_t<(D > 1), MatDx1, Scalar>;
 
  private:
-  using MatDx2 = algebra::Vector<GlobalCoord, 2>;
+  using MatDx2 = algebra::Vector<Global, 2>;
   using Mat2x1 = algebra::Vector<Scalar, 2>;
   using Gauss = GaussLegendre<Scalar, Q>;
 
  private:
   static const std::array<Scalar, Q> local_weights_;
-  static const std::array<LocalCoord, Q> local_coords_;
+  static const std::array<Local, Q> local_coords_;
   std::array<Scalar, Q> global_weights_;
-  std::array<GlobalCoord, Q> global_coords_;
+  std::array<Global, Q> global_coords_;
   MatDx2 pq_;
 
  public:
@@ -40,7 +40,7 @@ class Line {
   static int CountQuadraturePoints() {
     return Q;
   }
-  GlobalCoord GetVertex(int i) const {
+  Global GetVertex(int i) const {
     return pq_[i];
   }
 
@@ -52,7 +52,7 @@ class Line {
     return v.norm();
   }
   void BuildQuadraturePoints() {
-    GlobalCoord pq = pq_[0] - pq_[1];
+    Global pq = pq_[0] - pq_[1];
     auto det_j = Norm(pq) * 0.5;
     int n = CountQuadraturePoints();
     for (int i = 0; i < n; ++i) {
@@ -72,29 +72,29 @@ class Line {
   }
 
  public:
-  Line(GlobalCoord const &p0, GlobalCoord const &p1) {
+  Line(Global const &p0, Global const &p1) {
     pq_[0] = p0; pq_[1] = p1;
     BuildQuadraturePoints();
   }
-  GlobalCoord const &GetGlobalCoord(int i) const {
+  Global const &GetGlobalCoord(int i) const {
     return global_coords_[i];
   }
   Scalar const &GetGlobalWeight(int i) const {
     return global_weights_[i];
   }
-  LocalCoord const &GetLocalCoord(int i) const {
+  Local const &GetLocalCoord(int i) const {
     return local_coords_[i];
   }
   Scalar const &GetLocalWeight(int i) const {
     return local_weights_[i];
   }
-  GlobalCoord LocalToGlobal(Scalar x) const {
+  Global LocalToGlobal(Scalar x) const {
     return pq_.dot(shape_2x1(x));
   }
 };
 
 template <typename S, int D, int Q>
-std::array<typename Line<S, D, Q>::LocalCoord, Q> const
+std::array<typename Line<S, D, Q>::Local, Q> const
 Line<S, D, Q>::local_coords_ = Line<S, D, Q>::BuildLocalCoords();
 
 template <typename S, int D, int Q>

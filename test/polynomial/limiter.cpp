@@ -33,7 +33,7 @@ class TestWenoLimiters : public ::testing::Test {
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
-  using Coord = typename Gauss::GlobalCoord;
+  using Coord = typename Gauss::Global;
 
   std::string const test_input_dir_{TEST_INPUT_DIR};
 };

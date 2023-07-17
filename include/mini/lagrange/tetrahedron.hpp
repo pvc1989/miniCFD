@@ -27,19 +27,19 @@ class Tetrahedron : public Cell<Scalar> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   int CountCorners() const override final {
     return 4;
   }
-  const GlobalCoord &center() const override final {
+  const Global &center() const override final {
     return center_;
   }
 
  protected:
-  GlobalCoord center_;
+  Global center_;
   void BuildCenter() {
     Scalar a = 1.0 / 4;
     center_ = this->LocalToGlobal(a, a, a);
@@ -57,16 +57,16 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   static constexpr int kNodes = 4;
   static constexpr int kFaces = 4;
 
  private:
-  std::array<GlobalCoord, kNodes> global_coords_;
-  static const std::array<LocalCoord, kNodes> local_coords_;
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
   static const std::array<std::array<int, 3>, kFaces> faces_;
 
  public:
@@ -99,31 +99,31 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
       x_local, y_local, z_local, 1.0 - x_local - y_local - z_local
     };
   }
-  std::vector<LocalCoord> LocalToShapeGradients(
+  std::vector<Local> LocalToShapeGradients(
       Scalar x_local, Scalar y_local, Scalar z_local) const override {
     return {
-      LocalCoord(1, 0, 0), LocalCoord(0, 1, 0), LocalCoord(0, 0, 1),
-      LocalCoord(-1, -1, -1)
+      Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 1),
+      Local(-1, -1, -1)
     };
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
+  Global const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  LocalCoord const &GetLocalCoord(int q) const override {
+  Local const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
 
  public:
   Tetrahedron4(
-      GlobalCoord const &p0, GlobalCoord const &p1,
-      GlobalCoord const &p2, GlobalCoord const &p3) {
+      Global const &p0, Global const &p1,
+      Global const &p2, Global const &p3) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
     this->BuildCenter();
   }
-  Tetrahedron4(std::initializer_list<GlobalCoord> il) {
+  Tetrahedron4(std::initializer_list<Global> il) {
     assert(il.size() == kNodes);
     auto p = il.begin();
     for (int i = 0; i < kNodes; ++i) {
@@ -134,10 +134,10 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
 };
 // initialization of static const members:
 template <std::floating_point Scalar>
-const std::array<typename Tetrahedron4<Scalar>::LocalCoord, 4>
+const std::array<typename Tetrahedron4<Scalar>::Local, 4>
 Tetrahedron4<Scalar>::local_coords_{
-  Tetrahedron4::LocalCoord(1, 0, 0), Tetrahedron4::LocalCoord(0, 1, 0),
-  Tetrahedron4::LocalCoord(0, 0, 1), Tetrahedron4::LocalCoord(0, 0, 0)
+  Tetrahedron4::Local(1, 0, 0), Tetrahedron4::Local(0, 1, 0),
+  Tetrahedron4::Local(0, 0, 1), Tetrahedron4::Local(0, 0, 0)
 };
 
 template <std::floating_point Scalar>

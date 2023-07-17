@@ -13,7 +13,7 @@ class TestGaussQuadrangle : public ::testing::Test {
 TEST_F(TestGaussQuadrangle, OnStandardElementInTwoDimensionalSpace) {
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
   auto lagrange = Lagrange(
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
   );
@@ -42,8 +42,8 @@ TEST_F(TestGaussQuadrangle, OnStandardElementInTwoDimensionalSpace) {
 TEST_F(TestGaussQuadrangle, OnMappedElementInThreeDimensionalSpace) {
   using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 3>;
-  using Local = typename Lagrange::LocalCoord;
-  using Global = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   auto lagrange = Lagrange(
     Global(0, 0, 0), Global(4, 0, 0), Global(4, 4, 4), Global(0, 4, 4)
   );

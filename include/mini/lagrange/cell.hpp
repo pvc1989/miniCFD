@@ -21,32 +21,32 @@ class Cell : public Element<Scalar, 3, 3> {
 
  public:
   using Real = typename Base::Real;
-  using LocalCoord = typename Base::LocalCoord;
-  using GlobalCoord = typename Base::GlobalCoord;
+  using Local = typename Base::Local;
+  using Global = typename Base::Global;
   using Jacobian = typename Base::Jacobian;
 
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
-  virtual std::vector<LocalCoord> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
+  virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
 
-  std::vector<Scalar> LocalToShapeFunctions(const LocalCoord &xyz)
+  std::vector<Scalar> LocalToShapeFunctions(const Local &xyz)
       const override {
     return LocalToShapeFunctions(xyz[X], xyz[Y], xyz[Z]);
   }
-  std::vector<LocalCoord> LocalToShapeGradients(const LocalCoord &xyz)
+  std::vector<Local> LocalToShapeGradients(const Local &xyz)
       const override {
     return LocalToShapeGradients(xyz[X], xyz[Y], xyz[Z]);
   }
 
-  GlobalCoord LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
+  Global LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeFunctions(x_local, y_local, z_local);
-    GlobalCoord sum = this->GetGlobalCoord(0) * shapes[0];
+    Global sum = this->GetGlobalCoord(0) * shapes[0];
     for (int i = 1, n = this->CountNodes(); i < n; ++i) {
       sum += this->GetGlobalCoord(i) * shapes[i];
     }
     return sum;
   }
-  GlobalCoord LocalToGlobal(const LocalCoord &xyz) const override {
+  Global LocalToGlobal(const Local &xyz) const override {
     return LocalToGlobal(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -59,24 +59,24 @@ class Cell : public Element<Scalar, 3, 3> {
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const LocalCoord &xyz) const override {
+  Jacobian LocalToJacobian(const Local &xyz) const override {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 
-  LocalCoord GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
+  Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
       const {
-    GlobalCoord xyz_global = {x_global, y_global, z_global};
-    auto func = [this, &xyz_global](LocalCoord const &xyz_local) {
+    Global xyz_global = {x_global, y_global, z_global};
+    auto func = [this, &xyz_global](Local const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
       return res -= xyz_global;
     };
-    auto jac = [this](LocalCoord const &xyz_local) {
+    auto jac = [this](Local const &xyz_local) {
       return LocalToJacobian(xyz_local);
     };
-    GlobalCoord xyz0 = {0, 0, 0};
+    Global xyz0 = {0, 0, 0};
     return root(func, xyz0, jac);
   }
-  LocalCoord GlobalToLocal(const GlobalCoord &xyz) const {
+  Local GlobalToLocal(const Global &xyz) const {
     return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -90,9 +90,9 @@ class Cell : public Element<Scalar, 3, 3> {
 
  private:
   template <typename Callable, typename MatJ>
-  static GlobalCoord root(
-      Callable &&func, GlobalCoord x, MatJ &&matj, Scalar xtol = 1e-5) {
-    GlobalCoord res;
+  static Global root(
+      Callable &&func, Global x, MatJ &&matj, Scalar xtol = 1e-5) {
+    Global res;
     do {
       res = matj(x).partialPivLu().solve(func(x));
       x -= res;

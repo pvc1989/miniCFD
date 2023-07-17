@@ -13,7 +13,7 @@ class TestLagrangeTriangle3 : public ::testing::Test {
 TEST_F(TestLagrangeTriangle3, ThreeDimensional) {
   constexpr int D = 3;
   using Lagrange = mini::lagrange::Triangle3<double, D>;
-  using Coord = typename Lagrange::GlobalCoord;
+  using Coord = typename Lagrange::Global;
   auto quadrangle = Lagrange {
     Coord(9, 0, 0), Coord(0, 9, 0), Coord(0, 0, 9)
   };

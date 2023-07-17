@@ -27,19 +27,19 @@ class Hexahedron : public Cell<Scalar> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   int CountCorners() const override final {
     return 8;
   }
-  const GlobalCoord &center() const override final {
+  const Global &center() const override final {
     return center_;
   }
 
  protected:
-  GlobalCoord center_;
+  Global center_;
   void BuildCenter() {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a, a);
@@ -57,16 +57,16 @@ class Hexahedron8 : public Hexahedron<Scalar> {
 
  public:
   using typename Base::Real;
-  using typename Base::LocalCoord;
-  using typename Base::GlobalCoord;
+  using typename Base::Local;
+  using typename Base::Global;
   using typename Base::Jacobian;
 
   static constexpr int kNodes = 8;
   static constexpr int kFaces = 6;
 
  private:
-  std::array<GlobalCoord, kNodes> global_coords_;
-  static const std::array<LocalCoord, kNodes> local_coords_;
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
   static const std::array<std::array<int, 4>, kFaces> faces_;
 
  public:
@@ -121,9 +121,9 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     }
     return shapes;
   }
-  std::vector<LocalCoord> LocalToShapeGradients(
+  std::vector<Local> LocalToShapeGradients(
       Scalar x_local, Scalar y_local, Scalar z_local) const override {
-    auto shapes = std::vector<LocalCoord>(kNodes);
+    auto shapes = std::vector<Local>(kNodes);
     std::array<Scalar, kNodes> factor_xy, factor_yz, factor_zx;
     for (int i = 0; i < kNodes; ++i) {
       auto &local_i = GetLocalCoord(i);
@@ -145,26 +145,26 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   }
 
  public:
-  GlobalCoord const &GetGlobalCoord(int q) const override {
+  Global const &GetGlobalCoord(int q) const override {
     return global_coords_[q];
   }
-  LocalCoord const &GetLocalCoord(int q) const override {
+  Local const &GetLocalCoord(int q) const override {
     return local_coords_[q];
   }
 
  public:
   Hexahedron8(
-      GlobalCoord const &p0, GlobalCoord const &p1,
-      GlobalCoord const &p2, GlobalCoord const &p3,
-      GlobalCoord const &p4, GlobalCoord const &p5,
-      GlobalCoord const &p6, GlobalCoord const &p7) {
+      Global const &p0, Global const &p1,
+      Global const &p2, Global const &p3,
+      Global const &p4, Global const &p5,
+      Global const &p6, Global const &p7) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
     global_coords_[4] = p4; global_coords_[5] = p5;
     global_coords_[6] = p6; global_coords_[7] = p7;
     this->BuildCenter();
   }
-  Hexahedron8(std::initializer_list<GlobalCoord> il) {
+  Hexahedron8(std::initializer_list<Global> il) {
     assert(il.size() == kNodes);
     auto p = il.begin();
     for (int i = 0; i < kNodes; ++i) {
@@ -175,12 +175,12 @@ class Hexahedron8 : public Hexahedron<Scalar> {
 };
 // initialization of static const members:
 template <std::floating_point Scalar>
-const std::array<typename Hexahedron8<Scalar>::LocalCoord, 8>
+const std::array<typename Hexahedron8<Scalar>::Local, 8>
 Hexahedron8<Scalar>::local_coords_{
-  Hexahedron8::LocalCoord(-1, -1, -1), Hexahedron8::LocalCoord(+1, -1, -1),
-  Hexahedron8::LocalCoord(+1, +1, -1), Hexahedron8::LocalCoord(-1, +1, -1),
-  Hexahedron8::LocalCoord(-1, -1, +1), Hexahedron8::LocalCoord(+1, -1, +1),
-  Hexahedron8::LocalCoord(+1, +1, +1), Hexahedron8::LocalCoord(-1, +1, +1)
+  Hexahedron8::Local(-1, -1, -1), Hexahedron8::Local(+1, -1, -1),
+  Hexahedron8::Local(+1, +1, -1), Hexahedron8::Local(-1, +1, -1),
+  Hexahedron8::Local(-1, -1, +1), Hexahedron8::Local(+1, -1, +1),
+  Hexahedron8::Local(+1, +1, +1), Hexahedron8::Local(-1, +1, +1)
 };
 
 template <std::floating_point Scalar>

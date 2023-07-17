@@ -29,15 +29,15 @@ class Triangle : public Face<Scalar, kPhysDim> {
  public:
   using Lagrange = lagrange::Triangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
-  using LocalCoord = typename Lagrange::LocalCoord;
-  using GlobalCoord = typename Lagrange::GlobalCoord;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
   using Jacobian = typename Lagrange::Jacobian;
   using Frame = typename Lagrange::Frame;
 
  private:
-  static const std::array<LocalCoord, kPoints> local_coords_;
+  static const std::array<Local, kPoints> local_coords_;
   static const std::array<Scalar, kPoints> local_weights_;
-  std::array<GlobalCoord, kPoints> global_coords_;
+  std::array<Global, kPoints> global_coords_;
   std::array<Scalar, kPoints> global_weights_;
   std::array<Frame, kPoints> normal_frames_;
   Lagrange const *lagrange_;
@@ -49,13 +49,13 @@ class Triangle : public Face<Scalar, kPhysDim> {
   }
 
  public:
-  const GlobalCoord &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const override {
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
     return global_weights_[i];
   }
-  const LocalCoord &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const override {
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
@@ -63,7 +63,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   }
 
  protected:
-  GlobalCoord &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) override {
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
@@ -98,7 +98,7 @@ template <std::floating_point Scalar, int kPhysDim, int kPoints>
 class TriangleBuilder;
 
 template <std::floating_point Scalar, int kPhysDim, int kPoints>
-std::array<typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord,
+std::array<typename Triangle<Scalar, kPhysDim, kPoints>::Local,
     kPoints> const
 Triangle<Scalar, kPhysDim, kPoints>::local_coords_
     = TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalCoords();
@@ -111,13 +111,13 @@ Triangle<Scalar, kPhysDim, kPoints>::local_weights_
 template <std::floating_point Scalar, int kPhysDim>
 class TriangleBuilder<Scalar, kPhysDim, 1> {
   static constexpr int kPoints = 1;
-  using LocalCoord =
-      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
+  using Local =
+      typename Triangle<Scalar, kPhysDim, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
     Scalar a = .3333333333333333333333333333333333;
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     points[0] = { a, a };
     return points;
   }
@@ -130,12 +130,12 @@ class TriangleBuilder<Scalar, kPhysDim, 1> {
 template <std::floating_point Scalar, int kPhysDim>
 class TriangleBuilder<Scalar, kPhysDim, 3> {
   static constexpr int kPoints = 3;
-  using LocalCoord =
-      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
+  using Local =
+      typename Triangle<Scalar, kPhysDim, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the only S21 orbits
     Scalar a_s21[] = { 1./6. };
@@ -161,12 +161,12 @@ class TriangleBuilder<Scalar, kPhysDim, 3> {
 template <std::floating_point Scalar, int kPhysDim>
 class TriangleBuilder<Scalar, kPhysDim, 6> {
   static constexpr int kPoints = 6;
-  using LocalCoord =
-      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
+  using Local =
+      typename Triangle<Scalar, kPhysDim, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the two S21 orbits
     Scalar a_s21[] = {
@@ -196,12 +196,12 @@ class TriangleBuilder<Scalar, kPhysDim, 6> {
 template <std::floating_point Scalar, int kPhysDim>
 class TriangleBuilder<Scalar, kPhysDim, 12> {
   static constexpr int kPoints = 12;
-  using LocalCoord =
-      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
+  using Local =
+      typename Triangle<Scalar, kPhysDim, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     // the two S21 orbits
     Scalar a_s21[] = {
@@ -244,12 +244,12 @@ class TriangleBuilder<Scalar, kPhysDim, 12> {
 template <std::floating_point Scalar, int kPhysDim>
 class TriangleBuilder<Scalar, kPhysDim, 16> {
   static constexpr int kPoints = 16;
-  using LocalCoord =
-      typename Triangle<Scalar, kPhysDim, kPoints>::LocalCoord;
+  using Local =
+      typename Triangle<Scalar, kPhysDim, kPoints>::Local;
 
  public:
   static constexpr auto BuildLocalCoords() {
-    std::array<LocalCoord, kPoints> points;
+    std::array<Local, kPoints> points;
     int q = 0;
     {  // the only S3 orbit
       Scalar a = .33333333333333333333333333333333333;
