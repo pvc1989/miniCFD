@@ -42,7 +42,7 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
+  }, hexa) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another hexa-gauss
   Coord shift = {-1, 2, 3};
@@ -64,7 +64,7 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, hexa) - A::Identity()).cwiseAbs().maxCoeff();
+  }, hexa) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 TEST_F(TestHexahedron4x4x4, Projection) {
@@ -81,7 +81,7 @@ TEST_F(TestHexahedron4x4x4, Projection) {
   };
   auto scalar_pf = ScalarPF(scalar_f, basis);
   double residual = (scalar_pf.coeff()
-      - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0)).cwiseAbs().maxCoeff();
+      - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0)).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   auto vector_f = [](Coord const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
@@ -95,7 +95,7 @@ TEST_F(TestHexahedron4x4x4, Projection) {
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();
   Mat11x10 abs_diff = vector_pf.coeff() - exact_vector;
-  EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(abs_diff.norm(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {

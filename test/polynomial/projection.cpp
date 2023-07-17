@@ -77,7 +77,7 @@ TEST_F(TestProjection, VectorFunction) {
     return 1.0;
   }, gauss_);
   res = projection.GetAverage() - integral_f / integral_1;
-  EXPECT_NEAR(res.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(res.norm(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, CoeffConsistency) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 5>;
@@ -94,7 +94,7 @@ TEST_F(TestProjection, CoeffConsistency) {
   Coeff coeff_diff = projection.GetCoeffOnTaylorBasis()
       - projection.GetCoeffOnOrthoNormalBasis() * basis.coeff();
   std::cout << projection.GetCoeffOnTaylorBasis() << std::endl;
-  EXPECT_NEAR(coeff_diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(coeff_diff.norm(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
@@ -113,7 +113,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
   auto pdv_expect = Taylor::GetPdvValue(point, coeff);
   ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
-  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
   auto pdv_values = ProjFunc::MatKxN(); pdv_values.setZero();
   pdv_values(1, 1) = 1;  // (∂/∂x)(x)
   pdv_values(2, 2) = 1;  // (∂/∂y)(y)

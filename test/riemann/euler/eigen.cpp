@@ -19,8 +19,8 @@ TEST_F(TestEigenMatrices, OrthoNormality) {
   auto &L = eigen_matrices.L;
   auto &R = eigen_matrices.R;
   auto &I = decltype(eigen_matrices.L)::Identity();
-  EXPECT_NEAR((R * L - I).cwiseAbs().maxCoeff(), 0, 1e-15);
-  EXPECT_NEAR((L * R - I).cwiseAbs().maxCoeff(), 0, 1e-15);
+  EXPECT_NEAR((R * L - I).norm(), 0, 1e-15);
+  EXPECT_NEAR((L * R - I).norm(), 0, 1e-15);
 }
 
 }  // namespace euler

@@ -120,7 +120,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
           - adj_projection.GetAverage();
       adj_projection += diff;
       diff = cell_i.projection_.GetAverage() - adj_projection.GetAverage();
-      EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+      EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
       adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
     }
   }
@@ -221,9 +221,9 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     std::cout << std::endl;
     Mat5x1 diff = cell.projection_.GetAverage()
         - eigen_projections.back().GetAverage();
-    EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+    EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
     diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
-    EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+    EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
   });
   std::cout << std::endl;
 }

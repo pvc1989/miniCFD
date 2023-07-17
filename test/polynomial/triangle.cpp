@@ -32,7 +32,7 @@ TEST_F(TestTriangle, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another triangle-gauss
   Coord shift = {10, 20};
@@ -47,7 +47,7 @@ TEST_F(TestTriangle, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 

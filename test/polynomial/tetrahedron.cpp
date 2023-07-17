@@ -34,7 +34,7 @@ TEST_F(TestTetrahedron, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, tetra) - A::Identity()).cwiseAbs().maxCoeff();
+  }, tetra) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another tetra-gauss
   Coord shift = {10, 20, 30};
@@ -52,7 +52,7 @@ TEST_F(TestTetrahedron, OrthoNormal) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, tetra) - A::Identity()).cwiseAbs().maxCoeff();
+  }, tetra) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 

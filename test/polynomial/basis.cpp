@@ -153,7 +153,7 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
   };
   Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
-  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-13);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
 }
 TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
@@ -174,7 +174,7 @@ TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
   };
   Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
-  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
 TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
   using Gauss = mini::gauss::Tetrahedron<double, 24>;
@@ -195,7 +195,7 @@ TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
   };
   Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
-  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
 TEST_F(TestOrthoNormalBasis, OnHexahedron) {
   using Lagrange = mini::lagrange::Hexahedron8<double>;
@@ -217,7 +217,7 @@ TEST_F(TestOrthoNormalBasis, OnHexahedron) {
   };
   Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
       - Basis::MatNxN::Identity();
-  EXPECT_NEAR(diff.cwiseAbs().maxCoeff(), 0.0, 1e-14);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {

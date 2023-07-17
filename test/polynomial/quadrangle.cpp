@@ -30,7 +30,7 @@ TEST_F(TestQuadrangle4x4, OrthoNormal) {
     auto col = basis(xy);
     A prod = col * col.transpose();
     return prod;
-  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   auto x = left[0], y = left[1];
   lagrange = Lagrange(
@@ -41,7 +41,7 @@ TEST_F(TestQuadrangle4x4, OrthoNormal) {
     auto col = basis(xy);
     A prod = col * col.transpose();
     return prod;
-  }, gauss) - A::Identity()).cwiseAbs().maxCoeff();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-12);
 }
 TEST_F(TestQuadrangle4x4, Projection) {
@@ -61,7 +61,7 @@ TEST_F(TestQuadrangle4x4, Projection) {
   auto scalar_pf = ScalarPF(scalar_f, basis);
   using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
   double residual = (scalar_pf.coeff()
-      - Mat1x6(0, 0, 0, 0, 1, 0)).cwiseAbs().maxCoeff();
+      - Mat1x6(0, 0, 0, 0, 1, 0)).norm();
   EXPECT_NEAR(residual, 0.0, 1e-15);
   using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
   auto vector_f = [](Coord const& xy) {
@@ -78,7 +78,7 @@ TEST_F(TestQuadrangle4x4, Projection) {
       {0, 0, 0, 0, 0, 1}
   };
   Mat7x6 abs_diff = vector_pf.coeff() - exact_vector;
-  EXPECT_NEAR(abs_diff.cwiseAbs().maxCoeff(), 0.0, 1e-15);
+  EXPECT_NEAR(abs_diff.norm(), 0.0, 1e-14);
 }
 
 int main(int argc, char* argv[]) {
