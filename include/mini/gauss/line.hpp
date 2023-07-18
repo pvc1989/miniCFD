@@ -77,15 +77,19 @@ class Line {
     BuildQuadraturePoints();
   }
   Global const &GetGlobalCoord(int i) const {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_coords_[i];
   }
   Scalar const &GetGlobalWeight(int i) const {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_weights_[i];
   }
   Local const &GetLocalCoord(int i) const {
+    assert(0 <= i && i < CountQuadraturePoints());
     return local_coords_[i];
   }
   Scalar const &GetLocalWeight(int i) const {
+    assert(0 <= i && i < CountQuadraturePoints());
     return local_weights_[i];
   }
   Global LocalToGlobal(Scalar x) const {

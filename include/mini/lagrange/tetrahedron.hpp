@@ -108,11 +108,13 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
   }
 
  public:
-  Global const &GetGlobalCoord(int q) const override {
-    return global_coords_[q];
+  Global const &GetGlobalCoord(int i) const override {
+    assert(0 <= i && i < CountNodes());
+    return global_coords_[i];
   }
-  Local const &GetLocalCoord(int q) const override {
-    return local_coords_[q];
+  Local const &GetLocalCoord(int i) const override {
+    assert(0 <= i && i < CountNodes());
+    return local_coords_[i];
   }
 
  public:

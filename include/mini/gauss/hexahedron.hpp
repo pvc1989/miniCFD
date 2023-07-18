@@ -81,23 +81,29 @@ class Hexahedron : public Cell<Scalar> {
 
  public:
   const Global &GetGlobalCoord(int i) const override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_weights_[i];
   }
   const Local &GetLocalCoord(int i) const override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return local_weights_[i];
   }
 
  protected:
   Global &GetGlobalCoord(int i) override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
+    assert(0 <= i && i < CountQuadraturePoints());
     return global_weights_[i];
   }
 
