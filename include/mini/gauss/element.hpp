@@ -35,7 +35,7 @@ class Element {
    * 
    * @return int  Number of quadrature points on this element.
    */
-  virtual int CountQuadraturePoints() const = 0;
+  virtual int CountPoints() const = 0;
 
   /**
    * @brief Get the Local of the i-th quadrature point.
@@ -97,7 +97,7 @@ class Element {
   virtual Real &GetGlobalWeight(int i) = 0;
   Real BuildQuadraturePoints() {
     Real sum = 0.0;
-    for (int i = 0, n = CountQuadraturePoints(); i < n; ++i) {
+    for (int i = 0, n = CountPoints(); i < n; ++i) {
       auto &local_i = GetLocalCoord(i);
       GetGlobalCoord(i) = lagrange().LocalToGlobal(local_i);
       auto mat_j = lagrange().LocalToJacobian(local_i);

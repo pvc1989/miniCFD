@@ -115,7 +115,7 @@ class RungeKuttaBase {
       part.ForEachConstLocalCell([this](const Cell &cell){
         auto &coeff = this->residual_.at(cell.id());
         const auto &gauss = *(cell.gauss_ptr_);
-        auto n = gauss.CountQuadraturePoints();
+        auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &xyz = gauss.GetGlobalCoord(q);
           Value cv = cell.GetValue(xyz);
@@ -135,7 +135,7 @@ class RungeKuttaBase {
       const auto &holder = *(face.holder_);
       const auto &sharer = *(face.sharer_);
       const auto &riemann = (face.riemann_);
-      auto n = gauss.CountQuadraturePoints();
+      auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GetValue(coord);
@@ -156,7 +156,7 @@ class RungeKuttaBase {
       const auto &holder = *(face.holder_);
       const auto &sharer = *(face.sharer_);
       const auto &riemann = (face.riemann_);
-      auto n = gauss.CountQuadraturePoints();
+      auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GetValue(coord);
@@ -174,7 +174,7 @@ class RungeKuttaBase {
       assert(face.sharer_ == nullptr);
       const auto &holder = *(face.holder_);
       const auto &riemann = (face.riemann_);
-      auto n = gauss.CountQuadraturePoints();
+      auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GetValue(coord);
@@ -194,7 +194,7 @@ class RungeKuttaBase {
       assert(face.sharer_ == nullptr);
       const auto &holder = *(face.holder_);
       const auto &riemann = (face.riemann_);
-      auto n = gauss.CountQuadraturePoints();
+      auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GetValue(coord);
@@ -216,7 +216,7 @@ class RungeKuttaBase {
         assert(face.sharer_ == nullptr);
         const auto &holder = *(face.holder_);
         const auto &riemann = (face.riemann_);
-        auto n = gauss.CountQuadraturePoints();
+        auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_given = iter->second(coord, this->t_curr_);
@@ -237,7 +237,7 @@ class RungeKuttaBase {
         assert(face.sharer_ == nullptr);
         const auto &holder = *(face.holder_);
         const auto &riemann = (face.riemann_);
-        auto n = gauss.CountQuadraturePoints();
+        auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GetValue(coord);
@@ -259,7 +259,7 @@ class RungeKuttaBase {
         assert(face.sharer_ == nullptr);
         const auto &holder = *(face.holder_);
         const auto &riemann = (face.riemann_);
-        auto n = gauss.CountQuadraturePoints();
+        auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GetValue(coord);
@@ -281,7 +281,7 @@ class RungeKuttaBase {
         assert(face.sharer_ == nullptr);
         const auto &holder = *(face.holder_);
         const auto &riemann = (face.riemann_);
-        auto n = gauss.CountQuadraturePoints();
+        auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GetValue(coord);

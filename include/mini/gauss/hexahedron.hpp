@@ -45,7 +45,7 @@ class Hexahedron : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountQuadraturePoints() const override {
+  int CountPoints() const override {
     return Qx * Qy * Qz;
   }
 
@@ -81,29 +81,29 @@ class Hexahedron : public Cell<Scalar> {
 
  public:
   const Global &GetGlobalCoord(int i) const override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
   const Scalar &GetGlobalWeight(int i) const override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
   const Local &GetLocalCoord(int i) const override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return local_coords_[i];
   }
   const Scalar &GetLocalWeight(int i) const override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return local_weights_[i];
   }
 
  protected:
   Global &GetGlobalCoord(int i) override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
   Scalar &GetGlobalWeight(int i) override {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
 

@@ -20,7 +20,7 @@ TEST_F(TestGaussQuadrangle, OnStandardElementInTwoDimensionalSpace) {
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 2);
-  EXPECT_EQ(gauss.CountQuadraturePoints(), 16);
+  EXPECT_EQ(gauss.CountPoints(), 16);
   auto p0 = gauss.GetLocalCoord(0);
   EXPECT_EQ(p0[0], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
   EXPECT_EQ(p0[1], -std::sqrt((3 + 2 * std::sqrt(1.2)) / 7));
@@ -66,7 +66,7 @@ TEST_F(TestGaussQuadrangle, OnMappedElementInThreeDimensionalSpace) {
   EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
   // test normal frames
   Global normal = Global(0, -1, 1).normalized();
-  for (int q = 0; q < gauss.CountQuadraturePoints(); ++q) {
+  for (int q = 0; q < gauss.CountPoints(); ++q) {
     auto &frame = gauss.GetNormalFrame(q);
     auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
     EXPECT_NEAR((nu - normal).norm(), 0.0, 1e-15);

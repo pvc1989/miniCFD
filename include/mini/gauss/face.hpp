@@ -64,7 +64,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
 template <std::floating_point Scalar>
 struct NormalFrameBuilder<Scalar, 3> {
   static void Build(Face<Scalar, 3> *face) {
-    int n = face->CountQuadraturePoints();
+    int n = face->CountPoints();
     for (int i = 0; i < n; ++i) {
       auto &local_i = face->GetLocalCoord(i);
       face->GetNormalFrame(i) = face->lagrange().LocalToNormalFrame(local_i);

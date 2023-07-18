@@ -18,7 +18,7 @@ TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
     Coord(0, 0), Coord(2, 0), Coord(2, 2)
   );
   auto gauss = Gauss(lagrange);
-  EXPECT_EQ(gauss.CountQuadraturePoints(), 16);
+  EXPECT_EQ(gauss.CountPoints(), 16);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 2);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
@@ -63,7 +63,7 @@ TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
   // test normal frames
   Global normal = Global(0, 0, 1).normalized();
-  for (int q = 0; q < gauss.CountQuadraturePoints(); ++q) {
+  for (int q = 0; q < gauss.CountPoints(); ++q) {
     auto &frame = gauss.GetNormalFrame(q);
     auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
     EXPECT_NEAR((nu - normal).norm(), 0.0, 1e-15);

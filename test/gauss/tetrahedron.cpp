@@ -24,7 +24,7 @@ TEST_F(TestGaussTetrahedron, OnStandardElement) {
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
   EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
-  EXPECT_EQ(tetra.CountQuadraturePoints(), kPoints);
+  EXPECT_EQ(tetra.CountPoints(), kPoints);
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));

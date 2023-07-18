@@ -37,7 +37,7 @@ class Line {
   static int CountCorners() {
     return 2;
   }
-  static int CountQuadraturePoints() {
+  static int CountPoints() {
     return Q;
   }
   Global GetVertex(int i) const {
@@ -54,7 +54,7 @@ class Line {
   void BuildQuadraturePoints() {
     Global pq = pq_[0] - pq_[1];
     auto det_j = Norm(pq) * 0.5;
-    int n = CountQuadraturePoints();
+    int n = CountPoints();
     for (int i = 0; i < n; ++i) {
       global_weights_[i] = local_weights_[i] * det_j;
       global_coords_[i] = LocalToGlobal(GetLocalCoord(i));
@@ -77,19 +77,19 @@ class Line {
     BuildQuadraturePoints();
   }
   Global const &GetGlobalCoord(int i) const {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
   Scalar const &GetGlobalWeight(int i) const {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
   Local const &GetLocalCoord(int i) const {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return local_coords_[i];
   }
   Scalar const &GetLocalWeight(int i) const {
-    assert(0 <= i && i < CountQuadraturePoints());
+    assert(0 <= i && i < CountPoints());
     return local_weights_[i];
   }
   Global LocalToGlobal(Scalar x) const {
