@@ -2,10 +2,11 @@
 #ifndef MINI_AIRCRAFT_ROTOR_HPP_
 #define MINI_AIRCRAFT_ROTOR_HPP_
 
+#include <concepts>
+
 #include <iostream>
 #include <utility>
 #include <vector>
-#include <concepts>
 
 #include "mini/geometry/pi.hpp"
 #include "mini/aircraft/blade.hpp"

@@ -2,8 +2,9 @@
 #ifndef MINI_GAUSS_QUADRANGLE_HPP_
 #define MINI_GAUSS_QUADRANGLE_HPP_
 
-#include <cmath>
 #include <concepts>
+
+#include <cmath>
 
 #include "mini/algebra/eigen.hpp"
 

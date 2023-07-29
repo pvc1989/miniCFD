@@ -2,9 +2,11 @@
 #ifndef MINI_MESH_PART_HPP_
 #define MINI_MESH_PART_HPP_
 
-#include <algorithm>
-#include <cassert>
 #include <concepts>
+
+#include <cassert>
+
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <ios>
@@ -154,7 +156,8 @@ struct Face {
 
   Face(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr,
       Cell *holder, Cell *sharer, Int id = 0)
-      : lagrange_ptr_(std::move(lagrange_ptr)), gauss_ptr_(std::move(gauss_ptr)),
+      : lagrange_ptr_(std::move(lagrange_ptr)),
+        gauss_ptr_(std::move(gauss_ptr)),
         holder_(holder), sharer_(sharer), id_(id) {
     riemann_.Rotate(gauss_ptr_->GetNormalFrame(0));
   }
@@ -736,8 +739,10 @@ class Part {
       local_cells_[i_zone][i_sect] = std::move(cell_group);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto *i_node_list = &nodes[(i_cell - head) * npe];
-        auto [lagrange_uptr, gauss_uptr] = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = Cell(std::move(lagrange_uptr), std::move(gauss_uptr), metis_ids[i_cell]);
+        auto [lagrange_uptr, gauss_uptr]
+            = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = Cell(std::move(lagrange_uptr),
+            std::move(gauss_uptr), metis_ids[i_cell]);
         local_cells_[i_zone][i_sect][i_cell] = std::move(cell);
       }
     }
@@ -857,8 +862,10 @@ class Part {
         m_to_recv_cells[m_cell].npe = npe;
         int i_zone = recv_buf[index++];
         auto *i_node_list = &recv_buf[index];
-        auto [lagrange_uptr, gauss_uptr] = BuildGaussForCell(npe, i_zone, i_node_list);
-        auto cell = Cell(std::move(lagrange_uptr), std::move(gauss_uptr), m_cell);
+        auto [lagrange_uptr, gauss_uptr]
+            = BuildGaussForCell(npe, i_zone, i_node_list);
+        auto cell = Cell(std::move(lagrange_uptr),
+            std::move(gauss_uptr), m_cell);
         ghost_cells_[m_cell] = std::move(cell);
         index += npe;
       }

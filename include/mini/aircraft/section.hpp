@@ -2,10 +2,12 @@
 #ifndef MINI_AIRCRAFT_SECTION_HPP_
 #define MINI_AIRCRAFT_SECTION_HPP_
 
+#include <concepts>
+
 #include <cassert>
+
 #include <iostream>
 #include <utility>
-#include <concepts>
 
 #include "mini/aircraft/airfoil.hpp"
 #include "mini/geometry/frame.hpp"

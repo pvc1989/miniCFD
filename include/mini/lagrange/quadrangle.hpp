@@ -2,14 +2,17 @@
 #ifndef MINI_LAGRANGE_QUADRANGLE_HPP_
 #define MINI_LAGRANGE_QUADRANGLE_HPP_
 
-#include <algorithm>
-#include <array>
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
-#include <concepts>
 #include <cstring>
+
+#include <algorithm>
+#include <array>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "mini/lagrange/face.hpp"
 
@@ -31,10 +34,10 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   using typename Base::Global;
   using typename Base::Jacobian;
 
-  int CountCorners() const override final {
+  int CountCorners() const final {
     return 4;
   }
-  const Global &center() const override final {
+  const Global &center() const final {
     return center_;
   }
 

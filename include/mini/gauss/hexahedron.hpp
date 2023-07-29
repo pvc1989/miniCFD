@@ -2,11 +2,13 @@
 #ifndef MINI_GAUSS_HEXAHEDRON_HPP_
 #define MINI_GAUSS_HEXAHEDRON_HPP_
 
-#include <algorithm>
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <concepts>
+
+#include <algorithm>
 #include <type_traits>
 
 #include "mini/gauss/gauss.hpp"

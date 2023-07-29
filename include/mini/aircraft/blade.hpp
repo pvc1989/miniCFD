@@ -2,10 +2,11 @@
 #ifndef MINI_AIRCRAFT_BLADE_HPP_
 #define MINI_AIRCRAFT_BLADE_HPP_
 
+#include <concepts>
+
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <concepts>
 
 #include "mini/aircraft/section.hpp"
 

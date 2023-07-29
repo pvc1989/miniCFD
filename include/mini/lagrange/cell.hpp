@@ -2,8 +2,10 @@
 #ifndef MINI_LAGRANGE_CELL_HPP_
 #define MINI_LAGRANGE_CELL_HPP_
 
-#include <algorithm>
 #include <concepts>
+
+#include <algorithm>
+#include <vector>
 
 #include "mini/lagrange/element.hpp"
 
@@ -25,8 +27,10 @@ class Cell : public Element<Scalar, 3, 3> {
   using Global = typename Base::Global;
   using Jacobian = typename Base::Jacobian;
 
-  virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar) const = 0;
-  virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar, Scalar) const = 0;
+  virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar)
+      const = 0;
+  virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar, Scalar)
+      const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const Local &xyz)
       const override {
@@ -86,7 +90,8 @@ class Cell : public Element<Scalar, 3, 3> {
    * @param cell_nodes  The node id list of a Cell.
    * @param face_nodes  The node id list of a Face.
    */
-  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const = 0;
+  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes)
+      const = 0;
 
  private:
   template <typename Callable, typename MatJ>
@@ -99,7 +104,6 @@ class Cell : public Element<Scalar, 3, 3> {
     } while (res.norm() > xtol);
     return x;
   }
-
 };
 
 /**

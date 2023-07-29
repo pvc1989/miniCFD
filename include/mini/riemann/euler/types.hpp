@@ -2,10 +2,11 @@
 #ifndef MINI_RIEMANN_EULER_TYPES_HPP_
 #define MINI_RIEMANN_EULER_TYPES_HPP_
 
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <concepts>
 
 #include "mini/algebra/eigen.hpp"
 

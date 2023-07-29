@@ -4,6 +4,8 @@
 
 #include <cassert>
 #include <cmath>
+
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <numeric>

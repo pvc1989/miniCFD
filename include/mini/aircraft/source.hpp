@@ -2,10 +2,11 @@
 #ifndef MINI_AIRCRAFT_SOURCE_HPP_
 #define MINI_AIRCRAFT_SOURCE_HPP_
 
+#include <concepts>
+
 #include <algorithm>
 #include <utility>
 #include <vector>
-#include <concepts>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/geometry/frame.hpp"

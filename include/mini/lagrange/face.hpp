@@ -2,10 +2,12 @@
 #ifndef MINI_LAGRANGE_FACE_HPP_
 #define MINI_LAGRANGE_FACE_HPP_
 
+#include <concepts>
+
 #include <algorithm>
 #include <array>
-#include <concepts>
 #include <type_traits>
+#include <vector>
 
 #include "mini/lagrange/element.hpp"
 
@@ -86,7 +88,6 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   Jacobian LocalToJacobian(const Local &xy) const override {
     return LocalToJacobian(xy[X], xy[Y]);
   }
-
 };
 
 template <std::floating_point Scalar>

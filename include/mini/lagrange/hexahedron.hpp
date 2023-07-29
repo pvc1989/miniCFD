@@ -2,13 +2,15 @@
 #ifndef MINI_LAGRANGE_HEXAHEDRON_HPP_
 #define MINI_LAGRANGE_HEXAHEDRON_HPP_
 
-#include <algorithm>
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
-#include <concepts>
 #include <cstring>
+#include <algorithm>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/lagrange/cell.hpp"
@@ -31,10 +33,10 @@ class Hexahedron : public Cell<Scalar> {
   using typename Base::Global;
   using typename Base::Jacobian;
 
-  int CountCorners() const override final {
+  int CountCorners() const final {
     return 8;
   }
-  const Global &center() const override final {
+  const Global &center() const final {
     return center_;
   }
 
@@ -73,7 +75,8 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   int CountNodes() const override {
     return kNodes;
   }
-  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes) const override {
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes)
+      const override {
     int cnt = 0, nid = 0, sum = 0;
     while (cnt < 3) {
       auto curr_node = cell_nodes[nid];
@@ -188,8 +191,9 @@ Hexahedron8<Scalar>::local_coords_{
 template <std::floating_point Scalar>
 const std::array<std::array<int, 4>, 6>
 Hexahedron8<Scalar>::faces_{
-  // See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png for node numbering.
-  // Faces can be distinguished by the sum of the three minimum node ids.
+  /* See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_8.png for node numbering.
+   * Faces can be distinguished by the sum of the three minimum node ids.
+   */
   0, 3, 2, 1/* 0 + 2 + 1 == 3 */, 0, 1, 5, 4/* 0 + 1 + 4 == 5 */,
   1, 2, 6, 5/* 1 + 2 + 5 == 8 */, 2, 3, 7, 6/* 2 + 3 + 6 == 11 */,
   0, 4, 7, 3/* 0 + 4 + 4 == 7 */, 4, 5, 6, 7/* 4 + 5 + 6 == 15 */

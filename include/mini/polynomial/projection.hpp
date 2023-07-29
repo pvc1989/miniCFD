@@ -2,8 +2,10 @@
 #ifndef MINI_POLYNOMIAL_PROJECTION_HPP_
 #define MINI_POLYNOMIAL_PROJECTION_HPP_
 
-#include <cmath>
 #include <concepts>
+
+#include <cmath>
+
 #include <iostream>
 #include <type_traits>
 #include <utility>
@@ -23,7 +25,8 @@ namespace polynomial {
  * @tparam kDegrees the degree of completeness
  * @tparam kComponents the number of function components
  */
-template <std::floating_point Scalar, int kDimensions, int kDegrees, int kComponents>
+template <std::floating_point Scalar, int kDimensions, int kDegrees,
+    int kComponents>
 class Projection {
  public:
   using Basis = OrthoNormal<Scalar, kDimensions, kDegrees>;
@@ -114,7 +117,8 @@ class Projection {
     };
     auto integral = gauss::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
-    return Taylor<Scalar, kDimensions, kDegrees>::GetSmoothness(integral, volume);
+    return Taylor<Scalar, kDimensions, kDegrees>::GetSmoothness(
+        integral, volume);
   }
   template <typename Callable>
   void Project(Callable &&func, const Basis &basis) {

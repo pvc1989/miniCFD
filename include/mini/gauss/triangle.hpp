@@ -2,10 +2,12 @@
 #ifndef MINI_GAUSS_TRIANGLE_HPP_
 #define MINI_GAUSS_TRIANGLE_HPP_
 
-#include <algorithm>
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
-#include <concepts>
+
+#include <algorithm>
 #include <cstring>
 #include <type_traits>
 

@@ -2,9 +2,11 @@
 #ifndef MINI_GAUSS_GAUSS_HPP_
 #define MINI_GAUSS_GAUSS_HPP_
 
-#include <array>
-#include <cmath>
 #include <concepts>
+
+#include <cmath>
+
+#include <array>
 
 namespace mini {
 namespace gauss {

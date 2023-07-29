@@ -2,11 +2,13 @@
 #ifndef MINI_GAUSS_TETRAHEDRON_HPP_
 #define MINI_GAUSS_TETRAHEDRON_HPP_
 
-#include <algorithm>
+#include <concepts>
+
 #include <cassert>
 #include <cmath>
-#include <concepts>
 #include <cstring>
+
+#include <algorithm>
 #include <type_traits>
 #include <utility>
 

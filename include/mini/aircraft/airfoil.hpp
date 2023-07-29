@@ -2,9 +2,11 @@
 #ifndef MINI_AIRCRAFT_AIRFOIL_HPP_
 #define MINI_AIRCRAFT_AIRFOIL_HPP_
 
-#include <array>
-#include <cmath>
 #include <concepts>
+
+#include <cmath>
+
+#include <array>
 
 namespace mini {
 namespace aircraft {

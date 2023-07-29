@@ -2,6 +2,8 @@
 #ifndef MINI_LAGRANGE_ELEMENT_HPP_
 #define MINI_LAGRANGE_ELEMENT_HPP_
 
+#include <vector>
+
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
@@ -37,7 +39,6 @@ class Element {
   virtual const Local &GetLocalCoord(int i) const = 0;
   virtual const Global &GetGlobalCoord(int i) const = 0;
   virtual const Global &center() const = 0;
-
 };
 
 }  // namespace lagrange

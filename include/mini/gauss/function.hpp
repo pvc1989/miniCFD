@@ -2,8 +2,10 @@
 #ifndef MINI_GAUSS_FUNCTION_HPP_
 #define MINI_GAUSS_FUNCTION_HPP_
 
-#include <cmath>
 #include <concepts>
+
+#include <cmath>
+
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
