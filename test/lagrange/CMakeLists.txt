@@ -3,6 +3,7 @@ set (cases
   quadrangle
   tetrahedron
   hexahedron
+  pyramid
 )
 foreach (case ${cases})
   add_executable(test_lagrange_${case} ${case}.cpp)
