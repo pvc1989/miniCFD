@@ -76,8 +76,9 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
   int CountNodes() const override {
     return kNodes;
   }
-  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes)
-      const override {
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    assert(3 == face_n_node);
     int cnt = 0, nid = 0, sum = 0;
     while (cnt < 3) {
       auto curr_node = cell_nodes[nid];

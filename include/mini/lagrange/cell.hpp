@@ -89,9 +89,10 @@ class Cell : public Element<Scalar, 3, 3> {
    * 
    * @param cell_nodes  The node id list of a Cell.
    * @param face_nodes  The node id list of a Face.
+   * @param face_n_node  Number of nodes on the Face.
    */
-  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes)
-      const = 0;
+  virtual void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const = 0;
 
  private:
   template <typename Callable, typename MatJ>
@@ -136,7 +137,7 @@ void SortNodesOnFace(const Cell<Scalar> &cell, const T *cell_nodes,
     std::copy_n(face_nodes, face_n_node, face_node_list);
   }
   // Delegate the real work or sorting to the virtual function.
-  cell.SortNodesOnFace(cell_node_list, face_node_list);
+  cell.SortNodesOnFace(cell_node_list, face_node_list, face_n_node);
   if (sizeof(U) != sizeof(size_t)) {
     std::copy_n(face_node_list, face_n_node, face_nodes);
   }

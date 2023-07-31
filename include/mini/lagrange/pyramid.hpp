@@ -73,16 +73,10 @@ class Pyramid5 : public Pyramid<Scalar> {
   int CountNodes() const override {
     return kNodes;
   }
-  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes)
-      const override {
-    int cnt[5] = { 0, 0, 0, 0, 0 };
-    for (int f = 0; f < 3; ++f) {
-      if (cell_nodes[4] == face_nodes[f]) {
-        cnt[4] = 1;
-        break;
-      }
-    }
-    if (cnt[4]) {
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    if (face_n_node == 3) {
+      int cnt[5] = { 0, 0, 0, 0, 1 };
       for (int f = 0; f < 3; ++f) {
         for (int c = 0; c < 4; ++c) {
           if (cell_nodes[c] == face_nodes[f]) {
