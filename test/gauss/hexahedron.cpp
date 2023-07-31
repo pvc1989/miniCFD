@@ -13,7 +13,6 @@ class TestGaussHexahedron : public ::testing::Test {
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
-  
 };
 TEST_F(TestGaussHexahedron, OnStandardElement) {
   auto lagrange = Lagrange {
