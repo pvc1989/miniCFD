@@ -11,7 +11,6 @@
 
 class TestLagrangeTetrahedron4 : public ::testing::Test {
  protected:
-  static constexpr int kPoints = 24;
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
   using Coord = typename Lagrange::Global;
 };
@@ -21,6 +20,8 @@ TEST_F(TestLagrangeTetrahedron4, CoordinateMap) {
   };
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
+  EXPECT_EQ(tetra.CountCorners(), 4);
+  EXPECT_EQ(tetra.CountNodes(), 4);
   EXPECT_EQ(tetra.center(), Coord(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Coord(0, 0, 0));
   EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Coord(3, 0, 0));

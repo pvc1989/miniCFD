@@ -21,6 +21,8 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   };
   static_assert(hexa.CellDim() == 3);
   static_assert(hexa.PhysDim() == 3);
+  EXPECT_EQ(hexa.CountCorners(), 8);
+  EXPECT_EQ(hexa.CountNodes(), 8);
   EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Coord(10, 10, 10));
   EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Coord(15, 15, 15));
   EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Coord(30, 40, 50));

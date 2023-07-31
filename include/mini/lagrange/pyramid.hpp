@@ -1,6 +1,6 @@
-//  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_LAGRANGE_HEXAHEDRON_HPP_
-#define MINI_LAGRANGE_HEXAHEDRON_HPP_
+//  Copyright 2023 PEI Weicheng
+#ifndef MINI_LAGRANGE_PYRAMID_HPP_
+#define MINI_LAGRANGE_PYRAMID_HPP_
 
 #include <concepts>
 
@@ -48,7 +48,7 @@ class Pyramid : public Cell<Scalar> {
 };
 
 /**
- * @brief Coordinate map on 8-node pyramidal elements.
+ * @brief Coordinate map on 5-node pyramidal elements.
  * 
  * @tparam Scalar  Type of scalar variables.
  */
@@ -205,4 +205,4 @@ Pyramid5<Scalar>::faces_{
 }  // namespace lagrange
 }  // namespace mini
 
-#endif  // MINI_LAGRANGE_HEXAHEDRON_HPP_
+#endif  // MINI_LAGRANGE_PYRAMID_HPP_

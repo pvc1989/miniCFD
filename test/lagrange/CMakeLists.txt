@@ -3,6 +3,7 @@ set (cases
   quadrangle
   tetrahedron
   hexahedron
+  wedge
   pyramid
 )
 foreach (case ${cases})
