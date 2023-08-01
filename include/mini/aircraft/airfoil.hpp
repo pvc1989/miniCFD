@@ -28,10 +28,10 @@ class Linear : public Abstract<Scalar> {
   Linear(Scalar c_lift/* deg^{-1} */, Scalar c_drag/* deg^{-1} */)
       : c_lift_(c_lift), c_drag_(c_drag) {
   }
-  Scalar Lift(Scalar deg) const override {
+  Scalar Lift(Scalar deg) const final {
     return c_lift_ * deg;
   }
-  Scalar Drag(Scalar deg) const override {
+  Scalar Drag(Scalar deg) const final {
     return c_drag_ * std::abs(deg);
   }
 };
@@ -118,10 +118,10 @@ class SC1095 : public Abstract<Scalar> {
   };
 
  public:
-  Scalar Lift(Scalar deg) const override {
+  Scalar Lift(Scalar deg) const final {
     return lift_[(deg + 180) / 2];
   }
-  Scalar Drag(Scalar deg) const override {
+  Scalar Drag(Scalar deg) const final {
     return drag_[(deg + 180) / 2];
   }
 };

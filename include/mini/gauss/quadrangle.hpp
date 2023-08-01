@@ -48,7 +48,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   Scalar area_;
 
  public:
-  int CountPoints() const override {
+  int CountPoints() const final {
     return Qx * Qy;
   }
 
@@ -77,39 +77,39 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   }
 
  public:
-  const Global &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
-  const Scalar &GetGlobalWeight(int i) const override {
+  const Scalar &GetGlobalWeight(int i) const final {
     assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
-  const Local &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountPoints());
     return local_coords_[i];
   }
-  const Scalar &GetLocalWeight(int i) const override {
+  const Scalar &GetLocalWeight(int i) const final {
     assert(0 <= i && i < CountPoints());
     return local_weights_[i];
   }
 
  protected:
-  Global &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) final {
     assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
-  Scalar &GetGlobalWeight(int i) override {
+  Scalar &GetGlobalWeight(int i) final {
     assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
 
  public:
-  const Frame &GetNormalFrame(int i) const override {
+  const Frame &GetNormalFrame(int i) const final {
     assert(0 <= i && i < CountPoints());
     return normal_frames_[i];
   }
-  Frame &GetNormalFrame(int i) override {
+  Frame &GetNormalFrame(int i) final {
     assert(0 <= i && i < CountPoints());
     return normal_frames_[i];
   }
@@ -121,11 +121,11 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
     NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 
-  const Lagrange &lagrange() const override {
+  const Lagrange &lagrange() const final {
     return *lagrange_;
   }
 
-  Scalar area() const override {
+  Scalar area() const final {
     return area_;
   }
 };

@@ -73,7 +73,7 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
   static const std::array<std::array<int, 3>, kFaces> faces_;
 
  public:
-  int CountNodes() const override {
+  int CountNodes() const final {
     return kNodes;
   }
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
@@ -99,13 +99,13 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
 
  public:
   std::vector<Scalar> LocalToShapeFunctions(
-      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
     return {
       x_local, y_local, z_local, 1.0 - x_local - y_local - z_local
     };
   }
   std::vector<Local> LocalToShapeGradients(
-      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
     return {
       Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 1),
       Local(-1, -1, -1)
@@ -113,11 +113,11 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
   }
 
  public:
-  Global const &GetGlobalCoord(int i) const override {
+  Global const &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return global_coords_[i];
   }
-  Local const &GetLocalCoord(int i) const override {
+  Local const &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return local_coords_[i];
   }

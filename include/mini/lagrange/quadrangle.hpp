@@ -71,13 +71,13 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
   static const std::array<Local, kNodes> local_coords_;
 
  public:
-  int CountNodes() const override {
+  int CountNodes() const final {
     return kNodes;
   }
 
  public:
   std::vector<Scalar> LocalToShapeFunctions(Scalar x_local, Scalar y_local)
-      const override {
+      const final {
     auto shapes = std::vector<Scalar>(kNodes);
     for (int i = 0; i < kNodes; ++i) {
       auto &local_i = GetLocalCoord(i);
@@ -87,7 +87,7 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
     return shapes;
   }
   std::vector<Local> LocalToShapeGradients(Scalar x_local, Scalar y_local)
-      const override {
+      const final {
     auto shapes = std::vector<Local>(kNodes);
     std::array<Scalar, kNodes> factor_x, factor_y;
     for (int i = 0; i < kNodes; ++i) {
@@ -105,11 +105,11 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
   }
 
  public:
-  Global const &GetGlobalCoord(int i) const override {
+  Global const &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return global_coords_[i];
   }
-  Local const &GetLocalCoord(int i) const override {
+  Local const &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return local_coords_[i];
   }

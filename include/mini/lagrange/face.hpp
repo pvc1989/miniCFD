@@ -50,11 +50,11 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar) const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const Local &xy)
-      const override {
+      const final {
     return LocalToShapeFunctions(xy[X], xy[Y]);
   }
   std::vector<Local> LocalToShapeGradients(const Local &xy)
-      const override {
+      const final {
     return LocalToShapeGradients(xy[X], xy[Y]);
   }
   Frame LocalToNormalFrame(Scalar x_local, Scalar y_local) const {
@@ -73,7 +73,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
     }
     return sum;
   }
-  Global LocalToGlobal(const Local &xy) const override {
+  Global LocalToGlobal(const Local &xy) const final {
     return LocalToGlobal(xy[X], xy[Y]);
   }
 
@@ -85,7 +85,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const Local &xy) const override {
+  Jacobian LocalToJacobian(const Local &xy) const final {
     return LocalToJacobian(xy[X], xy[Y]);
   }
 };

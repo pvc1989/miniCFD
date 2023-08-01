@@ -71,30 +71,30 @@ class Triangle3 : public Triangle<Scalar, kPhysDim> {
   static const std::array<Local, kNodes> local_coords_;
 
  public:
-  int CountNodes() const override {
+  int CountNodes() const final {
     return kNodes;
   }
 
  public:
   std::vector<Scalar> LocalToShapeFunctions(Scalar x_local, Scalar y_local)
-      const override {
+      const final {
     return {
       x_local, y_local, 1.0 - x_local - y_local
     };
   }
   std::vector<Local> LocalToShapeGradients(Scalar x_local, Scalar y_local)
-      const override {
+      const final {
     return {
       Local(1, 0), Local(0, 1), Local(-1, -1)
     };
   }
 
  public:
-  Global const &GetGlobalCoord(int i) const override {
+  Global const &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return global_coords_[i];
   }
-  Local const &GetLocalCoord(int i) const override {
+  Local const &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return local_coords_[i];
   }

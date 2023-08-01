@@ -33,11 +33,11 @@ class Cell : public Element<Scalar, 3, 3> {
       const = 0;
 
   std::vector<Scalar> LocalToShapeFunctions(const Local &xyz)
-      const override {
+      const final {
     return LocalToShapeFunctions(xyz[X], xyz[Y], xyz[Z]);
   }
   std::vector<Local> LocalToShapeGradients(const Local &xyz)
-      const override {
+      const final {
     return LocalToShapeGradients(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -50,7 +50,7 @@ class Cell : public Element<Scalar, 3, 3> {
     }
     return sum;
   }
-  Global LocalToGlobal(const Local &xyz) const override {
+  Global LocalToGlobal(const Local &xyz) const final {
     return LocalToGlobal(xyz[X], xyz[Y], xyz[Z]);
   }
 
@@ -63,7 +63,7 @@ class Cell : public Element<Scalar, 3, 3> {
     }
     return sum;
   }
-  Jacobian LocalToJacobian(const Local &xyz) const override {
+  Jacobian LocalToJacobian(const Local &xyz) const final {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 

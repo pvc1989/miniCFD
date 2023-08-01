@@ -42,34 +42,34 @@ class Tetrahedron : public Cell<Scalar> {
   Scalar volume_;
 
  public:
-  int CountPoints() const override {
+  int CountPoints() const final {
     return kPoints;
   }
 
  public:
-  const Global &GetGlobalCoord(int i) const override {
+  const Global &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
-  const Scalar &GetGlobalWeight(int i) const override {
+  const Scalar &GetGlobalWeight(int i) const final {
     assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
-  const Local &GetLocalCoord(int i) const override {
+  const Local &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountPoints());
     return local_coords_[i];
   }
-  const Scalar &GetLocalWeight(int i) const override {
+  const Scalar &GetLocalWeight(int i) const final {
     assert(0 <= i && i < CountPoints());
     return local_weights_[i];
   }
 
  protected:
-  Global &GetGlobalCoord(int i) override {
+  Global &GetGlobalCoord(int i) final {
     assert(0 <= i && i < CountPoints());
     return global_coords_[i];
   }
-  Scalar &GetGlobalWeight(int i) override {
+  Scalar &GetGlobalWeight(int i) final {
     assert(0 <= i && i < CountPoints());
     return global_weights_[i];
   }
@@ -85,11 +85,11 @@ class Tetrahedron : public Cell<Scalar> {
   Tetrahedron &operator=(Tetrahedron &&) noexcept = default;
   virtual ~Tetrahedron() noexcept = default;
 
-  const Lagrange &lagrange() const override {
+  const Lagrange &lagrange() const final {
     return *lagrange_;
   }
 
-  Scalar volume() const override {
+  Scalar volume() const final {
     return volume_;
   }
 };

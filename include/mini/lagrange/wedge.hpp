@@ -71,7 +71,7 @@ class Wedge6 : public Wedge<Scalar> {
   static const std::array<std::array<int, 4>, 3> quadrangles_;
 
  public:
-  int CountNodes() const override {
+  int CountNodes() const final {
     return kNodes;
   }
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
@@ -113,7 +113,7 @@ class Wedge6 : public Wedge<Scalar> {
 
  public:
   std::vector<Scalar> LocalToShapeFunctions(
-      Scalar a_local, Scalar b_local, Scalar z_local) const override {
+      Scalar a_local, Scalar b_local, Scalar z_local) const final {
     auto shapes = std::vector<Scalar>(kNodes);
     auto c_local = 1.0 - a_local - b_local;
     auto factor_z = (1 - z_local) / 2;
@@ -127,7 +127,7 @@ class Wedge6 : public Wedge<Scalar> {
     return shapes;
   }
   std::vector<Local> LocalToShapeGradients(
-      Scalar a_local, Scalar b_local, Scalar z_local) const override {
+      Scalar a_local, Scalar b_local, Scalar z_local) const final {
     auto grads = std::vector<Local>(kNodes);
     constexpr int A{0}, B{1};
     auto c_local = 1.0 - a_local - b_local;
@@ -161,11 +161,11 @@ class Wedge6 : public Wedge<Scalar> {
   }
 
  public:
-  Global const &GetGlobalCoord(int i) const override {
+  Global const &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return global_coords_[i];
   }
-  Local const &GetLocalCoord(int i) const override {
+  Local const &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return local_coords_[i];
   }

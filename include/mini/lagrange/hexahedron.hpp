@@ -72,7 +72,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   static const std::array<std::array<int, 4>, kFaces> faces_;
 
  public:
-  int CountNodes() const override {
+  int CountNodes() const final {
     return kNodes;
   }
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
@@ -114,7 +114,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
 
  public:
   std::vector<Scalar> LocalToShapeFunctions(
-      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
     auto shapes = std::vector<Scalar>(kNodes);
     for (int i = 0; i < kNodes; ++i) {
       auto &local_i = GetLocalCoord(i);
@@ -126,7 +126,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     return shapes;
   }
   std::vector<Local> LocalToShapeGradients(
-      Scalar x_local, Scalar y_local, Scalar z_local) const override {
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
     auto shapes = std::vector<Local>(kNodes);
     std::array<Scalar, kNodes> factor_xy, factor_yz, factor_zx;
     for (int i = 0; i < kNodes; ++i) {
@@ -149,11 +149,11 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   }
 
  public:
-  Global const &GetGlobalCoord(int i) const override {
+  Global const &GetGlobalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return global_coords_[i];
   }
-  Local const &GetLocalCoord(int i) const override {
+  Local const &GetLocalCoord(int i) const final {
     assert(0 <= i && i < CountNodes());
     return local_coords_[i];
   }
