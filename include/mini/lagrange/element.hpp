@@ -2,6 +2,11 @@
 #ifndef MINI_LAGRANGE_ELEMENT_HPP_
 #define MINI_LAGRANGE_ELEMENT_HPP_
 
+#include <concepts>
+
+#include <cassert>
+
+#include <initializer_list>
 #include <vector>
 
 #include "mini/algebra/eigen.hpp"
@@ -39,7 +44,26 @@ class Element {
   virtual const Local &GetLocalCoord(int i) const = 0;
   virtual const Global &GetGlobalCoord(int i) const = 0;
   virtual const Global &center() const = 0;
+
+ protected:
+  virtual void BuildCenter() = 0;
+  Global &_GetGlobalCoord(int i) {
+    const Global &global
+        = const_cast<const Element *>(this)->GetGlobalCoord(i);
+    return const_cast<Global &>(global);
+  }
 };
+
+template <typename Element>
+static void Build(Element *element,
+    std::initializer_list<typename Element::Global> il) {
+  assert(il.size() == element->CountNodes());
+  auto p = il.begin();
+  for (int i = 0, n = element->CountNodes(); i < n; ++i) {
+    element->_GetGlobalCoord(i) = p[i];
+  }
+  element->BuildCenter();
+}
 
 }  // namespace lagrange
 }  // namespace mini

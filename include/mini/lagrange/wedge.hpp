@@ -5,13 +5,12 @@
 #include <concepts>
 
 #include <cassert>
-#include <cmath>
-#include <cstring>
-#include <algorithm>
-#include <type_traits>
-#include <utility>
+
+#include <array>
+#include <initializer_list>
 #include <vector>
 
+#include "mini/lagrange/element.hpp"
 #include "mini/lagrange/cell.hpp"
 
 namespace mini {
@@ -41,7 +40,7 @@ class Wedge : public Cell<Scalar> {
 
  protected:
   Global center_;
-  void BuildCenter() {
+  void BuildCenter() final {
     Scalar a = 1.0 / 3;
     center_ = this->LocalToGlobal(a, a, 0);
   }
@@ -179,13 +178,11 @@ class Wedge6 : public Wedge<Scalar> {
     global_coords_[4] = p4; global_coords_[5] = p5;
     this->BuildCenter();
   }
+
+  friend void lagrange::Build(Wedge6 *,
+      std::initializer_list<Global>);
   Wedge6(std::initializer_list<Global> il) {
-    assert(il.size() == kNodes);
-    auto p = il.begin();
-    for (int i = 0; i < kNodes; ++i) {
-      global_coords_[i] = p[i];
-    }
-    this->BuildCenter();
+    lagrange::Build(this, il);
   }
 };
 // initialization of static const members:

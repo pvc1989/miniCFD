@@ -5,15 +5,12 @@
 #include <concepts>
 
 #include <cassert>
-#include <cmath>
-#include <cstring>
 
-#include <algorithm>
 #include <array>
-#include <type_traits>
-#include <utility>
+#include <initializer_list>
 #include <vector>
 
+#include "mini/lagrange/element.hpp"
 #include "mini/lagrange/face.hpp"
 
 namespace mini {
@@ -43,7 +40,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
 
  protected:
   Global center_;
-  void BuildCenter() {
+  void BuildCenter() final {
     Scalar a = 1.0 / 3;
     center_ = this->LocalToGlobal(a, a);
   }
@@ -107,13 +104,11 @@ class Triangle3 : public Triangle<Scalar, kPhysDim> {
     global_coords_[2] = p2;
     this->BuildCenter();
   }
+
+  friend void lagrange::Build(Triangle3 *,
+      std::initializer_list<Global>);
   Triangle3(std::initializer_list<Global> il) {
-    assert(il.size() == kNodes);
-    auto p = il.begin();
-    for (int i = 0; i < kNodes; ++i) {
-      global_coords_[i] = p[i];
-    }
-    this->BuildCenter();
+    lagrange::Build(this, il);
   }
 };
 // initialization of static const members:

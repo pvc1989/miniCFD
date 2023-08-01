@@ -5,14 +5,12 @@
 #include <concepts>
 
 #include <cassert>
-#include <cmath>
-#include <cstring>
-#include <algorithm>
-#include <type_traits>
-#include <utility>
+
+#include <array>
+#include <initializer_list>
 #include <vector>
 
-#include "mini/algebra/eigen.hpp"
+#include "mini/lagrange/element.hpp"
 #include "mini/lagrange/cell.hpp"
 
 namespace mini {
@@ -42,7 +40,7 @@ class Hexahedron : public Cell<Scalar> {
 
  protected:
   Global center_;
-  void BuildCenter() {
+  void BuildCenter() final {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a, a);
   }
@@ -170,13 +168,11 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     global_coords_[6] = p6; global_coords_[7] = p7;
     this->BuildCenter();
   }
+
+  friend void lagrange::Build(Hexahedron8 *,
+      std::initializer_list<Global>);
   Hexahedron8(std::initializer_list<Global> il) {
-    assert(il.size() == kNodes);
-    auto p = il.begin();
-    for (int i = 0; i < kNodes; ++i) {
-      global_coords_[i] = p[i];
-    }
-    this->BuildCenter();
+    lagrange::Build(this, il);
   }
 };
 // initialization of static const members:
