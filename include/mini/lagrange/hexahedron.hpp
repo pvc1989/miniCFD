@@ -40,7 +40,7 @@ class Hexahedron : public Cell<Scalar> {
 
  protected:
   Global center_;
-  void BuildCenter() final {
+  void _BuildCenter() final {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a, a);
   }
@@ -166,13 +166,13 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     global_coords_[2] = p2; global_coords_[3] = p3;
     global_coords_[4] = p4; global_coords_[5] = p5;
     global_coords_[6] = p6; global_coords_[7] = p7;
-    this->BuildCenter();
+    this->_BuildCenter();
   }
 
-  friend void lagrange::Build(Hexahedron8 *,
+  friend void lagrange::_Build(Hexahedron8 *,
       std::initializer_list<Global>);
   Hexahedron8(std::initializer_list<Global> il) {
-    lagrange::Build(this, il);
+    lagrange::_Build(this, il);
   }
 };
 // initialization of static const members:

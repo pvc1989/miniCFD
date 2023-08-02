@@ -40,7 +40,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
 
  protected:
   Global center_;
-  void BuildCenter() final {
+  void _BuildCenter() final {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a);
   }
@@ -117,13 +117,13 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
       Global const &p2, Global const &p3) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
-    this->BuildCenter();
+    this->_BuildCenter();
   }
 
-  friend void lagrange::Build(Quadrangle4 *,
+  friend void lagrange::_Build(Quadrangle4 *,
       std::initializer_list<Global>);
   Quadrangle4(std::initializer_list<Global> il) {
-    lagrange::Build(this, il);
+    lagrange::_Build(this, il);
   }
 };
 // initialization of static const members:

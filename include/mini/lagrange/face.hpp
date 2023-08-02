@@ -18,7 +18,7 @@ template <std::floating_point Scalar, int kPhysDim>
 class Face;
 
 template <std::floating_point Scalar, int kPhysDim>
-struct NormalFrameBuilder {
+struct _NormalFrameBuilder {
   using Frame = typename Face<Scalar, kPhysDim>::Frame;
   static Frame Build(const Face<Scalar, kPhysDim> &face,
       Scalar x_local, Scalar y_local) {
@@ -58,7 +58,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
     return LocalToShapeGradients(xy[X], xy[Y]);
   }
   Frame LocalToNormalFrame(Scalar x_local, Scalar y_local) const {
-    return NormalFrameBuilder<Scalar, kPhysDim>
+    return _NormalFrameBuilder<Scalar, kPhysDim>
         ::Build(*this, x_local, y_local);
   }
   Frame LocalToNormalFrame(const Local &xy) const {
@@ -91,7 +91,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
 };
 
 template <std::floating_point Scalar>
-struct NormalFrameBuilder<Scalar, 3> {
+struct _NormalFrameBuilder<Scalar, 3> {
   using Frame = typename Face<Scalar, 3>::Frame;
   static Frame Build(const Face<Scalar, 3> &face,
       Scalar x_local, Scalar y_local) {

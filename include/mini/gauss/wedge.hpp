@@ -28,7 +28,7 @@ namespace gauss {
 template <std::floating_point Scalar, int Qt, int Qz>
 class Wedge : public Cell<Scalar> {
   static constexpr int kPoints = Qt * Qz;
-  using GaussT = TriangleBuilder<Scalar, 2, Qt>;
+  using GaussT = _TriangleBuilder<Scalar, 2, Qt>;
   using GaussZ = GaussLegendre<Scalar, Qz>;
 
  public:

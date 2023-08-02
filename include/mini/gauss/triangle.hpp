@@ -92,7 +92,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   explicit Triangle(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
     area_ = this->BuildQuadraturePoints();
-    NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
+    _NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 
   const Lagrange &lagrange() const final {
@@ -105,21 +105,21 @@ class Triangle : public Face<Scalar, kPhysDim> {
 };
 
 template <std::floating_point Scalar, int kPhysDim, int kPoints>
-class TriangleBuilder;
+class _TriangleBuilder;
 
 template <std::floating_point Scalar, int kPhysDim, int kPoints>
 std::array<typename Triangle<Scalar, kPhysDim, kPoints>::Local,
     kPoints> const
 Triangle<Scalar, kPhysDim, kPoints>::local_coords_
-    = TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalCoords();
+    = _TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalCoords();
 
 template <std::floating_point Scalar, int kPhysDim, int kPoints>
 const std::array<Scalar, kPoints>
 Triangle<Scalar, kPhysDim, kPoints>::local_weights_
-    = TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalWeights();
+    = _TriangleBuilder<Scalar, kPhysDim, kPoints>::BuildLocalWeights();
 
 template <std::floating_point Scalar, int kPhysDim>
-class TriangleBuilder<Scalar, kPhysDim, 1> {
+class _TriangleBuilder<Scalar, kPhysDim, 1> {
   static constexpr int kPoints = 1;
   using Local =
       typename Triangle<Scalar, kPhysDim, kPoints>::Local;
@@ -138,7 +138,7 @@ class TriangleBuilder<Scalar, kPhysDim, 1> {
 };
 
 template <std::floating_point Scalar, int kPhysDim>
-class TriangleBuilder<Scalar, kPhysDim, 3> {
+class _TriangleBuilder<Scalar, kPhysDim, 3> {
   static constexpr int kPoints = 3;
   using Local =
       typename Triangle<Scalar, kPhysDim, kPoints>::Local;
@@ -169,7 +169,7 @@ class TriangleBuilder<Scalar, kPhysDim, 3> {
 };
 
 template <std::floating_point Scalar, int kPhysDim>
-class TriangleBuilder<Scalar, kPhysDim, 6> {
+class _TriangleBuilder<Scalar, kPhysDim, 6> {
   static constexpr int kPoints = 6;
   using Local =
       typename Triangle<Scalar, kPhysDim, kPoints>::Local;
@@ -204,7 +204,7 @@ class TriangleBuilder<Scalar, kPhysDim, 6> {
 };
 
 template <std::floating_point Scalar, int kPhysDim>
-class TriangleBuilder<Scalar, kPhysDim, 12> {
+class _TriangleBuilder<Scalar, kPhysDim, 12> {
   static constexpr int kPoints = 12;
   using Local =
       typename Triangle<Scalar, kPhysDim, kPoints>::Local;
@@ -252,7 +252,7 @@ class TriangleBuilder<Scalar, kPhysDim, 12> {
 };
 
 template <std::floating_point Scalar, int kPhysDim>
-class TriangleBuilder<Scalar, kPhysDim, 16> {
+class _TriangleBuilder<Scalar, kPhysDim, 16> {
   static constexpr int kPoints = 16;
   using Local =
       typename Triangle<Scalar, kPhysDim, kPoints>::Local;

@@ -40,7 +40,7 @@ class Pyramid : public Cell<Scalar> {
 
  protected:
   Global center_;
-  void BuildCenter() final {
+  void _BuildCenter() final {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a, a);
   }
@@ -170,13 +170,13 @@ class Pyramid5 : public Pyramid<Scalar> {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2; global_coords_[3] = p3;
     global_coords_[4] = p4;
-    this->BuildCenter();
+    this->_BuildCenter();
   }
 
-  friend void lagrange::Build(Pyramid5 *,
+  friend void lagrange::_Build(Pyramid5 *,
       std::initializer_list<Global>);
   Pyramid5(std::initializer_list<Global> il) {
-    lagrange::Build(this, il);
+    lagrange::_Build(this, il);
   }
 };
 // initialization of static const members:

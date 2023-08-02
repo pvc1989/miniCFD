@@ -15,7 +15,7 @@ template <std::floating_point Scalar, int kPhysDim>
 class Face;
 
 template <std::floating_point Scalar, int kPhysDim>
-struct NormalFrameBuilder {
+struct _NormalFrameBuilder {
   static void Build(Face<Scalar, kPhysDim> *face) {
   }
 };
@@ -62,7 +62,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
 };
 
 template <std::floating_point Scalar>
-struct NormalFrameBuilder<Scalar, 3> {
+struct _NormalFrameBuilder<Scalar, 3> {
   static void Build(Face<Scalar, 3> *face) {
     int n = face->CountPoints();
     for (int i = 0; i < n; ++i) {

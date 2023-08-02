@@ -46,7 +46,7 @@ class Element {
   virtual const Global &center() const = 0;
 
  protected:
-  virtual void BuildCenter() = 0;
+  virtual void _BuildCenter() = 0;
   Global &_GetGlobalCoord(int i) {
     const Global &global
         = const_cast<const Element *>(this)->GetGlobalCoord(i);
@@ -55,14 +55,14 @@ class Element {
 };
 
 template <typename Element>
-static void Build(Element *element,
+static void _Build(Element *element,
     std::initializer_list<typename Element::Global> il) {
   assert(il.size() == element->CountNodes());
   auto p = il.begin();
   for (int i = 0, n = element->CountNodes(); i < n; ++i) {
     element->_GetGlobalCoord(i) = p[i];
   }
-  element->BuildCenter();
+  element->_BuildCenter();
 }
 
 }  // namespace lagrange

@@ -40,7 +40,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
 
  protected:
   Global center_;
-  void BuildCenter() final {
+  void _BuildCenter() final {
     Scalar a = 1.0 / 3;
     center_ = this->LocalToGlobal(a, a);
   }
@@ -102,13 +102,13 @@ class Triangle3 : public Triangle<Scalar, kPhysDim> {
       Global const &p2) {
     global_coords_[0] = p0; global_coords_[1] = p1;
     global_coords_[2] = p2;
-    this->BuildCenter();
+    this->_BuildCenter();
   }
 
-  friend void lagrange::Build(Triangle3 *,
+  friend void lagrange::_Build(Triangle3 *,
       std::initializer_list<Global>);
   Triangle3(std::initializer_list<Global> il) {
-    lagrange::Build(this, il);
+    lagrange::_Build(this, il);
   }
 };
 // initialization of static const members:

@@ -95,20 +95,20 @@ class Tetrahedron : public Cell<Scalar> {
 };
 
 template <std::floating_point Scalar, int kPoints>
-class TetrahedronBuilder;
+class _TetrahedronBuilder;
 
 template <std::floating_point Scalar, int kPoints>
 const std::array<typename Tetrahedron<Scalar, kPoints>::Local, kPoints>
 Tetrahedron<Scalar, kPoints>::local_coords_
-    = TetrahedronBuilder<Scalar, kPoints>::BuildLocalCoords();
+    = _TetrahedronBuilder<Scalar, kPoints>::BuildLocalCoords();
 
 template <std::floating_point Scalar, int kPoints>
 const std::array<Scalar, kPoints>
 Tetrahedron<Scalar, kPoints>::local_weights_
-    = TetrahedronBuilder<Scalar, kPoints>::BuildLocalWeights();
+    = _TetrahedronBuilder<Scalar, kPoints>::BuildLocalWeights();
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 1> {
+class _TetrahedronBuilder<Scalar, 1> {
   static constexpr int kPoints = 1;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
@@ -126,7 +126,7 @@ class TetrahedronBuilder<Scalar, 1> {
 };
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 4> {
+class _TetrahedronBuilder<Scalar, 4> {
   static constexpr int kPoints = 4;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
@@ -153,7 +153,7 @@ class TetrahedronBuilder<Scalar, 4> {
 };
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 14> {
+class _TetrahedronBuilder<Scalar, 14> {
   static constexpr int kPoints = 14;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
@@ -200,7 +200,7 @@ class TetrahedronBuilder<Scalar, 14> {
 };
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 15> {
+class _TetrahedronBuilder<Scalar, 15> {
   static constexpr int kPoints = 15;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
@@ -253,7 +253,7 @@ class TetrahedronBuilder<Scalar, 15> {
 };
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 24> {
+class _TetrahedronBuilder<Scalar, 24> {
   static constexpr int kPoints = 24;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 
@@ -310,7 +310,7 @@ class TetrahedronBuilder<Scalar, 24> {
 };
 
 template <std::floating_point Scalar>
-class TetrahedronBuilder<Scalar, 46> {
+class _TetrahedronBuilder<Scalar, 46> {
   static constexpr int kPoints = 46;
   using Local = typename Tetrahedron<Scalar, kPoints>::Local;
 

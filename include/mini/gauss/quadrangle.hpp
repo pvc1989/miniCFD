@@ -118,7 +118,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   explicit Quadrangle(Lagrange const &lagrange)
       : lagrange_(&lagrange) {
     area_ = this->BuildQuadraturePoints();
-    NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
+    _NormalFrameBuilder<Scalar, kPhysDim>::Build(this);
   }
 
   const Lagrange &lagrange() const final {
