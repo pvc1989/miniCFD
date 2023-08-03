@@ -26,7 +26,7 @@ TEST_F(TestLagrangePyramid5, CoordinateMap) {
   static_assert(lagrange.PhysDim() == 3);
   EXPECT_EQ(lagrange.CountCorners(), 5);
   EXPECT_EQ(lagrange.CountNodes(), 5);
-  EXPECT_EQ(lagrange.center(), Coord(0, 0, h/2));
+  EXPECT_EQ(lagrange.center(), Coord(0, 0, h/4));
   EXPECT_EQ(lagrange.LocalToGlobal(1, 0, 0), Coord(a/2, 0, h/2));
   EXPECT_EQ(lagrange.LocalToGlobal(0, 1, 0), Coord(0, b/2, h/2));
   EXPECT_EQ(lagrange.LocalToGlobal(0, 0, 1), Coord(0, 0, h));

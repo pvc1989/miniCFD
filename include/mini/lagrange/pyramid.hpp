@@ -41,8 +41,7 @@ class Pyramid : public Cell<Scalar> {
  protected:
   Global center_;
   void _BuildCenter() final {
-    Scalar a = 0;
-    center_ = this->LocalToGlobal(a, a, a);
+    center_ = this->LocalToGlobal(0, 0, -0.5);
   }
 };
 
