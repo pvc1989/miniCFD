@@ -16,18 +16,20 @@ class TestLagrangePyramid5 : public ::testing::Test {
   using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangePyramid5, CoordinateMap) {
+  auto a = 2.0, b = 3.0, h = 4.0;
   auto lagrange = Lagrange{
-    Coord(-2, -2, 0), Coord(2, -2, 0), Coord(2, 2, 0), Coord(-2, 2, 0),
-    Coord(0, 0, 4)
+    Coord(-a, -b, 0), Coord(+a, -b, 0),
+    Coord(+a, +b, 0), Coord(-a, +b, 0),
+    Coord(0, 0, h)
   };
   static_assert(lagrange.CellDim() == 3);
   static_assert(lagrange.PhysDim() == 3);
   EXPECT_EQ(lagrange.CountCorners(), 5);
   EXPECT_EQ(lagrange.CountNodes(), 5);
-  EXPECT_EQ(lagrange.center(), Coord(0, 0, 2));
-  EXPECT_EQ(lagrange.LocalToGlobal(1, 0, 0), Coord(1, 0, 2));
-  EXPECT_EQ(lagrange.LocalToGlobal(0, 1, 0), Coord(0, 1, 2));
-  EXPECT_EQ(lagrange.LocalToGlobal(0, 0, 1), Coord(0, 0, 4));
+  EXPECT_EQ(lagrange.center(), Coord(0, 0, h/2));
+  EXPECT_EQ(lagrange.LocalToGlobal(1, 0, 0), Coord(a/2, 0, h/2));
+  EXPECT_EQ(lagrange.LocalToGlobal(0, 1, 0), Coord(0, b/2, h/2));
+  EXPECT_EQ(lagrange.LocalToGlobal(0, 0, 1), Coord(0, 0, h));
   EXPECT_EQ(lagrange.GlobalToLocal(lagrange.GetGlobalCoord(0)),
                                    lagrange.GetLocalCoord(0));
   EXPECT_EQ(lagrange.GlobalToLocal(lagrange.GetGlobalCoord(1)),
@@ -55,6 +57,16 @@ TEST_F(TestLagrangePyramid5, CoordinateMap) {
     for (int j = 0; j < n; ++j) {
       EXPECT_EQ(shapes[j], i == j);
     }
+  }
+  // test Jacobian determinant:
+  auto abh = (a + a) * (b + b) * h;
+  auto exact = [abh](double z){
+    return (1 - z) * (1 - z) * abh / 32;
+  };
+  for (int i = 0; i < 100'000; ++i) {
+    auto x = rand(), y = rand(), z = rand();
+    auto jacobian = cell.LocalToJacobian(x, y, z);
+    EXPECT_NEAR(std::abs(jacobian.determinant()), exact(z), 1e-14);
   }
 }
 TEST_F(TestLagrangePyramid5, SortNodesOnFace) {
