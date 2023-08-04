@@ -1,6 +1,6 @@
 //  Copyright 2019 PEI Weicheng and YANG Minghao
-#ifndef MINI_GAUSS_GAUSS_HPP_
-#define MINI_GAUSS_GAUSS_HPP_
+#ifndef MINI_GAUSS_LEGENDRE_HPP_
+#define MINI_GAUSS_LEGENDRE_HPP_
 
 #include <concepts>
 
@@ -12,10 +12,10 @@ namespace mini {
 namespace gauss {
 
 template <std::floating_point Scalar = double, int Q = 4>
-struct GaussLegendre;
+struct Legendre;
 
 template <std::floating_point Scalar>
-struct GaussLegendre<Scalar, 1> {
+struct Legendre<Scalar, 1> {
   using Array = std::array<Scalar, 1>;
   static const Array points;
   static const Array weights;
@@ -27,16 +27,16 @@ struct GaussLegendre<Scalar, 1> {
   }
 };
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 1>::Array const
-GaussLegendre<Scalar, 1>::points =
-    GaussLegendre<Scalar, 1>::BuildPoints();
+typename Legendre<Scalar, 1>::Array const
+Legendre<Scalar, 1>::points =
+    Legendre<Scalar, 1>::BuildPoints();
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 1>::Array const
-GaussLegendre<Scalar, 1>::weights =
-    GaussLegendre<Scalar, 1>::BuildWeights();
+typename Legendre<Scalar, 1>::Array const
+Legendre<Scalar, 1>::weights =
+    Legendre<Scalar, 1>::BuildWeights();
 
 template <std::floating_point Scalar>
-struct GaussLegendre<Scalar, 2> {
+struct Legendre<Scalar, 2> {
   using Array = std::array<Scalar, 2>;
   static const Array points;
   static const Array weights;
@@ -48,16 +48,16 @@ struct GaussLegendre<Scalar, 2> {
   }
 };
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 2>::Array const
-GaussLegendre<Scalar, 2>::points =
-    GaussLegendre<Scalar, 2>::BuildPoints();
+typename Legendre<Scalar, 2>::Array const
+Legendre<Scalar, 2>::points =
+    Legendre<Scalar, 2>::BuildPoints();
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 2>::Array const
-GaussLegendre<Scalar, 2>::weights =
-    GaussLegendre<Scalar, 2>::BuildWeights();
+typename Legendre<Scalar, 2>::Array const
+Legendre<Scalar, 2>::weights =
+    Legendre<Scalar, 2>::BuildWeights();
 
 template <std::floating_point Scalar>
-struct GaussLegendre<Scalar, 3> {
+struct Legendre<Scalar, 3> {
   using Array = std::array<Scalar, 3>;
   static const Array points;
   static const Array weights;
@@ -69,16 +69,16 @@ struct GaussLegendre<Scalar, 3> {
   }
 };
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 3>::Array const
-GaussLegendre<Scalar, 3>::points =
-    GaussLegendre<Scalar, 3>::BuildPoints();
+typename Legendre<Scalar, 3>::Array const
+Legendre<Scalar, 3>::points =
+    Legendre<Scalar, 3>::BuildPoints();
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 3>::Array const
-GaussLegendre<Scalar, 3>::weights =
-    GaussLegendre<Scalar, 3>::BuildWeights();
+typename Legendre<Scalar, 3>::Array const
+Legendre<Scalar, 3>::weights =
+    Legendre<Scalar, 3>::BuildWeights();
 
 template <std::floating_point Scalar>
-struct GaussLegendre<Scalar, 4> {
+struct Legendre<Scalar, 4> {
   using Array = std::array<Scalar, 4>;
   static const Array points;
   static const Array weights;
@@ -100,16 +100,16 @@ struct GaussLegendre<Scalar, 4> {
   }
 };
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 4>::Array const
-GaussLegendre<Scalar, 4>::points =
-    GaussLegendre<Scalar, 4>::BuildPoints();
+typename Legendre<Scalar, 4>::Array const
+Legendre<Scalar, 4>::points =
+    Legendre<Scalar, 4>::BuildPoints();
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 4>::Array const
-GaussLegendre<Scalar, 4>::weights =
-    GaussLegendre<Scalar, 4>::BuildWeights();
+typename Legendre<Scalar, 4>::Array const
+Legendre<Scalar, 4>::weights =
+    Legendre<Scalar, 4>::BuildWeights();
 
 template <std::floating_point Scalar>
-struct GaussLegendre<Scalar, 5> {
+struct Legendre<Scalar, 5> {
   using Array = std::array<Scalar, 5>;
   static const Array points;
   static const Array weights;
@@ -133,15 +133,15 @@ struct GaussLegendre<Scalar, 5> {
   }
 };
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 5>::Array const
-GaussLegendre<Scalar, 5>::points =
-    GaussLegendre<Scalar, 5>::BuildPoints();
+typename Legendre<Scalar, 5>::Array const
+Legendre<Scalar, 5>::points =
+    Legendre<Scalar, 5>::BuildPoints();
 template <std::floating_point Scalar>
-typename GaussLegendre<Scalar, 5>::Array const
-GaussLegendre<Scalar, 5>::weights =
-    GaussLegendre<Scalar, 5>::BuildWeights();
+typename Legendre<Scalar, 5>::Array const
+Legendre<Scalar, 5>::weights =
+    Legendre<Scalar, 5>::BuildWeights();
 
 }  // namespace gauss
 }  // namespace mini
 
-#endif  // MINI_GAUSS_GAUSS_HPP_
+#endif  // MINI_GAUSS_LEGENDRE_HPP_

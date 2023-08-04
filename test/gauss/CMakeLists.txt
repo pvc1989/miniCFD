@@ -1,6 +1,6 @@
-add_executable(test_gauss_gauss gauss.cpp)
-set_target_properties(test_gauss_gauss PROPERTIES OUTPUT_NAME gauss)
-add_test(NAME test_gauss_gauss COMMAND gauss)
+add_executable(test_gauss_legendre legendre.cpp)
+set_target_properties(test_gauss_legendre PROPERTIES OUTPUT_NAME legendre)
+add_test(NAME test_gauss_legendre COMMAND legendre)
 
 set (cases
   triangle

@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/legendre.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/gauss/triangle.hpp"
 #include "mini/lagrange/wedge.hpp"
@@ -29,7 +29,7 @@ template <std::floating_point Scalar, int Qt, int Qz>
 class Wedge : public Cell<Scalar> {
   static constexpr int kPoints = Qt * Qz;
   using GaussT = _TriangleBuilder<Scalar, 2, Qt>;
-  using GaussZ = GaussLegendre<Scalar, Qz>;
+  using GaussZ = Legendre<Scalar, Qz>;
 
  public:
   using Lagrange = lagrange::Wedge<Scalar>;

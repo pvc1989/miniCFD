@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/legendre.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/lagrange/hexahedron.hpp"
 
@@ -27,9 +27,9 @@ namespace gauss {
  */
 template <std::floating_point Scalar, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {
-  using GaussX = GaussLegendre<Scalar, Qx>;
-  using GaussY = GaussLegendre<Scalar, Qy>;
-  using GaussZ = GaussLegendre<Scalar, Qz>;
+  using GaussX = Legendre<Scalar, Qx>;
+  using GaussY = Legendre<Scalar, Qy>;
+  using GaussZ = Legendre<Scalar, Qz>;
 
  public:
   using Lagrange = lagrange::Hexahedron<Scalar>;

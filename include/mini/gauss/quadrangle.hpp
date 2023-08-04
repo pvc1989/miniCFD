@@ -8,7 +8,7 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/legendre.hpp"
 #include "mini/gauss/face.hpp"
 #include "mini/lagrange/quadrangle.hpp"
 
@@ -27,8 +27,8 @@ template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4>
 class Quadrangle : public Face<Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
 
-  using GaussX = GaussLegendre<Scalar, Qx>;
-  using GaussY = GaussLegendre<Scalar, Qy>;
+  using GaussX = Legendre<Scalar, Qx>;
+  using GaussY = Legendre<Scalar, Qy>;
 
  public:
   using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;

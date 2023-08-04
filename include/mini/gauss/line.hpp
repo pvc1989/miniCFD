@@ -6,7 +6,7 @@
 #include <type_traits>
 
 #include "mini/algebra/eigen.hpp"
-#include "mini/gauss/gauss.hpp"
+#include "mini/gauss/legendre.hpp"
 
 namespace mini {
 namespace gauss {
@@ -24,7 +24,7 @@ class Line {
  private:
   using MatDx2 = algebra::Vector<Global, 2>;
   using Mat2x1 = algebra::Vector<Scalar, 2>;
-  using Gauss = GaussLegendre<Scalar, Q>;
+  using Gauss = Legendre<Scalar, Q>;
 
  private:
   static const std::array<Scalar, Q> local_weights_;
