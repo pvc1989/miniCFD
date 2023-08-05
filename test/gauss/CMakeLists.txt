@@ -14,6 +14,7 @@ set (cases
   tetrahedron
   hexahedron
   wedge
+  pyramid
 )
 foreach (case ${cases})
   add_executable(test_gauss_${case} ${case}.cpp)
