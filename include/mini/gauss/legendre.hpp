@@ -11,6 +11,12 @@
 namespace mini {
 namespace gauss {
 
+/**
+ * @brief Gauss--Legendre quadrature rules, i.e. \f$ \int_{-1}^{1} f(\xi) \,\mathrm{d}\xi \approx \sum_{q=1}^{Q} w_q f(\xi_q) \f$
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ * @tparam Q  Nnumber of quadrature points.
+ */
 template <std::floating_point Scalar = double, int Q = 4>
 struct Legendre;
 
