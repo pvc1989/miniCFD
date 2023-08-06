@@ -97,6 +97,70 @@ typename Jacobi<Scalar, 3, 2, 0>::Array const
 Jacobi<Scalar, 3, 2, 0>::weights =
 Jacobi<Scalar, 3, 2, 0>::BuildWeights();
 
+template <std::floating_point Scalar>
+struct Jacobi<Scalar, 4, 2, 0> {
+  using Array = std::array<Scalar, 4>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
+    return {
+      -0.9029989011060054,
+      -0.5227985248962753,
+      0.03409459020873491,
+      0.5917028357935458
+    };
+  }
+  static Array BuildWeights() {
+    return {
+      0.8871073248902219,
+      1.1476703183937156,
+      0.5490710973833848,
+      0.08281792599934465
+    };
+  }
+};
+template <std::floating_point Scalar>
+typename Jacobi<Scalar, 4, 2, 0>::Array const
+Jacobi<Scalar, 4, 2, 0>::points =
+Jacobi<Scalar, 4, 2, 0>::BuildPoints();
+template <std::floating_point Scalar>
+typename Jacobi<Scalar, 4, 2, 0>::Array const
+Jacobi<Scalar, 4, 2, 0>::weights =
+Jacobi<Scalar, 4, 2, 0>::BuildWeights();
+
+template <std::floating_point Scalar>
+struct Jacobi<Scalar, 5, 2, 0> {
+  using Array = std::array<Scalar, 5>;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
+    return {
+      -0.9308421201635698,
+      -0.6530393584566087,
+      -0.2202272258689614,
+      0.26866694526177365,
+      0.7021084258940329
+    };
+  }
+  static Array BuildWeights() {
+    return {
+      0.6541182742861681,
+      1.009591695199291,
+      0.7136012897727205,
+      0.25644480578369516,
+      0.03291060162479203,
+    };
+  }
+};
+template <std::floating_point Scalar>
+typename Jacobi<Scalar, 5, 2, 0>::Array const
+Jacobi<Scalar, 5, 2, 0>::points =
+Jacobi<Scalar, 5, 2, 0>::BuildPoints();
+template <std::floating_point Scalar>
+typename Jacobi<Scalar, 5, 2, 0>::Array const
+Jacobi<Scalar, 5, 2, 0>::weights =
+Jacobi<Scalar, 5, 2, 0>::BuildWeights();
+
 }  // namespace gauss
 }  // namespace mini
 
