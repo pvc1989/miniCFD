@@ -8,7 +8,7 @@
 
 #include "gtest/gtest.h"
 
-class TestJacobi : public ::testing::Test {
+class TestGaussJacobi : public ::testing::Test {
  protected:
   static constexpr int kAlpha{2}, kBeta{0};
   static double rand() {
@@ -29,17 +29,85 @@ class TestJacobi : public ::testing::Test {
     return val;
   }
 };
-TEST_F(TestJacobi, ThreePoint) {
-  using Gauss = mini::gauss::Jacobi<double, 3, kAlpha, kBeta>;
+TEST_F(TestGaussJacobi, OnePoint) {
+  constexpr int kQuad = 1;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Jacobi<double, kQuad, kAlpha, kBeta>;
   std::srand(31415926);
-  std::vector<double> v = { rand(), rand(), rand(), rand(), rand() };
-  auto *a = v.data();
-  int n = v.size();
-  double sum = 0.0;
-  for (int i = 0; i < n; ++i) {
-    sum += f(a, n, Gauss::points[i]) * Gauss::weights[i];
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
   }
-  EXPECT_NEAR(sum, exact(a, n), 1e-13);
+}
+TEST_F(TestGaussJacobi, TwoPoint) {
+  constexpr int kQuad = 2;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Jacobi<double, kQuad, kAlpha, kBeta>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-14);
+  }
+}
+TEST_F(TestGaussJacobi, ThreePoint) {
+  constexpr int kQuad = 3;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Jacobi<double, kQuad, kAlpha, kBeta>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-13);
+  }
+}
+TEST_F(TestGaussJacobi, FourPoint) {
+  constexpr int kQuad = 4;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Jacobi<double, kQuad, kAlpha, kBeta>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-12);
+  }
+}
+TEST_F(TestGaussJacobi, FivePoint) {
+  constexpr int kQuad = 5;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Jacobi<double, kQuad, kAlpha, kBeta>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-12);
+  }
 }
 
 int main(int argc, char* argv[]) {
