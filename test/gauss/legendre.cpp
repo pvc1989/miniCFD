@@ -1,67 +1,112 @@
 // Copyright 2019 PEI Weicheng and YANG Minghao
 
+#include <cmath>
+#include <cstdlib>
+
 #include "mini/gauss/legendre.hpp"
+#include "mini/gauss/function.hpp"
 
 #include "gtest/gtest.h"
 
-class TestLegendre : public ::testing::Test {
+class TestGaussLegendre : public ::testing::Test {
  protected:
-  using Scalar = double;
+  static double rand() {
+    return std::rand() / (1.0 + RAND_MAX);
+  }
+  static double f(double *a, int n, double x) {
+    double val = 0.0;
+    for (int i = 0; i < n; ++i) {
+      val += a[i] * std::pow(x, i);
+    }
+    return val;
+  }
+  static double exact(double *a, int n) {
+    double val = 0.0;
+    for (int i = 0; i < n; ++i) {
+      val += a[i] * (i % 2 ? 0.0 : 2.0) / (i + 1.0);
+    }
+    return val;
+  }
 };
-TEST_F(TestLegendre, OnePoint) {
-  using Gauss = mini::gauss::Legendre<Scalar, 1>;
-  auto &p = Gauss::points;
-  auto &w = Gauss::weights;
-  EXPECT_DOUBLE_EQ(p[0], 0.0);
-  EXPECT_DOUBLE_EQ(w[0], 2.0);
+TEST_F(TestGaussLegendre, OnePoint) {
+  constexpr int kQuad = 1;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
+  }
 }
-TEST_F(TestLegendre, TwoPoint) {
-  using Gauss = mini::gauss::Legendre<Scalar, 2>;
-  auto &p = Gauss::points;
-  auto &w = Gauss::weights;
-  EXPECT_DOUBLE_EQ(p[0], -0.5773502691896257);
-  EXPECT_DOUBLE_EQ(w[0], 1.0);
-  EXPECT_DOUBLE_EQ(p[1], +0.5773502691896257);
-  EXPECT_DOUBLE_EQ(w[1], 1.0);
+TEST_F(TestGaussLegendre, TwoPoint) {
+  constexpr int kQuad = 2;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
+  }
 }
-TEST_F(TestLegendre, ThreePoint) {
-  using Gauss = mini::gauss::Legendre<Scalar, 3>;
-  auto &p = Gauss::points;
-  auto &w = Gauss::weights;
-  EXPECT_DOUBLE_EQ(p[0], -0.7745966692414834);
-  EXPECT_DOUBLE_EQ(w[0], 0.5555555555555556);
-  EXPECT_DOUBLE_EQ(p[1], 0.0);
-  EXPECT_DOUBLE_EQ(w[1], 0.8888888888888888);
-  EXPECT_DOUBLE_EQ(p[2], +0.7745966692414834);
-  EXPECT_DOUBLE_EQ(w[2], 0.5555555555555556);
+TEST_F(TestGaussLegendre, ThreePoint) {
+  constexpr int kQuad = 3;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
+  }
 }
-TEST_F(TestLegendre, FourPoint) {
-  using Gauss = mini::gauss::Legendre<Scalar, 4>;
-  auto &p = Gauss::points;
-  auto &w = Gauss::weights;
-  EXPECT_DOUBLE_EQ(p[0], -0.8611363115940526);
-  EXPECT_DOUBLE_EQ(w[0], 0.34785484513745385);
-  EXPECT_DOUBLE_EQ(p[1], -0.3399810435848563);
-  EXPECT_DOUBLE_EQ(w[1], 0.6521451548625462);
-  EXPECT_DOUBLE_EQ(p[2], +0.3399810435848563);
-  EXPECT_DOUBLE_EQ(w[2], 0.6521451548625462);
-  EXPECT_DOUBLE_EQ(p[3], +0.8611363115940526);
-  EXPECT_DOUBLE_EQ(w[3], 0.34785484513745385);
+TEST_F(TestGaussLegendre, FourPoint) {
+  constexpr int kQuad = 4;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
+  }
 }
-TEST_F(TestLegendre, FivePoint) {
-  using Gauss = mini::gauss::Legendre<Scalar, 5>;
-  auto &p = Gauss::points;
-  auto &w = Gauss::weights;
-  EXPECT_DOUBLE_EQ(p[0], -0.906179845938664);
-  EXPECT_DOUBLE_EQ(w[0], 0.23692688505618908);
-  EXPECT_DOUBLE_EQ(p[1], -0.5384693101056831);
-  EXPECT_DOUBLE_EQ(w[1], 0.47862867049936647);
-  EXPECT_DOUBLE_EQ(p[2], 0.0);
-  EXPECT_DOUBLE_EQ(w[2], 0.5688888888888889);
-  EXPECT_DOUBLE_EQ(p[3], +0.5384693101056831);
-  EXPECT_DOUBLE_EQ(w[3], 0.47862867049936647);
-  EXPECT_DOUBLE_EQ(p[4], +0.906179845938664);
-  EXPECT_DOUBLE_EQ(w[4], 0.23692688505618908);
+TEST_F(TestGaussLegendre, FivePoint) {
+  constexpr int kQuad = 5;
+  constexpr int kTerm = 2 * kQuad - 1;
+  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-14);
+  }
 }
 
 int main(int argc, char* argv[]) {
