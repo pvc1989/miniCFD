@@ -59,7 +59,12 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-template <class Int>
+/**
+ * @brief Index information of a Node.
+ * 
+ * @tparam Int  Type of integers.
+ */
+template <std::integral Int>
 struct NodeInfo {
   NodeInfo() = default;
   NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
@@ -71,7 +76,12 @@ struct NodeInfo {
   Int i_zone{0}, i_node{0};
 };
 
-template <class Int>
+/**
+ * @brief Index information of a Cell.
+ * 
+ * @tparam Int  Type of integers.
+ */
+template <std::integral Int>
 struct CellInfo {
   CellInfo() = default;
   CellInfo(Int z, Int s, Int c, Int n)
@@ -84,7 +94,13 @@ struct CellInfo {
   Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
-template <typename Int, std::floating_point Scalar>
+/**
+ * @brief Mimic CGNS's `GridCoordinates_t`, but partitioned.
+ * 
+ * @tparam Int  Type of integers.
+ * @tparam Scalar  Type of scalars.
+ */
+template <std::integral Int, std::floating_point Scalar>
 struct NodeGroup {
   Int head_, size_;
   ShiftedVector<Int> metis_id_;
@@ -131,10 +147,10 @@ struct NodeGroup {
   }
 };
 
-template <typename Int, int kDegrees, class Riemann>
+template <std::integral Int, int kDegrees, class Riemann>
 struct Cell;
 
-template <typename Int, int D, class R>
+template <std::integral Int, int D, class R>
 struct Face {
   constexpr static int kDegrees = D;
   using Riemann = R;
@@ -185,7 +201,7 @@ struct Face {
   }
 };
 
-template <typename Int, int D, class R>
+template <std::integral Int, int D, class R>
 struct Cell {
   constexpr static int kDegrees = D;
   using Riemann = R;
@@ -276,7 +292,14 @@ struct Cell {
   }
 };
 
-template <typename Int, int kDegrees, class Riemann>
+/**
+ * @brief Mimic CGNS's `Elements_t`, but partitioned.
+ * 
+ * @tparam Int  Type of integers.
+ * @tparam kDegrees  Degree of the solution polynomials.
+ * @tparam Riemann  Type of the Riemann solver on each Face.
+ */
+template <std::integral Int, int kDegrees, class Riemann>
 class CellGroup {
   using Cell = cgns::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Cell::Scalar;
@@ -374,7 +397,14 @@ class CellGroup {
   }
 };
 
-template <typename Int, int D, class R>
+/**
+ * @brief Mimic CGNS's `Zone_t`, but partitioned.
+ * 
+ * @tparam Int  Type of integers.
+ * @tparam D  Degree of the solution polynomials.
+ * @tparam R  Type of the Riemann solver on each Face.
+ */
+template <std::integral Int, int D, class R>
 class Part {
  public:
   constexpr static int kDegrees = D;
@@ -1496,10 +1526,10 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <typename Int, int kDegrees, class Riemann>
+template <std::integral Int, int kDegrees, class Riemann>
 MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <typename Int, int kDegrees, class Riemann>
+template <std::integral Int, int kDegrees, class Riemann>
 MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
