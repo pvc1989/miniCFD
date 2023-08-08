@@ -24,7 +24,7 @@ using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
 constexpr int kDegrees = 2;
-using Part = mini::mesh::cgns::Part<cgsize_t, kDegrees, Riemann>;
+using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
 using Coord = typename Cell::Coord;

@@ -15,12 +15,12 @@ namespace mesh {
 
 template class Shuffler<idx_t, double>;
 
-namespace cgns {
+namespace part {
 
 template class Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
 template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 
-}  // namespace cgns
+}  // namespace part
 }  // namespace mesh
 
 namespace polynomial {
@@ -31,7 +31,7 @@ template class mini::polynomial::LazyWeno<Cell2>;
 }  // namespace polynomial
 }  // namespace mini
 
-template class RungeKutta<1, mini::mesh::cgns::Part0,
+template class RungeKutta<1, mini::mesh::part::Part0,
     mini::polynomial::Limiter0>;
-template class RungeKutta<3, mini::mesh::cgns::Part2,
+template class RungeKutta<3, mini::mesh::part::Part2,
     mini::polynomial::Limiter2>;

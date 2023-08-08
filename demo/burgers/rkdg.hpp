@@ -24,7 +24,7 @@ namespace mesh {
 
 extern template class Shuffler<idx_t, double>;
 
-namespace cgns {
+namespace part {
 
 extern template class Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
 extern template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
@@ -32,13 +32,13 @@ extern template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 using Part0 = Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
 using Part2 = Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 
-}  // namespace cgns
+}  // namespace part
 }  // namespace mesh
 
 namespace polynomial {
 
-using Cell0 = mesh::cgns::Part0::Cell;
-using Cell2 = mesh::cgns::Part2::Cell;
+using Cell0 = mesh::part::Part0::Cell;
+using Cell2 = mesh::part::Part2::Cell;
 
 extern template class mini::polynomial::LazyWeno<Cell0>;
 extern template class mini::polynomial::LazyWeno<Cell2>;
@@ -49,9 +49,9 @@ using Limiter2 = mini::polynomial::LazyWeno<Cell2>;
 }  // namespace polynomial
 }  // namespace mini
 
-extern template class RungeKutta<1, mini::mesh::cgns::Part0,
+extern template class RungeKutta<1, mini::mesh::part::Part0,
     mini::polynomial::Limiter0>;
-extern template class RungeKutta<3, mini::mesh::cgns::Part2,
+extern template class RungeKutta<3, mini::mesh::part::Part2,
     mini::polynomial::Limiter2>;
 
 #endif  // DEMO_BURGERS_RKDG_HPP_

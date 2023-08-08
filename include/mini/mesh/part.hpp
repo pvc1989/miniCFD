@@ -35,8 +35,14 @@
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
-/* Provide a K-way type selection mechanism. */
 namespace mini {
+namespace mesh {
+namespace part {
+
+/**
+ * @brief A K-way type selection mechanism that extends `std::conditional_t`.
+ * 
+ */
 // generic version, no instantiation:
 template<unsigned N, typename... Types>
 struct select;
@@ -53,11 +59,6 @@ struct select<0, T, Types...> {
 // STL-style type aliasing:
 template<unsigned N, typename... Types>
 using select_t = typename select<N, Types...>::type;
-}  // namespace mini
-
-namespace mini {
-namespace mesh {
-namespace cgns {
 
 /**
  * @brief Index information of a Node.
@@ -103,8 +104,8 @@ struct CellInfo {
 template <std::integral Int, std::floating_point Scalar>
 struct NodeGroup {
   Int head_, size_;
-  ShiftedVector<Int> metis_id_;
-  ShiftedVector<Scalar> x_, y_, z_;
+  cgns::ShiftedVector<Int> metis_id_;
+  cgns::ShiftedVector<Scalar> x_, y_, z_;
   cgsize_t zone_size_[3][1];
   char zone_name_[33];
 
@@ -161,7 +162,7 @@ struct Face {
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Face<Scalar, kPhysDim>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
+  using Cell = part::Cell<Int, kDegrees, Riemann>;
   using Coord = typename Cell::Coord;
 
   LagrangeUptr lagrange_ptr_;
@@ -221,7 +222,7 @@ struct Cell {
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
   static constexpr int kFields = K * N;
-  using Face = cgns::Face<Int, kDegrees, R>;
+  using Face = part::Face<Int, kDegrees, R>;
 
   std::vector<Cell *> adj_cells_;
   std::vector<Face *> adj_faces_;
@@ -301,12 +302,12 @@ struct Cell {
  */
 template <std::integral Int, int kDegrees, class Riemann>
 class CellGroup {
-  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
+  using Cell = part::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
-  ShiftedVector<Cell> cells_;
-  ShiftedVector<ShiftedVector<Scalar>> fields_;  // [i_field][i_cell]
+  cgns::ShiftedVector<Cell> cells_;
+  cgns::ShiftedVector<cgns::ShiftedVector<Scalar>> fields_;  // [i_field][i_cell]
   int npe_;
 
  public:
@@ -316,7 +317,7 @@ class CellGroup {
       : head_(head), size_(size), cells_(size, head), fields_(kFields, 1),
         npe_(npe) {
     for (int i = 1; i <= kFields; ++i) {
-      fields_[i] = ShiftedVector<Scalar>(size, head);
+      fields_[i] = cgns::ShiftedVector<Scalar>(size, head);
     }
   }
   CellGroup() = default;
@@ -371,10 +372,10 @@ class CellGroup {
   auto cend() const {
     return cells_.cend();
   }
-  ShiftedVector<Scalar> const &GetField(Int i_field) const {
+  cgns::ShiftedVector<Scalar> const &GetField(Int i_field) const {
     return fields_.at(i_field);
   }
-  ShiftedVector<Scalar> &GetField(Int i_field) {
+  cgns::ShiftedVector<Scalar> &GetField(Int i_field) {
     return fields_.at(i_field);
   }
   void GatherFields() {
@@ -409,8 +410,8 @@ class Part {
  public:
   constexpr static int kDegrees = D;
   using Riemann = R;
-  using Face = cgns::Face<Int, kDegrees, Riemann>;
-  using Cell = cgns::Cell<Int, kDegrees, Riemann>;
+  using Face = part::Face<Int, kDegrees, Riemann>;
+  using Cell = part::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Riemann::Scalar;
   using Coord = typename Cell::Coord;
   using Value = typename Cell::Value;
@@ -419,17 +420,17 @@ class Part {
 
  private:
   struct Connectivity {
-    ShiftedVector<Int> index;
+    cgns::ShiftedVector<Int> index;
     std::vector<Int> nodes;
     cgsize_t first, last, local_first, local_last;
     ElementType_t type;
     char name[33];
   };
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using NodeInfo = cgns::NodeInfo<Int>;
-  using CellInfo = cgns::CellInfo<Int>;
-  using NodeGroup = cgns::NodeGroup<Int, Scalar>;
-  using CellGroup = cgns::CellGroup<Int, kDegrees, R>;
+  using NodeInfo = part::NodeInfo<Int>;
+  using CellInfo = part::CellInfo<Int>;
+  using NodeGroup = part::NodeGroup<Int, Scalar>;
+  using CellGroup = part::CellGroup<Int, kDegrees, R>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = CellGroup::kFields;
   static constexpr int i_base = 1;
@@ -443,23 +444,23 @@ class Part {
 
  private:
   using LagrangeOnTriangle = lagrange::Triangle3<Scalar, kPhysDim>;
-  using GaussOnTriangle = mini::select_t<kDegrees,
+  using GaussOnTriangle = select_t<kDegrees,
     gauss::Triangle<Scalar, kPhysDim, 1>,
     gauss::Triangle<Scalar, kPhysDim, 3>,
     gauss::Triangle<Scalar, kPhysDim, 6>,
     gauss::Triangle<Scalar, kPhysDim, 12>>;
   using LagrangeOnQuadrangle = lagrange::Quadrangle4<Scalar, kPhysDim>;
-  using GaussOnQuadrangle = mini::select_t<kDegrees,
+  using GaussOnQuadrangle = select_t<kDegrees,
     gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
     gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
     gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
     gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
-  using GaussOnTetrahedron = mini::select_t<kDegrees,
+  using GaussOnTetrahedron = select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
-  using GaussOnHexahedron = mini::select_t<kDegrees,
+  using GaussOnHexahedron = select_t<kDegrees,
     gauss::Hexahedron<Scalar, 1, 1, 1>,
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
@@ -627,7 +628,7 @@ class Part {
       int i_part, m_node, i_zone, i_node;
       std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
       recv_nodes[i_part].emplace_back(m_node);
-      m_to_node_info_[m_node] = cgns::NodeInfo<Int>(i_zone, i_node);
+      m_to_node_info_[m_node] = part::NodeInfo<Int>(i_zone, i_node);
     }
     std::vector<std::vector<Scalar>> recv_coords;
     for (auto &[i_part, nodes] : recv_nodes) {
@@ -733,7 +734,7 @@ class Part {
       cgsize_t mem_dimensions[] = { tail - head };
       cgsize_t mem_range_min[] = { 1 };
       cgsize_t mem_range_max[] = { mem_dimensions[0] };
-      ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
+      cgns::ShiftedVector<Int> metis_ids(mem_dimensions[0], head);
       int i_sol = SolnNameToId(i_file, i_base, i_zone, "DataOnCells");
       int i_field = FieldNameToId(i_file, i_base, i_zone, i_sol, "MetisIndex");
       if (cgp_field_general_read_data(i_file, i_base, i_zone, i_sol, i_field,
@@ -745,7 +746,7 @@ class Part {
       auto &conn = connectivities_[i_zone][i_sect];
       auto &index = conn.index;
       auto &nodes = conn.nodes;
-      index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
+      index = cgns::ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       if (cg_section_read(i_file, i_base, i_zone, i_sect,
           conn.name, &conn.type, &conn.first, &conn.last, &x, &y)) {
         cgp_error_exit();
@@ -1390,9 +1391,9 @@ class Part {
       local_adjs_;  // [i_pair] -> { m_holder, m_sharer }
   std::vector<std::unique_ptr<Face>>
       local_faces_, ghost_faces_;  // [i_face] -> a uptr of Face
-  std::map<Int, std::map<Int, ShiftedVector<std::unique_ptr<Face>>>>
+  std::map<Int, std::map<Int, cgns::ShiftedVector<std::unique_ptr<Face>>>>
       bound_faces_;  // [i_zone][i_sect][i_face] -> a uptr of Face
-  std::unordered_map<std::string, ShiftedVector<std::unique_ptr<Face>> *>
+  std::unordered_map<std::string, cgns::ShiftedVector<std::unique_ptr<Face>> *>
       name_to_faces_;
   std::vector<MPI_Request> requests_;
   std::array<std::string, kComponents> field_names_;
@@ -1443,7 +1444,7 @@ class Part {
       name_to_z_s[conn.name] = { i_zone, i_sect };
       int npe; cg_npe(conn.type, &npe);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
-      index = ShiftedVector<Int>(mem_dimensions[0] + 1, head);
+      index = cgns::ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       for (int i = 0; i < index.size(); ++i) {
         index.at(head + i) = npe * i;
       }
@@ -1488,7 +1489,7 @@ class Part {
         faces.emplace_back(std::move(face_uptr));
       }
     }
-    // build name to ShiftedVector of faces
+    // build name to cgns::ShiftedVector of faces
     for (auto &[name, z_s] : name_to_z_s) {
       auto [i_zone, i_sect] = z_s;
       auto &faces = bound_faces_.at(i_zone).at(i_sect);
@@ -1533,7 +1534,7 @@ template <std::integral Int, int kDegrees, class Riemann>
 MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
-}  // namespace cgns
+}  // namespace part
 }  // namespace mesh
 }  // namespace mini
 
