@@ -66,14 +66,14 @@ using select_t = typename select<N, Types...>::type;
  * @tparam Int  Type of integers.
  */
 template <std::integral Int>
-struct NodeInfo {
-  NodeInfo() = default;
-  NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
-  NodeInfo(NodeInfo const &) = default;
-  NodeInfo &operator=(NodeInfo const &) = default;
-  NodeInfo(NodeInfo &&) noexcept = default;
-  NodeInfo &operator=(NodeInfo &&) noexcept = default;
-  ~NodeInfo() noexcept = default;
+struct NodeIndex {
+  NodeIndex() = default;
+  NodeIndex(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
+  NodeIndex(NodeIndex const &) = default;
+  NodeIndex &operator=(NodeIndex const &) = default;
+  NodeIndex(NodeIndex &&) noexcept = default;
+  NodeIndex &operator=(NodeIndex &&) noexcept = default;
+  ~NodeIndex() noexcept = default;
   Int i_zone{0}, i_node{0};
 };
 
@@ -83,15 +83,15 @@ struct NodeInfo {
  * @tparam Int  Type of integers.
  */
 template <std::integral Int>
-struct CellInfo {
-  CellInfo() = default;
-  CellInfo(Int z, Int s, Int c, Int n)
+struct CellIndex {
+  CellIndex() = default;
+  CellIndex(Int z, Int s, Int c, Int n)
       : i_zone(z), i_sect(s), i_cell(c), npe(n) {}
-  CellInfo(CellInfo const &) = default;
-  CellInfo &operator=(CellInfo const &) = default;
-  CellInfo(CellInfo &&) noexcept = default;
-  CellInfo &operator=(CellInfo &&) noexcept = default;
-  ~CellInfo() noexcept = default;
+  CellIndex(CellIndex const &) = default;
+  CellIndex &operator=(CellIndex const &) = default;
+  CellIndex(CellIndex &&) noexcept = default;
+  CellIndex &operator=(CellIndex &&) noexcept = default;
+  ~CellIndex() noexcept = default;
   Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
 };
 
@@ -102,24 +102,24 @@ struct CellInfo {
  * @tparam Scalar  Type of scalars.
  */
 template <std::integral Int, std::floating_point Scalar>
-struct NodeGroup {
+struct Coordinates {
   Int head_, size_;
   cgns::ShiftedVector<Int> metis_id_;
   cgns::ShiftedVector<Scalar> x_, y_, z_;
   cgsize_t zone_size_[3][1];
   char zone_name_[33];
 
-  NodeGroup(int head, int size)
+  Coordinates(int head, int size)
       : head_(head), size_(size), metis_id_(size, head),
         x_(size, head), y_(size, head), z_(size, head) {
   }
-  NodeGroup() = default;
-  NodeGroup(NodeGroup const &) = delete;
-  NodeGroup &operator=(NodeGroup const &) = delete;
-  NodeGroup(NodeGroup &&that) noexcept {
+  Coordinates() = default;
+  Coordinates(Coordinates const &) = delete;
+  Coordinates &operator=(Coordinates const &) = delete;
+  Coordinates(Coordinates &&that) noexcept {
     *this = std::move(that);
   }
-  NodeGroup &operator=(NodeGroup &&that) noexcept {
+  Coordinates &operator=(Coordinates &&that) noexcept {
     if (this != &that) {
       head_ = that.head_;
       size_ = that.size_;
@@ -132,7 +132,7 @@ struct NodeGroup {
     }
     return *this;
   }
-  ~NodeGroup() noexcept = default;
+  ~Coordinates() noexcept = default;
 
   Int size() const {
     return size_;
@@ -301,7 +301,7 @@ struct Cell {
  * @tparam Riemann  Type of the Riemann solver on each Face.
  */
 template <std::integral Int, int kDegrees, class Riemann>
-class CellGroup {
+class Section {
   using Cell = part::Cell<Int, kDegrees, Riemann>;
   using Scalar = typename Cell::Scalar;
 
@@ -313,19 +313,19 @@ class CellGroup {
  public:
   static constexpr int kFields = Cell::kFields;
 
-  CellGroup(int head, int size, int npe)
+  Section(int head, int size, int npe)
       : head_(head), size_(size), cells_(size, head), fields_(kFields, 1),
         npe_(npe) {
     for (int i = 1; i <= kFields; ++i) {
       fields_[i] = cgns::ShiftedVector<Scalar>(size, head);
     }
   }
-  CellGroup() = default;
-  CellGroup(CellGroup const &) = delete;
-  CellGroup(CellGroup &&) noexcept = default;
-  CellGroup &operator=(CellGroup const &) = delete;
-  CellGroup &operator=(CellGroup &&) noexcept = default;
-  ~CellGroup() noexcept = default;
+  Section() = default;
+  Section(Section const &) = delete;
+  Section(Section &&) noexcept = default;
+  Section &operator=(Section const &) = delete;
+  Section &operator=(Section &&) noexcept = default;
+  ~Section() noexcept = default;
 
   Int head() const {
     return head_;
@@ -399,7 +399,7 @@ class CellGroup {
 };
 
 /**
- * @brief Mimic CGNS's `Zone_t`, but partitioned.
+ * @brief Mimic CGNS's `Base_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
  * @tparam D  Degree of the solution polynomials.
@@ -427,12 +427,12 @@ class Part {
     char name[33];
   };
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using NodeInfo = part::NodeInfo<Int>;
-  using CellInfo = part::CellInfo<Int>;
-  using NodeGroup = part::NodeGroup<Int, Scalar>;
-  using CellGroup = part::CellGroup<Int, kDegrees, R>;
+  using NodeIndex = part::NodeIndex<Int>;
+  using CellIndex = part::CellIndex<Int>;
+  using Coordinates = part::Coordinates<Int, Scalar>;
+  using Section = part::Section<Int, kDegrees, R>;
   static constexpr int kLineWidth = 128;
-  static constexpr int kFields = CellGroup::kFields;
+  static constexpr int kFields = Section::kFields;
   static constexpr int i_base = 1;
   static constexpr int i_grid = 1;
   static constexpr auto kIntType
@@ -559,7 +559,7 @@ class Part {
     while (istrm.getline(line, kLineWidth) && line[0] != '#') {
       int i_zone, head, tail;
       std::sscanf(line, "%d %d %d", &i_zone, &head, &tail);
-      auto node_group = NodeGroup(head, tail - head);
+      auto node_group = Coordinates(head, tail - head);
       if (cg_zone_read(i_file, i_base, i_zone,
           node_group.zone_name_, node_group.zone_size_[0])) {
         cgp_error_exit();
@@ -587,7 +587,7 @@ class Part {
       }
       for (int i_node = head; i_node < tail; ++i_node) {
         auto m_node = node_group.metis_id_[i_node];
-        m_to_node_info_[m_node] = NodeInfo(i_zone, i_node);
+        m_to_node_index_[m_node] = NodeIndex(i_zone, i_node);
       }
       local_nodes_[i_zone] = std::move(node_group);
     }
@@ -609,7 +609,7 @@ class Part {
     for (auto &[i_part, nodes] : send_nodes) {
       auto &coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
-        auto &info = m_to_node_info_.at(m_node);
+        auto &info = m_to_node_index_.at(m_node);
         auto const &coord = GetCoord(info.i_zone, info.i_node);
         coords.emplace_back(coord[0]);
         coords.emplace_back(coord[1]);
@@ -628,7 +628,7 @@ class Part {
       int i_part, m_node, i_zone, i_node;
       std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
       recv_nodes[i_part].emplace_back(m_node);
-      m_to_node_info_[m_node] = part::NodeInfo<Int>(i_zone, i_node);
+      m_to_node_index_[m_node] = part::NodeIndex<Int>(i_zone, i_node);
     }
     std::vector<std::vector<Scalar>> recv_coords;
     for (auto &[i_part, nodes] : recv_nodes) {
@@ -653,7 +653,7 @@ class Part {
     for (auto &[i_part, nodes] : recv_nodes) {
       auto *xyz = recv_coords[i_source++].data();
       for (auto m_node : nodes) {
-        auto &info = m_to_node_info_[m_node];
+        auto &info = m_to_node_index_[m_node];
         ghost_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
       }
@@ -754,7 +754,7 @@ class Part {
       int npe; cg_npe(conn.type, &npe);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
-        m_to_cell_info_[m_cell] = CellInfo(i_zone, i_sect, i_cell, npe);
+        m_to_cell_index_[m_cell] = CellIndex(i_zone, i_sect, i_cell, npe);
       }
       nodes.resize(npe * mem_dimensions[0]);
       for (int i = 0; i < index.size(); ++i) {
@@ -766,7 +766,7 @@ class Part {
           range_min[0], range_max[0], nodes.data())) {
         cgp_error_exit();
       }
-      auto cell_group = CellGroup(head, tail - head, npe);
+      auto cell_group = Section(head, tail - head, npe);
       local_cells_[i_zone][i_sect] = std::move(cell_group);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto *i_node_list = &nodes[(i_cell - head) * npe];
@@ -835,7 +835,7 @@ class Part {
     for (auto &[i_part, npes] : send_npes) {
       auto &send_buf = send_cells.emplace_back();
       for (auto &[m_cell, npe] : npes) {
-        auto &info = m_to_cell_info_[m_cell];
+        auto &info = m_to_cell_index_[m_cell];
         assert(npe == info.npe);
         Int i_zone = info.i_zone, i_sect = info.i_sect, i_cell = info.i_cell;
         auto &conn = connectivities_.at(i_zone).at(i_sect);
@@ -874,15 +874,15 @@ class Part {
     requests.clear();
     return recv_cells;
   }
-  struct GhostCellInfo {
+  struct GhostCellIndex {
     int source, head, npe;
   };
-  std::unordered_map<Int, GhostCellInfo> BuildGhostCells(
+  std::unordered_map<Int, GhostCellIndex> BuildGhostCells(
       GhostAdj const &ghost_adj,
       std::vector<std::vector<Int>> const &recv_cells) {
     auto &recv_npes = ghost_adj.recv_npes;
     // build ghost cells
-    std::unordered_map<Int, GhostCellInfo> m_to_recv_cells;
+    std::unordered_map<Int, GhostCellIndex> m_to_recv_cells;
     int i_source = 0;
     for (auto &[i_part, npes] : recv_npes) {
       auto &recv_buf = recv_cells.at(i_source);
@@ -910,7 +910,7 @@ class Part {
       auto &curr_part = send_cell_ptrs_[i_part];
       assert(curr_part.empty());
       for (auto &[m_cell, npe] : npes) {
-        auto &info = m_to_cell_info_[m_cell];
+        auto &info = m_to_cell_index_[m_cell];
         auto &cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
         cell.inner_ = false;
         curr_part.emplace_back(&cell);
@@ -934,8 +934,8 @@ class Part {
   void BuildLocalFaces() {
     // build local faces
     for (auto [m_holder, m_sharer] : local_adjs_) {
-      auto &holder_info = m_to_cell_info_[m_holder];
-      auto &sharer_info = m_to_cell_info_[m_sharer];
+      auto &holder_info = m_to_cell_index_[m_holder];
+      auto &sharer_info = m_to_cell_index_[m_sharer];
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
       auto i_node_cnt = std::unordered_map<Int, Int>();
@@ -977,11 +977,11 @@ class Part {
   }
   void BuildGhostFaces(GhostAdj const &ghost_adj,
       std::vector<std::vector<Int>> const &recv_cells,
-      std::unordered_map<Int, GhostCellInfo> const &m_to_recv_cells) {
+      std::unordered_map<Int, GhostCellIndex> const &m_to_recv_cells) {
     auto &m_cell_pairs = ghost_adj.m_cell_pairs;
     // build ghost faces
     for (auto [m_holder, m_sharer] : m_cell_pairs) {
-      auto &holder_info = m_to_cell_info_[m_holder];
+      auto &holder_info = m_to_cell_index_[m_holder];
       auto &sharer_info = m_to_recv_cells.at(m_sharer);
       auto i_zone = holder_info.i_zone;
       // find the common nodes of the holder and the sharer
@@ -1367,17 +1367,17 @@ class Part {
   }
 
  private:
-  std::map<Int, NodeGroup>
-      local_nodes_;  // [i_zone] -> a NodeGroup obj
+  std::map<Int, Coordinates>
+      local_nodes_;  // [i_zone] -> a Coordinates obj
   std::unordered_map<Int, std::unordered_map<Int, Mat3x1>>
       ghost_nodes_;  // [i_zone][i_node] -> a Mat3x1 obj
-  std::unordered_map<Int, NodeInfo>
-      m_to_node_info_;  // [m_node] -> a NodeInfo obj
-  std::unordered_map<Int, CellInfo>
-      m_to_cell_info_;  // [m_cell] -> a CellInfo obj
+  std::unordered_map<Int, NodeIndex>
+      m_to_node_index_;  // [m_node] -> a NodeIndex obj
+  std::unordered_map<Int, CellIndex>
+      m_to_cell_index_;  // [m_cell] -> a CellIndex obj
   std::map<Int, std::map<Int, Connectivity>>
       connectivities_;  // [i_zone][i_sect] -> a Connectivity obj
-  std::map<Int, std::map<Int, CellGroup>>
+  std::map<Int, std::map<Int, Section>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
   std::vector<Cell *>
       inner_cells_, inter_cells_;  // [i_cell] -> Cell *
@@ -1467,7 +1467,7 @@ class Part {
         for (auto [m_cell, cnt] : cell_cnt) {
           assert(cnt <= npe);
           if (cnt == npe) {  // this cell holds this face
-            auto &info = m_to_cell_info_[m_cell];
+            auto &info = m_to_cell_index_[m_cell];
             Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
             auto &holder = local_cells_.at(z).at(s).at(c);
             auto &holder_conn = connectivities_.at(z).at(s);
