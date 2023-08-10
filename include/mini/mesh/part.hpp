@@ -25,13 +25,19 @@
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns.hpp"
 #include "mini/lagrange/cell.hpp"
+#include "mini/lagrange/triangle.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 #include "mini/lagrange/tetrahedron.hpp"
 #include "mini/lagrange/hexahedron.hpp"
+#include "mini/lagrange/pyramid.hpp"
+#include "mini/lagrange/wedge.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/gauss/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/gauss/tetrahedron.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/gauss/pyramid.hpp"
+#include "mini/gauss/wedge.hpp"
 #include "mini/polynomial/basis.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -455,18 +461,30 @@ class Part {
     gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
     gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
     gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
+  using LagrangeOnTetrahedron = lagrange::Tetrahedron4<Scalar>;
   using GaussOnTetrahedron = select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
+  using LagrangeOnHexahedron = lagrange::Hexahedron8<Scalar>;
   using GaussOnHexahedron = select_t<kDegrees,
     gauss::Hexahedron<Scalar, 1, 1, 1>,
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
     gauss::Hexahedron<Scalar, 4, 4, 4>>;
-  using LagrangeOnTetrahedron = mini::lagrange::Tetrahedron4<Scalar>;
-  using LagrangeOnHexahedron = mini::lagrange::Hexahedron8<Scalar>;
+  using LagrangeOnPyramid = lagrange::Pyramid5<Scalar>;
+  using GaussOnPyramid = select_t<kDegrees,
+    gauss::Pyramid<Scalar, 1, 1, 1>,
+    gauss::Pyramid<Scalar, 2, 2, 2>,
+    gauss::Pyramid<Scalar, 3, 3, 3>,
+    gauss::Pyramid<Scalar, 4, 4, 4>>;
+  using LagrangeOnWedge = lagrange::Wedge6<Scalar>;
+  using GaussOnWedge = select_t<kDegrees,
+    gauss::Wedge<Scalar, 1, 1>,
+    gauss::Wedge<Scalar, 3, 2>,
+    gauss::Wedge<Scalar, 6, 3>,
+    gauss::Wedge<Scalar, 12, 4>>;
 
  public:
   Part(std::string const &directory, int rank)
@@ -668,6 +686,26 @@ class Part {
     auto gauss = std::make_unique<GaussOnTetrahedron>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
+  std::pair< std::unique_ptr<LagrangeOnPyramid>,
+             std::unique_ptr<GaussOnPyramid> >
+  BuildPyramidUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnPyramid>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+        GetCoord(i_zone, i_node_list[4]));
+    auto gauss = std::make_unique<GaussOnPyramid>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
+  }
+  std::pair< std::unique_ptr<LagrangeOnWedge>,
+             std::unique_ptr<GaussOnWedge> >
+  BuildWedgeUptr(int i_zone, Int const *i_node_list) const {
+    auto lagrange = std::make_unique<LagrangeOnWedge>(
+        GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+        GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]));
+    auto gauss = std::make_unique<GaussOnWedge>(*lagrange);
+    return { std::move(lagrange), std::move(gauss) };
+  }
   std::pair< std::unique_ptr<LagrangeOnHexahedron>,
              std::unique_ptr<GaussOnHexahedron> >
   BuildHexahedronUptr(int i_zone, Int const *i_node_list) const {
@@ -684,6 +722,10 @@ class Part {
     switch (npe) {
       case 4:
         return BuildTetrahedronUptr(i_zone, i_node_list); break;
+      case 5:
+        return BuildPyramidUptr(i_zone, i_node_list); break;
+      case 6:
+        return BuildWedgeUptr(i_zone, i_node_list); break;
       case 8:
         return BuildHexahedronUptr(i_zone, i_node_list); break;
       default:
@@ -751,11 +793,13 @@ class Part {
           conn.name, &conn.type, &conn.first, &conn.last, &x, &y)) {
         cgp_error_exit();
       }
+      // TODO(PVC): wrap in mini::mesh::cgns
       int npe; cg_npe(conn.type, &npe);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
         m_to_cell_index_[m_cell] = CellIndex(i_zone, i_sect, i_cell, npe);
       }
+      // TODO(PVC): only for non-mixed Section
       nodes.resize(npe * mem_dimensions[0]);
       for (int i = 0; i < index.size(); ++i) {
         index.at(head + i) = npe * i;
@@ -766,8 +810,8 @@ class Part {
           range_min[0], range_max[0], nodes.data())) {
         cgp_error_exit();
       }
-      auto cell_group = Section(head, tail - head, npe);
-      local_cells_[i_zone][i_sect] = std::move(cell_group);
+      auto section = Section(head, tail - head, npe);
+      local_cells_[i_zone][i_sect] = std::move(section);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto *i_node_list = &nodes[(i_cell - head) * npe];
         auto [lagrange_uptr, gauss_uptr]
