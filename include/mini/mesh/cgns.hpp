@@ -23,6 +23,30 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
+int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
+  switch (type) {
+  case CGNS_ENUMV( TRI_3 ): return 3;
+  case CGNS_ENUMV( TRI_6 ): return 6;
+  case CGNS_ENUMV( QUAD_4 ): return 4;
+  case CGNS_ENUMV( QUAD_8 ): return 8;
+  case CGNS_ENUMV( QUAD_9 ): return 9;
+  case CGNS_ENUMV( TETRA_4 ): return 4;
+  case CGNS_ENUMV( TETRA_10 ): return 10;
+  case CGNS_ENUMV( PYRA_5 ): return 5;
+  case CGNS_ENUMV( PYRA_13 ): return 13;
+  case CGNS_ENUMV( PYRA_14 ): return 14;
+  case CGNS_ENUMV( HEXA_8 ): return 8;
+  case CGNS_ENUMV( HEXA_20 ): return 20;
+  case CGNS_ENUMV( HEXA_27 ): return 27;
+  case CGNS_ENUMV( PENTA_6 ): return 6;
+  case CGNS_ENUMV( PENTA_15 ): return 15;
+  case CGNS_ENUMV( PENTA_18 ): return 18;
+  default:
+    int npe; cg_npe(type, &npe); return npe;
+  }
+  return -1;
+}
+
 template <class Real> class File;
 template <class Real> class Base;
 template <class Real> class Zone;
@@ -169,7 +193,7 @@ class Section {
       : zone_{&zone},
         i_sect_{sid}, name_{name}, first_{first}, size_{size},
         n_boundary_cells_{n_boundary_cells}, type_{type},
-        i_node_list_(size * CountNodesByType(type)) {
+        i_node_list_(size * cgns::CountNodesByType(type)) {
   }
 
  public:  // Copy Control:
@@ -201,13 +225,8 @@ class Section {
   CGNS_ENUMT(ElementType_t) type() const {
     return type_;
   }
-  static int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
-    int npe;
-    cg_npe(type, &npe);
-    return npe;
-  }
   int CountNodesByType() const {
-    return CountNodesByType(type_);
+    return cgns::CountNodesByType(type_);
   }
   static int dim(CGNS_ENUMT(ElementType_t) type) {
     int d;

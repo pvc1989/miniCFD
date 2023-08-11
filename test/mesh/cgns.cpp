@@ -33,7 +33,7 @@ class TestTypes : public ::testing::Test {
     cgSection(char* sn, int si, int fi, int la, int nb,
               CGNS_ENUMT(ElementType_t) ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          i_node_list((last-first+1) * Section<double>::CountNodesByType(ty)) {
+          i_node_list((last-first+1) * cgns::CountNodesByType(ty)) {
     }
   };
   struct cgZone {

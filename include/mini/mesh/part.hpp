@@ -793,8 +793,7 @@ class Part {
           conn.name, &conn.type, &conn.first, &conn.last, &x, &y)) {
         cgp_error_exit();
       }
-      // TODO(PVC): wrap in mini::mesh::cgns
-      int npe; cg_npe(conn.type, &npe);
+      int npe = cgns::CountNodesByType(conn.type);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
         m_to_cell_index_[m_cell] = CellIndex(i_zone, i_sect, i_cell, npe);
@@ -1486,7 +1485,7 @@ class Part {
         cgp_error_exit();
       }
       name_to_z_s[conn.name] = { i_zone, i_sect };
-      int npe; cg_npe(conn.type, &npe);
+      int npe = cgns::CountNodesByType(conn.type);
       nodes = std::vector<Int>(npe * mem_dimensions[0]);
       index = cgns::ShiftedVector<Int>(mem_dimensions[0] + 1, head);
       for (int i = 0; i < index.size(); ++i) {
