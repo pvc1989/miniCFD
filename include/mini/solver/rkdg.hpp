@@ -170,10 +170,9 @@ class RungeKuttaBase {
   }
   void ApplySolidWall(const Part &part) {
     auto visit = [this](const Face &face){
-      const auto &gauss = *(face.gauss_ptr_);
-      assert(face.sharer_ == nullptr);
-      const auto &holder = *(face.holder_);
-      const auto &riemann = (face.riemann_);
+      const auto &gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &riemann = face.riemann();
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
@@ -190,10 +189,9 @@ class RungeKuttaBase {
   }
   void ApplySupersonicOutlet(const Part &part) {
     auto visit = [this](const Face &face){
-      const auto &gauss = *(face.gauss_ptr_);
-      assert(face.sharer_ == nullptr);
-      const auto &holder = *(face.holder_);
-      const auto &riemann = (face.riemann_);
+      const auto &gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &riemann = face.riemann();
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
@@ -212,10 +210,9 @@ class RungeKuttaBase {
     for (auto iter = supersonic_inlet__.begin();
         iter != supersonic_inlet__.end(); ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto &gauss = *(face.gauss_ptr_);
-        assert(face.sharer_ == nullptr);
-        const auto &holder = *(face.holder_);
-        const auto &riemann = (face.riemann_);
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
@@ -233,10 +230,9 @@ class RungeKuttaBase {
     for (auto iter = subsonic_inlet_.begin(); iter != subsonic_inlet_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto &gauss = *(face.gauss_ptr_);
-        assert(face.sharer_ == nullptr);
-        const auto &holder = *(face.holder_);
-        const auto &riemann = (face.riemann_);
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
@@ -255,10 +251,9 @@ class RungeKuttaBase {
     for (auto iter = subsonic_outlet_.begin(); iter != subsonic_outlet_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto &gauss = *(face.gauss_ptr_);
-        assert(face.sharer_ == nullptr);
-        const auto &holder = *(face.holder_);
-        const auto &riemann = (face.riemann_);
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
@@ -277,10 +272,9 @@ class RungeKuttaBase {
     for (auto iter = smart_boundary_.begin(); iter != smart_boundary_.end();
         ++iter) {
       auto visit = [this, iter](const Face &face){
-        const auto &gauss = *(face.gauss_ptr_);
-        assert(face.sharer_ == nullptr);
-        const auto &holder = *(face.holder_);
-        const auto &riemann = (face.riemann_);
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);

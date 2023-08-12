@@ -191,16 +191,24 @@ struct Face {
   ~Face() noexcept = default;
 
   Gauss const &gauss() const {
+    assert(gauss_ptr_);
     return *gauss_ptr_;
+  }
+  Riemann const &riemann() const {
+    return riemann_;
   }
   Coord center() const {
     return gauss().center();
   }
   Scalar area() const {
-    return gauss_ptr_->area();
+    return gauss().area();
   }
   Int id() const {
     return id_;
+  }
+  Cell const &holder() const {
+    assert(holder_);
+    return *holder_;
   }
   Cell const *other(Cell const *cell) const {
     assert(cell == sharer_ || cell == holder_);
@@ -1512,11 +1520,11 @@ class Part {
           if (cnt == npe) {  // this cell holds this face
             auto &info = m_to_cell_index_[m_cell];
             Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
-            auto &holder = local_cells_.at(z).at(s).at(c);
+            holder_ptr = &(local_cells_.at(z).at(s).at(c));
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            lagrange::SortNodesOnFace(holder.lagrange(),
+            lagrange::SortNodesOnFace(holder_ptr->lagrange(),
                 &holder_nodes[holder_head], face_node_list, npe);
             break;
           }
