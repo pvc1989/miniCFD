@@ -358,9 +358,7 @@ class Writer {
       pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" "
           << "NumberOfComponents=\"3\"/>\n";
       pvtu << "    </PPoints>\n";
-      int n_parts;
-      MPI_Comm_size(MPI_COMM_WORLD, &n_parts);
-      for (int i_part = 0; i_part < n_parts; ++i_part) {
+      for (int i_part = 0; i_part < part.size(); ++i_part) {
         pvtu << "    <Piece Source=\"./" << soln_name << '/'
             << i_part << ".vtu\"/>\n";
       }

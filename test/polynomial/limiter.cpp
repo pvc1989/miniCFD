@@ -168,17 +168,17 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   std::cout << "[Done] " << cmd << std::endl;
   // build a `Part` from the cgns file
   MPI_Init(NULL, NULL);
-  int n_cores, i_core;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
+  int n_core, i_core;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
   MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
   using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-  Shuffler::PartitionAndShuffle(case_name, old_file_name, n_cores);
+  Shuffler::PartitionAndShuffle(case_name, old_file_name, n_core);
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
   using Part = mini::mesh::part::Part<cgsize_t, 2, Riemann>;
-  auto part = Part(case_name, i_core);
+  auto part = Part(case_name, i_core, n_core);
   MPI_Finalize();
   // project the function
   using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;

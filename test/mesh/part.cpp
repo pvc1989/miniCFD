@@ -16,8 +16,8 @@
 // mpirun -n 4 ./part
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
-  int n_cores, i_core;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
+  int n_core, i_core;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
   MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
@@ -28,9 +28,9 @@ int main(int argc, char* argv[]) {
   auto time_begin = MPI_Wtime();
   if (i_core == 0) {
     std::printf("Run `./shuffler %d %s` on proc[%d/%d] at %f sec\n",
-        n_cores, case_name.c_str(),
-        i_core, n_cores, MPI_Wtime() - time_begin);
-    auto cmd = "./shuffler " + std::to_string(n_cores) + ' ' + case_name;
+        n_core, case_name.c_str(),
+        i_core, n_core, MPI_Wtime() - time_begin);
+    auto cmd = "./shuffler " + std::to_string(n_core) + ' ' + case_name;
     if (std::system(cmd.c_str()))
       throw std::runtime_error(cmd + std::string(" failed."));
   }
@@ -38,12 +38,12 @@ int main(int argc, char* argv[]) {
 
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
       case_name.c_str(), i_core,
-      i_core, n_cores, MPI_Wtime() - time_begin);
+      i_core, n_core, MPI_Wtime() - time_begin);
   constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
   using Riemann = mini::
       riemann::rotated::Multiple<double, kComponents, kDimensions>;
   using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
-  auto part = Part(case_name, i_core);
+  auto part = Part(case_name, i_core, n_core);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
   const auto *part_ptr = &part;
@@ -57,11 +57,11 @@ int main(int argc, char* argv[]) {
     }
   });
   std::printf("On proc[%d/%d], avg_volume = %f = %f / %d\n",
-      i_core, n_cores, volume / n_cells, volume, n_cells);
+      i_core, n_core, volume / n_cells, volume, n_cells);
   std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",
-      i_core, n_cores, area / n_faces, area, n_faces);
+      i_core, n_core, area / n_faces, area, n_faces);
   std::printf("Run Project() on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+      i_core, n_core, MPI_Wtime() - time_begin);
   part.Project([](auto const& xyz){
     auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
     mini::algebra::Matrix<double, 2, 1> col;
@@ -70,17 +70,17 @@ int main(int argc, char* argv[]) {
     return col;
   });
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+      i_core, n_core, MPI_Wtime() - time_begin);
   using Cell = typename Part::Cell;
   auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+      i_core, n_core, MPI_Wtime() - time_begin);
   part.GatherSolutions();
   part.WriteSolutions("Step0");
   mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Step0");
   std::printf("Run MPI_Finalize() on proc[%d/%d] at %f sec\n",
-      i_core, n_cores, MPI_Wtime() - time_begin);
+      i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Finalize();
 }

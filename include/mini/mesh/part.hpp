@@ -495,9 +495,9 @@ class Part {
     gauss::Wedge<Scalar, 12, 4>>;
 
  public:
-  Part(std::string const &directory, int rank)
+  Part(std::string const &directory, int rank, int size)
       : directory_(directory), cgns_file_(directory + "/shuffled.cgns"),
-        rank_(rank) {
+        rank_(rank), size_(size) {
     int i_file;
     if (cgp_open(cgns_file_.c_str(), CG_MODE_READ, &i_file)) {
       cgp_error_exit();
@@ -531,6 +531,9 @@ class Part {
   }
   int rank() const {
     return rank_;
+  }
+  int size() const {
+    return size_;
   }
 
  private:
@@ -1450,7 +1453,7 @@ class Part {
   std::array<std::string, kComponents> field_names_;
   const std::string directory_;
   const std::string cgns_file_;
-  int rank_, cell_dim_, phys_dim_;
+  int rank_, size_, cell_dim_, phys_dim_;
   char base_name_[33];
 
   void BuildBoundaryFaces(std::ifstream &istrm, int i_file) {

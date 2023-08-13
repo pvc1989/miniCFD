@@ -34,15 +34,15 @@ void WriteForces(Part const &part, Source *source, double t_curr,
 
 int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   MPI_Init(NULL, NULL);
-  int n_cores, i_core;
-  MPI_Comm_size(MPI_COMM_WORLD, &n_cores);
+  int n_core, i_core;
+  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
   MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   if (argc < 7) {
     if (i_core == 0) {
       std::cout << "usage:\n"
-          << "  mpirun -n <n_cores> " << argv[0] << " <cgns_file> <output_path>"
+          << "  mpirun -n <n_core> " << argv[0] << " <cgns_file> <output_path>"
           << " <t_start> <t_stop> <n_steps_per_frame> <n_frames>"
           << " [<i_frame_start> [n_parts_prev] [--write_forces]]\n";
     }
@@ -73,17 +73,17 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
   auto time_begin = MPI_Wtime();
 
   /* Partition the mesh. */
-  if (i_core == 0 && n_parts_prev != n_cores) {
+  if (i_core == 0 && n_parts_prev != n_core) {
     using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-    Shuffler::PartitionAndShuffle(output_path, old_file_name, n_cores);
+    Shuffler::PartitionAndShuffle(output_path, old_file_name, n_core);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
   if (i_core == 0) {
     std::printf("Create %d `Part`s at %f sec\n",
-        n_cores, MPI_Wtime() - time_begin);
+        n_core, MPI_Wtime() - time_begin);
   }
-  auto part = Part(output_path, i_core);
+  auto part = Part(output_path, i_core, n_core);
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
@@ -97,23 +97,23 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     });
     if (i_core == 0) {
       std::printf("[Done] Project() on %d cores at %f sec\n",
-          n_cores, MPI_Wtime() - time_begin);
+          n_core, MPI_Wtime() - time_begin);
     }
     part.GatherSolutions();
     part.WriteSolutions("Frame0");
     mini::mesh::vtk::Writer<Part>::WriteSolutions(part, "Frame0");
     if (i_core == 0) {
       std::printf("[Done] WriteSolutions(Frame0) on %d cores at %f sec\n",
-          n_cores, MPI_Wtime() - time_begin);
+          n_core, MPI_Wtime() - time_begin);
     }
   } else {
-    std::string soln_name = (n_parts_prev != n_cores)
+    std::string soln_name = (n_parts_prev != n_core)
         ? "shuffled" : "Frame" + std::to_string(i_frame);
     part.ReadSolutions(soln_name);
     part.ScatterSolutions();
     if (i_core == 0) {
       std::printf("[Done] ReadSolutions(Frame%d) on %d cores at %f sec\n",
-          i_frame, n_cores, MPI_Wtime() - time_begin);
+          i_frame, n_core, MPI_Wtime() - time_begin);
     }
   }
   if (write_forces) {
@@ -121,7 +121,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     WriteForces(part, &source, t_start, frame_name, i_core);
     if (i_core == 0) {
       std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
-          i_frame, n_cores, MPI_Wtime() - time_begin);
+          i_frame, n_core, MPI_Wtime() - time_begin);
     }
   }
 
@@ -146,12 +146,12 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
       part.ScatterSolutions();
       if (i_core == 0) {
         std::printf("[Done] ReadSolutions(Frame%d) on %d cores at %f sec\n",
-            i_frame, n_cores, MPI_Wtime() - time_begin);
+            i_frame, n_core, MPI_Wtime() - time_begin);
       }
       WriteForces(part, &source, t_curr, frame_name, i_core);
       if (i_core == 0) {
         std::printf("[Done] WriteForces(Frame%d) on %d cores at %f sec\n",
-            i_frame, n_cores, MPI_Wtime() - wtime_start);
+            i_frame, n_core, MPI_Wtime() - wtime_start);
       }
       continue;
     }
@@ -161,7 +161,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     auto wtime_total = wtime_curr * n_steps / i_step;
     if (i_core == 0) {
       std::printf("[Done] Update(Step%d/%d) on %d cores at %f / %f sec\n",
-          i_step, n_steps, n_cores, wtime_curr, wtime_total);
+          i_step, n_steps, n_core, wtime_curr, wtime_total);
     }
 
     if (i_step % n_steps_per_frame == 0) {
@@ -172,7 +172,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
       mini::mesh::vtk::Writer<Part>::WriteSolutions(part, frame_name);
       if (i_core == 0) {
         std::printf("[Done] WriteSolutions(Frame%d) on %d cores at %f sec\n",
-            i_frame, n_cores, MPI_Wtime() - wtime_start);
+            i_frame, n_core, MPI_Wtime() - wtime_start);
       }
     }
   }
@@ -181,7 +181,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
     std::printf("time-range = [%f, %f], frame-range = [%d, %d], dt = %f\n",
         t_start, t_stop, i_frame - n_frames, i_frame, dt);
     std::printf("[Start] MPI_Finalize() on %d cores at %f sec\n",
-        n_cores, MPI_Wtime() - time_begin);
+        n_core, MPI_Wtime() - time_begin);
   }
   MPI_Finalize();
   return 0;
