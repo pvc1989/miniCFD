@@ -78,7 +78,7 @@ CgnsToMetis<Int, Real>::Map(CgnsMesh const &cgns_mesh) {
   auto n_zones = base.CountZones();
   Int n_nodes_in_curr_base{0};
   auto cell_ptr = std::vector<Int>();  // METIS node range
-  auto i_cellx = std::vector<Int>();  // METIS node index
+  auto cell_idx = std::vector<Int>();  // METIS node index
   Int pointer_value{0};
   cell_ptr.emplace_back(pointer_value);
   Int n_nodes_in_prev_zones{0};
@@ -118,17 +118,17 @@ CgnsToMetis<Int, Real>::Map(CgnsMesh const &cgns_mesh) {
         cell_ptr.emplace_back(pointer_value += n_nodes_per_cell);
       }
       auto i_node_list_size = n_nodes_per_cell * n_cells_in_curr_sect;
-      i_cellx.reserve(i_cellx.size() + i_node_list_size);
+      cell_idx.reserve(cell_idx.size() + i_node_list_size);
       auto i_node_list = section.GetNodeIdList();
       for (Int i_node = 0; i_node < i_node_list_size; ++i_node) {
         auto metis_i_node = n_nodes_in_prev_zones + i_node_list[i_node] - 1;
-        i_cellx.emplace_back(metis_i_node);
+        cell_idx.emplace_back(metis_i_node);
       }
     }
     n_nodes_in_prev_zones += zone.CountNodes();
   }
   assert(metis_to_cgns_for_nodes.size() == n_nodes_in_curr_base);
-  return MetisMesh(cell_ptr, i_cellx, n_nodes_in_curr_base);
+  return MetisMesh(cell_ptr, cell_idx, n_nodes_in_curr_base);
 }
 
 template <class Int, class Real>
