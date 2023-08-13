@@ -514,14 +514,19 @@ void Shuffler<Int, Real>::PartitionAndShuffle(std::string const &case_name,
   std::printf("[Done] %s\n", cmd);
   auto cgns_mesh = cgns::File<Real>(old_cgns_name);
   cgns_mesh.ReadBases();
+  std::printf("[Done] %s\n", "cgns::File::ReadBases");
   /* Partition the mesh: */
   auto mapper = mapper::CgnsToMetis<Int, Real>();
   metis::Mesh<Int> metis_mesh = mapper.Map(cgns_mesh);
   assert(mapper.IsValid());
+  std::printf("[Done] %s\n", "mapper::CgnsToMetis");
   Int n_common_nodes{3};
   auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
+  std::printf("[Done] %s\n", "metis::MeshToDual");
   auto cell_parts = metis::PartGraph(graph, n_parts);
+  std::printf("[Done] %s\n", "metis::PartGraph");
   auto node_parts = metis::GetNodeParts(metis_mesh, cell_parts, n_parts);
+  std::printf("[Done] %s\n", "metis::GetNodeParts");
   mapper.WriteParts(cell_parts, node_parts, &cgns_mesh);
   std::printf("[Done] partition `%s` into %d parts.\n",
       old_cgns_name.c_str(), static_cast<int>(n_parts));
