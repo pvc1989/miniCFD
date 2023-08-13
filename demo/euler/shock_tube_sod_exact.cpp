@@ -28,6 +28,17 @@ void MyBC(const std::string &suffix, Solver *solver) {
     solver->SetSolidWall("3_S_51");
     solver->SetSolidWall("3_S_16");
     solver->SetSolidWall("3_S_46");
+  } else if (suffix == "wedge") {
+    solver->SetSmartBoundary("4_S_42", state_left);  // Left
+    solver->SetSmartBoundary("4_S_20", state_right);  // Right
+    solver->SetSolidWall("3_S_1");
+    solver->SetSolidWall("3_S_2");
+    solver->SetSolidWall("4_S_24");
+    solver->SetSolidWall("4_S_38");
+    solver->SetSolidWall("3_S_29");
+    solver->SetSolidWall("3_S_51");
+    solver->SetSolidWall("4_S_16");
+    solver->SetSolidWall("4_S_46");
   } else {
     assert(suffix == "hexa");
     solver->SetSmartBoundary("4_S_42", state_left);  // Left

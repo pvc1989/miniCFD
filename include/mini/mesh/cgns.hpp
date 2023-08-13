@@ -644,14 +644,16 @@ class Zone {
   * Return true if the cell type is supported and consistent with the given dim.
   */
   static bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
-    if (cell_dim == 2) {
-      if (type == CGNS_ENUMV(TRI_3) || type == CGNS_ENUMV(QUAD_4) ||
-          type == CGNS_ENUMV(MIXED))
-        return true;
-    } else if (cell_dim == 3) {
-      if (type == CGNS_ENUMV(TETRA_4) || type == CGNS_ENUMV(HEXA_8) ||
-          type == CGNS_ENUMV(MIXED))
-        return true;
+    switch (type) {
+    case CGNS_ENUMV(TRI_3):
+    case CGNS_ENUMV(QUAD_4):
+      return cell_dim == 2;
+    case CGNS_ENUMV(TETRA_4):
+    case CGNS_ENUMV(PENTA_6):
+    case CGNS_ENUMV(HEXA_8):
+      return cell_dim == 3;
+    default:
+      return type == CGNS_ENUMV(MIXED);
     }
     return false;
   }

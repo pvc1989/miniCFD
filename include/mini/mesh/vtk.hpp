@@ -9,24 +9,35 @@ namespace mini {
 namespace mesh {
 namespace vtk {
 
+/**
+ * @brief Mimic VTK's cell types.
+ * 
+ * See 
+https://vtk.org/doc/nightly/html/vtkCellType_8h.html for details.
+  */
+enum class CellType {
+  kTetrahedron = 10,
+  kHexahedron = 12,
+  kWedge = 13,
+  kTetrahedron10 = 24,
+  kHexahedron20 = 25,
+  kHexahedron64 = 72,
+};
+
 template <typename Part>
 class Writer {
   using Cell = typename Part::Cell;
   using Value = typename Cell::Value;
   using Coord = typename Cell::Coord;
 
-  enum class CellType {
-    kTetrahedron = 10,
-    kHexahedron = 12,
-    kTetrahedron10 = 24,
-    kHexahedron20 = 25,
-    kHexahedron64 = 72,
-  };
   static CellType GetCellType(int n_corners) {
     CellType cell_type;
     switch (n_corners) {
       case 4:
         cell_type = CellType::kTetrahedron10;
+        break;
+      case 6:
+        cell_type = CellType::kWedge;
         break;
       case 8:
         cell_type = CellType::kHexahedron64;
@@ -42,6 +53,9 @@ class Writer {
     switch (cell_type) {
       case CellType::kTetrahedron:
         n_nodes = 4;
+        break;
+      case CellType::kWedge:
+        n_nodes = 6;
         break;
       case CellType::kHexahedron:
         n_nodes = 8;
@@ -70,6 +84,9 @@ class Writer {
     switch (type) {
       case CellType::kTetrahedron:
         PrepareDataOnTetrahedron4(cell, coords, values);
+        break;
+      case CellType::kWedge:
+        PrepareDataOnWedge6(cell, coords, values);
         break;
       case CellType::kHexahedron:
         PrepareDataOnHexa8(cell, coords, values);
@@ -115,6 +132,25 @@ class Writer {
     coords->emplace_back(cell.LocalToGlobal({0, 0.5, 0}));
     values->emplace_back(cell.GetValue(coords->back()));
     coords->emplace_back(cell.LocalToGlobal({0, 0, 0.5}));
+    values->emplace_back(cell.GetValue(coords->back()));
+  }
+  static void PrepareDataOnWedge6(const Cell &cell,
+      std::vector<Coord> *coords, std::vector<Value> *values) {
+    /**
+     *   VTK's 0, 1, 2, 3, 4, 5 correspond to
+     *  CGNS's 1, 3, 2, 4, 6, 5
+     */
+    coords->emplace_back(cell.LocalToGlobal({1, 0, -1}));
+    values->emplace_back(cell.GetValue(coords->back()));
+    coords->emplace_back(cell.LocalToGlobal({0, 0, -1}));
+    values->emplace_back(cell.GetValue(coords->back()));
+    coords->emplace_back(cell.LocalToGlobal({0, 1, -1}));
+    values->emplace_back(cell.GetValue(coords->back()));
+    coords->emplace_back(cell.LocalToGlobal({1, 0, +1}));
+    values->emplace_back(cell.GetValue(coords->back()));
+    coords->emplace_back(cell.LocalToGlobal({0, 0, +1}));
+    values->emplace_back(cell.GetValue(coords->back()));
+    coords->emplace_back(cell.LocalToGlobal({0, 1, +1}));
     values->emplace_back(cell.GetValue(coords->back()));
   }
   static void PrepareDataOnHexa8(const Cell &cell,
