@@ -231,6 +231,8 @@ struct Cell {
   using Projection = polynomial::
       Projection<Scalar, kPhysDim, kDegrees, kComponents>;
   using Coord = typename Projection::Coord;
+  using Local = Coord;
+  using Global = Coord;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions

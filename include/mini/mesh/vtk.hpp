@@ -16,12 +16,124 @@ namespace vtk {
 https://vtk.org/doc/nightly/html/vtkCellType_8h.html for details.
   */
 enum class CellType {
-  kTetrahedron = 10,
-  kHexahedron = 12,
-  kWedge = 13,
+  kTetrahedron4 = 10,
+  kHexahedron8 = 12,
+  kWedge6 = 13,
   kTetrahedron10 = 24,
   kHexahedron20 = 25,
   kHexahedron64 = 72,
+};
+
+template <typename Cell>
+void PrepareData(const typename Cell::Local locals[], int n, const Cell &cell,
+    std::vector<typename Cell::Global> *coords,
+    std::vector<typename Cell::Value> *values) {
+  for (int i = 0; i < n; ++i) {
+    coords->emplace_back(cell.LocalToGlobal(locals[i]));
+    values->emplace_back(cell.GetValue(coords->back()));
+  }
+}
+
+template <typename Local>
+class Tetrahedron4 {
+ public:
+  static const Local locals[4];
+};
+template <typename Local>
+const Local Tetrahedron4<Local>::locals[4]{
+  Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 1), Local(0, 0, 0)
+};
+
+template <typename Local>
+class Tetrahedron10 {
+ public:
+  static const Local locals[10];
+};
+template <typename Local>
+const Local Tetrahedron10<Local>::locals[10]{
+  Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 1), Local(0, 0, 0),
+  Local(0.5, 0.5, 0), Local(0, 0.5, 0.5), Local(0.5, 0, 0.5),
+  Local(0.5, 0, 0), Local(0, 0.5, 0), Local(0, 0, 0.5),
+};
+
+template <typename Local>
+class Wedge6 {
+ public:
+  static const Local locals[6];
+};
+template <typename Local>
+const Local Wedge6<Local>::locals[6]{
+  /**
+   *   VTK's 0, 1, 2, 3, 4, 5 correspond to
+   *  CGNS's 1, 3, 2, 4, 6, 5
+   */
+  Local(1, 0, -1), Local(0, 0, -1), Local(0, 1, -1),
+  Local(1, 0, +1), Local(0, 0, +1), Local(0, 1, +1),
+};
+
+template <typename Local>
+class Hexahedron8 {
+ public:
+  static const Local locals[8];
+};
+template <typename Local>
+const Local Hexahedron8<Local>::locals[8]{
+  Local(-1, -1, -1), Local(+1, -1, -1), Local(+1, +1, -1), Local(-1, +1, -1),
+  Local(-1, -1, +1), Local(+1, -1, +1), Local(+1, +1, +1), Local(-1, +1, +1),
+};
+
+template <typename Local>
+class Hexahedron20 {
+ public:
+  static const Local locals[20];
+};
+template <typename Local>
+const Local Hexahedron20<Local>::locals[20]{
+  // nodes at corners (same as Hexahedron8)
+  Local(-1, -1, -1), Local(+1, -1, -1), Local(+1, +1, -1), Local(-1, +1, -1),
+  Local(-1, -1, +1), Local(+1, -1, +1), Local(+1, +1, +1), Local(-1, +1, +1),
+  // nodes on edges
+  Local(0., -1, -1), Local(+1, 0., -1), Local(0., +1, -1), Local(-1, 0., -1),
+  Local(0., -1, +1), Local(+1, 0., +1), Local(0., +1, +1), Local(-1, 0., +1),
+  Local(-1, -1, 0.), Local(+1, -1, 0.), Local(+1, +1, 0.), Local(-1, +1, 0.),
+};
+
+template <typename Local>
+class Hexahedron64 {
+  static constexpr double a = 1. / 3;
+
+ public:
+  static const Local locals[64];
+};
+template <typename Local>
+const Local Hexahedron64<Local>::locals[64]{
+  // nodes at corners (same as Hexahedron8)
+  Local(-1, -1, -1), Local(+1, -1, -1), Local(+1, +1, -1), Local(-1, +1, -1),
+  Local(-1, -1, +1), Local(+1, -1, +1), Local(+1, +1, +1), Local(-1, +1, +1),
+  // [8, 16) nodes on bottom edges
+  Local(-a, -1, -1), Local(+a, -1, -1), Local(+1, -a, -1), Local(+1, +a, -1),
+  Local(-a, +1, -1), Local(+a, +1, -1), Local(-1, -a, -1), Local(-1, +a, -1),
+  // [16, 24) nodes on top edges
+  Local(-a, -1, +1), Local(+a, -1, +1), Local(+1, -a, +1), Local(+1, +a, +1),
+  Local(-a, +1, +1), Local(+a, +1, +1), Local(-1, -a, +1), Local(-1, +a, +1),
+  // [24, 32) nodes on vertical edges
+  Local(-1, -1, -a), Local(-1, -1, +a), Local(+1, -1, -a), Local(+1, -1, +a),
+  Local(-1, +1, -a), Local(-1, +1, +a), Local(+1, +1, -a), Local(+1, +1, +a),
+  // [32, 36) nodes on the left face
+  Local(-1, -a, -a), Local(-1, +a, -a), Local(-1, -a, +a), Local(-1, +a, +a),
+  // [36, 40) nodes on the right face
+  Local(+1, -a, -a), Local(+1, +a, -a), Local(+1, -a, +a), Local(+1, +a, +a),
+  // [40, 44) nodes on the front face
+  Local(-a, -1, -a), Local(+a, -1, -a), Local(-a, -1, +a), Local(+a, -1, +a),
+  // [44, 48) nodes on the back face
+  Local(-a, +1, -a), Local(+a, +1, -a), Local(-a, +1, +a), Local(+a, +1, +a),
+  // [48, 52) nodes on the bottom face
+  Local(-a, -a, -1), Local(+a, -a, -1), Local(-a, +a, -1), Local(+a, +a, -1),
+  // [52, 56) nodes on the top face
+  Local(-a, -a, +1), Local(+a, -a, +1), Local(-a, +a, +1), Local(+a, +a, +1),
+  // [56, 64) nodes inside the body
+  Local(-a, -a, -a), Local(+a, -a, -a), Local(-a, +a, -a), Local(+a, +a, -a),
+  Local(-a, -a, +a), Local(+a, -a, +a), Local(-a, +a, +a), Local(+a, +a, +a),
 };
 
 template <typename Part>
@@ -37,7 +149,7 @@ class Writer {
         cell_type = CellType::kTetrahedron10;
         break;
       case 6:
-        cell_type = CellType::kWedge;
+        cell_type = CellType::kWedge6;
         break;
       case 8:
         cell_type = CellType::kHexahedron64;
@@ -51,13 +163,13 @@ class Writer {
   static int CountNodes(CellType cell_type) {
     int n_nodes;
     switch (cell_type) {
-      case CellType::kTetrahedron:
+      case CellType::kTetrahedron4:
         n_nodes = 4;
         break;
-      case CellType::kWedge:
+      case CellType::kWedge6:
         n_nodes = 6;
         break;
-      case CellType::kHexahedron:
+      case CellType::kHexahedron8:
         n_nodes = 8;
         break;
       case CellType::kTetrahedron10:
@@ -82,253 +194,28 @@ class Writer {
     types->push_back(type);
     // TODO(PVC): dispatch by virtual functions?
     switch (type) {
-      case CellType::kTetrahedron:
-        PrepareDataOnTetrahedron4(cell, coords, values);
-        break;
-      case CellType::kWedge:
-        PrepareDataOnWedge6(cell, coords, values);
-        break;
-      case CellType::kHexahedron:
-        PrepareDataOnHexa8(cell, coords, values);
-        break;
-      case CellType::kTetrahedron10:
-        PrepareDataOnTetrahedron10(cell, coords, values);
-        break;
-      case CellType::kHexahedron20:
-        PrepareDataOnHexa20(cell, coords, values);
-        break;
-      case CellType::kHexahedron64:
-        PrepareDataOnHexa64(cell, coords, values);
-        break;
-      default:
-        assert(false);
-        break;
+    case CellType::kTetrahedron4:
+      vtk::PrepareData<Cell>(Tetrahedron4<Coord>::locals, 4, cell, coords, values);
+      break;
+    case CellType::kWedge6:
+      vtk::PrepareData<Cell>(Wedge6<Coord>::locals, 6, cell, coords, values);
+      break;
+    case CellType::kHexahedron8:
+      vtk::PrepareData<Cell>(Hexahedron8<Coord>::locals, 8, cell, coords, values);
+      break;
+    case CellType::kTetrahedron10:
+      vtk::PrepareData<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
+      break;
+    case CellType::kHexahedron20:
+      vtk::PrepareData<Cell>(Hexahedron20<Coord>::locals, 20, cell, coords, values);
+      break;
+    case CellType::kHexahedron64:
+      vtk::PrepareData<Cell>(Hexahedron64<Coord>::locals, 64, cell, coords, values);
+      break;
+    default:
+      assert(false);
+      break;
     }
-  }
-  static void PrepareDataOnTetrahedron4(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    coords->emplace_back(cell.LocalToGlobal({1, 0, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 1, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0, 1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-  }
-  static void PrepareDataOnTetrahedron10(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    // nodes at corners
-    PrepareDataOnTetrahedron4(cell, coords, values);
-    // nodes on edges
-    coords->emplace_back(cell.LocalToGlobal({0.5, 0.5, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0.5, 0.5}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0.5, 0, 0.5}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0.5, 0, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0.5, 0}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0, 0.5}));
-    values->emplace_back(cell.GetValue(coords->back()));
-  }
-  static void PrepareDataOnWedge6(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    /**
-     *   VTK's 0, 1, 2, 3, 4, 5 correspond to
-     *  CGNS's 1, 3, 2, 4, 6, 5
-     */
-    coords->emplace_back(cell.LocalToGlobal({1, 0, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({1, 0, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 0, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0, 1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-  }
-  static void PrepareDataOnHexa8(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    coords->emplace_back(cell.LocalToGlobal({-1, -1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-  }
-  static void PrepareDataOnHexa20(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    // nodes at corners
-    PrepareDataOnHexa8(cell, coords, values);
-    // nodes on edges
-    coords->emplace_back(cell.LocalToGlobal({0., -1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, 0., -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0., +1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, 0., -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0., -1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, 0., +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({0., +1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, 0., +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -1, 0.}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -1, 0.}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +1, 0.}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +1, 0.}));
-    values->emplace_back(cell.GetValue(coords->back()));
-  }
-  static void PrepareDataOnHexa64(const Cell &cell,
-      std::vector<Coord> *coords, std::vector<Value> *values) {
-    // [0, 8) nodes at corners
-    PrepareDataOnHexa8(cell, coords, values);
-    constexpr double a = 1. / 3;
-    // [8, 16) nodes on bottom edges
-    coords->emplace_back(cell.LocalToGlobal({-a, -1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +1, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [16, 24) nodes on top edges
-    coords->emplace_back(cell.LocalToGlobal({-a, -1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +1, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [24, 32) nodes on vertical edges
-    coords->emplace_back(cell.LocalToGlobal({-1, -1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [32, 36) nodes on the left face
-    coords->emplace_back(cell.LocalToGlobal({-1, -a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, -a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-1, +a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [36, 40) nodes on the right face
-    coords->emplace_back(cell.LocalToGlobal({+1, -a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, -a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+1, +a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [40, 44) nodes on the front face
-    coords->emplace_back(cell.LocalToGlobal({-a, -1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, -1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [44, 48) nodes on the back face
-    coords->emplace_back(cell.LocalToGlobal({-a, +1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +1, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +1, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [48, 52) nodes on the bottom face
-    coords->emplace_back(cell.LocalToGlobal({-a, -a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +a, -1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [52, 56) nodes on the top face
-    coords->emplace_back(cell.LocalToGlobal({-a, -a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +a, +1}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    // [56, 64) nodes inside the body
-    coords->emplace_back(cell.LocalToGlobal({-a, -a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +a, -a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, -a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, -a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({-a, +a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
-    coords->emplace_back(cell.LocalToGlobal({+a, +a, +a}));
-    values->emplace_back(cell.GetValue(coords->back()));
   }
 
  public:
