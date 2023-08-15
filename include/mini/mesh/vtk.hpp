@@ -25,7 +25,7 @@ enum class CellType {
 };
 
 template <typename Cell>
-void PrepareData(const typename Cell::Local locals[], int n, const Cell &cell,
+void Prepare(const typename Cell::Local locals[], int n, const Cell &cell,
     std::vector<typename Cell::Global> *coords,
     std::vector<typename Cell::Value> *values) {
   for (int i = 0; i < n; ++i) {
@@ -34,8 +34,21 @@ void PrepareData(const typename Cell::Local locals[], int n, const Cell &cell,
   }
 }
 
+/**
+ * @brief Mimic VTK's cells.
+ * 
+ * For node numbering, see [linear element](https://raw.githubusercontent.com/Kitware/vtk-examples/gh-pages/src/VTKBook/Figures/Figure5-2.png), [high-order element](https://raw.githubusercontent.com/Kitware/vtk-examples/gh-pages/src/VTKBook/Figures/Figure5-4.png) and [arbitrary Lagrange element](https://gitlab.kitware.com/vtk/vtk/uploads/d18be24480da192e4b70568f050d114f/VtkLagrangeNodeNumbering.pdf) for details.
+ */
+class Element {
+};
+
+/**
+ * @brief Mimic VTK's [vtkTetra](https://vtk.org/doc/nightly/html/classvtkTetra.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Tetrahedron4 {
+class Tetrahedron4 : public Element {
  public:
   static const Local locals[4];
 };
@@ -44,8 +57,13 @@ const Local Tetrahedron4<Local>::locals[4]{
   Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 1), Local(0, 0, 0)
 };
 
+/**
+ * @brief Mimic VTK's [vtkQuadraticTetra](https://vtk.org/doc/nightly/html/classvtkQuadraticTetra.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Tetrahedron10 {
+class Tetrahedron10 : public Element {
  public:
   static const Local locals[10];
 };
@@ -56,8 +74,13 @@ const Local Tetrahedron10<Local>::locals[10]{
   Local(0.5, 0, 0), Local(0, 0.5, 0), Local(0, 0, 0.5),
 };
 
+/**
+ * @brief Mimic VTK's [vtkWedge](https://vtk.org/doc/nightly/html/classvtkWedge.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Wedge6 {
+class Wedge6 : public Element {
  public:
   static const Local locals[6];
 };
@@ -71,8 +94,13 @@ const Local Wedge6<Local>::locals[6]{
   Local(1, 0, +1), Local(0, 0, +1), Local(0, 1, +1),
 };
 
+/**
+ * @brief Mimic VTK's [vtkHexahedron](https://vtk.org/doc/nightly/html/classvtkHexahedron.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Hexahedron8 {
+class Hexahedron8 : public Element {
  public:
   static const Local locals[8];
 };
@@ -82,8 +110,13 @@ const Local Hexahedron8<Local>::locals[8]{
   Local(-1, -1, +1), Local(+1, -1, +1), Local(+1, +1, +1), Local(-1, +1, +1),
 };
 
+/**
+ * @brief Mimic VTK's [vtkQuadraticHexahedron](https://vtk.org/doc/nightly/html/classvtkQuadraticHexahedron.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Hexahedron20 {
+class Hexahedron20 : public Element {
  public:
   static const Local locals[20];
 };
@@ -98,8 +131,13 @@ const Local Hexahedron20<Local>::locals[20]{
   Local(-1, -1, 0.), Local(+1, -1, 0.), Local(+1, +1, 0.), Local(-1, +1, 0.),
 };
 
+/**
+ * @brief Mimic VTK's [vtkLagrangeHexahedron](https://vtk.org/doc/nightly/html/classvtkLagrangeHexahedron.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
 template <typename Local>
-class Hexahedron64 {
+class Hexahedron64 : public Element {
   static constexpr double a = 1. / 3;
 
  public:
@@ -188,29 +226,29 @@ class Writer {
     return n_nodes;
   }
 
-  static void PrepareData(const Cell &cell, std::vector<CellType> *types,
+  static void Prepare(const Cell &cell, std::vector<CellType> *types,
       std::vector<Coord> *coords, std::vector<Value> *values) {
     auto type = GetCellType(cell.CountCorners());
     types->push_back(type);
     // TODO(PVC): dispatch by virtual functions?
     switch (type) {
     case CellType::kTetrahedron4:
-      vtk::PrepareData<Cell>(Tetrahedron4<Coord>::locals, 4, cell, coords, values);
+      vtk::Prepare<Cell>(Tetrahedron4<Coord>::locals, 4, cell, coords, values);
       break;
     case CellType::kWedge6:
-      vtk::PrepareData<Cell>(Wedge6<Coord>::locals, 6, cell, coords, values);
+      vtk::Prepare<Cell>(Wedge6<Coord>::locals, 6, cell, coords, values);
       break;
     case CellType::kHexahedron8:
-      vtk::PrepareData<Cell>(Hexahedron8<Coord>::locals, 8, cell, coords, values);
+      vtk::Prepare<Cell>(Hexahedron8<Coord>::locals, 8, cell, coords, values);
       break;
     case CellType::kTetrahedron10:
-      vtk::PrepareData<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
+      vtk::Prepare<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
       break;
     case CellType::kHexahedron20:
-      vtk::PrepareData<Cell>(Hexahedron20<Coord>::locals, 20, cell, coords, values);
+      vtk::Prepare<Cell>(Hexahedron20<Coord>::locals, 20, cell, coords, values);
       break;
     case CellType::kHexahedron64:
-      vtk::PrepareData<Cell>(Hexahedron64<Coord>::locals, 64, cell, coords, values);
+      vtk::Prepare<Cell>(Hexahedron64<Coord>::locals, 64, cell, coords, values);
       break;
     default:
       assert(false);
@@ -225,7 +263,7 @@ class Writer {
     auto coords = std::vector<Coord>();
     auto values = std::vector<Value>();
     part.ForEachConstLocalCell([&types, &coords, &values](const Cell &cell){
-      PrepareData(cell, &types, &coords, &values);
+      Prepare(cell, &types, &coords, &values);
     });
     if (part.rank() == 0) {
       char temp[1024];
