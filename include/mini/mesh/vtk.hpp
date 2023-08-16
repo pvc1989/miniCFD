@@ -12,13 +12,13 @@ namespace vtk {
 /**
  * @brief Mimic VTK's cell types.
  * 
- * See 
-https://vtk.org/doc/nightly/html/vtkCellType_8h.html for details.
+ * See [vtkCellType.h](https://vtk.org/doc/nightly/html/vtkCellType_8h.html) for details.
   */
 enum class CellType {
   kTetrahedron4 = 10,
   kHexahedron8 = 12,
   kWedge6 = 13,
+  kWedge15 = 26,
   kTetrahedron10 = 24,
   kHexahedron20 = 25,
   kHexahedron64 = 72,
@@ -92,6 +92,28 @@ const Local Wedge6<Local>::locals[6]{
    */
   Local(1, 0, -1), Local(0, 0, -1), Local(0, 1, -1),
   Local(1, 0, +1), Local(0, 0, +1), Local(0, 1, +1),
+};
+
+/**
+ * @brief Mimic VTK's [vtkQuadraticWedge](https://vtk.org/doc/nightly/html/classvtkQuadraticWedge.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
+template <typename Local>
+class Wedge15 : public Element {
+ public:
+  static const Local locals[15];
+};
+template <typename Local>
+const Local Wedge15<Local>::locals[15]{
+  // nodes at bottom (0, 1, 2) and top (3, 4, 5) corners
+  Local(1, 0, -1), Local(0, 1, -1), Local(0, 0, -1),
+  Local(1, 0, +1), Local(0, 1, +1), Local(0, 0, +1),
+  // nodes on bottom (6, 7, 8) and top (9, 10, 11) edges
+  Local(0.5, 0.5, -1), Local(0, 0.5, -1), Local(0.5, 0, -1),
+  Local(0.5, 0.5, +1), Local(0, 0.5, +1), Local(0.5, 0, +1),
+  // nodes on vertical (12, 13, 14) edges
+  Local(1, 0, 0), Local(0, 1, 0), Local(0, 0, 0),
 };
 
 /**
@@ -187,10 +209,10 @@ class Writer {
         cell_type = CellType::kTetrahedron10;
         break;
       case 6:
-        cell_type = CellType::kWedge6;
+        cell_type = CellType::kWedge15;
         break;
       case 8:
-        cell_type = CellType::kHexahedron64;
+        cell_type = CellType::kHexahedron20;
         break;
       default:
         assert(false);
@@ -204,14 +226,17 @@ class Writer {
       case CellType::kTetrahedron4:
         n_nodes = 4;
         break;
+      case CellType::kTetrahedron10:
+        n_nodes = 10;
+        break;
       case CellType::kWedge6:
         n_nodes = 6;
         break;
+      case CellType::kWedge15:
+        n_nodes = 15;
+        break;
       case CellType::kHexahedron8:
         n_nodes = 8;
-        break;
-      case CellType::kTetrahedron10:
-        n_nodes = 10;
         break;
       case CellType::kHexahedron20:
         n_nodes = 20;
@@ -235,14 +260,17 @@ class Writer {
     case CellType::kTetrahedron4:
       vtk::Prepare<Cell>(Tetrahedron4<Coord>::locals, 4, cell, coords, values);
       break;
+    case CellType::kTetrahedron10:
+      vtk::Prepare<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
+      break;
     case CellType::kWedge6:
       vtk::Prepare<Cell>(Wedge6<Coord>::locals, 6, cell, coords, values);
       break;
+    case CellType::kWedge15:
+      vtk::Prepare<Cell>(Wedge15<Coord>::locals, 15, cell, coords, values);
+      break;
     case CellType::kHexahedron8:
       vtk::Prepare<Cell>(Hexahedron8<Coord>::locals, 8, cell, coords, values);
-      break;
-    case CellType::kTetrahedron10:
-      vtk::Prepare<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
       break;
     case CellType::kHexahedron20:
       vtk::Prepare<Cell>(Hexahedron20<Coord>::locals, 20, cell, coords, values);
