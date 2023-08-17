@@ -20,18 +20,17 @@ class TestTypes : public ::testing::Test {
   using myFile = File<double>;
   using cgField = std::vector<double>;
   struct cgSolution {
-    std::string name; int id; CGNS_ENUMT(GridLocation_t) location;
+    std::string name; int id; GridLocation location;
     std::map<std::string, cgField> fields;
-    cgSolution(char* sn, int si, CGNS_ENUMT(GridLocation_t) lc)
+    cgSolution(char* sn, int si, GridLocation lc)
         : name(sn), id(si), location(lc) {
     }
   };
   struct cgSection {
     std::string name; int id, first, last, n_boundary;
-    CGNS_ENUMT(ElementType_t) type;
+    ElementType type;
     std::vector<int> i_node_list;
-    cgSection(char* sn, int si, int fi, int la, int nb,
-              CGNS_ENUMT(ElementType_t) ty)
+    cgSection(char* sn, int si, int fi, int la, int nb, ElementType ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
           i_node_list((last-first+1) * cgns::CountNodesByType(ty)) {
     }
@@ -253,7 +252,7 @@ TEST_F(TestTypes, ReadSolution) {
   cg_zone.solutions.reserve(n_sols);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
     char sol_name[33];
-    CGNS_ENUMT(GridLocation_t) location;
+    GridLocation location;
     cg_sol_info(i_file, base_id, i_zone, sol_id, sol_name, &location);
     auto &cg_solution = cg_zone.solutions.emplace_back(
         sol_name, sol_id, location);
@@ -261,7 +260,7 @@ TEST_F(TestTypes, ReadSolution) {
     int n_fields;
     cg_nfields(i_file, base_id, i_zone, sol_id, &n_fields);
     for (int field_id = 1; field_id <= n_fields; ++field_id) {
-      CGNS_ENUMT(DataType_t) datatype;
+      DataType datatype;
       char field_name[33];
       cg_field_info(i_file, base_id, i_zone, sol_id, field_id, &datatype,
                     field_name);

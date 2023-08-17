@@ -23,7 +23,13 @@ namespace mini {
 namespace mesh {
 namespace cgns {
 
-int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
+using ElementType = CGNS_ENUMT(ElementType_t);
+using PointSetType = CGNS_ENUMT(PointSetType_t);
+using BCType = CGNS_ENUMT(BCType_t);
+using GridLocation = CGNS_ENUMT(GridLocation_t);
+using DataType = CGNS_ENUMT(DataType_t);
+
+int CountNodesByType(ElementType type) {
   switch (type) {
   case CGNS_ENUMV( TRI_3 ): return 3;
   case CGNS_ENUMV( TRI_6 ): return 6;
@@ -47,7 +53,7 @@ int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
   return -1;
 }
 
-int dim(CGNS_ENUMT(ElementType_t) type) {
+int dim(ElementType type) {
   switch (type) {
   case CGNS_ENUMV(NODE):
     return 0;
@@ -211,8 +217,7 @@ class Section {
  public:  // Constructors:
   Section() = default;
   Section(Zone<Real> const &zone, int i_sect, char const *name,
-      cgsize_t first, cgsize_t last, int n_boundary_cells,
-      CGNS_ENUMT(ElementType_t) type)
+      cgsize_t first, cgsize_t last, int n_boundary_cells, ElementType type)
       : zone_{&zone}, i_sect_{i_sect}, name_{name}, first_{first}, last_{last},
         n_boundary_cells_{n_boundary_cells}, type_{type} {
     cgsize_t data_size;
@@ -252,7 +257,7 @@ class Section {
   cgsize_t CellIdMin() const { return first_; }
   cgsize_t CellIdMax() const { return last_; }
   cgsize_t CountCells() const { return last_ - first_ + 1; }
-  CGNS_ENUMT(ElementType_t) type() const {
+  ElementType type() const {
     return type_;
   }
   int CountNodesByType() const {
@@ -329,7 +334,7 @@ class Section {
   Zone<Real> const *zone_{nullptr};
   cgsize_t first_, last_;
   int i_sect_, n_boundary_cells_;
-  CGNS_ENUMT(ElementType_t) type_;
+  ElementType type_;
 };
 
 template <class Real>
@@ -338,10 +343,10 @@ struct BC {
   cgsize_t ptset[2];
   cgsize_t n_pnts, normal_list_flag, normal_list_size;
   int normal_index, n_mesh;
-  CGNS_ENUMT(PointSetType_t) ptset_type;
-  CGNS_ENUMT(BCType_t) type;
-  CGNS_ENUMT(GridLocation_t) location;
-  CGNS_ENUMT(DataType_t) normal_data_type;
+  PointSetType ptset_type;
+  BCType type;
+  GridLocation location;
+  DataType normal_data_type;
 };
 template <class Real>
 class ZoneBC {
@@ -466,7 +471,7 @@ template <class Real>
 class Solution {
  public:  // Constructors:
   Solution(Zone<Real> const &zone, int i_soln, char const *name,
-           CGNS_ENUMT(GridLocation_t) location)
+           GridLocation location)
       : zone_(&zone), i_soln_(i_soln), name_(name), location_(location) {
   }
 
@@ -493,7 +498,7 @@ class Solution {
   std::string const &name() const {
     return name_;
   }
-  CGNS_ENUMT(GridLocation_t) localtion() const {
+  GridLocation localtion() const {
     return location_;
   }
   bool OnNodes() const {
@@ -548,7 +553,7 @@ class Solution {
   std::vector<std::unique_ptr<Field<Real>>> fields_;
   std::string name_;
   Zone<Real> const *zone_{nullptr};
-  CGNS_ENUMT(GridLocation_t) location_;
+  GridLocation location_;
   int i_soln_;
 };
 
@@ -613,7 +618,7 @@ class Zone {
   int CountCells() const {
     return n_cells_;
   }
-  int CountCellsByType(CGNS_ENUMT(ElementType_t) type) const {
+  int CountCellsByType(ElementType type) const {
     int cell_size{0};
     for (auto &section : sections_) {
       if (section->type_ == type) {
@@ -677,7 +682,7 @@ class Zone {
   /**
   * Return true if the cell type is supported and consistent with the given dim.
   */
-  static bool CheckTypeDim(CGNS_ENUMT(ElementType_t) type, int cell_dim) {
+  static bool CheckTypeDim(ElementType type, int cell_dim) {
     switch (type) {
     case CGNS_ENUMV(TRI_3):
     case CGNS_ENUMV(QUAD_4):
@@ -696,11 +701,11 @@ class Zone {
   Coordinates<Real> &GetCoordinates() {
     return coordinates_;
   }
-  Section<Real> &GetSection(int id) {
-    return *(sections_.at(id-1));
+  Section<Real> &GetSection(int i_sect) {
+    return *(sections_.at(i_sect-1));
   }
-  Solution<Real> &GetSolution(int id) {
-    return *(solutions_.at(id-1));
+  Solution<Real> &GetSolution(int i_soln) {
+    return *(solutions_.at(i_soln-1));
   }
   void ReadCoordinates() {
     coordinates_.Read();
@@ -711,7 +716,7 @@ class Zone {
     sections_.reserve(n_sections);
     for (int i_sect = 1; i_sect <= n_sections; ++i_sect) {
       char section_name[33];
-      CGNS_ENUMT(ElementType_t) cell_type;
+      ElementType cell_type;
       cgsize_t first, last;
       int n_boundary_cells, parent_flag;
       cg_section_read(file().id(), base().id(), i_zone_, i_sect,
@@ -736,7 +741,7 @@ class Zone {
     solutions_.reserve(n_solutions);
     for (int i_soln = 1; i_soln <= n_solutions; ++i_soln) {
       char sol_name[33];
-      CGNS_ENUMT(GridLocation_t) location;
+      GridLocation location;
       cg_sol_info(file().id(), base_->id(), i_zone_,
           i_soln, sol_name, &location);
       auto &solution = solutions_.emplace_back(std::make_unique<Solution<Real>>(
@@ -744,7 +749,7 @@ class Zone {
       int n_fields;
       cg_nfields(file().id(), base_->id(), i_zone_, i_soln, &n_fields);
       for (int i_field = 1; i_field <= n_fields; ++i_field) {
-        CGNS_ENUMT(DataType_t) datatype;
+        DataType datatype;
         char field_name[33];
         cg_field_info(file().id(), base_->id(), i_zone_, i_soln,
                       i_field, &datatype, field_name);
@@ -762,8 +767,7 @@ class Zone {
       }
     }
   }
-  Solution<Real> &AddSolution(char const *sol_name,
-      CGNS_ENUMT(GridLocation_t) location) {
+  Solution<Real> &AddSolution(char const *sol_name, GridLocation location) {
     // find an old one
     for (auto &soln_uptr : solutions_) {
       if (soln_uptr->name() == sol_name && soln_uptr->localtion() == location) {
