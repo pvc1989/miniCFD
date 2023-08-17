@@ -204,15 +204,26 @@ template <class Real>
 class Section {
   friend class Zone<Real>;
 
+  bool mixed() const {
+    return type_ == CGNS_ENUMV(MIXED);
+  }
+
  public:  // Constructors:
   Section() = default;
-  Section(Zone<Real> const &zone, int sid,
-          char const *name, cgsize_t first, cgsize_t size,
-          int n_boundary_cells, CGNS_ENUMT(ElementType_t) type)
-      : zone_{&zone},
-        i_sect_{sid}, name_{name}, first_{first}, size_{size},
-        n_boundary_cells_{n_boundary_cells}, type_{type},
-        connectivity_(size * cgns::CountNodesByType(type)) {
+  Section(Zone<Real> const &zone, int i_sect, char const *name,
+      cgsize_t first, cgsize_t last, int n_boundary_cells,
+      CGNS_ENUMT(ElementType_t) type)
+      : zone_{&zone}, i_sect_{i_sect}, name_{name}, first_{first}, last_{last},
+        n_boundary_cells_{n_boundary_cells}, type_{type} {
+    cgsize_t data_size;
+    if (mixed()) {
+      cg_ElementDataSize(file().id(), base().id(), zone.id(), i_sect,
+          &data_size);
+      start_offset_.resize(CountCells() + 1);
+    } else {
+      data_size = CountCells() * cgns::CountNodesByType(type);
+    }
+    connectivity_.resize(data_size);
   }
 
  public:  // Copy Control:
@@ -239,8 +250,8 @@ class Section {
     return i_sect_;
   }
   cgsize_t CellIdMin() const { return first_; }
-  cgsize_t CellIdMax() const { return first_ + size_ - 1; }
-  cgsize_t CountCells() const { return size_; }
+  cgsize_t CellIdMax() const { return last_; }
+  cgsize_t CountCells() const { return last_ - first_ + 1; }
   CGNS_ENUMT(ElementType_t) type() const {
     return type_;
   }
@@ -253,8 +264,9 @@ class Section {
   const cgsize_t *GetNodeIdList() const {
     return connectivity_.data();
   }
-  const cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t row) const {
-    return connectivity_.data() + CountNodesByType() * row;
+  const cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t i_row) const {
+    auto k = mixed() ? start_offset_.at(i_row) : CountNodesByType() * i_row;
+    return &(connectivity_.at(k));
   }
   const cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) const {
     return GetNodeIdListByNilBasedRow(i_cell - first_);
@@ -274,8 +286,10 @@ class Section {
   cgsize_t *GetNodeIdList() {
     return connectivity_.data();
   }
-  cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t row) {
-    return connectivity_.data() + CountNodesByType() * row;
+  cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t i_row) {
+    const cgsize_t *row
+        = const_cast<const Section *>(this)->GetNodeIdListByNilBasedRow(i_row);
+    return const_cast<cgsize_t *>(row);
   }
   cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) {
     return GetNodeIdListByNilBasedRow(i_cell - first_);
@@ -284,8 +298,13 @@ class Section {
    * Read connectivity_ from a given `(file, base, zone)` tuple.
    */
   void Read() {
-    cg_elements_read(file().id(), base().id(), zone_->id(), i_sect_,
-                     GetNodeIdList(), NULL/* int *parent_data */);
+    if (mixed()) {
+      cg_poly_elements_read(file().id(), base().id(), zone().id(), id(),
+          GetNodeIdList(), start_offset_.data(), nullptr/* int *parent_data */);
+    } else {
+      cg_elements_read(file().id(), base().id(), zone().id(), id(),
+          GetNodeIdList(), nullptr/* int *parent_data */);
+    }
   }
 
  private:  // Data Members:
@@ -308,7 +327,7 @@ class Section {
   std::vector<cgsize_t> start_offset_;
   std::string name_;
   Zone<Real> const *zone_{nullptr};
-  cgsize_t first_, size_;
+  cgsize_t first_, last_;
   int i_sect_, n_boundary_cells_;
   CGNS_ENUMT(ElementType_t) type_;
 };
@@ -446,9 +465,9 @@ class Field {
 template <class Real>
 class Solution {
  public:  // Constructors:
-  Solution(Zone<Real> const &zone, int sid, char const *name,
+  Solution(Zone<Real> const &zone, int i_soln, char const *name,
            CGNS_ENUMT(GridLocation_t) location)
-      : zone_(&zone), i_soln_(sid), name_(name), location_(location) {
+      : zone_(&zone), i_soln_(i_soln), name_(name), location_(location) {
   }
 
  public:  // Copy Control:
@@ -699,8 +718,8 @@ class Zone {
                       section_name, &cell_type, &first, &last,
                       &n_boundary_cells, &parent_flag);
       auto &section = sections_.emplace_back(std::make_unique<Section<Real>>(
-          *this, i_sect, section_name, first, /* size = */last - first + 1,
-          n_boundary_cells, cell_type));
+          *this, i_sect, section_name, first, last, n_boundary_cells,
+          cell_type));
       section->Read();
     }
     SortSectionsByDim();
@@ -785,14 +804,17 @@ class Zone {
       std::swap(sorted_sections[i], sections_[order[i]]);
     }
     std::swap(sorted_sections, sections_);
-    int n_cells = 1;
+    int i_next = 1;
     for (int i_sect = 1; i_sect <= n; ++i_sect) {
       auto &sect = *sections_[i_sect-1];
       sect.i_sect_ = i_sect;
-      sect.first_ = n_cells;
-      n_cells += sect.CountCells();
+      auto n_cell = sect.CountCells();
+      sect.first_ = i_next;
+      sect.last_ = sect.first_ + n_cell - 1;
+      assert(n_cell == sect.CountCells());
+      i_next += n_cell;
     }
-    assert(n_cells - 1 == CountAllCells());
+    assert(i_next - 1 == CountAllCells());
   }
 };
 
