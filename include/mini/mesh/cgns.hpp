@@ -47,6 +47,25 @@ int CountNodesByType(CGNS_ENUMT(ElementType_t) type) {
   return -1;
 }
 
+int dim(CGNS_ENUMT(ElementType_t) type) {
+  switch (type) {
+  case CGNS_ENUMV(NODE):
+    return 0;
+  case CGNS_ENUMV(BAR_2):
+    return 1;
+  case CGNS_ENUMV(TRI_3):
+  case CGNS_ENUMV(QUAD_4):
+    return 2;
+  case CGNS_ENUMV(TETRA_4):
+  case CGNS_ENUMV(PENTA_6):
+  case CGNS_ENUMV(HEXA_8):
+    return 3;
+  default:
+    assert(false);
+  }
+  return -1;
+}
+
 template <class Real> class File;
 template <class Real> class Base;
 template <class Real> class Zone;
@@ -193,7 +212,7 @@ class Section {
       : zone_{&zone},
         i_sect_{sid}, name_{name}, first_{first}, size_{size},
         n_boundary_cells_{n_boundary_cells}, type_{type},
-        i_node_list_(size * cgns::CountNodesByType(type)) {
+        connectivity_(size * cgns::CountNodesByType(type)) {
   }
 
  public:  // Copy Control:
@@ -228,39 +247,20 @@ class Section {
   int CountNodesByType() const {
     return cgns::CountNodesByType(type_);
   }
-  static int dim(CGNS_ENUMT(ElementType_t) type) {
-    int d;
-    switch (type) {
-    case CGNS_ENUMV(NODE):
-      d = 1; break;
-    case CGNS_ENUMV(BAR_2):
-      d = 1; break;
-    case CGNS_ENUMV(TRI_3):
-    case CGNS_ENUMV(QUAD_4):
-      d = 2; break;
-    case CGNS_ENUMV(TETRA_4):
-    case CGNS_ENUMV(PENTA_6):
-    case CGNS_ENUMV(HEXA_8):
-      d = 3; break;
-    default:
-      d = -1; break;
-    }
-    return d;
-  }
   int dim() const {
-    return dim(type_);
+    return cgns::dim(type_);
   }
   const cgsize_t *GetNodeIdList() const {
-    return i_node_list_.data();
+    return connectivity_.data();
   }
   const cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t row) const {
-    return i_node_list_.data() + CountNodesByType() * row;
+    return connectivity_.data() + CountNodesByType() * row;
   }
   const cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) const {
     return GetNodeIdListByNilBasedRow(i_cell - first_);
   }
   /**
-   * Write i_node_list_ into a given `(file, base, zone)` tuple.
+   * Write connectivity_ into a given `(file, base, zone)` tuple.
    */
   void Write() const {
     int i_sect;
@@ -272,16 +272,16 @@ class Section {
 
  public:  // Mutators:
   cgsize_t *GetNodeIdList() {
-    return i_node_list_.data();
+    return connectivity_.data();
   }
   cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t row) {
-    return i_node_list_.data() + CountNodesByType() * row;
+    return connectivity_.data() + CountNodesByType() * row;
   }
   cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) {
     return GetNodeIdListByNilBasedRow(i_cell - first_);
   }
   /**
-   * Read i_node_list_ from a given `(file, base, zone)` tuple.
+   * Read connectivity_ from a given `(file, base, zone)` tuple.
    */
   void Read() {
     cg_elements_read(file().id(), base().id(), zone_->id(), i_sect_,
@@ -289,7 +289,22 @@ class Section {
   }
 
  private:  // Data Members:
-  std::vector<cgsize_t> i_node_list_;
+  /*
+    if (type() == MIXED) {
+      connectivity_[i_cell] = { type, node_1, node_2, ..., node_n } of cell_i;
+    } else {
+      connectivity_[i_cell] = {       node_1, node_2, ..., node_n } of cell_i;
+    }
+   */
+  std::vector<cgsize_t> connectivity_;
+  /*
+    if (type() == MIXED) {
+      start_offset_[0] = 0;
+      start_offset_[i] = start_offset_[i-1] + NPE(type_i) + 1;
+    } else {
+      start_offset_ = {};
+    }
+   */
   std::vector<cgsize_t> start_offset_;
   std::string name_;
   Zone<Real> const *zone_{nullptr};
