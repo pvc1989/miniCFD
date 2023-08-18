@@ -14,6 +14,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -67,9 +68,9 @@ int dim(ElementType type) {
   case CGNS_ENUMV(HEXA_8):
     return 3;
   default:
-    assert(false);
+    assert(type == CGNS_ENUMV(MIXED));
   }
-  return -1;
+  return 4;
 }
 
 template <class Real> class File;
@@ -220,15 +221,6 @@ class Section {
       cgsize_t first, cgsize_t last, int n_boundary_cells, ElementType type)
       : zone_{&zone}, i_sect_{i_sect}, name_{name}, first_{first}, last_{last},
         n_boundary_cells_{n_boundary_cells}, type_{type} {
-    cgsize_t data_size;
-    if (mixed()) {
-      cg_ElementDataSize(file().id(), base().id(), zone.id(), i_sect,
-          &data_size);
-      start_offset_.resize(CountCells() + 1);
-    } else {
-      data_size = CountCells() * cgns::CountNodesByType(type);
-    }
-    connectivity_.resize(data_size);
   }
 
  public:  // Copy Control:
@@ -304,9 +296,15 @@ class Section {
    */
   void Read() {
     if (mixed()) {
+      cgsize_t data_size;
+      cg_ElementDataSize(file().id(), base().id(), zone().id(), id(),
+          &data_size);
+      start_offset_.resize(CountCells() + 1);
+      connectivity_.resize(data_size);
       cg_poly_elements_read(file().id(), base().id(), zone().id(), id(),
           GetNodeIdList(), start_offset_.data(), nullptr/* int *parent_data */);
     } else {
+      connectivity_.resize(CountCells() * CountNodesByType());
       cg_elements_read(file().id(), base().id(), zone().id(), id(),
           GetNodeIdList(), nullptr/* int *parent_data */);
     }
@@ -778,6 +776,44 @@ class Zone {
     int i_soln = solutions_.size() + 1;
     return *(solutions_.emplace_back(std::make_unique<Solution<Real>>(
         *this, i_soln, sol_name, location)));
+  }
+
+  /**
+   * @brief Merge the given sections to a single MIXED section.
+   * 
+   * @param section_list  Sections to be merged. If it is empty, then all sections are merged.
+   */
+  void MergeSections(std::initializer_list<int> section_list) {
+    auto section_set = std::unordered_set<int>(section_list);
+    auto merged_sections = std::vector<std::unique_ptr<Section<Real>>>();
+    auto mixed_section = std::make_unique<Section<Real>>(
+        *this, 0/* i_sect */, "Mixed"/* name */, 1/* first */, 0/* last */,
+        0/* n_boundary_cells */, CGNS_ENUMV(MIXED));
+    mixed_section->start_offset_.push_back(0);
+    for (auto &old_section : sections_) {
+      if (section_set.empty() || section_set.count(old_section->id())) {
+        auto type = old_section->type();
+        auto n_node = old_section->CountNodesByType();
+        for (auto i_cell = old_section->CellIdMin();
+            i_cell <= old_section->CellIdMax(); ++i_cell) {
+          auto *row = old_section->GetNodeIdListByOneBasedCellId(i_cell);
+          mixed_section->connectivity_.push_back(type);
+          for (int i = 0; i < n_node; ++i) {
+            mixed_section->connectivity_.push_back(row[i]);
+          }
+          mixed_section->start_offset_.push_back(
+              mixed_section->connectivity_.size());
+          mixed_section->last_++;
+        }
+      } else {  // not in the to-be-merged list
+        merged_sections.emplace_back(std::move(old_section));
+      }
+    }
+    if (mixed_section->CountCells()) {
+      merged_sections.emplace_back(std::move(mixed_section));
+    }
+    std::swap(sections_, merged_sections);
+    SortSectionsByDim();
   }
 
  private:

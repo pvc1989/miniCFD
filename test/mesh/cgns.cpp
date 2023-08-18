@@ -195,6 +195,41 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[3], 142);
   }
 }
+TEST_F(TestTypes, MergeSections) {
+  auto file = myFile(abs_path_);
+  file.ReadBases();
+  auto &zone = file.GetBase(1).GetZone(2);
+  auto n_sect = zone.CountSections();
+  zone.MergeSections({1, 2});
+  EXPECT_EQ(n_sect, 1 + zone.CountSections());
+  auto &section = zone.GetSection(1);
+  EXPECT_EQ(section.type(), CGNS_ENUMV(MIXED));
+  EXPECT_EQ(section.CellIdMin(), 1);
+  EXPECT_EQ(section.CellIdMax(), 671);
+  const cgsize_t* array;  // head of 1-based-node-id list
+  array = section.GetNodeIdListByOneBasedCellId(1);
+  EXPECT_EQ(array[0], CGNS_ENUMV(TRI_3));
+  EXPECT_EQ(array[1], 347);
+  EXPECT_EQ(array[2], 510);
+  EXPECT_EQ(array[3], 349);
+  array = section.GetNodeIdListByOneBasedCellId(271);
+  EXPECT_EQ(array[0], CGNS_ENUMV(TRI_3));
+  EXPECT_EQ(array[1], 367);
+  EXPECT_EQ(array[2], 503);
+  EXPECT_EQ(array[3], 492);
+  array = section.GetNodeIdListByOneBasedCellId(272);
+  EXPECT_EQ(array[0], CGNS_ENUMV(QUAD_4));
+  EXPECT_EQ(array[1], 4);
+  EXPECT_EQ(array[2], 456);
+  EXPECT_EQ(array[3], 416);
+  EXPECT_EQ(array[4], 543);
+  array = section.GetNodeIdListByOneBasedCellId(671);
+  EXPECT_EQ(array[0], CGNS_ENUMV(QUAD_4));
+  EXPECT_EQ(array[1], 467);
+  EXPECT_EQ(array[2], 2);
+  EXPECT_EQ(array[3], 469);
+  EXPECT_EQ(array[4], 142);
+}
 TEST_F(TestTypes, ReadZone) {
   // read by mini::mesh::cgns
   auto file = myFile(abs_path_);
