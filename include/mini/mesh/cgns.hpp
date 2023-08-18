@@ -71,7 +71,7 @@ int dim(ElementType type) {
   default:
     assert(type == CGNS_ENUMV(MIXED));
   }
-  return 4;
+  return -1;
 }
 
 template <class Real> class File;
@@ -222,6 +222,7 @@ class Section {
       cgsize_t first, cgsize_t last, int n_boundary_cells, ElementType type)
       : zone_{&zone}, i_sect_{i_sect}, name_{name}, first_{first}, last_{last},
         n_boundary_cells_{n_boundary_cells}, type_{type} {
+    dim_ = cgns::dim(type);
   }
 
  public:  // Copy Control:
@@ -257,7 +258,7 @@ class Section {
     return cgns::CountNodesByType(type_);
   }
   int dim() const {
-    return cgns::dim(type_);
+    return dim_;
   }
   const cgsize_t *GetNodeIdList() const {
     return connectivity_.data();
@@ -286,18 +287,24 @@ class Section {
   }
 
   /**
-   * Write connectivity_ into a given `(file, base, zone)` tuple.
+   * @brief Write the connectivity_ (and possibly the start_offset_) from the file.
    */
   void Write() const {
     int i_sect;
-    cg_section_write(file().id(), base().id(), zone_->id(),
-        name_.c_str(), type_, CellIdMin(), CellIdMax(), 0,
-        GetNodeIdList(), &i_sect);
+    if (mixed()) {
+      cg_poly_section_write(file().id(), base().id(), zone().id(),
+          name_.c_str(), type(), CellIdMin(), CellIdMax(), 0,
+          GetNodeIdList(), start_offset_.data(), &i_sect);
+    } else {
+      cg_section_write(file().id(), base().id(), zone().id(),
+          name_.c_str(), type(), CellIdMin(), CellIdMax(), 0,
+          GetNodeIdList(), &i_sect);
+    }
     assert(i_sect == i_sect_);
   }
 
   /**
-   * Read connectivity_ from a given `(file, base, zone)` tuple.
+   * @brief Read the connectivity_ (and possibly the start_offset_) from the file.
    */
   void Read() {
     if (mixed()) {
@@ -308,6 +315,12 @@ class Section {
       connectivity_.resize(data_size);
       cg_poly_elements_read(file().id(), base().id(), zone().id(), id(),
           GetNodeIdList(), start_offset_.data(), nullptr/* int *parent_data */);
+      for (int i : start_offset_) {
+        if (i != start_offset_.back()) {
+          auto cell_type = static_cast<ElementType>(connectivity_[i]);
+          dim_ = std::max(dim_, cgns::dim(cell_type));
+        }
+      }
     } else {
       connectivity_.resize(CountCells() * CountNodesByType());
       cg_elements_read(file().id(), base().id(), zone().id(), id(),
@@ -336,7 +349,7 @@ class Section {
   std::string name_;
   Zone<Real> const *zone_{nullptr};
   cgsize_t first_, last_;
-  int i_sect_, n_boundary_cells_;
+  int i_sect_, n_boundary_cells_, dim_;
   ElementType type_;
 };
 
@@ -799,6 +812,7 @@ class Zone {
       if (section_set.empty() || section_set.count(old_section->id())) {
         auto type = old_section->type();
         auto n_node = old_section->CountNodesByType();
+        mixed_section->dim_ = std::max(mixed_section->dim_, old_section->dim());
         for (auto i_cell = old_section->CellIdMin();
             i_cell <= old_section->CellIdMax(); ++i_cell) {
           auto *row = old_section->GetNodeIdList(i_cell);
