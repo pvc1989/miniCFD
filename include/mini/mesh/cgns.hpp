@@ -262,13 +262,29 @@ class Section {
   const cgsize_t *GetNodeIdList() const {
     return connectivity_.data();
   }
-  const cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t i_row) const {
+  cgsize_t *GetNodeIdList() {
+    return connectivity_.data();
+  }
+
+ private:
+  const cgsize_t *_GetNodeIdList(cgsize_t i_row) const {
     auto k = mixed() ? start_offset_.at(i_row) : CountNodesByType() * i_row;
     return &(connectivity_.at(k));
   }
-  const cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) const {
-    return GetNodeIdListByNilBasedRow(i_cell - first_);
+  cgsize_t *_GetNodeIdList(cgsize_t i_row) {
+    const cgsize_t *row
+        = const_cast<const Section *>(this)->_GetNodeIdList(i_row);
+    return const_cast<cgsize_t *>(row);
   }
+
+ public:
+  const cgsize_t *GetNodeIdList(cgsize_t i_cell) const {
+    return _GetNodeIdList(i_cell - first_);
+  }
+  cgsize_t *GetNodeIdList(cgsize_t i_cell) {
+    return _GetNodeIdList(i_cell - first_);
+  }
+
   /**
    * Write connectivity_ into a given `(file, base, zone)` tuple.
    */
@@ -280,18 +296,6 @@ class Section {
     assert(i_sect == i_sect_);
   }
 
- public:  // Mutators:
-  cgsize_t *GetNodeIdList() {
-    return connectivity_.data();
-  }
-  cgsize_t *GetNodeIdListByNilBasedRow(cgsize_t i_row) {
-    const cgsize_t *row
-        = const_cast<const Section *>(this)->GetNodeIdListByNilBasedRow(i_row);
-    return const_cast<cgsize_t *>(row);
-  }
-  cgsize_t *GetNodeIdListByOneBasedCellId(cgsize_t i_cell) {
-    return GetNodeIdListByNilBasedRow(i_cell - first_);
-  }
   /**
    * Read connectivity_ from a given `(file, base, zone)` tuple.
    */
@@ -797,7 +801,7 @@ class Zone {
         auto n_node = old_section->CountNodesByType();
         for (auto i_cell = old_section->CellIdMin();
             i_cell <= old_section->CellIdMax(); ++i_cell) {
-          auto *row = old_section->GetNodeIdListByOneBasedCellId(i_cell);
+          auto *row = old_section->GetNodeIdList(i_cell);
           mixed_section->connectivity_.push_back(type);
           for (int i = 0; i < n_node; ++i) {
             mixed_section->connectivity_.push_back(row[i]);
@@ -832,7 +836,7 @@ class Zone {
           (section_set.empty() || section_set.count(old_section->id()))) {
         for (auto i_cell = old_section->CellIdMin();
             i_cell <= old_section->CellIdMax(); ++i_cell) {
-          auto *row = old_section->GetNodeIdListByOneBasedCellId(i_cell);
+          auto *row = old_section->GetNodeIdList(i_cell);
           auto type = static_cast<ElementType>(row[0]);
           auto n_node = cgns::CountNodesByType(type);
           auto iter = type_to_sections.find(type);

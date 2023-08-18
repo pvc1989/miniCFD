@@ -88,7 +88,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto coords = std::array<Coord, 8>();
     const cgsize_t* array;  // head of 1-based-node-id list
-    array = sect.GetNodeIdListByOneBasedCellId(i_cell+1);
+    array = sect.GetNodeIdList(i_cell+1);
     for (int i = 0; i < 8; ++i) {
       auto i_node = array[i] - 1;
       coords[i][0] = x[i_node];

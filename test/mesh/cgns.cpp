@@ -143,14 +143,11 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(section.name(), "3_S_5_10");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 0-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(1);
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
+    array = section.GetNodeIdList(1);
     EXPECT_EQ(array[0], 43);
     EXPECT_EQ(array[1], 155);
     EXPECT_EQ(array[2], 154);
-    array = section.GetNodeIdListByOneBasedCellId(673);
-    auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
+    array = section.GetNodeIdList(673);
     EXPECT_EQ(array[0], 102);
     EXPECT_EQ(array[1], 196);
     EXPECT_EQ(array[2], 98);
@@ -163,14 +160,11 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(section.name(), "3_S_5_11");
     EXPECT_EQ(section.type(), CGNS_ENUMV(TRI_3));
     const cgsize_t* array;  // head of 0-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(1);
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
+    array = section.GetNodeIdList(1);
     EXPECT_EQ(array[0], 347);
     EXPECT_EQ(array[1], 510);
     EXPECT_EQ(array[2], 349);
-    array = section.GetNodeIdListByOneBasedCellId(271);
-    auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
+    array = section.GetNodeIdList(271);
     EXPECT_EQ(array[0], 367);
     EXPECT_EQ(array[1], 503);
     EXPECT_EQ(array[2], 492);
@@ -183,15 +177,12 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(section.name(), "4_S_9_12");
     EXPECT_EQ(section.type(), CGNS_ENUMV(QUAD_4));
     const cgsize_t* array;  // head of 0-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(272);
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(0));
+    array = section.GetNodeIdList(272);
     EXPECT_EQ(array[0], 4);
     EXPECT_EQ(array[1], 456);
     EXPECT_EQ(array[2], 416);
     EXPECT_EQ(array[3], 543);
-    array = section.GetNodeIdListByOneBasedCellId(671);
-    auto row = section.CountCells() - 1;
-    EXPECT_EQ(array, section.GetNodeIdListByNilBasedRow(row));
+    array = section.GetNodeIdList(671);
     EXPECT_EQ(array[0], 467);
     EXPECT_EQ(array[1], 2);
     EXPECT_EQ(array[2], 469);
@@ -211,23 +202,23 @@ TEST_F(TestTypes, MergeAndSplitSections) {
   EXPECT_EQ(section.CellIdMin(), 1);
   EXPECT_EQ(section.CellIdMax(), 671);
   const cgsize_t* array;  // head of 1-based-node-id list
-  array = section.GetNodeIdListByOneBasedCellId(1);
+  array = section.GetNodeIdList(1);
   EXPECT_EQ(array[0], CGNS_ENUMV(TRI_3));
   EXPECT_EQ(array[1], 347);
   EXPECT_EQ(array[2], 510);
   EXPECT_EQ(array[3], 349);
-  array = section.GetNodeIdListByOneBasedCellId(271);
+  array = section.GetNodeIdList(271);
   EXPECT_EQ(array[0], CGNS_ENUMV(TRI_3));
   EXPECT_EQ(array[1], 367);
   EXPECT_EQ(array[2], 503);
   EXPECT_EQ(array[3], 492);
-  array = section.GetNodeIdListByOneBasedCellId(272);
+  array = section.GetNodeIdList(272);
   EXPECT_EQ(array[0], CGNS_ENUMV(QUAD_4));
   EXPECT_EQ(array[1], 4);
   EXPECT_EQ(array[2], 456);
   EXPECT_EQ(array[3], 416);
   EXPECT_EQ(array[4], 543);
-  array = section.GetNodeIdListByOneBasedCellId(671);
+  array = section.GetNodeIdList(671);
   EXPECT_EQ(array[0], CGNS_ENUMV(QUAD_4));
   EXPECT_EQ(array[1], 467);
   EXPECT_EQ(array[2], 2);
@@ -243,11 +234,11 @@ TEST_F(TestTypes, MergeAndSplitSections) {
     EXPECT_EQ(section.CellIdMax(), 271);
     EXPECT_EQ(section.CountCells(), 271);
     const cgsize_t* array;  // head of 0-based-node-id list
-    array = section.GetNodeIdListByOneBasedCellId(1);
+    array = section.GetNodeIdList(1);
     EXPECT_EQ(array[0], 347);
     EXPECT_EQ(array[1], 510);
     EXPECT_EQ(array[2], 349);
-    array = section.GetNodeIdListByOneBasedCellId(271);
+    array = section.GetNodeIdList(271);
     EXPECT_EQ(array[0], 367);
     EXPECT_EQ(array[1], 503);
     EXPECT_EQ(array[2], 492);
@@ -258,12 +249,12 @@ TEST_F(TestTypes, MergeAndSplitSections) {
     EXPECT_EQ(section.CellIdMin(), 272);
     EXPECT_EQ(section.CellIdMax(), 671);
     EXPECT_EQ(section.CountCells(), 400);
-    array = section.GetNodeIdListByOneBasedCellId(272);
+    array = section.GetNodeIdList(272);
     EXPECT_EQ(array[0], 4);
     EXPECT_EQ(array[1], 456);
     EXPECT_EQ(array[2], 416);
     EXPECT_EQ(array[3], 543);
-    array = section.GetNodeIdListByOneBasedCellId(671);
+    array = section.GetNodeIdList(671);
     EXPECT_EQ(array[0], 467);
     EXPECT_EQ(array[1], 2);
     EXPECT_EQ(array[2], 469);
