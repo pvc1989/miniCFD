@@ -14,6 +14,7 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -813,6 +814,48 @@ class Zone {
       merged_sections.emplace_back(std::move(mixed_section));
     }
     std::swap(sections_, merged_sections);
+    SortSectionsByDim();
+  }
+  /**
+   * @brief Split the given MIXED sections to a few non-MIXED sections.
+   * 
+   * @param section_list  Sections to be merged. If it is empty, then all MIXED sections are splitted.
+   */
+  void SplitSections(std::initializer_list<int> section_list) {
+    auto section_set = std::unordered_set<int>(section_list);
+    auto new_sections = std::vector<std::unique_ptr<Section<Real>>>();
+    auto type_to_sections
+        = std::unordered_map<ElementType, std::unique_ptr<Section<Real>>>();
+    int i_sect = sections_.size();
+    for (auto &old_section : sections_) {
+      if (old_section->mixed() &&
+          (section_set.empty() || section_set.count(old_section->id()))) {
+        for (auto i_cell = old_section->CellIdMin();
+            i_cell <= old_section->CellIdMax(); ++i_cell) {
+          auto *row = old_section->GetNodeIdListByOneBasedCellId(i_cell);
+          auto type = static_cast<ElementType>(row[0]);
+          auto n_node = cgns::CountNodesByType(type);
+          auto iter = type_to_sections.find(type);
+          if (iter == type_to_sections.end()) {
+            auto uptr = std::make_unique<Section<Real>>(*this, i_sect++,
+                (std::to_string(type_to_sections.size())+"Mixed").c_str(),
+                1/* first */, 0/* last */, 0/* n_boundary_cells */, type);
+            iter = type_to_sections.emplace_hint(iter, type, std::move(uptr));
+          }
+          auto &section = iter->second;
+          for (int i = 1; i <= n_node; ++i) {
+            section->connectivity_.push_back(row[i]);
+          }
+          section->last_++;
+        }
+      } else {  // not mixed or not in the to-be-splitted list
+        new_sections.emplace_back(std::move(old_section));
+      }
+    }
+    for (auto &[type, section] : type_to_sections) {
+      new_sections.emplace_back(std::move(section));
+    }
+    std::swap(sections_, new_sections);
     SortSectionsByDim();
   }
 
