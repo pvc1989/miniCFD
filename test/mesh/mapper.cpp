@@ -9,18 +9,14 @@
 #include "mini/mesh/mapper.hpp"
 #include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
-namespace mini {
-namespace mesh {
-namespace mapper {
-
-class MeshMapperTest : public ::testing::Test {
+class TestMeshMapper : public ::testing::Test {
  protected:
-  using Mapper = CgnsToMetis<idx_t, double>;
+  using Mapper = mini::mesh::mapper::CgnsToMetis<idx_t, double>;
   std::string const test_input_dir_{TEST_INPUT_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
 };
-TEST_F(MeshMapperTest, MapCgnsToMetis) {
+TEST_F(TestMeshMapper, MapCgnsToMetis) {
   // convert cgns_mesh to metis_mesh
   auto file_name = test_input_dir_ + "/ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(file_name);
@@ -70,7 +66,7 @@ TEST_F(MeshMapperTest, MapCgnsToMetis) {
     }
   }
 }
-TEST_F(MeshMapperTest, WriteMetisToCgns) {
+TEST_F(TestMeshMapper, WriteMetisToCgns) {
   // convert cgns_mesh to metis_mesh
   auto file_name = "ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(test_input_dir_, file_name);
@@ -79,7 +75,7 @@ TEST_F(MeshMapperTest, WriteMetisToCgns) {
   auto metis_mesh = mapper.Map(cgns_mesh);
   EXPECT_TRUE(mapper.IsValid());
   idx_t n_parts{8}, n_common_nodes{2}, edge_cut{0};
-  auto [cell_parts, node_parts] = metis::PartMesh(
+  auto [cell_parts, node_parts] = mini::mesh::metis::PartMesh(
       metis_mesh, n_parts, n_common_nodes);
   // write the result of partitioning to cgns_mesh
   auto n_nodes_total = mapper.metis_to_cgns_for_nodes.size();
@@ -118,10 +114,6 @@ TEST_F(MeshMapperTest, WriteMetisToCgns) {
   }
   cgns_mesh.Write(output_dir_ + "partitioned_" + file_name, 2);
 }
-
-}  // namespace mapper
-}  // namespace mesh
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

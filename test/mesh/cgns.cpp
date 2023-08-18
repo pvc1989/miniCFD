@@ -10,37 +10,37 @@
 #include "mini/mesh/cgns.hpp"
 #include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
 
-namespace mini {
-namespace mesh {
-namespace cgns {
+using mini::mesh::cgns::GridLocation;
+using mini::mesh::cgns::ElementType;
+using mini::mesh::cgns::DataType;
 
-class TestTypes : public ::testing::Test {
+class TestMeshCgns : public ::testing::Test {
  protected:
   // common types
-  using myFile = File<double>;
-  using cgField = std::vector<double>;
-  struct cgSolution {
+  using File = mini::mesh::cgns::File<double>;
+  using Field = std::vector<double>;
+  struct Solution {
     std::string name; int id; GridLocation location;
-    std::map<std::string, cgField> fields;
-    cgSolution(char* sn, int si, GridLocation lc)
+    std::map<std::string, Field> fields;
+    Solution(char* sn, int si, GridLocation lc)
         : name(sn), id(si), location(lc) {
     }
   };
-  struct cgSection {
+  struct Section {
     std::string name; int id, first, last, n_boundary;
     ElementType type;
     std::vector<int> i_node_list;
-    cgSection(char* sn, int si, int fi, int la, int nb, ElementType ty)
+    Section(char* sn, int si, int fi, int la, int nb, ElementType ty)
         : name(sn), id(si), first(fi), last(la), n_boundary(nb), type(ty),
-          i_node_list((last-first+1) * cgns::CountNodesByType(ty)) {
+          i_node_list((last-first+1) * mini::mesh::cgns::CountNodesByType(ty)) {
     }
   };
-  struct cgZone {
+  struct Zone {
     std::string name; int id, vertex_size, cell_size;
     std::vector<double> x, y, z;
-    std::map<int, cgSection> sections;
-    std::vector<cgSolution> solutions;
-    cgZone(char* zn, int zi, cgsize_t* zone_size)
+    std::map<int, Section> sections;
+    std::vector<Solution> solutions;
+    Zone(char* zn, int zi, cgsize_t* zone_size)
         : name(zn), id(zi), vertex_size(zone_size[0]), cell_size(zone_size[1]),
           x(zone_size[0]), y(zone_size[0]), z(zone_size[0]) {
     }
@@ -49,17 +49,17 @@ class TestTypes : public ::testing::Test {
   std::string const abs_path_{std::string(TEST_INPUT_DIR) + "/ugrid_2d.cgns"};
   double const eps_ = 0.00001;
 };
-TEST_F(TestTypes, Constructors) {
-  auto files = std::vector<myFile>();
+TEST_F(TestMeshCgns, Constructors) {
+  auto files = std::vector<File>();
   // the absolute path version
   files.emplace_back(abs_path_);
   // the dir (with or without '/') + name version
   files.emplace_back(std::string(TEST_INPUT_DIR) + "/", "ugrid_2d.cgns");
   files.emplace_back(TEST_INPUT_DIR, "ugrid_2d.cgns");
 }
-TEST_F(TestTypes, ReadBase) {
+TEST_F(TestMeshCgns, ReadBase) {
   // read by mini::mesh::cgns
-  auto file = myFile(abs_path_);
+  auto file = File(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int i_file{-1};
@@ -88,9 +88,9 @@ TEST_F(TestTypes, ReadBase) {
     EXPECT_EQ(my_base.GetPhysDim(), base.phys_dim);
   }
 }
-TEST_F(TestTypes, ReadCoordinates) {
+TEST_F(TestMeshCgns, ReadCoordinates) {
   // read by mini::mesh::cgns
-  auto file = myFile(abs_path_);
+  auto file = File(abs_path_);
   file.ReadBases();
   {
     // check coordinates in zones[1]
@@ -131,9 +131,9 @@ TEST_F(TestTypes, ReadCoordinates) {
     EXPECT_DOUBLE_EQ(z.at(583), 0.0);
   }
 }
-TEST_F(TestTypes, ReadSections) {
+TEST_F(TestMeshCgns, ReadSections) {
   // read by mini::mesh::cgns
-  auto file = myFile(abs_path_);
+  auto file = File(abs_path_);
   file.ReadBases();
   {
     auto &section = file.GetBase(1).GetZone(1).GetSection(1);
@@ -189,8 +189,8 @@ TEST_F(TestTypes, ReadSections) {
     EXPECT_EQ(array[3], 142);
   }
 }
-TEST_F(TestTypes, MergeAndSplitSections) {
-  auto file = myFile(abs_path_);
+TEST_F(TestMeshCgns, MergeAndSplitSections) {
+  auto file = File(abs_path_);
   file.ReadBases();
   auto &zone = file.GetBase(1).GetZone(2);
   auto n_sect = zone.CountSections();
@@ -261,14 +261,14 @@ TEST_F(TestTypes, MergeAndSplitSections) {
     EXPECT_EQ(array[3], 142);
   }
 }
-TEST_F(TestTypes, ReadZone) {
+TEST_F(TestMeshCgns, ReadZone) {
   // read by mini::mesh::cgns
-  auto file = myFile(abs_path_);
+  auto file = File(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int i_file{-1};
   cg_open(abs_path_.c_str(), CG_MODE_READ, &i_file);
-  auto zone_info = std::vector<cgZone>();
+  auto zone_info = std::vector<Zone>();
   int n_bases{-1};
   cg_nbases(i_file, &n_bases);
   for (int base_id = 1; base_id <= n_bases; ++base_id) {
@@ -302,9 +302,9 @@ TEST_F(TestTypes, ReadZone) {
   }
   cg_close(i_file);
 }
-TEST_F(TestTypes, ReadSolution) {
+TEST_F(TestMeshCgns, ReadSolution) {
   // read by mini::mesh::cgns
-  auto file = myFile(abs_path_);
+  auto file = File(abs_path_);
   file.ReadBases();
   // read by cgnslib
   int i_file{-1};
@@ -313,7 +313,7 @@ TEST_F(TestTypes, ReadSolution) {
   char zone_name[33];
   cgsize_t zone_size[3][1];
   cg_zone_read(i_file, base_id, i_zone, zone_name, zone_size[0]);
-  auto cg_zone = cgZone(zone_name, i_zone, zone_size[0]);
+  auto cg_zone = Zone(zone_name, i_zone, zone_size[0]);
   cg_nsols(i_file, base_id, i_zone, &n_sols);
   cg_zone.solutions.reserve(n_sols);
   for (int sol_id = 1; sol_id <= n_sols; ++sol_id) {
@@ -337,7 +337,7 @@ TEST_F(TestTypes, ReadSolution) {
         last = cg_zone.cell_size;
       }
       std::string name = std::string(field_name);
-      cg_solution.fields.emplace(name, cgField(last));
+      cg_solution.fields.emplace(name, Field(last));
       cg_field_read(i_file, base_id, i_zone, sol_id, field_name,
                     datatype, &first, &last, cg_solution.fields[name].data());
     }
@@ -360,10 +360,6 @@ TEST_F(TestTypes, ReadSolution) {
     }
   }
 }
-
-}  // namespace cgns
-}  // namespace mesh
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

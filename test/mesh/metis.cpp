@@ -10,9 +10,7 @@
 #include "gtest/gtest.h"
 #include "mini/mesh/metis.hpp"
 
-namespace mini {
-namespace mesh {
-namespace metis {
+using mini::mesh::metis::Mesh;
 
 class Partitioner : public ::testing::Test {
  protected:
@@ -164,10 +162,6 @@ TEST_F(Partitioner, GetNodeParts) {
     EXPECT_EQ(node_parts[i], expected_node_parts[i]);
   }
 }
-
-}  // namespace metis
-}  // namespace mesh
-}  // namespace mini
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
