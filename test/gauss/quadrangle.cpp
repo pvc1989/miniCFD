@@ -76,6 +76,44 @@ TEST_F(TestGaussQuadrangle, OnMappedElementInThreeDimensionalSpace) {
     EXPECT_NEAR((sigma - Global(1, 0, 0)).norm(), 0.0, 1e-15);
   }
 }
+TEST_F(TestGaussQuadrangle, OnQuadraticElementInThreeDimensionalSpace) {
+  using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
+  using Lagrange = mini::lagrange::Quadrangle8<double, 3>;
+  using Local = typename Lagrange::Local;
+  using Global = typename Lagrange::Global;
+  auto lagrange = Lagrange(
+    Global(0, 0, 0), Global(4, 0, 0), Global(4, 4, 4), Global(0, 4, 4),
+    Global(2, 0, 0), Global(4, 2, 2), Global(2, 4, 4), Global(0, 2, 2)
+  );
+  auto gauss = Gauss(lagrange);
+  static_assert(gauss.CellDim() == 2);
+  static_assert(gauss.PhysDim() == 3);
+  EXPECT_NEAR(gauss.area(), sqrt(2) * 16.0, 1e-14);
+  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
+  EXPECT_EQ(gauss.LocalToGlobal(+1, +1), Global(4, 4, 4));
+  EXPECT_EQ(gauss.LocalToGlobal(-1, -1), Global(0, 0, 0));
+  EXPECT_DOUBLE_EQ(
+      Quadrature([](Local const&){ return 2.0; }, gauss), 8.0);
+  EXPECT_DOUBLE_EQ(
+      Integrate([](Global const&){ return 2.0; }, gauss), sqrt(2) * 32.0);
+  auto f = [](Global const& xyz){ return xyz[0]; };
+  auto g = [](Global const& xyz){ return xyz[1]; };
+  auto h = [](Global const& xyz){ return xyz[0] * xyz[1]; };
+  EXPECT_DOUBLE_EQ(Innerprod(f, g, gauss), Integrate(h, gauss));
+  EXPECT_DOUBLE_EQ(Norm(f, gauss), std::sqrt(Innerprod(f, f, gauss)));
+  EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
+  // test normal frames
+  Global normal = Global(0, -1, 1).normalized();
+  for (int q = 0; q < gauss.CountPoints(); ++q) {
+    auto &frame = gauss.GetNormalFrame(q);
+    auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
+    EXPECT_NEAR((nu - normal).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((nu - sigma.cross(pi)).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((sigma - pi.cross(nu)).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((pi - nu.cross(sigma)).norm(), 0.0, 1e-15);
+    EXPECT_NEAR((sigma - Global(1, 0, 0)).norm(), 0.0, 1e-15);
+  }
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
