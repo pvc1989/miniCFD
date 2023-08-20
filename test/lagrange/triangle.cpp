@@ -14,6 +14,7 @@ TEST_F(TestLagrangeTriangle3, ThreeDimensional) {
   constexpr int D = 3;
   using Lagrange = mini::lagrange::Triangle3<double, D>;
   using Coord = typename Lagrange::Global;
+  using Local = typename Lagrange::Local;
   auto quadrangle = Lagrange {
     Coord(9, 0, 0), Coord(0, 9, 0), Coord(0, 0, 9)
   };
@@ -32,11 +33,30 @@ TEST_F(TestLagrangeTriangle3, ThreeDimensional) {
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
-  for (int i = 0; i < 1'000'000; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     auto x = rand(), y = rand();
     auto shapes = face.LocalToShapeFunctions(x, y);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-15);
+    auto grads = face.LocalToShapeGradients(x, y);
+    Local grads_sum
+        = std::accumulate(grads.begin(), grads.end(), Local(0, 0));
+    EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
+    // compare gradients with O(h^2) finite difference derivatives
+    int X{0}, Y{1};
+    auto h = 1e-6;
+    int n_node = face.CountNodes();
+    auto left = face.LocalToShapeFunctions(x - h, y);
+    auto right = face.LocalToShapeFunctions(x + h, y);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][X] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = face.LocalToShapeFunctions(x, y - h);
+    right = face.LocalToShapeFunctions(x, y + h);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Y] -= (right[i_node] - left[i_node]) / (2 * h);
+      EXPECT_NEAR(grads[i_node].norm(), 0.0, 1e-9);
+    }
   }
   // test the Kronecker-delta and property:
   for (int i = 0, n = face.CountNodes(); i < n; ++i) {
@@ -65,6 +85,7 @@ TEST_F(TestLagrangeTriangle6, ThreeDimensional) {
   constexpr int D = 3;
   using Lagrange = mini::lagrange::Triangle6<double, D>;
   using Coord = typename Lagrange::Global;
+  using Local = typename Lagrange::Local;
   auto quadrangle = Lagrange {
     Coord(9, 0, 0), Coord(0, 9, 0), Coord(0, 0, 9),
     Coord(4.5, 4.5, 0), Coord(0, 4.5, 4.5), Coord(4.5, 0, 4.5)
@@ -90,11 +111,30 @@ TEST_F(TestLagrangeTriangle6, ThreeDimensional) {
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
-  for (int i = 0; i < 10'000; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     auto x = rand(), y = rand();
     auto shapes = face.LocalToShapeFunctions(x, y);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-14);
+    auto grads = face.LocalToShapeGradients(x, y);
+    Local grads_sum
+        = std::accumulate(grads.begin(), grads.end(), Local(0, 0));
+    EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
+    // compare gradients with O(h^2) finite difference derivatives
+    int X{0}, Y{1};
+    auto h = 1e-6;
+    int n_node = face.CountNodes();
+    auto left = face.LocalToShapeFunctions(x - h, y);
+    auto right = face.LocalToShapeFunctions(x + h, y);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][X] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = face.LocalToShapeFunctions(x, y - h);
+    right = face.LocalToShapeFunctions(x, y + h);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Y] -= (right[i_node] - left[i_node]) / (2 * h);
+      EXPECT_NEAR(grads[i_node].norm(), 0.0, 1e-8);
+    }
   }
   // test the Kronecker-delta and property:
   for (int i = 0, n = face.CountNodes(); i < n; ++i) {

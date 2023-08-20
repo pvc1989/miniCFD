@@ -40,6 +40,30 @@ TEST_F(TestLagrangeTetrahedron4, CoordinateMap) {
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_EQ(sum, 1.0);
+    auto grads = cell.LocalToShapeGradients(x, y, z);
+    Coord grads_sum
+        = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
+    EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
+    // compare gradients with O(h^2) finite difference derivatives
+    int X{0}, Y{1}, Z{2};
+    auto h = 1e-6;
+    int n_node = cell.CountNodes();
+    auto left = cell.LocalToShapeFunctions(x - h, y, z);
+    auto right = cell.LocalToShapeFunctions(x + h, y, z);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][X] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = cell.LocalToShapeFunctions(x, y - h, z);
+    right = cell.LocalToShapeFunctions(x, y + h, z);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Y] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = cell.LocalToShapeFunctions(x, y, z - h);
+    right = cell.LocalToShapeFunctions(x, y, z + h);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Z] -= (right[i_node] - left[i_node]) / (2 * h);
+      EXPECT_NEAR(grads[i_node].norm(), 0.0, 1e-9);
+    }
   }
   // test the Kronecker-delta and property:
   for (int i = 0, n = cell.CountNodes(); i < n; ++i) {
@@ -133,6 +157,30 @@ TEST_F(TestLagrangeTetrahedron10, CoordinateMap) {
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-14);
+    auto grads = cell.LocalToShapeGradients(x, y, z);
+    Coord grads_sum
+        = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
+    EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
+    // compare gradients with O(h^2) finite difference derivatives
+    int X{0}, Y{1}, Z{2};
+    auto h = 1e-6;
+    int n_node = cell.CountNodes();
+    auto left = cell.LocalToShapeFunctions(x - h, y, z);
+    auto right = cell.LocalToShapeFunctions(x + h, y, z);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][X] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = cell.LocalToShapeFunctions(x, y - h, z);
+    right = cell.LocalToShapeFunctions(x, y + h, z);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Y] -= (right[i_node] - left[i_node]) / (2 * h);
+    }
+    left = cell.LocalToShapeFunctions(x, y, z - h);
+    right = cell.LocalToShapeFunctions(x, y, z + h);
+    for (int i_node = 0; i_node < n_node; ++i_node) {
+      grads[i_node][Z] -= (right[i_node] - left[i_node]) / (2 * h);
+      EXPECT_NEAR(grads[i_node].norm(), 0.0, 1e-8);
+    }
   }
   // test the Kronecker-delta and property:
   for (int i = 0, n = cell.CountNodes(); i < n; ++i) {
