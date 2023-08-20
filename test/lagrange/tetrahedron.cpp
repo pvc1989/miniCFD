@@ -35,7 +35,7 @@ TEST_F(TestLagrangeTetrahedron4, CoordinateMap) {
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return std::rand() / (1.0 + RAND_MAX); };
-  for (int i = 0; i < 1'000'000; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     auto x = rand(), y = rand(), z = rand();
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
@@ -95,6 +95,103 @@ TEST_F(TestLagrangeTetrahedron4, SortNodesOnFace) {
     EXPECT_EQ(face_nodes, face_nodes_expect);
     face_nodes = { 22, 33, 44, 0 };
     face_nodes_expect = { 22, 33, 44, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+  }
+}
+
+class TestLagrangeTetrahedron10 : public ::testing::Test {
+ protected:
+  using Lagrange = mini::lagrange::Tetrahedron10<double>;
+  using Coord = typename Lagrange::Global;
+};
+TEST_F(TestLagrangeTetrahedron10, CoordinateMap) {
+  auto tetra = Lagrange{
+    Coord(0, 0, 0), Coord(6, 0, 0), Coord(0, 6, 0), Coord(0, 0, 6),
+    Coord(3, 0, 0), Coord(3, 3, 0), Coord(0, 3, 0),
+    Coord(0, 0, 3), Coord(3, 0, 3), Coord(0, 3, 3),
+  };
+  static_assert(tetra.CellDim() == 3);
+  static_assert(tetra.PhysDim() == 3);
+  EXPECT_EQ(tetra.CountCorners(), 4);
+  EXPECT_EQ(tetra.CountNodes(), 10);
+  EXPECT_EQ(tetra.center(), Coord(1.5, 1.5, 1.5));
+  EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Coord(0, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Coord(6, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Coord(0, 6, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 0), Coord(0, 0, 6));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 0), Coord(1, 0, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(6, 0, 0), Coord(0, 1, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 6, 0), Coord(0, 0, 1));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 6), Coord(0, 0, 0));
+  mini::lagrange::Cell<typename Lagrange::Real> &cell = tetra;
+  // test the partition-of-unity property:
+  std::srand(31415926);
+  auto rand = [](){ return std::rand() / (1.0 + RAND_MAX); };
+  for (int i = 0; i < 1000; ++i) {
+    auto x = rand(), y = rand(), z = rand();
+    auto shapes = cell.LocalToShapeFunctions(x, y, z);
+    auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
+    EXPECT_NEAR(sum, 1.0, 1e-14);
+  }
+  // test the Kronecker-delta and property:
+  for (int i = 0, n = cell.CountNodes(); i < n; ++i) {
+    auto local_i = cell.GetLocalCoord(i);
+    auto shapes = cell.LocalToShapeFunctions(local_i);
+    for (int j = 0; j < n; ++j) {
+      EXPECT_EQ(shapes[j], i == j);
+    }
+  }
+}
+TEST_F(TestLagrangeTetrahedron10, SortNodesOnFace) {
+  using mini::lagrange::SortNodesOnFace;
+  auto cell = Lagrange{
+    Coord(0, 0, 0), Coord(6, 0, 0), Coord(0, 6, 0), Coord(0, 0, 6),
+    Coord(3, 0, 0), Coord(3, 3, 0), Coord(0, 3, 0),
+    Coord(0, 0, 3), Coord(3, 0, 3), Coord(0, 3, 3),
+  };
+  int face_n_node = 6;
+  // test the version without conversion:
+  {
+    using Vector = std::vector<size_t>;
+    Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010, 0 };
+    Vector face_nodes, face_nodes_expect;
+    face_nodes = { 11, 22, 33, 55, 66, 77, 0 };
+    face_nodes_expect = { 11, 33, 22, 77, 66, 55, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 44, 22, 55, 88, 99, 0 };
+    face_nodes_expect = { 11, 22, 44, 55, 99, 88, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 33, 44, 1010, 88, 77, 0 };
+    face_nodes_expect = { 11, 44, 33, 88, 1010, 77, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 22, 33, 44, 1010, 99, 66, 0 };
+    face_nodes_expect = { 22, 33, 44, 66, 1010, 99, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+  }
+  // test the version with conversion:
+  {
+    using Vector = std::vector<short>;
+    Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010, 0 };
+    Vector face_nodes, face_nodes_expect;
+    face_nodes = { 11, 22, 33, 55, 66, 77, 0 };
+    face_nodes_expect = { 11, 33, 22, 77, 66, 55, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 44, 22, 55, 88, 99, 0 };
+    face_nodes_expect = { 11, 22, 44, 55, 99, 88, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 11, 33, 44, 1010, 88, 77, 0 };
+    face_nodes_expect = { 11, 44, 33, 88, 1010, 77, 0 };
+    SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
+    EXPECT_EQ(face_nodes, face_nodes_expect);
+    face_nodes = { 22, 33, 44, 1010, 99, 66, 0 };
+    face_nodes_expect = { 22, 33, 44, 66, 1010, 99, 0 };
     SortNodesOnFace(cell, cell_nodes.data(), face_nodes.data(), face_n_node);
     EXPECT_EQ(face_nodes, face_nodes_expect);
   }

@@ -11,33 +11,64 @@
 class TestGaussTetrahedron : public ::testing::Test {
  protected:
   static constexpr int kPoints = 24;
-  using Lagrange = mini::lagrange::Tetrahedron4<double>;
   using Gauss = mini::gauss::Tetrahedron<double, kPoints>;
-  using Mat3x1 = mini::algebra::Matrix<double, 3, 1>;
+  using Coord = typename Gauss::Global;
 };
-TEST_F(TestGaussTetrahedron, OnStandardElement) {
+TEST_F(TestGaussTetrahedron, OnLinearElement) {
+  using Lagrange = mini::lagrange::Tetrahedron4<double>;
   auto lagrange = Lagrange{
-    Mat3x1(0, 0, 0), Mat3x1(3, 0, 0), Mat3x1(0, 3, 0), Mat3x1(0, 0, 3)
+    Coord(0, 0, 0), Coord(3, 0, 0), Coord(0, 3, 0), Coord(0, 0, 3)
   };
   auto tetra = Gauss(lagrange);
   static_assert(tetra.CellDim() == 3);
   static_assert(tetra.PhysDim() == 3);
   EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
-  EXPECT_EQ(tetra.center(), Mat3x1(0.75, 0.75, 0.75));
+  EXPECT_EQ(tetra.center(), Coord(0.75, 0.75, 0.75));
   EXPECT_EQ(tetra.CountPoints(), kPoints);
-  EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Mat3x1(0, 0, 0));
-  EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Mat3x1(3, 0, 0));
-  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Mat3x1(0, 3, 0));
-  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 0), Mat3x1(0, 0, 3));
-  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 0), Mat3x1(1, 0, 0));
-  EXPECT_EQ(tetra.GlobalToLocal(3, 0, 0), Mat3x1(0, 1, 0));
-  EXPECT_EQ(tetra.GlobalToLocal(0, 3, 0), Mat3x1(0, 0, 1));
-  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 3), Mat3x1(0, 0, 0));
-  EXPECT_NEAR(Quadrature([](Mat3x1 const&){ return 6.0; }, tetra), 1.0, 1e-14);
-  EXPECT_NEAR(Integrate([](Mat3x1 const&){ return 6.0; }, tetra), 27.0, 1e-13);
-  auto f = [](Mat3x1 const& xyz){ return xyz[0]; };
-  auto g = [](Mat3x1 const& xyz){ return xyz[1]; };
-  auto h = [](Mat3x1 const& xyz){ return xyz[0] * xyz[1]; };
+  EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Coord(0, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Coord(3, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Coord(0, 3, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 0), Coord(0, 0, 3));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 0), Coord(1, 0, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(3, 0, 0), Coord(0, 1, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 3, 0), Coord(0, 0, 1));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 3), Coord(0, 0, 0));
+  EXPECT_NEAR(Quadrature([](Coord const&){ return 6.0; }, tetra), 1.0, 1e-14);
+  EXPECT_NEAR(Integrate([](Coord const&){ return 6.0; }, tetra), 27.0, 1e-13);
+  auto f = [](Coord const& xyz){ return xyz[0]; };
+  auto g = [](Coord const& xyz){ return xyz[1]; };
+  auto h = [](Coord const& xyz){ return xyz[0] * xyz[1]; };
+  EXPECT_DOUBLE_EQ(Innerprod(f, g, tetra), Integrate(h, tetra));
+  EXPECT_DOUBLE_EQ(Norm(f, tetra), std::sqrt(Innerprod(f, f, tetra)));
+  EXPECT_DOUBLE_EQ(Norm(g, tetra), std::sqrt(Innerprod(g, g, tetra)));
+}
+TEST_F(TestGaussTetrahedron, OnQuadraticElement) {
+  using Lagrange = mini::lagrange::Tetrahedron10<double>;
+  double a = 1.5;
+  auto lagrange = Lagrange{
+    Coord(0, 0, 0), Coord(a*2, 0, 0), Coord(0, a*2, 0), Coord(0, 0, a*2),
+    Coord(a, 0, 0), Coord(a, a, 0), Coord(0, a, 0),
+    Coord(0, 0, a), Coord(a, 0, a), Coord(0, a, a),
+  };
+  auto tetra = Gauss(lagrange);
+  static_assert(tetra.CellDim() == 3);
+  static_assert(tetra.PhysDim() == 3);
+  EXPECT_NEAR(tetra.volume(), 4.5, 1e-14);
+  EXPECT_EQ(tetra.center(), Coord(0.75, 0.75, 0.75));
+  EXPECT_EQ(tetra.CountPoints(), kPoints);
+  EXPECT_EQ(tetra.LocalToGlobal(1, 0, 0), Coord(0, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 1, 0), Coord(3, 0, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 1), Coord(0, 3, 0));
+  EXPECT_EQ(tetra.LocalToGlobal(0, 0, 0), Coord(0, 0, 3));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 0), Coord(1, 0, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(3, 0, 0), Coord(0, 1, 0));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 3, 0), Coord(0, 0, 1));
+  EXPECT_EQ(tetra.GlobalToLocal(0, 0, 3), Coord(0, 0, 0));
+  EXPECT_NEAR(Quadrature([](Coord const&){ return 6.0; }, tetra), 1.0, 1e-14);
+  EXPECT_NEAR(Integrate([](Coord const&){ return 6.0; }, tetra), 27.0, 1e-13);
+  auto f = [](Coord const& xyz){ return xyz[0]; };
+  auto g = [](Coord const& xyz){ return xyz[1]; };
+  auto h = [](Coord const& xyz){ return xyz[0] * xyz[1]; };
   EXPECT_DOUBLE_EQ(Innerprod(f, g, tetra), Integrate(h, tetra));
   EXPECT_DOUBLE_EQ(Norm(f, tetra), std::sqrt(Innerprod(f, f, tetra)));
   EXPECT_DOUBLE_EQ(Norm(g, tetra), std::sqrt(Innerprod(g, g, tetra)));

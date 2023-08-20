@@ -15,6 +15,7 @@ namespace mini {
 namespace lagrange {
 
 static constexpr int X{0}, Y{1}, Z{2};
+static constexpr int A{0}, B{1}, C{2}, D{3};
 
 /**
  * @brief Abstract coordinate map on surface elements.
