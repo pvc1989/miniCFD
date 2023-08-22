@@ -43,6 +43,38 @@ class Pyramid : public Cell<Scalar> {
   void _BuildCenter() final {
     center_ = this->LocalToGlobal(0, 0, -0.5);
   }
+
+  static int GetFaceId(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node/* number of nodes on triangle */) {
+    int cnt[5] = { 0, 0, 0, 0, 1 };
+    for (int f = 0; f < face_n_node; ++f) {
+      for (int c = 0; c < 4; ++c) {
+        if (cell_nodes[c] == face_nodes[f]) {
+          cnt[c] = 1;
+          break;
+        }
+      }
+    }
+    assert(3 == std::accumulate(cnt, cnt + 5, 0));
+    int i_face;
+    if (cnt[0]) {
+      if (cnt[1]) {
+        i_face = 0;
+      } else {
+        assert(cnt[3]);
+        i_face = 3;
+      }
+    } else {
+      assert(cnt[2]);
+      if (cnt[1]) {
+        i_face = 1;
+      } else {
+        assert(cnt[3]);
+        i_face = 2;
+      }
+    }
+    return i_face;
+  }
 };
 
 /**
@@ -74,35 +106,9 @@ class Pyramid5 : public Pyramid<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     if (face_n_node == 3) {
-      int cnt[5] = { 0, 0, 0, 0, 1 };
-      for (int f = 0; f < 3; ++f) {
-        for (int c = 0; c < 4; ++c) {
-          if (cell_nodes[c] == face_nodes[f]) {
-            cnt[c] = 1;
-            break;
-          }
-        }
-      }
-      assert(3 == std::accumulate(cnt, cnt + 5, 0));
-      int i_face;
-      if (cnt[0]) {
-        if (cnt[1]) {
-          i_face = 0;
-        } else {
-          assert(cnt[3]);
-          i_face = 3;
-        }
-      } else {
-        assert(cnt[2]);
-        if (cnt[1]) {
-          i_face = 1;
-        } else {
-          assert(cnt[3]);
-          i_face = 2;
-        }
-      }
-      for (int i = 0; i < 3; ++i) {
-        face_nodes[i] = cell_nodes[faces_[i_face][i]];
+      int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+      for (int f = 0; f < face_n_node; ++f) {
+        face_nodes[f] = cell_nodes[faces_[i_face][f]];
       }
     } else {
       // the face is the bottom
@@ -205,6 +211,9 @@ Pyramid5<Scalar>::faces_{
   3, 0, 4
 };
 
+template <std::floating_point Scalar>
+class Pyramid14;
+
 /**
  * @brief Coordinate map on 13-node pyramidal elements.
  * 
@@ -213,6 +222,7 @@ Pyramid5<Scalar>::faces_{
 template <std::floating_point Scalar>
 class Pyramid13 : public Pyramid<Scalar> {
   using Base = Pyramid<Scalar>;
+  friend class Pyramid14<Scalar>;
 
  public:
   using typename Base::Real;
@@ -234,33 +244,7 @@ class Pyramid13 : public Pyramid<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     if (face_n_node == 6) {
-      int cnt[5] = { 0, 0, 0, 0, 1 };
-      for (int f = 0; f < face_n_node; ++f) {
-        for (int c = 0; c < 4; ++c) {
-          if (cell_nodes[c] == face_nodes[f]) {
-            cnt[c] = 1;
-            break;
-          }
-        }
-      }
-      assert(3 == std::accumulate(cnt, cnt + 5, 0));
-      int i_face;
-      if (cnt[0]) {
-        if (cnt[1]) {
-          i_face = 0;
-        } else {
-          assert(cnt[3]);
-          i_face = 3;
-        }
-      } else {
-        assert(cnt[2]);
-        if (cnt[1]) {
-          i_face = 1;
-        } else {
-          assert(cnt[3]);
-          i_face = 2;
-        }
-      }
+      int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
       for (int f = 0; f < face_n_node; ++f) {
         face_nodes[f] = cell_nodes[faces_[i_face][f]];
       }
@@ -433,6 +417,162 @@ Pyramid13<Scalar>::faces_{
   1, 2, 4, 6, 11, 10,
   2, 3, 4, 7, 12, 11,
   3, 0, 4, 8, 9, 12,
+};
+
+/**
+ * @brief Coordinate map on 14-node pyramidal elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ */
+template <std::floating_point Scalar>
+class Pyramid14 : public Pyramid<Scalar> {
+  using Base = Pyramid<Scalar>;
+
+ public:
+  using typename Base::Real;
+  using typename Base::Local;
+  using typename Base::Global;
+  using typename Base::Jacobian;
+
+  static constexpr int kNodes = 14;
+
+ private:
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
+
+ public:
+  int CountNodes() const final {
+    return kNodes;
+  }
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    if (face_n_node == 6) {
+      int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+      for (int f = 0; f < face_n_node; ++f) {
+        face_nodes[f] = cell_nodes[Pyramid13<Scalar>::faces_[i_face][f]];
+      }
+    } else {
+      assert(face_n_node == 9);
+      // the face is the bottom
+      face_nodes[0] = cell_nodes[0];
+      face_nodes[1] = cell_nodes[3];
+      face_nodes[2] = cell_nodes[2];
+      face_nodes[3] = cell_nodes[1];
+      face_nodes[4] = cell_nodes[8];
+      face_nodes[5] = cell_nodes[7];
+      face_nodes[6] = cell_nodes[6];
+      face_nodes[7] = cell_nodes[5];
+      face_nodes[8] = cell_nodes[13];
+    }
+  }
+
+ private:
+  static void LocalToNewShapeFunctions(Scalar x_local, Scalar y_local,
+      Scalar z_local, Scalar *shapes) {
+    auto quadratic_x = (1 - x_local * x_local);
+    auto quadratic_y = (1 - y_local * y_local);
+    auto factor_z = (1 - z_local) / 2;
+    shapes[13] = quadratic_x * quadratic_y * factor_z;
+  }
+  static void LocalToNewShapeGradients(Scalar x_local, Scalar y_local,
+      Scalar z_local, Local *grads) {
+    auto quadratic_x = (1 - x_local * x_local);
+    auto quadratic_y = (1 - y_local * y_local);
+    auto factor_z = (1 - z_local)/* \divide 2 */;
+    grads[13][X] = (/* 2 \times */-x_local) * quadratic_y * factor_z;
+    grads[13][Y] = (/* 2 \times */-y_local) * quadratic_x * factor_z;
+    grads[13][Z] = quadratic_x * quadratic_y * (-0.5);
+  }
+
+ public:
+  static void LocalToShapeFunctions(Scalar x_local, Scalar y_local,
+      Scalar z_local, Scalar *shapes) {
+    Pyramid13<Scalar>::LocalToShapeFunctions(
+        x_local, y_local, z_local, shapes);
+    LocalToNewShapeFunctions(x_local, y_local, z_local, shapes);
+    for (int b = 13; b < 14; ++b) {
+      Scalar x_b = local_coords_[b][X];
+      Scalar y_b = local_coords_[b][Y];
+      Scalar z_b = local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[13];
+      Pyramid13<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 13; ++a) {
+        shapes[a] -= old_shapes_on_new_nodes[a] * shapes[b];
+      }
+    }
+  }
+  std::vector<Scalar> LocalToShapeFunctions(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto shapes = std::vector<Scalar>(kNodes);
+    LocalToShapeFunctions(x_local, y_local, z_local, shapes.data());
+    return shapes;
+  }
+  static void LocalToShapeGradients(Scalar x_local, Scalar y_local,
+      Scalar z_local, Local *grads) {
+    Pyramid13<Scalar>::LocalToShapeGradients(
+        x_local, y_local, z_local, grads);
+    LocalToNewShapeGradients(x_local, y_local, z_local, grads);
+    for (int b = 13; b < 14; ++b) {
+      Scalar x_b = local_coords_[b][X];
+      Scalar y_b = local_coords_[b][Y];
+      Scalar z_b = local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[13];
+      Pyramid13<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 13; ++a) {
+        grads[a] -= old_shapes_on_new_nodes[a] * grads[b];
+      }
+    }
+  }
+  std::vector<Local> LocalToShapeGradients(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto grads = std::vector<Local>(kNodes);
+    LocalToShapeGradients(x_local, y_local, z_local, grads.data());
+    return grads;
+  }
+
+ public:
+  Global const &GetGlobalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return global_coords_[i];
+  }
+  Local const &GetLocalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return local_coords_[i];
+  }
+
+ public:
+  Pyramid14(
+      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
+      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
+      Global const &p8, Global const &p9, Global const &p10, Global const &p11, Global const &p12, Global const &p13) {
+    global_coords_[0] = p0; global_coords_[1] = p1; global_coords_[2] = p2;
+    global_coords_[3] = p3; global_coords_[4] = p4; global_coords_[5] = p5;
+    global_coords_[6] = p6; global_coords_[7] = p7; global_coords_[8] = p8;
+    global_coords_[9] = p9; global_coords_[10] = p10; global_coords_[11] = p11;
+    global_coords_[12] = p12; global_coords_[13] = p13;
+    this->_BuildCenter();
+  }
+
+  friend void lagrange::_Build(Pyramid14 *,
+      std::initializer_list<Global>);
+  Pyramid14(std::initializer_list<Global> il) {
+    lagrange::_Build(this, il);
+  }
+};
+// initialization of static const members:
+template <std::floating_point Scalar>
+const std::array<typename Pyramid14<Scalar>::Local, 14>
+Pyramid14<Scalar>::local_coords_{
+  Pyramid14::Local(-1, -1, -1), Pyramid14::Local(+1, -1, -1),
+  Pyramid14::Local(+1, +1, -1), Pyramid14::Local(-1, +1, -1),
+  Pyramid14::Local(0, 0, 1),
+  Pyramid14::Local(0, -1, -1), Pyramid14::Local(+1, 0, -1),
+  Pyramid14::Local(0, +1, -1), Pyramid14::Local(-1, 0, -1),
+  Pyramid14::Local(-1, -1, 0), Pyramid14::Local(+1, -1, 0),
+  Pyramid14::Local(+1, +1, 0), Pyramid14::Local(-1, +1, 0),
+  Pyramid14::Local(0, 0, -1),
 };
 
 }  // namespace lagrange
