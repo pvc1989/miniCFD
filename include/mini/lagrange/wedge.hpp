@@ -44,6 +44,39 @@ class Wedge : public Cell<Scalar> {
     Scalar a = 1.0 / 3;
     center_ = this->LocalToGlobal(a, a, 0);
   }
+
+  static int GetTriangleId(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node/* number of nodes on triangle */) {
+    int i_face = 0;
+    for (int f = 0; f < face_n_node; ++f) {
+      if (cell_nodes[4] == face_nodes[f]) {
+        i_face = 1;
+        break;
+      }
+    }
+    return i_face;
+  }
+
+  static int GetQuadrangleId(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node/* number of nodes on quadragle */) {
+    int c_sum = 0;  // sum of c's in (0, 1, 2)
+    for (int f = 0; f < face_n_node; ++f) {
+      for (int c = 0; c < 3; ++c) {
+        if (cell_nodes[c] == face_nodes[f]) {
+          c_sum += c;
+          break;
+        }
+      }
+    }
+    int i_face;
+    switch (c_sum) {
+    case 1: i_face = 0; break;
+    case 2: i_face = 2; break;
+    case 3: i_face = 1; break;
+    default: assert(false);
+    }
+    return i_face;
+  }
 };
 
 /**
@@ -76,34 +109,13 @@ class Wedge6 : public Wedge<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     if (face_n_node == 3) {
-      int i_face = 0;
-      for (int f = 0; f < face_n_node; ++f) {
-        if (cell_nodes[4] == face_nodes[f]) {
-          i_face = 1;
-          break;
-        }
-      }
+      int i_face = Base::GetTriangleId(cell_nodes, face_nodes, face_n_node);
       for (int f = 0; f < face_n_node; ++f) {
         face_nodes[f] = cell_nodes[triangles_[i_face][f]];
       }
     } else {
       assert(face_n_node == 4);
-      int c_sum = 0;  // sum of c's in (0, 1, 2)
-      for (int f = 0; f < face_n_node; ++f) {
-        for (int c = 0; c < 3; ++c) {
-          if (cell_nodes[c] == face_nodes[f]) {
-            c_sum += c;
-            break;
-          }
-        }
-      }
-      int i_face;
-      switch (c_sum) {
-      case 1: i_face = 0; break;
-      case 2: i_face = 2; break;
-      case 3: i_face = 1; break;
-      default: assert(false);
-      }
+      int i_face = Base::GetQuadrangleId(cell_nodes, face_nodes, face_n_node);
       for (int f = 0; f < face_n_node; ++f) {
         face_nodes[f] = cell_nodes[quadrangles_[i_face][f]];
       }
@@ -214,6 +226,9 @@ Wedge6<Scalar>::quadrangles_{
   0, 3, 5, 2,
 };
 
+template <std::floating_point Scalar>
+class Wedge18;
+
 /**
  * @brief Coordinate map on 15-node wedge elements.
  * 
@@ -222,6 +237,7 @@ Wedge6<Scalar>::quadrangles_{
 template <std::floating_point Scalar>
 class Wedge15 : public Wedge<Scalar> {
   using Base = Wedge<Scalar>;
+  friend class Wedge18<Scalar>;
 
  public:
   using typename Base::Real;
@@ -244,34 +260,13 @@ class Wedge15 : public Wedge<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     if (face_n_node == 6) {
-      int i_face = 0;
-      for (int f = 0; f < face_n_node; ++f) {
-        if (cell_nodes[4] == face_nodes[f]) {
-          i_face = 1;
-          break;
-        }
-      }
+      int i_face = Base::GetTriangleId(cell_nodes, face_nodes, face_n_node);
       for (int f = 0; f < face_n_node; ++f) {
         face_nodes[f] = cell_nodes[triangles_[i_face][f]];
       }
     } else {
       assert(face_n_node == 8);
-      int c_sum = 0;  // sum of c's in (0, 1, 2)
-      for (int f = 0; f < face_n_node; ++f) {
-        for (int c = 0; c < 3; ++c) {
-          if (cell_nodes[c] == face_nodes[f]) {
-            c_sum += c;
-            break;
-          }
-        }
-      }
-      int i_face;
-      switch (c_sum) {
-      case 1: i_face = 0; break;
-      case 2: i_face = 2; break;
-      case 3: i_face = 1; break;
-      default: assert(false);
-      }
+      int i_face = Base::GetQuadrangleId(cell_nodes, face_nodes, face_n_node);
       for (int f = 0; f < face_n_node; ++f) {
         face_nodes[f] = cell_nodes[quadrangles_[i_face][f]];
       }
@@ -451,7 +446,6 @@ Wedge15<Scalar>::local_coords_{
   Wedge15::Local(0.5, 0.5, +1), Wedge15::Local(0, 0.5, +1),
   Wedge15::Local(0.5, 0, +1),
 };
-
 /* See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/penta_15.png for node numbering.
 */
 template <std::floating_point Scalar>
@@ -468,6 +462,253 @@ Wedge15<Scalar>::quadrangles_{
   0, 3, 5, 2, 9, 14, 11, 8,
 };
 
+/**
+ * @brief Coordinate map on 18-node wedge elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ */
+template <std::floating_point Scalar>
+class Wedge18 : public Wedge<Scalar> {
+  using Base = Wedge<Scalar>;
+
+ public:
+  using typename Base::Real;
+  using typename Base::Local;
+  using typename Base::Global;
+  using typename Base::Jacobian;
+
+  static constexpr int kNodes = 18;
+
+ private:
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
+  static const std::array<std::array<int, 9>, 3> quadrangles_;
+
+ public:
+  int CountNodes() const final {
+    return kNodes;
+  }
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    if (face_n_node == 6) {
+      int i_face = Base::GetTriangleId(cell_nodes, face_nodes, face_n_node);
+      for (int f = 0; f < face_n_node; ++f) {
+        face_nodes[f] = cell_nodes[Wedge15<Scalar>::triangles_[i_face][f]];
+      }
+    } else {
+      assert(face_n_node == 9);
+      int i_face = Base::GetQuadrangleId(cell_nodes, face_nodes, face_n_node);
+      for (int f = 0; f < face_n_node; ++f) {
+        face_nodes[f] = cell_nodes[quadrangles_[i_face][f]];
+      }
+    }
+  }
+
+ public:
+  static void LocalToShapeFunctions(Scalar a_local, Scalar b_local,
+      Scalar z_local, Scalar *shapes) {
+    auto c_local = 1.0 - a_local - b_local;
+    auto quadratic_a = a_local * (2 * a_local - 1);
+    auto quadratic_b = b_local * (2 * b_local - 1);
+    auto quadratic_c = c_local * (2 * c_local - 1);
+    auto factor_ab = a_local * b_local * 4;
+    auto factor_bc = b_local * c_local * 4;
+    auto factor_ca = c_local * a_local * 4;
+    // local_coords_[i][Z] = -1
+    auto factor_z = (z_local - 1) * z_local / 2;
+    shapes[0] = quadratic_a * factor_z;
+    shapes[1] = quadratic_b * factor_z;
+    shapes[2] = quadratic_c * factor_z;
+    shapes[6] = factor_ab * factor_z;
+    shapes[7] = factor_bc * factor_z;
+    shapes[8] = factor_ca * factor_z;
+    // local_coords_[i][Z] = +1
+    factor_z += z_local;  // == (z_local + 1) * z_local / 2
+    shapes[3] = quadratic_a * factor_z;
+    shapes[4] = quadratic_b * factor_z;
+    shapes[5] = quadratic_c * factor_z;
+    shapes[12] = factor_ab * factor_z;
+    shapes[13] = factor_bc * factor_z;
+    shapes[14] = factor_ca * factor_z;
+    // local_coords_[i][Z] = 0
+    factor_z = 1 - z_local * z_local;
+    shapes[9] = quadratic_a * factor_z;
+    shapes[10] = quadratic_b * factor_z;
+    shapes[11] = quadratic_c * factor_z;
+    shapes[15] = factor_ab * factor_z;
+    shapes[16] = factor_bc * factor_z;
+    shapes[17] = factor_ca * factor_z;
+  }
+  std::vector<Scalar> LocalToShapeFunctions(
+      Scalar a_local, Scalar b_local, Scalar z_local) const final {
+    auto shapes = std::vector<Scalar>(kNodes);
+    LocalToShapeFunctions(a_local, b_local, z_local, shapes.data());
+    return shapes;
+  }
+  static void LocalToShapeGradients(Scalar a_local, Scalar b_local,
+      Scalar z_local, Local *grads) {
+    auto c_local = 1.0 - a_local - b_local;
+    auto quadratic_a = a_local * (2 * a_local - 1);
+    auto quadratic_b = b_local * (2 * b_local - 1);
+    auto quadratic_c = c_local * (2 * c_local - 1);
+    auto factor_a = a_local * 4;
+    auto factor_b = b_local * 4;
+    auto factor_c = c_local * 4;
+    auto factor_ab = factor_a * b_local;
+    auto factor_bc = factor_b * c_local;
+    auto factor_ca = factor_c * a_local;
+    // local_coords_[i][Z] = -1
+    auto factor_z = (z_local - 1) * z_local / 2;
+    auto grad_z = z_local - 0.5;
+    // shapes[0] = quadratic_a * factor_z;
+    grads[0][A] = (factor_a - 1) * factor_z;
+    grads[0][B] = 0;
+    grads[0][Z] = quadratic_a * grad_z;
+    // shapes[1] = quadratic_b * factor_z;
+    grads[1][A] = 0;
+    grads[1][B] = (factor_b - 1) * factor_z;
+    grads[1][Z] = quadratic_b * grad_z;
+    // shapes[2] = quadratic_c * factor_z;
+    grads[2][A] =
+    grads[2][B] = (1 - factor_c) * factor_z;
+    grads[2][Z] = quadratic_c * grad_z;
+    // shapes[6] = factor_ab * factor_z;
+    grads[6][A] = factor_b * factor_z;
+    grads[6][B] = factor_a * factor_z;
+    grads[6][Z] = factor_ab * grad_z;
+    // shapes[7] = factor_bc * factor_z;
+    grads[7][A] = -factor_b * factor_z;
+    grads[7][B] = (factor_c - factor_b) * factor_z;
+    grads[7][Z] = factor_bc * grad_z;
+    // shapes[8] = factor_ca * factor_z;
+    grads[8][A] = (factor_c - factor_a) * factor_z;
+    grads[8][B] = -factor_a * factor_z;
+    grads[8][Z] = factor_ca * grad_z;
+    // local_coords_[i][Z] = +1
+    factor_z += z_local;  // == (z_local + 1) * z_local / 2
+    grad_z += 1;
+    // shapes[3] = quadratic_a * factor_z;
+    grads[3][A] = (factor_a - 1) * factor_z;
+    grads[3][B] = 0;
+    grads[3][Z] = quadratic_a * grad_z;
+    // shapes[4] = quadratic_b * factor_z;
+    grads[4][A] = 0;
+    grads[4][B] = (factor_b - 1) * factor_z;
+    grads[4][Z] = quadratic_b * grad_z;
+    // shapes[5] = quadratic_c * factor_z;
+    grads[5][A] =
+    grads[5][B] = (1 - factor_c) * factor_z;
+    grads[5][Z] = quadratic_c * grad_z;
+    // shapes[12] = factor_ab * factor_z;
+    grads[12][A] = factor_b * factor_z;
+    grads[12][B] = factor_a * factor_z;
+    grads[12][Z] = factor_ab * grad_z;
+    // shapes[13] = factor_bc * factor_z;
+    grads[13][A] = -factor_b * factor_z;
+    grads[13][B] = (factor_c - factor_b) * factor_z;
+    grads[13][Z] = factor_bc * grad_z;
+    // shapes[14] = factor_ca * factor_z;
+    grads[14][A] = (factor_c - factor_a) * factor_z;
+    grads[14][B] = -factor_a * factor_z;
+    grads[14][Z] = factor_ca * grad_z;
+    // local_coords_[i][Z] = 0
+    factor_z = 1 - z_local * z_local;
+    grad_z = -2 * z_local;
+    // shapes[9] = quadratic_a * factor_z;
+    grads[9][A] = (factor_a - 1) * factor_z;
+    grads[9][B] = 0;
+    grads[9][Z] = quadratic_a * grad_z;
+    // shapes[10] = quadratic_b * factor_z;
+    grads[10][A] = 0;
+    grads[10][B] = (factor_b - 1) * factor_z;
+    grads[10][Z] = quadratic_b * grad_z;
+    // shapes[11] = quadratic_c * factor_z;
+    grads[11][A] =
+    grads[11][B] = (1 - factor_c) * factor_z;
+    grads[11][Z] = quadratic_c * grad_z;
+    // shapes[15] = factor_ab * factor_z;
+    grads[15][A] = factor_b * factor_z;
+    grads[15][B] = factor_a * factor_z;
+    grads[15][Z] = factor_ab * grad_z;
+    // shapes[16] = factor_bc * factor_z;
+    grads[16][A] = -factor_b * factor_z;
+    grads[16][B] = (factor_c - factor_b) * factor_z;
+    grads[16][Z] = factor_bc * grad_z;
+    // shapes[17] = factor_ca * factor_z;
+    grads[17][A] = (factor_c - factor_a) * factor_z;
+    grads[17][B] = -factor_a * factor_z;
+    grads[17][Z] = factor_ca * grad_z;
+  }
+  std::vector<Local> LocalToShapeGradients(
+      Scalar a_local, Scalar b_local, Scalar z_local) const final {
+    auto grads = std::vector<Local>(kNodes);
+    LocalToShapeGradients(a_local, b_local, z_local, grads.data());
+    return grads;
+  }
+
+ public:
+  Global const &GetGlobalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return global_coords_[i];
+  }
+  Local const &GetLocalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return local_coords_[i];
+  }
+
+ public:
+  Wedge18(
+      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
+      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
+      Global const &p8, Global const &p9, Global const &p10, Global const &p11,
+      Global const &p12, Global const &p13, Global const &p14,
+      Global const &p15, Global const &p16, Global const &p17) {
+    global_coords_[0] = p0; global_coords_[1] = p1; global_coords_[2] = p2;
+    global_coords_[3] = p3; global_coords_[4] = p4; global_coords_[5] = p5;
+    global_coords_[6] = p6; global_coords_[7] = p7; global_coords_[8] = p8;
+    global_coords_[9] = p9; global_coords_[10] = p10; global_coords_[11] = p11;
+    global_coords_[12] = p12; global_coords_[13] = p13;
+    global_coords_[14] = p14; global_coords_[15] = p15;
+    global_coords_[16] = p16; global_coords_[17] = p17;
+    this->_BuildCenter();
+  }
+
+  friend void lagrange::_Build(Wedge18 *,
+      std::initializer_list<Global>);
+  Wedge18(std::initializer_list<Global> il) {
+    lagrange::_Build(this, il);
+  }
+};
+// initialization of static const members:
+template <std::floating_point Scalar>
+const std::array<typename Wedge18<Scalar>::Local, 18>
+Wedge18<Scalar>::local_coords_{
+  // corner nodes on the bottom face
+  Wedge18::Local(1, 0, -1), Wedge18::Local(0, 1, -1), Wedge18::Local(0, 0, -1),
+  // corner nodes on the top face
+  Wedge18::Local(1, 0, +1), Wedge18::Local(0, 1, +1), Wedge18::Local(0, 0, +1),
+  // mid-edge nodes on the bottom face
+  Wedge18::Local(0.5, 0.5, -1), Wedge18::Local(0, 0.5, -1),
+  Wedge18::Local(0.5, 0, -1),
+  // mid-edge nodes on vertical edges
+  Wedge18::Local(1, 0, 0), Wedge18::Local(0, 1, 0), Wedge18::Local(0, 0, 0),
+  // mid-edge nodes on the top face
+  Wedge18::Local(0.5, 0.5, +1), Wedge18::Local(0, 0.5, +1),
+  Wedge18::Local(0.5, 0, +1),
+  // mid-face nodes on quadragles
+  Wedge18::Local(0.5, 0.5, 0), Wedge18::Local(0, 0.5, 0),
+  Wedge18::Local(0.5, 0, 0),
+};
+/* See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/penta_18.png for node numbering.
+ * Only quadrangles are listed here, since triangles are the same as Wedge15.
+ */
+template <std::floating_point Scalar>
+const std::array<std::array<int, 9>, 3>
+Wedge18<Scalar>::quadrangles_{
+  0, 1, 4, 3, 6, 10, 12, 9, 15,
+  1, 2, 5, 4, 7, 11, 13, 10, 16,
+  0, 3, 5, 2, 9, 14, 11, 8, 17,
+};
 
 }  // namespace lagrange
 }  // namespace mini
