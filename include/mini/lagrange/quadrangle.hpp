@@ -249,20 +249,7 @@ class Quadrangle8 : public Quadrangle<Scalar, kPhysDim> {
   }
 
  public:
-  Quadrangle8(
-      Global const &p0, Global const &p1,
-      Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5,
-      Global const &p6, Global const &p7) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Quadrangle8 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Quadrangle8 *, std::initializer_list<Global>);
   Quadrangle8(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }

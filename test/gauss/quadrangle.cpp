@@ -14,9 +14,9 @@ TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
-  );
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 2);
@@ -81,10 +81,10 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
   using Lagrange = mini::lagrange::Quadrangle8<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Global(0, 0, 0), Global(4, 0, 0), Global(4, 4, 4), Global(0, 4, 4),
-    Global(2, 0, 0), Global(4, 2, 2), Global(2, 4, 4), Global(0, 2, 2)
-  );
+    Global(2, 0, 0), Global(4, 2, 2), Global(2, 4, 4), Global(0, 2, 2),
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
@@ -119,11 +119,11 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle9) {
   using Lagrange = mini::lagrange::Quadrangle9<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Global(0, 0, 0), Global(4, 0, 0), Global(4, 4, 4), Global(0, 4, 4),
     Global(2, 0, 0), Global(4, 2, 2), Global(2, 4, 4), Global(0, 2, 2),
-    Global(2, 2, 2)
-  );
+    Global(2, 2, 2),
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);

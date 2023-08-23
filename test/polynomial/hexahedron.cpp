@@ -28,12 +28,10 @@ class TestHexahedron4x4x4 : public ::testing::Test {
 };
 TEST_F(TestHexahedron4x4x4, OrthoNormal) {
   // build a hexa-gauss
-  auto lagrange = Lagrange(
-    Coord(-1, -1, -1), Coord(+1, -1, -1),
-    Coord(+1, +1, -1), Coord(-1, +1, -1),
-    Coord(-1, -1, +1), Coord(+1, -1, +1),
-    Coord(+1, +1, +1), Coord(-1, +1, +1)
-  );
+  auto lagrange = Lagrange {
+    Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
+    Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
+  };
   auto hexa = Gauss(lagrange);
   // build an orthonormal basis on it
   auto basis = Basis(hexa);
@@ -46,7 +44,7 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another hexa-gauss
   Coord shift = {-1, 2, 3};
-  lagrange = Lagrange(
+  lagrange = Lagrange {
     lagrange.GetGlobalCoord(0) + shift,
     lagrange.GetGlobalCoord(1) + shift,
     lagrange.GetGlobalCoord(2) + shift,
@@ -54,8 +52,8 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
     lagrange.GetGlobalCoord(4) + shift,
     lagrange.GetGlobalCoord(5) + shift,
     lagrange.GetGlobalCoord(6) + shift,
-    lagrange.GetGlobalCoord(7) + shift
-  );
+    lagrange.GetGlobalCoord(7) + shift,
+  };
   hexa = Gauss(lagrange);
   // build another orthonormal basis on it
   basis = Basis(hexa);
@@ -68,12 +66,10 @@ TEST_F(TestHexahedron4x4x4, OrthoNormal) {
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 TEST_F(TestHexahedron4x4x4, Projection) {
-  auto lagrange = Lagrange(
-    Coord(-1, -1, -1), Coord(+1, -1, -1),
-    Coord(+1, +1, -1), Coord(-1, +1, -1),
-    Coord(-1, -1, +1), Coord(+1, -1, +1),
-    Coord(+1, +1, +1), Coord(-1, +1, +1)
-  );
+  auto lagrange = Lagrange{
+    Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
+    Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
+  };
   auto hexa = Gauss(lagrange);
   auto basis = Basis(hexa);
   auto scalar_f = [](Coord const& xyz){

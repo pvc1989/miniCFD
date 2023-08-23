@@ -171,20 +171,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   }
 
  public:
-  Hexahedron8(
-      Global const &p0, Global const &p1,
-      Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5,
-      Global const &p6, Global const &p7) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Hexahedron8 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Hexahedron8 *, std::initializer_list<Global>);
   Hexahedron8(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }
@@ -364,29 +351,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
   }
 
  public:
-  Hexahedron20(
-      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
-      Global const &p8, Global const &p9, Global const &p10, Global const &p11,
-      Global const &p12, Global const &p13,
-      Global const &p14, Global const &p15,
-      Global const &p16, Global const &p17,
-      Global const &p18, Global const &p19) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7;
-    global_coords_[8] = p8; global_coords_[9] = p9;
-    global_coords_[10] = p10; global_coords_[11] = p11;
-    global_coords_[12] = p12; global_coords_[13] = p13;
-    global_coords_[14] = p14; global_coords_[15] = p15;
-    global_coords_[16] = p16; global_coords_[17] = p17;
-    global_coords_[18] = p19; global_coords_[19] = p19;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Hexahedron20 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Hexahedron20 *, std::initializer_list<Global>);
   Hexahedron20(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }
@@ -536,34 +501,7 @@ class Hexahedron27 : public Hexahedron<Scalar> {
   }
 
  public:
-  Hexahedron27(
-      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
-      Global const &p8, Global const &p9, Global const &p10, Global const &p11,
-      Global const &p12, Global const &p13, Global const &p14,
-      Global const &p15, Global const &p16, Global const &p17,
-      Global const &p18, Global const &p19, Global const &p20,
-      Global const &p21, Global const &p22, Global const &p23,
-      Global const &p24, Global const &p25, Global const &p26) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7;
-    global_coords_[8] = p8; global_coords_[9] = p9;
-    global_coords_[10] = p10; global_coords_[11] = p11;
-    global_coords_[12] = p12; global_coords_[13] = p13;
-    global_coords_[14] = p14; global_coords_[15] = p15;
-    global_coords_[16] = p16; global_coords_[17] = p17;
-    global_coords_[18] = p18; global_coords_[19] = p19;
-    global_coords_[20] = p20; global_coords_[21] = p21;
-    global_coords_[22] = p22; global_coords_[23] = p23;
-    global_coords_[24] = p24; global_coords_[25] = p25;
-    global_coords_[26] = p26;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Hexahedron27 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Hexahedron27 *, std::initializer_list<Global>);
   Hexahedron27(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }

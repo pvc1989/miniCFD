@@ -177,17 +177,7 @@ class Pyramid5 : public Pyramid<Scalar> {
   }
 
  public:
-  Pyramid5(
-      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
-      Global const &p4) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Pyramid5 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Pyramid5 *, std::initializer_list<Global>);
   Pyramid5(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }
@@ -378,20 +368,7 @@ class Pyramid13 : public Pyramid<Scalar> {
   }
 
  public:
-  Pyramid13(
-      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
-      Global const &p8, Global const &p9, Global const &p10, Global const &p11, Global const &p12) {
-    global_coords_[0] = p0; global_coords_[1] = p1; global_coords_[2] = p2;
-    global_coords_[3] = p3; global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7; global_coords_[8] = p8;
-    global_coords_[9] = p9; global_coords_[10] = p10; global_coords_[11] = p11;
-    global_coords_[12] = p12;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Pyramid13 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Pyramid13 *, std::initializer_list<Global>);
   Pyramid13(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }
@@ -543,20 +520,7 @@ class Pyramid14 : public Pyramid<Scalar> {
   }
 
  public:
-  Pyramid14(
-      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
-      Global const &p8, Global const &p9, Global const &p10, Global const &p11, Global const &p12, Global const &p13) {
-    global_coords_[0] = p0; global_coords_[1] = p1; global_coords_[2] = p2;
-    global_coords_[3] = p3; global_coords_[4] = p4; global_coords_[5] = p5;
-    global_coords_[6] = p6; global_coords_[7] = p7; global_coords_[8] = p8;
-    global_coords_[9] = p9; global_coords_[10] = p10; global_coords_[11] = p11;
-    global_coords_[12] = p12; global_coords_[13] = p13;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Pyramid14 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Pyramid14 *, std::initializer_list<Global>);
   Pyramid14(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }

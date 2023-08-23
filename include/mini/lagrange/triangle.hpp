@@ -99,16 +99,7 @@ class Triangle3 : public Triangle<Scalar, kPhysDim> {
   }
 
  public:
-  Triangle3(
-      Global const &p0, Global const &p1,
-      Global const &p2) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Triangle3 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Triangle3 *, std::initializer_list<Global>);
   Triangle3(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }
@@ -198,18 +189,7 @@ class Triangle6 : public Triangle<Scalar, kPhysDim> {
   }
 
  public:
-  Triangle6(
-      Global const &p0, Global const &p1,
-      Global const &p2, Global const &p3,
-      Global const &p4, Global const &p5) {
-    global_coords_[0] = p0; global_coords_[1] = p1;
-    global_coords_[2] = p2; global_coords_[3] = p3;
-    global_coords_[4] = p4; global_coords_[5] = p5;
-    this->_BuildCenter();
-  }
-
-  friend void lagrange::_Build(Triangle6 *,
-      std::initializer_list<Global>);
+  friend void lagrange::_Build(Triangle6 *, std::initializer_list<Global>);
   Triangle6(std::initializer_list<Global> il) {
     lagrange::_Build(this, il);
   }

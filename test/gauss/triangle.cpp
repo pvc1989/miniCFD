@@ -14,9 +14,7 @@ TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Lagrange = mini::lagrange::Triangle3<double, 2>;
   using Coord = typename Lagrange::Global;
-  auto lagrange = Lagrange(
-    Coord(0, 0), Coord(2, 0), Coord(2, 2)
-  );
+  auto lagrange = Lagrange { Coord(0, 0), Coord(2, 0), Coord(2, 2) };
   auto gauss = Gauss(lagrange);
   EXPECT_EQ(gauss.CountPoints(), 16);
   static_assert(gauss.CellDim() == 2);
@@ -40,9 +38,9 @@ TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   using Lagrange = mini::lagrange::Triangle3<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
-  auto lagrange = Lagrange(
-    Global(0, 0, 2), Global(2, 0, 2), Global(2, 2, 2)
-  );
+  auto lagrange = Lagrange {
+    Global(0, 0, 2), Global(2, 0, 2), Global(2, 2, 2),
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
@@ -77,10 +75,10 @@ TEST_F(TestGaussTriangle, OnQuadraticElementInThreeDimensionalSpace) {
   using Lagrange = mini::lagrange::Triangle6<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Global(0, 0, 2), Global(2, 0, 2), Global(2, 2, 2),
-    Global(1, 0, 2), Global(2, 1, 2), Global(1, 1, 2)
-  );
+    Global(1, 0, 2), Global(2, 1, 2), Global(1, 1, 2),
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);

@@ -139,7 +139,7 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Coord = Gauss::Global;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
-  auto lagrange = Lagrange(p0, p1, p2);
+  auto lagrange = Lagrange{ p0, p1, p2 };
   auto gauss = Gauss(lagrange);
   using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
@@ -203,7 +203,7 @@ TEST_F(TestOrthoNormalBasis, OnHexahedron) {
   using Coord = Gauss::Global;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
         p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};
-  auto lagrange = Lagrange(p0, p1, p2, p3, p4, p5, p6, p7);
+  auto lagrange = Lagrange{ p0, p1, p2, p3, p4, p5, p6, p7 };
   auto gauss = Gauss(lagrange);
   using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
   auto basis = Basis(gauss);

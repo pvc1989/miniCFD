@@ -702,31 +702,37 @@ class Part {
   std::pair< std::unique_ptr<LagrangeOnPyramid>,
              std::unique_ptr<GaussOnPyramid> >
   BuildPyramidUptr(int i_zone, Int const *i_node_list) const {
-    auto lagrange = std::make_unique<LagrangeOnPyramid>(
+    auto coords = {
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
-        GetCoord(i_zone, i_node_list[4]));
+        GetCoord(i_zone, i_node_list[4]),
+    };
+    auto lagrange = std::make_unique<LagrangeOnPyramid>(coords);
     auto gauss = std::make_unique<GaussOnPyramid>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
   std::pair< std::unique_ptr<LagrangeOnWedge>,
              std::unique_ptr<GaussOnWedge> >
   BuildWedgeUptr(int i_zone, Int const *i_node_list) const {
-    auto lagrange = std::make_unique<LagrangeOnWedge>(
+    auto coords = {
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
-        GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]));
+        GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
+    };
+    auto lagrange = std::make_unique<LagrangeOnWedge>(coords);
     auto gauss = std::make_unique<GaussOnWedge>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
   std::pair< std::unique_ptr<LagrangeOnHexahedron>,
              std::unique_ptr<GaussOnHexahedron> >
   BuildHexahedronUptr(int i_zone, Int const *i_node_list) const {
-    auto lagrange = std::make_unique<LagrangeOnHexahedron>(
+    auto coords = {
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
         GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
         GetCoord(i_zone, i_node_list[4]), GetCoord(i_zone, i_node_list[5]),
-        GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]));
+        GetCoord(i_zone, i_node_list[6]), GetCoord(i_zone, i_node_list[7]),
+    };
+    auto lagrange = std::make_unique<LagrangeOnHexahedron>(coords);
     auto gauss = std::make_unique<GaussOnHexahedron>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
@@ -750,18 +756,22 @@ class Part {
   std::pair< std::unique_ptr<LagrangeOnTriangle>,
              std::unique_ptr<GaussOnTriangle> >
   BuildTriangleUptr(int i_zone, Int const *i_node_list) const {
-    auto lagrange = std::make_unique<LagrangeOnTriangle>(
+    auto coords = {
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
-        GetCoord(i_zone, i_node_list[2]));
+        GetCoord(i_zone, i_node_list[2]),
+    };
+    auto lagrange = std::make_unique<LagrangeOnTriangle>(coords);
     auto gauss = std::make_unique<GaussOnTriangle>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
   std::pair< std::unique_ptr<LagrangeOnQuadrangle>,
              std::unique_ptr<GaussOnQuadrangle> >
   BuildQuadrangleUptr(int i_zone, Int const *i_node_list) const {
-    auto lagrange = std::make_unique<LagrangeOnQuadrangle>(
+    auto coords = {
         GetCoord(i_zone, i_node_list[0]), GetCoord(i_zone, i_node_list[1]),
-        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]));
+        GetCoord(i_zone, i_node_list[2]), GetCoord(i_zone, i_node_list[3]),
+    };
+    auto lagrange = std::make_unique<LagrangeOnQuadrangle>(coords);
     auto gauss = std::make_unique<GaussOnQuadrangle>(*lagrange);
     return { std::move(lagrange), std::move(gauss) };
   }
