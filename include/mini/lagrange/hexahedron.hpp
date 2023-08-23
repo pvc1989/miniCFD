@@ -44,6 +44,40 @@ class Hexahedron : public Cell<Scalar> {
     Scalar a = 0;
     center_ = this->LocalToGlobal(a, a, a);
   }
+
+  static int GetFaceId(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node/* number of nodes on quadrangle */) {
+    int cnt = 0, c = 0, c_sum = 0;
+    while (cnt < 3) {
+      auto curr_node = cell_nodes[c];
+      for (int f = 0; f < face_n_node; ++f) {
+        if (face_nodes[f] == curr_node) {
+          c_sum += c;
+          ++cnt;
+          break;
+        }
+      }
+      ++c;
+    }
+    int i_face;
+    switch (c_sum) {
+    case 3:
+      i_face = 0; break;
+    case 5:
+      i_face = 1; break;
+    case 7:
+      i_face = 4; break;
+    case 8:
+      i_face = 2; break;
+    case 11:
+      i_face = 3; break;
+    case 15:
+      i_face = 5; break;
+    default:
+      assert(false);
+    }
+    return i_face;
+  }
 };
 
 /**
@@ -76,37 +110,9 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     assert(4 == face_n_node);
-    int cnt = 0, nid = 0, sum = 0;
-    while (cnt < 3) {
-      auto curr_node = cell_nodes[nid];
-      for (int i = 0; i < 4; ++i) {
-        if (face_nodes[i] == curr_node) {
-          sum += nid;
-          ++cnt;
-          break;
-        }
-      }
-      ++nid;
-    }
-    int i_face;
-    switch (sum) {
-    case 3:
-      i_face = 0; break;
-    case 5:
-      i_face = 1; break;
-    case 7:
-      i_face = 4; break;
-    case 8:
-      i_face = 2; break;
-    case 11:
-      i_face = 3; break;
-    case 15:
-      i_face = 5; break;
-    default:
-      assert(false);
-    }
-    for (int i = 0; i < 4; ++i) {
-      face_nodes[i] = cell_nodes[faces_[i_face][i]];
+    int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+    for (int f = 0; f < face_n_node; ++f) {
+      face_nodes[f] = cell_nodes[faces_[i_face][f]];
     }
   }
 
@@ -234,58 +240,30 @@ class Hexahedron20 : public Hexahedron<Scalar> {
   void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
       int face_n_node) const final {
     assert(8 == face_n_node);
-    int cnt = 0, c = 0, c_sum = 0;
-    while (cnt < 3) {
-      auto curr_node = cell_nodes[c];
-      for (int f = 0; f < 8; ++f) {
-        if (face_nodes[f] == curr_node) {
-          c_sum += c;
-          ++cnt;
-          break;
-        }
-      }
-      ++c;
-    }
-    int i_face;
-    switch (c_sum) {
-    case 3:
-      i_face = 0; break;
-    case 5:
-      i_face = 1; break;
-    case 7:
-      i_face = 4; break;
-    case 8:
-      i_face = 2; break;
-    case 11:
-      i_face = 3; break;
-    case 15:
-      i_face = 5; break;
-    default:
-      assert(false);
-    }
-    for (int i = 0; i < 8; ++i) {
-      face_nodes[i] = cell_nodes[faces_[i_face][i]];
+    int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+    for (int f = 0; f < face_n_node; ++f) {
+      face_nodes[f] = cell_nodes[faces_[i_face][f]];
     }
   }
 
  private:
   static void LocalToNewShapeFunctions(Scalar x_local, Scalar y_local,
       Scalar z_local, Scalar *shapes) {
-    // x_local = 0
+    // local_coords_[i][X] = 0
     Scalar factor_x = (1 - x_local * x_local) / 4;
     for (int a : {8, 10, 16, 18}) {
       shapes[a] = factor_x
           * (1 + local_coords_[a][Y] * y_local)
           * (1 + local_coords_[a][Z] * z_local);
     }
-    // y_local = 0
+    // local_coords_[i][Y] = 0
     Scalar factor_y = (1 - y_local * y_local) / 4;
     for (int a : {9, 11, 17, 19}) {
       shapes[a] = factor_y
           * (1 + local_coords_[a][X] * x_local)
           * (1 + local_coords_[a][Z] * z_local);
     }
-    // z_local = 0
+    // local_coords_[i][Z] = 0
     Scalar factor_z = (1 - z_local * z_local) / 4;
     for (int a : {12, 13, 14, 15}) {
       shapes[a] = factor_z
@@ -295,7 +273,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
   }
   static void LocalToNewShapeGradients(Scalar x_local, Scalar y_local,
       Scalar z_local, Local *grads) {
-    // x_local = 0
+    // local_coords_[i][X] = 0
     Scalar shape_x = (1 - x_local * x_local) / 4;
     Scalar grad_x = -x_local / 2;
     for (int a : {8, 10, 16, 18}) {
@@ -305,7 +283,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
       grads[a][Y] = shape_x * local_coords_[a][Y] * shape_z;
       grads[a][Z] = shape_x * shape_y * local_coords_[a][Z];
     }
-    // y_local = 0
+    // local_coords_[i][Y] = 0
     Scalar shape_y = (1 - y_local * y_local) / 4;
     Scalar grad_y = -y_local / 2;
     for (int a : {9, 11, 17, 19}) {
@@ -315,7 +293,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
       grads[a][Y] = shape_x * grad_y * shape_z;
       grads[a][Z] = shape_x * shape_y * local_coords_[a][Z];
     }
-    // z_local = 0
+    // local_coords_[i][Z] = 0
     Scalar shape_z = (1 - z_local * z_local) / 4;
     Scalar grad_z = -z_local / 2;
     for (int a : {12, 13, 14, 15}) {
@@ -446,6 +424,189 @@ Hexahedron20<Scalar>::faces_{
   /*  eta = +1 */2, 3, 7, 6, 10, 15, 18, 14,
   /*   xi = -1 */0, 4, 7, 3, 12, 19, 15, 11,
   /* zeta = +1 */4, 5, 6, 7, 16, 17, 18, 19,
+};
+
+/**
+ * @brief Coordinate map on 27-node hexahedral elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ */
+template <std::floating_point Scalar>
+class Hexahedron27 : public Hexahedron<Scalar> {
+  using Base = Hexahedron<Scalar>;
+
+ public:
+  using typename Base::Real;
+  using typename Base::Local;
+  using typename Base::Global;
+  using typename Base::Jacobian;
+
+  static constexpr int kNodes = 27;
+  static constexpr int kFaces = 6;
+
+ private:
+  std::array<Global, kNodes> global_coords_;
+  static const std::array<Local, kNodes> local_coords_;
+  static const std::array<std::array<int, 9>, kFaces> faces_;
+
+ public:
+  int CountNodes() const final {
+    return kNodes;
+  }
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    assert(9 == face_n_node);
+    int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+    for (int f = 0; f < face_n_node; ++f) {
+      face_nodes[f] = cell_nodes[faces_[i_face][f]];
+    }
+  }
+
+ public:
+  static void LocalToShapeFunctions(Scalar x_local, Scalar y_local,
+      Scalar z_local, Scalar *shapes) {
+    Scalar factor_x[3] {
+      (x_local - 1) * x_local / 2, (1 - x_local * x_local),
+      (x_local + 1) * x_local / 2,
+    };
+    Scalar factor_y[3] {
+      (y_local - 1) * y_local / 2, (1 - y_local * y_local),
+      (y_local + 1) * y_local / 2,
+    };
+    Scalar factor_z[3] {
+      (z_local - 1) * z_local / 2, (1 - z_local * z_local),
+      (z_local + 1) * z_local / 2,
+    };
+    for (int i = 0; i < kNodes; ++i) {
+      auto &local_i = local_coords_[i];
+      int i_x = local_i[X] + 1;
+      int i_y = local_i[Y] + 1;
+      int i_z = local_i[Z] + 1;
+      shapes[i] = factor_x[i_x] * factor_y[i_y] * factor_z[i_z];
+    }
+  }
+  std::vector<Scalar> LocalToShapeFunctions(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto shapes = std::vector<Scalar>(kNodes);
+    LocalToShapeFunctions(x_local, y_local, z_local, shapes.data());
+    return shapes;
+  }
+  static void LocalToShapeGradients(Scalar x_local, Scalar y_local,
+      Scalar z_local, Local *grads) {
+    Scalar factor_x[3] {
+      (x_local - 1) * x_local / 2, (1 - x_local * x_local),
+      (x_local + 1) * x_local / 2,
+    };
+    Scalar factor_y[3] {
+      (y_local - 1) * y_local / 2, (1 - y_local * y_local),
+      (y_local + 1) * y_local / 2,
+    };
+    Scalar factor_z[3] {
+      (z_local - 1) * z_local / 2, (1 - z_local * z_local),
+      (z_local + 1) * z_local / 2,
+    };
+    Scalar grad_x[3] { x_local - 0.5, -2 * x_local, x_local + 0.5 };
+    Scalar grad_y[3] { y_local - 0.5, -2 * y_local, y_local + 0.5 };
+    Scalar grad_z[3] { z_local - 0.5, -2 * z_local, z_local + 0.5 };
+    for (int i = 0; i < kNodes; ++i) {
+      auto &local_i = local_coords_[i];
+      int i_x = local_i[X] + 1;
+      int i_y = local_i[Y] + 1;
+      int i_z = local_i[Z] + 1;
+      grads[i][X] = grad_x[i_x] * factor_y[i_y] * factor_z[i_z];
+      grads[i][Y] = factor_x[i_x] * grad_y[i_y] * factor_z[i_z];
+      grads[i][Z] = factor_x[i_x] * factor_y[i_y] * grad_z[i_z];
+    }
+  }
+  std::vector<Local> LocalToShapeGradients(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto grads = std::vector<Local>(kNodes);
+    LocalToShapeGradients(x_local, y_local, z_local, grads.data());
+    return grads;
+  }
+
+ public:
+  Global const &GetGlobalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return global_coords_[i];
+  }
+  Local const &GetLocalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return local_coords_[i];
+  }
+
+ public:
+  Hexahedron27(
+      Global const &p0, Global const &p1, Global const &p2, Global const &p3,
+      Global const &p4, Global const &p5, Global const &p6, Global const &p7,
+      Global const &p8, Global const &p9, Global const &p10, Global const &p11,
+      Global const &p12, Global const &p13, Global const &p14,
+      Global const &p15, Global const &p16, Global const &p17,
+      Global const &p18, Global const &p19, Global const &p20,
+      Global const &p21, Global const &p22, Global const &p23,
+      Global const &p24, Global const &p25, Global const &p26) {
+    global_coords_[0] = p0; global_coords_[1] = p1;
+    global_coords_[2] = p2; global_coords_[3] = p3;
+    global_coords_[4] = p4; global_coords_[5] = p5;
+    global_coords_[6] = p6; global_coords_[7] = p7;
+    global_coords_[8] = p8; global_coords_[9] = p9;
+    global_coords_[10] = p10; global_coords_[11] = p11;
+    global_coords_[12] = p12; global_coords_[13] = p13;
+    global_coords_[14] = p14; global_coords_[15] = p15;
+    global_coords_[16] = p16; global_coords_[17] = p17;
+    global_coords_[18] = p18; global_coords_[19] = p19;
+    global_coords_[20] = p20; global_coords_[21] = p21;
+    global_coords_[22] = p22; global_coords_[23] = p23;
+    global_coords_[24] = p24; global_coords_[25] = p25;
+    global_coords_[26] = p26;
+    this->_BuildCenter();
+  }
+
+  friend void lagrange::_Build(Hexahedron27 *,
+      std::initializer_list<Global>);
+  Hexahedron27(std::initializer_list<Global> il) {
+    lagrange::_Build(this, il);
+  }
+};
+// initialization of static const members:
+template <std::floating_point Scalar>
+const std::array<typename Hexahedron27<Scalar>::Local, 27>
+Hexahedron27<Scalar>::local_coords_{
+  // corner nodes on the bottom face
+  Hexahedron27::Local(-1, -1, -1), Hexahedron27::Local(+1, -1, -1),
+  Hexahedron27::Local(+1, +1, -1), Hexahedron27::Local(-1, +1, -1),
+  // corner nodes on the top face
+  Hexahedron27::Local(-1, -1, +1), Hexahedron27::Local(+1, -1, +1),
+  Hexahedron27::Local(+1, +1, +1), Hexahedron27::Local(-1, +1, +1),
+  // mid-edge nodes on the bottom face
+  Hexahedron27::Local(0, -1, -1), Hexahedron27::Local(+1, 0, -1),
+  Hexahedron27::Local(0, +1, -1), Hexahedron27::Local(-1, 0, -1),
+  // mid-edge nodes on vertical edges
+  Hexahedron27::Local(-1, -1, 0), Hexahedron27::Local(+1, -1, 0),
+  Hexahedron27::Local(+1, +1, 0), Hexahedron27::Local(-1, +1, 0),
+  // mid-edge nodes on the top face
+  Hexahedron27::Local(0, -1, +1), Hexahedron27::Local(+1, 0, +1),
+  Hexahedron27::Local(0, +1, +1), Hexahedron27::Local(-1, 0, +1),
+  // mid-face nodes
+  Hexahedron27::Local(0, 0, -1),
+  Hexahedron27::Local(0, -1, 0), Hexahedron27::Local(+1, 0, 0),
+  Hexahedron27::Local(0, +1, 0), Hexahedron27::Local(-1, 0, 0),
+  Hexahedron27::Local(0, 0, +1),
+  // center node
+  Hexahedron27::Local(0, 0, 0),
+};
+template <std::floating_point Scalar>
+const std::array<std::array<int, 9>, 6>
+Hexahedron27<Scalar>::faces_{
+  /* See http://cgns.github.io/CGNS_docs_current/sids/conv.figs/hexa_27.png for node numbering.
+   * Faces can be distinguished by the sum of the three minimum node ids.
+   */
+  /* zeta = -1 */0, 3, 2, 1, 11, 10, 9, 8, 20,
+  /*  eta = -1 */0, 1, 5, 4, 8, 13, 16, 12, 21,
+  /*   xi = +1 */1, 2, 6, 5, 9, 14, 17, 13, 22,
+  /*  eta = +1 */2, 3, 7, 6, 10, 15, 18, 14, 23,
+  /*   xi = -1 */0, 4, 7, 3, 12, 19, 15, 11, 24,
+  /* zeta = +1 */4, 5, 6, 7, 16, 17, 18, 19, 25,
 };
 
 }  // namespace lagrange
