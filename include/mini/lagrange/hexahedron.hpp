@@ -391,6 +391,9 @@ Hexahedron20<Scalar>::faces_{
   /* zeta = +1 */4, 5, 6, 7, 16, 17, 18, 19,
 };
 
+template <std::floating_point Scalar>
+class Hexahedron26;
+
 /**
  * @brief Coordinate map on 27-node hexahedral elements.
  * 
@@ -399,6 +402,7 @@ Hexahedron20<Scalar>::faces_{
 template <std::floating_point Scalar>
 class Hexahedron27 : public Hexahedron<Scalar> {
   using Base = Hexahedron<Scalar>;
+  friend class Hexahedron26<Scalar>;
 
  public:
   using typename Base::Real;
@@ -545,6 +549,161 @@ Hexahedron27<Scalar>::faces_{
   /*  eta = +1 */2, 3, 7, 6, 10, 15, 18, 14, 23,
   /*   xi = -1 */0, 4, 7, 3, 12, 19, 15, 11, 24,
   /* zeta = +1 */4, 5, 6, 7, 16, 17, 18, 19, 25,
+};
+
+/**
+ * @brief Coordinate map on 26-node hexahedral elements.
+ * 
+ * @tparam Scalar  Type of scalar variables.
+ */
+template <std::floating_point Scalar>
+class Hexahedron26 : public Hexahedron<Scalar> {
+  using Base = Hexahedron<Scalar>;
+
+ public:
+  using typename Base::Real;
+  using typename Base::Local;
+  using typename Base::Global;
+  using typename Base::Jacobian;
+
+  static constexpr int kNodes = 26;
+
+ private:
+  std::array<Global, kNodes> global_coords_;
+
+ public:
+  int CountNodes() const final {
+    return kNodes;
+  }
+  void SortNodesOnFace(const size_t *cell_nodes, size_t *face_nodes,
+      int face_n_node) const final {
+    assert(9 == face_n_node);
+    int i_face = Base::GetFaceId(cell_nodes, face_nodes, face_n_node);
+    for (int f = 0; f < face_n_node; ++f) {
+      face_nodes[f] = cell_nodes[Hexahedron27<Scalar>::faces_[i_face][f]];
+    }
+  }
+
+ private:
+  static void LocalToNewShapeFunctions(Scalar x_local, Scalar y_local,
+      Scalar z_local, Scalar *shapes) {
+    Scalar quadratic_x = (1 - x_local * x_local);
+    Scalar quadratic_y = (1 - y_local * y_local);
+    Scalar quadratic_z = (1 - z_local * z_local);
+    // local_coords_[i][Y] = local_coords_[i][Z] = 0
+    Scalar quadratic_yz = quadratic_y * quadratic_z / 2;
+    for (int a : {22, 24}) {
+      shapes[a] = quadratic_yz
+          * (1 + Hexahedron27<Scalar>::local_coords_[a][X] * x_local);
+    }
+    // local_coords_[i][Z] = local_coords_[i][X] = 0
+    Scalar quadratic_zx = quadratic_z * quadratic_x / 2;
+    for (int a : {21, 23}) {
+      shapes[a] = quadratic_zx
+          * (1 + Hexahedron27<Scalar>::local_coords_[a][Y] * y_local);
+    }
+    // local_coords_[i][X] = local_coords_[i][Y] = 0
+    Scalar quadratic_xy = quadratic_x * quadratic_y / 2;
+    for (int a : {20, 25}) {
+      shapes[a] = quadratic_xy
+          * (1 + Hexahedron27<Scalar>::local_coords_[a][Z] * z_local);
+    }
+  }
+  static void LocalToNewShapeGradients(Scalar x_local, Scalar y_local,
+      Scalar z_local, Local *grads) {
+    Scalar quadratic_x = (1 - x_local * x_local);
+    Scalar quadratic_y = (1 - y_local * y_local);
+    Scalar quadratic_z = (1 - z_local * z_local);
+    // local_coords_[i][Y] = local_coords_[i][Z] = 0
+    for (int a : {22, 24}) {
+      Scalar factor_x
+          = (1 + Hexahedron27<Scalar>::local_coords_[a][X] * x_local);
+      grads[a][X] = (Hexahedron27<Scalar>::local_coords_[a][X] / 2)
+          * quadratic_y * quadratic_z;
+      grads[a][Y] = factor_x * (-y_local) * quadratic_z;
+      grads[a][Z] = factor_x * (-z_local) * quadratic_y;
+    }
+    // local_coords_[i][Z] = local_coords_[i][X] = 0
+    for (int a : {21, 23}) {
+      Scalar factor_y = (1 + Hexahedron27<Scalar>::local_coords_[a][Y] * y_local);
+      grads[a][Y] = (Hexahedron27<Scalar>::local_coords_[a][Y] / 2)
+          * quadratic_z * quadratic_x;
+      grads[a][Z] = factor_y * (-z_local) * quadratic_x;
+      grads[a][X] = factor_y * (-x_local) * quadratic_z;
+    }
+    // local_coords_[i][X] = local_coords_[i][Y] = 0
+    for (int a : {20, 25}) {
+      Scalar factor_z = (1 + Hexahedron27<Scalar>::local_coords_[a][Z] * z_local);
+      grads[a][Z] = (Hexahedron27<Scalar>::local_coords_[a][Z] / 2)
+          * quadratic_x * quadratic_y;
+      grads[a][X] = factor_z * (-x_local) * quadratic_y;
+      grads[a][Y] = factor_z * (-y_local) * quadratic_x;
+    }
+  }
+
+ public:
+  static void LocalToShapeFunctions(Scalar x_local, Scalar y_local,
+      Scalar z_local, Scalar *shapes) {
+    Hexahedron20<Scalar>::LocalToShapeFunctions(
+        x_local, y_local, z_local, shapes);
+    LocalToNewShapeFunctions(x_local, y_local, z_local, shapes);
+    for (int b = 20; b < 26; ++b) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[20];
+      Hexahedron20<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 20; ++a) {
+        shapes[a] -= old_shapes_on_new_nodes[a] * shapes[b];
+      }
+    }
+  }
+  std::vector<Scalar> LocalToShapeFunctions(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto shapes = std::vector<Scalar>(kNodes);
+    LocalToShapeFunctions(x_local, y_local, z_local, shapes.data());
+    return shapes;
+  }
+  static void LocalToShapeGradients(Scalar x_local, Scalar y_local,
+      Scalar z_local, Local *grads) {
+    Hexahedron20<Scalar>::LocalToShapeGradients(
+        x_local, y_local, z_local, grads);
+    LocalToNewShapeGradients(x_local, y_local, z_local, grads);
+    for (int b = 20; b < 26; ++b) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[20];
+      Hexahedron20<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 20; ++a) {
+        grads[a] -= old_shapes_on_new_nodes[a] * grads[b];
+      }
+    }
+  }
+  std::vector<Local> LocalToShapeGradients(
+      Scalar x_local, Scalar y_local, Scalar z_local) const final {
+    auto grads = std::vector<Local>(kNodes);
+    LocalToShapeGradients(x_local, y_local, z_local, grads.data());
+    return grads;
+  }
+
+ public:
+  Global const &GetGlobalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return global_coords_[i];
+  }
+  Local const &GetLocalCoord(int i) const final {
+    assert(0 <= i && i < CountNodes());
+    return Hexahedron27<Scalar>::local_coords_[i];
+  }
+
+ public:
+  friend void lagrange::_Build(Hexahedron26 *, std::initializer_list<Global>);
+  Hexahedron26(std::initializer_list<Global> il) {
+    lagrange::_Build(this, il);
+  }
 };
 
 }  // namespace lagrange
