@@ -616,9 +616,11 @@ class Element(abc.ABC):
         The element is responsible for the column-to-coeff conversion.
         """
         dtype = self.scalar_type()
-        if dtype == self.value_type():
+        vtype = self.value_type()
+        if issubclass(dtype, vtype) or issubclass(vtype, dtype):
             self.expansion().set_coeff(column)
         else:
+            assert vtype is np.ndarray
             n_row = self.n_term()
             n_col = self.equation().n_component()
             coeff = np.ndarray(n_row, np.ndarray)

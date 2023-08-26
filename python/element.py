@@ -373,6 +373,7 @@ class GaussLagrangeFR(LagrangeFR):
         return residual
 
     def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
+        return
         correction = self.get_interface_correction(left_jump, right_jump)
         e = self.expansion()
         for k in range(self.n_term()):

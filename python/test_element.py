@@ -88,14 +88,14 @@ class TestGaussLagrangeFR(unittest.TestCase):
                 - self._element.get_discontinuous_flux(self._x_right, 0.0))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
-    def test_get_flux_gradient(self):
+    def test_get_continuous_flux_gradient(self):
         """Test the gradient of the reconstructed continuous flux.
         """
         upwind_flux_left = np.random.rand()
         upwind_flux_right = np.random.rand()
         points = np.linspace(self._x_left, self._x_right)
         for x_global in points:
-            gradient_actual = self._element.get_flux_gradient(x_global,
+            gradient_actual = self._element.get_continuous_flux_gradient(x_global,
                 upwind_flux_left, upwind_flux_right)
             # 2nd-order finite difference approximation
             delta_x = 0.0001

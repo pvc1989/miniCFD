@@ -43,8 +43,8 @@ class TestDetectors(unittest.TestCase):
         self._n_element = 73
         self._riemann = riemann.LinearAdvection(1.0)
 
-    def build_scheme(self, method: spatial.FiniteElement,
-            degree: int) -> spatial.FiniteElement:
+    def build_scheme(self, method: spatial.DiscontinuousGalerkin,
+            degree: int) -> spatial.DiscontinuousGalerkin:
         scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme

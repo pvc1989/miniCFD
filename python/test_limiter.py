@@ -44,13 +44,13 @@ class TestLimiters(unittest.TestCase):
         self._riemann = riemann.LinearAdvection(1.0)
         self._detector = detector.All()
 
-    def build_scheme(self, method: spatial.FiniteElement,
-            degree: int) -> spatial.FiniteElement:
+    def build_scheme(self, method: spatial.DiscontinuousGalerkin,
+            degree: int) -> spatial.DiscontinuousGalerkin:
         scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme
 
-    def set_xticks(self, axins: axes.Axes, scheme: spatial.FiniteElement,
+    def set_xticks(self, axins: axes.Axes, scheme: spatial.DiscontinuousGalerkin,
             xmin, xmax):
         xticks = []
         for i in range(scheme.n_element()):
@@ -63,7 +63,7 @@ class TestLimiters(unittest.TestCase):
 
     def test_limiters_on_jumps(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LegendreFR, degree)
+        scheme = self.build_scheme(spatial.GaussLagrangeFR, degree)
         u_init = jumps
         limiters = [
             limiter.ZhongXingHui2013(),
@@ -120,7 +120,7 @@ class TestLimiters(unittest.TestCase):
 
     def test_limiters_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LegendreFR, degree)
+        scheme = self.build_scheme(spatial.GaussLagrangeFR, degree)
         k1, k2 = 10, 5
         def u_init(x):
             return smooth(x, k1, k2)

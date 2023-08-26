@@ -93,7 +93,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
         # plt.show()
         plt.savefig("compare_resolutions.svg")
 
-    def _get_spatial_matrices(self, scheme: spatial.FiniteElement, i_cell: int):
+    def _get_spatial_matrices(self, scheme: spatial.DiscontinuousGalerkin, i_cell: int):
         i_prev = i_cell - 1
         i_next = (i_cell + 1) % scheme.n_element()
         cell_prev = scheme.get_element_by_index(i_prev)

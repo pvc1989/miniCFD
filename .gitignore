@@ -1,5 +1,6 @@
 .DS_Store
 *.pdf
+*.svg
 *.vtu
 python/stats
 
