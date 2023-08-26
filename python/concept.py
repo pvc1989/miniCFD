@@ -468,19 +468,19 @@ class RiemannSolver(abc.ABC):
 
     @abc.abstractmethod
     def get_interface_flux_and_bjump(self, u_left: Expansion, u_right: Expansion,
-            viscous: float):
+            viscosity: float):
         """Get the value of (F - G) and half-jump of b = nu*U on the interface.
         
         It is assumed G is in the form of nu * ∂U/∂x.
         """
 
     def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
-            viscous: float):
+            viscosity: float):
         """Get the value of (F - G) on the interface.
         
         It is assumed G is in the form of nu * ∂U/∂x.
         """
-        flux, _ = self.get_interface_flux_and_bjump(u_left, u_right, viscous)
+        flux, _ = self.get_interface_flux_and_bjump(u_left, u_right, viscosity)
         return flux
 
 
@@ -581,7 +581,7 @@ class Element(abc.ABC):
         mass_matrix = self.expansion().get_basis_innerproducts()
         return mass_matrix
 
-    def get_discontinuous_flux(self, x_global, extra_viscous,
+    def get_discontinuous_flux(self, x_global, extra_viscosity,
             u_given=None, du_given=None):
         """Get the value of f(u^h, du^h) at a given point.
         """
@@ -595,9 +595,9 @@ class Element(abc.ABC):
         else:
             du_approx = self.expansion().global_to_gradient(x_global)
         flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
-        if callable(extra_viscous):
-            extra_viscous = extra_viscous(x_global)
-        flux -= extra_viscous * du_approx
+        if callable(extra_viscosity):
+            extra_viscosity = extra_viscosity(x_global)
+        flux -= extra_viscosity * du_approx
         return flux
 
     def get_solution_value(self, x_global: float):
@@ -660,12 +660,12 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_interior_residual(self, extra_viscous=0.0) -> np.ndarray:
+    def get_interior_residual(self, extra_viscosity=0.0) -> np.ndarray:
         """Get the residual given by the flux in the element.
         """
 
     @abc.abstractmethod
-    def add_interface_residual(self, extra_viscous, left_flux, right_flux, residual: np.ndarray):
+    def add_interface_residual(self, extra_viscosity, left_flux, right_flux, residual: np.ndarray):
         """Add the residual given by the flux on the interface.
         """
 
@@ -690,7 +690,7 @@ class Element(abc.ABC):
         """Suggest a CFL number for explicit RK time stepping.
         """
 
-    def _suggest_dt_by_blazek(self, extra_viscous):
+    def _suggest_dt_by_blazek(self, extra_viscosity):
         """See Eq. (6.20) in Blazek (2015).
         """
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
@@ -720,15 +720,15 @@ class Element(abc.ABC):
             for val in eigvals:
                 lambda_c = max(lambda_c, np.abs(val))
             b = self.equation().get_diffusive_coeff(u)
-            if callable(extra_viscous):
-                b += extra_viscous(x)
+            if callable(extra_viscosity):
+                b += extra_viscosity(x)
             else:
-                b += extra_viscous
+                b += extra_viscosity
             lambda_d = b / h
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
         return delta_t * self.suggest_cfl(3)
 
-    def _suggest_dt_by_klockner(self, extra_viscous):
+    def _suggest_dt_by_klockner(self, extra_viscosity):
         """See Eq. (2.1) in Klöckner (2011).
         """
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
@@ -742,16 +742,16 @@ class Element(abc.ABC):
             for val in eigvals:
                 lambda_c = max(lambda_c, np.abs(val))
             b = self.equation().get_diffusive_coeff(u)
-            if callable(extra_viscous):
-                b += extra_viscous(x)
+            if callable(extra_viscosity):
+                b += extra_viscosity(x)
             else:
-                b += extra_viscous
+                b += extra_viscosity
             lambda_d = b / h
             delta_t = min(delta_t, h / p2 / (lambda_c + p2 * lambda_d))
         return delta_t
 
-    def suggest_delta_t(self, extra_viscous):
-        return self._suggest_dt_by_blazek(extra_viscous)
+    def suggest_delta_t(self, extra_viscosity):
+        return self._suggest_dt_by_blazek(extra_viscosity)
 
 
 class Grid(abc.ABC):
@@ -830,7 +830,7 @@ class Limiter(abc.ABC):
         """
 
 
-class Viscous(abc.ABC):
+class Viscosity(abc.ABC):
     """An object that adds artificial viscosity to a spatial scheme.
     """
 
@@ -848,7 +848,7 @@ class Viscous(abc.ABC):
         """
 
     def get_coeff(self, i_cell: int):
-        """Get the viscous coefficient of the ith cell.
+        """Get the viscosity coefficient of the ith cell.
         """
         assert 0 <= i_cell
         if i_cell in self._index_to_coeff:
@@ -901,14 +901,14 @@ class SpatialScheme(Grid, OdeSystem):
 
     def __init__(self, riemann: RiemannSolver,
             n_element: int, x_left: float, x_right: float,
-            detector=None, limiter=None, viscous=None) -> None:
+            detector=None, limiter=None, viscosity=None) -> None:
         assert x_left < x_right
         assert n_element > 1
         Grid.__init__(self, n_element)
         self._riemann = riemann
         self._detector = detector
         self._limiter = limiter
-        self._viscous = viscous
+        self._viscosity = viscosity
         self._is_periodic = True
 
     def value_type(self):
@@ -978,34 +978,34 @@ class SpatialScheme(Grid, OdeSystem):
         """Get the flux value at a given point.
         """
 
-    def viscous(self) -> Viscous:
-        """Get a reference to the underlying viscous model.
+    def viscosity(self) -> Viscosity:
+        """Get a reference to the underlying viscosity model.
         """
-        return self._viscous
+        return self._viscosity
 
-    def set_detector_and_limiter(self, detector, limiter, viscous):
+    def set_detector_and_limiter(self, detector, limiter, viscosity):
         if isinstance(detector, Detector):
             self._detector = detector
         if isinstance(limiter, Limiter):
             self._limiter = limiter
-        if isinstance(viscous, Viscous):
-            self._viscous = viscous
+        if isinstance(viscosity, Viscosity):
+            self._viscosity = viscosity
 
     def suppress_oscillations(self):
         if self._detector:
             indices = self._detector.get_troubled_cell_indices(self)
             if self._limiter:
                 self._limiter.reconstruct(indices, self)
-            if self._viscous:
-                self._viscous.generate(indices, self)
+            if self._viscosity:
+                self._viscosity.generate(indices, self)
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):
             cell_i = self.get_element_by_index(i_cell)
-            extra_viscous = 0.0
-            if self._viscous:
-                extra_viscous = self._viscous.get_coeff(i_cell)
-            delta_t = min(delta_t, cell_i.suggest_delta_t(extra_viscous))
+            extra_viscosity = 0.0
+            if self._viscosity:
+                extra_viscosity = self._viscosity.get_coeff(i_cell)
+            delta_t = min(delta_t, cell_i.suggest_delta_t(extra_viscosity))
         return delta_t
 
 

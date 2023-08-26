@@ -136,7 +136,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
                 riemann.LinearAdvection(a_const=1.0),
                 degree, n_element, x_left, x_right)
             s_prev, s_curr, s_next = self._get_spatial_matrices(scheme, i_curr)
-            # viscous
+            # viscosity
             nu = np.random.rand()
             scheme = spatial.GaussLagrangeFR(
                 riemann.LinearAdvectionDiffusion(a_const=1.0, b_const=nu),

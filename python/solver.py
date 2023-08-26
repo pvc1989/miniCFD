@@ -10,7 +10,7 @@ import vtk
 
 import concept
 import equation, riemann
-import spatial, detector, limiter, viscous
+import spatial, detector, limiter, viscosity
 import temporal
 
 
@@ -19,7 +19,7 @@ class SolverBase(abc.ABC):
     """
 
     def __init__(self, u_mean: float, spatial_scheme: concept.SpatialScheme,
-            d: concept.Detector, l: concept.Limiter, v: concept.Viscous,
+            d: concept.Detector, l: concept.Limiter, v: concept.Viscosity,
             ode_solver: concept.OdeSolver):
         self._spatial = spatial_scheme
         self._spatial.set_detector_and_limiter(d, l, v)
@@ -30,7 +30,7 @@ class SolverBase(abc.ABC):
         if l:
             self._solver_name += f', limiter.{l.name()}'
         if v:
-            self._solver_name += f', viscous.{v.name(True)}'
+            self._solver_name += f', viscosity.{v.name(True)}'
         self._output_points = np.linspace(self._spatial.x_left(),
             self._spatial.x_right(), 201)
         self._u_mean = u_mean
@@ -121,7 +121,7 @@ class SolverBase(abc.ABC):
         solution = vtk.vtkFloatArray()
         solution.SetName("U")
         solution.SetNumberOfComponents(1)
-        if self._spatial.viscous():
+        if self._spatial.viscosity():
             viscosity = vtk.vtkFloatArray()
             viscosity.SetName("Viscosity")
             viscosity.SetNumberOfComponents(1)
@@ -138,8 +138,8 @@ class SolverBase(abc.ABC):
             # value = expect_solution[i_solution]
             # i_solution += 1
             solution.InsertNextValue(value)
-            if self._spatial.viscous():
-                coeff = self._spatial.viscous().get_coeff(i_cell)
+            if self._spatial.viscosity():
+                coeff = self._spatial.viscosity().get_coeff(i_cell)
                 if callable(coeff):
                     coeff = coeff(x)
                 viscosity.InsertNextValue(coeff)
@@ -147,7 +147,7 @@ class SolverBase(abc.ABC):
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
         grid.GetPointData().SetScalars(solution)
-        if self._spatial.viscous():
+        if self._spatial.viscosity():
             grid.GetPointData().SetActiveScalars("Viscosity")
             grid.GetPointData().SetScalars(viscosity)
         writer = vtk.vtkXMLDataSetWriter()
@@ -235,7 +235,7 @@ class LinearSmooth(SolverBase):
 
     def __init__(self, u_mean: float, wave_number: int,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._a_const = self._spatial.equation().get_convective_speed()
         self._b_const = self._spatial.equation().get_diffusive_coeff()
@@ -266,7 +266,7 @@ class LinearJumps(LinearSmooth):
 
     def __init__(self, u_mean: float, k: int,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         LinearSmooth.__init__(self, u_mean, k, s, d, l, v, ode_solver)
 
     def u_init(self, x_global):
@@ -290,7 +290,7 @@ class InviscidBurgers(SolverBase):
 
     def __init__(self, u_mean: float, wave_number: int,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
@@ -344,7 +344,7 @@ class ShockTube(SolverBase):
 
     def __init__(self, value_left: np.ndarray, value_right: np.ndarray,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         u_mean = (value_left[0] + value_right[0]) / 2
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._spatial._is_periodic = False
@@ -372,7 +372,7 @@ class Sod(ShockTube):
 
     def __init__(self, u_mean: float, wave_number: int,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         e = s.equation()
         assert isinstance(e, equation.Euler)
         left = e.primitive_to_conservative(rho=1.0, u=0, p=1.0)
@@ -388,7 +388,7 @@ class Lax(ShockTube):
 
     def __init__(self, u_mean: float, wave_number: int,
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscous, ode_solver: concept.OdeSolver) -> None:
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         e = s.equation()
         assert isinstance(e, equation.Euler)
         left = e.primitive_to_conservative(rho=0.445, u=0.698, p=3.528)
@@ -437,12 +437,12 @@ if __name__ == '__main__':
     parser.add_argument('--limiter',
         choices=['LWA', 'ZXH', 'XXR'],
         help='method for limiting numerical oscillations')
-    parser.add_argument('--viscous_model',
+    parser.add_argument('--viscosity_model',
         choices=['Constant', 'Persson', 'Energy'],
         help='method for adding artificial viscosity')
-    parser.add_argument('--viscous_model_const',
+    parser.add_argument('--viscosity_model_const',
         default=0.0, type=float,
-        help='constant in viscous model')
+        help='constant in viscosity model')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
         help='degree of polynomials for approximation')
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         help='phase speed of the wave')
     parser.add_argument('-v', '--physical_viscosity',
         default=0.0, type=float,
-        help='physical viscous coeff of the equation')
+        help='physical viscosity coeff of the equation')
     parser.add_argument('-k', '--wave_number',
         default=1, type=int,
         help='number of waves in the domain')
@@ -507,14 +507,14 @@ if __name__ == '__main__':
         the_limiter = limiter.XuXiaoRui2023()
     else:
         the_limiter = None
-    if args.viscous_model == 'Constant':
-        the_viscous = viscous.Constant(args.viscous_model_const)
-    elif args.viscous_model == 'Persson':
-        the_viscous = viscous.Persson2006(args.viscous_model_const)
-    elif args.viscous_model == 'Energy':
-        the_viscous = viscous.Energy(args.viscous_model_const)
+    if args.viscosity_model == 'Constant':
+        the_viscosity = viscosity.Constant(args.viscosity_model_const)
+    elif args.viscosity_model == 'Persson':
+        the_viscosity = viscosity.Persson2006(args.viscosity_model_const)
+    elif args.viscosity_model == 'Energy':
+        the_viscosity = viscosity.Energy(args.viscosity_model_const)
     else:
-        the_viscous = None
+        the_viscosity = None
     if args.problem == 'Smooth':
         SolverClass = LinearSmooth
         the_riemann = riemann.LinearAdvectionDiffusion(args.convection_speed,
@@ -536,7 +536,7 @@ if __name__ == '__main__':
     solver = SolverClass(args.u_mean, args.wave_number,
         SpatialClass(the_riemann,
             args.degree, args.n_element, args.x_left, args.x_right),
-        the_detector, the_limiter, the_viscous,
+        the_detector, the_limiter, the_viscosity,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':
         solver.animate(args.t_begin, args.t_end, args.n_step, args.n_frame)
