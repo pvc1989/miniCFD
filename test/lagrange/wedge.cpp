@@ -6,6 +6,8 @@
 
 #include "mini/lagrange/cell.hpp"
 #include "mini/lagrange/wedge.hpp"
+#include "mini/lagrange/triangle.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 
 #include "gtest/gtest.h"
 
@@ -79,6 +81,58 @@ TEST_F(TestLagrangeWedge6, CoordinateMap) {
     auto shapes = cell.LocalToShapeFunctions(local_i);
     for (int j = 0; j < n; ++j) {
       EXPECT_EQ(shapes[j], i == j);
+    }
+  }
+  // test consistency with shape functions on Triangle3's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 2, 1 }, { 3, 4, 5 }
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle3<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-16);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle4's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4, 3 }, { 1, 2, 5, 4 }, { 0, 3, 5, 2 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle4<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand() * 2 - 1, y = rand() * 2 - 1;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-15);
+        }
+      }
     }
   }
 }
@@ -217,6 +271,62 @@ TEST_F(TestLagrangeWedge15, CoordinateMap) {
     auto shapes = cell.LocalToShapeFunctions(local_i);
     for (int j = 0; j < n; ++j) {
       EXPECT_EQ(shapes[j], i == j);
+    }
+  }
+  // test consistency with shape functions on Triangle6's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 2, 1, 8, 7, 6 }, { 3, 4, 5, 12, 13, 14 }
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle6<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-14);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle8's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4, 3, 6, 10, 12, 9 }, { 1, 2, 5, 4, 7, 11, 13, 10 },
+        { 0, 3, 5, 2, 9, 14, 11, 8 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle8<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+        cell.GetGlobalCoord(c_list[6]), cell.GetGlobalCoord(c_list[7]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand() * 2 - 1, y = rand() * 2 - 1;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-14);
+        }
+      }
     }
   }
 }
@@ -363,6 +473,63 @@ TEST_F(TestLagrangeWedge18, CoordinateMap) {
     auto shapes = cell.LocalToShapeFunctions(local_i);
     for (int j = 0; j < n; ++j) {
       EXPECT_EQ(shapes[j], i == j);
+    }
+  }
+  // test consistency with shape functions on Triangle6's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 2, 1, 8, 7, 6 }, { 3, 4, 5, 12, 13, 14 }
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle6<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-13);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle9's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4, 3, 6, 10, 12, 9, 15 }, { 1, 2, 5, 4, 7, 11, 13, 10, 16 },
+        { 0, 3, 5, 2, 9, 14, 11, 8, 17 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle9<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+        cell.GetGlobalCoord(c_list[6]), cell.GetGlobalCoord(c_list[7]),
+        cell.GetGlobalCoord(c_list[8]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand() * 2 - 1, y = rand() * 2 - 1;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-14);
+        }
+      }
     }
   }
 }

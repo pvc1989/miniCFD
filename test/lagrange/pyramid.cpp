@@ -6,6 +6,8 @@
 
 #include "mini/lagrange/cell.hpp"
 #include "mini/lagrange/pyramid.hpp"
+#include "mini/lagrange/triangle.hpp"
+#include "mini/lagrange/quadrangle.hpp"
 
 #include "gtest/gtest.h"
 
@@ -90,6 +92,56 @@ TEST_F(TestLagrangePyramid5, CoordinateMap) {
     auto x = rand(), y = rand(), z = rand();
     auto jacobian = cell.LocalToJacobian(x, y, z);
     EXPECT_NEAR(std::abs(jacobian.determinant()), exact(z), 1e-14);
+  }
+  // test consistency with shape functions on Triangle3's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4 }, { 1, 2, 4 }, { 2, 3, 4 }, { 3, 0, 4 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle3<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = (rand() + 1) / 2, y = (rand() + 1) / 2;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-15);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle4's:
+  {
+    std::vector<std::vector<int>> c_lists{ { 0, 3, 2, 1 } };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle4<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-15);
+        }
+      }
+    }
   }
 }
 TEST_F(TestLagrangePyramid5, SortNodesOnFace) {
@@ -237,6 +289,62 @@ TEST_F(TestLagrangePyramid13, CoordinateMap) {
     auto x = rand(), y = rand(), z = rand();
     auto jacobian = cell.LocalToJacobian(x, y, z);
     EXPECT_NEAR(std::abs(jacobian.determinant()), exact(z), 1e-14);
+  }
+  // test consistency with shape functions on Triangle6's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4, 5, 10, 9 }, { 1, 2, 4, 6, 11, 10 },
+        { 2, 3, 4, 7, 12, 11 }, { 3, 0, 4, 8, 9, 12 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle6<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = (rand() + 1) / 2, y = (rand() + 1) / 2;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-14);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle8's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 3, 2, 1, 8, 7, 6, 5 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle8<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+        cell.GetGlobalCoord(c_list[6]), cell.GetGlobalCoord(c_list[7]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-15);
+        }
+      }
+    }
   }
 }
 TEST_F(TestLagrangePyramid13, SortNodesOnFace) {
@@ -394,6 +502,63 @@ TEST_F(TestLagrangePyramid14, CoordinateMap) {
     auto x = rand(), y = rand(), z = rand();
     auto jacobian = cell.LocalToJacobian(x, y, z);
     EXPECT_NEAR(std::abs(jacobian.determinant()), exact(z), 1e-14);
+  }
+  // test consistency with shape functions on Triangle6's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 1, 4, 5, 10, 9 }, { 1, 2, 4, 6, 11, 10 },
+        { 2, 3, 4, 7, 12, 11 }, { 3, 0, 4, 8, 9, 12 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Triangle6<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = (rand() + 1) / 2, y = (rand() + 1) / 2;
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-14);
+        }
+      }
+    }
+  }
+  // test consistency with shape functions on Quadrangle8's:
+  {
+    std::vector<std::vector<int>> c_lists{
+        { 0, 3, 2, 1, 8, 7, 6, 5, 13 },
+    };
+    for (auto c_list : c_lists) {
+      auto c2f = std::vector<int>(cell.CountNodes(), -1);
+      int f = 0;
+      for (int c : c_list) { c2f[c] = f++; }
+      auto face = mini::lagrange::Quadrangle9<double, 3>{
+        cell.GetGlobalCoord(c_list[0]), cell.GetGlobalCoord(c_list[1]),
+        cell.GetGlobalCoord(c_list[2]), cell.GetGlobalCoord(c_list[3]),
+        cell.GetGlobalCoord(c_list[4]), cell.GetGlobalCoord(c_list[5]),
+        cell.GetGlobalCoord(c_list[6]), cell.GetGlobalCoord(c_list[7]),
+        cell.GetGlobalCoord(c_list[8]),
+      };
+      for (int i = 0; i < 1000; ++i) {
+        auto x = rand(), y = rand();
+        auto global = face.LocalToGlobal(x, y);
+        auto local = cell.GlobalToLocal(global);
+        auto cell_shapes = cell.LocalToShapeFunctions(local);
+        auto face_shapes = face.LocalToShapeFunctions(x, y);
+        for (int c = 0; c < cell.CountNodes(); c++) {
+          int f = c2f[c];
+          EXPECT_NEAR(cell_shapes[c], f < 0 ? 0 : face_shapes[f], 1e-15);
+        }
+      }
+    }
   }
 }
 TEST_F(TestLagrangePyramid14, SortNodesOnFace) {
