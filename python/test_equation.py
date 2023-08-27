@@ -20,6 +20,9 @@ class TestEquations(unittest.TestCase):
         self.assertEqual(advection.get_convective_jacobian(u_given), a_const)
         self.assertEqual(advection.get_convective_eigvals(u_given)[0], a_const)
         self.assertEqual(advection.get_convective_speed(u_given), a_const)
+        nu, du_dx = rand(), rand()
+        self.assertEqual(nu * du_dx,
+            advection.get_diffusive_flux(u_given, du_dx, nu))
 
     def test_inviscid_burgers(self):
         """Test methods of an InviscidBurgers object."""
@@ -32,6 +35,9 @@ class TestEquations(unittest.TestCase):
         self.assertEqual(burgers.get_convective_jacobian(u_given), speed)
         self.assertEqual(burgers.get_convective_eigvals(u_given)[0], speed)
         self.assertEqual(burgers.get_convective_speed(u_given), speed)
+        nu, du_dx = rand(), rand()
+        self.assertEqual(nu * du_dx,
+            burgers.get_diffusive_flux(u_given, du_dx, nu))
 
     def test_linear_system(self):
         """Test methods of a LinearSystem object."""

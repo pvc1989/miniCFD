@@ -23,8 +23,8 @@ class ConservationLaw(concept.Equation):
     def get_diffusive_coeff(self, u=0.0):
         return 0
 
-    def get_diffusive_flux(self, u, du_dx):
-        return self.get_diffusive_coeff(u) * du_dx
+    def get_diffusive_flux(self, u, du_dx, nu):
+        return (self.get_diffusive_coeff(u) + nu) * du_dx
 
     def get_source(self, u):
         return u * 0

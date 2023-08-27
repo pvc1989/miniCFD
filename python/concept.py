@@ -426,7 +426,7 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_diffusive_flux(self, u_given, du_dx_given):
+    def get_diffusive_flux(self, u_given, du_dx_given, nu_given):
         """Get the value of G(U, ∂U/∂x) for a given pair of U and ∂U/∂x.
         """
 
@@ -467,20 +467,18 @@ class RiemannSolver(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_interface_flux_and_bjump(self, u_left: Expansion, u_right: Expansion,
-            viscosity: float):
+    def get_interface_flux_and_bjump(self, left, right):
         """Get the value of (F - G) and half-jump of b = nu*U on the interface.
         
         It is assumed G is in the form of nu * ∂U/∂x.
         """
 
-    def get_interface_flux(self, u_left: Expansion, u_right: Expansion,
-            viscosity: float):
+    def get_interface_flux(self, left, right):
         """Get the value of (F - G) on the interface.
         
         It is assumed G is in the form of nu * ∂U/∂x.
         """
-        flux, _ = self.get_interface_flux_and_bjump(u_left, u_right, viscosity)
+        flux, _ = self.get_interface_flux_and_bjump(left, right)
         return flux
 
 
@@ -497,6 +495,7 @@ class Element(abc.ABC):
         self._integrator = expansion.integrator()
         self._left_expansion = None
         self._right_expansion = None
+        self._extra_viscosity = None
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
@@ -581,8 +580,16 @@ class Element(abc.ABC):
         mass_matrix = self.expansion().get_basis_innerproducts()
         return mass_matrix
 
-    def get_discontinuous_flux(self, x_global, extra_viscosity,
-            u_given=None, du_given=None):
+    def get_extra_viscosity(self, x_global: float) -> float:
+        if callable(self._extra_viscosity):
+            return self._extra_viscosity(x_global)
+        elif isinstance(self._extra_viscosity, float):
+            return self._extra_viscosity
+        else:
+            assert not self._extra_viscosity
+            return 0.0
+
+    def get_discontinuous_flux(self, x_global, u_given=None, du_given=None):
         """Get the value of f(u^h, du^h) at a given point.
         """
         if u_given:
@@ -594,10 +601,8 @@ class Element(abc.ABC):
             du_approx = du_given
         else:
             du_approx = self.expansion().global_to_gradient(x_global)
-        flux -= self.equation().get_diffusive_flux(u_approx, du_approx)
-        if callable(extra_viscosity):
-            extra_viscosity = extra_viscosity(x_global)
-        flux -= extra_viscosity * du_approx
+        flux -= self.equation().get_diffusive_flux(u_approx, du_approx,
+            self.get_extra_viscosity(x_global))
         return flux
 
     def get_solution_value(self, x_global: float):
@@ -662,12 +667,13 @@ class Element(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_interior_residual(self, extra_viscosity=0.0) -> np.ndarray:
+    def get_interior_residual(self) -> np.ndarray:
         """Get the residual given by the flux in the element.
         """
 
     @abc.abstractmethod
-    def add_interface_residual(self, extra_viscosity, left_flux, right_flux, residual: np.ndarray):
+    def add_interface_residual(self, left_flux, right_flux,
+            residual: np.ndarray):
         """Add the residual given by the flux on the interface.
         """
 
@@ -692,7 +698,7 @@ class Element(abc.ABC):
         """Suggest a CFL number for explicit RK time stepping.
         """
 
-    def _suggest_dt_by_blazek(self, extra_viscosity):
+    def _suggest_dt_by_blazek(self):
         """See Eq. (6.20) in Blazek (2015).
         """
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
@@ -722,15 +728,12 @@ class Element(abc.ABC):
             for val in eigvals:
                 lambda_c = max(lambda_c, np.abs(val))
             b = self.equation().get_diffusive_coeff(u)
-            if callable(extra_viscosity):
-                b += extra_viscosity(x)
-            else:
-                b += extra_viscosity
+            b += self.get_extra_viscosity(x)
             lambda_d = b / h
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
         return delta_t * self.suggest_cfl(3)
 
-    def _suggest_dt_by_klockner(self, extra_viscosity):
+    def _suggest_dt_by_klockner(self):
         """See Eq. (2.1) in Klöckner (2011).
         """
         points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
@@ -744,16 +747,13 @@ class Element(abc.ABC):
             for val in eigvals:
                 lambda_c = max(lambda_c, np.abs(val))
             b = self.equation().get_diffusive_coeff(u)
-            if callable(extra_viscosity):
-                b += extra_viscosity(x)
-            else:
-                b += extra_viscosity
+            b += self.get_extra_viscosity(x)
             lambda_d = b / h
             delta_t = min(delta_t, h / p2 / (lambda_c + p2 * lambda_d))
         return delta_t
 
-    def suggest_delta_t(self, extra_viscosity):
-        return self._suggest_dt_by_blazek(extra_viscosity)
+    def suggest_delta_t(self):
+        return self._suggest_dt_by_blazek()
 
 
 class Grid(abc.ABC):
@@ -849,14 +849,14 @@ class Viscosity(abc.ABC):
         """Generate artificial viscosity for each troubled cell.
         """
 
-    def get_coeff(self, i_cell: int):
-        """Get the viscosity coefficient of the ith cell.
+    def get_cell_viscosity(self, i_cell: int):
+        """Get the viscosity of the ith cell.
         """
         assert 0 <= i_cell
         if i_cell in self._index_to_coeff:
             return self._index_to_coeff[i_cell]
         else:
-            return 0.0
+            return None
 
 
 class OdeSystem(abc.ABC):
@@ -1000,14 +1000,14 @@ class SpatialScheme(Grid, OdeSystem):
                 self._limiter.reconstruct(indices, self)
             if self._viscosity:
                 self._viscosity.generate(indices, self)
+                for i_cell in range(self.n_element()):
+                    self.get_element_by_index(i_cell)._extra_viscosity = \
+                        self._viscosity.get_cell_viscosity(i_cell)
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):
             cell_i = self.get_element_by_index(i_cell)
-            extra_viscosity = 0.0
-            if self._viscosity:
-                extra_viscosity = self._viscosity.get_coeff(i_cell)
-            delta_t = min(delta_t, cell_i.suggest_delta_t(extra_viscosity))
+            delta_t = min(delta_t, cell_i.suggest_delta_t())
         return delta_t
 
 

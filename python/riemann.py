@@ -60,14 +60,24 @@ class Solver(concept.RiemannSolver):
         du += du_mean
         return du
 
-    def get_interface_flux_and_bjump(self, expansion_left: expansion.Taylor,
-            expansion_right: expansion.Taylor, viscosity: float):
+    @staticmethod
+    def _get_interface_viscosity(left: float, right: float) -> float:
+        return min(left, right)
+
+    def get_interface_flux_and_bjump(self,
+            left: concept.Element, right: concept.Element):
+        expansion_left = left.expansion()
+        expansion_right = right.expansion()
         # Get the convective flux on the interface:
         x_left = expansion_left.x_right()
         u_left = expansion_left.global_to_value(x_left)
         x_right = expansion_right.x_left()
         u_right = expansion_right.global_to_value(x_right)
         flux = self.get_upwind_flux(u_left, u_right)
+        viscosity = self.equation().get_diffusive_coeff()
+        viscosity += Solver._get_interface_viscosity(
+            left.get_extra_viscosity(left.x_right()),
+            right.get_extra_viscosity(right.x_left()))
         if viscosity == 0:
             return flux, u_left - u_left
         # Get the diffusive flux on the interface by the DDG method:

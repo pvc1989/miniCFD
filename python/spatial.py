@@ -48,51 +48,24 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
             prev = self.get_element_by_index(i-1)
-            # TODO: distinguish left & right viscosity
-            viscosity = self.equation().get_diffusive_coeff()
-            if self._viscosity:
-                nu_curr = self._viscosity.get_coeff(i)
-                if callable(nu_curr):
-                    nu_curr = nu_curr(curr.x_left())
-                nu_prev = self._viscosity.get_coeff(i-1)
-                if callable(nu_prev):
-                    nu_prev = nu_prev(prev.x_right())
-                viscosity += min(nu_curr, nu_prev)
             interface_fluxes[i], interface_bjumps[i] = \
-                self._riemann.get_interface_flux_and_bjump(
-                    prev.expansion(), curr.expansion(), viscosity)
+                self._riemann.get_interface_flux_and_bjump(prev, curr)
         if self.is_periodic():
             i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
             prev = self.get_element_by_index(i_prev)
-            viscosity = self.equation().get_diffusive_coeff()
-            if self._viscosity:
-                nu_curr = self._viscosity.get_coeff(0)
-                if callable(nu_curr):
-                    nu_curr = nu_curr(curr.x_left())
-                nu_prev = self._viscosity.get_coeff(i_prev)
-                if callable(nu_prev):
-                    nu_prev = nu_prev(prev.x_right())
-                viscosity += min(nu_curr, nu_prev)
             interface_fluxes[0], interface_bjumps[0] = \
-                self._riemann.get_interface_flux_and_bjump(
-                prev.expansion(), curr.expansion(), viscosity)
+                self._riemann.get_interface_flux_and_bjump(prev, curr)
             interface_fluxes[-1] = interface_fluxes[0]
             interface_bjumps[-1] = interface_bjumps[0]
         else:  # TODO: support other boundary condtions
             curr = self.get_element_by_index(0)
-            viscosity = 0.0
-            if self._viscosity:
-                viscosity = self._viscosity.get_coeff(0)
             interface_fluxes[0] = \
-                curr.get_discontinuous_flux(curr.x_left(), viscosity)
+                curr.get_discontinuous_flux(curr.x_left())
             interface_bjumps[0] *= 0
             curr = self.get_element_by_index(-1)
-            viscosity = 0.0
-            if self._viscosity:
-                viscosity = self._viscosity.get_coeff(-1)
             interface_fluxes[-1] = \
-                curr.get_discontinuous_flux(curr.x_right(), viscosity)
+                curr.get_discontinuous_flux(curr.x_right())
             interface_bjumps[-1] *= 0
         return interface_fluxes, interface_bjumps
 
@@ -102,10 +75,7 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
     def get_discontinuous_flux(self, point):
         i_cell = self.get_element_index(point)
         cell_i = self.get_element_by_index(i_cell)
-        viscosity = 0.0
-        if self._viscosity:
-            viscosity = self._viscosity.get_coeff(i_cell)
-        return cell_i.get_discontinuous_flux(point, viscosity)
+        return cell_i.get_discontinuous_flux(point)
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
@@ -157,12 +127,9 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
             element_i = self.get_element_by_index(i)
             # build element_i's residual column
             # 1st: evaluate the internal integral
-            extra_viscosity = 0.0
-            if self._viscosity:
-                extra_viscosity = self._viscosity.get_coeff(i)
-            residual = element_i.get_interior_residual(extra_viscosity)
+            residual = element_i.get_interior_residual()
             # 2nd: evaluate the boundary integral
-            element_i.add_interface_residual(extra_viscosity,
+            element_i.add_interface_residual(
                 interface_fluxes[i], interface_fluxes[i+1], residual)
             element_i.add_interface_correction(
                 interface_jumps[i], interface_jumps[i+1], residual)
@@ -231,17 +198,14 @@ class FluxReconstruction(DiscontinuousGalerkin):
 
     def get_continuous_flux(self, point):
         curr = self.get_element_index(point)
-        viscosity = self.equation().get_diffusive_coeff()
         # solve riemann problem at the left end of curr element
         right = self.get_element_by_index(curr)
         left = self.get_element_by_index(curr-1)
-        upwind_flux_left = self._riemann.get_interface_flux(
-            left.expansion(), right.expansion(), viscosity)
+        upwind_flux_left = self._riemann.get_interface_flux(left, right)
         # solve riemann problem at the right end of curr element
         left = self.get_element_by_index(curr)
         right = self.get_element_by_index((curr + 1) % self.n_element())
-        upwind_flux_right = self._riemann.get_interface_flux(
-            left.expansion(), right.expansion(), viscosity)
+        upwind_flux_right = self._riemann.get_interface_flux(left, right)
         assert (isinstance(left, element.LagrangeFR)
             or isinstance(left, element.GaussLagrangeFR)
             or isinstance(left, element.LegendreFR))

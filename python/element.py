@@ -26,17 +26,17 @@ class DiscontinuousGalerkin(Element):
     def suggest_cfl(self, rk_order: int) -> float:
         return DiscontinuousGalerkin._cfl[self.degree()][rk_order]
 
-    def get_interior_residual(self, extra_viscosity):
+    def get_interior_residual(self):
         """Get the residual column by evaluating the internal integral.
         """
         def integrand(x_global):
             return np.tensordot(
                 self.get_basis_gradients(x_global),
-                self.get_discontinuous_flux(x_global, extra_viscosity),
+                self.get_discontinuous_flux(x_global),
                 0)
         return self.fixed_quad_global(integrand, self.degree())
 
-    def add_interface_residual(self, extra_viscosity, left_flux, right_flux, residual):
+    def add_interface_residual(self, left_flux, right_flux, residual):
         residual += np.tensordot(
             self.get_basis_values(self.x_left()), left_flux, 0)
         residual -= np.tensordot(
@@ -93,7 +93,7 @@ class GaussLagrangeDG(LagrangeDG):
             column[k] /= self._mass_matrix_diag[k]
         return column
 
-    def get_interior_residual(self, extra_viscosity):
+    def get_interior_residual(self):
         """Get the residual column by evaluating the internal integral.
 
         For GaussLagrangeDG, which is a spetral element scheme, the integral can be reduced to a weighted sum of nodal values.
@@ -102,12 +102,12 @@ class GaussLagrangeDG(LagrangeDG):
         values = self.get_sample_values()
         gauss = self.expansion()
         residual = np.tensordot(self._basis_gradients[0],
-            self.get_discontinuous_flux(points[0], extra_viscosity,
+            self.get_discontinuous_flux(points[0],
                 values[0], values.dot(self._basis_gradients[0])),
             0) * gauss.get_sample_weight(0)
         for k in range(1, self.n_term()):
             residual += np.tensordot(self._basis_gradients[k],
-                self.get_discontinuous_flux(points[k], extra_viscosity,
+                self.get_discontinuous_flux(points[k],
                     values[k], values.dot(self._basis_gradients[k])),
                 0) * gauss.get_sample_weight(k)
         return residual
@@ -135,6 +135,8 @@ class LegendreDG(DiscontinuousGalerkin):
 
 
 class FluxReconstruction(Element):
+    """Element for implement FR schemes.
+    """
 
     def __init__(self, r: RiemannSolver, e: Expansion) -> None:
         Element.__init__(self, r, e)
@@ -154,15 +156,15 @@ class FluxReconstruction(Element):
         return left, right
 
     @abc.abstractmethod
-    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
+    def get_continuous_flux(self, x_global,
+            upwind_flux_left, upwind_flux_right):
         """Get the value of the reconstructed continuous flux at a given point.
         """
 
     @abc.abstractmethod
-    def get_continuous_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
-        """Get the gradient value of the reconstructed continuous flux at a given point.
+    def get_continuous_flux_gradient(self, x_global,
+            upwind_flux_left, upwind_flux_right):
+        """Get the gradient of the reconstructed continuous flux at a given point.
         """
 
 
@@ -185,62 +187,58 @@ class LagrangeFR(FluxReconstruction):
     def divide_mass_matrix(self, column: np.ndarray):
         return column
 
-    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
-        flux = self.get_discontinuous_flux(x_global, extra_viscosity)
+    def get_continuous_flux(self, x_global,
+            upwind_flux_left, upwind_flux_right):
+        flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left(), extra_viscosity))
+            - self.get_discontinuous_flux(self.x_left()))
         flux += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right(), extra_viscosity))
+            - self.get_discontinuous_flux(self.x_right()))
         return flux
 
-    def get_discontinuous_flux_gradient(self, x_global, extra_viscosity):
+    def get_discontinuous_flux_gradient(self, x_global):
         """Get the gradient value of the discontinuous flux at a given point.
         """
         basis_gradients = self.get_basis_gradients(x_global)
         flux_gradient = 0.0
         i_sample = 0
         for x_sample in self.expansion().get_sample_points():
-            u_sample = self.get_solution_value(x_sample)
-            du_sample = self.get_solution_gradient(x_sample)
-            f_sample = self.equation().get_convective_flux(u_sample)
-            f_sample -= self.equation().get_diffusive_flux(u_sample, du_sample)
-            if callable(extra_viscosity):
-                f_sample -= du_sample * extra_viscosity(x_sample)
-            else:
-                f_sample -= du_sample * extra_viscosity
+            f_sample = self.get_discontinuous_flux(x_sample,
+                u_given=self.get_solution_value(x_sample),
+                du_given=self.get_solution_gradient(x_sample))
             flux_gradient += f_sample * basis_gradients[i_sample]
             i_sample += 1
         return flux_gradient
 
-    def get_interior_residual(self, extra_viscosity=0) -> np.ndarray:
+    def get_interior_residual(self) -> np.ndarray:
         residual = np.ndarray(self.n_term(), self.value_type())
         points = self.expansion().get_sample_points()
         for i_sample in range(self.n_term()):
             x_sample = points[i_sample]
             residual[i_sample] = \
-                -self.get_discontinuous_flux_gradient(x_sample, extra_viscosity)
+                -self.get_discontinuous_flux_gradient(x_sample)
         return residual
 
-    def get_continuous_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
+    def get_continuous_flux_gradient(self, x_global,
+            upwind_flux_left, upwind_flux_right):
         left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left(), extra_viscosity)
+            self.get_discontinuous_flux(self.x_left())
         right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right(), extra_viscosity)
-        gradient = self.get_discontinuous_flux_gradient(x_global, extra_viscosity)
+            self.get_discontinuous_flux(self.x_right())
+        gradient = self.get_discontinuous_flux_gradient(x_global)
         left_grad, right_grad = self.get_correction_gradients(x_global)
         gradient += left_grad * left_flux_gap
         gradient += right_grad * right_flux_gap
         return gradient
 
-    def add_interface_residual(self, extra_viscosity, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
+    def add_interface_residual(self, upwind_flux_left, upwind_flux_right,
+            residual: np.ndarray):
         left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left(), extra_viscosity)
+            self.get_discontinuous_flux(self.x_left())
         right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right(), extra_viscosity)
+            self.get_discontinuous_flux(self.x_right())
         points = self.expansion().get_sample_points()
         for i_sample in range(self.n_term()):
             x_global = points[i_sample]
@@ -343,7 +341,7 @@ class GaussLagrangeFR(LagrangeFR):
     def expansion(self) -> GaussLagrangeExpansion:
         return Element.expansion(self)
 
-    def get_interior_residual(self, extra_viscosity):
+    def get_interior_residual(self):
         residual = np.ndarray(self.n_term(), self.value_type())
         u_samples = self.expansion().get_coeff_ref()
         # build gradients of u at sample points
@@ -355,24 +353,26 @@ class GaussLagrangeFR(LagrangeFR):
         f_samples = np.ndarray(self.n_term(), self.value_type())
         for i in range(self.n_term()):
             f_samples[i] = self.get_discontinuous_flux(
-                x_samples[i], extra_viscosity, u_samples[i], du_samples[i])
+                x_samples[i], u_samples[i], du_samples[i])
         # build gradients of f at sample points
         for i in range(self.n_term()):
             residual[i] = -f_samples.dot(self._basis_gradients[i])
         return residual
 
-    def add_interface_residual(self, extra_viscosity, upwind_flux_left, upwind_flux_right, residual: np.ndarray):
+    def add_interface_residual(self, upwind_flux_left, upwind_flux_right,
+            residual: np.ndarray):
         left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left(), extra_viscosity)
+            self.get_discontinuous_flux(self.x_left())
         right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right(), extra_viscosity)
+            self.get_discontinuous_flux(self.x_right())
         for i_sample in range(self.n_term()):
             left, right = self._correction_gradients[i_sample]
             residual[i_sample] -= left * left_flux_gap
             residual[i_sample] -= right * right_flux_gap
         return residual
 
-    def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
+    def add_interface_correction(self, left_jump, right_jump,
+            residual: np.ndarray):
         return
         correction = self.get_interface_correction(left_jump, right_jump)
         e = self.expansion()
@@ -414,8 +414,8 @@ class LegendreFR(FluxReconstruction):
     def divide_mass_matrix(self, column: np.ndarray):
         return LegendreDG.divide_mass_matrix(self, column)
 
-    def get_continuous_flux(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
+    def get_continuous_flux(self, x_global,
+            upwind_flux_left, upwind_flux_right):
         flux = self.get_discontinuous_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
@@ -425,8 +425,8 @@ class LegendreFR(FluxReconstruction):
             - self.get_discontinuous_flux(self.x_right()))
         return flux
 
-    def get_continuous_flux_gradient(self, x_global, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
+    def get_continuous_flux_gradient(self, x_global,
+            upwind_flux_left, upwind_flux_right):
         u_approx = self.get_solution_value(x_global)
         a_approx = self.equation().get_convective_jacobian(u_approx)
         gradient = a_approx @ self.expansion().global_to_gradient(x_global)
@@ -440,12 +440,11 @@ class LegendreFR(FluxReconstruction):
             - self.get_discontinuous_flux(self.x_right()))
         return gradient
 
-    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right,
-            extra_viscosity=0.0):
+    def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):
         # TODO: project grad-correction on the Legendre basis in init.
         def integrand(x_global):
             column = self.get_basis_values(x_global) * self.get_flux_gradient(
-                x_global, upwind_flux_left, upwind_flux_right, extra_viscosity)
+                x_global, upwind_flux_left, upwind_flux_right)
             column = self.divide_mass_matrix(column)
             return column
         values = self.expansion().integrator().fixed_quad_global(
