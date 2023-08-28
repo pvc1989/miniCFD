@@ -592,15 +592,15 @@ class Element(abc.ABC):
     def get_discontinuous_flux(self, x_global, u_given=None, du_given=None):
         """Get the value of f(u^h, du^h) at a given point.
         """
-        if u_given:
-            u_approx = u_given
-        else:
+        if u_given is None:
             u_approx = self.get_solution_value(x_global)
-        flux = self.equation().get_convective_flux(u_approx)
-        if du_given:
-            du_approx = du_given
         else:
+            u_approx = u_given
+        flux = self.equation().get_convective_flux(u_approx)
+        if du_given is None:
             du_approx = self.expansion().global_to_gradient(x_global)
+        else:
+            du_approx = du_given
         flux -= self.equation().get_diffusive_flux(u_approx, du_approx,
             self.get_extra_viscosity(x_global))
         return flux

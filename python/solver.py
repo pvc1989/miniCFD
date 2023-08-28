@@ -137,7 +137,10 @@ class SolverBase(abc.ABC):
             value = self._spatial.get_solution_value(x)
             # value = expect_solution[i_solution]
             # i_solution += 1
-            solution.InsertNextValue(value)
+            if isinstance(value, np.ndarray):
+                solution.InsertNextValue(value[0])
+            else:
+                solution.InsertNextValue(value)
             if self._spatial.viscosity():
                 viscosity.InsertNextValue(cell_i.get_extra_viscosity(x))
         # assert i_solution == len(expect_solution)

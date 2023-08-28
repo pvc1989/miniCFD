@@ -6,7 +6,6 @@ from scipy.optimize import fsolve
 import concept
 import equation
 import gas
-import expansion
 
 
 class Solver(concept.RiemannSolver):
@@ -80,6 +79,7 @@ class Solver(concept.RiemannSolver):
             right.get_extra_viscosity(right.x_left()))
         if viscosity == 0:
             return flux, u_left - u_left
+        viscosity -= self.equation().get_diffusive_coeff()
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
         if expansion_left.degree() > 1:
@@ -98,10 +98,11 @@ class Solver(concept.RiemannSolver):
         else:
             pass
         u_jump = u_right - u_left
-        du = self.get_interface_gradient(expansion_left.length(), 
-            expansion_right.length(), u_jump,
-            (du_left + du_right) / 2, ddu_right - ddu_left)
-        return flux - viscosity * du, viscosity / 2 * u_jump
+        du = self.get_interface_gradient(left.length(), right.length(),
+            u_jump, (du_left + du_right) / 2, ddu_right - ddu_left)
+        flux -= self.equation().get_diffusive_flux(
+            (u_left + u_right) / 2, du, viscosity)
+        return flux, viscosity / 2 * u_jump
 
 
 class LinearAdvection(Solver):

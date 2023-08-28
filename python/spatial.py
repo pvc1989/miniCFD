@@ -62,11 +62,11 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
             curr = self.get_element_by_index(0)
             interface_fluxes[0] = \
                 curr.get_discontinuous_flux(curr.x_left())
-            interface_bjumps[0] *= 0
+            interface_bjumps[0] = interface_bjumps[1] * 0
             curr = self.get_element_by_index(-1)
             interface_fluxes[-1] = \
                 curr.get_discontinuous_flux(curr.x_right())
-            interface_bjumps[-1] *= 0
+            interface_bjumps[-1] = interface_bjumps[0]
         return interface_fluxes, interface_bjumps
 
     def get_solution_value(self, point):
