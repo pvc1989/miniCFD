@@ -9,7 +9,7 @@ import element
 import riemann
 
 
-class TestGaussLagrangeFR(unittest.TestCase):
+class TestFRonLegendreRoots(unittest.TestCase):
     """Test the element for implement flux reconstruction schemes.
     """
 
@@ -20,7 +20,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
         self._n_element = 5
         self._degree = 1
         self._a_const = np.pi
-        self._spatial = spatial.GaussLagrangeFR(
+        self._spatial = spatial.FRonLegendreRoots(
             riemann.LinearAdvection(self._a_const),
             self._degree, self._n_element, self._x_left, self._x_right)
 
@@ -65,11 +65,11 @@ class TestGaussLagrangeFR(unittest.TestCase):
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        plt.savefig("GaussLagrangeFR.svg")
+        plt.savefig("FRonLegendreRoots.svg")
 
     def test_resolution(self):
         degree = 4
-        scheme = spatial.GaussLagrangeFR(
+        scheme = spatial.FRonLegendreRoots(
             riemann.LinearAdvection(self._a_const),
             degree, self._n_element, self._x_left, self._x_right)
         points = np.linspace(scheme.x_left(), scheme.x_right(), 201)
@@ -132,19 +132,19 @@ class TestGaussLagrangeFR(unittest.TestCase):
         i_curr = n_element // 2
         for degree in range(2, 10):
             # inviscid
-            scheme = spatial.GaussLagrangeFR(
+            scheme = spatial.FRonLegendreRoots(
                 riemann.LinearAdvection(a_const=1.0),
                 degree, n_element, x_left, x_right)
             s_prev, s_curr, s_next = self._get_spatial_matrices(scheme, i_curr)
             # viscosity
             nu = np.random.rand()
-            scheme = spatial.GaussLagrangeFR(
+            scheme = spatial.FRonLegendreRoots(
                 riemann.LinearAdvectionDiffusion(a_const=1.0, b_const=nu),
                 degree, n_element, x_left, x_right)
             r_prev, r_curr, r_next = self._get_spatial_matrices(scheme, i_curr)
             # compare
             cell_curr = scheme.get_element_by_index(i_curr)
-            assert isinstance(cell_curr, element.GaussLagrangeFR)
+            assert isinstance(cell_curr, element.FRonLegendreRoots)
             mat_b, mat_c, mat_d, mat_e, mat_f = cell_curr.get_dissipation_matrices()
             mat_d += mat_b - mat_c
             self.assertAlmostEqual(0.0,

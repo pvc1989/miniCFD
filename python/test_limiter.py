@@ -63,7 +63,7 @@ class TestLimiters(unittest.TestCase):
 
     def test_limiters_on_jumps(self):
         degree = 4
-        scheme = self.build_scheme(spatial.GaussLagrangeFR, degree)
+        scheme = self.build_scheme(spatial.FRonLegendreRoots, degree)
         u_init = jumps
         limiters = [
             limiter.ZhongXingHui2013(),
@@ -120,7 +120,7 @@ class TestLimiters(unittest.TestCase):
 
     def test_limiters_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.GaussLagrangeFR, degree)
+        scheme = self.build_scheme(spatial.FRonLegendreRoots, degree)
         k1, k2 = 10, 5
         def u_init(x):
             return smooth(x, k1, k2)

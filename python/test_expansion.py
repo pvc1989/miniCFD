@@ -113,8 +113,8 @@ class TestTaylor(unittest.TestCase):
                 expected.global_to_derivatives(x_global)), places=5)
 
 
-class TestLagrange(unittest.TestCase):
-    """Test the expansion.Lagrange class.
+class TestLagrangeOnUniformRoots(unittest.TestCase):
+    """Test the expansion.LagrangeOnUniformRoots class.
     """
 
     def __init__(self, method_name: str = "") -> None:
@@ -122,7 +122,7 @@ class TestLagrange(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = 10.0
         self._coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._expansion = expansion.Lagrange(5, self._coordinate)
+        self._expansion = expansion.LagrangeOnUniformRoots(5, self._coordinate)
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
@@ -133,7 +133,7 @@ class TestLagrange(unittest.TestCase):
         plt.figure()
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
-            my_expansion = expansion.Lagrange(degree, self._coordinate)
+            my_expansion = expansion.LagrangeOnUniformRoots(degree, self._coordinate)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -142,7 +142,7 @@ class TestLagrange(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.Lagrange.svg")
+        plt.savefig("expansion.LagrangeOnUniformRoots.svg")
 
     def test_values_at_sample_points(self):
         """Test values at sample points.
@@ -210,14 +210,14 @@ class TestLagrange(unittest.TestCase):
     def test_coeff_setting(self):
         self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
         # set by Lagrange.set_coeff
-        lagrange = expansion.Lagrange(self._expansion.degree(),
+        lagrange = expansion.LagrangeOnUniformRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_coeff(self._expansion.get_coeff_ref())
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
         # set by Lagrange.set_taylor_coeff
-        lagrange = expansion.Lagrange(self._expansion.degree(),
+        lagrange = expansion.LagrangeOnUniformRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
@@ -229,7 +229,7 @@ class TestLagrange(unittest.TestCase):
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
         shifted = ShiftedExpansion(self._expansion, x_shift)
-        expected = expansion.Lagrange(self._expansion.degree(),
+        expected = expansion.LagrangeOnUniformRoots(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())
         expected.approximate(lambda x: np.sin(x - x_shift))
@@ -247,8 +247,8 @@ class TestLagrange(unittest.TestCase):
                 expected.global_to_derivatives(x_global)))
 
 
-class TestGaussLagrange(unittest.TestCase):
-    """Test the expansion.GaussLagrange class.
+class TestLagrangeOnLegendreRoots(unittest.TestCase):
+    """Test the expansion.LagrangeOnLegendreRoots class.
     """
 
     def __init__(self, method_name: str = "") -> None:
@@ -256,7 +256,7 @@ class TestGaussLagrange(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = 10.0
         self._coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._expansion = expansion.GaussLagrange(5, self._coordinate)
+        self._expansion = expansion.LagrangeOnLegendreRoots(5, self._coordinate)
 
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
@@ -267,7 +267,7 @@ class TestGaussLagrange(unittest.TestCase):
         plt.figure()
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
-            my_expansion = expansion.GaussLagrange(degree, self._coordinate)
+            my_expansion = expansion.LagrangeOnLegendreRoots(degree, self._coordinate)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -276,7 +276,7 @@ class TestGaussLagrange(unittest.TestCase):
         plt.legend()
         plt.ylim([-1.5, 2.0])
         # plt.show()
-        plt.savefig("expansion.GaussLagrange.svg")
+        plt.savefig("expansion.LagrangeOnLegendreRoots.svg")
 
     def test_values_at_sample_points(self):
         """Test values at sample points.
@@ -343,15 +343,15 @@ class TestGaussLagrange(unittest.TestCase):
 
     def test_coeff_setting(self):
         self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
-        # set by GaussLagrange.set_coeff
-        lagrange = expansion.GaussLagrange(self._expansion.degree(),
+        # set by LagrangeOnLegendreRoots.set_coeff
+        lagrange = expansion.LagrangeOnLegendreRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_coeff(self._expansion.get_coeff_ref())
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
-        # set by GaussLagrange.set_taylor_coeff
-        lagrange = expansion.GaussLagrange(self._expansion.degree(),
+        # set by LagrangeOnLegendreRoots.set_taylor_coeff
+        lagrange = expansion.LagrangeOnLegendreRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
@@ -379,7 +379,7 @@ class TestGaussLagrange(unittest.TestCase):
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
         shifted = ShiftedExpansion(self._expansion, x_shift)
-        expected = expansion.GaussLagrange(self._expansion.degree(),
+        expected = expansion.LagrangeOnLegendreRoots(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())
         expected.approximate(lambda x: np.sin(x - x_shift))

@@ -189,15 +189,8 @@ class Lagrange(Taylor):
     """The Lagrange expansion of a general function.
     """
 
-    @staticmethod
-    def _get_roots(n_point):
-        # Sample points evenly distributed in the element.
-        delta = 2.0 / n_point / 2
-        roots = np.linspace(delta - 1, 1 - delta, n_point)
-        return roots
-
     def __init__(self, degree: int, coordinate: Coordinate,
-            value_type=float, get_roots=_get_roots) -> None:
+            get_roots: callable, value_type=float) -> None:
         Taylor.__init__(self, degree, coordinate, value_type)
         n_point = degree + 1
         assert n_point >= 1
@@ -298,23 +291,46 @@ class Lagrange(Taylor):
         return taylor_derivatives.dot(self._lagrange_to_taylor)
 
 
-class GaussLagrange(Lagrange):
-    """Specialized Lagrange expansion using Gaussian quadrature points as nodes.
+class LagrangeOnUniformRoots(Lagrange):
+    """Specialized Lagrange expansion using uniform roots as nodes.
+    """
+
+    @staticmethod
+    def _get_roots(n_point):
+        # Sample points evenly distributed in the element.
+        delta = 2.0 / n_point / 2
+        roots = np.linspace(delta - 1, 1 - delta, n_point)
+        return roots
+
+    def __init__(self, degree: int, coordinate: Coordinate,
+            value_type=float) -> None:
+        get_roots = LagrangeOnUniformRoots._get_roots
+        Lagrange.__init__(self, degree, coordinate, get_roots, value_type)
+
+    def name(self, verbose) -> str:
+        my_name = 'LagrangeOnUniformRoots'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+
+class LagrangeOnLegendreRoots(Lagrange):
+    """Specialized Lagrange expansion using Legendre roots as nodes.
     """
 
     def __init__(self, degree: int, coordinate: Coordinate,
             value_type=float) -> None:
         n_point = degree + 1
         roots, local_weights = special.roots_legendre(n_point)
-        Lagrange.__init__(self, degree, coordinate, value_type,
-            get_roots=lambda n_point: roots)
+        get_roots = lambda n_point: roots
+        Lagrange.__init__(self, degree, coordinate, get_roots, value_type)
         self._sample_weights = np.ndarray(n_point)
         for k in range(self.n_term()):
             jacobian = self.coordinate().local_to_jacobian(roots[k])
             self._sample_weights[k] = local_weights[k] * jacobian
 
     def name(self, verbose) -> str:
-        my_name = 'GaussLagrange'
+        my_name = 'LagrangeOnLegendreRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name

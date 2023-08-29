@@ -4,13 +4,13 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
-from element import GaussLagrangeFR
+from element import FRonLegendreRoots
 from coordinate import LinearCoordinate
 from riemann import LinearAdvection
 from polynomial import Vincent
 
 
-class TestGaussLagrangeFR(unittest.TestCase):
+class TestFRonLegendreRoots(unittest.TestCase):
     """Test the element for implement flux reconstruction schemes.
     """
 
@@ -23,7 +23,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
         self.coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._element = GaussLagrangeFR(self._riemann, self._degree,
+        self._element = FRonLegendreRoots(self._riemann, self._degree,
             self.coordinate)
         self._element.approximate(np.sin)
 
@@ -51,7 +51,7 @@ class TestGaussLagrangeFR(unittest.TestCase):
             label='Upwind Flux At Right')
         plt.legend()
         # plt.show()
-        plt.savefig("GaussLagrangeFRbyRadau.svg")
+        plt.savefig("RadauFRonLegendreRoots.svg")
 
     def test_get_discontinuous_flux(self):
         """Test the values of the discontinuous flux.

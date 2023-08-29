@@ -5,9 +5,10 @@ import numpy as np
 
 from concept import Expansion, Element, RiemannSolver, Coordinate
 from polynomial import Vincent
-from expansion import Lagrange as LagrangeExpansion
-from expansion import GaussLagrange as GaussLagrangeExpansion
+from expansion import LagrangeOnUniformRoots
+from expansion import LagrangeOnLegendreRoots
 from expansion import Legendre as LegendreExpansion
+import expansion
 
 
 class DiscontinuousGalerkin(Element):
@@ -51,13 +52,11 @@ class LagrangeDG(DiscontinuousGalerkin):
     """Element for implement the DG scheme using a Lagrange expansion.
     """
 
-    def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate) -> None:
-        e = LagrangeExpansion(degree, coordinate, riemann.value_type())
-        DiscontinuousGalerkin.__init__(self, riemann, e)
+    def __init__(self, r: RiemannSolver, e: expansion.Lagrange) -> None:
+        DiscontinuousGalerkin.__init__(self, r, e)
         self._mass_matrix = self._build_mass_matrix()
 
-    def expansion(self) -> LagrangeExpansion:
+    def expansion(self) -> expansion.Lagrange:
         return Element.expansion(self)
 
     def divide_mass_matrix(self, column: np.ndarray):
@@ -70,13 +69,26 @@ class LagrangeDG(DiscontinuousGalerkin):
         return self.expansion().get_sample_values()
 
 
-class GaussLagrangeDG(LagrangeDG):
-    """Specialized LagrangeDG element using Gaussian quadrature points as nodes.
+class DGonUniformRoots(DiscontinuousGalerkin):
+    """Specialized LagrangeDG using uniform (internal) roots as solution points.
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate) -> None:
-        e = GaussLagrangeExpansion(degree, coordinate, riemann.value_type())
+        e = LagrangeOnUniformRoots(degree, coordinate, riemann.value_type())
+        LagrangeDG.__init__(self, r, e)
+
+    def expansion(self) -> LagrangeOnUniformRoots:
+        return Element.expansion(self)
+
+
+class DGonLegendreRoots(LagrangeDG):
+    """Specialized LagrangeDG using Legendre roots as solution points.
+    """
+
+    def __init__(self, riemann: RiemannSolver, degree: int,
+            coordinate: Coordinate) -> None:
+        e = LagrangeOnLegendreRoots(degree, coordinate, riemann.value_type())
         DiscontinuousGalerkin.__init__(self, riemann, e)
         self._mass_matrix_diag = np.ndarray(self.n_term())
         self._basis_gradients = np.ndarray(self.n_term(), np.ndarray)
@@ -85,7 +97,7 @@ class GaussLagrangeDG(LagrangeDG):
             self._mass_matrix_diag[k] = self.expansion().get_sample_weight(k)
             self._basis_gradients[k] = self.get_basis_gradients(points[k])
 
-    def expansion(self) -> GaussLagrangeExpansion:
+    def expansion(self) -> LagrangeOnLegendreRoots:
         return Element.expansion(self)
 
     def divide_mass_matrix(self, column: np.ndarray):
@@ -96,7 +108,7 @@ class GaussLagrangeDG(LagrangeDG):
     def get_interior_residual(self):
         """Get the residual column by evaluating the internal integral.
 
-        For GaussLagrangeDG, which is a spetral element scheme, the integral can be reduced to a weighted sum of nodal values.
+        For DGonLegendreRoots, which is a spetral element scheme, the integral can be reduced to a weighted sum of nodal values.
         """
         points = self.get_sample_points()
         values = self.get_sample_values()
@@ -174,13 +186,11 @@ class LagrangeFR(FluxReconstruction):
     """Element for implement the FR scheme using a Lagrange expansion.
     """
 
-    def __init__(self, riemann: RiemannSolver, degree: int,
-            coordinate: Coordinate) -> None:
-        e = LagrangeExpansion(degree, coordinate, riemann.value_type())
-        FluxReconstruction.__init__(self, riemann, e)
+    def __init__(self, r: RiemannSolver, e: expansion.Lagrange) -> None:
+        FluxReconstruction.__init__(self, r, e)
         self._disspation_matrices = None
 
-    def expansion(self) -> LagrangeExpansion:
+    def expansion(self) -> expansion.Lagrange:
         return Element.expansion(self)
 
     def get_sample_points(self) -> np.ndarray:
@@ -320,13 +330,27 @@ class LagrangeFR(FluxReconstruction):
         return mat_b, mat_c, mat_d, mat_e, mat_f
 
 
-class GaussLagrangeFR(LagrangeFR):
-    """Element for implement the FR scheme using a GaussLagrange expansion.
+class FRonUniformRoots(LagrangeFR):
+    """Specialized LagrangeFR using uniform (internal) roots as solution points.
     """
 
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate) -> None:
-        e = GaussLagrangeExpansion(degree, coordinate, riemann.value_type())
+        e = LagrangeOnUniformRoots(degree, coordinate, riemann.value_type())
+        LagrangeFR.__init__(self, riemann, e)
+        self._disspation_matrices = None
+
+    def expansion(self) -> LagrangeOnUniformRoots:
+        return Element.expansion(self)
+
+
+class FRonLegendreRoots(LagrangeFR):
+    """Specialized LagrangeFR using Legendre roots as solution points.
+    """
+
+    def __init__(self, riemann: RiemannSolver, degree: int,
+            coordinate: Coordinate) -> None:
+        e = LagrangeOnLegendreRoots(degree, coordinate, riemann.value_type())
         FluxReconstruction.__init__(self, riemann, e)
         self._disspation_matrices = None
         self._basis_gradients = np.ndarray(self.n_term(), np.ndarray)
@@ -340,7 +364,7 @@ class GaussLagrangeFR(LagrangeFR):
             i_sample += 1
         assert i_sample == self.n_term()
 
-    def expansion(self) -> GaussLagrangeExpansion:
+    def expansion(self) -> LagrangeOnLegendreRoots:
         return Element.expansion(self)
 
     def get_interior_residual(self):

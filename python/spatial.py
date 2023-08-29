@@ -160,14 +160,14 @@ class LegendreDG(DiscontinuousGalerkin):
         return my_name
 
 
-class LagrangeDG(DiscontinuousGalerkin):
-    """The ODE system given by the DG method using a Lagrange expansion.
+class DGonUniformRoots(DiscontinuousGalerkin):
+    """The ODE system given by the DG method using a Lagrange expansion on uniform roots.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LagrangeDG)
+            n_element, x_left, x_right, element.DGonUniformRoots)
 
     def name(self, verbose=True):
         my_name = 'LagrangeDG'
@@ -176,17 +176,17 @@ class LagrangeDG(DiscontinuousGalerkin):
         return my_name
 
 
-class GaussLagrangeDG(DiscontinuousGalerkin):
-    """The ODE system given by the DG method using a GaussLagrange expansion.
+class DGonLegendreRoots(DiscontinuousGalerkin):
+    """The ODE system given by the DG method using a Lagrange expansion on Legendre roots.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.GaussLagrangeDG)
+            n_element, x_left, x_right, element.DGonLegendreRoots)
 
     def name(self, verbose=True):
-        my_name = 'GaussLagrangeDG'
+        my_name = 'DGonLegendreRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
@@ -207,7 +207,7 @@ class FluxReconstruction(DiscontinuousGalerkin):
         right = self.get_element_by_index((curr + 1) % self.n_element())
         upwind_flux_right = self._riemann.get_interface_flux(left, right)
         assert (isinstance(left, element.LagrangeFR)
-            or isinstance(left, element.GaussLagrangeFR)
+            or isinstance(left, element.FRonLegendreRoots)
             or isinstance(left, element.LegendreFR))
         return left.get_continuous_flux(point,
             upwind_flux_left, upwind_flux_right)
@@ -216,33 +216,33 @@ class FluxReconstruction(DiscontinuousGalerkin):
         return self.get_continuous_flux(point)
 
 
-class LagrangeFR(FluxReconstruction):
-    """The ODE system given by Huyhn's FR method.
+class FRonUniformRoots(FluxReconstruction):
+    """The ODE system given by the DG method using a Lagrange expansion on uniform roots.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LagrangeFR)
+            n_element, x_left, x_right, element.FRonUniformRoots)
 
     def name(self, verbose=True):
-        my_name = 'LagrangeFR'
+        my_name = 'FRonUniformRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
 
 
-class GaussLagrangeFR(FluxReconstruction):
-    """The ODE system given by Huyhn's FR method.
+class FRonLegendreRoots(FluxReconstruction):
+    """The ODE system given by the FR method using a Lagrange expansion on Legendre roots.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float) -> None:
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.GaussLagrangeFR)
+            n_element, x_left, x_right, element.FRonLegendreRoots)
 
     def name(self, verbose=True):
-        my_name = 'GaussLagrangeFR'
+        my_name = 'FRonLegendreRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name

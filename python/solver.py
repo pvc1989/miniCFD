@@ -316,7 +316,7 @@ class InviscidBurgers(SolverBase):
 
         To product for general cases, it's better to use a higher order scheme with a fine grid, e.g.:
 
-            python3 solver.py --t_end 2.0 --method LagrangeFR --degree 2 --problem Burgers --detector KXRCF --limiter LWA --n_element 201 --output vtu --n_frame 100
+            python3 solver.py --t_end 2.0 --method FRonUniformRoots --degree 2 --problem Burgers --detector KXRCF --limiter LWA --n_element 201 --output vtu --n_frame 100
         """
         if self._u_mean:
             return np.nan
@@ -427,9 +427,9 @@ if __name__ == '__main__':
         default=500, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['LagrangeDG', 'GaussLagrangeDG', 'LegendreDG',
-                 'LagrangeFR', 'GaussLagrangeFR', 'LegendreFR'],
-        default='GaussLagrangeFR',
+        choices=['DGonUniformRoots', 'DGonLegendreRoots', 'LegendreDG',
+                 'FRonUniformRoots', 'FRonLegendreRoots', 'LegendreFR'],
+        default='FRonLegendreRoots',
         help='method for spatial discretization')
     parser.add_argument('--detector',
         choices=['All', 'KXRCF', 'LWA', 'LYH', 'ZJ', 'Persson'],
@@ -471,16 +471,16 @@ if __name__ == '__main__':
         help='number of frames to be written')
     args = parser.parse_args()
     print(args)
-    if args.method == 'LagrangeDG':
-        SpatialClass = spatial.LagrangeDG
-    elif args.method == 'GaussLagrangeDG':
-        SpatialClass = spatial.GaussLagrangeDG
+    if args.method == 'DGonUniformRoots':
+        SpatialClass = spatial.DGonUniformRoots
+    elif args.method == 'DGonLegendreRoots':
+        SpatialClass = spatial.DGonLegendreRoots
     elif args.method == 'LegendreDG':
         SpatialClass = spatial.LegendreDG
-    elif args.method == 'LagrangeFR':
-        SpatialClass = spatial.LagrangeFR
-    elif args.method == 'GaussLagrangeFR':
-        SpatialClass = spatial.GaussLagrangeFR
+    elif args.method == 'FRonUniformRoots':
+        SpatialClass = spatial.FRonUniformRoots
+    elif args.method == 'FRonLegendreRoots':
+        SpatialClass = spatial.FRonLegendreRoots
     elif args.method == 'LegendreFR':
         SpatialClass = spatial.LegendreFR
     else:
