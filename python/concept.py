@@ -678,7 +678,9 @@ class Element(abc.ABC):
         """
 
     def get_interface_correction(self, left_jump, right_jump) -> np.ndarray:
-        """Get interface correction given by Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564.
+        """Get the interface correction for the DDG method.
+
+        See [Liu and Yan, "The Direct Discontinuous Galerkin (DDG) Method for Diffusion with Interface Corrections", Communications in Computational Physics 8, 3 (2010), pp. 541--564](https://doi.org/10.4208/cicp.010909.011209a) for details.
 
         The jumps passed in have already been divided by 2.
         """

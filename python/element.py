@@ -12,9 +12,9 @@ from expansion import Legendre as LegendreExpansion
 
 class DiscontinuousGalerkin(Element):
     """Element for implement DG schemes.
-    """
 
-    # See Cockburn and Shu, "Runge–Kutta Discontinuous Galerkin Methods for Convection-Dominated Problems", Journal of Scientific Computing 16, 3 (2001), pp. 173--261.
+    See [Cockburn and Shu, "Runge–Kutta Discontinuous Galerkin Methods for Convection-Dominated Problems", Journal of Scientific Computing 16, 3 (2001), pp. 173--261](https://doi.org/10.1023/a:1012873910884) for details.
+    """
     _cfl = np.ones((9, 5))
     _cfl[:, 2] = (1.000, 0.333, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
     _cfl[:, 3] = (1.256, 0.409, 0.209, 0.130, 0.089, 0.066, 0.051, 0.040, 0.033)
@@ -136,6 +136,8 @@ class LegendreDG(DiscontinuousGalerkin):
 
 class FluxReconstruction(Element):
     """Element for implement FR schemes.
+
+    See [Huynh, "A Flux Reconstruction Approach to High-Order Schemes Including Discontinuous Galerkin Methods", in 18th AIAA Computational Fluid Dynamics Conference (Miami, Florida, USA: American Institute of Aeronautics and Astronautics, 2007)](https://doi.org/10.2514/6.2007-4079) and [Vincent and Castonguay and Jameson, "A New Class of High-Order Energy Stable Flux Reconstruction Schemes", Journal of Scientific Computing 47, 1 (2010), pp. 50--72.](https://doi.org/10.1007/s10915-010-9420-z) for details.
     """
 
     def __init__(self, r: RiemannSolver, e: Expansion) -> None:

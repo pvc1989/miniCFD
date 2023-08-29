@@ -44,7 +44,7 @@ class SmoothnessBased(concept.Detector):
 class Krivodonova2004(SmoothnessBased):
     """A jump detector for high-order DG schemes.
 
-    See Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338.
+    See [Krivodonova et al., "Shock detection and limiting with discontinuous Galerkin methods for hyperbolic conservation laws", Applied Numerical Mathematics 48, 3-4 (2004), pp. 323--338](https://doi.org/10.1016/j.apnum.2003.11.002) for details.
     """
 
     def name(self, verbose=False):
@@ -90,7 +90,7 @@ class Krivodonova2004(SmoothnessBased):
 class LiWanAi2011(SmoothnessBased):
     """A jump detector for high-order finite volume schemes.
 
-    See Li and Ren, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763.
+    See [Li and Ren, "High-order k-exact WENO finite volume schemes for solving gas dynamic Euler equations on unstructured grids", International Journal for Numerical Methods in Fluids 70, 6 (2011), pp. 742--763](https://doi.org/10.1002/fld.2710) for details.
     """
 
     def name(self, verbose=False):
@@ -140,7 +140,7 @@ class LiWanAi2011(SmoothnessBased):
 class ZhuJun2021(SmoothnessBased):
     """A jump detector for high-order DG schemes.
 
-    See Zhu and Shu and Qiu, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499.
+    See [Zhu and Shu and Qiu, "High-order Runge-Kutta discontinuous Galerkin methods with multi-resolution WENO limiters for solving steady-state problems", Applied Numerical Mathematics 165 (2021), pp. 482--499](https://doi.org/10.1016/j.apnum.2021.03.011) for details.
     """
 
     def name(self, verbose=False):
@@ -188,7 +188,7 @@ class ZhuJun2021(SmoothnessBased):
 class LiYanHui2022(concept.Detector):
     """A jump detector for high-order FD schemes.
 
-    See Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770.
+    See [Li Yanhui, Chen Congwei, and Ren Yu-Xin, "A class of high-order finite difference schemes with minimized dispersion and adaptive dissipation for solving compressible flo…", Journal of Computational Physics 448 (2022), pp. 110770](https://doi.org/10.1016/j.jcp.2021.110770) for details.
     """
 
     def __init__(self) -> None:
@@ -261,7 +261,7 @@ class LiYanHui2022(concept.Detector):
 class Persson2006(SmoothnessBased):
     """A jump detector based on artificial viscosity.
 
-    See Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006).
+    See [Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006)](https://doi.org/10.2514/6.2006-112) for details.
     """
 
     def name(self, verbose=False):
