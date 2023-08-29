@@ -60,22 +60,20 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
             interface_bjumps[-1] = interface_bjumps[0]
         else:  # TODO: support other boundary condtions
             curr = self.get_element_by_index(0)
-            interface_fluxes[0] = \
-                curr.get_discontinuous_flux(curr.x_left())
+            interface_fluxes[0] = curr.get_dg_flux(curr.x_left())
             interface_bjumps[0] = interface_bjumps[1] * 0
             curr = self.get_element_by_index(-1)
-            interface_fluxes[-1] = \
-                curr.get_discontinuous_flux(curr.x_right())
+            interface_fluxes[-1] = curr.get_dg_flux(curr.x_right())
             interface_bjumps[-1] = interface_bjumps[0]
         return interface_fluxes, interface_bjumps
 
     def get_solution_value(self, point):
         return self.get_element(point).get_solution_value(point)
 
-    def get_discontinuous_flux(self, point):
+    def get_dg_flux(self, point):
         i_cell = self.get_element_index(point)
         cell_i = self.get_element_by_index(i_cell)
-        return cell_i.get_discontinuous_flux(point)
+        return cell_i.get_dg_flux(point)
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
@@ -141,7 +139,7 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
         return column
 
     def get_flux_value(self, point):
-        return self.get_discontinuous_flux(point)
+        return self.get_dg_flux(point)
 
 
 class LegendreDG(DiscontinuousGalerkin):
@@ -196,7 +194,7 @@ class FluxReconstruction(DiscontinuousGalerkin):
     """An mid-level class that defines common methods for all FR schemes.
     """
 
-    def get_continuous_flux(self, point):
+    def get_fr_flux(self, point):
         curr = self.get_element_index(point)
         # solve riemann problem at the left end of curr element
         right = self.get_element_by_index(curr)
@@ -209,11 +207,11 @@ class FluxReconstruction(DiscontinuousGalerkin):
         assert (isinstance(left, element.LagrangeFR)
             or isinstance(left, element.FRonLegendreRoots)
             or isinstance(left, element.LegendreFR))
-        return left.get_continuous_flux(point,
+        return left.get_fr_flux(point,
             upwind_flux_left, upwind_flux_right)
 
     def get_flux_value(self, point):
-        return self.get_continuous_flux(point)
+        return self.get_fr_flux(point)
 
 
 class FRonUniformRoots(FluxReconstruction):

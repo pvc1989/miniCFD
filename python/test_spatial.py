@@ -34,32 +34,31 @@ class TestFRonLegendreRoots(unittest.TestCase):
         n_point = 201
         points = np.linspace(self._x_left, self._x_right, n_point)
         exact_solution = np.ndarray(n_point)
-        discontinuous_solution = np.ndarray(n_point)
+        actual_solution = np.ndarray(n_point)
         exact_flux = np.ndarray(n_point)
-        discontinuous_flux = np.ndarray(n_point)
-        continuous_flux = np.ndarray(n_point)
+        dg_flux = np.ndarray(n_point)
+        fr_flux = np.ndarray(n_point)
         for i in range(n_point):
             point_i = points[i]
-            discontinuous_solution[i] = self._spatial.get_solution_value(
-                point_i)
+            actual_solution[i] = self._spatial.get_solution_value(point_i)
             exact_solution[i] = u(point_i)
             exact_flux[i] = self._spatial.equation().get_convective_flux(
                 exact_solution[i])
-            discontinuous_flux[i] = self._spatial.get_discontinuous_flux(
+            dg_flux[i] = self._spatial.get_dg_flux(
                 point_i)
-            continuous_flux[i] = self._spatial.get_continuous_flux(point_i)
+            fr_flux[i] = self._spatial.get_fr_flux(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         points /= self._spatial.delta_x(0)
         plt.plot(points, exact_solution, 'r-', label='Exact')
-        plt.plot(points, discontinuous_solution, 'b+', label='Discontinuous')
+        plt.plot(points, actual_solution, 'b+', label='Actual')
         plt.xlabel(r'$x\,/\,h$')
         plt.ylabel('Solution')
         plt.legend()
         plt.subplot(2, 1, 2)
         plt.plot(points, exact_flux, 'r-', label='Exact')
-        plt.plot(points, discontinuous_flux, 'b+', label='Discontinuous')
-        plt.plot(points, continuous_flux, 'gx', label='Reconstructed')
+        plt.plot(points, dg_flux, 'b+', label='Discontinuous')
+        plt.plot(points, fr_flux, 'gx', label='Reconstructed')
         plt.xlabel(r'$x\,/\,h$')
         plt.ylabel('Flux')
         plt.legend()

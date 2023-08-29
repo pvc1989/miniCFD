@@ -34,17 +34,16 @@ class TestFRonLegendreRoots(unittest.TestCase):
         upwind_flux_right = np.random.rand()
         n_point = 201
         points = np.linspace(self._x_left, self._x_right, n_point)
-        discontinuous_flux = np.zeros(n_point)
-        continuous_flux = np.zeros(n_point)
+        dg_flux = np.zeros(n_point)
+        fr_flux = np.zeros(n_point)
         for i in range(n_point):
             point_i = points[i]
-            discontinuous_flux[i] = self._element.get_discontinuous_flux(
-                point_i, 0.0)
-            continuous_flux[i] = self._element.get_continuous_flux(
+            dg_flux[i] = self._element.get_dg_flux(point_i, 0.0)
+            fr_flux[i] = self._element.get_fr_flux(
                 point_i, upwind_flux_left, upwind_flux_right)
         plt.figure()
-        plt.plot(points, discontinuous_flux, 'r--', label='Discontinuous Flux')
-        plt.plot(points, continuous_flux, 'b-', label='Continuous Flux')
+        plt.plot(points, dg_flux, 'r--', label='DG Flux')
+        plt.plot(points, fr_flux, 'b-', label='FR Flux')
         plt.plot(self._x_left, upwind_flux_left, 'k<',
             label='Upwind Flux At Left')
         plt.plot(self._x_right, upwind_flux_right, 'k>',
@@ -53,55 +52,55 @@ class TestFRonLegendreRoots(unittest.TestCase):
         # plt.show()
         plt.savefig("RadauFRonLegendreRoots.svg")
 
-    def test_get_discontinuous_flux(self):
+    def test_get_dg_flux(self):
         """Test the values of the discontinuous flux.
         """
         for x_global in self._test_points:
-            flux_actual = self._element.get_discontinuous_flux(x_global, 0.0)
-            # discontinuous_flux = a * u
+            flux_actual = self._element.get_dg_flux(x_global, 0.0)
+            # dg_flux = a * u
             u_approx = self._element.get_solution_value(x_global)
             flux_expect = self._equation.get_convective_flux(u_approx)
             self.assertAlmostEqual(flux_expect, flux_actual)
 
-    def test_get_continuous_flux(self):
+    def test_get_fr_flux(self):
         """Test the values of the reconstructed continuous flux.
         """
         upwind_flux_left = np.random.rand()
         upwind_flux_right = np.random.rand()
         self.assertAlmostEqual(upwind_flux_left,
-            self._element.get_continuous_flux(self._x_left,
+            self._element.get_fr_flux(self._x_left,
                 upwind_flux_left, upwind_flux_right))
         self.assertAlmostEqual(upwind_flux_right,
-            self._element.get_continuous_flux(self._x_right,
+            self._element.get_fr_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
         vincent = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
         for x_global in self._test_points:
-            flux_actual = self._element.get_continuous_flux(x_global,
+            flux_actual = self._element.get_fr_flux(x_global,
                 upwind_flux_left, upwind_flux_right)
-            # continuous_flux = discontinuous_flux + correction
-            flux_expect = self._element.get_discontinuous_flux(x_global, 0.0)
+            # fr_flux = dg_flux + correction
+            flux_expect = self._element.get_dg_flux(x_global, 0.0)
             x_local = self.coordinate.global_to_local(x_global)
             left, right = vincent.local_to_value(x_local)
             flux_expect += left * (upwind_flux_left
-                - self._element.get_discontinuous_flux(self._x_left, 0.0))
+                - self._element.get_dg_flux(self._x_left, 0.0))
             flux_expect += right * (upwind_flux_right
-                - self._element.get_discontinuous_flux(self._x_right, 0.0))
+                - self._element.get_dg_flux(self._x_right, 0.0))
             self.assertAlmostEqual(flux_expect, flux_actual)
 
-    def test_get_continuous_flux_gradient(self):
+    def test_get_fr_flux_gradient(self):
         """Test the gradient of the reconstructed continuous flux.
         """
         upwind_flux_left = np.random.rand()
         upwind_flux_right = np.random.rand()
         points = np.linspace(self._x_left, self._x_right)
         for x_global in points:
-            gradient_actual = self._element.get_continuous_flux_gradient(x_global,
+            gradient_actual = self._element.get_fr_flux_gradient(x_global,
                 upwind_flux_left, upwind_flux_right)
             # 2nd-order finite difference approximation
             delta_x = 0.0001
-            flux_right = self._element.get_continuous_flux(x_global + delta_x,
+            flux_right = self._element.get_fr_flux(x_global + delta_x,
                     upwind_flux_left, upwind_flux_right)
-            flux_left = self._element.get_continuous_flux(x_global - delta_x,
+            flux_left = self._element.get_fr_flux(x_global - delta_x,
                     upwind_flux_left, upwind_flux_right)
             gradient_approx = (flux_right - flux_left) / (delta_x + delta_x)
             self.assertAlmostEqual(gradient_actual, gradient_approx)

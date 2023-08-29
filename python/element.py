@@ -33,7 +33,7 @@ class DiscontinuousGalerkin(Element):
         def integrand(x_global):
             return np.tensordot(
                 self.get_basis_gradients(x_global),
-                self.get_discontinuous_flux(x_global),
+                self.get_dg_flux(x_global),
                 0)
         return self.fixed_quad_global(integrand, self.degree())
 
@@ -114,12 +114,12 @@ class DGonLegendreRoots(LagrangeDG):
         values = self.get_sample_values()
         gauss = self.expansion()
         residual = np.tensordot(self._basis_gradients[0],
-            self.get_discontinuous_flux(points[0],
+            self.get_dg_flux(points[0],
                 values[0], values.dot(self._basis_gradients[0])),
             0) * gauss.get_sample_weight(0)
         for k in range(1, self.n_term()):
             residual += np.tensordot(self._basis_gradients[k],
-                self.get_discontinuous_flux(points[k],
+                self.get_dg_flux(points[k],
                     values[k], values.dot(self._basis_gradients[k])),
                 0) * gauss.get_sample_weight(k)
         return residual
@@ -170,13 +170,12 @@ class FluxReconstruction(Element):
         return left, right
 
     @abc.abstractmethod
-    def get_continuous_flux(self, x_global,
-            upwind_flux_left, upwind_flux_right):
+    def get_fr_flux(self, x_global, upwind_flux_left, upwind_flux_right):
         """Get the value of the reconstructed continuous flux at a given point.
         """
 
     @abc.abstractmethod
-    def get_continuous_flux_gradient(self, x_global,
+    def get_fr_flux_gradient(self, x_global,
             upwind_flux_left, upwind_flux_right):
         """Get the gradient of the reconstructed continuous flux at a given point.
         """
@@ -199,25 +198,25 @@ class LagrangeFR(FluxReconstruction):
     def divide_mass_matrix(self, column: np.ndarray):
         return column
 
-    def get_continuous_flux(self, x_global,
+    def get_fr_flux(self, x_global,
             upwind_flux_left, upwind_flux_right):
-        flux = self.get_discontinuous_flux(x_global)
+        flux = self.get_dg_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left()))
+            - self.get_dg_flux(self.x_left()))
         flux += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right()))
+            - self.get_dg_flux(self.x_right()))
         return flux
 
-    def get_discontinuous_flux_gradient(self, x_global):
+    def get_dg_flux_gradient(self, x_global):
         """Get the gradient value of the discontinuous flux at a given point.
         """
         basis_gradients = self.get_basis_gradients(x_global)
         flux_gradient = 0.0
         i_sample = 0
         for x_sample in self.expansion().get_sample_points():
-            f_sample = self.get_discontinuous_flux(x_sample,
+            f_sample = self.get_dg_flux(x_sample,
                 u_given=self.get_solution_value(x_sample),
                 du_given=self.get_solution_gradient(x_sample))
             flux_gradient += f_sample * basis_gradients[i_sample]
@@ -230,16 +229,16 @@ class LagrangeFR(FluxReconstruction):
         for i_sample in range(self.n_term()):
             x_sample = points[i_sample]
             residual[i_sample] = \
-                -self.get_discontinuous_flux_gradient(x_sample)
+                -self.get_dg_flux_gradient(x_sample)
         return residual
 
-    def get_continuous_flux_gradient(self, x_global,
+    def get_fr_flux_gradient(self, x_global,
             upwind_flux_left, upwind_flux_right):
         left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left())
+            self.get_dg_flux(self.x_left())
         right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right())
-        gradient = self.get_discontinuous_flux_gradient(x_global)
+            self.get_dg_flux(self.x_right())
+        gradient = self.get_dg_flux_gradient(x_global)
         left_grad, right_grad = self.get_correction_gradients(x_global)
         gradient += left_grad * left_flux_gap
         gradient += right_grad * right_flux_gap
@@ -248,9 +247,9 @@ class LagrangeFR(FluxReconstruction):
     def add_interface_residual(self, upwind_flux_left, upwind_flux_right,
             residual: np.ndarray):
         left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left())
+            self.get_dg_flux(self.x_left())
         right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right())
+            self.get_dg_flux(self.x_right())
         points = self.expansion().get_sample_points()
         for i_sample in range(self.n_term()):
             x_global = points[i_sample]
@@ -378,7 +377,7 @@ class FRonLegendreRoots(LagrangeFR):
         # build values of f at sample points
         f_samples = np.ndarray(self.n_term(), self.value_type())
         for i in range(self.n_term()):
-            f_samples[i] = self.get_discontinuous_flux(
+            f_samples[i] = self.get_dg_flux(
                 x_samples[i], u_samples[i], du_samples[i])
         # build gradients of f at sample points
         for i in range(self.n_term()):
@@ -387,10 +386,8 @@ class FRonLegendreRoots(LagrangeFR):
 
     def add_interface_residual(self, upwind_flux_left, upwind_flux_right,
             residual: np.ndarray):
-        left_flux_gap = upwind_flux_left - \
-            self.get_discontinuous_flux(self.x_left())
-        right_flux_gap = upwind_flux_right - \
-            self.get_discontinuous_flux(self.x_right())
+        left_flux_gap = upwind_flux_left - self.get_dg_flux(self.x_left())
+        right_flux_gap = upwind_flux_right - self.get_dg_flux(self.x_right())
         for i_sample in range(self.n_term()):
             left, right = self._correction_gradients[i_sample]
             residual[i_sample] -= left * left_flux_gap
@@ -440,18 +437,18 @@ class LegendreFR(FluxReconstruction):
     def divide_mass_matrix(self, column: np.ndarray):
         return LegendreDG.divide_mass_matrix(self, column)
 
-    def get_continuous_flux(self, x_global,
+    def get_fr_flux(self, x_global,
             upwind_flux_left, upwind_flux_right):
-        flux = self.get_discontinuous_flux(x_global)
+        flux = self.get_dg_flux(x_global)
         x_local = self.coordinate().global_to_local(x_global)
         left, right = self._correction.local_to_value(x_local)
         flux += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left()))
+            - self.get_dg_flux(self.x_left()))
         flux += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right()))
+            - self.get_dg_flux(self.x_right()))
         return flux
 
-    def get_continuous_flux_gradient(self, x_global,
+    def get_fr_flux_gradient(self, x_global,
             upwind_flux_left, upwind_flux_right):
         u_approx = self.get_solution_value(x_global)
         a_approx = self.equation().get_convective_jacobian(u_approx)
@@ -461,9 +458,9 @@ class LegendreFR(FluxReconstruction):
         left /= self.coordinate().global_to_jacobian(x_global)
         right /= self.coordinate().global_to_jacobian(x_global)
         gradient += left * (upwind_flux_left
-            - self.get_discontinuous_flux(self.x_left()))
+            - self.get_dg_flux(self.x_left()))
         gradient += right * (upwind_flux_right
-            - self.get_discontinuous_flux(self.x_right()))
+            - self.get_dg_flux(self.x_right()))
         return gradient
 
     def get_flux_gradients(self, upwind_flux_left, upwind_flux_right):

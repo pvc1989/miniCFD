@@ -589,7 +589,7 @@ class Element(abc.ABC):
             assert not self._extra_viscosity
             return 0.0
 
-    def get_discontinuous_flux(self, x_global, u_given=None, du_given=None):
+    def get_dg_flux(self, x_global, u_given=None, du_given=None):
         """Get the value of f(u^h, du^h) at a given point.
         """
         if u_given is None:
