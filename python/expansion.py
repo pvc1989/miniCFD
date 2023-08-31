@@ -51,9 +51,18 @@ class Taylor(Expansion):
     def approximate(self, function: callable):
         x_center = self.x_center()
         self._taylor_coeff[0] = function(x_center)
+        def kth_df_dx(f, k) -> callable:
+            return nd.Derivative(f, n=k, step=self.length()/100, order=4)
         for k in range(1, self.n_term()):
-            df_dx = nd.Derivative(function, n=k,
-                step=self.length()/100, order=4)
+            if issubclass(self.scalar_type(), complex):
+                def df_dx(x):
+                    real = kth_df_dx(lambda x: function(x).real, k)
+                    imag = kth_df_dx(lambda x: function(x).imag, k)
+                    return real(x) + 1j * imag(x)
+            elif issubclass(self.scalar_type(), float):
+                df_dx = kth_df_dx(function, k)
+            else:
+                assert False
             derivative = df_dx(x_center)
             # print(derivative)
             self._taylor_coeff[k] = derivative / Taylor._factorials[k]
