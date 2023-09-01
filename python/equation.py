@@ -23,8 +23,8 @@ class ConservationLaw(concept.Equation):
     def get_diffusive_coeff(self, u=0.0):
         return 0
 
-    def get_diffusive_flux(self, u, du_dx, nu):
-        return (self.get_diffusive_coeff(u) + nu) * du_dx
+    def get_diffusive_flux(self, u, du_dx, nu_extra):
+        return (self.get_diffusive_coeff(u) + nu_extra) * du_dx
 
     def get_source(self, u):
         return u * 0
@@ -172,11 +172,11 @@ class Euler(ConservationLaw):
         enthalpy = aa / self._gas.gamma_minus_1()
         return enthalpy + u*u/2
 
-    def get_diffusive_flux(self, u, du_dx, nu):
+    def get_diffusive_flux(self, u, du_dx, nu_extra):
         """Get the diffusive flux caused by extra viscosity.
         """
         velocity_x = u[1] / u[0]
-        tau = (4.0/3) * nu * (du_dx[1] - velocity_x * du_dx[0])
+        tau = (4.0/3) * nu_extra * (du_dx[1] - velocity_x * du_dx[0])
         return np.array([0, tau, tau * velocity_x])
 
     def get_convective_flux(self, U):

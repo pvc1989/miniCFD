@@ -79,7 +79,6 @@ class Solver(concept.RiemannSolver):
             right.get_extra_viscosity(right.x_left()))
         if viscosity == 0:
             return flux, u_left - u_left
-        viscosity -= self.equation().get_diffusive_coeff()
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
         if expansion_left.degree() > 1:
@@ -100,8 +99,9 @@ class Solver(concept.RiemannSolver):
         u_jump = u_right - u_left
         du = self.get_interface_gradient(left.length(), right.length(),
             u_jump, (du_left + du_right) / 2, ddu_right - ddu_left)
+        extra_viscosity = viscosity - self.equation().get_diffusive_coeff()
         flux -= self.equation().get_diffusive_flux(
-            (u_left + u_right) / 2, du, viscosity)
+            (u_left + u_right) / 2, du, extra_viscosity)
         return flux, viscosity / 2 * u_jump
 
 
