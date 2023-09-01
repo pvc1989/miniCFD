@@ -165,6 +165,7 @@ class Euler(ConservationLaw):
             u = U[1] / U[0]
         p = (U[2] - u*U[1]/2) * self._gas.gamma_minus_1()
         # print(U, '->', rho, u, p)
+        assert rho >= 0 and p >= 0
         return rho, u, p
 
     def primitive_to_total_enthalpy(self, rho, u, p):
@@ -172,12 +173,18 @@ class Euler(ConservationLaw):
         enthalpy = aa / self._gas.gamma_minus_1()
         return enthalpy + u*u/2
 
-    def get_diffusive_flux(self, u, du_dx, nu_extra):
+    def get_diffusive_flux(self, U, dx_U, nu_extra):
         """Get the diffusive flux caused by extra viscosity.
         """
-        velocity_x = u[1] / u[0]
-        tau = (4.0/3) * nu_extra * (du_dx[1] - velocity_x * du_dx[0])
-        return np.array([0, tau, tau * velocity_x])
+        rho, u, p = self.conservative_to_primitive(U)
+        dx_rho = dx_U[0]
+        dx_u = (dx_U[1] - u * dx_rho) / rho
+        mu = rho * nu_extra
+        tau = (4.0/3) * mu * dx_u
+        dx_e0 = dx_U[2]
+        prandtl = 1e100
+        q = self._gas.get_heat_flux(rho, dx_rho, u, dx_u, p, dx_e0, mu, prandtl)
+        return np.array([0, tau, tau * u - q])
 
     def get_convective_flux(self, U):
         rho, u, p = self.conservative_to_primitive(U)

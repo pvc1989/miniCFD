@@ -40,3 +40,11 @@ class Ideal(object):
 
     def p_rho_to_a(self, p, rho):
         return np.sqrt(self.p_rho_to_aa(p, rho))
+
+    def get_heat_flux(self, rho, dx_rho, u, dx_u, p, dx_e0, mu, prandtl):
+        dx_kinetic = dx_rho * u * u / 2 + rho * u * dx_u
+        temp = p / rho * dx_rho * self.one_over_gamma_minus_1()
+        # Now, temp == R * T * dx_rho / (gamma - 1)
+        temp = (dx_e0 - dx_kinetic - temp) / rho
+        # Now, temp == C_v * dx_T / (gamma - 1)
+        return -mu / prandtl * self.gamma() * temp
