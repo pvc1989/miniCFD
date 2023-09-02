@@ -9,13 +9,13 @@ from matplotlib import colors
 
 class Viewer:
 
-    def __init__(self, expect, actual) -> None:
-        self._expect = self.load(expect, 'U')
-        self._actual = self.load(actual, 'U')
-        self._viscosity = self.load(actual, 'Viscosity')
+    def __init__(self, expect, actual, scalar_name) -> None:
         self._actual_path = actual
+        self._expect = self.load(expect, scalar_name)
+        self._actual = self.load(actual, scalar_name)
+        self._viscosity = self.load(actual, 'Viscosity')
 
-    def load(self, path, array_name):
+    def load(self, path, scalar_name):
         reader = vtk.vtkXMLUnstructuredGridReader()
         n_point = 201
         n_frame = 101
@@ -26,7 +26,9 @@ class Viewer:
             reader.Update()
             pdata = reader.GetOutput().GetPointData()
             assert isinstance(pdata, vtk.vtkPointData)
-            u = pdata.GetAbstractArray(array_name)
+            u = pdata.GetAbstractArray(scalar_name)
+            if not u:
+                return None
             assert isinstance(u, vtk.vtkFloatArray)
             for i_point in range(n_point):
                 udata[i_frame][i_point] = u.GetTuple1(i_point)
@@ -38,12 +40,14 @@ class Viewer:
         ax.set_ylabel(r'$t$')
         zdata = np.abs(self._expect - self._actual)
         mappable = ax.imshow(zdata, origin='lower', cmap='coolwarm',
-            norm=colors.LogNorm(vmin=1e-6, vmax=1e1, clip=True))
+            norm=colors.LogNorm(vmin=1e-6, vmax=1e0, clip=True))
         fig.colorbar(mappable, location='top', label='Pointwise Errors')
         plt.tight_layout()
         plt.savefig(f'{self._actual_path}/error2d.svg')
 
     def plot_viscosity(self):
+        if self._viscosity is None:
+            return
         fig, ax = plt.subplots()
         ax.set_xlabel(r'$x$')
         ax.set_ylabel(r'$t$')
@@ -55,6 +59,6 @@ class Viewer:
 
 
 if __name__ == '__main__':
-    viewer = Viewer(sys.argv[1], sys.argv[2])
+    viewer = Viewer(sys.argv[1], sys.argv[2], sys.argv[3])
     viewer.plot_error()
     viewer.plot_viscosity()
