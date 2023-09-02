@@ -14,6 +14,25 @@ import spatial, detector, limiter, viscosity
 import temporal
 
 
+def _get_ith_array(arrays, i) -> vtk.vtkFloatArray:
+    return arrays[i]
+
+
+def _get_ith_float(a, i) -> float:
+    if isinstance(a, np.ndarray):
+        return a[i]
+    else:
+        return a
+
+
+def _vector_to_scalar(array_of_vector: np.ndarray, i_scalar: int) -> np.ndarray:
+    n_vector = len(array_of_vector)
+    array_of_scalar = np.ndarray(n_vector)
+    for i_vector in range(n_vector):
+        array_of_scalar[i_vector] = array_of_vector[i_vector][i_scalar]
+    return array_of_scalar
+
+
 class SolverBase(abc.ABC):
     """Define common methods for all solvers.
     """
@@ -65,17 +84,13 @@ class SolverBase(abc.ABC):
 
     def _get_ydata(self, t_curr, points):
         n_point = len(points)
-        expect_solution = np.ndarray(n_point)
-        approx_solution = np.ndarray(n_point)
+        value_type = self._spatial.value_type()
+        expect_solution = np.ndarray(n_point, value_type)
+        approx_solution = np.ndarray(n_point, value_type)
         for i in range(n_point):
             point_i = points[i]
-            approx_i = self._spatial.get_solution_value(point_i)
-            expect_i = self.u_exact(point_i, t_curr)
-            if isinstance(approx_i, np.ndarray):
-                approx_i = approx_i[0]
-                expect_i = expect_i[0]
-            approx_solution[i] = approx_i
-            expect_solution[i] = expect_i
+            approx_solution[i] = self._spatial.get_solution_value(point_i)
+            expect_solution[i] = self.u_exact(point_i, t_curr)
         return expect_solution, approx_solution
 
     def _measure_errors(self, t_curr):
@@ -99,6 +114,9 @@ class SolverBase(abc.ABC):
         """
         points = self._output_points
         expect_solution, approx_solution = self._get_ydata(t_curr, points)
+        if self._spatial.value_type() == np.ndarray:
+            expect_solution = _vector_to_scalar(expect_solution, 0)
+            approx_solution = _vector_to_scalar(approx_solution, 0)
         fig = self._get_figure()
         plt.plot(points, approx_solution, 'b-',
             label=self.solver_name())
@@ -118,35 +136,40 @@ class SolverBase(abc.ABC):
     def _write_to_vtu(self, filename: str, t_curr: float, binary=True):
         grid = vtk.vtkUnstructuredGrid()
         vtk_points = vtk.vtkPoints()
-        solution = vtk.vtkFloatArray()
-        solution.SetName("U")
-        solution.SetNumberOfComponents(1)
+        n_component = self._spatial.equation().n_component()
+        component_names = self._spatial.equation().component_names()
+        solutions = []
+        for i_component in range(n_component):
+            solutions.append(vtk.vtkFloatArray())
+            solution_i = _get_ith_array(solutions, i_component)
+            solution_i.SetName(component_names[i_component])
+            solution_i.SetNumberOfComponents(1)
         if self._spatial.viscosity():
             viscosity = vtk.vtkFloatArray()
             viscosity.SetName("Viscosity")
             viscosity.SetNumberOfComponents(1)
         i_cell = 0
         cell_i = self._spatial.get_element_by_index(i_cell)
-        # expect_solution, _ = self._get_ydata(t_curr, self._output_points)
-        # i_solution = 0
+        _, values = self._get_ydata(t_curr, self._output_points)
+        i_point = 0
         for x in self._output_points:
             vtk_points.InsertNextPoint((x, 0, 0))
             if x > cell_i.x_right():
                 i_cell += 1
                 cell_i = self._spatial.get_element_by_index(i_cell)
-            value = self._spatial.get_solution_value(x)
-            # value = expect_solution[i_solution]
-            # i_solution += 1
-            if isinstance(value, np.ndarray):
-                solution.InsertNextValue(value[0])
-            else:
-                solution.InsertNextValue(value)
+            value = values[i_point]
+            i_point += 1
+            for i_component in range(n_component):
+                solution_i = _get_ith_array(solutions, i_component)
+                solution_i.InsertNextValue(_get_ith_float(value, i_component))
             if self._spatial.viscosity():
                 viscosity.InsertNextValue(cell_i.get_extra_viscosity(x))
-        # assert i_solution == len(expect_solution)
+        assert i_point == len(values)
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
-        grid.GetPointData().SetScalars(solution)
+        for i_component in range(n_component):
+            grid.GetPointData().SetActiveScalars(component_names[i_component])
+            grid.GetPointData().SetScalars(solutions[i_component])
         if self._spatial.viscosity():
             grid.GetPointData().SetActiveScalars("Viscosity")
             grid.GetPointData().SetScalars(viscosity)
@@ -209,6 +232,9 @@ class SolverBase(abc.ABC):
         # update data for the next frame
         def update_func(t_curr):
             expect_solution, approx_solution = self._get_ydata(t_curr, points)
+            if self._spatial.value_type() == np.ndarray:
+                expect_solution = _vector_to_scalar(expect_solution, 0)
+                approx_solution = _vector_to_scalar(approx_solution, 0)
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
             print(f't = {t_curr:.3f}')

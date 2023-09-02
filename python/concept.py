@@ -396,6 +396,11 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
+    def component_names(self) -> tuple[str]:
+        """Get the names of components in U.
+        """
+
+    @abc.abstractmethod
     def name(self, verbose: bool) -> str:
         """Get the name of the equation.
         """

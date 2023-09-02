@@ -13,6 +13,9 @@ class Scalar(concept.Equation):
     def get_convective_eigvals(self, u_given) -> tuple:
         return (self.get_convective_speed(u_given),)
 
+    def component_names(self) -> tuple[str]:
+        return ('U',)
+
 
 class ConservationLaw(concept.Equation):
     # \pdv{U}{t} + \pdv{F}{x} = 0
@@ -118,9 +121,16 @@ class LinearSystem(ConservationLaw):
         self._A = A_const
         eigvals = np.linalg.eigvals(A_const)
         self._eigvals = (eigvals[0], eigvals[1], eigvals[2])
+        names = []
+        for i in range(self.n_component()):
+            names.append(f'U{i}')
+        self._component_names = tuple(names)
 
     def n_component(self):
         return len(self._A)
+
+    def component_names(self) -> tuple[str]:
+        return self._component_names
 
     def name(self, verbose=True) -> str:
         return "LinearSystem"
@@ -146,6 +156,9 @@ class Euler(ConservationLaw):
 
     def n_component(self):
         return 3
+
+    def component_names(self) -> tuple[str]:
+        return ('Density', 'MomentumX', 'EnergyStagnationDensity')
 
     def name(self, verbose=True) -> str:
         return "Euler"
