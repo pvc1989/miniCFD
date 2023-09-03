@@ -349,6 +349,13 @@ class LagrangeOnLegendreRoots(Lagrange):
         """
         return self._sample_weights[k]
 
+    def average(self):
+        values = self.get_sample_values()
+        value = values[0] * self.get_sample_weight(0)
+        for i in range(1, self.n_term()):
+            value += values[i] * self.get_sample_weight(i)
+        return value
+
 
 class Legendre(Taylor):
     """Approximate a general function based on Legendre polynomials.

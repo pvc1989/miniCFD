@@ -82,23 +82,48 @@ class Energy(concept.Viscosity):
     @staticmethod
     def _jumps_to_energy(jumps: np.ndarray, cell: concept.Element,
             indices=None):
-        curr = cell.expansion()
-        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
-        energy = 0.0
         if not indices:
             indices = range(len(jumps))
+        curr = cell.expansion()
+        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
+        n_component = cell.equation().n_component()
+        if n_component > 1:
+            u_average = curr.average()
+            left_eigmat, _ = cell.equation().get_convective_eigmats(u_average)
+            new_jumps = np.ndarray(len(jumps), np.ndarray)
+            for i_node in indices:
+                new_jumps[i_node] = left_eigmat @ jumps[i_node]
+            jumps = new_jumps
+            energy = np.zeros(n_component)
+        else:
+            energy = 0.0
         for k in indices:
             energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
         return energy
+
+    @staticmethod
+    def _min(x, y):
+        if isinstance(x, np.ndarray):
+            for i in range(len(x)):
+                x[i] = min(x[i], y[i])
+        else:
+            assert isinstance(x, float)
+            x = min(x, y)
+        return x
+
+    @staticmethod
+    def _min3(x, y, z):
+        return Energy._min(x, Energy._min(y, z))
 
     def _get_high_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
         """Compare with polynomials on neighbors.
         """
         curr = cell.expansion()
+        value_type = curr.value_type()
         left, right = cell.neighbor_expansions()
-        left_jumps = np.ndarray(len(points))
-        right_jumps = np.ndarray(len(points))
+        left_jumps = np.ndarray(len(points), value_type)
+        right_jumps = np.ndarray(len(points), value_type)
         for i in range(len(points)):
             x_curr = points[i]
             if left:
@@ -109,19 +134,20 @@ class Energy(concept.Viscosity):
                 right_jumps[i] = values[i] - right.global_to_value(x_curr)
             else:
                 right_jumps[i] = np.infty
-        return min(Energy._jumps_to_energy(left_jumps, cell),
-                   Energy._jumps_to_energy(right_jumps, cell))
+        return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
+                           Energy._jumps_to_energy(right_jumps, cell))
 
     def _get_low_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
         curr = cell.expansion()
+        value_type = curr.value_type()
         left, right = cell.neighbor_expansions()
         # build left_jumps
-        left_jumps = np.ndarray(len(points))
+        left_jumps = np.ndarray(len(points), value_type)
         if left:
-            left_low = expansion.Legendre(1, left.coordinate())
+            left_low = expansion.Legendre(1, left.coordinate(), value_type)
             left_low.approximate(lambda x: left.global_to_value(x))
             for i in range(len(points)):
                 left_jumps[i] = values[i] - left_low.global_to_value(points[i])
@@ -129,30 +155,31 @@ class Energy(concept.Viscosity):
             for i in range(len(points)):
                 left_jumps[i] = np.infty
         # build right_jumps
-        right_jumps = np.ndarray(len(points))
+        right_jumps = np.ndarray(len(points), value_type)
         if right:
-            right_low = expansion.Legendre(1, right.coordinate())
+            right_low = expansion.Legendre(1, right.coordinate(), value_type)
             right_low.approximate(lambda x: right.global_to_value(x))
             for i in range(len(points)):
                 right_jumps[i] = values[i] - right_low.global_to_value(points[i])
         else:
             for i in range(len(points)):
                 right_jumps[i] = np.infty
-        return min(Energy._jumps_to_energy(left_jumps, cell),
-                   Energy._jumps_to_energy(right_jumps, cell))
+        return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
+                           Energy._jumps_to_energy(right_jumps, cell))
 
     def _get_lazy_half_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=k and p=1 extensions from neighbors in the closer half using the integrator on cell.
         """
         curr = cell.expansion()
+        value_type = curr.value_type()
         left, right = cell.neighbor_expansions()
-        low_jumps = np.zeros(len(points))
-        high_jumps = np.zeros(len(points))
+        low_jumps = np.zeros(len(points), value_type)
+        high_jumps = np.zeros(len(points), value_type)
         # build left_energy
         left_energy = np.infty
         if left:
-            left_low = expansion.Legendre(1, left.coordinate())
+            left_low = expansion.Legendre(1, left.coordinate(), value_type)
             left_low.approximate(lambda x: left.global_to_value(x))
             indices = range((1 + len(points)) // 2)
             for i in indices:
@@ -161,13 +188,13 @@ class Energy(concept.Viscosity):
             if len(points) % 2:
                 low_jumps[indices[-1]] /= np.sqrt(2)
                 high_jumps[indices[-1]] /= np.sqrt(2)
-            left_energy = min(
+            left_energy = Energy._min(
                 Energy._jumps_to_energy(low_jumps, cell, indices),
                 Energy._jumps_to_energy(high_jumps, cell, indices))
         # build right_energy
         right_energy = np.infty
         if right:
-            right_low = expansion.Legendre(1, right.coordinate())
+            right_low = expansion.Legendre(1, right.coordinate(), value_type)
             right_low.approximate(lambda x: right.global_to_value(x))
             indices = range(len(points) // 2, len(points))
             for i in indices:
@@ -176,7 +203,7 @@ class Energy(concept.Viscosity):
             if len(points) % 2:
                 low_jumps[indices[0]] /= np.sqrt(2)
                 high_jumps[indices[0]] /= np.sqrt(2)
-            right_energy = min(
+            right_energy = Energy._min(
                 Energy._jumps_to_energy(low_jumps, cell, indices),
                 Energy._jumps_to_energy(high_jumps, cell, indices))
         return left_energy + right_energy
@@ -248,7 +275,7 @@ class Energy(concept.Viscosity):
         """Compare with four polynomials borrowed from neighbors.
         """
         points = cell.get_sample_points()
-        values = np.ndarray(len(points))
+        values = np.ndarray(len(points), cell.value_type())
         for i in range(len(points)):
             values[i] = cell.get_solution_value(points[i])
         # return self._get_high_order_energy(cell, points, values)
@@ -258,7 +285,7 @@ class Energy(concept.Viscosity):
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         # return self._get_lazy_half_energy(cell, points, values)
         # return self._get_exact_half_energy(cell)
-        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
+        return Energy._min3(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
 
     @staticmethod
@@ -277,7 +304,8 @@ class Energy(concept.Viscosity):
         dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
-        assert nu >= 0, (nu)
+        if isinstance(nu, np.ndarray):
+            nu = np.max(nu)
         return min(nu, Energy._nu_max(curr))
 
     def _get_nu(self, i_cell: int, n_cell: int):

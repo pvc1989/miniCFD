@@ -411,13 +411,28 @@ class FRonLegendreRoots(LagrangeFR):
                 mat_w[k][k] = self.expansion().get_sample_weight(k)
             self._disspation_matrices = (mat_w@mat_d, mat_w@mat_e, mat_w@mat_f)
         mat_d, mat_e, mat_f = self._disspation_matrices
-        curr_column = self.get_solution_column()
-        dissipation = mat_d @ curr_column
-        # left, right = self.neighbor_expansions()
-        # dissipation += mat_e @ left.get_coeff_ref()
-        # dissipation += mat_f @ right.get_coeff_ref()
-        dissipation = curr_column.transpose() @ dissipation
-        assert dissipation < 0
+        n_component = self.equation().n_component()
+        if n_component == 1:
+            column = self.get_solution_column()
+            dissipation = mat_d @ column
+            # left, right = self.neighbor_expansions()
+            # dissipation += mat_e @ left.get_coeff_ref()
+            # dissipation += mat_f @ right.get_coeff_ref()
+            dissipation = column.transpose() @ dissipation
+            assert dissipation < 0, dissipation
+        else:
+            u_average = self.expansion().average()
+            L, _ = self.equation().get_convective_eigmats(u_average)
+            U = self.expansion().get_sample_values()
+            V = np.ndarray((self.n_term(), n_component))
+            for i_node in range(self.n_term()):
+                V[i_node, :] = L @ U[i_node]
+            dissipation = np.ndarray(n_component)
+            for i_comp in range(n_component):
+                column = V[:, i_comp]
+                dissipation_i = column.transpose() @ (mat_d @ column)
+                assert dissipation_i < 0, dissipation_i
+                dissipation[i_comp] = dissipation_i
         # print(f'dissipation = {dissipation:.2e}')
         return dissipation
 
