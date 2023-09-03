@@ -80,8 +80,10 @@ class Energy(concept.Viscosity):
             return 'Energy'
 
     @staticmethod
-    def _jumps_to_energy(jumps: np.ndarray, curr: expansion.LagrangeOnLegendreRoots,
+    def _jumps_to_energy(jumps: np.ndarray, cell: concept.Element,
             indices=None):
+        curr = cell.expansion()
+        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
         energy = 0.0
         if not indices:
             indices = range(len(jumps))
@@ -107,8 +109,8 @@ class Energy(concept.Viscosity):
                 right_jumps[i] = values[i] - right.global_to_value(x_curr)
             else:
                 right_jumps[i] = np.infty
-        return min(Energy._jumps_to_energy(left_jumps, curr),
-                   Energy._jumps_to_energy(right_jumps, curr))
+        return min(Energy._jumps_to_energy(left_jumps, cell),
+                   Energy._jumps_to_energy(right_jumps, cell))
 
     def _get_low_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
@@ -136,8 +138,8 @@ class Energy(concept.Viscosity):
         else:
             for i in range(len(points)):
                 right_jumps[i] = np.infty
-        return min(Energy._jumps_to_energy(left_jumps, curr),
-                   Energy._jumps_to_energy(right_jumps, curr))
+        return min(Energy._jumps_to_energy(left_jumps, cell),
+                   Energy._jumps_to_energy(right_jumps, cell))
 
     def _get_lazy_half_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
@@ -160,8 +162,8 @@ class Energy(concept.Viscosity):
                 low_jumps[indices[-1]] /= np.sqrt(2)
                 high_jumps[indices[-1]] /= np.sqrt(2)
             left_energy = min(
-                Energy._jumps_to_energy(low_jumps, curr, indices),
-                Energy._jumps_to_energy(high_jumps, curr, indices))
+                Energy._jumps_to_energy(low_jumps, cell, indices),
+                Energy._jumps_to_energy(high_jumps, cell, indices))
         # build right_energy
         right_energy = np.infty
         if right:
@@ -175,8 +177,8 @@ class Energy(concept.Viscosity):
                 low_jumps[indices[0]] /= np.sqrt(2)
                 high_jumps[indices[0]] /= np.sqrt(2)
             right_energy = min(
-                Energy._jumps_to_energy(low_jumps, curr, indices),
-                Energy._jumps_to_energy(high_jumps, curr, indices))
+                Energy._jumps_to_energy(low_jumps, cell, indices),
+                Energy._jumps_to_energy(high_jumps, cell, indices))
         return left_energy + right_energy
 
     def _get_exact_half_energy(self, cell: element.FRonLegendreRoots):
@@ -256,8 +258,8 @@ class Energy(concept.Viscosity):
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
         # return self._get_lazy_half_energy(cell, points, values)
         # return self._get_exact_half_energy(cell)
-        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
-        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
+        return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
+        # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
 
     @staticmethod
     def _nu_max(cell: element.LagrangeFR):
