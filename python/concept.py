@@ -421,6 +421,11 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_convective_eigmats(self, u_given) -> tuple:
+        """Get the left and right eigenmatrices of ∂F(U)/∂U for a given U.
+        """
+
+    @abc.abstractmethod
     def get_convective_speed(self, u_given):
         """Get the value of convective speed for a given U.
         """

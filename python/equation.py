@@ -13,6 +13,9 @@ class Scalar(concept.Equation):
     def get_convective_eigvals(self, u_given) -> tuple:
         return (self.get_convective_speed(u_given),)
 
+    def get_convective_eigmats(self, u_given) -> tuple:
+        return (1, 1)
+
     def component_names(self) -> tuple[str]:
         return ('U',)
 
@@ -119,8 +122,10 @@ class LinearSystem(ConservationLaw):
         ConservationLaw.__init__(self, np.ndarray)
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
-        eigvals = np.linalg.eigvals(A_const)
-        self._eigvals = (eigvals[0], eigvals[1], eigvals[2])
+        eigvals, R = np.linalg.eig(A_const)
+        self._eigvals = tuple(eigvals)
+        L = np.linalg.inv(R)
+        self._eigmats = (L, R)
         names = []
         for i in range(self.n_component()):
             names.append(f'U{i}')
@@ -143,6 +148,9 @@ class LinearSystem(ConservationLaw):
 
     def get_convective_eigvals(self, u_given) -> np.ndarray:
         return self._eigvals
+
+    def get_convective_eigmats(self, u_given) -> tuple:
+        return self._eigmats
 
     def get_convective_speed(self, u_given):
         assert False
