@@ -223,6 +223,13 @@ class Lagrange(Taylor):
         """
         self._taylor_to_lagrange = base_rows
         self._lagrange_to_taylor = np.linalg.inv(base_rows)
+        self._cached_average = None
+
+    def _update_cached_average(self):
+        self._cached_average = Taylor.average(self)
+
+    def average(self):
+        return self._cached_average
 
     def name(self, verbose) -> str:
         my_name = 'Lagrange'
@@ -260,6 +267,7 @@ class Lagrange(Taylor):
         for i in range(len(values)):
             self._sample_values[i] = values[i]
         self._set_taylor_coeff()
+        self._update_cached_average()
 
     def get_coeff_ref(self):
         return self._sample_values
@@ -268,6 +276,7 @@ class Lagrange(Taylor):
         for i in range(self._basis.n_term()):
             self._sample_values[i] = function(self._sample_points[i])
         self._set_taylor_coeff()
+        self._update_cached_average()
 
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
@@ -349,12 +358,12 @@ class LagrangeOnLegendreRoots(Lagrange):
         """
         return self._sample_weights[k]
 
-    def average(self):
+    def _update_cached_average(self):
         values = self.get_sample_values()
         value = values[0] * self.get_sample_weight(0)
         for i in range(1, self.n_term()):
             value += values[i] * self.get_sample_weight(i)
-        return value
+        self._cached_average = value / self.coordinate().length()
 
 
 class Legendre(Taylor):

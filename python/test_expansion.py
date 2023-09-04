@@ -357,6 +357,14 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
         self.assertAlmostEqual(0.0, np.linalg.norm(diff))
 
+    def test_average(self):
+        self._expansion.approximate(np.sin)
+        self.assertAlmostEqual(self._expansion.average(),
+            expansion.Taylor.average(self._expansion))
+        self._expansion.set_coeff(np.random.rand(self._expansion.n_term()))
+        self.assertAlmostEqual(self._expansion.average(),
+            expansion.Taylor.average(self._expansion))
+
     def test_sample_weights(self):
         n_term = self._expansion.n_term()
         polynomial_coeff = np.random.rand(n_term)
