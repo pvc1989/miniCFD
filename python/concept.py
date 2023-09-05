@@ -506,6 +506,7 @@ class Element(abc.ABC):
         self._left_expansion = None
         self._right_expansion = None
         self._extra_viscosity = None
+        self._eigen_matrices = None
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
@@ -567,6 +568,7 @@ class Element(abc.ABC):
         """Approximate a general function as u^h.
         """
         self.expansion().approximate(function)
+        self._update_eigen_matrices()
 
     def fixed_quad_global(self, function: callable, n_point: int):
         return self.integrator().fixed_quad_global(function, n_point)
@@ -648,6 +650,7 @@ class Element(abc.ABC):
                     i_dof += 1
             assert i_dof == len(column)
             self.expansion().set_coeff(coeff)
+        self._update_eigen_matrices()
 
     def get_solution_column(self) -> np.ndarray:
         """Get coefficients of the solution's expansion.
@@ -766,6 +769,13 @@ class Element(abc.ABC):
 
     def suggest_delta_t(self):
         return self._suggest_dt_by_blazek()
+
+    def _update_eigen_matrices(self):
+        u_average = self.expansion().average()
+        self._eigen_matrices = self.equation().get_convective_eigmats(u_average)
+
+    def get_convective_eigmats(self) -> tuple[np.ndarray, np.ndarray]:
+        return self._eigen_matrices
 
 
 class Grid(abc.ABC):

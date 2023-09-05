@@ -76,7 +76,7 @@ class DGonUniformRoots(DiscontinuousGalerkin):
     def __init__(self, riemann: RiemannSolver, degree: int,
             coordinate: Coordinate) -> None:
         e = LagrangeOnUniformRoots(degree, coordinate, riemann.value_type())
-        LagrangeDG.__init__(self, r, e)
+        LagrangeDG.__init__(self, riemann, e)
 
     def expansion(self) -> LagrangeOnUniformRoots:
         return Element.expansion(self)
@@ -421,8 +421,7 @@ class FRonLegendreRoots(LagrangeFR):
             dissipation = column.transpose() @ dissipation
             assert dissipation < 0, dissipation
         else:
-            u_average = self.expansion().average()
-            L, _ = self.equation().get_convective_eigmats(u_average)
+            L, _ = self.get_convective_eigmats()
             U = self.expansion().get_sample_values()
             V = np.ndarray((self.n_term(), n_component))
             for i_node in range(self.n_term()):

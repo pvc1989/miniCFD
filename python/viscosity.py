@@ -88,8 +88,7 @@ class Energy(concept.Viscosity):
         assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
         n_component = cell.equation().n_component()
         if n_component > 1:
-            u_average = curr.average()
-            left_eigmat, _ = cell.equation().get_convective_eigmats(u_average)
+            left_eigmat, _ = cell.get_convective_eigmats()
             new_jumps = np.ndarray(len(jumps), np.ndarray)
             for i_node in indices:
                 new_jumps[i_node] = left_eigmat @ jumps[i_node]

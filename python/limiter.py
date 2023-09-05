@@ -38,8 +38,7 @@ class CompactWENO(concept.Limiter):
         if isinstance(eq, equation.Scalar):
             return self.get_scalar_taylor_coeff(candidates)
         elif isinstance(eq, equation.Euler):
-            average = curr.expansion().average()
-            left, right = eq.get_convective_eigmats(average)
+            left, right = curr.get_convective_eigmats()
             vector_taylor_coeffs = []
             vector_candidates = candidates
             for vector_poly in vector_candidates:
