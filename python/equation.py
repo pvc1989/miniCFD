@@ -4,47 +4,13 @@ import concept
 import gas
 
 
-class Scalar(concept.Equation):
-
-    def get_convective_jacobian(self, u_given) -> np.ndarray:
-        speed = self.get_convective_speed(u_given)
-        return np.array([speed])
-
-    def get_convective_eigvals(self, u_given) -> tuple:
-        return (self.get_convective_speed(u_given),)
-
-    def get_convective_eigmats(self, u_given) -> tuple:
-        return (1, 1)
-
-    def component_names(self) -> tuple[str]:
-        return ('U',)
-
-
-class ConservationLaw(concept.Equation):
-    # \pdv{U}{t} + \pdv{F}{x} = 0
-
-    def __init__(self, value_type) -> None:
-        concept.Equation.__init__(self, value_type)
-
-    def get_diffusive_coeff(self, u=0.0):
-        return 0
-
-    def get_diffusive_flux(self, u, du_dx, nu_extra):
-        return (self.get_diffusive_coeff(u) + nu_extra) * du_dx
-
-    def get_source(self, u):
-        return u * 0
-
-
-class LinearAdvection(ConservationLaw, Scalar):
-    # ∂u/∂t + a * ∂u/∂x = 0
+class LinearAdvection(concept.ScalarEquation):
+    """ \f$ \partial_t u + a\,\partial_x u = 0 \f$
+    """
 
     def __init__(self, a_const, value_type=float):
-        ConservationLaw.__init__(self, value_type)
+        concept.Equation.__init__(self, value_type)
         self._a = a_const
-
-    def n_component(self):
-        return 1
 
     def name(self, verbose=True) -> str:
         my_name = r'$\partial u/\partial t$+' + f'{self._a} '
@@ -59,7 +25,8 @@ class LinearAdvection(ConservationLaw, Scalar):
 
 
 class LinearAdvectionDiffusion(LinearAdvection):
-    # ∂u/∂t + a * ∂u/∂x = (∂/∂x)(b * ∂u/∂x)
+    """ \f$ \partial_t u + a\,\partial_x u = \partial_x \left(b\,\partial_x\right) \f$
+    """
 
     def __init__(self, a_const, b_const, value_type=float):
         LinearAdvection.__init__(self, a_const, value_type)
@@ -75,16 +42,14 @@ class LinearAdvectionDiffusion(LinearAdvection):
         return self._b
 
 
-class InviscidBurgers(ConservationLaw, Scalar):
-    # ∂u/∂t + k * u * ∂u/∂x = 0
+class InviscidBurgers(concept.ScalarEquation):
+    """ \f$ \partial_t u + ku\,\partial_x u = 0 \f$
+    """
 
     def __init__(self, k=1.0):
-        ConservationLaw.__init__(self, float)
+        concept.Equation.__init__(self, float)
         assert k > 0.0
         self._k = k
-
-    def n_component(self):
-        return 1
 
     def name(self, verbose=True) -> str:
         my_name = r'$\partial u/\partial t+$' + f'{self._k} u '
@@ -99,7 +64,8 @@ class InviscidBurgers(ConservationLaw, Scalar):
 
 
 class Burgers(InviscidBurgers):
-    # ∂u/∂t + k * ∂u/∂x = (∂/∂x)(ν * ∂u/∂x)
+    """ \f$ \partial_t u + ku\,\partial_x u = \partial_x \left(b\,\partial_x\right) \f$
+    """
 
     def __init__(self, k_const=1.0, nu_const=0.0):
         assert k_const > 0.0 and nu_const >= 0.0
@@ -116,10 +82,12 @@ class Burgers(InviscidBurgers):
         return self._nu
 
 
-class LinearSystem(ConservationLaw):
+class LinearSystem(concept.EquationSystem):
+    """ \f$ \partial_t U + A\,\partial_x U = 0 \f$
+    """
 
     def __init__(self, A_const: np.ndarray):
-        ConservationLaw.__init__(self, np.ndarray)
+        concept.EquationSystem.__init__(self)
         assert A_const.shape[0] == A_const.shape[1]
         self._A = A_const
         eigvals, R = np.linalg.eig(A_const)
@@ -152,14 +120,11 @@ class LinearSystem(ConservationLaw):
     def get_convective_eigmats(self, u_given) -> tuple:
         return self._eigmats
 
-    def get_convective_speed(self, u_given):
-        assert False
 
-
-class Euler(ConservationLaw):
+class Euler(concept.EquationSystem):
 
     def __init__(self, gamma=1.4):
-        ConservationLaw.__init__(self, np.ndarray)
+        concept.EquationSystem.__init__(self)
         self._gas = gas.Ideal(gamma)
 
     def n_component(self):
@@ -264,9 +229,6 @@ class Euler(ConservationLaw):
         left[2][1] = -(b1 * u - 1 / a) / 2
         left[2][2] = b1 / 2
         return (left, right)
-
-    def get_convective_speed(self, u_given):
-        return u_given[1] / u_given[0]
 
 
 if __name__ == '__main__':

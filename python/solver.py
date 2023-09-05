@@ -264,7 +264,7 @@ class LinearSmooth(SolverBase):
             v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         super().__init__(u_mean, s, d, l, v, ode_solver)
         self._a_const = self._spatial.equation().get_convective_speed()
-        self._b_const = self._spatial.equation().get_diffusive_coeff()
+        self._b_const = self._spatial.equation().get_diffusive_coeff(u_mean)
         self._k_const = wave_number
         self._wave_number = self._k_const * np.pi * 2 / self._spatial.length()
 

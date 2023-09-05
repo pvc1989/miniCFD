@@ -17,9 +17,9 @@ class TestEquations(unittest.TestCase):
         advection = equation.LinearAdvection(a_const)
         u_given = rand()
         self.assertEqual(advection.get_convective_flux(u_given), a_const*u_given)
-        self.assertEqual(advection.get_convective_jacobian(u_given), a_const)
-        self.assertEqual(advection.get_convective_eigvals(u_given)[0], a_const)
         self.assertEqual(advection.get_convective_speed(u_given), a_const)
+        self.assertEqual(advection.get_convective_radius(u_given),
+            np.abs(advection.get_convective_speed(u_given)))
         nu, du_dx = rand(), rand()
         self.assertEqual(nu * du_dx,
             advection.get_diffusive_flux(u_given, du_dx, nu))
@@ -32,9 +32,9 @@ class TestEquations(unittest.TestCase):
         speed = k_const * u_given
         flux = k_const * u_given**2 / 2
         self.assertEqual(burgers.get_convective_flux(u_given), flux)
-        self.assertEqual(burgers.get_convective_jacobian(u_given), speed)
-        self.assertEqual(burgers.get_convective_eigvals(u_given)[0], speed)
         self.assertEqual(burgers.get_convective_speed(u_given), speed)
+        self.assertEqual(burgers.get_convective_radius(u_given),
+            np.abs(burgers.get_convective_speed(u_given)))
         nu, du_dx = rand(), rand()
         self.assertEqual(nu * du_dx,
             burgers.get_diffusive_flux(u_given, du_dx, nu))
@@ -87,9 +87,8 @@ class TestEquations(unittest.TestCase):
         eigvals = euler.get_convective_eigvals(given)
         norm = np.linalg.norm(eigvals - np.sort(np.linalg.eigvals(jacobian)))
         self.assertAlmostEqual(norm, 0.0)
-        self.assertEqual(
-            euler.get_convective_eigvals(given)[1],
-            euler.get_convective_speed(given))
+        self.assertEqual(np.max(np.abs(eigvals)),
+            euler.get_convective_radius(given))
         # test A = R * lambdas * L
         lambdas = np.eye(3)
         lambdas[0][0] = eigvals[0]

@@ -379,7 +379,7 @@ class ShiftedExpansion(Expansion):
 
 
 class Equation(abc.ABC):
-    """A PDE in the form of ∂U/∂t + ∂F/∂x = ∂G/∂x + H.
+    """A PDE in the form of \f$ \partial_t U + \partial_x F = \partial_x G + 0\f$.
     """
 
     def __init__(self, value_type) -> None:
@@ -411,38 +411,60 @@ class Equation(abc.ABC):
         """
 
     @abc.abstractmethod
-    def get_convective_jacobian(self, u_given) -> np.ndarray:
-        """Get the value of ∂F(U)/∂U for a given U.
+    def get_convective_radius(self, u_given):
+        """Get the max convective speed.
         """
 
-    @abc.abstractmethod
-    def get_convective_eigvals(self, u_given) -> tuple:
-        """Get the eigenvalues of ∂F(U)/∂U for a given U.
+    def get_diffusive_coeff(self, u_given):
+        """Get the value of b(U) for a given U if G(U, ∂U/∂x) = b(U) * ∂U/∂x.
         """
+        return 0.0
 
-    @abc.abstractmethod
-    def get_convective_eigmats(self, u_given) -> tuple:
-        """Get the left and right eigenmatrices of ∂F(U)/∂U for a given U.
+    def get_diffusive_flux(self, u, du_dx, nu_extra):
+        """Get the value of G(U, ∂U/∂x) for a given pair of U and ∂U/∂x, and optionally some extra viscosity.
         """
+        return (self.get_diffusive_coeff(u) + nu_extra) * du_dx
+
+
+class ScalarEquation(Equation):
+
+    def n_component(self):
+        return 1
+
+    def component_names(self) -> tuple[str]:
+        return ('U',)
 
     @abc.abstractmethod
     def get_convective_speed(self, u_given):
         """Get the value of convective speed for a given U.
         """
 
+    def get_convective_radius(self, u_given):
+        return np.abs(self.get_convective_speed(u_given))
+
+
+class EquationSystem(Equation):
+
+    def __init__(self) -> None:
+        Equation.__init__(self, np.ndarray)
+
     @abc.abstractmethod
-    def get_diffusive_coeff(self, u_given):
-        """Get the value of b for a given U if G(U, ∂U/∂x) = b(U) * ∂U/∂x.
+    def get_convective_jacobian(self, u_given) -> np.ndarray:
+        """Get the value of ∂F(U)/∂U for a given U.
         """
 
     @abc.abstractmethod
-    def get_diffusive_flux(self, u_given, du_dx_given, nu_extra):
-        """Get the value of G(U, ∂U/∂x) for a given pair of U and ∂U/∂x.
+    def get_convective_eigvals(self, u_given) -> np.ndarray:
+        """Get the eigenvalues of ∂F(U)/∂U for a given U.
         """
 
+    def get_convective_radius(self, u_given):
+        eigvals = self.get_convective_eigvals(u_given)
+        return np.max(np.abs(eigvals))
+
     @abc.abstractmethod
-    def get_source(self, u_given):
-        """Get the value of H(U) for a given U.
+    def get_convective_eigmats(self, u_given) -> tuple[np.ndarray, np.ndarray]:
+        """Get the left and right eigenmatrices of ∂F(U)/∂U for a given U.
         """
 
 
@@ -506,12 +528,19 @@ class Element(abc.ABC):
         self._left_expansion = None
         self._right_expansion = None
         self._extra_viscosity = None
-        self._eigen_matrices = None
+        if isinstance(self.equation(), EquationSystem):
+            self._eigen_matrices = None
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
         """
         return self._riemann.equation()
+
+    def is_scalar(self):
+        return isinstance(self.equation(), ScalarEquation)
+
+    def is_system(self):
+        return isinstance(self.equation(), EquationSystem)
 
     def value_type(self):
         return self.expansion().value_type()
@@ -568,7 +597,8 @@ class Element(abc.ABC):
         """Approximate a general function as u^h.
         """
         self.expansion().approximate(function)
-        self._update_eigen_matrices()
+        if self.is_system():
+            self._update_eigen_matrices()
 
     def fixed_quad_global(self, function: callable, n_point: int):
         return self.integrator().fixed_quad_global(function, n_point)
@@ -632,17 +662,14 @@ class Element(abc.ABC):
 
         The element is responsible for the column-to-coeff conversion.
         """
-        dtype = self.scalar_type()
-        vtype = self.value_type()
-        if issubclass(dtype, vtype) or issubclass(vtype, dtype):
+        if not self.is_system():
             self.expansion().set_coeff(column)
         else:
-            assert vtype is np.ndarray
             n_row = self.n_term()
             n_col = self.equation().n_component()
             coeff = np.ndarray(n_row, np.ndarray)
             for i_row in range(n_row):
-                coeff[i_row] = np.ndarray(n_col, dtype)
+                coeff[i_row] = np.ndarray(n_col, self.scalar_type())
             i_dof = 0
             for i_col in range(n_col):
                 for i_row in range(n_row):
@@ -650,7 +677,7 @@ class Element(abc.ABC):
                     i_dof += 1
             assert i_dof == len(column)
             self.expansion().set_coeff(coeff)
-        self._update_eigen_matrices()
+            self._update_eigen_matrices()
 
     def get_solution_column(self) -> np.ndarray:
         """Get coefficients of the solution's expansion.
@@ -738,10 +765,8 @@ class Element(abc.ABC):
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
-            eigvals = self.equation().get_convective_eigvals(u)
-            lambda_c = 1e-16
-            for val in eigvals:
-                lambda_c = max(lambda_c, np.abs(val))
+            lambda_c = self.equation().get_convective_radius(u)
+            lambda_c = max(lambda_c, 1e-16)
             b = self.equation().get_diffusive_coeff(u)
             b += self.get_extra_viscosity(x)
             lambda_d = b / h
@@ -757,10 +782,8 @@ class Element(abc.ABC):
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
-            eigvals = self.equation().get_convective_eigvals(u)
-            lambda_c = 1e-16
-            for val in eigvals:
-                lambda_c = max(lambda_c, np.abs(val))
+            lambda_c = self.equation().get_convective_radius(u)
+            lambda_c = max(lambda_c, 1e-16)
             b = self.equation().get_diffusive_coeff(u)
             b += self.get_extra_viscosity(x)
             lambda_d = b / h
@@ -772,7 +795,9 @@ class Element(abc.ABC):
 
     def _update_eigen_matrices(self):
         u_average = self.expansion().average()
-        self._eigen_matrices = self.equation().get_convective_eigmats(u_average)
+        equation = self.equation()
+        assert isinstance(equation, EquationSystem)
+        self._eigen_matrices = equation.get_convective_eigmats(u_average)
 
     def get_convective_eigmats(self) -> tuple[np.ndarray, np.ndarray]:
         return self._eigen_matrices

@@ -6,7 +6,6 @@ from copy import deepcopy
 
 import concept
 import expansion
-import equation
 
 
 def _get_taylor_coeff(candidate: concept.Expansion):
@@ -34,10 +33,11 @@ class CompactWENO(concept.Limiter):
 
     def get_new_taylor_coeff(self, curr: concept.Element) -> np.ndarray:
         candidates = self.get_candidates(curr)
-        eq = curr.equation()
-        if isinstance(eq, equation.Scalar):
+        if curr.is_scalar():
             return self.get_scalar_taylor_coeff(candidates)
-        elif isinstance(eq, equation.Euler):
+        else:
+            assert curr.is_system()
+            n_component = curr.equation().n_component()
             left, right = curr.get_convective_eigmats()
             vector_taylor_coeffs = []
             vector_candidates = candidates
@@ -48,9 +48,9 @@ class CompactWENO(concept.Limiter):
                 for i_term in range(len(new_taylor_coeff)):
                     new_taylor_coeff[i_term] = left @ old_taylor_coeff[i_term]
                 vector_taylor_coeffs.append(new_taylor_coeff)
-            new_taylor_coeff = np.ndarray((curr.n_term(), eq.n_component()),
+            new_taylor_coeff = np.ndarray((curr.n_term(), n_component),
                 curr.scalar_type())
-            for i_comp in range(eq.n_component()):
+            for i_comp in range(n_component):
                 scalar_taylors = []
                 for i_candidate in range(len(vector_candidates)):
                     vector_poly = vector_candidates[i_candidate]

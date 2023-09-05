@@ -86,15 +86,15 @@ class Energy(concept.Viscosity):
             indices = range(len(jumps))
         curr = cell.expansion()
         assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
-        n_component = cell.equation().n_component()
-        if n_component > 1:
+        if cell.is_system():
             left_eigmat, _ = cell.get_convective_eigmats()
             new_jumps = np.ndarray(len(jumps), np.ndarray)
             for i_node in indices:
                 new_jumps[i_node] = left_eigmat @ jumps[i_node]
             jumps = new_jumps
-            energy = np.zeros(n_component)
+            energy = np.zeros(cell.equation().n_component())
         else:
+            assert cell.is_scalar()
             energy = 0.0
         for k in indices:
             energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
@@ -292,9 +292,7 @@ class Energy(concept.Viscosity):
         a_max = 0
         u_samples = cell.expansion().get_sample_values()
         for u in u_samples:
-            eigvals = cell.equation().get_convective_eigvals(u)
-            for val in eigvals:
-                a_max = max(a_max, np.abs(val))
+            a_max = max(a_max, cell.equation().get_convective_radius(u))
         return cell.length() / cell.degree() * a_max
 
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):

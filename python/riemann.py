@@ -73,8 +73,10 @@ class Solver(concept.RiemannSolver):
         x_right = expansion_right.x_left()
         u_right = expansion_right.global_to_value(x_right)
         flux = self.get_upwind_flux(u_left, u_right)
-        viscosity = self.equation().get_diffusive_coeff()
-        viscosity += Solver._get_interface_viscosity(
+        physical_viscosity = Solver._get_interface_viscosity(
+            self.equation().get_diffusive_coeff(u_left),
+            self.equation().get_diffusive_coeff(u_right))
+        viscosity = physical_viscosity + Solver._get_interface_viscosity(
             left.get_extra_viscosity(left.x_right()),
             right.get_extra_viscosity(right.x_left()))
         if viscosity == 0:
@@ -99,7 +101,7 @@ class Solver(concept.RiemannSolver):
         u_jump = u_right - u_left
         du = self.get_interface_gradient(left.length(), right.length(),
             u_jump, (du_left + du_right) / 2, ddu_right - ddu_left)
-        extra_viscosity = viscosity - self.equation().get_diffusive_coeff()
+        extra_viscosity = viscosity - physical_viscosity
         flux -= self.equation().get_diffusive_flux(
             (u_left + u_right) / 2, du, extra_viscosity)
         return flux, viscosity / 2 * u_jump

@@ -79,11 +79,13 @@ class Krivodonova2004(SmoothnessBased):
                     dividend += np.abs(value
                         - right.global_to_value(right.x_left()))
             divisor = ratio * curr_norm
-            if isinstance(curr.equation(), equation.Scalar):
+            if curr.is_scalar():
                 smoothness_values[i_curr] = dividend / divisor
             elif isinstance(curr.equation(), equation.Euler):
                 smoothness_values[i_curr] = max(
                     dividend[0] / divisor[0], dividend[-1] / divisor[-1])
+            else:
+                smoothness_values[i_curr] = max(dividend / divisor)
         return smoothness_values
 
 
