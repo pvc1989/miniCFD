@@ -12,7 +12,7 @@ class Viewer:
     def __init__(self, expect, actual, scalar_name) -> None:
         self._actual_path = actual
         self._scalar_name = scalar_name
-        self._points = np.linspace(-1, 1, 201)
+        self._points = np.linspace(0, 2, 201) / (2 / 40)
         self._expect = Viewer.load(expect, scalar_name)
         self._actual = Viewer.load(actual, scalar_name)
         self._viscosity = Viewer.load(actual, 'Viscosity')
@@ -38,7 +38,7 @@ class Viewer:
 
     def plot_frame(self, i_frame):
         fig, ax = plt.subplots()
-        ax.set_xlabel(r'$x$')
+        ax.set_xlabel('Element Index')
         ax.set_ylabel(self._scalar_name)
         ydata = self._expect[i_frame]
         ax.plot(self._points, ydata, 'b--', label='Expect')
@@ -51,8 +51,8 @@ class Viewer:
 
     def plot_error(self):
         fig, ax = plt.subplots()
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$t$')
+        ax.set_xlabel('Point Index')
+        ax.set_ylabel('Time Index')
         zdata = np.abs(self._expect - self._actual)
         mappable = ax.imshow(zdata, origin='lower', cmap='coolwarm',
             norm=colors.LogNorm(vmin=1e-6, vmax=1e0, clip=True))
@@ -64,8 +64,8 @@ class Viewer:
         if self._viscosity is None:
             return
         fig, ax = plt.subplots()
-        ax.set_xlabel(r'$x$')
-        ax.set_ylabel(r'$t$')
+        ax.set_xlabel('Point Index')
+        ax.set_ylabel('Time Index')
         zdata = self._viscosity
         mappable = ax.imshow(zdata, origin='lower', cmap='coolwarm')
         fig.colorbar(mappable, location='top', label='Viscosity')
