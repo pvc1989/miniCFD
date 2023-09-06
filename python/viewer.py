@@ -11,16 +11,18 @@ class Viewer:
 
     def __init__(self, expect, actual, scalar_name) -> None:
         self._actual_path = actual
-        self._expect = self.load(expect, scalar_name)
-        self._actual = self.load(actual, scalar_name)
-        self._viscosity = self.load(actual, 'Viscosity')
+        self._scalar_name = scalar_name
+        self._points = np.linspace(-1, 1, 201)
+        self._expect = Viewer.load(expect, scalar_name)
+        self._actual = Viewer.load(actual, scalar_name)
+        self._viscosity = Viewer.load(actual, 'Viscosity')
 
-    def load(self, path, scalar_name):
+    @staticmethod
+    def load(path, scalar_name):
         reader = vtk.vtkXMLUnstructuredGridReader()
         n_point = 201
         n_frame = 101
         udata = np.ndarray((n_frame, n_point))
-        nu_data = np.ndarray((n_frame, n_point))
         for i_frame in range(n_frame):
             reader.SetFileName(f"{path}/Frame{i_frame}.vtu")
             reader.Update()
@@ -33,6 +35,19 @@ class Viewer:
             for i_point in range(n_point):
                 udata[i_frame][i_point] = u.GetTuple1(i_point)
         return udata
+
+    def plot_frame(self, i_frame):
+        fig, ax = plt.subplots()
+        ax.set_xlabel(r'$x$')
+        ax.set_ylabel(self._scalar_name)
+        ydata = self._expect[i_frame]
+        ax.plot(self._points, ydata, 'b--', label='Expect')
+        ydata = self._actual[i_frame]
+        ax.plot(self._points, ydata, 'r-', label='Actual')
+        plt.legend(loc='upper right')
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(f'{self._actual_path}/Frame{i_frame}.svg')
 
     def plot_error(self):
         fig, ax = plt.subplots()
@@ -60,5 +75,6 @@ class Viewer:
 
 if __name__ == '__main__':
     viewer = Viewer(sys.argv[1], sys.argv[2], sys.argv[3])
+    viewer.plot_frame(100)
     viewer.plot_error()
     viewer.plot_viscosity()
