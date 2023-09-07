@@ -366,20 +366,22 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
             expansion.Taylor.average(self._expansion))
 
     def test_sample_weights(self):
-        n_term = self._expansion.n_term()
-        polynomial_coeff = np.random.rand(n_term)
-        def function(x):
-            x -= self._expansion.x_center()
-            powers = x ** np.arange(n_term)
-            return polynomial_coeff.dot(powers)
-        self._expansion.approximate(function)
-        integral = self._expansion.integrator().fixed_quad_global(
-            function, n_term)
-        weights = np.ndarray(n_term)
-        for k in range(n_term):
-            weights[k] = self._expansion.get_sample_weight(k)
-        product = self._expansion.get_coeff_ref().dot(weights)
-        self.assertAlmostEqual(integral, product)
+        for degree in range(10):
+            n_term = degree + 1
+            polynomial_coeff = np.random.rand(n_term)
+            the_expansion = expansion.LagrangeOnLegendreRoots(degree,
+                self._coordinate)
+            def function(x):
+                x -= the_expansion.x_center()
+                powers = x ** np.arange(n_term)
+                return polynomial_coeff.dot(powers)
+            the_expansion.approximate(function)
+            integral, _ = integrate.quad(function, self._x_left, self._x_right)
+            weights = np.ndarray(n_term)
+            for k in range(n_term):
+                weights[k] = the_expansion.get_sample_weight(k)
+            product = the_expansion.get_coeff_ref().dot(weights)
+            self.assertAlmostEqual(integral, product)
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.
@@ -524,20 +526,22 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
             expansion.Taylor.average(self._expansion))
 
     def test_sample_weights(self):
-        n_term = self._expansion.n_term()
-        polynomial_coeff = np.random.rand(n_term)
-        def function(x):
-            x -= self._expansion.x_center()
-            powers = x ** np.arange(n_term)
-            return polynomial_coeff.dot(powers)
-        self._expansion.approximate(function)
-        integral = self._expansion.integrator().fixed_quad_global(
-            function, n_term)
-        weights = np.ndarray(n_term)
-        for k in range(n_term):
-            weights[k] = self._expansion.get_sample_weight(k)
-        product = self._expansion.get_coeff_ref().dot(weights)
-        self.assertAlmostEqual(integral, product)
+        for degree in range(2, 6):
+            n_term = degree + 1
+            polynomial_coeff = np.random.rand(n_term)
+            the_expansion = expansion.LagrangeOnLobattoRoots(degree,
+                self._coordinate)
+            def function(x):
+                x -= the_expansion.x_center()
+                powers = x ** np.arange(n_term)
+                return polynomial_coeff.dot(powers)
+            the_expansion.approximate(function)
+            integral, _ = integrate.quad(function, self._x_left, self._x_right)
+            weights = np.ndarray(n_term)
+            for k in range(n_term):
+                weights[k] = the_expansion.get_sample_weight(k)
+            product = the_expansion.get_coeff_ref().dot(weights)
+            self.assertAlmostEqual(integral, product)
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.

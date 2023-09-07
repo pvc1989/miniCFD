@@ -6,27 +6,39 @@ import numpy as np
 from scipy import integrate
 
 from coordinate import LinearCoordinate
-from integrator import GaussLegendre
+import integrator
 
 
-class TestGaussLegendre(unittest.TestCase):
+class TestGaussOnLinearCoordinate(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._x_left = np.random.rand()
         self._x_right = 1 + np.random.rand()
         self._coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._integrator = GaussLegendre(self._coordinate)
 
-    def test_accuracy(self):
-        """Test algebraic accuracy order.
+    def test_gauss_legendre(self):
+        """Test Gauss--Legendre's (2k - 1)-degree algebraic accuracy.
         """
-        for degree in range(0, 8):
+        gauss = integrator.GaussLegendre(self._coordinate)
+        for n_point in range(1, 10):
+            degree = 2 * n_point - 1 - self._coordinate.jacobian_degree()
             def integrand(x_global):
                 return x_global**degree
-            n_point = 1 + (degree+self._coordinate.jacobian_degree())//2
             self.assertAlmostEqual(
-                self._integrator.fixed_quad_global(integrand, n_point),
+                gauss.fixed_quad_global(integrand, n_point),
+                integrate.quad(integrand, self._x_left, self._x_right)[0])
+
+    def test_gauss_lobatto(self):
+        """Test Gauss-Lobatto's (2k - 3)-degree algebraic accuracy.
+        """
+        gauss = integrator.GaussLobatto(self._coordinate)
+        for n_point in range(3, 7):
+            degree = 2 * n_point - 3 - self._coordinate.jacobian_degree()
+            def integrand(x_global):
+                return x_global**degree
+            self.assertAlmostEqual(
+                gauss.fixed_quad_global(integrand, n_point),
                 integrate.quad(integrand, self._x_left, self._x_right)[0])
 
 
