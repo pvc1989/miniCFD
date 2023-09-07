@@ -8,19 +8,9 @@ import concept
 
 class GaussLegendre(concept.Integrator):
 
-    def get_quadrature_points(self, n_point: int) -> np.ndarray:
-        roots, _ = special.roots_legendre(n_point)
-        points = np.ndarray(n_point)
-        for i in range(n_point):
-            points[i] = self._coordinate.local_to_global(roots[i])
-        return points
-
-    def fixed_quad_local(self, function: callable, n_point: int):
-        roots, weights = special.roots_legendre(n_point)
-        value = weights[0] * function(roots[0])
-        for i in range(1, len(roots)):
-            value += weights[i] * function(roots[i])
-        return value
+    @staticmethod
+    def get_roots_and_weights(n_point):
+        return special.roots_legendre(n_point)
 
 
 class GaussLobatto(concept.Integrator):
@@ -58,20 +48,6 @@ class GaussLobatto(concept.Integrator):
         else:
             assert False, f'{n_point} not in (3, 4, 5, 6).'
         return roots, weights
-
-    def get_quadrature_points(self, n_point: int) -> np.ndarray:
-        roots, _ = GaussLobatto.get_roots_and_weights(n_point)
-        points = np.ndarray(n_point)
-        for i in range(n_point):
-            points[i] = self._coordinate.local_to_global(roots[i])
-        return points
-
-    def fixed_quad_local(self, function: callable, n_point: int):
-        roots, weights = GaussLobatto.get_roots_and_weights(n_point)
-        value = weights[0] * function(roots[0])
-        for i in range(1, len(roots)):
-            value += weights[i] * function(roots[i])
-        return value
 
 
 if __name__ == '__main__':

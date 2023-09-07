@@ -115,55 +115,65 @@ class ShiftedCoordinate(Coordinate):
 class Integrator(abc.ABC):
     """A cell-like object that performs integrations on it.
     """
-    # TODO: rename to IntegrableElement
 
-    def __init__(self, coordinate: Coordinate) -> None:
-        assert isinstance(coordinate, Coordinate)
+    @abc.abstractstaticmethod
+    def get_roots_and_weights(n_point) -> tuple[np.ndarray, np.ndarray]:
+        """Get the local coordinates and weights of a given number of quadrature points.
+
+        Mimic `scipy.special.roots_legendre`-like functions.
+        """
+
+    def __init__(self, coordinate: Coordinate, n_point: int) -> None:
+        assert n_point > 0
         self._coordinate = coordinate
+        roots, weights = self.get_roots_and_weights(n_point)
+        for i in range(n_point):
+            local_i = roots[i]
+            roots[i] = coordinate.local_to_global(local_i)
+            weights[i] *= coordinate.local_to_jacobian(local_i)
+        self._global_points = roots
+        self._global_weights = weights
 
     def coordinate(self) -> Coordinate:
         """Get the underlying coordinate mapping object.
         """
         return self._coordinate
 
-    @abc.abstractmethod
-    def get_quadrature_points(self, n_point: int) -> np.ndarray:
-        """Get the global coordinates of a given number of quadrature points.
+    def n_point(self):
+        return len(self._global_points)
+
+    def get_kth_point_and_weight(self, k: int):
+        """Get the global coordinate and weight of the kth quadrature point.
         """
+        return self._global_points[k], self._global_weights[k]
 
-    @abc.abstractmethod
-    def fixed_quad_local(self, function: callable, n_point: int):
-        """Integrate a function defined in local coordinates on [-1, 1] with a given number of quadrature points."""
+    def fixed_quad_global(self, function: callable):
+        """Integrate a function defined in global coordinates.
+        """
+        value = self._global_weights[0] * function(self._global_points[0])
+        for i in range(1, self.n_point()):
+            point, weight = self.get_kth_point_and_weight(i)
+            value += weight * function(point)
+        return value
 
-    def fixed_quad_global(self, function: callable, n_point: int):
-        """Integrate a function defined in global coordinates with a given number of quadrature points."""
-        n_point = max(1, n_point)
-        def integrand(x_local):
-            x_global = self.coordinate().local_to_global(x_local)
-            jacobian = self.coordinate().local_to_jacobian(x_local)
-            return function(x_global) * jacobian
-        return self.fixed_quad_local(integrand, n_point)
-
-    def average(self, function: callable, n_point: int):
+    def average(self, function: callable):
         """Get the average value of a function on this element.
         """
-        integral = self.fixed_quad_global(function, n_point)
+        integral = self.fixed_quad_global(function)
         return integral / self.coordinate().length()
 
-    def norm_1(self, function: callable, n_point: int):
+    def norm_1(self, function: callable):
         """Get the L_1 norm of a function on this element.
         """
         value = self.fixed_quad_global(
-            lambda x_global: np.abs(function(x_global)),
-            n_point)
+            lambda x_global: np.abs(function(x_global)))
         return value
 
     def norm_2(self, function: callable, n_point: int):
         """Get the L_2 norm of a function on this element.
         """
         value = self.fixed_quad_global(
-            lambda x_global: np.abs(function(x_global))**2,
-            n_point)
+            lambda x_global: np.abs(function(x_global))**2)
         return np.sqrt(value)
 
     def norm_infty(self, function: callable, n_point: int):
@@ -171,8 +181,7 @@ class Integrator(abc.ABC):
         """
         points = np.linspace(
             self.coordinate().x_left(), self.coordinate().x_right(), n_point)
-        # Alternatively, quadrature points can be used:
-        # points = self.get_quadrature_points(n_point)
+        # Alternatively, quadrature points can be used.
         value = np.abs(function(points[0]))
         if np.isscalar(value):
             for i in range(1, len(points)):
@@ -184,10 +193,9 @@ class Integrator(abc.ABC):
                     value[j] = max(value[j], new_value[j])
         return value
 
-    def inner_product(self, phi: callable, psi: callable, n_point):
+    def inner_product(self, phi: callable, psi: callable):
         value = self.fixed_quad_global(
-            lambda x_global: phi(x_global) * psi(x_global),
-            n_point)
+            lambda x_global: phi(x_global) * psi(x_global))
         return value
 
 
