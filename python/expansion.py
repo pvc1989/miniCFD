@@ -207,7 +207,7 @@ class Lagrange(Taylor):
         self._sample_values = np.ndarray(n_point, value_type)
         assert issubclass(Integrator, concept.Integrator)
         if get_local_points is Integrator.get_local_points:
-            self._sample_points = self.integrator()._global_points
+            self._sample_points = self.integrator().get_global_points()
         else:
             self._sample_points = self.coordinate().local_to_global(roots)
         # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
@@ -345,8 +345,8 @@ class LagrangeOnGaussPoints(Lagrange):
         assert issubclass(Integrator, concept.Integrator)
         Lagrange.__init__(self, degree, coordinate, Integrator.get_local_points,
             Integrator, value_type)
-        assert self._sample_points is self.integrator()._global_points
-        self._sample_weights = self.integrator()._global_weights
+        assert self._sample_points is self.integrator().get_global_points()
+        self._sample_weights = self.integrator().get_global_weights()
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnGaussPoints'

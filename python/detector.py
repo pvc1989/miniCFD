@@ -158,7 +158,7 @@ class ZhuJun2021(SmoothnessBased):
             curr = grid.get_element_by_index(i_curr)
             def function(x_global):
                 return curr.get_solution_value(x_global)
-            norms[i_curr] = curr.integrator().norm_1(function, curr.n_term())
+            norms[i_curr] = curr.integrator().norm_1(function)
         smoothness_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
@@ -182,8 +182,7 @@ class ZhuJun2021(SmoothnessBased):
 
     def _integrate(self, curr: concept.Element, that: concept.Expansion):
         integral = curr.integrator().fixed_quad_global(
-            lambda x: curr.get_solution_value(x) - that.global_to_value(x),
-            curr.n_term())
+            lambda x: curr.get_solution_value(x) - that.global_to_value(x))
         return np.abs(integral)
 
 

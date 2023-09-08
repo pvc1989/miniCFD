@@ -146,18 +146,24 @@ class Integrator(abc.ABC):
     def n_point(self):
         return len(self._global_points)
 
-    def get_kth_point_and_weight(self, k: int):
-        """Get the global coordinate and weight of the kth quadrature point.
+    def get_global_points(self):
+        """Get the global coordinates of all quadrature points.
         """
-        return self._global_points[k], self._global_weights[k]
+        return self._global_points
+
+    def get_global_weights(self):
+        """Get the global weights of all quadrature points.
+        """
+        return self._global_weights
 
     def fixed_quad_global(self, function: callable):
         """Integrate a function defined in global coordinates.
         """
-        value = self._global_weights[0] * function(self._global_points[0])
+        points = self.get_global_points()
+        weights = self.get_global_weights()
+        value = weights[0] * function(points[0])
         for i in range(1, self.n_point()):
-            point, weight = self.get_kth_point_and_weight(i)
-            value += weight * function(point)
+            value += weights[i] * function(points[i])
         return value
 
     def average(self, function: callable):
@@ -173,7 +179,7 @@ class Integrator(abc.ABC):
             lambda x_global: np.abs(function(x_global)))
         return value
 
-    def norm_2(self, function: callable, n_point: int):
+    def norm_2(self, function: callable):
         """Get the L_2 norm of a function on this element.
         """
         value = self.fixed_quad_global(

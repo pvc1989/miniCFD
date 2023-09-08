@@ -103,8 +103,7 @@ class ZhongXingHui2013(CompactWENO):
         borrowed = Type(this.degree(), this.coordinate(), this.value_type())
         this_average = this.average()
         that_average = this.integrator().average(
-            lambda x: that.global_to_value(x),
-            n_point=this.degree())
+            lambda x: that.global_to_value(x))
         borrowed.approximate(lambda x: that.global_to_value(x)
             + this_average - that_average)
         return borrowed
@@ -113,8 +112,7 @@ class ZhongXingHui2013(CompactWENO):
         beta = 0.0
         def integrand(x_global):
             return taylor.global_to_derivatives(x_global)**2
-        norms = taylor.integrator().fixed_quad_global(integrand,
-            n_point=taylor.degree())
+        norms = taylor.integrator().fixed_quad_global(integrand)
         for k in range(1, taylor.degree()+1):
             length = taylor.length()
             scale = length**(2*k-1) / expansion.Taylor._factorials[k]**2
@@ -174,16 +172,15 @@ class LiWanAi2020(CompactWENO):
         def psi(x_that):
             return that.global_to_value(x_that) - this_average
         phi = borrowed.get_basis(1)
-        coeff[1] = (that.integrator().inner_product(phi, psi, that.degree())
-            / that.integrator().norm_2(phi, that.degree()))
+        coeff[1] = (that.integrator().inner_product(phi, psi) /
+                    that.integrator().norm_2(phi))
         borrowed.set_coeff(coeff)
         return borrowed
 
     def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
             return taylor.global_to_derivatives(x_global)**2
-        norms = taylor.integrator().fixed_quad_global(integrand,
-            n_point=taylor.degree())
+        norms = taylor.integrator().fixed_quad_global(integrand)
         for k in range(1, taylor.degree()+1):
             jacobian = taylor.length() / 2
             scale = jacobian**(2*k-1) / expansion.Taylor._factorials[k-1]**2
