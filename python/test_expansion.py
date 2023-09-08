@@ -6,6 +6,7 @@ from scipy import integrate
 from matplotlib import pyplot as plt
 
 import expansion
+from integrator import GaussLegendre
 from concept import ShiftedExpansion
 from coordinate import LinearCoordinate
 
@@ -19,7 +20,7 @@ class TestTaylor(unittest.TestCase):
         self._x_left = -0.4
         self._x_right = 0.6  # avoid x_center = 0.0
         self._coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._expansion = expansion.Taylor(5, self._coordinate)
+        self._expansion = expansion.Taylor(5, self._coordinate, GaussLegendre)
 
     def test_get_basis_values_and_gradients(self):
         """Test methods for getting values and gradients of basis.
@@ -52,7 +53,7 @@ class TestTaylor(unittest.TestCase):
     def test_get_gradient_and_derivative_values(self):
         """Test methods for getting derivatives of u^h.
         """
-        taylor = expansion.Taylor(5, self._coordinate, complex)
+        taylor = expansion.Taylor(5, self._coordinate, GaussLegendre, complex)
         # only approximate well near the center
         points = np.linspace(self._x_left/2, self._x_right/2, num=201)
         def function(x):
@@ -78,7 +79,7 @@ class TestTaylor(unittest.TestCase):
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
             my_expansion = expansion.Taylor(degree,
-                LinearCoordinate(x_left, x_right))
+                LinearCoordinate(x_left, x_right), GaussLegendre)
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -97,7 +98,7 @@ class TestTaylor(unittest.TestCase):
         shifted = ShiftedExpansion(self._expansion, x_shift)
         expected = expansion.Taylor(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
-            self._expansion.value_type())
+            GaussLegendre, self._expansion.value_type())
         expected.approximate(lambda x: np.sin(x - x_shift))
         self.assertAlmostEqual(0.0, np.linalg.norm(shifted.get_coeff_ref() -
             expected.get_coeff_ref()))

@@ -4,12 +4,12 @@ import numpy as np
 from scipy import special
 import numdifftools as nd
 
-from concept import Expansion, Coordinate
+import concept
 import integrator
 import polynomial
 
 
-class Taylor(Expansion):
+class Taylor(concept.Expansion):
     """The Taylor expansion of a general function.
 
     u^h(x) = \sum_{k=0}^{p} u^{(k)} / (k!) * (x-c)^{k}
@@ -19,12 +19,12 @@ class Taylor(Expansion):
     for k in range(1, len(_factorials)):
         _factorials[k] = _factorials[k-1] * k
 
-    def __init__(self, degree: int, coordinate: Coordinate,
-            value_type=float) -> None:
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
+            Integrator=integrator.GaussLegendre, value_type=float) -> None:
         assert 0 <= degree < 20
         self._n_term = degree + 1
-        Expansion.__init__(self, coordinate,
-            integrator.GaussLegendre(coordinate),
+        concept.Expansion.__init__(self, coordinate,
+            Integrator(coordinate, self._n_term),
             value_type)
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
@@ -70,8 +70,7 @@ class Taylor(Expansion):
     def average(self):
         def integrand(x_global):
             return self.global_to_value(x_global)
-        n_point = 1 + (self.degree() + self.coordinate().jacobian_degree()) // 2
-        return self.integrator().average(integrand, n_point)
+        return self.integrator().average(integrand)
 
     def get_basis(self, i_basis: int) -> callable:
         assert 0 <= i_basis
@@ -130,8 +129,7 @@ class Taylor(Expansion):
             column = self.get_basis_values(x_global)
             matrix = np.tensordot(column, column, axes=0)
             return matrix
-        mass_matrix = self.integrator().fixed_quad_global(integrand,
-            self.n_term())
+        mass_matrix = self.integrator().fixed_quad_global(integrand)
         # mass_matrix[i][j] := inner-product of basis[i] and basis[j]
         return mass_matrix
 
@@ -198,9 +196,9 @@ class Lagrange(Taylor):
     """The Lagrange expansion of a general function.
     """
 
-    def __init__(self, degree: int, coordinate: Coordinate,
-            get_roots: callable, value_type=float) -> None:
-        Taylor.__init__(self, degree, coordinate, value_type)
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
+            get_roots: callable, Integrator, value_type=float) -> None:
+        Taylor.__init__(self, degree, coordinate, Integrator, value_type)
         n_point = degree + 1
         assert n_point >= 1
         roots = get_roots(n_point)
@@ -320,10 +318,11 @@ class LagrangeOnUniformRoots(Lagrange):
         roots = np.linspace(delta - 1, 1 - delta, n_point)
         return roots
 
-    def __init__(self, degree: int, coordinate: Coordinate,
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
         get_roots = LagrangeOnUniformRoots._get_roots
-        Lagrange.__init__(self, degree, coordinate, get_roots, value_type)
+        Lagrange.__init__(self, degree, coordinate, get_roots,
+            integrator.GaussLegendre, value_type)
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnUniformRoots'
@@ -336,12 +335,14 @@ class LagrangeOnGaussPoints(Lagrange):
     """Specialized Lagrange expansion using Gauss points as nodes.
     """
 
-    def __init__(self, degree: int, coordinate: Coordinate,
-            get_roots_and_weights: callable, value_type=float) -> None:
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
+            Integrator, value_type=float) -> None:
         n_point = degree + 1
-        roots, local_weights = get_roots_and_weights(n_point)
+        assert issubclass(Integrator, concept.Integrator)
+        roots, local_weights = Integrator.get_roots_and_weights(n_point)
         get_roots = lambda n_point: roots
-        Lagrange.__init__(self, degree, coordinate, get_roots, value_type)
+        Lagrange.__init__(self, degree, coordinate, get_roots,
+            Integrator, value_type)
         self._sample_weights = np.ndarray(n_point)
         for k in range(self.n_term()):
             jacobian = self.coordinate().local_to_jacobian(roots[k])
@@ -370,10 +371,10 @@ class LagrangeOnLegendreRoots(LagrangeOnGaussPoints):
     """Specialized Lagrange expansion using Legendre roots as nodes.
     """
 
-    def __init__(self, degree: int, coordinate: Coordinate,
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
         LagrangeOnGaussPoints.__init__(self, degree, coordinate,
-            special.roots_legendre, value_type)
+            integrator.GaussLegendre, value_type)
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnLegendreRoots'
@@ -386,10 +387,10 @@ class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
     """Specialized Lagrange expansion using Legendre roots as nodes.
     """
 
-    def __init__(self, degree: int, coordinate: Coordinate,
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
         LagrangeOnGaussPoints.__init__(self, degree, coordinate,
-            integrator.GaussLobatto.get_roots_and_weights, value_type)
+            integrator.GaussLobatto, value_type)
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnLobattoRoots'
@@ -402,9 +403,10 @@ class Legendre(Taylor):
     """Approximate a general function based on Legendre polynomials.
     """
 
-    def __init__(self, degree: int, coordinate: Coordinate,
+    def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
-        Taylor.__init__(self, degree, coordinate, value_type)
+        Taylor.__init__(self, degree, coordinate,
+            integrator.GaussLegendre, value_type)
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
         # Legendre polynoamials are only orthogonal for 1-degree coordinate map,
         # whose Jacobian determinant is constant over [-1, 1].
@@ -475,13 +477,11 @@ class Legendre(Taylor):
 
     def approximate(self, function):
         for k in range(self.n_term()):
-            def integrand(x_local):
-                value = special.eval_legendre(k, x_local)
-                value *= function(self.coordinate().local_to_global(x_local))
-                value *= self.coordinate().local_to_jacobian(x_local)
+            def integrand(x_global):
+                x_local = self.coordinate().global_to_local(x_global)
+                value = special.eval_legendre(k, x_local) * function(x_global)
                 return value
-            self._mode_coeffs[k] = self.integrator().fixed_quad_local(integrand,
-                self.n_term())
+            self._mode_coeffs[k] = self.integrator().fixed_quad_global(integrand)
             self._mode_coeffs[k] /= self._mode_weights[k]
         self._set_taylor_coeff()
 
@@ -519,7 +519,8 @@ class TruncatedLegendre(Taylor):
     def __init__(self, degree: int, that: Legendre) -> None:
         assert 0 <= degree <= that.degree()
         assert isinstance(that, Legendre)
-        Taylor.__init__(self, degree, that.coordinate(), that.value_type())
+        Taylor.__init__(self, degree, that.coordinate(),
+            integrator.GaussLegendre, that.value_type())
         n_term = degree + 1
         self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
         self._mode_coeffs = that._mode_coeffs[0:n_term]

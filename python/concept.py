@@ -324,8 +324,9 @@ class ShiftedExpansion(Expansion):
     def __init__(self, expansion: Expansion, x_shift: float):
         shifted_coordinate = ShiftedCoordinate(expansion.coordinate(), x_shift)
         IntegtatorType = type(expansion.integrator())
+        n_point = expansion.integrator().n_point()
         Expansion.__init__(self, shifted_coordinate,
-            IntegtatorType(shifted_coordinate), expansion.value_type())
+            IntegtatorType(shifted_coordinate, n_point), expansion.value_type())
         self._unshifted_expansion = expansion
         self._x_shift = x_shift
 
