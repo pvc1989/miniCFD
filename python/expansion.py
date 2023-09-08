@@ -197,15 +197,19 @@ class Lagrange(Taylor):
     """
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
-            get_roots: callable, Integrator, value_type=float) -> None:
+            get_local_points: callable, Integrator, value_type=float) -> None:
         Taylor.__init__(self, degree, coordinate, Integrator, value_type)
         n_point = degree + 1
         assert n_point >= 1
-        roots = get_roots(n_point)
+        roots = get_local_points(n_point)
         # Build the basis and sample points.
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
-        self._sample_points = self.coordinate().local_to_global(roots)
+        assert issubclass(Integrator, concept.Integrator)
+        if get_local_points is Integrator.get_local_points:
+            self._sample_points = self.integrator()._global_points
+        else:
+            self._sample_points = self.coordinate().local_to_global(roots)
         # base_rows[k] := values of the base (Taylor) basis at sample_points[k]
         base_rows = np.ndarray((self.n_term(), self.n_term()))
         for k in range(self.n_term()):
@@ -312,7 +316,7 @@ class LagrangeOnUniformRoots(Lagrange):
     """
 
     @staticmethod
-    def _get_roots(n_point):
+    def _get_local_roots(n_point):
         # Sample points evenly distributed in the element.
         delta = 2.0 / n_point / 2
         roots = np.linspace(delta - 1, 1 - delta, n_point)
@@ -320,8 +324,8 @@ class LagrangeOnUniformRoots(Lagrange):
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
-        get_roots = LagrangeOnUniformRoots._get_roots
-        Lagrange.__init__(self, degree, coordinate, get_roots,
+        get_local_points = LagrangeOnUniformRoots._get_local_roots
+        Lagrange.__init__(self, degree, coordinate, get_local_points,
             integrator.GaussLegendre, value_type)
 
     def name(self, verbose) -> str:
@@ -339,14 +343,10 @@ class LagrangeOnGaussPoints(Lagrange):
             Integrator, value_type=float) -> None:
         n_point = degree + 1
         assert issubclass(Integrator, concept.Integrator)
-        roots, local_weights = Integrator.get_roots_and_weights(n_point)
-        get_roots = lambda n_point: roots
-        Lagrange.__init__(self, degree, coordinate, get_roots,
+        Lagrange.__init__(self, degree, coordinate, Integrator.get_local_points,
             Integrator, value_type)
-        self._sample_weights = np.ndarray(n_point)
-        for k in range(self.n_term()):
-            jacobian = self.coordinate().local_to_jacobian(roots[k])
-            self._sample_weights[k] = local_weights[k] * jacobian
+        assert self._sample_points is self.integrator()._global_points
+        self._sample_weights = self.integrator()._global_weights
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnGaussPoints'

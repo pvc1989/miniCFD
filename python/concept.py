@@ -117,21 +117,25 @@ class Integrator(abc.ABC):
     """
 
     @abc.abstractstaticmethod
-    def get_roots_and_weights(n_point) -> tuple[np.ndarray, np.ndarray]:
-        """Get the local coordinates and weights of a given number of quadrature points.
+    def get_local_points(n_point) -> np.ndarray:
+        """Get the local coordinates of a given number of quadrature points.
+        """
 
-        Mimic `scipy.special.roots_legendre`-like functions.
+    @abc.abstractstaticmethod
+    def get_local_weights(n_point) -> np.ndarray:
+        """Get the local weights of a given number of quadrature points.
         """
 
     def __init__(self, coordinate: Coordinate, n_point: int) -> None:
         assert n_point > 0
         self._coordinate = coordinate
-        roots, weights = self.get_roots_and_weights(n_point)
+        points = self.get_local_points(n_point)
+        weights = self.get_local_weights(n_point)
         for i in range(n_point):
-            local_i = roots[i]
-            roots[i] = coordinate.local_to_global(local_i)
+            local_i = points[i]
+            points[i] = coordinate.local_to_global(local_i)
             weights[i] *= coordinate.local_to_jacobian(local_i)
-        self._global_points = roots
+        self._global_points = points
         self._global_weights = weights
 
     def coordinate(self) -> Coordinate:
