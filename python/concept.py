@@ -297,6 +297,13 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
+    def get_basis_derivatives(self, x_global: float, k: int) -> np.ndarray:
+        """Get the derivatives of all basis functions at a given point.
+
+        values[l] = the k-th derivative of l-th basis.
+        """
+
+    @abc.abstractmethod
     def get_basis_innerproducts(self):
         """Get the inner-products of each pair of basis functions.
         """
@@ -312,8 +319,8 @@ class Expansion(abc.ABC):
         """
 
     @abc.abstractmethod
-    def global_to_derivatives(self, x_global: float):
-        """Evaluate the derivatives of the approximation and return-by-value the result.
+    def global_to_derivatives(self, x_global: float, k: int):
+        """Evaluate the kth derivatives of u^h and return-by-value the result.
         """
 
     @abc.abstractmethod
@@ -360,9 +367,9 @@ class ShiftedExpansion(Expansion):
         x_unshifted = x_global - self._x_shift
         return self._unshifted_expansion.global_to_gradient(x_unshifted)
 
-    def global_to_derivatives(self, x_global: float) -> np.ndarray:
+    def global_to_derivatives(self, x_global: float, k: int) -> np.ndarray:
         x_unshifted = x_global - self._x_shift
-        return self._unshifted_expansion.global_to_derivatives(x_unshifted)
+        return self._unshifted_expansion.global_to_derivatives(x_unshifted, k)
 
     def get_basis_values(self, x_global: float) -> np.ndarray:
         x_unshifted = x_global - self._x_shift
@@ -375,6 +382,10 @@ class ShiftedExpansion(Expansion):
     def get_basis_hessians(self, x_global: float) -> np.ndarray:
         x_unshifted = x_global - self._x_shift
         return self._unshifted_expansion.get_basis_hessians(x_unshifted)
+
+    def get_basis_derivatives(self, x_global: float, k: int) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_derivatives(x_unshifted, k)
 
     def get_coeff_ref(self) -> np.ndarray:
         return self._unshifted_expansion.get_coeff_ref()

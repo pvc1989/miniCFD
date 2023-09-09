@@ -41,13 +41,17 @@ class TestTaylor(unittest.TestCase):
         """
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
-            gradients_expect = self._expansion.get_basis_gradients(point)
-            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
-            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            expect = self._expansion.get_basis_values(point)
+            actual = self._expansion.get_basis_derivatives(point, 0)
+            norm = np.linalg.norm(actual - expect)
             self.assertAlmostEqual(norm, 0.0)
-            hessians_expect = self._expansion.get_basis_hessians(point)
-            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
-            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            expect = self._expansion.get_basis_gradients(point)
+            actual = self._expansion.get_basis_derivatives(point, 1)
+            norm = np.linalg.norm(actual - expect)
+            self.assertAlmostEqual(norm, 0.0)
+            expect = self._expansion.get_basis_hessians(point)
+            actual = self._expansion.get_basis_derivatives(point, 2)
+            norm = np.linalg.norm(expect - actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_get_gradient_and_derivative_values(self):
@@ -62,7 +66,10 @@ class TestTaylor(unittest.TestCase):
             return np.exp(1j * x) * (1j)**k
         taylor.approximate(function)
         for x in points:
-            values = taylor.global_to_derivatives(x)
+            values = np.ndarray(taylor.n_term(), taylor.value_type())
+            for k in range(taylor.n_term()):
+                values[k] = taylor.global_to_derivatives(x, k)
+            self.assertAlmostEqual(taylor.global_to_value(x), values[0])
             self.assertAlmostEqual(taylor.global_to_gradient(x), values[1])
             for k in range(1, taylor.n_term()):
                 self.assertAlmostEqual(values[k], derivative(x, k),
@@ -109,9 +116,10 @@ class TestTaylor(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                shifted.global_to_derivatives(x_global) -
-                expected.global_to_derivatives(x_global)), places=5)
+            for k in range(shifted.n_term()):
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    shifted.global_to_derivatives(x_global, k) -
+                    expected.global_to_derivatives(x_global, k)), places=5)
 
 
 class TestLagrangeOnUniformRoots(unittest.TestCase):
@@ -172,13 +180,17 @@ class TestLagrangeOnUniformRoots(unittest.TestCase):
         """
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
-            gradients_expect = self._expansion.get_basis_gradients(point)
-            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
-            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            expect = self._expansion.get_basis_values(point)
+            actual = self._expansion.get_basis_derivatives(point, 0)
+            norm = np.linalg.norm(actual - expect)
             self.assertAlmostEqual(norm, 0.0)
-            hessians_expect = self._expansion.get_basis_hessians(point)
-            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
-            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            expect = self._expansion.get_basis_gradients(point)
+            actual = self._expansion.get_basis_derivatives(point, 1)
+            norm = np.linalg.norm(actual - expect)
+            self.assertAlmostEqual(norm, 0.0)
+            expect = self._expansion.get_basis_hessians(point)
+            actual = self._expansion.get_basis_derivatives(point, 2)
+            norm = np.linalg.norm(expect - actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_global_to_gradient(self):
@@ -243,9 +255,10 @@ class TestLagrangeOnUniformRoots(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                shifted.global_to_derivatives(x_global) -
-                expected.global_to_derivatives(x_global)))
+            for k in range(shifted.n_term()):
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    shifted.global_to_derivatives(x_global, k) -
+                    expected.global_to_derivatives(x_global, k)))
 
 
 class TestLagrangeOnLegendreRoots(unittest.TestCase):
@@ -306,13 +319,17 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
         """
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
-            gradients_expect = self._expansion.get_basis_gradients(point)
-            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
-            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            expect = self._expansion.get_basis_values(point)
+            actual = self._expansion.get_basis_derivatives(point, 0)
+            norm = np.linalg.norm(actual - expect)
             self.assertAlmostEqual(norm, 0.0)
-            hessians_expect = self._expansion.get_basis_hessians(point)
-            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
-            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            expect = self._expansion.get_basis_gradients(point)
+            actual = self._expansion.get_basis_derivatives(point, 1)
+            norm = np.linalg.norm(actual - expect)
+            self.assertAlmostEqual(norm, 0.0)
+            expect = self._expansion.get_basis_hessians(point)
+            actual = self._expansion.get_basis_derivatives(point, 2)
+            norm = np.linalg.norm(expect - actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_global_to_gradient(self):
@@ -403,9 +420,10 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                shifted.global_to_derivatives(x_global) -
-                expected.global_to_derivatives(x_global)))
+            for k in range(shifted.n_term()):
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    shifted.global_to_derivatives(x_global, k) -
+                    expected.global_to_derivatives(x_global, k)))
 
 
 class TestLagrangeOnLobattoRoots(unittest.TestCase):
@@ -466,13 +484,17 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
         """
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
-            gradients_expect = self._expansion.get_basis_gradients(point)
-            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
-            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            expect = self._expansion.get_basis_values(point)
+            actual = self._expansion.get_basis_derivatives(point, 0)
+            norm = np.linalg.norm(actual - expect)
             self.assertAlmostEqual(norm, 0.0)
-            hessians_expect = self._expansion.get_basis_hessians(point)
-            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
-            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            expect = self._expansion.get_basis_gradients(point)
+            actual = self._expansion.get_basis_derivatives(point, 1)
+            norm = np.linalg.norm(actual - expect)
+            self.assertAlmostEqual(norm, 0.0)
+            expect = self._expansion.get_basis_hessians(point)
+            actual = self._expansion.get_basis_derivatives(point, 2)
+            norm = np.linalg.norm(expect - actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_global_to_gradient(self):
@@ -563,9 +585,10 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                shifted.global_to_derivatives(x_global) -
-                expected.global_to_derivatives(x_global)))
+            for k in range(shifted.n_term()):
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    shifted.global_to_derivatives(x_global, k) -
+                    expected.global_to_derivatives(x_global, k)))
 
 
 class TestLegendre(unittest.TestCase):
@@ -628,13 +651,17 @@ class TestLegendre(unittest.TestCase):
         """
         points = np.linspace(self._x_left, self._x_right, num=201)
         for point in points:
-            gradients_expect = self._expansion.get_basis_gradients(point)
-            gradients_actual = self._expansion.get_basis_derivatives(point)[1]
-            norm = np.linalg.norm(gradients_actual - gradients_expect)
+            expect = self._expansion.get_basis_values(point)
+            actual = self._expansion.get_basis_derivatives(point, 0)
+            norm = np.linalg.norm(actual - expect)
             self.assertAlmostEqual(norm, 0.0)
-            hessians_expect = self._expansion.get_basis_hessians(point)
-            hessians_actual = self._expansion.get_basis_derivatives(point)[2]
-            norm = np.linalg.norm(hessians_expect - hessians_actual)
+            expect = self._expansion.get_basis_gradients(point)
+            actual = self._expansion.get_basis_derivatives(point, 1)
+            norm = np.linalg.norm(actual - expect)
+            self.assertAlmostEqual(norm, 0.0)
+            expect = self._expansion.get_basis_hessians(point)
+            actual = self._expansion.get_basis_derivatives(point, 2)
+            norm = np.linalg.norm(expect - actual)
             self.assertAlmostEqual(norm, 0.0)
 
     def test_global_to_gradient(self):
@@ -713,9 +740,10 @@ class TestLegendre(unittest.TestCase):
                 expected.global_to_value(x_global))
             self.assertAlmostEqual(shifted.global_to_gradient(x_global),
                 expected.global_to_gradient(x_global))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                shifted.global_to_derivatives(x_global) -
-                expected.global_to_derivatives(x_global)))
+            for k in range(shifted.n_term()):
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    shifted.global_to_derivatives(x_global, k) -
+                    expected.global_to_derivatives(x_global, k)))
 
 
 class TestTruncatedLegendre(unittest.TestCase):
@@ -737,12 +765,13 @@ class TestTruncatedLegendre(unittest.TestCase):
             for x in points:
                 self.assertAlmostEqual(legendre_low.global_to_value(x),
                     legendre_trunc.global_to_value(x))
-                diff = (legendre_low.global_to_derivatives(x)
-                    - legendre_trunc.global_to_derivatives(x))
-                self.assertEqual(np.linalg.norm(diff), 0)
-                diff = (legendre_low.get_basis_values(x)
-                    - legendre_trunc.get_basis_values(x))
-                self.assertEqual(np.linalg.norm(diff), 0)
+                for k in range(p_low):
+                    diff = (legendre_low.global_to_derivatives(x, k)
+                        - legendre_trunc.global_to_derivatives(x, k))
+                    self.assertEqual(np.linalg.norm(diff), 0)
+                    diff = (legendre_low.get_basis_values(x)
+                        - legendre_trunc.get_basis_values(x))
+                    self.assertEqual(np.linalg.norm(diff), 0)
 
 
 if __name__ == '__main__':

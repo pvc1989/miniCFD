@@ -110,19 +110,17 @@ class Taylor(concept.Expansion):
             x_power *= x_global
         return values
 
-    def get_basis_derivatives(self, x_global: float):
-        """Get all non-zero-in-general derivatives of the basis.
-
-        values[k][l] = the k-th derivative of (x-c)^{l}.
-        """
-        x_global -= self.x_center()
-        values = np.zeros((self.n_term(), self.n_term()))
-        values[0] = self.get_basis_values(x_global)
-        for k in range(1, self.n_term()):
+    def get_basis_derivatives(self, x_global: float, k: int):
+        if k == 0:
+            return Taylor.get_basis_values(self, x_global)
+        else:
+            assert k > 0
+            values = np.zeros(self.n_term())
+            x_global -= self.x_center()
             for l in range(k, self.n_term()):
-                values[k][l] = x_global**(l-k) * (Taylor._factorials[l]
+                values[l] = x_global**(l-k) * (Taylor._factorials[l]
                     / Taylor._factorials[l-k])
-        return values
+            return values
 
     def get_basis_innerproducts(self):
         def integrand(x_global):
@@ -141,19 +139,15 @@ class Taylor(concept.Expansion):
         taylor_basis_gradients = Taylor.get_basis_gradients(self, x_global)
         return self._taylor_coeff.dot(taylor_basis_gradients)
 
-    def global_to_derivatives(self, x_global: float) -> np.ndarray:
-        """Get all non-zero-in-general derivatives of u^h.
-
-        values[k] = the k-th derivative of u^h.
-        """
-        # TODO: evaluate the k-th derivative only
-        basis_derivatives = Taylor.get_basis_derivatives(self, x_global)
-        values = np.zeros(self.n_term(), self.value_type())
-        values[0] = self.global_to_value(x_global)
-        for k in range(1, self.n_term()):
-            for l in range(k, self.n_term()):
-                values[k] += basis_derivatives[k][l] * self._taylor_coeff[l]
-        return values
+    def global_to_derivatives(self, x_global: float, k: int) -> np.ndarray:
+        if k == 0:
+            return self.global_to_value(x_global)
+        assert k > 0
+        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global, k)
+        value = taylor_derivatives[k] * self._taylor_coeff[k]
+        for l in range(k + 1, self.n_term()):
+            value += taylor_derivatives[l] * self._taylor_coeff[l]
+        return value
 
     def set_coeff(self, coeff):
         for i_row in range(self.n_term()):
@@ -226,6 +220,13 @@ class Lagrange(Taylor):
         self._taylor_to_lagrange = base_rows
         self._lagrange_to_taylor = np.linalg.inv(base_rows)
         self._cached_average = None
+        # cached for frequent usage:
+        self._basis_derivatives = np.zeros((n_point, n_point, n_point))
+        for i_point in range(n_point):
+            point_i = self._sample_points[i_point]
+            for k_derivative in range(n_point):
+                self._basis_derivatives[i_point][k_derivative] = \
+                    self.get_basis_derivatives(point_i, k_derivative)
 
     def _update_cached_average(self):
         self._cached_average = Taylor.average(self)
@@ -306,8 +307,8 @@ class Lagrange(Taylor):
         taylor_hessians = Taylor.get_basis_hessians(self, x_global)
         return taylor_hessians.dot(self._lagrange_to_taylor)
 
-    def get_basis_derivatives(self, x_global: float):
-        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
+    def get_basis_derivatives(self, x_global: float, k: int):
+        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global, k)
         return taylor_derivatives.dot(self._lagrange_to_taylor)
 
 
@@ -341,7 +342,6 @@ class LagrangeOnGaussPoints(Lagrange):
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             Integrator, value_type=float) -> None:
-        n_point = degree + 1
         assert issubclass(Integrator, concept.Integrator)
         Lagrange.__init__(self, degree, coordinate, Integrator.get_local_points,
             Integrator, value_type)
@@ -507,8 +507,8 @@ class Legendre(Taylor):
         taylor_hessians = Taylor.get_basis_hessians(self, x_global)
         return taylor_hessians.dot(self._legendre_to_taylor)
 
-    def get_basis_derivatives(self, x_global: float):
-        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global)
+    def get_basis_derivatives(self, x_global: float, k: int):
+        taylor_derivatives = Taylor.get_basis_derivatives(self, x_global, k)
         return taylor_derivatives.dot(self._legendre_to_taylor)
 
 
@@ -558,7 +558,7 @@ class TruncatedLegendre(Taylor):
     def get_basis_hessians(self, x_global: float):
         assert False
 
-    def get_basis_derivatives(self, x_global: float):
+    def get_basis_derivatives(self, x_global: float, k: int):
         assert False
 
 

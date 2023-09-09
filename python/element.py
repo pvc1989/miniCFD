@@ -288,6 +288,7 @@ class LagrangeFR(FluxReconstruction):
         return residual
 
     def get_dissipation_matrices(self):
+        curr = self.expansion()
         left, right = self.neighbor_expansions()
         n_term = self.n_term()
         shape = (n_term, n_term)
@@ -300,8 +301,8 @@ class LagrangeFR(FluxReconstruction):
             for l in range(n_term):
                 mat_b[k] += mat_a[k][l] * mat_a[l]
         # print('B =\n', mat_b)
-        basis_values_curr_left = self.get_basis_values(self.x_left())
-        basis_values_curr_right = self.get_basis_values(self.x_right())
+        basis_values_curr_left = curr.get_boundary_derivatives(0, True, True)
+        basis_values_curr_right = curr.get_boundary_derivatives(0, False, True)
         correction_gradients_left = np.ndarray(n_term)
         correction_gradients_right = np.ndarray(n_term)
         for i in range(n_term):
@@ -319,15 +320,15 @@ class LagrangeFR(FluxReconstruction):
             d_minus_left = self._riemann.get_interface_gradient(
                 left.length(), self.length(),
                 u_jump = +basis_values_curr_left,
-                du_mean = 0.5 * self.get_basis_gradients(self.x_left()),
-                ddu_jump = +self.get_basis_hessians(self.x_left()))
+                du_mean = 0.5 * curr.get_boundary_derivatives(1, True, True),
+                ddu_jump = +curr.get_boundary_derivatives(2, True, True))
         d_minus_right = 0.0
         if right:
             d_minus_right = self._riemann.get_interface_gradient(
                 self.length(), right.length(),
                 u_jump = -basis_values_curr_right,
-                du_mean = 0.5 * self.get_basis_gradients(self.x_right()),
-                ddu_jump = -self.get_basis_hessians(self.x_right()))
+                du_mean = 0.5 * curr.get_boundary_derivatives(1, False, True),
+                ddu_jump = -curr.get_boundary_derivatives(2, False, True))
         mat_d = np.ndarray(shape)
         for k in range(n_term):
             mat_d[k] = correction_gradients_right[k] * d_minus_right
@@ -338,16 +339,16 @@ class LagrangeFR(FluxReconstruction):
         if left:
             d_plus_left = self._riemann.get_interface_gradient(
                 left.length(), self.length(),
-                u_jump = -left.get_basis_values(left.x_right()),
-                du_mean = 0.5 * left.get_basis_gradients(left.x_right()),
-                ddu_jump = -left.get_basis_hessians(left.x_right()))
+                u_jump = -left.get_boundary_derivatives(0, False, True),
+                du_mean = 0.5 * left.get_boundary_derivatives(1, False, True),
+                ddu_jump = -left.get_boundary_derivatives(2, False, True))
         d_plus_right = 0.0
         if right:
             d_plus_right = self._riemann.get_interface_gradient(
                 self.length(), right.length(),
-                u_jump = +right.get_basis_values(right.x_left()),
-                du_mean = 0.5 * right.get_basis_gradients(right.x_left()),
-                ddu_jump = +right.get_basis_hessians(right.x_left()))
+                u_jump = +right.get_boundary_derivatives(0, True, True),
+                du_mean = 0.5 * right.get_boundary_derivatives(1, True, True),
+                ddu_jump = +right.get_boundary_derivatives(2, True, True))
         mat_e = np.ndarray(shape)
         mat_f = np.ndarray(shape)
         for k in range(n_term):

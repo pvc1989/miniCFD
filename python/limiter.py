@@ -111,12 +111,17 @@ class ZhongXingHui2013(CompactWENO):
     def _get_smoothness_value(self, taylor: expansion.Taylor):
         beta = 0.0
         def integrand(x_global):
-            return taylor.global_to_derivatives(x_global)**2
+            values = np.ndarray(taylor.degree(), taylor.value_type())
+            for d in range(taylor.degree()):
+                k = d + 1
+                values[d] = taylor.global_to_derivatives(x_global, k)**2
+            return values
         norms = taylor.integrator().fixed_quad_global(integrand)
-        for k in range(1, taylor.degree()+1):
+        for d in range(taylor.degree()):
+            k = d + 1
             length = taylor.length()
             scale = length**(2*k-1) / expansion.Taylor._factorials[k]**2
-            beta += norms[k] * scale
+            beta += norms[d] * scale
         return beta
 
     def get_candidates(self, curr: concept.Element) -> list:
@@ -179,12 +184,17 @@ class LiWanAi2020(CompactWENO):
 
     def _get_derivative_norms(self, taylor: expansion.Taylor):
         def integrand(x_global):
-            return taylor.global_to_derivatives(x_global)**2
+            values = np.ndarray(taylor.degree(), taylor.value_type())
+            for d in range(taylor.degree()):
+                k = d + 1
+                values[d] = taylor.global_to_derivatives(x_global, k)**2
+            return values
         norms = taylor.integrator().fixed_quad_global(integrand)
-        for k in range(1, taylor.degree()+1):
+        for d in range(taylor.degree()):
+            k = d + 1
             jacobian = taylor.length() / 2
             scale = jacobian**(2*k-1) / expansion.Taylor._factorials[k-1]**2
-            norms[k] *= scale
+            norms[d] *= scale
         return norms
 
     def _get_smoothness_value(self, taylor: expansion.Taylor):
