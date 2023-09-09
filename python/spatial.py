@@ -190,6 +190,22 @@ class DGonLegendreRoots(DiscontinuousGalerkin):
         return my_name
 
 
+class DGonLobattoRoots(DiscontinuousGalerkin):
+    """The ODE system given by the DG method using a Lagrange expansion on Lobatto roots.
+    """
+
+    def __init__(self, riemann: concept.RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        DiscontinuousGalerkin.__init__(self, riemann, degree,
+            n_element, x_left, x_right, element.DGonLobattoRoots)
+
+    def name(self, verbose=True):
+        my_name = 'DGonLobattoRoots'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+
 class FluxReconstruction(DiscontinuousGalerkin):
     """An mid-level class that defines common methods for all FR schemes.
     """
@@ -241,6 +257,22 @@ class FRonLegendreRoots(FluxReconstruction):
 
     def name(self, verbose=True):
         my_name = 'FRonLegendreRoots'
+        if verbose:
+            my_name += r' ($p=$' + f'{self.degree()})'
+        return my_name
+
+
+class FRonLobattoRoots(FluxReconstruction):
+    """The ODE system given by the FR method using a Lagrange expansion on Lobatto roots.
+    """
+
+    def __init__(self, riemann: concept.RiemannSolver,
+            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+        FluxReconstruction.__init__(self, riemann, degree,
+            n_element, x_left, x_right, element.FRonLobattoRoots)
+
+    def name(self, verbose=True):
+        my_name = 'FRonLobattoRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name

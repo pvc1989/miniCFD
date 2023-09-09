@@ -501,12 +501,16 @@ if __name__ == '__main__':
         SpatialClass = spatial.DGonUniformRoots
     elif args.method == 'DGonLegendreRoots':
         SpatialClass = spatial.DGonLegendreRoots
+    elif args.method == 'DGonLobattoRoots':
+        SpatialClass = spatial.DGonLobattoRoots
     elif args.method == 'LegendreDG':
         SpatialClass = spatial.LegendreDG
     elif args.method == 'FRonUniformRoots':
         SpatialClass = spatial.FRonUniformRoots
     elif args.method == 'FRonLegendreRoots':
         SpatialClass = spatial.FRonLegendreRoots
+    elif args.method == 'FRonLobattoRoots':
+        SpatialClass = spatial.FRonLobattoRoots
     elif args.method == 'LegendreFR':
         SpatialClass = spatial.LegendreFR
     else:
