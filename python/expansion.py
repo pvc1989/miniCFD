@@ -311,6 +311,9 @@ class Lagrange(Taylor):
         taylor_derivatives = Taylor.get_basis_derivatives(self, x_global, k)
         return taylor_derivatives.dot(self._lagrange_to_taylor)
 
+    def get_derivatives_of_basis_at_point_j(self, j, k):
+        return self._basis_derivatives[j][k]
+
 
 class LagrangeOnUniformRoots(Lagrange):
     """Specialized Lagrange expansion using uniform roots as nodes.
@@ -397,6 +400,19 @@ class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
+
+    def get_boundary_derivatives(self, k: int, left: bool, basis: bool):
+        if left:
+            j = 0
+        else:
+            j = -1
+        if k == 0:
+            return self._sample_values[j]
+        basis_derivatives = self.get_derivatives_of_basis_at_point_j(j, k)
+        if basis:
+            return basis_derivatives
+        else:
+            return self._sample_values.dot(basis_derivatives)
 
 
 class Legendre(Taylor):

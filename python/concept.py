@@ -333,6 +333,19 @@ class Expansion(abc.ABC):
         """Get the reference to the coefficient for each basis.
         """
 
+    def get_boundary_derivatives(self, k: int, left: bool, basis: bool):
+        """Get the kth derivatives of basis or u^h at x_left or x_right.
+        """
+        if left:
+            x = self.x_left()
+        else:
+            x = self.x_right()
+        basis_derivatives = self.get_basis_derivatives(x, k)
+        if basis:
+            return basis_derivatives
+        else:
+            return self.get_coeff_ref().dot(basis_derivatives)
+
 
 class ShiftedExpansion(Expansion):
     """An wrapper that acts as if a given expansion is shifted along x-axis by a given amount.

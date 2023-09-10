@@ -68,10 +68,8 @@ class Solver(concept.RiemannSolver):
         expansion_left = left.expansion()
         expansion_right = right.expansion()
         # Get the convective flux on the interface:
-        x_left = expansion_left.x_right()
-        u_left = expansion_left.global_to_value(x_left)
-        x_right = expansion_right.x_left()
-        u_right = expansion_right.global_to_value(x_right)
+        u_left = expansion_left.get_boundary_derivatives(0, False, False)
+        u_right = expansion_right.get_boundary_derivatives(0, True, False)
         flux = self.get_upwind_flux(u_left, u_right)
         physical_viscosity = Solver._get_interface_viscosity(
             self.equation().get_diffusive_coeff(u_left),
@@ -83,21 +81,15 @@ class Solver(concept.RiemannSolver):
             return flux, u_left - u_left
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
+        if expansion_left.degree() > 0:
+            du_left = expansion_left.get_boundary_derivatives(1, False, False)
         if expansion_left.degree() > 1:
-            derivatives = expansion_left.global_to_derivatives(x_left)
-            du_left, ddu_left = derivatives[1], derivatives[2]
-        elif expansion_left.degree() == 1:
-            du_left = expansion_left.global_to_gradient(x_left)
-        else:
-            pass
+            ddu_left = expansion_left.get_boundary_derivatives(2, False, False)
         du_right, ddu_right = 0, 0
+        if expansion_right.degree() > 0:
+            du_right = expansion_right.get_boundary_derivatives(1, True, False)
         if expansion_right.degree() > 1:
-            derivatives = expansion_right.global_to_derivatives(x_right)
-            du_right, ddu_right = derivatives[1], derivatives[2]
-        elif expansion_right.degree() == 1:
-            du_right = expansion_right.global_to_gradient(x_right)
-        else:
-            pass
+            ddu_right = expansion_right.get_boundary_derivatives(2, True, False)
         u_jump = u_right - u_left
         du = self.get_interface_gradient(left.length(), right.length(),
             u_jump, (du_left + du_right) / 2, ddu_right - ddu_left)
