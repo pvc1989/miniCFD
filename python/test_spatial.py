@@ -44,9 +44,9 @@ class TestFRonLegendreRoots(unittest.TestCase):
             exact_solution[i] = u(point_i)
             exact_flux[i] = self._spatial.equation().get_convective_flux(
                 exact_solution[i])
-            dg_flux[i] = self._spatial.get_dg_flux(
-                point_i)
-            fr_flux[i] = self._spatial.get_fr_flux(point_i)
+            dg_flux[i] = self._spatial.equation().get_convective_flux(
+                actual_solution[i])
+            fr_flux[i] = self._spatial.get_flux_value(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         points /= self._spatial.delta_x(0)

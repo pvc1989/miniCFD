@@ -871,5 +871,101 @@ class OdeSolver(abc.ABC):
         """
 
 
+class SpatialScheme(Grid, OdeSystem):
+    """An ODE system given by some FiniteElement scheme.
+    """
+
+    def __init__(self, riemann: RiemannSolver,
+            n_element: int, x_left: float, x_right: float,
+            detector=None, limiter=None, viscosity=None) -> None:
+        assert x_left < x_right
+        assert n_element > 1
+        Grid.__init__(self, n_element)
+        self._riemann = riemann
+        self._detector = detector
+        self._limiter = limiter
+        self._viscosity = viscosity
+        self._is_periodic = True
+
+    def value_type(self):
+        return self.get_element_by_index(0).value_type()
+
+    def scalar_type(self):
+        return self.get_element_by_index(0).scalar_type()
+
+    def degree(self):
+        """Get the degree of the polynomial approximation.
+        """
+        return self.get_element_by_index(0).degree()
+
+    def equation(self) -> Equation:
+        return self._riemann.equation()
+
+    @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the compact string representation of the method.
+        """
+
+    def is_periodic(self):
+        """Whether a periodic boundary condition is applied.
+        """
+        return self._is_periodic
+
+    @abc.abstractmethod
+    def link_neighbors(self):
+        """Link each element to its neighbors' expansions.
+        """
+
+    @abc.abstractmethod
+    def n_dof(self):
+        """Count degrees of freedom in current object.
+        """
+
+    @abc.abstractmethod
+    def initialize(self, function: callable):
+        """Set the initial condition.
+        """
+
+    @abc.abstractmethod
+    def get_solution_value(self, point):
+        """Get the solution value at a given point.
+        """
+
+    @abc.abstractmethod
+    def get_flux_value(self, point):
+        """Get the flux value at a given point.
+        """
+
+    def viscosity(self) -> Viscosity:
+        """Get a reference to the underlying viscosity model.
+        """
+        return self._viscosity
+
+    def set_detector_and_limiter(self, detector, limiter, viscosity):
+        if isinstance(detector, Detector):
+            self._detector = detector
+        if isinstance(limiter, Limiter):
+            self._limiter = limiter
+        if isinstance(viscosity, Viscosity):
+            self._viscosity = viscosity
+
+    def suppress_oscillations(self):
+        if self._detector:
+            indices = self._detector.get_troubled_cell_indices(self)
+            if self._limiter:
+                self._limiter.reconstruct(indices, self)
+            if self._viscosity:
+                self._viscosity.generate(indices, self)
+                for i_cell in range(self.n_element()):
+                    self.get_element_by_index(i_cell)._extra_viscosity = \
+                        self._viscosity.get_cell_viscosity(i_cell)
+
+    def suggest_delta_t(self, delta_t):
+        for i_cell in range(self.n_element()):
+            cell_i = self.get_element_by_index(i_cell)
+            delta_t = min(delta_t, cell_i.suggest_delta_t())
+        return delta_t
+
+
 if __name__ == '__main__':
     pass

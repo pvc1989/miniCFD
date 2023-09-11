@@ -11,128 +11,19 @@ import expansion
 import element
 
 
-class SpatialScheme(concept.Grid, concept.OdeSystem):
-    """An ODE system given by some spatial scheme.
+class FiniteVolume(concept.SpatialScheme):
+    """An ODE system given by some FiniteVolume scheme.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            n_element: int, x_left: float, x_right: float,
-            detector=None, limiter=None, viscosity=None) -> None:
-        assert x_left < x_right
-        assert n_element > 1
-        concept.Grid.__init__(self, n_element)
-        self._riemann = riemann
-        self._detector = detector
-        self._limiter = limiter
-        self._viscosity = viscosity
-        self._is_periodic = True
 
-    def value_type(self):
-        return self.get_element_by_index(0).value_type()
-
-    def scalar_type(self):
-        return self.get_element_by_index(0).scalar_type()
-
-    def degree(self):
-        """Get the degree of the polynomial approximation.
-        """
-        return self.get_element_by_index(0).degree()
-
-    def equation(self) -> concept.Equation:
-        return self._riemann.equation()
-
-    @abc.abstractmethod
-    def name(self, verbose: bool) -> str:
-        """Get the compact string representation of the method.
-        """
-
-    def is_periodic(self):
-        """Whether a periodic boundary condition is applied.
-        """
-        return self._is_periodic
-
-    def _get_shifted_expansion(self, i_cell: int, x_shift: float):
-        cell_i = self.get_element_by_index(i_cell)
-        return expansion.Shifted(cell_i.expansion(), x_shift)
-
-    def link_neighbors(self):
-        """Link each element to its neighbors' expansions.
-        """
-        self.get_element_by_index(0)._right_expansion = \
-            self.get_element_by_index(1).expansion()
-        for i_cell in range(1, self.n_element() - 1):
-            cell_i = self.get_element_by_index(i_cell)
-            cell_i._left_expansion = \
-                self.get_element_by_index(i_cell - 1).expansion()
-            cell_i._right_expansion = \
-                self.get_element_by_index(i_cell + 1).expansion()
-        self.get_element_by_index(-1)._left_expansion = \
-            self.get_element_by_index(-2).expansion()
-        if self.is_periodic():
-            self.get_element_by_index(0)._left_expansion = \
-                self._get_shifted_expansion(-1, -self.length())
-            self.get_element_by_index(-1)._right_expansion = \
-                self._get_shifted_expansion(0, +self.length())
-
-    @abc.abstractmethod
-    def n_dof(self):
-        """Count degrees of freedom in current object.
-        """
-
-    @abc.abstractmethod
-    def initialize(self, function: callable):
-        """Set the initial condition.
-        """
-
-    @abc.abstractmethod
-    def get_solution_value(self, point):
-        """Get the solution value at a given point.
-        """
-
-    @abc.abstractmethod
-    def get_flux_value(self, point):
-        """Get the flux value at a given point.
-        """
-
-    def viscosity(self) -> concept.Viscosity:
-        """Get a reference to the underlying viscosity model.
-        """
-        return self._viscosity
-
-    def set_detector_and_limiter(self, detector, limiter, viscosity):
-        if isinstance(detector, concept.Detector):
-            self._detector = detector
-        if isinstance(limiter, concept.Limiter):
-            self._limiter = limiter
-        if isinstance(viscosity, concept.Viscosity):
-            self._viscosity = viscosity
-
-    def suppress_oscillations(self):
-        if self._detector:
-            indices = self._detector.get_troubled_cell_indices(self)
-            if self._limiter:
-                self._limiter.reconstruct(indices, self)
-            if self._viscosity:
-                self._viscosity.generate(indices, self)
-                for i_cell in range(self.n_element()):
-                    self.get_element_by_index(i_cell)._extra_viscosity = \
-                        self._viscosity.get_cell_viscosity(i_cell)
-
-    def suggest_delta_t(self, delta_t):
-        for i_cell in range(self.n_element()):
-            cell_i = self.get_element_by_index(i_cell)
-            delta_t = min(delta_t, cell_i.suggest_delta_t())
-        return delta_t
-
-
-class DiscontinuousGalerkin(SpatialScheme):
-    """An mid-level class that defines common methods for all DG schemes.
+class FiniteElement(concept.SpatialScheme):
+    """An ODE system given by some FiniteElement scheme.
     """
 
     def __init__(self, riemann: concept.RiemannSolver,
             degree: int, n_element: int, x_left: float, x_right: float,
             ElementType: concept.Element) -> None:
-        SpatialScheme.__init__(self, riemann,
+        concept.SpatialScheme.__init__(self, riemann,
             n_element, x_left, x_right)
         assert degree >= 0
         delta_x = (x_right - x_left) / n_element
@@ -186,10 +77,28 @@ class DiscontinuousGalerkin(SpatialScheme):
     def get_solution_value(self, point):
         return self.get_element(point).get_solution_value(point)
 
-    def get_dg_flux(self, point):
-        i_cell = self.get_element_index(point)
+    def _get_shifted_expansion(self, i_cell: int, x_shift: float):
         cell_i = self.get_element_by_index(i_cell)
-        return cell_i.get_dg_flux(point)
+        return expansion.Shifted(cell_i.expansion(), x_shift)
+
+    def link_neighbors(self):
+        """Link each element to its neighbors' expansions.
+        """
+        self.get_element_by_index(0)._right_expansion = \
+            self.get_element_by_index(1).expansion()
+        for i_cell in range(1, self.n_element() - 1):
+            cell_i = self.get_element_by_index(i_cell)
+            cell_i._left_expansion = \
+                self.get_element_by_index(i_cell - 1).expansion()
+            cell_i._right_expansion = \
+                self.get_element_by_index(i_cell + 1).expansion()
+        self.get_element_by_index(-1)._left_expansion = \
+            self.get_element_by_index(-2).expansion()
+        if self.is_periodic():
+            self.get_element_by_index(0)._left_expansion = \
+                self._get_shifted_expansion(-1, -self.length())
+            self.get_element_by_index(-1)._right_expansion = \
+                self._get_shifted_expansion(0, +self.length())
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
@@ -254,8 +163,15 @@ class DiscontinuousGalerkin(SpatialScheme):
         assert i_dof == self.n_dof()
         return column
 
+
+class DiscontinuousGalerkin(FiniteElement):
+    """An mid-level class that defines common methods for all DG schemes.
+    """
+
     def get_flux_value(self, point):
-        return self.get_dg_flux(point)
+        i_cell = self.get_element_index(point)
+        cell_i = self.get_element_by_index(i_cell)
+        return cell_i.get_dg_flux(point)
 
 
 class LegendreDG(DiscontinuousGalerkin):
@@ -322,11 +238,11 @@ class DGonLobattoRoots(DiscontinuousGalerkin):
         return my_name
 
 
-class FluxReconstruction(DiscontinuousGalerkin):
+class FluxReconstruction(FiniteElement):
     """An mid-level class that defines common methods for all FR schemes.
     """
 
-    def get_fr_flux(self, point):
+    def get_flux_value(self, point):
         curr = self.get_element_index(point)
         # solve riemann problem at the left end of curr element
         right = self.get_element_by_index(curr)
@@ -337,13 +253,9 @@ class FluxReconstruction(DiscontinuousGalerkin):
         right = self.get_element_by_index((curr + 1) % self.n_element())
         upwind_flux_right = self._riemann.get_interface_flux(left, right)
         assert (isinstance(left, element.LagrangeFR)
-            or isinstance(left, element.FRonLegendreRoots)
             or isinstance(left, element.LegendreFR))
         return left.get_fr_flux(point,
             upwind_flux_left, upwind_flux_right)
-
-    def get_flux_value(self, point):
-        return self.get_fr_flux(point)
 
 
 class FRonUniformRoots(FluxReconstruction):
