@@ -4,7 +4,6 @@ import unittest
 
 import numpy as np
 
-from concept import ShiftedCoordinate
 import coordinate
 
 
@@ -29,7 +28,7 @@ class TestLinear(unittest.TestCase):
         """Test consistency with a shifted coordinate.
         """
         x_shift = np.random.rand()
-        shifted = ShiftedCoordinate(self._coordinate, x_shift)
+        shifted = coordinate.Shifted(self._coordinate, x_shift)
         expected = coordinate.Linear(self._x_left+x_shift, self._x_right+x_shift)
         self.assertEqual(shifted.jacobian_degree(), expected.jacobian_degree())
         self.assertAlmostEqual(shifted.x_left(), expected.x_left())

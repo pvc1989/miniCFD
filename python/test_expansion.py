@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 
 import expansion
 from integrator import GaussLegendre
-from concept import ShiftedExpansion
 from coordinate import Linear as LinearCoordinate
 
 
@@ -102,7 +101,7 @@ class TestTaylor(unittest.TestCase):
         """
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
-        shifted = ShiftedExpansion(self._expansion, x_shift)
+        shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.Taylor(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             GaussLegendre, self._expansion.value_type())
@@ -241,7 +240,7 @@ class TestLagrangeOnUniformRoots(unittest.TestCase):
         """
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
-        shifted = ShiftedExpansion(self._expansion, x_shift)
+        shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.LagrangeOnUniformRoots(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())
@@ -406,7 +405,7 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
         """
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
-        shifted = ShiftedExpansion(self._expansion, x_shift)
+        shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.LagrangeOnLegendreRoots(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())
@@ -571,7 +570,7 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
         """
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
-        shifted = ShiftedExpansion(self._expansion, x_shift)
+        shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.LagrangeOnLobattoRoots(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())
@@ -726,7 +725,7 @@ class TestLegendre(unittest.TestCase):
         """
         self._expansion.approximate(np.sin)
         x_shift = np.random.rand()
-        shifted = ShiftedExpansion(self._expansion, x_shift)
+        shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.Legendre(self._expansion.degree(),
             LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
             self._expansion.value_type())

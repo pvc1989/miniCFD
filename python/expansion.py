@@ -5,8 +5,83 @@ from scipy import special
 import numdifftools as nd
 
 import concept
+import coordinate
 import integrator
 import polynomial
+
+
+class Shifted(concept.Expansion):
+    """An wrapper that acts as if a given expansion is shifted along x-axis by a given amount.
+    """
+
+    def __init__(self, expansion: concept.Expansion, x_shift: float):
+        shifted_coordinate = coordinate.Shifted(expansion.coordinate(), x_shift)
+        IntegtatorType = type(expansion.integrator())
+        n_point = expansion.integrator().n_point()
+        concept.Expansion.__init__(self, shifted_coordinate,
+            IntegtatorType(shifted_coordinate, n_point), expansion.value_type())
+        self._unshifted_expansion = expansion
+        self._x_shift = x_shift
+
+    def scalar_type(self):
+        return self._unshifted_expansion.scalar_type()
+
+    def name(self, verbose: bool) -> str:
+        return self._unshifted_expansion.name(verbose)
+
+    def n_term(self):
+        return self._unshifted_expansion.n_term()
+
+    def degree(self):
+        return self._unshifted_expansion.degree()
+
+    def global_to_value(self, x_global: float):
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_value(x_unshifted)
+
+    def global_to_gradient(self, x_global: float):
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_gradient(x_unshifted)
+
+    def global_to_derivatives(self, x_global: float, k: int) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.global_to_derivatives(x_unshifted, k)
+
+    def get_basis_values(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_values(x_unshifted)
+
+    def get_basis_gradients(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_gradients(x_unshifted)
+
+    def get_basis_hessians(self, x_global: float) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_hessians(x_unshifted)
+
+    def get_basis_derivatives(self, x_global: float, k: int) -> np.ndarray:
+        x_unshifted = x_global - self._x_shift
+        return self._unshifted_expansion.get_basis_derivatives(x_unshifted, k)
+
+    def get_coeff_ref(self) -> np.ndarray:
+        return self._unshifted_expansion.get_coeff_ref()
+
+    def average(self):
+        return self._unshifted_expansion.average()
+
+    def get_basis_innerproducts(self):
+        return self._unshifted_expansion.get_basis_innerproducts()
+
+    # The following methods are banned for this wrapper.
+
+    def approximate(self, function: callable):
+        assert False
+
+    def get_basis(self, i_basis: int) -> callable:
+        assert False
+
+    def set_coeff(self, coeff: np.ndarray):
+        assert False
 
 
 class Taylor(concept.Expansion):
