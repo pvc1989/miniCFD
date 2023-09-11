@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 from scipy import integrate
 
-from coordinate import LinearCoordinate
+import coordinate
 import integrator
 
 
@@ -15,7 +15,7 @@ class TestGaussOnLinearCoordinate(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = np.random.rand()
         self._x_right = 1 + np.random.rand()
-        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self._coordinate = coordinate.Linear(self._x_left, self._x_right)
 
     def test_gauss_legendre(self):
         """Test Gauss--Legendre's (2k - 1)-degree algebraic accuracy.

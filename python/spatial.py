@@ -5,7 +5,7 @@ from numpy.testing import assert_almost_equal
 import bisect
 
 import concept
-from  coordinate import LinearCoordinate
+import coordinate
 import element
 
 
@@ -27,7 +27,7 @@ class DiscontinuousGalerkin(concept.SpatialScheme):
             self._x_left_sorted[i_element] = x_left_i
             x_right_i = x_left_i + delta_x
             element_i = ElementType(riemann, degree,
-                LinearCoordinate(x_left_i, x_right_i))
+                coordinate.Linear(x_left_i, x_right_i))
             self._elements[i_element] = element_i
             x_left_i = x_right_i
         assert_almost_equal(x_left_i, x_right)

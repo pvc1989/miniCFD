@@ -4,7 +4,7 @@ import concept
 import expansion
 import element
 import detector
-from coordinate import LinearCoordinate
+import coordinate
 from integrator import GaussLegendre
 
 class Constant(concept.Viscosity):
@@ -224,7 +224,7 @@ class Energy(concept.Viscosity):
         # build left_energy
         left_energy = 0
         if left:
-            left_coord = LinearCoordinate(curr.x_left(), curr.x_center())
+            left_coord = coordinate.Linear(curr.x_left(), curr.x_center())
             left_low = expansion.Legendre(1, left_coord)
             left_low.approximate(lambda x: left.global_to_value(x))
             left_energy = min(get_energy(left_coord, curr, left),
@@ -232,7 +232,7 @@ class Energy(concept.Viscosity):
         # build right_energy
         right_energy = 0
         if right:
-            right_coord = LinearCoordinate(curr.x_center(), curr.x_right())
+            right_coord = coordinate.Linear(curr.x_center(), curr.x_right())
             right_low = expansion.Legendre(1, right_coord)
             right_low.approximate(lambda x: right.global_to_value(x))
             right_energy = min(get_energy(right_coord, curr, right),

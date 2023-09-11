@@ -5,16 +5,16 @@ import unittest
 import numpy as np
 
 from concept import ShiftedCoordinate
-from coordinate import LinearCoordinate
+import coordinate
 
 
-class TestLinearCoordinate(unittest.TestCase):
+class TestLinear(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._x_left = np.random.rand()
         self._x_right = 1 + np.random.rand()
-        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self._coordinate = coordinate.Linear(self._x_left, self._x_right)
 
     def test_consistency_of_transforms(self):
         """Test consistency of coordinate transforms between local and global.
@@ -30,7 +30,7 @@ class TestLinearCoordinate(unittest.TestCase):
         """
         x_shift = np.random.rand()
         shifted = ShiftedCoordinate(self._coordinate, x_shift)
-        expected = LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift)
+        expected = coordinate.Linear(self._x_left+x_shift, self._x_right+x_shift)
         self.assertEqual(shifted.jacobian_degree(), expected.jacobian_degree())
         self.assertAlmostEqual(shifted.x_left(), expected.x_left())
         self.assertAlmostEqual(shifted.x_right(), expected.x_right())

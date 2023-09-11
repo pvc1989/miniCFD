@@ -3,7 +3,7 @@
 import concept
 
 
-class LinearCoordinate(concept.Coordinate):
+class Linear(concept.Coordinate):
     """A linear map between local and global coordinates.
     """
 

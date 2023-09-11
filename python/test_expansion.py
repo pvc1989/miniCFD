@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import expansion
 from integrator import GaussLegendre
 from concept import ShiftedExpansion
-from coordinate import LinearCoordinate
+from coordinate import Linear as LinearCoordinate
 
 
 class TestTaylor(unittest.TestCase):

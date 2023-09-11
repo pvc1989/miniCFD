@@ -4,8 +4,8 @@ import unittest
 import numpy as np
 from matplotlib import pyplot as plt
 
+import coordinate
 from element import FRonLegendreRoots
-from coordinate import LinearCoordinate
 from riemann import LinearAdvection
 from polynomial import Vincent
 
@@ -22,7 +22,7 @@ class TestFRonLegendreRoots(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
-        self.coordinate = LinearCoordinate(self._x_left, self._x_right)
+        self.coordinate = coordinate.Linear(self._x_left, self._x_right)
         self._element = FRonLegendreRoots(self._riemann, self._degree,
             self.coordinate)
         self._element.approximate(np.sin)
