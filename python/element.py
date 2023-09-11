@@ -34,16 +34,17 @@ class DiscontinuousGalerkin(Element):
         """
         def integrand(x_global):
             return np.tensordot(
-                self.get_basis_gradients(x_global),
+                self.expansion().get_basis_gradients(x_global),
                 self.get_dg_flux(x_global),
                 0)
         return self.fixed_quad_global(integrand, self.degree())
 
     def add_interface_residual(self, left_flux, right_flux, residual):
-        residual += np.tensordot(
-            self.get_basis_values(self.x_left()), left_flux, 0)
-        residual -= np.tensordot(
-            self.get_basis_values(self.x_right()), right_flux, 0)
+        e = self.expansion()
+        left_basis = e.get_boundary_derivatives(0, True, True)
+        residual += np.tensordot(left_basis, left_flux, 0)
+        right_basis = e.get_boundary_derivatives(0, False, True)
+        residual -= np.tensordot(right_basis, right_flux, 0)
 
     def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
         correction = self.get_interface_correction(left_jump, right_jump)
@@ -93,19 +94,13 @@ class DGonGaussPoints(LagrangeDG):
         assert issubclass(LagrangeExpansion, LagrangeOnGaussPoints)
         e = LagrangeExpansion(degree, coordinate, riemann.value_type())
         DiscontinuousGalerkin.__init__(self, riemann, e)
-        self._mass_matrix_diag = np.ndarray(self.n_term())
-        self._basis_gradients = np.ndarray(self.n_term(), np.ndarray)
-        points = self.get_sample_points()
-        for k in range(self.n_term()):
-            self._mass_matrix_diag[k] = self.expansion().get_sample_weight(k)
-            self._basis_gradients[k] = self.get_basis_gradients(points[k])
 
     def expansion(self) -> LagrangeOnGaussPoints:
         return Element.expansion(self)
 
     def divide_mass_matrix(self, column: np.ndarray):
         for k in range(self.n_term()):
-            column[k] /= self._mass_matrix_diag[k]
+            column[k] /= self.expansion().get_sample_weight(k)
         return column
 
     def get_interior_residual(self):
@@ -113,19 +108,16 @@ class DGonGaussPoints(LagrangeDG):
 
         For DGonGaussPoints, which is a spetral element scheme, the integral can be reduced to a weighted sum of nodal values.
         """
-        points = self.get_sample_points()
-        values = self.get_sample_values()
-        gauss = self.expansion()
-        residual = np.tensordot(self._basis_gradients[0],
-            self.get_dg_flux(points[0],
-                values[0], values.dot(self._basis_gradients[0])),
-            0) * gauss.get_sample_weight(0)
-        for k in range(1, self.n_term()):
-            residual += np.tensordot(self._basis_gradients[k],
-                self.get_dg_flux(points[k],
-                    values[k], values.dot(self._basis_gradients[k])),
-                0) * gauss.get_sample_weight(k)
-        return residual
+        def integrand(j_node):
+            e = self.expansion()
+            x = e._sample_points[j_node]
+            u = e.get_derivatives_at_node(j_node, 0, False)
+            du = e.get_derivatives_at_node(j_node, 1, False)
+            return np.tensordot(
+                e.get_derivatives_at_node(j_node, 1, True),
+                self.get_dg_flux(x, u, du),
+                0)
+        return self.integrator().fixed_quad_global(integrand, True)
 
 
 class DGonLegendreRoots(DGonGaussPoints):
@@ -241,13 +233,14 @@ class LagrangeFR(FluxReconstruction):
     def get_dg_flux_gradient(self, x_global):
         """Get the gradient value of the discontinuous flux at a given point.
         """
-        basis_gradients = self.get_basis_gradients(x_global)
+        e = self.expansion()
+        basis_gradients = e.get_basis_gradients(x_global)
         flux_gradient = 0.0
         i_sample = 0
-        for x_sample in self.expansion().get_sample_points():
+        for x_sample in e.get_sample_points():
             f_sample = self.get_dg_flux(x_sample,
-                u_given=self.get_solution_value(x_sample),
-                du_given=self.get_solution_gradient(x_sample))
+                e.get_derivatives_at_node(i_sample, 0, False),
+                e.get_derivatives_at_node(i_sample, 1, False))
             flux_gradient += f_sample * basis_gradients[i_sample]
             i_sample += 1
         return flux_gradient
@@ -295,7 +288,7 @@ class LagrangeFR(FluxReconstruction):
         points = self.get_sample_points()
         mat_a = np.ndarray(shape)
         for i in range(n_term):
-            mat_a[i] = self.get_basis_gradients(points[i])
+            mat_a[i] = curr.get_derivatives_at_node(i, 1, True)
         mat_b = np.zeros(shape)
         for k in range(n_term):
             for l in range(n_term):
@@ -383,12 +376,10 @@ class FRonGaussPoints(LagrangeFR):
         e = LagrangeExpansion(degree, coordinate, riemann.value_type())
         FluxReconstruction.__init__(self, riemann, e)
         self._disspation_matrices = None
-        self._basis_gradients = np.ndarray(self.n_term(), np.ndarray)
         self._correction_gradients = np.ndarray(self.n_term(), tuple)
         points = self.expansion().get_sample_points()
         i_sample = 0
         for x_global in points:
-            self._basis_gradients[i_sample] = self.get_basis_gradients(x_global)
             self._correction_gradients[i_sample] = \
                 self.get_correction_gradients(x_global)
             i_sample += 1
@@ -399,26 +390,29 @@ class FRonGaussPoints(LagrangeFR):
 
     def get_interior_residual(self):
         residual = np.ndarray(self.n_term(), self.value_type())
-        u_samples = self.expansion().get_coeff_ref()
-        # build gradients of u at sample points
-        du_samples = np.ndarray(self.n_term(), self.value_type())
-        for i in range(self.n_term()):
-            du_samples[i] = u_samples.dot(self._basis_gradients[i])
+        e = self.expansion()
         x_samples = self.expansion().get_sample_points()
-        # build values of f at sample points
         f_samples = np.ndarray(self.n_term(), self.value_type())
         for i in range(self.n_term()):
-            f_samples[i] = self.get_dg_flux(
-                x_samples[i], u_samples[i], du_samples[i])
-        # build gradients of f at sample points
+            u_sample = e.get_derivatives_at_node(i, 0, False)
+            # build gradients of u at the i-th sample point
+            du_sample = e.get_derivatives_at_node(i, 1, False)
+            # build values of f at the i-th sample point
+            f_samples[i] = self.get_dg_flux(x_samples[i], u_sample, du_sample)
         for i in range(self.n_term()):
-            residual[i] = -f_samples.dot(self._basis_gradients[i])
+            # build gradients of f at sample points
+            residual[i] = -f_samples.dot(e.get_derivatives_at_node(i, 1, True))
         return residual
 
     def add_interface_residual(self, upwind_flux_left, upwind_flux_right,
             residual: np.ndarray):
-        left_flux_gap = upwind_flux_left - self.get_dg_flux(self.x_left())
-        right_flux_gap = upwind_flux_right - self.get_dg_flux(self.x_right())
+        e = self.expansion()
+        left_flux_gap = upwind_flux_left - self.get_dg_flux(self.x_left(),
+            e.get_boundary_derivatives(0, True, False),
+            e.get_boundary_derivatives(1, True, False))
+        right_flux_gap = upwind_flux_right - self.get_dg_flux(self.x_right(),
+            e.get_boundary_derivatives(0, False, False),
+            e.get_boundary_derivatives(1, False, False))
         for i_sample in range(self.n_term()):
             left, right = self._correction_gradients[i_sample]
             residual[i_sample] -= left * left_flux_gap

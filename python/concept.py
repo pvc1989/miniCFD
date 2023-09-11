@@ -114,14 +114,19 @@ class Integrator(abc.ABC):
         """
         return self._global_weights
 
-    def fixed_quad_global(self, function: callable):
-        """Integrate a function defined in global coordinates.
+    def fixed_quad_global(self, function: callable, index=False):
+        """Integrate a function defined in global coordinates or node index.
         """
         points = self.get_global_points()
         weights = self.get_global_weights()
-        value = weights[0] * function(points[0])
-        for i in range(1, self.n_point()):
-            value += weights[i] * function(points[i])
+        if index:
+            value = weights[0] * function(0)
+            for i in range(1, self.n_point()):
+                value += weights[i] * function(i)
+        else:
+            value = weights[0] * function(points[0])
+            for i in range(1, self.n_point()):
+                value += weights[i] * function(points[i])
         return value
 
     def average(self, function: callable):
@@ -527,24 +532,6 @@ class Element(abc.ABC):
         if self.is_system():
             self._update_eigen_matrices()
 
-    def fixed_quad_global(self, function: callable, n_point: int):
-        return self.integrator().fixed_quad_global(function, n_point)
-
-    def get_basis_values(self, x_global: float) -> np.ndarray:
-        """Get the values of basis at a given point.
-        """
-        return self.expansion().get_basis_values(x_global)
-
-    def get_basis_gradients(self, x_global: float) -> np.ndarray:
-        """Get the gradients of basis at a given point.
-        """
-        return self.expansion().get_basis_gradients(x_global)
-
-    def get_basis_hessians(self, x_global: float) -> np.ndarray:
-        """Get the hessians of basis at a given point.
-        """
-        return self.expansion().get_basis_hessians(x_global)
-
     def _build_mass_matrix(self):
         mass_matrix = self.expansion().get_basis_innerproducts()
         return mass_matrix
@@ -651,10 +638,11 @@ class Element(abc.ABC):
 
         The jumps passed in have already been divided by 2.
         """
+        e = self.expansion()
         correction = np.tensordot(
-            self.get_basis_gradients(self.x_left()), left_jump, 0)
+            e.get_boundary_derivatives(1, True, True), left_jump, 0)
         correction += np.tensordot(
-            self.get_basis_gradients(self.x_right()), right_jump, 0)
+            e.get_boundary_derivatives(1, False, True), right_jump, 0)
         return correction
 
     def add_interface_correction(self, left_jump, right_jump, residual: np.ndarray):
