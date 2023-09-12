@@ -37,7 +37,7 @@ class DiscontinuousGalerkin(Element):
                 self.expansion().get_basis_gradients(x_global),
                 self.get_dg_flux(x_global),
                 0)
-        return self.fixed_quad_global(integrand, self.degree())
+        return self.integrate(integrand, self.degree())
 
     def add_interface_residual(self, left_flux, right_flux, residual):
         e = self.expansion()
@@ -117,7 +117,7 @@ class DGonGaussPoints(LagrangeDG):
                 e.get_derivatives_at_node(j_node, 1, True),
                 self.get_dg_flux(x, u, du),
                 0)
-        return self.integrator().fixed_quad_global(integrand, True)
+        return self.integrator().integrate(integrand, True)
 
 
 class DGonLegendreRoots(DGonGaussPoints):
@@ -535,7 +535,7 @@ class LegendreFR(FluxReconstruction):
                 x_global, upwind_flux_left, upwind_flux_right)
             column = self.divide_mass_matrix(column)
             return column
-        values = self.expansion().integrator().fixed_quad_global(
+        values = self.expansion().integrator().integrate(
             integrand, self.n_term())
         return values
 

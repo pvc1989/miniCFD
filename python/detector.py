@@ -181,7 +181,7 @@ class ZhuJun2021(SmoothnessBased):
         return smoothness_values
 
     def _integrate(self, curr: concept.Element, that: concept.Expansion):
-        integral = curr.integrator().fixed_quad_global(
+        integral = curr.integrator().integrate(
             lambda x: curr.get_solution_value(x) - that.global_to_value(x))
         return np.abs(integral)
 

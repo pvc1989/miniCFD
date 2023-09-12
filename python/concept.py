@@ -114,7 +114,7 @@ class Integrator(abc.ABC):
         """
         return self._global_weights
 
-    def fixed_quad_global(self, function: callable, index=False):
+    def integrate(self, function: callable, index=False):
         """Integrate a function defined in global coordinates or node index.
         """
         points = self.get_global_points()
@@ -132,20 +132,20 @@ class Integrator(abc.ABC):
     def average(self, function: callable):
         """Get the average value of a function on this element.
         """
-        integral = self.fixed_quad_global(function)
+        integral = self.integrate(function)
         return integral / self.coordinate().length()
 
     def norm_1(self, function: callable):
         """Get the L_1 norm of a function on this element.
         """
-        value = self.fixed_quad_global(
+        value = self.integrate(
             lambda x_global: np.abs(function(x_global)))
         return value
 
     def norm_2(self, function: callable):
         """Get the L_2 norm of a function on this element.
         """
-        value = self.fixed_quad_global(
+        value = self.integrate(
             lambda x_global: np.abs(function(x_global))**2)
         return np.sqrt(value)
 
@@ -167,7 +167,7 @@ class Integrator(abc.ABC):
         return value
 
     def inner_product(self, phi: callable, psi: callable):
-        value = self.fixed_quad_global(
+        value = self.integrate(
             lambda x_global: phi(x_global) * psi(x_global))
         return value
 

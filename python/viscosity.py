@@ -218,7 +218,7 @@ class Energy(concept.Viscosity):
             def diff_sq(x):
                 value = this.global_to_value(x) - that.global_to_value(x)
                 return value**2
-            return integrator.fixed_quad_global(diff_sq, degree // 2 + 1) / 2
+            return integrator.integrate(diff_sq, degree // 2 + 1) / 2
         curr = cell.expansion()
         left, right = cell.neighbor_expansions()
         # build left_energy

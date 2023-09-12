@@ -202,7 +202,7 @@ class Taylor(concept.Expansion):
             column = self.get_basis_values(x_global)
             matrix = np.tensordot(column, column, axes=0)
             return matrix
-        mass_matrix = self.integrator().fixed_quad_global(integrand)
+        mass_matrix = self.integrator().integrate(integrand)
         # mass_matrix[i][j] := inner-product of basis[i] and basis[j]
         return mass_matrix
 
@@ -572,7 +572,7 @@ class Legendre(Taylor):
                 x_local = self.coordinate().global_to_local(x_global)
                 value = special.eval_legendre(k, x_local) * function(x_global)
                 return value
-            self._mode_coeffs[k] = self.integrator().fixed_quad_global(integrand)
+            self._mode_coeffs[k] = self.integrator().integrate(integrand)
             self._mode_coeffs[k] /= self._mode_weights[k]
         self._set_taylor_coeff()
 

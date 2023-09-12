@@ -116,7 +116,7 @@ class ZhongXingHui2013(CompactWENO):
                 k = d + 1
                 values[d] = taylor.global_to_derivatives(x_global, k)**2
             return values
-        norms = taylor.integrator().fixed_quad_global(integrand)
+        norms = taylor.integrator().integrate(integrand)
         for d in range(taylor.degree()):
             k = d + 1
             length = taylor.length()
@@ -189,7 +189,7 @@ class LiWanAi2020(CompactWENO):
                 k = d + 1
                 values[d] = taylor.global_to_derivatives(x_global, k)**2
             return values
-        norms = taylor.integrator().fixed_quad_global(integrand)
+        norms = taylor.integrator().integrate(integrand)
         for d in range(taylor.degree()):
             k = d + 1
             jacobian = taylor.length() / 2
