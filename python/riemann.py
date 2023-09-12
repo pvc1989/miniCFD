@@ -105,8 +105,8 @@ class LinearAdvection(Solver):
         e = equation.LinearAdvection(a_const, value_type)
         Solver.__init__(self, e)
 
-    def equation(self) -> concept.Equation:
-        return self._equation
+    def equation(self) -> equation.LinearAdvection:
+        return Solver.equation(self)
 
     def _determine_wave_structure(self):
         pass
@@ -124,6 +124,9 @@ class LinearAdvectionDiffusion(LinearAdvection):
         e = equation.LinearAdvectionDiffusion(a_const, b_const)
         Solver.__init__(self, e)
 
+    def equation(self) -> equation.LinearAdvectionDiffusion:
+        return Solver.equation(self)
+
 
 class InviscidBurgers(Solver):
 
@@ -131,18 +134,18 @@ class InviscidBurgers(Solver):
         Solver.__init__(self, equation.InviscidBurgers(k))
 
     def equation(self) -> equation.InviscidBurgers:
-        return self._equation
+        return Solver.equation(self)
 
     def _determine_wave_structure(self):
         self._slope_left, self._slope_right = 0, 0
         if self._value_left <= self._value_right:  # rarefaction
             self._slope_left = \
-                self._equation.get_convective_speed(self._value_left)
+                self.equation().get_convective_speed(self._value_left)
             self._slope_right = \
-                self._equation.get_convective_speed(self._value_right)
+                self.equation().get_convective_speed(self._value_right)
         else:  # shock
             u_mean = (self._value_left + self._value_right) / 2
-            slope = self._equation.get_convective_speed(u_mean) 
+            slope = self.equation().get_convective_speed(u_mean) 
             self._slope_left, self._slope_right = slope, slope
 
     def _get_value(self, slope):
@@ -160,6 +163,40 @@ class Burgers(InviscidBurgers):
     def __init__(self, k=1.0, nu=0.0):
         Solver.__init__(self, equation.Burgers(k, nu))
 
+    def equation(self) -> equation.Burgers:
+        return Solver.equation(self)
+
+
+class Coupled(Solver):
+    """A system of two linearly coupled scalar equations.
+    """
+
+    def __init__(self, v_0: Solver, v_1: Solver, R: np.ndarray):
+        self._v_0 = v_0
+        self._v_1 = v_1
+        e = equation.Coupled(v_0.equation(), v_1.equation(), R)
+        Solver.__init__(self, e)
+
+    def equation(self) -> equation.Coupled:
+        return Solver.equation(self)
+
+    def set_initial(self, u_left, u_right):
+        v_left = self.equation().to_characteristics(u_left)
+        v_right = self.equation().to_characteristics(u_right)
+        self._v_0.set_initial(v_left[0], v_right[0])
+        self._v_1.set_initial(v_left[1], v_right[1])
+        self._determine_wave_structure()
+
+    def _determine_wave_structure(self):
+        self._v_0._determine_wave_structure()
+        self._v_1._determine_wave_structure()
+
+    def _get_value(self, slope) -> np.ndarray:
+        v_0 = self._v_0._get_value(slope)
+        v_1 = self._v_1._get_value(slope)
+        V = np.array([v_0, v_1])
+        return self.equation().from_characteristics(V)
+
 
 class Euler(Solver):
 
@@ -168,7 +205,7 @@ class Euler(Solver):
         Solver.__init__(self, equation.Euler(gamma))
 
     def equation(self) -> equation.Euler:
-        return self._equation
+        return Solver.equation(self)
 
     def _determine_wave_structure(self):
         # set states in unaffected regions

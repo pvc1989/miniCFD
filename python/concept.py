@@ -399,6 +399,14 @@ class EquationSystem(Equation):
         """Get the left and right eigenmatrices of ∂F(U)/∂U for a given U.
         """
 
+    def to_characteristics(self, u_given) -> np.ndarray:
+        L, _ = self.get_convective_eigmats(u_given)
+        return L @ u_given
+
+    def from_characteristics(self, v_given) -> np.ndarray:
+        _, R = self.get_convective_eigmats(v_given)
+        return R @ v_given
+
 
 class RiemannSolver(abc.ABC):
     """An exact or approximate solver for the Riemann problem of an Equation.

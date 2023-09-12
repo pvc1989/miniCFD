@@ -121,6 +121,66 @@ class LinearSystem(concept.EquationSystem):
         return self._eigmats
 
 
+class Coupled(concept.EquationSystem):
+    """A system of two linearly coupled scalar equations.
+    """
+
+    def __init__(self, v_0: concept.ScalarEquation, v_1: concept.ScalarEquation,
+            R: np.ndarray):
+        concept.EquationSystem.__init__(self)
+        self._v_0 = v_0
+        self._v_1 = v_1
+        self._component_names = (v_0.name()+'0', v_1.name()+'1')
+        assert R.shape == (2, 2)
+        self._R = R
+        self._L = np.linalg.inv(R)
+        self._A_0 = R[:, 0] @ self._L[0]
+        self._A_1 = R[:, 1] @ self._L[1]
+
+    def n_component(self):
+        return 2
+
+    def component_names(self) -> tuple[str]:
+        return self._component_names
+
+    def name(self, verbose=True) -> str:
+        return "Coupled"
+
+    def get_convective_jacobian(self, U: np.ndarray) -> np.ndarray:
+        lambdas = self.get_convective_eigvals(U)
+        return lambdas[0] * self._A_0 + lambdas[1] * self._A_1
+
+    def get_convective_eigmats(self, U: np.ndarray) -> tuple:
+        return (self._L, self._R)
+
+    def get_convective_eigvals(self, U: np.ndarray) -> np.ndarray:
+        V = self.to_characteristics(U)
+        lambda_0 = self._v_0.get_convective_speed(V[0])
+        lambda_1 = self._v_1.get_convective_speed(V[1])
+        return np.array([lambda_0, lambda_1])
+
+    def get_convective_flux(self, U: np.ndarray) -> np.ndarray:
+        V = self.to_characteristics(U)
+        flux_0 = self._v_0.get_convective_flux(V[0])
+        flux_1 = self._v_1.get_convective_flux(V[1])
+        return self._R @ np.array([flux_0, flux_1])
+
+    def get_diffusive_coeff(self, U: np.ndarray) -> np.ndarray:
+        V = self.to_characteristics(U)
+        nu_0 = self._v_0.get_diffusive_coeff(V[0])
+        nu_1 = self._v_1.get_diffusive_coeff(V[1])
+        return nu_0 * self._A_0 + nu_1 * self._A_1
+
+    def get_diffusive_flux(self, U: np.ndarray, dU: np.ndarray,
+            nu_extra: np.ndarray) -> np.ndarray:
+        V = self.to_characteristics(U)
+        dV = self.to_characteristics(dU)
+        nu_0, nu_1 = nu_extra[0], nu_extra[1]
+        flux_0 = self._v_0.get_diffusive_flux(V[0], dV[0], nu_0)
+        flux_1 = self._v_1.get_diffusive_flux(V[1], dV[1], nu_1)
+        return self._R @ np.array([flux_0, flux_1])
+
+
 class Euler(concept.EquationSystem):
 
     def __init__(self, gamma=1.4):

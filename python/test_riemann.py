@@ -141,6 +141,28 @@ class TestInviscidBurgers(unittest.TestCase):
         self.assertEqual(solver.get_value(x=+1, t=0), u_right)
         self.assertIn(solver.get_value(x=0, t=0), (u_left, u_right))
 
+
+class TestCoupled(unittest.TestCase):
+
+    def __init__(self, methodName: str = "runTest") -> None:
+        super().__init__(methodName)
+
+    def test_inviscid(self):
+        v_0 = riemann.LinearAdvection(1.0)
+        v_1 = riemann.InviscidBurgers(1.0)
+        R = np.array([[1, 1], [-1, 1]])
+        L = np.linalg.inv(R)
+        u_solver = riemann.Coupled(v_0, v_1, R)
+        for i in range(1000):
+            u_left, u_right = rand(2), rand(2)
+            v_left, v_right = L @ u_left, L @ u_right
+            u_solved = u_solver.get_upwind_flux(u_left, u_right)
+            v_solved = np.array([
+                v_0.get_upwind_flux(v_left[0], v_right[0]),
+                v_1.get_upwind_flux(v_left[1], v_right[1])])
+            self.assertAlmostEqual(0, np.linalg.norm((u_solved - R @ v_solved)))
+
+
 class TestEuler(unittest.TestCase):
 
     def __init__(self, methodName: str = "runTest") -> None:
