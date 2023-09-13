@@ -288,7 +288,7 @@ class Energy(concept.Viscosity):
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
 
     @staticmethod
-    def _nu_max(cell: element.LagrangeFR):
+    def _get_max_nu(cell: element.LagrangeFR):
         a_max = 0
         u_samples = cell.expansion().get_sample_values()
         for u in u_samples:
@@ -301,9 +301,7 @@ class Energy(concept.Viscosity):
         dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
-        if isinstance(nu, np.ndarray):
-            nu = np.max(nu)
-        return min(nu, Energy._nu_max(curr))
+        return np.minimum(nu, Energy._get_max_nu(curr))
 
     def _get_nu(self, i_cell: int, n_cell: int):
         assert -1 <= i_cell <= n_cell
@@ -379,26 +377,7 @@ class Energy(concept.Viscosity):
             a[2][p] = (x_right**q - x_left**q) / q
         return a
 
-    @staticmethod
-    def _common(a, b):
-        # return (a + b) / 2
-        return min(a, b)
-
-    def _get_smooth_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
-        cell = grid.get_element_by_index(i_cell)
-        n_cell = grid.n_element()
-        b = np.ndarray(3)
-        assert i_cell in self._index_to_nu
-        b[0] = self._index_to_nu[i_cell]
-        left, right = cell.neighbor_expansions()
-        if left:
-            b[1] = Energy._common(b[0], self._get_nu(i_cell - 1, n_cell))
-        else:
-            b[1] = b[0]
-        if right:
-            b[2] = Energy._common(b[0], self._get_nu(i_cell + 1, n_cell))
-        else:
-            b[2] = b[0]
+    def _get_callable_scalar(self, b: np.ndarray, i_cell, cell: concept.Element) -> callable:
         if b[0] != max(b):  # build linear for non-max
             return lambda x: b[1] + (b[2] - b[1]) * (x - cell.x_left()) / cell.length()
         else:  # build quad for max
@@ -412,8 +391,43 @@ class Energy(concept.Viscosity):
         def coeff(x_global: float):
             x = x_global - cell.x_center()
             nu = max(0, c[0] + c[1] * x + c[2] * x * x)
-            return min(nu, Energy._nu_max(cell))
+            # return min(nu, Energy._get_max_nu(cell))
+            return nu
         return coeff
+
+    def _get_callable_vector(self, b: np.ndarray, i_cell, cell: concept.Element) -> callable:
+        n_component = cell.equation().n_component()
+        callables = []
+        for i in range(n_component):
+            b_i = np.array([b[0][i], b[1][i], b[2][i]])
+            callables.append(self._get_callable_scalar(b_i, i_cell, cell))
+        def coeff(x_global: float):
+            values = np.ndarray(n_component)
+            for i in range(n_component):
+                values[i] = callables[i](x_global)
+            return values
+        return coeff
+
+    @staticmethod
+    def _common(a, b):
+        return (a + b) / 2
+        # return np.minimum(a, b)
+
+    def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+        cell = grid.get_element_by_index(i_cell)
+        n_cell = grid.n_element()
+        assert i_cell in self._index_to_nu
+        nu_const = self._index_to_nu[i_cell]
+        b = np.array([nu_const, nu_const, nu_const])
+        left, right = cell.neighbor_expansions()
+        if left:
+            b[1] = Energy._common(b[0], self._get_nu(i_cell - 1, n_cell))
+        if right:
+            b[2] = Energy._common(b[0], self._get_nu(i_cell + 1, n_cell))
+        if type(nu_const) is np.ndarray:
+            return self._get_callable_vector(b, i_cell, cell)
+        else:
+            return self._get_callable_scalar(b, i_cell, cell)
 
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._index_to_nu.clear()
@@ -422,7 +436,7 @@ class Energy(concept.Viscosity):
             nu = self._get_constant_coeff(grid, i_cell)
             self._index_to_nu[i_cell] = nu
         for i_cell in troubled_cell_indices:
-            coeff = self._get_smooth_coeff(grid, i_cell)
+            coeff = self._get_callable_coeff(grid, i_cell)
             self._index_to_coeff[i_cell] = coeff
 
 

@@ -61,7 +61,7 @@ class Solver(concept.RiemannSolver):
 
     @staticmethod
     def _get_interface_viscosity(left: float, right: float) -> float:
-        return min(left, right)
+        return np.minimum(left, right)
 
     def get_interface_flux_and_bjump(self,
             left: concept.Element, right: concept.Element):
@@ -77,7 +77,7 @@ class Solver(concept.RiemannSolver):
         viscosity = physical_viscosity + Solver._get_interface_viscosity(
             left.get_extra_viscosity(left.x_right()),
             right.get_extra_viscosity(right.x_left()))
-        if viscosity == 0:
+        if viscosity.all() == 0:
             return flux, u_left - u_left
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0

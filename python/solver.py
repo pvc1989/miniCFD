@@ -162,17 +162,17 @@ class SolverBase(abc.ABC):
             for i_component in range(n_component):
                 solution_i = _get_ith_array(solutions, i_component)
                 solution_i.InsertNextValue(_get_ith_float(value, i_component))
-            if self._spatial.viscosity():
-                viscosity.InsertNextValue(cell_i.get_extra_viscosity(x))
+            # if self._spatial.viscosity():
+            #     viscosity.InsertNextValue(cell_i.get_extra_viscosity(x))
         assert i_point == len(values)
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
         for i_component in range(n_component):
             grid.GetPointData().SetActiveScalars(component_names[i_component])
             grid.GetPointData().SetScalars(solutions[i_component])
-        if self._spatial.viscosity():
-            grid.GetPointData().SetActiveScalars("Viscosity")
-            grid.GetPointData().SetScalars(viscosity)
+        # if self._spatial.viscosity():
+        #     grid.GetPointData().SetActiveScalars("Viscosity")
+        #     grid.GetPointData().SetScalars(viscosity)
         writer = vtk.vtkXMLDataSetWriter()
         writer.SetInputData(grid)
         writer.SetFileName(filename)
