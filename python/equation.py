@@ -141,6 +141,13 @@ class Coupled(concept.EquationSystem):
         flux_1 = self._v_1.get_diffusive_flux(V[1], dV[1], nu_1)
         return self._R @ np.array([flux_0, flux_1])
 
+    def get_diffusive_radius(self, U, nu_extra, h_given):
+        V = self.to_characteristics(U)
+        nu_0, nu_1 = nu_extra[0], nu_extra[1]
+        s_0 = self._v_0.get_diffusive_radius(V[0], nu_0, h_given)
+        s_1 = self._v_1.get_diffusive_radius(V[1], nu_1, h_given)
+        return max(s_0, s_1)
+
 
 class Euler(concept.EquationSystem):
 
@@ -250,6 +257,14 @@ class Euler(concept.EquationSystem):
         left[2][1] = -(b1 * u - 1 / a) / 2
         left[2][2] = b1 / 2
         return (left, right)
+
+    def get_diffusive_radius(self, U, nu_extra, h_given):
+        V = self.to_characteristics(U)
+        if isinstance(nu_extra, np.ndarray):
+            return np.max(nu_extra) / h_given
+        else:
+            assert isinstance(nu_extra, float)
+            return nu_extra / h_given
 
 
 if __name__ == '__main__':

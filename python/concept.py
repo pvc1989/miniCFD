@@ -352,10 +352,15 @@ class Equation(abc.ABC):
         """
         return 0.0
 
+    @abc.abstractmethod
     def get_diffusive_flux(self, u, du_dx, nu_extra):
         """Get the value of G(U, ∂U/∂x) for a given pair of U and ∂U/∂x, and optionally some extra viscosity.
         """
-        return (self.get_diffusive_coeff(u) + nu_extra) * du_dx
+
+    @abc.abstractmethod
+    def get_diffusive_radius(self, u_given, nu_extra, h_given):
+        """Get the max equivalent speed of diffusion.
+        """
 
 
 class ScalarEquation(Equation):
@@ -373,6 +378,13 @@ class ScalarEquation(Equation):
 
     def get_convective_radius(self, u_given):
         return np.abs(self.get_convective_speed(u_given))
+
+    def get_diffusive_flux(self, u, du_dx, nu_extra):
+        return (self.get_diffusive_coeff(u) + nu_extra) * du_dx
+
+    def get_diffusive_radius(self, u_given, nu_extra, h_given):
+        nu = self.get_diffusive_coeff(u_given) + nu_extra
+        return nu / h_given
 
 
 class EquationSystem(Equation):
@@ -690,9 +702,8 @@ class Element(abc.ABC):
             u = self.get_solution_value(x)
             lambda_c = self.equation().get_convective_radius(u)
             lambda_c = max(lambda_c, 1e-16)
-            b = self.equation().get_diffusive_coeff(u)
-            b += self.get_extra_viscosity(x)
-            lambda_d = b / h
+            nu = self.get_extra_viscosity(x)
+            lambda_d = self.equation().get_diffusive_radius(u, nu, h)
             delta_t = min(delta_t, h / (lambda_c + spatial_factor * lambda_d))
         return delta_t * self.suggest_cfl(3)
 
@@ -707,9 +718,8 @@ class Element(abc.ABC):
             u = self.get_solution_value(x)
             lambda_c = self.equation().get_convective_radius(u)
             lambda_c = max(lambda_c, 1e-16)
-            b = self.equation().get_diffusive_coeff(u)
-            b += self.get_extra_viscosity(x)
-            lambda_d = b / h
+            nu = self.get_extra_viscosity(x)
+            lambda_d = self.equation().get_diffusive_radius(u, nu, h)
             delta_t = min(delta_t, h / p2 / (lambda_c + p2 * lambda_d))
         return delta_t
 
