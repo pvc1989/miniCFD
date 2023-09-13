@@ -40,28 +40,30 @@ class TestEquations(unittest.TestCase):
             burgers.get_diffusive_flux(u_given, du_dx, nu))
 
     def test_linear_system(self):
-        """Test methods of a LinearSystem object."""
-        a_const = rand(3, 3)
+        """Test methods of a Coupled object."""
+        a_const = rand(2, 2)
         a_const += a_const.transpose()  # gaurantee real eigvals
-        system = equation.LinearSystem(a_const)
-        u_given = rand(3, 1)
+        eigvals, R = np.linalg.eig(a_const)
+        system = equation.Coupled(
+            equation.LinearAdvection(eigvals[0]),
+            equation.LinearAdvection(eigvals[1]),
+            R)
+        u_given = rand(2)
         norm = np.linalg.norm(system.get_convective_flux(u_given)
             - a_const.dot(u_given))
-        self.assertEqual(norm, 0.0)
+        self.assertAlmostEqual(norm, 0.0)
         norm = np.linalg.norm(system.get_convective_jacobian(u_given) - a_const)
-        self.assertEqual(norm, 0.0)
-        eigvals = system.get_convective_eigvals(u_given)
-        norm = np.linalg.norm(eigvals - np.linalg.eigvals(a_const))
+        self.assertAlmostEqual(norm, 0.0)
+        norm = np.linalg.norm(eigvals - system.get_convective_eigvals(u_given))
         self.assertEqual(norm, 0.0)
         # test A = R * lambdas * L
-        lambdas = np.eye(3)
+        lambdas = np.eye(2)
         lambdas[0][0] = eigvals[0]
         lambdas[1][1] = eigvals[1]
-        lambdas[2][2] = eigvals[2]
         left, right = system.get_convective_eigmats(u_given)
-        norm = np.linalg.norm(np.eye(3) - right @ left)
+        norm = np.linalg.norm(np.eye(2) - right @ left)
         self.assertAlmostEqual(norm, 0.0)
-        norm = np.linalg.norm(np.eye(3) - left @ right)
+        norm = np.linalg.norm(np.eye(2) - left @ right)
         self.assertAlmostEqual(norm, 0.0)
         norm = np.linalg.norm(a_const @ right - right @ lambdas)
         self.assertAlmostEqual(norm, 0.0)

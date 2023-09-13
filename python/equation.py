@@ -82,45 +82,6 @@ class Burgers(InviscidBurgers):
         return self._nu
 
 
-class LinearSystem(concept.EquationSystem):
-    """ \f$ \partial_t U + A\,\partial_x U = 0 \f$
-    """
-
-    def __init__(self, A_const: np.ndarray):
-        concept.EquationSystem.__init__(self)
-        assert A_const.shape[0] == A_const.shape[1]
-        self._A = A_const
-        eigvals, R = np.linalg.eig(A_const)
-        self._eigvals = tuple(eigvals)
-        L = np.linalg.inv(R)
-        self._eigmats = (L, R)
-        names = []
-        for i in range(self.n_component()):
-            names.append(f'U{i}')
-        self._component_names = tuple(names)
-
-    def n_component(self):
-        return len(self._A)
-
-    def component_names(self) -> tuple[str]:
-        return self._component_names
-
-    def name(self, verbose=True) -> str:
-        return "LinearSystem"
-
-    def get_convective_flux(self, U: np.ndarray) -> np.ndarray:
-        return self._A.dot(U)
-
-    def get_convective_jacobian(self, U: np.ndarray) -> np.ndarray:
-        return self._A
-
-    def get_convective_eigvals(self, u_given) -> np.ndarray:
-        return self._eigvals
-
-    def get_convective_eigmats(self, u_given) -> tuple:
-        return self._eigmats
-
-
 class Coupled(concept.EquationSystem):
     """A system of two linearly coupled scalar equations.
     """
@@ -134,8 +95,8 @@ class Coupled(concept.EquationSystem):
         assert R.shape == (2, 2)
         self._R = R
         self._L = np.linalg.inv(R)
-        self._A_0 = R[:, 0] @ self._L[0]
-        self._A_1 = R[:, 1] @ self._L[1]
+        self._A_0 = np.tensordot(R[:, 0], self._L[0], 0)
+        self._A_1 = np.tensordot(R[:, 1], self._L[1], 0)
 
     def n_component(self):
         return 2
