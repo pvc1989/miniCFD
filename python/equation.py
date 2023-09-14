@@ -187,7 +187,7 @@ class Euler(concept.EquationSystem):
         enthalpy = aa / self._gas.gamma_minus_1()
         return enthalpy + u*u/2
 
-    def _get_diffusive_flux(self, U, dx_U, nu_extra):
+    def _get_diffusive_flux_physically(self, U, dx_U, nu_extra):
         rho, u, p = self.conservative_to_primitive(U)
         dx_rho = dx_U[0]
         dx_u = (dx_U[1] - u * dx_rho) / rho
@@ -198,12 +198,18 @@ class Euler(concept.EquationSystem):
         q = self._gas.get_heat_flux(rho, dx_rho, u, dx_u, p, dx_e0, mu, prandtl)
         return np.array([0, tau, tau * u - q])
 
-    def get_diffusive_flux(self, U, dx_U, nu_extra):
+    def _get_diffusive_flux_eigenwisely(self, U, dx_U, nu_extra):
         L, R = self.get_convective_eigmats(U)
         B = np.zeros((3, 3))
         for i in range(3):
             B += nu_extra[i] * np.tensordot(R[:, i], L[i], 0)
         return B @ dx_U
+
+    def get_diffusive_flux(self, U, dx_U, nu_extra):
+        if type(nu_extra) is np.ndarray:
+            return self._get_diffusive_flux_eigenwisely(U, dx_U, nu_extra)
+        else:
+            return self._get_diffusive_flux_physically(U, dx_U, nu_extra)
 
     def get_convective_flux(self, U):
         rho, u, p = self.conservative_to_primitive(U)

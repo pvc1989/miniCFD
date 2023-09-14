@@ -301,7 +301,10 @@ class Energy(concept.Viscosity):
         dissipation = curr.get_dissipation_rate()
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
-        return np.minimum(nu, Energy._get_max_nu(curr))
+        # if type(nu) is np.ndarray:
+        #     nu = max(nu)
+        nu_max = Energy._get_max_nu(curr)
+        return np.minimum(nu, nu_max)
 
     def _get_nu(self, i_cell: int, n_cell: int):
         assert -1 <= i_cell <= n_cell
