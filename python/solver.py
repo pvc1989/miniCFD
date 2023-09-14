@@ -144,12 +144,25 @@ class SolverBase(abc.ABC):
             solution_i = _get_ith_array(solutions, i_component)
             solution_i.SetName(component_names[i_component])
             solution_i.SetNumberOfComponents(1)
-        if self._spatial.viscosity():
-            viscosity = vtk.vtkFloatArray()
-            viscosity.SetName("Viscosity")
-            viscosity.SetNumberOfComponents(1)
         i_cell = 0
         cell_i = self._spatial.get_element_by_index(i_cell)
+        if self._spatial.viscosity():
+            nu = cell_i.get_extra_viscosity(cell_i.x_left())
+            if type(nu) is np.ndarray:
+                assert len(nu) == n_component
+                viscosity = []
+                viscosity_names = []
+                for i_component in range(n_component):
+                    viscosity.append(vtk.vtkFloatArray())
+                    viscosity_i = _get_ith_array(viscosity, i_component)
+                    name = f'Viscosity{i_component + 1}'
+                    viscosity_names.append(name)
+                    viscosity_i.SetName(name)
+                    viscosity_i.SetNumberOfComponents(1)
+            else:
+                viscosity = vtk.vtkFloatArray()
+                viscosity.SetName("Viscosity")
+                viscosity.SetNumberOfComponents(1)
         _, values = self._get_ydata(t_curr, self._output_points)
         i_point = 0
         for x in self._output_points:
@@ -162,17 +175,29 @@ class SolverBase(abc.ABC):
             for i_component in range(n_component):
                 solution_i = _get_ith_array(solutions, i_component)
                 solution_i.InsertNextValue(_get_ith_float(value, i_component))
-            # if self._spatial.viscosity():
-            #     viscosity.InsertNextValue(cell_i.get_extra_viscosity(x))
+            if self._spatial.viscosity():
+                nu = cell_i.get_extra_viscosity(x)
+                if type(nu) is np.ndarray:
+                    for i_component in range(n_component):
+                        viscosity_i = _get_ith_array(viscosity, i_component)
+                        viscosity_i.InsertNextValue(nu[i_component])
+                else:
+                    viscosity.InsertNextValue(nu)
         assert i_point == len(values)
         assert i_cell + 1 == self._spatial.n_element()
         grid.SetPoints(vtk_points)
         for i_component in range(n_component):
             grid.GetPointData().SetActiveScalars(component_names[i_component])
             grid.GetPointData().SetScalars(solutions[i_component])
-        # if self._spatial.viscosity():
-        #     grid.GetPointData().SetActiveScalars("Viscosity")
-        #     grid.GetPointData().SetScalars(viscosity)
+        if self._spatial.viscosity():
+            if type(nu) is np.ndarray:
+                for i_component in range(n_component):
+                    name = viscosity_names[i_component]
+                    grid.GetPointData().SetActiveScalars(name)
+                    grid.GetPointData().SetScalars(viscosity[i_component])
+            else:
+                grid.GetPointData().SetActiveScalars("Viscosity")
+                grid.GetPointData().SetScalars(viscosity)
         writer = vtk.vtkXMLDataSetWriter()
         writer.SetInputData(grid)
         writer.SetFileName(filename)

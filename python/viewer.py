@@ -9,13 +9,16 @@ from matplotlib import colors
 
 class Viewer:
 
-    def __init__(self, expect, actual, scalar_name) -> None:
+    def __init__(self, expect, actual, scalar_name: str) -> None:
         self._actual_path = actual
         self._scalar_name = scalar_name
         self._points = np.linspace(0, 2, 201) / (2 / 40)
-        self._expect = Viewer.load(expect, scalar_name)
-        self._actual = Viewer.load(actual, scalar_name)
-        self._viscosity = Viewer.load(actual, 'Viscosity')
+        self._expect = self._actual = self._viscosity = None
+        if scalar_name.startswith('Viscosity'):
+            self._viscosity = Viewer.load(actual, scalar_name)
+        else:
+            self._expect = Viewer.load(expect, scalar_name)
+            self._actual = Viewer.load(actual, scalar_name)
 
     @staticmethod
     def load(path, scalar_name):
@@ -37,6 +40,8 @@ class Viewer:
         return udata
 
     def plot_frame(self, i_frame):
+        if self._actual is None:
+            return
         fig, ax = plt.subplots()
         ax.set_xlabel('Element Index')
         ax.set_ylabel(self._scalar_name)
@@ -50,6 +55,8 @@ class Viewer:
         plt.savefig(f'{self._actual_path}/Frame{i_frame}.svg')
 
     def plot_error(self):
+        if self._actual is None:
+            return
         fig, ax = plt.subplots()
         ax.set_xlabel('Point Index')
         ax.set_ylabel('Time Index')
@@ -68,9 +75,9 @@ class Viewer:
         ax.set_ylabel('Time Index')
         zdata = self._viscosity
         mappable = ax.imshow(zdata, origin='lower', cmap='coolwarm')
-        fig.colorbar(mappable, location='top', label='Viscosity')
+        fig.colorbar(mappable, location='top', label=self._scalar_name)
         plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/viscosity.svg')
+        plt.savefig(f'{self._actual_path}/{self._scalar_name}.svg')
 
 
 if __name__ == '__main__':
