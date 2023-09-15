@@ -387,7 +387,10 @@ class Lagrange(Taylor):
         return taylor_derivatives.dot(self._lagrange_to_taylor)
 
     def get_derivatives_at_node(self, j_node, k_order, basis: bool):
-        basis_derivatives = self._basis_derivatives[j_node][k_order]
+        if k_order > self.degree():
+            basis_derivatives = np.zeros(self.n_term())
+        else:
+            basis_derivatives = self._basis_derivatives[j_node][k_order]
         if basis:
             return basis_derivatives
         else:
