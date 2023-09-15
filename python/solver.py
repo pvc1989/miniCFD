@@ -451,6 +451,46 @@ class Lax(ShockTube):
         return 'Lax'
 
 
+class ShuOsher(SolverBase):
+    """Demo the usage of Euler related classes.
+    """
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
+        u_mean = 2.0
+        super().__init__(u_mean, s, d, l, v, ode_solver)
+        self._spatial._is_periodic = False
+        self._x_mid = 1.0
+
+    def equation(self) -> equation.Euler:
+        return self._spatial.equation()
+
+    def u_init(self, x_global):
+        e = self.equation()
+        if x_global < self._x_mid:
+            return e.primitive_to_conservative(3.857143, 2.629369, 10.33333)
+        else:
+            rho = 1 + np.sin(5 * x_global) / 5
+            return e.primitive_to_conservative(rho, 0, 1)
+
+    def u_exact(self, x_global, t_curr):
+        return None
+
+    def _get_ydata(self, t_curr, points):
+        n_point = len(points)
+        value_type = self._spatial.value_type()
+        expect_solution = None
+        approx_solution = np.ndarray(n_point, value_type)
+        for i in range(n_point):
+            point_i = points[i]
+            approx_solution[i] = self._spatial.get_solution_value(point_i)
+        return expect_solution, approx_solution
+
+    def problem_name(self):
+        return 'Shu-Osher'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog = 'python3 solver.py',
@@ -498,7 +538,7 @@ if __name__ == '__main__':
         default=2, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
-        choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax'],
+        choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax', 'ShuOsher'],
         default='Smooth',
         help='problem to be solved')
     parser.add_argument('--u_mean',
@@ -586,6 +626,10 @@ if __name__ == '__main__':
     elif args.problem == 'Lax':
         SolverClass = Lax
         the_riemann = riemann.Roe(gamma=1.4)
+    elif args.problem == 'ShuOsher':
+        SolverClass = ShuOsher
+        the_riemann = riemann.Roe(gamma=1.4)
+        assert args.x_left == 0 and args.x_right == 10
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,

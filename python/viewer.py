@@ -49,7 +49,7 @@ class Viewer:
         ax.plot(self._points, ydata, 'b--', label='Expect')
         ydata = self._actual[i_frame]
         ax.plot(self._points, ydata, 'r-', label='Actual')
-        plt.legend(loc='upper right')
+        plt.legend()
         plt.grid()
         plt.tight_layout()
         plt.savefig(f'{self._actual_path}/Frame{i_frame}.svg')
