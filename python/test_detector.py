@@ -42,27 +42,32 @@ class TestDetectors(unittest.TestCase):
         self._x_right = np.pi * 4
         self._n_element = 73
         self._riemann = riemann.LinearAdvection(1.0)
-
-    def build_scheme(self, method: spatial.DiscontinuousGalerkin,
-            degree: int) -> spatial.DiscontinuousGalerkin:
-        scheme = method(self._riemann,
-            degree, self._n_element, self._x_left, self._x_right)
-        return scheme
-
-    def test_smoothness_on_jumps(self):
-        degree = 4
-        scheme = self.build_scheme(spatial.LegendreDG, degree)
-        u_init = jumps
-        scheme.initialize(u_init)
-        centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
-            scheme.x_right() - scheme.delta_x(0), self._n_element)
-        detectors = [
+        self._detectors = [
           detector.Krivodonova2004(),
           detector.LiWanAi2011(),
           detector.ZhuJun2021(),
           detector.LiYanHui2022(),
           detector.Persson2006(),
         ]
+
+    def _n_detector(self) -> int:
+        return len(self._detectors)
+
+    def _get_detector(self, i: int) -> concept.Detector:
+        return self._detectors[i]
+
+    def _build_scheme(self, method, degree: int,
+            r: concept.RiemannSolver) -> spatial.FiniteElement:
+        scheme = method(r, degree, self._n_element, self._x_left, self._x_right)
+        return scheme
+
+    def test_smoothness_on_jumps(self):
+        degree = 4
+        scheme = self._build_scheme(spatial.LegendreDG, degree, self._riemann)
+        u_init = jumps
+        scheme.initialize(u_init)
+        centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
+            scheme.x_right() - scheme.delta_x(0), self._n_element)
         plt.figure(figsize=(6,6))
         plt.subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -82,10 +87,12 @@ class TestDetectors(unittest.TestCase):
         plt.subplot(3,1,(2,3))
         plt.semilogy()
         x_values = centers / scheme.delta_x(0)
-        for i in range(len(detectors)):
-            y_values = detectors[i].get_smoothness_values(scheme)
+        for i in range(self._n_detector()):
+            detector_i = self._get_detector(i)
+            # assert isinstance(detector_i, detector.SmoothnessBased)
+            y_values = detector_i.get_smoothness_values(scheme)
             plt.plot(x_values, y_values, markers[i],
-                label=detectors[i].name())
+                label=detector_i.name())
         x_values = [
             scheme.x_left() / scheme.delta_x(0),
             scheme.x_right() / scheme.delta_x(0)
@@ -101,20 +108,13 @@ class TestDetectors(unittest.TestCase):
 
     def test_smoothness_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LegendreDG, degree)
+        scheme = self._build_scheme(spatial.LegendreDG, degree, self._riemann)
         k1, k2 = 10, 20
         def u_init(x):
             return smooth(x, k1, k2)
         scheme.initialize(u_init)
         centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
             scheme.x_right() - scheme.delta_x(0), self._n_element)
-        detectors = [
-          detector.Krivodonova2004(),
-          detector.LiWanAi2011(),
-          detector.ZhuJun2021(),
-          detector.LiYanHui2022(),
-          detector.Persson2006(),
-        ]
         fig = plt.figure(figsize=(6,6))
         ax = fig.add_subplot(3,1,1)
         points = np.linspace(self._x_left, self._x_right, self._n_element * 10)
@@ -136,10 +136,12 @@ class TestDetectors(unittest.TestCase):
         plt.grid()
         ax = fig.add_subplot(3,1,(2,3))
         plt.semilogy()
-        for i in range(len(detectors)):
-            y_values = detectors[i].get_smoothness_values(scheme)
+        for i in range(self._n_detector()):
+            detector_i = self._get_detector(i)
+            # assert isinstance(detector_i, detector.SmoothnessBased)
+            y_values = detector_i.get_smoothness_values(scheme)
             plt.plot(centers/scheme.delta_x(0), y_values, markers[i],
-                label=detectors[i].name())
+                label=detector_i.name())
         x_values = [
             scheme.x_left() / scheme.delta_x(0),
             scheme.x_right() / scheme.delta_x(0)]
@@ -154,33 +156,25 @@ class TestDetectors(unittest.TestCase):
 
     def test_detectors_on_smooth(self):
         degree = 4
-        scheme = self.build_scheme(spatial.LegendreDG, degree)
-        detectors = [
-          detector.Krivodonova2004(),
-          detector.LiWanAi2011(),
-          detector.ZhuJun2021(),
-          detector.LiYanHui2022(),
-          detector.Persson2006(),
-        ]
+        scheme = self._build_scheme(spatial.LegendreDG, degree, self._riemann)
         k_max = int((degree+1) * scheme.n_element() / 2)
         kappa_h = np.ndarray(k_max)
-        active_counts = np.ndarray((len(detectors), k_max))
+        active_counts = np.ndarray((self._n_detector(), k_max))
         for k in range(k_max):
             kappa = (k+1) * 2 * np.pi / scheme.length()
             kappa_h[k] = kappa * scheme.delta_x(0)
             def u_init(x):
                 return 1+np.sin(kappa * (x - scheme.x_left()))
             scheme.initialize(u_init)
-            for i in range(len(detectors)):
-                detector_i = detectors[i]
-                assert isinstance(detector_i, concept.Detector)
+            for i in range(self._n_detector()):
+                detector_i = self._get_detector(i)
                 troubled_cell_indices = \
                     detector_i.get_troubled_cell_indices(scheme)
                 active_counts[i][k] = len(troubled_cell_indices)
         plt.figure()
-        for i in range(len(detectors)):
+        for i in range(self._n_detector()):
             plt.plot(kappa_h/np.pi, active_counts[i]/scheme.n_element()*100,
-                f'-{markers[i]}', label=detectors[i].name())
+                f'-{markers[i]}', label=self._get_detector(i).name())
         plt.legend()
         plt.title(r'On $1+\sin(\kappa x)$ Approximated by '+scheme.name())
         plt.xlabel(r'$\kappa h\,/\,\pi$')
