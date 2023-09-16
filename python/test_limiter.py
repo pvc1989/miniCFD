@@ -44,13 +44,13 @@ class TestLimiters(unittest.TestCase):
         self._riemann = riemann.LinearAdvection(1.0)
         self._detector = detector.All()
 
-    def build_scheme(self, method: spatial.DiscontinuousGalerkin,
-            degree: int) -> spatial.DiscontinuousGalerkin:
+    def build_scheme(self, method, degree: int) -> spatial.FiniteElement:
+        assert issubclass(method, spatial.FiniteElement)
         scheme = method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
         return scheme
 
-    def set_xticks(self, axins: axes.Axes, scheme: spatial.DiscontinuousGalerkin,
+    def set_xticks(self, axins: axes.Axes, scheme: spatial.FiniteElement,
             xmin, xmax):
         xticks = []
         for i in range(scheme.n_element()):
@@ -94,8 +94,17 @@ class TestLimiters(unittest.TestCase):
             limiter_i = limiters[i]
             assert isinstance(limiter_i, concept.Limiter)
             scheme.initialize(u_init)
+            old_averages = np.ndarray(scheme.n_element())
+            for i_element in range(scheme.n_element()):
+                old_averages[i_element] = \
+                    scheme.get_element_by_index(i_element).expansion().average()
             indices = self._detector.get_troubled_cell_indices(scheme)
             limiter_i.reconstruct(indices, scheme)
+            new_averages = np.ndarray(scheme.n_element())
+            for i_element in range(scheme.n_element()):
+                new_averages[i_element] = \
+                    scheme.get_element_by_index(i_element).expansion().average()
+            self.assertEqual(0, np.linalg.norm(new_averages - old_averages))
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
@@ -148,8 +157,17 @@ class TestLimiters(unittest.TestCase):
             limiter_i = limiters[i]
             assert isinstance(limiter_i, concept.Limiter)
             scheme.initialize(u_init)
+            old_averages = np.ndarray(scheme.n_element())
+            for i_element in range(scheme.n_element()):
+                old_averages[i_element] = \
+                    scheme.get_element_by_index(i_element).expansion().average()
             indices = self._detector.get_troubled_cell_indices(scheme)
             limiter_i.reconstruct(indices, scheme)
+            new_averages = np.ndarray(scheme.n_element())
+            for i_element in range(scheme.n_element()):
+                new_averages[i_element] = \
+                    scheme.get_element_by_index(i_element).expansion().average()
+            self.assertEqual(0, np.linalg.norm(new_averages - old_averages))
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
