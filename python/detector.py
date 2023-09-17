@@ -31,6 +31,12 @@ class SmoothnessBased(concept.Detector):
         """
         return 1.0
 
+    def get_scalar_smoothness(self, cell: concept.Element, dividend, divisor):
+        if cell.is_scalar():
+            return dividend / divisor
+        else:
+            return max(dividend / divisor)
+
     def get_troubled_cell_indices(self, grid: concept.Grid) -> list:
         troubled_cell_indices = []
         smoothness_values = self.get_smoothness_values(grid)
@@ -53,39 +59,48 @@ class Krivodonova2004(SmoothnessBased):
         else:
             return 'KXRCF'
 
+    @staticmethod
+    def _get_normal_velocity(cell: concept.Element, value) -> float:
+        eq = cell.equation()
+        if isinstance(eq, concept.ScalarEquation):
+            return eq.get_convective_speed(value)
+        elif isinstance(eq, equation.Euler):
+            # _, u, _ = eq.conservative_to_primitive(value)
+            return value[1] / value[0]
+        else:
+            assert False
+
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         smoothness_values = np.ndarray(n_cell)
         for i_curr in range(n_cell):
-            curr = grid.get_element_by_index(i_curr)
+            cell_i = grid.get_element_by_index(i_curr)
+            curr = cell_i.expansion()
             def function(x_global):
-                return curr.get_solution_value(x_global)
+                return curr.global_to_value(x_global)
             curr_norm = curr.integrator().norm_infty(function, curr.n_term())
             curr_norm += 1e-8  # avoid division-by-zero
             ratio = curr.length()**((curr.degree() + 1) / 2)
-            left, right = curr.neighbor_expansions()
+            left, right = cell_i.neighbor_expansions()
             if np.isscalar(curr_norm):
                 dividend = 0.0
             else:
                 dividend = np.zeros(len(curr_norm))
             if left:
-                value = curr.get_solution_value(curr.x_left())
-                if curr.equation().get_convective_speed(value) >= 0:
+                value = curr.get_boundary_derivatives(0, True, False)
+                u_n = Krivodonova2004._get_normal_velocity(cell_i, value)
+                if u_n >= 0:
                     dividend += np.abs(value
-                        - left.global_to_value(left.x_right()))
+                        - left.get_boundary_derivatives(0, False, False))
             if right:
-                value = curr.get_solution_value(curr.x_right())
-                if curr.equation().get_convective_speed(value) <= 0:
+                value = curr.get_boundary_derivatives(0, False, False)
+                u_n = Krivodonova2004._get_normal_velocity(cell_i, value)
+                if u_n <= 0:
                     dividend += np.abs(value
-                        - right.global_to_value(right.x_left()))
+                        - right.get_boundary_derivatives(0, True, False))
             divisor = ratio * curr_norm
-            if curr.is_scalar():
-                smoothness_values[i_curr] = dividend / divisor
-            elif isinstance(curr.equation(), equation.Euler):
-                smoothness_values[i_curr] = max(
-                    dividend[0] / divisor[0], dividend[-1] / divisor[-1])
-            else:
-                smoothness_values[i_curr] = max(dividend / divisor)
+            smoothness_values[i_curr] = \
+                self.get_scalar_smoothness(cell_i, dividend, divisor)
         return smoothness_values
 
 
@@ -103,7 +118,7 @@ class LiWanAi2011(SmoothnessBased):
 
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
-        averages = np.ndarray(n_cell)
+        averages = np.ndarray(n_cell, grid.get_element_by_index(0).value_type())
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
             averages[i_curr] = np.abs(curr.expansion().average())
@@ -120,19 +135,20 @@ class LiWanAi2011(SmoothnessBased):
             if left:
                 i_left = i_curr - 1
                 n_neighbor += 1
-                max_average = max(max_average, averages[i_left])
+                max_average = np.maximum(max_average, averages[i_left])
                 left_value = left.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - left_value)
             if right:
                 i_right = (i_curr + 1) % n_cell
                 n_neighbor += 1
-                max_average = max(max_average, averages[i_right])
+                max_average = np.maximum(max_average, averages[i_right])
                 right_value = right.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - right_value)
             ratio = n_neighbor * curr.length()**((curr.degree() + 1) / 2)
             max_average += 1e-8  # avoid division-by-zero
             divisor = ratio * max_average
-            smoothness_values[i_curr] = dividend / divisor
+            smoothness_values[i_curr] = \
+                self.get_scalar_smoothness(curr, dividend, divisor)
         return smoothness_values
 
     def max_smoothness(self, curr: concept.Element):
@@ -153,7 +169,8 @@ class ZhuJun2021(SmoothnessBased):
 
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
-        norms = np.ndarray(n_cell)
+        value_type = grid.get_element_by_index(0).value_type()
+        norms = np.ndarray(n_cell, value_type)
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
             def function(x_global):
@@ -168,16 +185,17 @@ class ZhuJun2021(SmoothnessBased):
             if left:
                 i_left = i_curr - 1
                 integral = self._integrate(curr, left)
-                dividend = max(dividend, integral)
-                min_norm = min(min_norm, norms[i_left])
+                dividend = np.maximum(dividend, integral)
+                min_norm = np.minimum(min_norm, norms[i_left])
             if right:
                 i_right = (i_curr + 1) % n_cell
                 integral = self._integrate(curr, right)
-                dividend = max(dividend, integral)
-                min_norm = min(min_norm, norms[i_right])
+                dividend = np.maximum(dividend, integral)
+                min_norm = np.minimum(min_norm, norms[i_right])
             min_norm += 1e-8  # avoid division-by-zero
             divisor = min_norm * curr.length()
-            smoothness_values[i_curr] = dividend / divisor
+            smoothness_values[i_curr] = \
+                self.get_scalar_smoothness(curr, dividend, divisor)
         return smoothness_values
 
     def _integrate(self, curr: concept.Element, that: concept.Expansion):
@@ -199,6 +217,7 @@ class LiYanHui2022(concept.Detector):
         self._epsilon *= self._xi**2
         self._sample_points = []
         self._sample_values = None
+        self._grid = None
 
     def name(self, verbose=False):
         if verbose:
@@ -210,10 +229,13 @@ class LiYanHui2022(concept.Detector):
         # TODO: support nonuniform grid
         troubled_cell_indices = []
         n_cell = grid.n_element()
+        value_type = grid.get_element_by_index(0).value_type()
         n_node_per_cell = grid.get_element_by_index(0).n_term()
         n_node = n_cell * n_node_per_cell
-        if self._sample_values is None:
-            self._sample_values = np.ndarray(n_node)
+        if grid is not self._grid:
+            self._grid = grid
+            self._sample_points = []
+            self._sample_values = np.ndarray(n_node, value_type)
         u_values = self._sample_values
         i_node = 0
         for i_cell in range(n_cell):
@@ -227,8 +249,8 @@ class LiYanHui2022(concept.Detector):
             for x in self._sample_points[i_cell]:
                 u_values[i_node] = curr_element.get_solution_value(x)
                 i_node += 1
-        assert i_node == n_node
-        psi_values = np.ndarray(n_node)
+        assert i_node == n_node, (i_node, n_node)
+        psi_values = np.ndarray(n_node, value_type)
         for i_node in range(n_node):
             a = np.abs(u_values[i_node] - u_values[i_node-1])
             a += np.abs(u_values[i_node] - 2 * u_values[i_node-1]
@@ -242,9 +264,11 @@ class LiYanHui2022(concept.Detector):
             i_node_min = n_node_per_cell * i_cell
             i_node_max = n_node_per_cell + i_node_min
             for i_node in range(i_node_min, i_node_max):
-                left = min(psi_values[i_node], psi_values[i_node-1])
-                right = min(psi_values[i_node], psi_values[(i_node+1)%n_cell])
-                if min(left, right) < self._psi_c:
+                i_left = i_node - 1
+                i_right = (i_node + 1) % n_node
+                psi_min = np.minimum(psi_values[i_node], psi_values[i_left])
+                psi_min = np.minimum(psi_min, psi_values[i_right])
+                if (psi_min < self._psi_c).any():
                     troubled_cell_indices.append(i_cell)
                     break
         return troubled_cell_indices
@@ -285,7 +309,7 @@ class Persson2006(SmoothnessBased):
             all_modes_energy = u_approx.integrator().inner_product(
                 u, u, u_approx.n_term())
             legendre = expansion.Legendre(u_approx.degree(),
-                u_approx.coordinate())
+                u_approx.coordinate(), u_approx.value_type())
             pth_basis = legendre.get_basis(u_approx.degree())
             pth_mode_energy = u_approx.integrator().inner_product(
                 u, pth_basis, u_approx.n_term())**2
@@ -300,7 +324,8 @@ class Persson2006(SmoothnessBased):
             sensor_ref = cell.degree()**(-3)
             u_approx = cell.expansion()
             sensor = Persson2006.get_smoothness_value(u_approx)
-            smoothness_values[i_cell] = sensor / sensor_ref
+            smoothness_values[i_cell] = \
+                self.get_scalar_smoothness(cell, sensor, sensor_ref)
         return smoothness_values
 
 
