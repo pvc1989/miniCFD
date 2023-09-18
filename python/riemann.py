@@ -71,13 +71,13 @@ class Solver(concept.RiemannSolver):
         u_left = expansion_left.get_boundary_derivatives(0, False, False)
         u_right = expansion_right.get_boundary_derivatives(0, True, False)
         flux = self.get_upwind_flux(u_left, u_right)
-        physical_viscosity = Solver._get_interface_viscosity(
-            self.equation().get_diffusive_coeff(u_left),
-            self.equation().get_diffusive_coeff(u_right))
-        viscosity = physical_viscosity + Solver._get_interface_viscosity(
+        extra_viscosity = Solver._get_interface_viscosity(
             left.get_extra_viscosity(left.x_right()),
             right.get_extra_viscosity(right.x_left()))
-        if viscosity.all() == 0:
+        total_viscosity = extra_viscosity + Solver._get_interface_viscosity(
+            self.equation().get_diffusive_coeff(u_left),
+            self.equation().get_diffusive_coeff(u_right))
+        if (total_viscosity == 0).all():
             return flux, u_left - u_left
         # Get the diffusive flux on the interface by the DDG method:
         du_left, ddu_left = 0, 0
@@ -93,10 +93,9 @@ class Solver(concept.RiemannSolver):
         u_jump = u_right - u_left
         du = self.get_interface_gradient(left.length(), right.length(),
             u_jump, (du_left + du_right) / 2, ddu_right - ddu_left)
-        extra_viscosity = viscosity - physical_viscosity
         flux -= self.equation().get_diffusive_flux(
             (u_left + u_right) / 2, du, extra_viscosity)
-        return flux, viscosity / 2 * u_jump
+        return flux, total_viscosity / 2 * u_jump
 
 
 class LinearAdvection(Solver):
