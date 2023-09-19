@@ -188,7 +188,7 @@ class TestDetectors(unittest.TestCase):
         # plt.show()
         plt.savefig('compare_detectors_on_smooth.svg')
 
-    def test_detectors_on_smooth(self):
+    def test_detectors_on_euler(self):
         roe = riemann.Euler(1.4)
         euler = roe.equation()
         def sod(x):

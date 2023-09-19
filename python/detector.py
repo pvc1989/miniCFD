@@ -76,9 +76,11 @@ class Krivodonova2004(SmoothnessBased):
         for i_curr in range(n_cell):
             cell_i = grid.get_element_by_index(i_curr)
             curr = cell_i.expansion()
-            def function(x_global):
-                return curr.global_to_value(x_global)
-            curr_norm = curr.integrator().norm_infty(function, curr.n_term())
+            # def function(x_global):
+            #     return curr.global_to_value(x_global)
+            # curr_norm = curr.integrator().norm_infty(function, curr.n_term())
+            # averaging is faster if cached
+            curr_norm = np.abs(curr.average())
             curr_norm += 1e-8  # avoid division-by-zero
             ratio = curr.length()**((curr.degree() + 1) / 2)
             left, right = cell_i.neighbor_expansions()
