@@ -92,7 +92,7 @@ class ZhongXingHui2013(CompactWENO):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Zhong–Shu (2013)'
+            return 'Zhong Xing-Hui (2013)'
         else:
             return 'ZXH'
 
@@ -163,7 +163,7 @@ class LiWanAi2020(CompactWENO):
 
     def name(self, verbose=False):
         if verbose:
-            return r'Li–Wang–Ren (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
+            return r'Li Wan-Ai (2020), $K_\mathrm{trunc}=$'+f'{self._k_trunc:g}'
         else:
             return r'LWA($K_\mathrm{trunc}=$'+f'{self._k_trunc:g})'
 
@@ -271,7 +271,7 @@ class XuXiaoRui2023(CompactWENO):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Xu (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
+            return 'Xu Xiao-Rui (2023, ' + r'$\alpha=$' + f'{self._alpha:g})'
         else:
             return 'XXR'
 

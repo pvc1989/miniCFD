@@ -112,7 +112,7 @@ class LiWanAi2011(SmoothnessBased):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Li–Ren (2011)'
+            return 'Li Wan-Ai (2011)'
         else:
             return 'LWA'
 
@@ -163,7 +163,7 @@ class ZhuJun2021(SmoothnessBased):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Zhu–Shu–Qiu (2021)'
+            return 'Zhu Jun (2021)'
         else:
             return 'ZJ'
 
@@ -221,7 +221,7 @@ class LiYanHui2022(concept.Detector):
 
     def name(self, verbose=False):
         if verbose:
-            return 'Li–Ren (2022)'
+            return 'Li Yan-Hui (2022)'
         else:
             return 'LYH'
 
