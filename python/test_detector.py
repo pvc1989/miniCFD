@@ -57,15 +57,16 @@ class TestDetectors(unittest.TestCase):
     def _get_detector(self, i: int) -> concept.Detector:
         return self._detectors[i]
 
-    def _build_scheme(self, method, degree: int, n_element: int,
+    def _build_scheme(self, method, degree: int, periodic: bool, n_element: int,
             r: concept.RiemannSolver) -> spatial.FiniteElement:
-        scheme = method(r, degree, n_element, self._x_left, self._x_right)
+        scheme = method(r, degree,
+            periodic, n_element, self._x_left, self._x_right)
         return scheme
 
     def test_smoothness_on_jumps(self):
         degree = 4
         scheme = self._build_scheme(spatial.LegendreDG, degree,
-            self._n_element, self._riemann)
+            True, self._n_element, self._riemann)
         u_init = jumps
         scheme.initialize(u_init)
         centers = scheme.delta_x(0)/2 + np.linspace(scheme.x_left(),
@@ -111,7 +112,7 @@ class TestDetectors(unittest.TestCase):
     def test_smoothness_on_smooth(self):
         degree = 4
         scheme = self._build_scheme(spatial.LegendreDG, degree,
-            self._n_element, self._riemann)
+            True, self._n_element, self._riemann)
         k1, k2 = 10, 20
         def u_init(x):
             return smooth(x, k1, k2)
@@ -160,7 +161,7 @@ class TestDetectors(unittest.TestCase):
     def test_detectors_on_smooth(self):
         degree = 4
         scheme = self._build_scheme(spatial.LegendreDG, degree,
-            self._n_element, self._riemann)
+            True, self._n_element, self._riemann)
         k_max = int((degree+1) * scheme.n_element() / 2)
         kappa_h = np.ndarray(k_max)
         active_counts = np.ndarray((self._n_detector(), k_max))
@@ -199,14 +200,14 @@ class TestDetectors(unittest.TestCase):
         for n_element in (33, 55, 77):
             for degree in range(1, 8):
                 scheme = self._build_scheme(spatial.LegendreDG, degree,
-                    n_element, roe)
+                    False, n_element, roe)
                 scheme.initialize(sod)
                 for i in range(self._n_detector()):
                     detector_i = self._get_detector(i)
                     troubled_cell_indices = \
                         detector_i.get_troubled_cell_indices(scheme)
                     i_mid = scheme.get_element_index(self._x_mid)
-                    print(i_mid, f'{troubled_cell_indices} by {detector_i}')
+                    print(degree, i_mid, f'{troubled_cell_indices} by {detector_i.name(True)}')
 
 
 if __name__ == '__main__':

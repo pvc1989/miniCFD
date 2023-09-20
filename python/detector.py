@@ -262,6 +262,9 @@ class LiYanHui2022(concept.Detector):
                 + u_values[(i_node+2)%n_node])
             psi_values[i_node] = (2 * a * b + self._epsilon) / (
                 a**2 + b**2 + self._epsilon)
+        if not grid.is_periodic():
+            psi_values[0] = psi_values[1] = self._psi_c
+            psi_values[-1] = psi_values[-2] = self._psi_c
         for i_cell in range(n_cell):
             i_node_min = n_node_per_cell * i_cell
             i_node_max = n_node_per_cell + i_node_min

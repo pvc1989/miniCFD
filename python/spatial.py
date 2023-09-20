@@ -1,6 +1,5 @@
 """Concrete implementations of spatial schemes.
 """
-import abc
 import numpy as np
 from numpy.testing import assert_almost_equal
 import bisect
@@ -20,11 +19,11 @@ class FiniteElement(concept.SpatialScheme):
     """An ODE system given by some FiniteElement scheme.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float,
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float,
             ElementType: concept.Element) -> None:
         concept.SpatialScheme.__init__(self, riemann,
-            n_element, x_left, x_right)
+            periodic, n_element, x_left, x_right)
         assert degree >= 0
         delta_x = (x_right - x_left) / n_element
         self._x_left_sorted = np.ndarray(n_element)
@@ -178,10 +177,10 @@ class LegendreDG(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Legendre expansion.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LegendreDG)
+            periodic, n_element, x_left, x_right, element.LegendreDG)
 
     def name(self, verbose=True):
         my_name = 'LegendreDG'
@@ -194,10 +193,10 @@ class DGonUniformRoots(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion on uniform roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.DGonUniformRoots)
+            periodic, n_element, x_left, x_right, element.DGonUniformRoots)
 
     def name(self, verbose=True):
         my_name = 'LagrangeDG'
@@ -210,10 +209,10 @@ class DGonLegendreRoots(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion on Legendre roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.DGonLegendreRoots)
+            periodic, n_element, x_left, x_right, element.DGonLegendreRoots)
 
     def name(self, verbose=True):
         my_name = 'DGonLegendreRoots'
@@ -226,10 +225,10 @@ class DGonLobattoRoots(DiscontinuousGalerkin):
     """The ODE system given by the DG method using a Lagrange expansion on Lobatto roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         DiscontinuousGalerkin.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.DGonLobattoRoots)
+            periodic, n_element, x_left, x_right, element.DGonLobattoRoots)
 
     def name(self, verbose=True):
         my_name = 'DGonLobattoRoots'
@@ -262,10 +261,10 @@ class FRonUniformRoots(FluxReconstruction):
     """The ODE system given by the DG method using a Lagrange expansion on uniform roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.FRonUniformRoots)
+            periodic, n_element, x_left, x_right, element.FRonUniformRoots)
 
     def name(self, verbose=True):
         my_name = 'FRonUniformRoots'
@@ -278,10 +277,10 @@ class FRonLegendreRoots(FluxReconstruction):
     """The ODE system given by the FR method using a Lagrange expansion on Legendre roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.FRonLegendreRoots)
+            periodic, n_element, x_left, x_right, element.FRonLegendreRoots)
 
     def name(self, verbose=True):
         my_name = 'FRonLegendreRoots'
@@ -294,10 +293,10 @@ class FRonLobattoRoots(FluxReconstruction):
     """The ODE system given by the FR method using a Lagrange expansion on Lobatto roots.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int, 
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.FRonLobattoRoots)
+            periodic, n_element, x_left, x_right, element.FRonLobattoRoots)
 
     def name(self, verbose=True):
         my_name = 'FRonLobattoRoots'
@@ -310,10 +309,10 @@ class LegendreFR(FluxReconstruction):
     """The ODE system given by Huyhn's FR method.
     """
 
-    def __init__(self, riemann: concept.RiemannSolver,
-            degree: int, n_element: int, x_left: float, x_right: float) -> None:
+    def __init__(self, riemann: concept.RiemannSolver, degree: int,
+            periodic: bool, n_element: int, x_left: float, x_right: float):
         FluxReconstruction.__init__(self, riemann, degree,
-            n_element, x_left, x_right, element.LegendreFR)
+            periodic, n_element, x_left, x_right, element.LegendreFR)
 
     def name(self, verbose=True):
         my_name = 'LegendreFR'

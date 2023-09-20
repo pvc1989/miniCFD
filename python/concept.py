@@ -738,7 +738,8 @@ class Element(abc.ABC):
 
 class Grid(abc.ABC):
 
-    def __init__(self, n_element: int):
+    def __init__(self, periodic: bool, n_element: int):
+        self._periodic = periodic
         self._elements = np.ndarray(n_element, Element)
 
     @abc.abstractmethod
@@ -780,6 +781,11 @@ class Grid(abc.ABC):
         """Get the length of the i-th element.
         """
         return self.get_element_by_index(i_cell).length()
+
+    def is_periodic(self):
+        """Whether a periodic boundary condition is applied.
+        """
+        return self._periodic
 
 
 class Detector(abc.ABC):
@@ -882,16 +888,15 @@ class SpatialScheme(Grid, OdeSystem):
     """
 
     def __init__(self, riemann: RiemannSolver,
-            n_element: int, x_left: float, x_right: float,
+            periodic: bool, n_element: int, x_left: float, x_right: float,
             detector=None, limiter=None, viscosity=None) -> None:
         assert x_left < x_right
         assert n_element > 1
-        Grid.__init__(self, n_element)
+        Grid.__init__(self, periodic, n_element)
         self._riemann = riemann
         self._detector = detector
         self._limiter = limiter
         self._viscosity = viscosity
-        self._is_periodic = True
 
     def value_type(self):
         return self.get_element_by_index(0).value_type()
@@ -911,11 +916,6 @@ class SpatialScheme(Grid, OdeSystem):
     def name(self, verbose: bool) -> str:
         """Get the compact string representation of the method.
         """
-
-    def is_periodic(self):
-        """Whether a periodic boundary condition is applied.
-        """
-        return self._is_periodic
 
     @abc.abstractmethod
     def link_neighbors(self):
