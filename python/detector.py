@@ -130,25 +130,25 @@ class LiWanAi2011(SmoothnessBased):
         for i_curr in range(n_cell):
             curr = grid.get_element_by_index(i_curr)
             curr_value = curr.get_solution_value(curr.x_center())
-            max_average = averages[i_curr]
+            curr_norm = averages[i_curr]
             n_neighbor = 0
             dividend = 0.0
             left, right = curr.neighbor_expansions()
             if left:
                 i_left = i_curr - 1
                 n_neighbor += 1
-                max_average = np.maximum(max_average, averages[i_left])
+                curr_norm = np.minimum(curr_norm, averages[i_left])
                 left_value = left.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - left_value)
             if right:
                 i_right = (i_curr + 1) % n_cell
                 n_neighbor += 1
-                max_average = np.maximum(max_average, averages[i_right])
+                curr_norm = np.minimum(curr_norm, averages[i_right])
                 right_value = right.global_to_value(curr.x_center())
                 dividend += np.abs(curr_value - right_value)
             ratio = n_neighbor * curr.length()**((curr.degree() + 1) / 2)
-            max_average += 1e-8  # avoid division-by-zero
-            divisor = ratio * max_average
+            curr_norm += 1e-8  # avoid division-by-zero
+            divisor = ratio * curr_norm
             smoothness_values[i_curr] = \
                 self.get_scalar_smoothness(curr, dividend, divisor)
         return smoothness_values
@@ -233,6 +233,7 @@ class LiYanHui2022(concept.Detector):
         n_cell = grid.n_element()
         value_type = grid.get_element_by_index(0).value_type()
         n_node_per_cell = grid.get_element_by_index(0).n_term()
+        n_node_per_cell = max(n_node_per_cell, 3)
         n_node = n_cell * n_node_per_cell
         if grid is not self._grid:
             self._grid = grid
@@ -244,9 +245,9 @@ class LiYanHui2022(concept.Detector):
             curr_element = grid.get_element_by_index(i_cell)
             assert isinstance(curr_element, concept.Element)
             if len(self._sample_points) == i_cell:
-                delta = curr_element.length() / curr_element.n_term() / 2
+                delta = curr_element.length() / n_node_per_cell / 2
                 points = np.linspace(curr_element.x_left() + delta,
-                    curr_element.x_right() - delta, curr_element.n_term())
+                    curr_element.x_right() - delta, n_node_per_cell)
                 self._sample_points.append(points)
             for x in self._sample_points[i_cell]:
                 u_values[i_node] = curr_element.get_solution_value(x)
@@ -319,6 +320,7 @@ class Persson2006(SmoothnessBased):
             pth_mode_energy = u_approx.integrator().inner_product(
                 u, pth_basis, u_approx.n_term())**2
             pth_mode_energy /= legendre.get_mode_weight(u_approx.degree())
+        all_modes_energy += 1e-8
         return pth_mode_energy / all_modes_energy
 
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
