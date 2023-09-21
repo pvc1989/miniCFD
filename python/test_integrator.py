@@ -20,7 +20,7 @@ class TestGaussOnLinearCoordinate(unittest.TestCase):
     def test_gauss_legendre(self):
         """Test Gauss--Legendre's (2k - 1)-degree algebraic accuracy.
         """
-        for n_point in range(1, 10):
+        for n_point in range(1, 20):
             gauss = integrator.GaussLegendre(self._coordinate, n_point)
             degree = 2 * n_point - 1 - self._coordinate.jacobian_degree()
             def integrand(x_global):
@@ -31,7 +31,7 @@ class TestGaussOnLinearCoordinate(unittest.TestCase):
     def test_gauss_lobatto(self):
         """Test Gauss-Lobatto's (2k - 3)-degree algebraic accuracy.
         """
-        for n_point in range(3, 11):
+        for n_point in range(3, 20):
             gauss = integrator.GaussLobatto(self._coordinate, n_point)
             degree = 2 * n_point - 3 - self._coordinate.jacobian_degree()
             def integrand(x_global):

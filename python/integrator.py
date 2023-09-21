@@ -1,7 +1,7 @@
 """Implementations of concrete integrators.
 """
 import numpy as np
-from scipy import special
+from scipy import special, optimize
 
 import concept
 
@@ -21,6 +21,7 @@ class GaussLobatto(concept.Integrator):
 
     @staticmethod
     def get_local_points(n_point):
+        assert n_point >= 2
         points = np.ndarray(n_point)
         points[0] = -1
         points[-1] = 1
@@ -69,7 +70,14 @@ class GaussLobatto(concept.Integrator):
             points[7] = -points[2]
             points[8] = -points[1]
         else:
-            assert False, f'{n_point} not in range(3, 11).'
+            def prime(n, x):
+                val = special.eval_legendre(n - 1, x)
+                val -= x * special.eval_legendre(n, x)
+                return n * val / (1 - x**2)
+            roots, _ = special.roots_legendre(n_point - 1)
+            for i in range(1, n_point - 1):
+                points[i] = optimize.bisect(lambda x: prime(n_point - 1, x),
+                    roots[i - 1], roots[i])
         return points
 
     @staticmethod
@@ -112,7 +120,11 @@ class GaussLobatto(concept.Integrator):
             weights[3] = weights[6] = 0.2920426836796839
             weights[4] = weights[5] = 0.3275397611838974
         else:
-            assert False, f'{n_point} not in range(3, 11).'
+            points = GaussLobatto.get_local_points(n_point)
+            weights[0] = weights[-1] = 2 / n_point / (n_point - 1)
+            for i in range(1, n_point - 1):
+                val = special.eval_legendre(n_point - 1, points[i])
+                weights[i] = 2 / n_point / (n_point - 1) / val**2
         return weights
 
 
