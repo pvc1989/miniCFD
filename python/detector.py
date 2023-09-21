@@ -6,6 +6,7 @@ import abc
 import concept
 import expansion
 import equation
+from scipy import stats
 
 
 class All(concept.Detector):
@@ -290,7 +291,7 @@ class LiYanHui2022(concept.Detector):
 
 
 class Persson2006(SmoothnessBased):
-    """A jump detector based on artificial viscosity.
+    """A jump detector based on decay of modal coefficients.
 
     See [Per-Olof Persson and Jaime Peraire, "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods", in 44th AIAA Aerospace Sciences Meeting and Exhibit (Reno, Nevada, USA: American Institute of Aeronautics and Astronautics, 2006)](https://doi.org/10.2514/6.2006-112) for details.
     """
@@ -333,6 +334,90 @@ class Persson2006(SmoothnessBased):
             sensor = Persson2006.get_smoothness_value(u_approx)
             smoothness_values[i_cell] = \
                 self.get_scalar_smoothness(cell, sensor, sensor_ref)
+        return smoothness_values
+
+
+class Kloeckner2011(SmoothnessBased):
+    """A jump detector based on decay of modal coefficients.
+
+    See [Klöckner and Warburton and Hesthaven, "Viscous Shock Capturing in a Time-Explicit Discontinuous Galerkin Method", Mathematical Modelling of Natural Phenomena 6, 3 (2011), pp. 57--83](https://doi.org/10.1051/mmnp/20116303) for details.
+    """
+
+    def __init__(self, degree: int) -> None:
+        self._degree = degree
+        decay = np.ndarray(degree)
+        sum = 0
+        for n in range(degree):
+            decay[n] = (n + 1)**(-2 * degree)
+            sum += decay[n]
+        decay /= sum
+        self._modal_decay = decay
+
+    def name(self, verbose=False):
+        if verbose:
+            return 'Klöckner (2011)'
+        else:
+            return 'Klöckner'
+
+    def _b2(self, degree: int):
+        assert 1 <= degree <= self._degree
+        return self._modal_decay[degree - 1]
+
+    def add_modal_decay(self, energy_array: np.ndarray) -> np.ndarray:
+        energy_sum = np.sum(energy_array) + 1e-8
+        for n in range(len(energy_array) - 1, 0, -1):
+            energy_array[n] += energy_sum * self._b2(n)
+        return energy_array
+
+    @staticmethod
+    def apply_skyline(energy_array: np.ndarray) -> np.ndarray:
+        energy_array[-1] = energy_array[-2] = \
+            np.maximum(np.abs(energy_array[-1]), np.abs(energy_array[-2]))
+        for n in range(len(energy_array) - 3, 0, -1):
+            energy_array[n] = np.maximum(energy_array[n], energy_array[n + 1])
+        return energy_array
+
+    @staticmethod
+    def get_least_square_slope(energy_array: np.ndarray):
+        p = len(energy_array) - 1
+        x = np.ndarray(p, energy_array.dtype)
+        y = np.ndarray(p, energy_array.dtype)
+        for k in range(p):
+            x[k] = -2 * np.log(k + 1)
+            y[k] = np.log(energy_array[k + 1])
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+        dividend = 0.0
+        divisor = 0.0
+        for k in range(p):
+            delta_x = x[k] - x_mean
+            delta_y = y[k] - y_mean
+            dividend += delta_y * delta_x
+            divisor += delta_x * delta_x
+        return dividend / divisor
+
+    def get_smoothness_value(self, u_approx: expansion.Taylor):
+        if isinstance(u_approx, expansion.Legendre):
+            legendre = u_approx
+        else:
+            assert isinstance(u_approx, expansion.Taylor)
+            legendre = expansion.Legendre(u_approx.degree(),
+                u_approx.coordinate(), u_approx.value_type())
+        energy_array = np.ndarray(legendre.n_term(), legendre.value_type())
+        for k in range(legendre.n_term()):
+            energy_array[k] += legendre.get_mode_energy(k)
+        self.add_modal_decay(energy_array)
+        Kloeckner2011.apply_skyline(energy_array)
+        return Kloeckner2011.get_least_square_slope(energy_array)
+
+    def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
+        n_cell = grid.n_element()
+        smoothness_values = np.ndarray(n_cell)
+        for i_cell in range(n_cell):
+            cell = grid.get_element_by_index(i_cell)
+            values = self.get_smoothness_value(cell.expansion())
+            smoothness_values[i_cell] = \
+                self.get_scalar_smoothness(cell, 1.5, values)
         return smoothness_values
 
 

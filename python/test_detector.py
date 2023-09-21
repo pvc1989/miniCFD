@@ -8,6 +8,7 @@ import concept
 import riemann
 import spatial
 import detector
+import expansion
 
 
 markers = ['1', '2', '3', '4', '+', 'x']
@@ -49,6 +50,7 @@ class TestDetectors(unittest.TestCase):
           detector.ZhuJun2021(),
           detector.LiYanHui2022(),
           detector.Persson2006(),
+          detector.Kloeckner2011(3),
         ]
 
     def _n_detector(self) -> int:
@@ -62,6 +64,31 @@ class TestDetectors(unittest.TestCase):
         scheme = method(r, degree,
             periodic, n_element, self._x_left, self._x_right)
         return scheme
+
+    def test_kloeckner(self):
+        degree = 10
+        kloeckner = detector.Kloeckner2011(degree)
+        get_slope = detector.Kloeckner2011.get_least_square_slope
+        scheme = spatial.DGonLegendreRoots(self._riemann, degree, False,
+            n_element = 3, x_left = -3, x_right = 3)
+        scheme.initialize(lambda x: x > 0)
+        cell_i = scheme.get_element_by_index(1)
+        lagrange = cell_i.expansion()
+        legendre = expansion.Legendre(degree, cell_i.coordinate(), cell_i.value_type())
+        legendre.approximate(lambda x: lagrange.global_to_value(x))
+        energy_array = np.ndarray(legendre.n_term(), legendre.value_type())
+        for k in range(legendre.n_term()):
+            energy_array[k] = legendre.get_mode_energy(k)
+            c = np.sqrt(energy_array[k])
+            print(k, np.log10(c))
+        print('Raw', get_slope(energy_array))
+        energy_copy = energy_array.copy()
+        kloeckner.apply_skyline(energy_array)
+        print('SL', get_slope(energy_array))
+        energy_array = energy_copy.copy()
+        kloeckner.add_modal_decay(energy_array)
+        kloeckner.apply_skyline(energy_array)
+        print('BD+SL', get_slope(energy_array))
 
     def test_smoothness_on_jumps(self):
         degree = 4
