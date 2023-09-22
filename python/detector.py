@@ -337,21 +337,31 @@ class Persson2006(SmoothnessBased):
         return smoothness_values
 
 
+
 class Kloeckner2011(SmoothnessBased):
     """A jump detector based on decay of modal coefficients.
 
     See [Klöckner and Warburton and Hesthaven, "Viscous Shock Capturing in a Time-Explicit Discontinuous Galerkin Method", Mathematical Modelling of Natural Phenomena 6, 3 (2011), pp. 57--83](https://doi.org/10.1051/mmnp/20116303) for details.
     """
 
-    def __init__(self, degree: int) -> None:
-        self._degree = degree
-        decay = np.ndarray(degree)
-        sum = 0
-        for n in range(degree):
-            decay[n] = (n + 1)**(-2 * degree)
-            sum += decay[n]
-        decay /= sum
-        self._modal_decay = decay
+    @staticmethod
+    def _get_modal_decay(p_max: int):
+        decay = np.ndarray((p_max + 1, p_max + 1))
+        for p in range(1, p_max + 1):
+            decay_p = decay[p]
+            sum = 0
+            for n in range(p):
+                decay_p[n] = (n + 1)**(-2 * p)
+                sum += decay_p[n]
+            decay_p /= sum
+        return decay
+
+    _modal_decay = _get_modal_decay(100)
+
+
+    @staticmethod
+    def _b2(p: int, n: int):
+        return Kloeckner2011._modal_decay[p][n - 1]
 
     def name(self, verbose=False):
         if verbose:
@@ -359,27 +369,24 @@ class Kloeckner2011(SmoothnessBased):
         else:
             return 'Klöckner'
 
-    def _b2(self, degree: int):
-        assert 1 <= degree <= self._degree
-        return self._modal_decay[degree - 1]
-
-    def add_modal_decay(self, energy_array: np.ndarray) -> np.ndarray:
-        assert self._degree + 1 == len(energy_array)
+    @staticmethod
+    def add_modal_decay(energy_array: np.ndarray) -> np.ndarray:
+        degree = len(energy_array) - 1
         energy_sum = np.sum(energy_array) + 1e-8
-        for n in range(self._degree, 0, -1):
-            energy_array[n] += energy_sum * self._b2(n)
+        for n in range(degree, 0, -1):
+            energy_array[n] += energy_sum * Kloeckner2011._b2(degree, n)
         return energy_array
 
-    def apply_skyline(self, energy_array: np.ndarray) -> np.ndarray:
-        assert self._degree + 1 == len(energy_array)
+    @staticmethod
+    def apply_skyline(energy_array: np.ndarray) -> np.ndarray:
         energy_array[-1] = energy_array[-2] = \
             np.maximum(np.abs(energy_array[-1]), np.abs(energy_array[-2]))
         for n in range(len(energy_array) - 3, 0, -1):
             energy_array[n] = np.maximum(energy_array[n], energy_array[n + 1])
         return energy_array
 
-    def get_least_square_slope(self, energy_array: np.ndarray):
-        assert self._degree + 1 == len(energy_array)
+    @staticmethod
+    def get_least_square_slope(energy_array: np.ndarray):
         p = len(energy_array) - 1
         x_sum = 0
         y_sum = np.log10(energy_array[1])
@@ -394,7 +401,8 @@ class Kloeckner2011(SmoothnessBased):
             xy_sum += x_k * y_k
         return (xy_sum - x_sum * y_sum / p) / (xx_sum - x_sum * x_sum / p)
 
-    def get_smoothness_value(self, u_approx: expansion.Taylor):
+    @staticmethod
+    def get_smoothness_value(u_approx: expansion.Taylor):
         if isinstance(u_approx, expansion.Legendre):
             legendre = u_approx
         else:
@@ -403,17 +411,17 @@ class Kloeckner2011(SmoothnessBased):
                 u_approx.coordinate(), u_approx.value_type())
         energy_array = np.ndarray(legendre.n_term(), legendre.value_type())
         for k in range(legendre.n_term()):
-            energy_array[k] += legendre.get_mode_energy(k)
-        self.add_modal_decay(energy_array)
-        self.apply_skyline(energy_array)
-        return self.get_least_square_slope(energy_array)
+            energy_array[k] = legendre.get_mode_energy(k)
+        Kloeckner2011.add_modal_decay(energy_array)
+        Kloeckner2011.apply_skyline(energy_array)
+        return Kloeckner2011.get_least_square_slope(energy_array)
 
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()
         smoothness_values = np.ndarray(n_cell)
         for i_cell in range(n_cell):
             cell = grid.get_element_by_index(i_cell)
-            values = self.get_smoothness_value(cell.expansion())
+            values = Kloeckner2011.get_smoothness_value(cell.expansion())
             smoothness_values[i_cell] = \
                 self.get_scalar_smoothness(cell, 1.5, values)
         return smoothness_values

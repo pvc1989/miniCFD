@@ -52,7 +52,7 @@ class TestDetectors(unittest.TestCase):
           detector.ZhuJun2021(),
           detector.LiYanHui2022(),
           detector.Persson2006(),
-          detector.Kloeckner2011(3),
+          detector.Kloeckner2011(),
         ]
 
     def _n_detector(self) -> int:
@@ -78,8 +78,8 @@ class TestDetectors(unittest.TestCase):
             (20, lambda x: x > 0.91, 0.8, 0.56, 0.75),
         ]
         coord = coordinate.Linear(-1, 1)
+        kloeckner = detector.Kloeckner2011()
         for degree, function, s_raw, s_sl, s_bdsl in input:
-            kloeckner = detector.Kloeckner2011(degree)
             lagrange = expansion.LagrangeOnLobattoRoots(degree, coord)
             lagrange.approximate(function)
             legendre = expansion.Legendre(degree, coord, lagrange.value_type())
@@ -90,6 +90,7 @@ class TestDetectors(unittest.TestCase):
                 energy_array[k] = legendre.get_mode_energy(k)
                 min_log10_q = min(min_log10_q, np.log10(energy_array[k])/2)
             s = kloeckner.get_least_square_slope(energy_array)
+            # print('Raw', s_raw, s)
             if min_log10_q < -10:
                 self.assertAlmostEqual(s_raw, s, delta=1.6)
             else:
@@ -97,11 +98,13 @@ class TestDetectors(unittest.TestCase):
             energy_copy = energy_array.copy()
             kloeckner.apply_skyline(energy_array)
             s = kloeckner.get_least_square_slope(energy_array)
+            # print('SL', s_sl, s)
             self.assertAlmostEqual(s_sl, s, places=2)
             energy_array = energy_copy.copy()
             kloeckner.add_modal_decay(energy_array)
             kloeckner.apply_skyline(energy_array)
             s = kloeckner.get_least_square_slope(energy_array)
+            # print('BDSL', s_bdsl, s)
             self.assertAlmostEqual(s_bdsl, s, delta=0.13)
 
     def test_smoothness_on_jumps(self):
@@ -239,7 +242,7 @@ class TestDetectors(unittest.TestCase):
             else:
                 return euler.primitive_to_conservative(0.125, 0, 0.1)
         for n_element in (33, 55, 77):
-            for degree in range(1, 8):
+            for degree in range(3, 10):
                 scheme = self._build_scheme(spatial.LegendreDG, degree,
                     False, n_element, roe)
                 scheme.initialize(sod)
@@ -248,7 +251,8 @@ class TestDetectors(unittest.TestCase):
                     troubled_cell_indices = \
                         detector_i.get_troubled_cell_indices(scheme)
                     i_mid = scheme.get_element_index(self._x_mid)
-                    print(degree, i_mid, f'{troubled_cell_indices} by {detector_i.name(True)}')
+                    # print(degree, i_mid, f'{troubled_cell_indices} by {detector_i.name(True)}')
+                    self.assertTrue(i_mid in troubled_cell_indices)
 
 
 if __name__ == '__main__':
