@@ -380,21 +380,18 @@ class Kloeckner2011(SmoothnessBased):
     @staticmethod
     def get_least_square_slope(energy_array: np.ndarray):
         p = len(energy_array) - 1
-        x = np.ndarray(p, energy_array.dtype)
-        y = np.ndarray(p, energy_array.dtype)
-        for k in range(p):
-            x[k] = -2 * np.log(k + 1)
-            y[k] = np.log(energy_array[k + 1])
-        x_mean = np.mean(x)
-        y_mean = np.mean(y)
-        dividend = 0.0
-        divisor = 0.0
-        for k in range(p):
-            delta_x = x[k] - x_mean
-            delta_y = y[k] - y_mean
-            dividend += delta_y * delta_x
-            divisor += delta_x * delta_x
-        return dividend / divisor
+        x_sum = 0
+        y_sum = np.log(energy_array[1])
+        xx_sum = 0
+        xy_sum = 0
+        for k in range(1, p):
+            x_k = -2 * np.log(k + 1)
+            y_k = np.log(energy_array[k + 1])
+            x_sum += x_k
+            y_sum += y_k
+            xx_sum += x_k * x_k
+            xy_sum += x_k * y_k
+        return (xy_sum - x_sum * y_sum / p) / (xx_sum - x_sum * x_sum / p)
 
     def get_smoothness_value(self, u_approx: expansion.Taylor):
         if isinstance(u_approx, expansion.Legendre):
