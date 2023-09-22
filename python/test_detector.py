@@ -2,9 +2,11 @@
 """
 import unittest
 import numpy as np
+from scipy import special
 from matplotlib import pyplot as plt
 
 import concept
+import coordinate
 import riemann
 import spatial
 import detector
@@ -66,29 +68,41 @@ class TestDetectors(unittest.TestCase):
         return scheme
 
     def test_kloeckner(self):
-        degree = 10
-        kloeckner = detector.Kloeckner2011(degree)
-        get_slope = detector.Kloeckner2011.get_least_square_slope
-        scheme = spatial.DGonLegendreRoots(self._riemann, degree, False,
-            n_element = 3, x_left = -3, x_right = 3)
-        scheme.initialize(lambda x: x > 0)
-        cell_i = scheme.get_element_by_index(1)
-        lagrange = cell_i.expansion()
-        legendre = expansion.Legendre(degree, cell_i.coordinate(), cell_i.value_type())
-        legendre.approximate(lambda x: lagrange.global_to_value(x))
-        energy_array = np.ndarray(legendre.n_term(), legendre.value_type())
-        for k in range(legendre.n_term()):
-            energy_array[k] = legendre.get_mode_energy(k)
-            c = np.sqrt(energy_array[k])
-            print(k, np.log10(c))
-        print('Raw', get_slope(energy_array))
-        energy_copy = energy_array.copy()
-        kloeckner.apply_skyline(energy_array)
-        print('SL', get_slope(energy_array))
-        energy_array = energy_copy.copy()
-        kloeckner.add_modal_decay(energy_array)
-        kloeckner.apply_skyline(energy_array)
-        print('BD+SL', get_slope(energy_array))
+        input = [
+            (10, lambda x: x > 0, 1.0, 0.88, 1.05),
+            (10, lambda x: x * (x > 0), 7.2, 1.67, 1.75),
+            (10, lambda x: x * x * (x > 0), 13.3, 2.94, 2.99),
+            (10, lambda x: special.eval_legendre(10, x), -6.5, 0.0, 0.0),
+            (10, lambda x: np.cos(3 + np.sin(1.3 * x)), 4.2, 4.24, 4.84),
+            (10, lambda x: np.sin(np.pi * x), 7.8, 4.12, 4.27),
+            (20, lambda x: x > 0.91, 0.8, 0.56, 0.75),
+        ]
+        coord = coordinate.Linear(-1, 1)
+        for degree, function, s_raw, s_sl, s_bdsl in input:
+            kloeckner = detector.Kloeckner2011(degree)
+            lagrange = expansion.LagrangeOnLobattoRoots(degree, coord)
+            lagrange.approximate(function)
+            legendre = expansion.Legendre(degree, coord, lagrange.value_type())
+            legendre.approximate(lambda x: lagrange.global_to_value(x))
+            energy_array = np.ndarray(legendre.n_term(), legendre.value_type())
+            min_log10_q = 0
+            for k in range(legendre.n_term()):
+                energy_array[k] = legendre.get_mode_energy(k)
+                min_log10_q = min(min_log10_q, np.log10(energy_array[k])/2)
+            s = kloeckner.get_least_square_slope(energy_array)
+            if min_log10_q < -10:
+                self.assertAlmostEqual(s_raw, s, delta=1.6)
+            else:
+                self.assertAlmostEqual(s_raw, s, delta=0.05)
+            energy_copy = energy_array.copy()
+            kloeckner.apply_skyline(energy_array)
+            s = kloeckner.get_least_square_slope(energy_array)
+            self.assertAlmostEqual(s_sl, s, places=2)
+            energy_array = energy_copy.copy()
+            kloeckner.add_modal_decay(energy_array)
+            kloeckner.apply_skyline(energy_array)
+            s = kloeckner.get_least_square_slope(energy_array)
+            self.assertAlmostEqual(s_bdsl, s, delta=0.13)
 
     def test_smoothness_on_jumps(self):
         degree = 4

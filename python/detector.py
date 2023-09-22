@@ -364,29 +364,30 @@ class Kloeckner2011(SmoothnessBased):
         return self._modal_decay[degree - 1]
 
     def add_modal_decay(self, energy_array: np.ndarray) -> np.ndarray:
+        assert self._degree + 1 == len(energy_array)
         energy_sum = np.sum(energy_array) + 1e-8
-        for n in range(len(energy_array) - 1, 0, -1):
+        for n in range(self._degree, 0, -1):
             energy_array[n] += energy_sum * self._b2(n)
         return energy_array
 
-    @staticmethod
-    def apply_skyline(energy_array: np.ndarray) -> np.ndarray:
+    def apply_skyline(self, energy_array: np.ndarray) -> np.ndarray:
+        assert self._degree + 1 == len(energy_array)
         energy_array[-1] = energy_array[-2] = \
             np.maximum(np.abs(energy_array[-1]), np.abs(energy_array[-2]))
         for n in range(len(energy_array) - 3, 0, -1):
             energy_array[n] = np.maximum(energy_array[n], energy_array[n + 1])
         return energy_array
 
-    @staticmethod
-    def get_least_square_slope(energy_array: np.ndarray):
+    def get_least_square_slope(self, energy_array: np.ndarray):
+        assert self._degree + 1 == len(energy_array)
         p = len(energy_array) - 1
         x_sum = 0
-        y_sum = np.log(energy_array[1])
+        y_sum = np.log10(energy_array[1])
         xx_sum = 0
         xy_sum = 0
         for k in range(1, p):
-            x_k = -2 * np.log(k + 1)
-            y_k = np.log(energy_array[k + 1])
+            x_k = -2 * np.log10(k + 1)
+            y_k = np.log10(energy_array[k + 1])
             x_sum += x_k
             y_sum += y_k
             xx_sum += x_k * x_k
@@ -404,8 +405,8 @@ class Kloeckner2011(SmoothnessBased):
         for k in range(legendre.n_term()):
             energy_array[k] += legendre.get_mode_energy(k)
         self.add_modal_decay(energy_array)
-        Kloeckner2011.apply_skyline(energy_array)
-        return Kloeckner2011.get_least_square_slope(energy_array)
+        self.apply_skyline(energy_array)
+        return self.get_least_square_slope(energy_array)
 
     def get_smoothness_values(self, grid: concept.Grid) -> np.ndarray:
         n_cell = grid.n_element()

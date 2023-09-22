@@ -90,13 +90,13 @@ class Taylor(concept.Expansion):
     u^h(x) = \sum_{k=0}^{p} u^{(k)} / (k!) * (x-c)^{k}
     """
 
-    _factorials = np.ones(20)
+    _factorials = np.ones(100)
     for k in range(1, len(_factorials)):
         _factorials[k] = _factorials[k-1] * k
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             Integrator=integrator.GaussLegendre, value_type=float) -> None:
-        assert 0 <= degree < 20
+        assert 0 <= degree < 100
         self._n_term = degree + 1
         concept.Expansion.__init__(self, coordinate,
             Integrator(coordinate, self._n_term),
