@@ -338,6 +338,7 @@ class Lagrange(Taylor):
         lagrange_coeff = self._taylor_to_lagrange @ taylor_coeff
         for i in range(len(lagrange_coeff)):
             self._sample_values[i] = lagrange_coeff[i]
+        self._update_cached_average()
 
     def set_coeff(self, values):
         """Set values at sample points.

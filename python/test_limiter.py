@@ -104,7 +104,8 @@ class TestLimiters(unittest.TestCase):
             for i_element in range(scheme.n_element()):
                 new_averages[i_element] = \
                     scheme.get_element_by_index(i_element).expansion().average()
-            self.assertEqual(0, np.linalg.norm(new_averages - old_averages))
+            self.assertAlmostEqual(0,
+                np.linalg.norm(new_averages - old_averages))
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],
@@ -167,7 +168,8 @@ class TestLimiters(unittest.TestCase):
             for i_element in range(scheme.n_element()):
                 new_averages[i_element] = \
                     scheme.get_element_by_index(i_element).expansion().average()
-            self.assertEqual(0, np.linalg.norm(new_averages - old_averages))
+            self.assertAlmostEqual(0,
+                np.linalg.norm(new_averages - old_averages))
             for k in range(len(points)):
                 y_values[k] = scheme.get_solution_value(points[k])
             plt.plot(x_values, y_values, marker=markers[i],

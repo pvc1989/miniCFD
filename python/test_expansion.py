@@ -233,12 +233,16 @@ class TestLagrangeOnUniformRoots(unittest.TestCase):
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
         # set by Lagrange.set_taylor_coeff
         lagrange = expansion.LagrangeOnUniformRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
         self.assertAlmostEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.
@@ -372,12 +376,16 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
         # set by LagrangeOnLegendreRoots.set_taylor_coeff
         lagrange = expansion.LagrangeOnLegendreRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
         self.assertAlmostEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
 
     def test_average(self):
         self._expansion.approximate(np.sin)
@@ -537,12 +545,16 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
         # set by LagrangeOnLobattoRoots.set_taylor_coeff
         lagrange = expansion.LagrangeOnLobattoRoots(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
         self.assertAlmostEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
 
     def test_average(self):
         self._expansion.approximate(np.sin)
@@ -718,12 +730,16 @@ class TestLegendre(unittest.TestCase):
         taylor_coeff = expansion.Taylor.get_coeff_ref(self._expansion)
         diff = expansion.Taylor.get_coeff_ref(lagrange) - taylor_coeff
         self.assertEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
         # set by Lagrange.set_taylor_coeff
         lagrange = expansion.Legendre(self._expansion.degree(),
             self._expansion.coordinate(), self._expansion.value_type())
         lagrange.set_taylor_coeff(taylor_coeff)
         diff = lagrange.get_coeff_ref() - self._expansion.get_coeff_ref()
         self.assertAlmostEqual(0.0, np.linalg.norm(diff))
+        self.assertAlmostEqual(lagrange.average(),
+            expansion.Taylor.average(lagrange))
 
     def test_consistency_with_shifted(self):
         """Test consistency with a shifted Expansion.
