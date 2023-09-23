@@ -18,8 +18,10 @@ class TestTaylor(unittest.TestCase):
         super().__init__(method_name)
         self._x_left = -0.4
         self._x_right = 0.6  # avoid x_center = 0.0
-        self._coordinate = LinearCoordinate(self._x_left, self._x_right)
-        self._expansion = expansion.Taylor(5, self._coordinate, GaussLegendre)
+        coordinate = LinearCoordinate(self._x_left, self._x_right)
+        degree = 5
+        self._integrator = expansion.Taylor.get_integrator(degree, coordinate)
+        self._expansion = expansion.Taylor(degree, self._integrator, float)
 
     def test_get_basis_values_and_gradients(self):
         """Test methods for getting values and gradients of basis.
@@ -56,7 +58,7 @@ class TestTaylor(unittest.TestCase):
     def test_get_gradient_and_derivative_values(self):
         """Test methods for getting derivatives of u^h.
         """
-        taylor = expansion.Taylor(5, self._coordinate, GaussLegendre, complex)
+        taylor = expansion.Taylor(5, self._integrator, complex)
         # only approximate well near the center
         points = np.linspace(self._x_left/2, self._x_right/2, num=201)
         def function(x):
@@ -77,6 +79,7 @@ class TestTaylor(unittest.TestCase):
     def test_plot(self):
         """Plot the curves of a function and its approximations."""
         x_left, x_right = 0.0, 10.0
+        coord = LinearCoordinate(x_left, x_right)
         points = np.linspace(x_left, x_right, num=201)
         def my_function(point):
             return np.sin(point)
@@ -85,7 +88,7 @@ class TestTaylor(unittest.TestCase):
         plt.plot(points, exact_values, 'o', label='Exact')
         for degree in range(8):
             my_expansion = expansion.Taylor(degree,
-                LinearCoordinate(x_left, x_right), GaussLegendre)
+                expansion.Taylor.get_integrator(degree, coord, GaussLegendre))
             my_expansion.approximate(my_function)
             approx_values = np.ndarray(len(points))
             for i in range(len(points)):
@@ -103,8 +106,10 @@ class TestTaylor(unittest.TestCase):
         x_shift = np.random.rand()
         shifted = expansion.Shifted(self._expansion, x_shift)
         expected = expansion.Taylor(self._expansion.degree(),
-            LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
-            GaussLegendre, self._expansion.value_type())
+            expansion.Taylor.get_integrator(self._expansion.degree(),
+                LinearCoordinate(self._x_left+x_shift, self._x_right+x_shift),
+                type(self._expansion.integrator())),
+            self._expansion.value_type())
         expected.approximate(lambda x: np.sin(x - x_shift))
         self.assertAlmostEqual(0.0, np.linalg.norm(shifted.get_coeff_ref() -
             expected.get_coeff_ref()))

@@ -176,9 +176,7 @@ class Expansion(abc.ABC):
     """The polynomial approximation of a general function.
     """
 
-    def __init__(self, coordinate: Coordinate, integrator: Integrator,
-            value_type=float) -> None:
-        self._coordinate = coordinate
+    def __init__(self, integrator: Integrator, value_type=float) -> None:
         self._integrator = integrator
         self._value_type = value_type
 
@@ -195,7 +193,7 @@ class Expansion(abc.ABC):
     def coordinate(self) -> Coordinate:
         """Get a refenece to the underlying Coordinate object.
         """
-        return self._coordinate
+        return self._integrator.coordinate()
 
     def integrator(self) -> Integrator:
         """Get a refenece to the underlying Integrator object.

@@ -398,7 +398,6 @@ class ShockTube(SolverBase):
             v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         u_mean = (value_left[0] + value_right[0]) / 2
         super().__init__(u_mean, s, d, l, v, ode_solver)
-        self._spatial._is_periodic = False
         self._x_mid = (self._spatial.x_left() + self._spatial.x_right()) / 2
         self._value_left = value_left
         self._value_right = value_right
@@ -460,7 +459,6 @@ class ShuOsher(SolverBase):
             v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         u_mean = 2.0
         super().__init__(u_mean, s, d, l, v, ode_solver)
-        self._spatial._is_periodic = False
         self._x_mid = 1.0
 
     def equation(self) -> equation.Euler:
@@ -633,8 +631,8 @@ if __name__ == '__main__':
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,
-        SpatialClass(the_riemann,
-            args.degree, args.n_element, args.x_left, args.x_right),
+        SpatialClass(the_riemann, args.degree,
+            False, args.n_element, args.x_left, args.x_right),
         the_detector, the_limiter, the_viscosity,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':

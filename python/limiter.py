@@ -61,7 +61,7 @@ class CompactWENO(concept.Limiter):
                     for i_term in range(n_term):
                         scalar_coeff[i_term] = vector_coeff[i_term][i_comp]
                     scalar_taylor = expansion.Taylor(vector_poly.degree(),
-                        curr.coordinate(), curr.scalar_type())
+                        curr.integrator(), curr.scalar_type())
                     scalar_taylor.set_coeff(scalar_coeff)
                     scalar_taylors.append(scalar_taylor)
                 scalar_coeff = self.get_scalar_taylor_coeff(scalar_taylors)

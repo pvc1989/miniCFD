@@ -18,7 +18,7 @@ class Shifted(concept.Expansion):
         shifted_coordinate = coordinate.Shifted(expansion.coordinate(), x_shift)
         IntegtatorType = type(expansion.integrator())
         n_point = expansion.integrator().n_point()
-        concept.Expansion.__init__(self, shifted_coordinate,
+        concept.Expansion.__init__(self,
             IntegtatorType(shifted_coordinate, n_point), expansion.value_type())
         self._unshifted_expansion = expansion
         self._x_shift = x_shift
@@ -94,13 +94,16 @@ class Taylor(concept.Expansion):
     for k in range(1, len(_factorials)):
         _factorials[k] = _factorials[k-1] * k
 
-    def __init__(self, degree: int, coordinate: concept.Coordinate,
-            Integrator=integrator.GaussLegendre, value_type=float) -> None:
+    @staticmethod
+    def get_integrator(degree: int, coordinate: concept.Coordinate,
+            IntegratorType = integrator.GaussLegendre) -> concept.Integrator:
+        return IntegratorType(coordinate, degree + 1)
+
+    def __init__(self, degree: int, integrator: concept.Integrator,
+            value_type=float) -> None:
         assert 0 <= degree < 100
         self._n_term = degree + 1
-        concept.Expansion.__init__(self, coordinate,
-            Integrator(coordinate, self._n_term),
-            value_type)
+        concept.Expansion.__init__(self, integrator, value_type)
         # coefficients of the Taylor expansion at x_center
         self._taylor_coeff = np.ndarray(self._n_term, value_type)
 
@@ -265,16 +268,16 @@ class Lagrange(Taylor):
     """The Lagrange expansion of a general function.
     """
 
-    def __init__(self, degree: int, coordinate: concept.Coordinate,
-            get_local_points: callable, Integrator, value_type=float) -> None:
-        Taylor.__init__(self, degree, coordinate, Integrator, value_type)
+    def __init__(self, degree: int, integrator: concept.Integrator,
+            get_local_points: callable, value_type=float) -> None:
+        Taylor.__init__(self, degree, integrator, value_type)
         n_point = degree + 1
         assert n_point >= 1
         roots = get_local_points(n_point)
         # Build the basis and sample points.
         self._basis = polynomial.LagrangeBasis(roots)
         self._sample_values = np.ndarray(n_point, value_type)
-        assert issubclass(Integrator, concept.Integrator)
+        Integrator = type(integrator)
         if get_local_points is Integrator.get_local_points:
             self._sample_points = self.integrator().get_global_points()
         else:
@@ -410,9 +413,10 @@ class LagrangeOnUniformRoots(Lagrange):
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
+        integrator = Taylor.get_integrator(degree, coordinate)
         get_local_points = LagrangeOnUniformRoots._get_local_roots
-        Lagrange.__init__(self, degree, coordinate, get_local_points,
-            integrator.GaussLegendre, value_type)
+        Lagrange.__init__(self, degree, integrator,
+            get_local_points, value_type)
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnUniformRoots'
@@ -428,8 +432,9 @@ class LagrangeOnGaussPoints(Lagrange):
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             Integrator, value_type=float) -> None:
         assert issubclass(Integrator, concept.Integrator)
-        Lagrange.__init__(self, degree, coordinate, Integrator.get_local_points,
-            Integrator, value_type)
+        integrator = Taylor.get_integrator(degree, coordinate, Integrator)
+        Lagrange.__init__(self, degree, integrator,
+            Integrator.get_local_points, value_type)
         assert self._sample_points is self.integrator().get_global_points()
         self._sample_weights = self.integrator().get_global_weights()
 
@@ -499,8 +504,8 @@ class Legendre(Taylor):
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
             value_type=float) -> None:
-        Taylor.__init__(self, degree, coordinate,
-            integrator.GaussLegendre, value_type)
+        integrator = Taylor.get_integrator(degree, coordinate)
+        Taylor.__init__(self, degree, integrator, value_type)
         self._mode_coeffs = np.ndarray(self._n_term, value_type)
         # Legendre polynoamials are only orthogonal for 1-degree coordinate map,
         # whose Jacobian determinant is constant over [-1, 1].
@@ -613,8 +618,7 @@ class TruncatedLegendre(Taylor):
     def __init__(self, degree: int, that: Legendre) -> None:
         assert 0 <= degree <= that.degree()
         assert isinstance(that, Legendre)
-        Taylor.__init__(self, degree, that.coordinate(),
-            integrator.GaussLegendre, that.value_type())
+        Taylor.__init__(self, degree, that.integrator(), that.value_type())
         n_term = degree + 1
         self._taylor_coeff[:] = that._taylor_coeff[0:n_term]
         self._mode_coeffs = that._mode_coeffs[0:n_term]
