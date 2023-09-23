@@ -3,7 +3,7 @@
 import unittest
 
 import numpy as np
-from scipy import integrate
+from scipy import integrate, special
 
 import coordinate
 import integrator
@@ -25,7 +25,7 @@ class TestGaussOnLinearCoordinate(unittest.TestCase):
             degree = 2 * n_point - 1 - self._coordinate.jacobian_degree()
             def integrand(x_global):
                 return x_global**degree
-            self.assertAlmostEqual(gauss.integrate(integrand),
+            self.assertAlmostEqual(1.0, gauss.integrate(integrand) /
                 integrate.quad(integrand, self._x_left, self._x_right)[0])
 
     def test_gauss_lobatto(self):
@@ -36,7 +36,7 @@ class TestGaussOnLinearCoordinate(unittest.TestCase):
             degree = 2 * n_point - 3 - self._coordinate.jacobian_degree()
             def integrand(x_global):
                 return x_global**degree
-            self.assertAlmostEqual(gauss.integrate(integrand),
+            self.assertAlmostEqual(1.0, gauss.integrate(integrand) /
                 integrate.quad(integrand, self._x_left, self._x_right)[0])
 
 

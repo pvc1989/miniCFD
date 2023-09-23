@@ -46,8 +46,8 @@ class TestLimiters(unittest.TestCase):
 
     def build_scheme(self, method, degree: int) -> spatial.FiniteElement:
         assert issubclass(method, spatial.FiniteElement)
-        scheme = method(self._riemann,
-            degree, self._n_element, self._x_left, self._x_right)
+        scheme = method(self._riemann, degree,
+            True, self._n_element, self._x_left, self._x_right)
         return scheme
 
     def set_xticks(self, axins: axes.Axes, scheme: spatial.FiniteElement,

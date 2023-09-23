@@ -253,6 +253,7 @@ class TestDetectors(unittest.TestCase):
                     i_mid = scheme.get_element_index(self._x_mid)
                     # print(degree, i_mid, f'{troubled_cell_indices} by {detector_i.name(True)}')
                     self.assertTrue(i_mid in troubled_cell_indices)
+                    self.assertTrue(len(troubled_cell_indices) <= 3)
 
 
 if __name__ == '__main__':
