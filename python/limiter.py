@@ -199,7 +199,7 @@ class LiWanAi2020(CompactWENO):
 
     def _get_smoothness_value(self, taylor: expansion.Taylor):
         norms = self._get_derivative_norms(taylor)
-        return np.sum(norms[1:])
+        return np.sum(norms)
 
     def get_candidates(self, curr: concept.Element) -> list:
         candidates = []

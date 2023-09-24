@@ -37,7 +37,7 @@ class DiscontinuousGalerkin(Element):
                 self.expansion().get_basis_gradients(x_global),
                 self.get_dg_flux(x_global),
                 0)
-        return self.integrate(integrand, self.degree())
+        return self.integrator().integrate(integrand)
 
     def add_interface_residual(self, left_flux, right_flux, residual):
         e = self.expansion()
