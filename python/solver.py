@@ -208,7 +208,7 @@ class SolverBase(abc.ABC):
         writer.Write()
 
     def solve_and_write(self, t_start: float, t_stop: float,  n_step: int,
-            n_frame: int, output: str):
+            n_frame: int, format: str):
         """Solve the problem in a given time range and write to vtu/pdf files.
         """
         dt_max = (t_stop - t_start) / n_step
@@ -217,14 +217,10 @@ class SolverBase(abc.ABC):
         t_curr = t_start
         for i_frame in range(n_frame+1):
             print(f'i_frame = {i_frame}, t = {t_curr:.2f}')
-            if output == 'pdf':
-                self._write_to_pdf(f'Frame{i_frame}.pdf', t_curr)
-            elif output == 'svg':
-                self._write_to_pdf(f'Frame{i_frame}.svg', t_curr)
-            elif output == 'vtu':
+            if format == 'vtu':
                 self._write_to_vtu(f'Frame{i_frame}.vtu', t_curr)
             else:
-                assert False
+                self._write_to_pdf(f'Frame{i_frame}.{format}', t_curr)
             if i_frame == n_frame:
                 break
             t_next = t_curr + dt_per_frame
@@ -234,7 +230,11 @@ class SolverBase(abc.ABC):
                 print(f't = {t_curr:.3f}, dt_max = {dt_max:.2e}',
                     f', dt_suggested = {dt_suggested:.2e}',
                     f', dt_actual = {dt_actual:.2e}')
-                self._ode_solver.update(self._spatial, dt_actual, t_curr)
+                try:
+                    self._ode_solver.update(self._spatial, dt_actual, t_curr)
+                except Exception as e:
+                    self._write_to_vtu(f'broken_at_t={t_curr:.2e}.vtu', t_curr)
+                    raise e
                 t_curr += dt_actual
 
     def animate(self, t_start: float, t_stop: float,  n_step: int,

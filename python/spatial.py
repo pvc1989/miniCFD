@@ -54,8 +54,12 @@ class FiniteElement(concept.SpatialScheme):
         for i in range(1, self.n_element()):
             curr = self.get_element_by_index(i)
             prev = self.get_element_by_index(i-1)
-            interface_fluxes[i], interface_bjumps[i] = \
-                self._riemann.get_interface_flux_and_bjump(prev, curr)
+            try:
+                interface_fluxes[i], interface_bjumps[i] = \
+                    self._riemann.get_interface_flux_and_bjump(prev, curr)
+            except Exception as e:
+                print(f'Riemann solver failed between element[{i-1}] and element[{i}].')
+                raise e
         if self.is_periodic():
             i_prev = self.n_element() - 1
             curr = self.get_element_by_index(0)
