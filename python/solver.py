@@ -612,27 +612,33 @@ if __name__ == '__main__':
         SolverClass = LinearSmooth
         the_riemann = riemann.LinearAdvectionDiffusion(args.convection_speed,
             args.physical_viscosity)
+        periodic = True
     elif args.problem == 'Jumps':
         SolverClass = LinearJumps
         the_riemann = riemann.LinearAdvection(args.convection_speed)
+        periodic = True
     elif args.problem == 'Burgers':
         SolverClass = InviscidBurgers
         the_riemann = riemann.InviscidBurgers(args.convection_speed)
+        periodic = True
     elif args.problem == 'Sod':
         SolverClass = Sod
         the_riemann = riemann.Roe(gamma=1.4)
+        periodic = False
     elif args.problem == 'Lax':
         SolverClass = Lax
         the_riemann = riemann.Roe(gamma=1.4)
+        periodic = False
     elif args.problem == 'ShuOsher':
         SolverClass = ShuOsher
         the_riemann = riemann.Roe(gamma=1.4)
         assert args.x_left == 0 and args.x_right == 10
+        periodic = False
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,
         SpatialClass(the_riemann, args.degree,
-            False, args.n_element, args.x_left, args.x_right),
+            periodic, args.n_element, args.x_left, args.x_right),
         the_detector, the_limiter, the_viscosity,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':
