@@ -168,7 +168,7 @@ class SolverBase(abc.ABC):
         for x in self._output_points:
             vtk_points.InsertNextPoint((x, 0, 0))
             if x > cell_i.x_right():
-                i_cell += 1
+                i_cell = self._spatial.get_element_index(x)
                 cell_i = self._spatial.get_element_by_index(i_cell)
             value = values[i_point]
             i_point += 1
