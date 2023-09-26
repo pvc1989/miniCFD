@@ -39,7 +39,7 @@ class SolverBase(abc.ABC):
 
     def __init__(self, u_mean: float, spatial_scheme: concept.SpatialScheme,
             d: concept.Detector, l: concept.Limiter, v: concept.Viscosity,
-            ode_solver: concept.OdeSolver):
+            ode_solver: concept.OdeSolver, n_output_point = 201):
         self._spatial = spatial_scheme
         self._spatial.set_detector_and_limiter(d, l, v)
         self._ode_solver = ode_solver
@@ -51,7 +51,7 @@ class SolverBase(abc.ABC):
         if v:
             self._solver_name += f', viscosity.{v.name(True)}'
         self._output_points = np.linspace(self._spatial.x_left(),
-            self._spatial.x_right(), 201)
+            self._spatial.x_right(), n_output_point)
         self._u_mean = u_mean
         self._ylim = (u_mean - 1.2, u_mean + 1.4)
 
@@ -122,7 +122,7 @@ class SolverBase(abc.ABC):
             label=self.solver_name())
         plt.plot(points, expect_solution, 'r--',
             label=f'Exact Solution of {self.problem_name()}')
-        plt.title(r'$t$'+f' = {t_curr:.2f}')
+        plt.title(r'$t$'+f' = {t_curr:.2e}')
         plt.legend(loc='upper right')
         plt.tight_layout()
         # plt.show()
@@ -216,7 +216,7 @@ class SolverBase(abc.ABC):
         self._spatial.initialize(lambda x_global: self.u_init(x_global))
         t_curr = t_start
         for i_frame in range(n_frame+1):
-            print(f'i_frame = {i_frame}, t = {t_curr:.2f}')
+            print(f'i_frame = {i_frame}, t = {t_curr:.2e}')
             if format == 'vtu':
                 self._write_to_vtu(f'Frame{i_frame}.vtu', t_curr)
             else:
@@ -227,7 +227,7 @@ class SolverBase(abc.ABC):
             while t_curr < t_next:
                 dt_suggested = self._spatial.suggest_delta_t(t_next - t_curr)
                 dt_actual = min(dt_max, dt_suggested)
-                print(f't = {t_curr:.3f}, dt_max = {dt_max:.2e}',
+                print(f't = {t_curr:.2e}, dt_max = {dt_max:.2e}',
                     f', dt_suggested = {dt_suggested:.2e}',
                     f', dt_actual = {dt_actual:.2e}')
                 try:
@@ -262,14 +262,14 @@ class SolverBase(abc.ABC):
                 approx_solution = _vector_to_scalar(approx_solution, 0)
             expect_line.set_ydata(expect_solution)
             approx_line.set_ydata(approx_solution)
-            print(f't = {t_curr:.3f}')
-            plt.title(r'$t=$'+f'{t_curr:.2f}')
+            print(f't = {t_curr:.2e}')
+            plt.title(r'$t=$'+f'{t_curr:.2e}')
             plt.legend(loc='upper right')
             t_next = min(t_stop, t_curr + dt_per_frame)
             while t_curr < t_next:
                 dt_suggested = self._spatial.suggest_delta_t(t_next - t_curr)
                 dt_actual = min(dt_max, dt_suggested)
-                print(f't = {t_curr:.3f}, dt_max = {dt_max:.2e}',
+                print(f't = {t_curr:.2e}, dt_max = {dt_max:.2e}',
                     f', dt_suggested = {dt_suggested:.2e}',
                     f', dt_actual = {dt_actual:.2e}')
                 self._ode_solver.update(self._spatial, dt_actual, t_curr)
@@ -458,8 +458,8 @@ class ShuOsher(SolverBase):
             s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
             v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
         u_mean = 2.0
-        super().__init__(u_mean, s, d, l, v, ode_solver)
-        self._x_mid = 1.0
+        super().__init__(u_mean, s, d, l, v, ode_solver, 501)
+        self._x_mid = s.x_left() + 0.1 * s.length()
 
     def equation(self) -> equation.Euler:
         return self._spatial.equation()
@@ -469,7 +469,7 @@ class ShuOsher(SolverBase):
         if x_global < self._x_mid:
             return e.primitive_to_conservative(3.857143, 2.629369, 10.33333)
         else:
-            rho = 1 + np.sin(5 * x_global) / 5
+            rho = 1 + np.sin(5 * (x_global - self._spatial.x_left())) / 5
             return e.primitive_to_conservative(rho, 0, 1)
 
     def u_exact(self, x_global, t_curr):
