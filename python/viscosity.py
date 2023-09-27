@@ -102,17 +102,21 @@ class Energy(concept.Viscosity):
 
     @staticmethod
     def _min(x, y):
-        if isinstance(x, np.ndarray):
-            for i in range(len(x)):
-                x[i] = min(x[i], y[i])
-        else:
-            assert isinstance(x, float)
-            x = min(x, y)
-        return x
+        return np.minimum(x, y)
 
     @staticmethod
     def _min3(x, y, z):
         return Energy._min(x, Energy._min(y, z))
+
+    @staticmethod
+    def _min_energy(left, left_jumps, right, right_jumps, cell):
+        if left is None:
+            return Energy._jumps_to_energy(right_jumps, cell)
+        elif right is None:
+            return Energy._jumps_to_energy(left_jumps, cell)
+        else:
+            return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
+                               Energy._jumps_to_energy(right_jumps, cell))
 
     def _get_high_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
@@ -127,14 +131,9 @@ class Energy(concept.Viscosity):
             x_curr = points[i]
             if left:
                 left_jumps[i] = values[i] - left.global_to_value(x_curr)
-            else:
-                left_jumps[i] = np.infty
             if right:
                 right_jumps[i] = values[i] - right.global_to_value(x_curr)
-            else:
-                right_jumps[i] = np.infty
-        return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
-                           Energy._jumps_to_energy(right_jumps, cell))
+        return Energy._min_energy(left, left_jumps, right, right_jumps, cell)
 
     def _get_low_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
@@ -150,9 +149,6 @@ class Energy(concept.Viscosity):
             left_low.approximate(lambda x: left.global_to_value(x))
             for i in range(len(points)):
                 left_jumps[i] = values[i] - left_low.global_to_value(points[i])
-        else:
-            for i in range(len(points)):
-                left_jumps[i] = np.infty
         # build right_jumps
         right_jumps = np.ndarray(len(points), value_type)
         if right:
@@ -160,11 +156,7 @@ class Energy(concept.Viscosity):
             right_low.approximate(lambda x: right.global_to_value(x))
             for i in range(len(points)):
                 right_jumps[i] = values[i] - right_low.global_to_value(points[i])
-        else:
-            for i in range(len(points)):
-                right_jumps[i] = np.infty
-        return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
-                           Energy._jumps_to_energy(right_jumps, cell))
+        return Energy._min_energy(left, left_jumps, right, right_jumps, cell)
 
     def _get_lazy_half_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
