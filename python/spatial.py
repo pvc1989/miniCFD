@@ -69,11 +69,13 @@ class FiniteElement(concept.SpatialScheme):
             interface_fluxes[-1] = interface_fluxes[0]
             interface_bjumps[-1] = interface_bjumps[0]
         else:  # TODO: support other boundary condtions
-            curr = self.get_element_by_index(0)
-            interface_fluxes[0] = curr.get_dg_flux(curr.x_left())
+            # curr = self.get_element_by_index(0)
+            # interface_fluxes[0] = curr.get_dg_flux(curr.x_left())
+            interface_fluxes[0] = self._flux_left
             interface_bjumps[0] = interface_bjumps[1] * 0
-            curr = self.get_element_by_index(-1)
-            interface_fluxes[-1] = curr.get_dg_flux(curr.x_right())
+            # curr = self.get_element_by_index(-1)
+            # interface_fluxes[-1] = curr.get_dg_flux(curr.x_right())
+            interface_fluxes[-1] = self._flux_right
             interface_bjumps[-1] = interface_bjumps[0]
         return interface_fluxes, interface_bjumps
 
