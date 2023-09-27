@@ -168,7 +168,7 @@ class Energy(concept.Viscosity):
         low_jumps = np.zeros(len(points), value_type)
         high_jumps = np.zeros(len(points), value_type)
         # build left_energy
-        left_energy = np.infty
+        left_energy = 0
         if left:
             left_low = expansion.Legendre(1, left.coordinate(), value_type)
             left_low.approximate(lambda x: left.global_to_value(x))
@@ -183,7 +183,7 @@ class Energy(concept.Viscosity):
                 Energy._jumps_to_energy(low_jumps, cell, indices),
                 Energy._jumps_to_energy(high_jumps, cell, indices))
         # build right_energy
-        right_energy = np.infty
+        right_energy = 0
         if right:
             right_low = expansion.Legendre(1, right.coordinate(), value_type)
             right_low.approximate(lambda x: right.global_to_value(x))
@@ -265,18 +265,19 @@ class Energy(concept.Viscosity):
     def _get_oscillation_energy(self, cell: element.FRonLegendreRoots):
         """Compare with four polynomials borrowed from neighbors.
         """
-        points = cell.get_sample_points()
-        values = np.ndarray(len(points), cell.value_type())
+        lagrange = cell.expansion()
+        points = lagrange.get_sample_points()
+        values = np.ndarray(cell.n_term(), cell.value_type())
         for i in range(len(points)):
-            values[i] = cell.get_solution_value(points[i])
+            values[i] = lagrange.get_derivatives_at_node(i, 0, False)
         # return self._get_high_order_energy(cell, points, values)
         # return self._get_low_order_energy(cell, points, values)
         # return self._get_interface_jump_energy(cell, points, values)
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_interface_jump_energy(cell))
-        # return self._get_lazy_half_energy(cell, points, values)
+        return self._get_lazy_half_energy(cell, points, values)
         # return self._get_exact_half_energy(cell)
-        return Energy._min3(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
+        # return Energy._min3(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_lazy_half_energy(cell, points, values))
         # return min(self._get_low_order_energy(cell, points, values), self._get_high_order_energy(cell, points, values), self._get_exact_half_energy(cell))
 
     @staticmethod
