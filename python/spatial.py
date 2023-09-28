@@ -8,6 +8,7 @@ import concept
 import coordinate
 import expansion
 import element
+import detector, limiter
 
 
 class FiniteVolume(concept.SpatialScheme):
@@ -144,6 +145,10 @@ class FiniteElement(concept.SpatialScheme):
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
             element_i.approximate(function)
+        temp_detector = detector.Krivodonova2004()
+        temp_limiter = limiter.LiWanAi2020()
+        indices = temp_detector.get_troubled_cell_indices(self)
+        temp_limiter.reconstruct(indices, self)
         self.suppress_oscillations()
 
     def get_residual_column(self):
