@@ -791,6 +791,7 @@ class Grid(abc.ABC):
         assert u_right is None or isinstance(u_right, self.value_type())
         self._u_left = u_left
         self._u_right = u_right
+        self.link_neighbors()
 
     def get_boundary_values(self):
         """Get prescribed (far-field) boundary values.
@@ -801,6 +802,11 @@ class Grid(abc.ABC):
         """Whether a periodic boundary condition is applied.
         """
         return self._u_left is None and self._u_right is None
+
+    @abc.abstractmethod
+    def link_neighbors(self):
+        """Link each element to its neighbors' expansions.
+        """
 
 
 class Detector(abc.ABC):

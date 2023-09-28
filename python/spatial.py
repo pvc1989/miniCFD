@@ -110,6 +110,9 @@ class FiniteElement(concept.SpatialScheme):
                 self._get_shifted_expansion(-1, -self.length())
             self.get_element_by_index(-1)._right_expansion = \
                 self._get_shifted_expansion(0, +self.length())
+        else:
+            self.get_element_by_index(0)._left_expansion = None
+            self.get_element_by_index(-1)._right_expansion = None
 
     def set_solution_column(self, column):
         assert len(column) == self.n_dof()
