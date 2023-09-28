@@ -402,8 +402,7 @@ class ShockTube(SolverBase):
         self._value_left = value_left
         self._value_right = value_right
         self._exact_riemann = riemann.Euler()
-        s._flux_left = s.equation().get_convective_flux(self.u_init(s.x_left()))
-        s._flux_right = s.equation().get_convective_flux(self.u_init(s.x_right()))
+        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
 
     def u_init(self, x_global):
         if x_global < self._x_mid:
@@ -462,8 +461,7 @@ class ShuOsher(SolverBase):
         u_mean = 2.0
         super().__init__(u_mean, s, d, l, v, ode_solver, 501)
         self._x_mid = s.x_left() + 0.1 * s.length()
-        s._flux_left = s.equation().get_convective_flux(self.u_init(s.x_left()))
-        s._flux_right = s.equation().get_convective_flux(self.u_init(s.x_right()))
+        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
 
     def equation(self) -> equation.Euler:
         return self._spatial.equation()
@@ -616,33 +614,27 @@ if __name__ == '__main__':
         SolverClass = LinearSmooth
         the_riemann = riemann.LinearAdvectionDiffusion(args.convection_speed,
             args.physical_viscosity)
-        periodic = True
     elif args.problem == 'Jumps':
         SolverClass = LinearJumps
         the_riemann = riemann.LinearAdvection(args.convection_speed)
-        periodic = True
     elif args.problem == 'Burgers':
         SolverClass = InviscidBurgers
         the_riemann = riemann.InviscidBurgers(args.convection_speed)
-        periodic = True
     elif args.problem == 'Sod':
         SolverClass = Sod
         the_riemann = riemann.Roe(gamma=1.4)
-        periodic = False
     elif args.problem == 'Lax':
         SolverClass = Lax
         the_riemann = riemann.Roe(gamma=1.4)
-        periodic = False
     elif args.problem == 'ShuOsher':
         SolverClass = ShuOsher
         the_riemann = riemann.Roe(gamma=1.4)
         assert args.x_left == 0 and args.x_right == 10
-        periodic = False
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,
         SpatialClass(the_riemann, args.degree,
-            periodic, args.n_element, args.x_left, args.x_right),
+            args.n_element, args.x_left, args.x_right),
         the_detector, the_limiter, the_viscosity,
         ode_solver=temporal.RungeKutta(args.rk_order))
     if args.output == 'fig':

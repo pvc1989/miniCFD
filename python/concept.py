@@ -736,9 +736,10 @@ class Element(abc.ABC):
 
 class Grid(abc.ABC):
 
-    def __init__(self, periodic: bool, n_element: int):
-        self._periodic = periodic
+    def __init__(self, n_element: int):
         self._elements = np.ndarray(n_element, Element)
+        self._u_left = None
+        self._u_right = None
 
     @abc.abstractmethod
     def get_element_index(self, point) -> int:
@@ -780,10 +781,26 @@ class Grid(abc.ABC):
         """
         return self.get_element_by_index(i_cell).length()
 
+    def value_type(self):
+        return self.get_element_by_index(0).value_type()
+
+    def set_boundary_values(self, u_left, u_right):
+        """Set prescribed (far-field) boundary values.
+        """
+        assert u_left is None or isinstance(u_left, self.value_type())
+        assert u_right is None or isinstance(u_right, self.value_type())
+        self._u_left = u_left
+        self._u_right = u_right
+
+    def get_boundary_values(self):
+        """Get prescribed (far-field) boundary values.
+        """
+        return self._u_left, self._u_right
+
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
         """
-        return self._periodic
+        return self._u_left is None and self._u_right is None
 
 
 class Detector(abc.ABC):
@@ -886,11 +903,11 @@ class SpatialScheme(Grid, OdeSystem):
     """
 
     def __init__(self, riemann: RiemannSolver,
-            periodic: bool, n_element: int, x_left: float, x_right: float,
+            n_element: int, x_left: float, x_right: float,
             detector=None, limiter=None, viscosity=None) -> None:
         assert x_left < x_right
         assert n_element > 1
-        Grid.__init__(self, periodic, n_element)
+        Grid.__init__(self, n_element)
         self._riemann = riemann
         self._detector = detector
         self._limiter = limiter
