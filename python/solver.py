@@ -54,6 +54,8 @@ class SolverBase(abc.ABC):
             self._spatial.x_right(), n_output_point)
         self._u_mean = u_mean
         self._ylim = (u_mean - 1.2, u_mean + 1.4)
+        self._temp_detector = detector.Krivodonova2004()
+        self._temp_limiter = limiter.LiWanAi2020()
 
     @abc.abstractmethod
     def problem_name(self) -> str:
@@ -213,7 +215,8 @@ class SolverBase(abc.ABC):
         """
         dt_max = (t_stop - t_start) / n_step
         dt_per_frame = (t_stop - t_start) / n_frame
-        self._spatial.initialize(lambda x_global: self.u_init(x_global))
+        self._spatial.initialize(lambda x_global: self.u_init(x_global),
+            self._temp_detector, self._temp_limiter)
         t_curr = t_start
         for i_frame in range(n_frame+1):
             print(f'i_frame = {i_frame}, t = {t_curr:.2e}')
@@ -251,7 +254,8 @@ class SolverBase(abc.ABC):
         points = self._output_points
         # initialize animation
         def init_func():
-            self._spatial.initialize(lambda x_global: self.u_init(x_global))
+            self._spatial.initialize(lambda x_global: self.u_init(x_global),
+                self._temp_detector, self._temp_limiter)
             expect_line.set_xdata(points)
             approx_line.set_xdata(points)
         # update data for the next frame

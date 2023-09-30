@@ -8,7 +8,6 @@ import concept
 import coordinate
 import expansion
 import element
-import detector, limiter
 
 
 class FiniteVolume(concept.SpatialScheme):
@@ -149,14 +148,15 @@ class FiniteElement(concept.SpatialScheme):
                     i_dof += 1
         return i_dof
 
-    def initialize(self, function: callable):
+    def initialize(self, function: callable,
+            temp_detector = None, temp_limiter = None):
         for element_i in self._elements:
             assert isinstance(element_i, concept.Element)
             element_i.approximate(function)
-        temp_detector = detector.Krivodonova2004()
-        temp_limiter = limiter.LiWanAi2020()
-        indices = temp_detector.get_troubled_cell_indices(self)
-        temp_limiter.reconstruct(indices, self)
+        if isinstance(temp_detector, concept.Detector):
+            indices = temp_detector.get_troubled_cell_indices(self)
+            assert isinstance(temp_limiter, concept.Limiter)
+            temp_limiter.reconstruct(indices, self)
         self.suppress_oscillations()
 
     def get_residual_column(self):

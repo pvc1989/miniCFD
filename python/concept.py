@@ -949,7 +949,8 @@ class SpatialScheme(Grid, OdeSystem):
         """
 
     @abc.abstractmethod
-    def initialize(self, function: callable):
+    def initialize(self, function: callable,
+            temp_detector = None, temp_limiter = None):
         """Set the initial condition.
         """
 
