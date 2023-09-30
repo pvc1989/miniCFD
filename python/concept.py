@@ -676,7 +676,6 @@ class Element(abc.ABC):
     def _suggest_dt_by_blazek(self):
         """See Eq. (6.20) in Blazek (2015).
         """
-        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
         p = self.degree()
         spatial_factor = 3 * p**2  # may be too large
@@ -690,11 +689,20 @@ class Element(abc.ABC):
         elif p == 3:
             spatial_factor = 12
         elif p == 4:
-            spatial_factor = 26
+            spatial_factor = 28
         elif p == 5:
             spatial_factor = 50
         elif p == 6:
             spatial_factor = 90
+        if True:
+            u = self.expansion().average()
+            lambda_c = self.equation().get_convective_radius(u)
+            lambda_c = max(lambda_c, 1e-16)
+            nu = self.get_extra_viscosity(self.x_center())
+            lambda_d = self.equation().get_diffusive_radius(u, nu, h)
+            delta_t = h / (lambda_c + spatial_factor * lambda_d)
+            return delta_t * self.suggest_cfl(3)
+        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
@@ -708,9 +716,17 @@ class Element(abc.ABC):
     def _suggest_dt_by_klockner(self):
         """See Eq. (2.1) in Klöckner (2011).
         """
-        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         h = self.length()
         p2 = self.degree()**2
+        if True:
+            u = self.expansion().average()
+            lambda_c = self.equation().get_convective_radius(u)
+            lambda_c = max(lambda_c, 1e-16)
+            nu = self.get_extra_viscosity(self.x_center())
+            lambda_d = self.equation().get_diffusive_radius(u, nu, h)
+            delta_t = h / p2 / (lambda_c + p2 * lambda_d)
+            return delta_t
+        points = np.linspace(self.x_left(), self.x_right(), self.n_term()+1)
         delta_t = np.infty
         for x in points:
             u = self.get_solution_value(x)
