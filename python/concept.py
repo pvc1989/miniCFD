@@ -561,7 +561,10 @@ class Element(abc.ABC):
             return self._extra_viscosity
         else:
             assert not self._extra_viscosity
-            return 0.0
+            if self.equation().n_component() == 1:
+                return 0.0
+            else:
+                return np.zeros(self.equation().n_component())
 
     def get_dg_flux(self, x_global, u_given=None, du_given=None):
         """Get the value of f(u^h, du^h) at a given point.

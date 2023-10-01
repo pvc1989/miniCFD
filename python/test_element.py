@@ -5,9 +5,43 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 import coordinate
-from element import FRonLegendreRoots
-from riemann import LinearAdvection
+import element
+import riemann
 from polynomial import Vincent
+
+
+class TestDGonGaussPoints(unittest.TestCase):
+    """Test elements for implement discontinuous Galerkin schemes.
+    """
+
+    def __init__(self, method_name: str = ...) -> None:
+        super().__init__(method_name)
+        np.random.seed(31415926)
+        temp = np.random.rand(2, 2) + np.eye(2)
+        self._vector_riemann = riemann.Coupled(
+            riemann.LinearAdvection(1 + np.random.rand()),
+            riemann.InviscidBurgers(1 + np.random.rand()),
+            temp + temp.T)
+        self._scalar_riemann = riemann.LinearAdvection(1 + np.random.rand())
+        self._elements = []
+        c = coordinate.Linear(np.random.rand(), 2 + np.random.rand())
+        for method in (element.DGonLegendreRoots, element.DGonLobattoRoots):
+            for r in (self._vector_riemann, self._scalar_riemann):
+                for p in range(1, 8):
+                    self._elements.append(method(r, p, c))
+
+    def test_interior_residuals(self):
+        np.random.seed(31415926)
+        for e in self._elements:
+            assert isinstance(e, element.DGonGaussPoints)
+            n_component = e.equation().n_component()
+            if n_component == 1:
+                e.approximate(lambda x: np.random.rand())
+            else:
+                e.approximate(lambda x: np.random.rand(n_component))
+            expect = element.DiscontinuousGalerkin.get_interior_residual(e)
+            actual = e.get_interior_residual()
+            self.assertAlmostEqual(0, np.linalg.norm(expect - actual))
 
 
 class TestFRonLegendreRoots(unittest.TestCase):
@@ -16,14 +50,15 @@ class TestFRonLegendreRoots(unittest.TestCase):
 
     def __init__(self, method_name: str = ...) -> None:
         super().__init__(method_name)
-        self._riemann = LinearAdvection(a_const=np.random.rand())
+        np.random.seed(31415926)
+        self._riemann = riemann.LinearAdvection(1 + np.random.rand())
         self._equation = self._riemann.equation()
         self._degree = 4
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
         self.coordinate = coordinate.Linear(self._x_left, self._x_right)
-        self._element = FRonLegendreRoots(self._riemann, self._degree,
+        self._element = element.FRonLegendreRoots(self._riemann, self._degree,
             self.coordinate)
         self._element.approximate(np.sin)
 
