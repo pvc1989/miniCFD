@@ -495,7 +495,7 @@ class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
         else:
             j_node = -1
         if k_order == 0:
-            return self._sample_values[j]
+            return self._sample_values[j_node]
         return self.get_derivatives_at_node(j_node, k_order, basis)
 
 

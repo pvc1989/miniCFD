@@ -11,7 +11,7 @@ from polynomial import Vincent
 
 
 class TestDGonGaussPoints(unittest.TestCase):
-    """Test elements for implement discontinuous Galerkin schemes.
+    """Test elements for implementing discontinuous Galerkin schemes.
     """
 
     def __init__(self, method_name: str = ...) -> None:
@@ -44,8 +44,61 @@ class TestDGonGaussPoints(unittest.TestCase):
             self.assertAlmostEqual(0, np.linalg.norm(expect - actual))
 
 
+class TestFRonGaussPoints(unittest.TestCase):
+    """Test elements for implementing flux reconstruction schemes.
+    """
+
+    def __init__(self, method_name: str = ...) -> None:
+        super().__init__(method_name)
+        np.random.seed(31415926)
+        temp = np.random.rand(2, 2) + np.eye(2)
+        self._vector_riemann = riemann.Coupled(
+            riemann.LinearAdvection(1 + np.random.rand()),
+            riemann.InviscidBurgers(1 + np.random.rand()),
+            temp + temp.T)
+        self._scalar_riemann = riemann.LinearAdvection(1 + np.random.rand())
+        self._elements = []
+        c = coordinate.Linear(np.random.rand(), 2 + np.random.rand())
+        for method in (element.FRonLegendreRoots, element.FRonLobattoRoots):
+            for r in (self._vector_riemann, self._scalar_riemann):
+                for p in range(1, 8):
+                    self._elements.append(method(r, p, c))
+
+    def test_interior_residuals(self):
+        np.random.seed(31415926)
+        for e in self._elements:
+            assert isinstance(e, element.FRonGaussPoints)
+            n_component = e.equation().n_component()
+            if n_component == 1:
+                e.approximate(lambda x: np.random.rand())
+            else:
+                e.approximate(lambda x: np.random.rand(n_component))
+            expect = element.LagrangeFR.get_interior_residual(e)
+            actual = e.get_interior_residual()
+            self.assertAlmostEqual(0, np.linalg.norm(expect - actual))
+
+    def test_interface_residuals(self):
+        np.random.seed(31415926)
+        for e in self._elements:
+            assert isinstance(e, element.FRonGaussPoints)
+            n_component = e.equation().n_component()
+            if n_component == 1:
+                e.approximate(lambda x: np.random.rand())
+            else:
+                e.approximate(lambda x: np.random.rand(n_component))
+            upwind_flux_left = np.random.rand(n_component)
+            upwind_flux_right = np.random.rand(n_component)
+            expect = np.zeros((e.n_term(), n_component))
+            element.LagrangeFR.add_interface_residual(e,
+                upwind_flux_left, upwind_flux_right, expect)
+            actual = np.zeros((e.n_term(), n_component))
+            e.add_interface_residual(
+                upwind_flux_left, upwind_flux_right, actual)
+            self.assertAlmostEqual(0, np.linalg.norm(expect - actual))
+
+
 class TestFRonLegendreRoots(unittest.TestCase):
-    """Test the element for implement flux reconstruction schemes.
+    """Test the element for implementing flux reconstruction schemes.
     """
 
     def __init__(self, method_name: str = ...) -> None:
