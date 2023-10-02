@@ -9,18 +9,19 @@ from matplotlib import colors
 
 class Viewer:
 
-    def __init__(self, expect, actual, scalar_name: str) -> None:
-        self._actual_path = actual
-        self._scalar_name = scalar_name
+    def __init__(self, argv) -> None:
+        self._expect_path = argv[1]
+        self._actual_path = argv[2]
+        self._n_element = int(argv[3])
+        self._scalar_name = argv[4]
         self._actual = self._viscosity = None
-        if scalar_name.startswith('Viscosity'):
-            self._viscosity = Viewer.load(actual, scalar_name)
+        if str.startswith(self._scalar_name, 'Viscosity'):
+            self._viscosity = Viewer.load(self._actual_path, self._scalar_name)
         else:
-            self._expect, m_point = Viewer.load(expect, scalar_name)
-            self._actual, n_point = Viewer.load(actual, scalar_name)
-            assert m_point == n_point
-            n_element = 101
-            self._points = np.linspace(0, 2, n_point) / (2 / n_element)
+            self._expect = Viewer.load(self._expect_path, self._scalar_name)
+            self._actual = Viewer.load(self._actual_path, self._scalar_name)
+            n_point = self._actual.shape[1]
+            self._points = np.linspace(0, self._n_element, n_point)
 
     @staticmethod
     def load(path, scalar_name):
@@ -41,7 +42,7 @@ class Viewer:
                 udata = np.ndarray((n_frame, n_point))
             for i_point in range(n_point):
                 udata[i_frame][i_point] = u.GetTuple1(i_point)
-        return udata, n_point
+        return udata
 
     def plot_frame(self):
         if self._actual is None:
@@ -86,7 +87,7 @@ class Viewer:
 
 
 if __name__ == '__main__':
-    viewer = Viewer(sys.argv[1], sys.argv[2], sys.argv[3])
+    viewer = Viewer(sys.argv)
     viewer.plot_frame()
     viewer.plot_error()
     viewer.plot_viscosity()
