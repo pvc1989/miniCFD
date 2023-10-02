@@ -12,20 +12,21 @@ class Viewer:
     def __init__(self, expect, actual, scalar_name: str) -> None:
         self._actual_path = actual
         self._scalar_name = scalar_name
-        self._points = np.linspace(0, 2, 201) / (2 / 40)
-        self._expect = self._actual = self._viscosity = None
+        self._actual = self._viscosity = None
         if scalar_name.startswith('Viscosity'):
             self._viscosity = Viewer.load(actual, scalar_name)
         else:
-            self._expect = Viewer.load(expect, scalar_name)
-            self._actual = Viewer.load(actual, scalar_name)
+            self._expect, m_point = Viewer.load(expect, scalar_name)
+            self._actual, n_point = Viewer.load(actual, scalar_name)
+            assert m_point == n_point
+            n_element = 101
+            self._points = np.linspace(0, 2, n_point) / (2 / n_element)
 
     @staticmethod
     def load(path, scalar_name):
         reader = vtk.vtkXMLUnstructuredGridReader()
-        n_point = 201
         n_frame = 101
-        udata = np.ndarray((n_frame, n_point))
+        udata = None
         for i_frame in range(n_frame):
             reader.SetFileName(f"{path}/Frame{i_frame}.vtu")
             reader.Update()
@@ -35,16 +36,20 @@ class Viewer:
             if not u:
                 return None
             assert isinstance(u, vtk.vtkFloatArray)
+            if udata is None:
+                n_point = u.GetNumberOfTuples()
+                udata = np.ndarray((n_frame, n_point))
             for i_point in range(n_point):
                 udata[i_frame][i_point] = u.GetTuple1(i_point)
-        return udata
+        return udata, n_point
 
-    def plot_frame(self, i_frame):
+    def plot_frame(self):
         if self._actual is None:
             return
         fig, ax = plt.subplots()
         ax.set_xlabel('Element Index')
         ax.set_ylabel(self._scalar_name)
+        i_frame = 100
         ydata = self._expect[i_frame]
         ax.plot(self._points, ydata, 'b--', label='Expect')
         ydata = self._actual[i_frame]
@@ -82,6 +87,6 @@ class Viewer:
 
 if __name__ == '__main__':
     viewer = Viewer(sys.argv[1], sys.argv[2], sys.argv[3])
-    viewer.plot_frame(100)
+    viewer.plot_frame()
     viewer.plot_error()
     viewer.plot_viscosity()
