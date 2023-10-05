@@ -20,8 +20,10 @@ class Viewer:
         else:
             self._expect = Viewer.load(self._expect_path, self._scalar_name)
             self._actual = Viewer.load(self._actual_path, self._scalar_name)
+            n_point = self._expect.shape[1]
+            self._expect_points = np.linspace(0, self._n_element, n_point)
             n_point = self._actual.shape[1]
-            self._points = np.linspace(0, self._n_element, n_point)
+            self._actual_points = np.linspace(0, self._n_element, n_point)
 
     @staticmethod
     def load(path, scalar_name):
@@ -52,9 +54,9 @@ class Viewer:
         ax.set_ylabel(self._scalar_name)
         i_frame = 100
         ydata = self._expect[i_frame]
-        ax.plot(self._points, ydata, 'b--', label='Expect')
+        ax.plot(self._expect_points, ydata, 'b--', label='Expect')
         ydata = self._actual[i_frame]
-        ax.plot(self._points, ydata, 'r-', label='Actual')
+        ax.plot(self._actual_points, ydata, 'r-', label='Actual')
         plt.legend()
         plt.grid()
         plt.tight_layout()
