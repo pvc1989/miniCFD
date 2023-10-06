@@ -2,6 +2,7 @@ import numpy as np
 
 import concept
 import expansion
+import equation
 import element
 import detector
 import coordinate
@@ -296,6 +297,8 @@ class Energy(concept.Viscosity):
         nu = oscillation_energy / (-dissipation * self._tau)
         # if type(nu) is np.ndarray:
         #     nu = max(nu)
+        if isinstance(curr.equation(), equation.Euler):
+            nu[1] *= 0.5
         nu_max = Energy._get_max_nu(curr)
         return np.minimum(nu, nu_max)
 
