@@ -294,14 +294,22 @@ class Expansion(abc.ABC):
         """Get the reference to the coefficient for each basis.
         """
 
-    def get_boundary_derivatives(self, k: int, left: bool, basis: bool):
-        """Get the kth derivatives of basis or u^h at x_left or x_right.
+    def get_boundary_basis_derivatives(self, k: int, left: bool):
+        """Get the kth derivatives of basis at x_left or x_right.
         """
         if left:
             x = self.x_left()
         else:
             x = self.x_right()
-        basis_derivatives = self.get_basis_derivatives(x, k)
+        return self.get_basis_derivatives(x, k)
+
+    def get_boundary_derivatives(self, k: int, left: bool, basis: bool):
+        """Get the kth derivatives of basis or u^h at x_left or x_right.
+        """
+        if left:
+            basis_derivatives = self.get_boundary_basis_derivatives(k, True)
+        else:
+            basis_derivatives = self.get_boundary_basis_derivatives(k, False)
         if basis:
             return basis_derivatives
         else:

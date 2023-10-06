@@ -63,6 +63,9 @@ class Shifted(concept.Expansion):
         x_unshifted = x_global - self._x_shift
         return self._unshifted_expansion.get_basis_derivatives(x_unshifted, k)
 
+    def get_boundary_basis_derivatives(self, k: int, left: bool):
+        return self._unshifted_expansion.get_boundary_basis_derivatives(k, left)
+
     def get_coeff_ref(self) -> np.ndarray:
         return self._unshifted_expansion.get_coeff_ref()
 
@@ -391,7 +394,12 @@ class Lagrange(Taylor):
         return taylor_derivatives.dot(self._lagrange_to_taylor)
 
     def get_derivatives_at_node(self, j_node, k_order, basis: bool):
-        if k_order > self.degree():
+        if k_order == 0:
+            if basis:
+                return self._basis_derivatives[j_node][k_order]
+            else:
+                return self._sample_values[j_node]
+        elif k_order > self.degree():
             basis_derivatives = np.zeros(self.n_term())
         else:
             basis_derivatives = self._basis_derivatives[j_node][k_order]
@@ -466,12 +474,28 @@ class LagrangeOnLegendreRoots(LagrangeOnGaussPoints):
             value_type=float) -> None:
         LagrangeOnGaussPoints.__init__(self, degree, coordinate,
             integrator.GaussLegendre, value_type)
+        shape = (self.n_term(), self.n_term())
+        self._basis_derivatives_at_left = np.ndarray(shape)
+        self._basis_derivatives_at_right = np.ndarray(shape)
+        for k in range(degree):
+            self._basis_derivatives_at_left[k] = \
+                self.get_basis_derivatives(self.x_left(), k)
+            self._basis_derivatives_at_right[k] = \
+                self.get_basis_derivatives(self.x_right(), k)
 
     def name(self, verbose) -> str:
         my_name = 'LagrangeOnLegendreRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
+
+    def get_boundary_basis_derivatives(self, k: int, left: bool):
+        if k > self.degree():
+            return np.zeros(self.n_term())
+        if left:
+            return self._basis_derivatives_at_left[k]
+        else:
+            return self._basis_derivatives_at_right[k]
 
 
 class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
