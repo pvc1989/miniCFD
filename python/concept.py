@@ -360,6 +360,11 @@ class Equation(abc.ABC):
         """Get the max equivalent speed of diffusion.
         """
 
+    @abc.abstractmethod
+    def inviscid(self):
+        """Whether the equation has a viscous term.
+        """
+
 
 class ScalarEquation(Equation):
 
@@ -578,8 +583,9 @@ class Element(abc.ABC):
             du_approx = self.expansion().global_to_gradient(x_global)
         else:
             du_approx = du_given
-        flux -= self.equation().get_diffusive_flux(u_approx, du_approx,
-            self.get_extra_viscosity(x_global))
+        if self._extra_viscosity or not self.equation().inviscid():
+            flux -= self.equation().get_diffusive_flux(u_approx, du_approx,
+                self.get_extra_viscosity(x_global))
         return flux
 
     def get_solution_value(self, x_global: float):

@@ -23,6 +23,9 @@ class LinearAdvection(concept.ScalarEquation):
     def get_convective_speed(self, u=0.0):
         return self._a
 
+    def inviscid(self):
+        return True
+
 
 class LinearAdvectionDiffusion(LinearAdvection):
     """ \f$ \partial_t u + a\,\partial_x u = \partial_x \left(b\,\partial_x\right) \f$
@@ -40,6 +43,9 @@ class LinearAdvectionDiffusion(LinearAdvection):
 
     def get_diffusive_coeff(self, u=0.0):
         return self._b
+
+    def inviscid(self):
+        return self._b == 0
 
 
 class InviscidBurgers(concept.ScalarEquation):
@@ -62,6 +68,9 @@ class InviscidBurgers(concept.ScalarEquation):
     def get_convective_speed(self, u):
         return self._k * u
 
+    def inviscid(self):
+        return True
+
 
 class Burgers(InviscidBurgers):
     """ \f$ \partial_t u + ku\,\partial_x u = \partial_x \left(b\,\partial_x\right) \f$
@@ -80,6 +89,9 @@ class Burgers(InviscidBurgers):
 
     def get_diffusive_coeff(self, u=0.0):
         return self._nu
+
+    def inviscid(self):
+        return self._nu == 0
 
 
 class Coupled(concept.EquationSystem):
@@ -147,6 +159,9 @@ class Coupled(concept.EquationSystem):
         s_0 = self._v_0.get_diffusive_radius(V[0], nu_0, h_given)
         s_1 = self._v_1.get_diffusive_radius(V[1], nu_1, h_given)
         return max(s_0, s_1)
+
+    def inviscid(self):
+        return self._v_0.inviscid() and self._v_1.inviscid()
 
 
 class Euler(concept.EquationSystem):
@@ -276,6 +291,9 @@ class Euler(concept.EquationSystem):
         else:
             assert isinstance(nu_extra, float)
             return nu_extra / h_given
+
+    def inviscid(self):
+        return True
 
 
 if __name__ == '__main__':
