@@ -15,8 +15,8 @@ class Viewer:
         self._n_element = int(argv[3])
         self._scalar_name = argv[4]
         self._actual = self._viscosity = None
-        if str.startswith(self._scalar_name, 'Viscosity'):
-            self._viscosity = Viewer.load(self._actual_path, self._scalar_name)
+        if self._scalar_name == 'Viscosity':
+            self._viscosity = Viewer.load_viscosity(self._actual_path)
         else:
             self._expect = Viewer.load(self._expect_path, self._scalar_name)
             self._actual = Viewer.load(self._actual_path, self._scalar_name)
@@ -46,6 +46,21 @@ class Viewer:
                 udata[i_frame][i_point] = u.GetTuple1(i_point)
         return udata
 
+    @staticmethod
+    def load_viscosity(path):
+        reader = vtk.vtkXMLUnstructuredGridReader()
+        reader.SetFileName(f"{path}/Frame0.vtu")
+        reader.Update()
+        pdata = reader.GetOutput().GetPointData()
+        assert isinstance(pdata, vtk.vtkPointData)
+        n_array = pdata.GetNumberOfArrays()
+        arrays = []
+        for i_array in range(n_array):
+            name_i = pdata.GetArrayName(i_array)
+            if str.startswith(name_i, 'Viscosity'):
+                arrays.append(Viewer.load(path, name_i))
+        return arrays
+
     def plot_frame(self):
         if self._actual is None:
             return
@@ -73,19 +88,29 @@ class Viewer:
             norm=colors.LogNorm(vmin=1e-6, vmax=1e0, clip=True))
         fig.colorbar(mappable, location='top', label='Pointwise Errors')
         plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/error2d.svg')
+        plt.savefig(f'{self._actual_path}/Error.svg')
 
     def plot_viscosity(self):
         if self._viscosity is None:
             return
-        fig, ax = plt.subplots()
-        ax.set_xlabel('Point Index')
-        ax.set_ylabel('Time Index')
-        zdata = self._viscosity
-        mappable = ax.imshow(zdata, origin='lower', cmap='coolwarm')
-        fig.colorbar(mappable, location='top', label=self._scalar_name)
-        plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/{self._scalar_name}.svg')
+        n_array = len(self._viscosity)
+        fig, ax = plt.subplots(n_array, 1, sharex=True, figsize=(7, 5))
+        fig.suptitle('Viscosity')
+        vmin = 0
+        vmax = 0
+        images = []
+        for i in range(n_array):
+            ax[i].set_ylabel('Frame Index')
+            zdata = self._viscosity[i]
+            vmax = max(vmax, np.max(zdata))
+            images.append(ax[i].imshow(zdata, aspect='auto', origin='lower', cmap='coolwarm'))
+        ax[-1].set_xlabel('Point Index')
+        norm = colors.Normalize(vmin, vmax)
+        for im in images:
+            im.set_norm(norm)
+        fig.colorbar(images[0], ax=ax, orientation='vertical')
+        # fig.tight_layout()
+        plt.savefig(f'{self._actual_path}/Viscosity.svg')
 
 
 if __name__ == '__main__':
