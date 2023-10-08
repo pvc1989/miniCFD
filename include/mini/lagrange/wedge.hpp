@@ -189,9 +189,8 @@ class Wedge6 : public Wedge<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Wedge6 *, std::initializer_list<Global>);
   Wedge6(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -400,9 +399,8 @@ class Wedge15 : public Wedge<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Wedge15 *, std::initializer_list<Global>);
   Wedge15(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -633,9 +631,8 @@ class Wedge18 : public Wedge<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Wedge18 *, std::initializer_list<Global>);
   Wedge18(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:

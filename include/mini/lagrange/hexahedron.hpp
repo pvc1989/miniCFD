@@ -202,9 +202,8 @@ class Hexahedron27 : public Hexahedron<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Hexahedron27 *, std::initializer_list<Global>);
   Hexahedron27(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -336,9 +335,8 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Hexahedron8 *, std::initializer_list<Global>);
   Hexahedron8(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 
@@ -499,9 +497,8 @@ class Hexahedron20 : public Hexahedron<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Hexahedron20 *, std::initializer_list<Global>);
   Hexahedron20(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 
@@ -654,9 +651,8 @@ class Hexahedron26 : public Hexahedron<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Hexahedron26 *, std::initializer_list<Global>);
   Hexahedron26(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 

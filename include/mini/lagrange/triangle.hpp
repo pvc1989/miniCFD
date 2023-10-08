@@ -99,9 +99,8 @@ class Triangle3 : public Triangle<Scalar, kPhysDim> {
   }
 
  public:
-  friend void lagrange::_Build(Triangle3 *, std::initializer_list<Global>);
   Triangle3(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, kPhysDim, 2>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -189,9 +188,8 @@ class Triangle6 : public Triangle<Scalar, kPhysDim> {
   }
 
  public:
-  friend void lagrange::_Build(Triangle6 *, std::initializer_list<Global>);
   Triangle6(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, kPhysDim, 2>::_Build(this, il);
   }
 };
 // initialization of static const members:

@@ -177,9 +177,8 @@ class Pyramid5 : public Pyramid<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Pyramid5 *, std::initializer_list<Global>);
   Pyramid5(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -368,9 +367,8 @@ class Pyramid13 : public Pyramid<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Pyramid13 *, std::initializer_list<Global>);
   Pyramid13(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -520,9 +518,8 @@ class Pyramid14 : public Pyramid<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Pyramid14 *, std::initializer_list<Global>);
   Pyramid14(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:

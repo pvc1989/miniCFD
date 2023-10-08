@@ -128,10 +128,8 @@ class Tetrahedron4 : public Tetrahedron<Scalar> {
     this->_BuildCenter();
   }
 
-  friend void lagrange::_Build(Tetrahedron4 *,
-      std::initializer_list<Global>);
   Tetrahedron4(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -288,9 +286,8 @@ class Tetrahedron10 : public Tetrahedron<Scalar> {
   }
 
  public:
-  friend void lagrange::_Build(Tetrahedron10 *, std::initializer_list<Global>);
   Tetrahedron10(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
 // initialization of static const members:

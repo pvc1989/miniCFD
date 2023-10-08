@@ -128,10 +128,8 @@ class Quadrangle4 : public Quadrangle<Scalar, kPhysDim> {
     this->_BuildCenter();
   }
 
-  friend void lagrange::_Build(Quadrangle4 *,
-      std::initializer_list<Global>);
   Quadrangle4(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, kPhysDim, 2>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -249,9 +247,8 @@ class Quadrangle8 : public Quadrangle<Scalar, kPhysDim> {
   }
 
  public:
-  friend void lagrange::_Build(Quadrangle8 *, std::initializer_list<Global>);
   Quadrangle8(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, kPhysDim, 2>::_Build(this, il);
   }
 };
 // initialization of static const members:
@@ -373,10 +370,8 @@ class Quadrangle9 : public Quadrangle<Scalar, kPhysDim> {
     this->_BuildCenter();
   }
 
-  friend void lagrange::_Build(Quadrangle9 *,
-      std::initializer_list<Global>);
   Quadrangle9(std::initializer_list<Global> il) {
-    lagrange::_Build(this, il);
+    Element<Scalar, kPhysDim, 2>::_Build(this, il);
   }
 };
 // initialization of static const members:

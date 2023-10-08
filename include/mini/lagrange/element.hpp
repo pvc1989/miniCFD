@@ -53,18 +53,17 @@ class Element {
         = const_cast<const Element *>(this)->GetGlobalCoord(i);
     return const_cast<Global &>(global);
   }
-};
 
-template <typename Element>
-static void _Build(Element *element,
-    std::initializer_list<typename Element::Global> il) {
-  assert(il.size() == element->CountNodes());
-  auto p = il.begin();
-  for (int i = 0, n = element->CountNodes(); i < n; ++i) {
-    element->_GetGlobalCoord(i) = p[i];
+  static void _Build(Element *element,
+      std::initializer_list<Global> il) {
+    assert(il.size() == element->CountNodes());
+    auto p = il.begin();
+    for (int i = 0, n = element->CountNodes(); i < n; ++i) {
+      element->_GetGlobalCoord(i) = p[i];
+    }
+    element->_BuildCenter();
   }
-  element->_BuildCenter();
-}
+};
 
 }  // namespace lagrange
 }  // namespace mini
