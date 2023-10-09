@@ -125,6 +125,23 @@ class TestTaylor(unittest.TestCase):
                     shifted.global_to_derivatives(x_global, k) -
                     expected.global_to_derivatives(x_global, k)), places=5)
 
+    def test_get_boundary_derivatives(self):
+        np.random.seed(31415926)
+        x_left = np.random.rand()
+        x_right = np.random.rand() + 2
+        coordinate = LinearCoordinate(x_left, x_right)
+        for degree in range(8):
+            gauss = expansion.Taylor.get_integrator(degree, coordinate)
+            e = expansion.Taylor(degree, gauss)
+            e.set_coeff(np.random.rand(e.n_term()))
+            for order in range(degree + 1):
+                expect = e.global_to_derivatives(x_left, order)
+                actual = e.get_boundary_derivatives(order, True, False)
+                self.assertAlmostEqual(expect, actual)
+                expect = e.global_to_derivatives(x_right, order)
+                actual = e.get_boundary_derivatives(order, False, False)
+                self.assertAlmostEqual(expect, actual)
+
 
 class TestLagrangeOnUniformRoots(unittest.TestCase):
     """Test the expansion.LagrangeOnUniformRoots class.
@@ -267,6 +284,22 @@ class TestLagrangeOnUniformRoots(unittest.TestCase):
                 self.assertAlmostEqual(0.0, np.linalg.norm(
                     shifted.global_to_derivatives(x_global, k) -
                     expected.global_to_derivatives(x_global, k)))
+
+    def test_get_boundary_derivatives(self):
+        np.random.seed(31415926)
+        x_left = np.random.rand()
+        x_right = np.random.rand() + 2
+        coordinate = LinearCoordinate(x_left, x_right)
+        for degree in range(8):
+            e = expansion.LagrangeOnUniformRoots(degree, coordinate)
+            e.set_coeff(np.random.rand(e.n_term()))
+            for order in range(degree + 1):
+                expect = e.global_to_derivatives(x_left, order)
+                actual = e.get_boundary_derivatives(order, True, False)
+                self.assertAlmostEqual(expect, actual)
+                expect = e.global_to_derivatives(x_right, order)
+                actual = e.get_boundary_derivatives(order, False, False)
+                self.assertAlmostEqual(expect, actual)
 
 
 class TestLagrangeOnLegendreRoots(unittest.TestCase):
@@ -437,6 +470,22 @@ class TestLagrangeOnLegendreRoots(unittest.TestCase):
                     shifted.global_to_derivatives(x_global, k) -
                     expected.global_to_derivatives(x_global, k)))
 
+    def test_get_boundary_derivatives(self):
+        np.random.seed(31415926)
+        x_left = np.random.rand()
+        x_right = np.random.rand() + 2
+        coordinate = LinearCoordinate(x_left, x_right)
+        for degree in range(8):
+            e = expansion.LagrangeOnLegendreRoots(degree, coordinate)
+            e.set_coeff(np.random.rand(e.n_term()))
+            for order in range(degree + 1):
+                expect = e.global_to_derivatives(x_left, order)
+                actual = e.get_boundary_derivatives(order, True, False)
+                self.assertAlmostEqual(expect, actual)
+                expect = e.global_to_derivatives(x_right, order)
+                actual = e.get_boundary_derivatives(order, False, False)
+                self.assertAlmostEqual(expect, actual)
+
 
 class TestLagrangeOnLobattoRoots(unittest.TestCase):
     """Test the expansion.LagrangeOnLobattoRoots class.
@@ -606,6 +655,22 @@ class TestLagrangeOnLobattoRoots(unittest.TestCase):
                     shifted.global_to_derivatives(x_global, k) -
                     expected.global_to_derivatives(x_global, k)))
 
+    def test_get_boundary_derivatives(self):
+        np.random.seed(31415926)
+        x_left = np.random.rand()
+        x_right = np.random.rand() + 2
+        coordinate = LinearCoordinate(x_left, x_right)
+        for degree in range(2, 8):
+            e = expansion.LagrangeOnLobattoRoots(degree, coordinate)
+            e.set_coeff(np.random.rand(e.n_term()))
+            for order in range(degree + 1):
+                expect = e.global_to_derivatives(x_left, order)
+                actual = e.get_boundary_derivatives(order, True, False)
+                self.assertAlmostEqual(expect, actual)
+                expect = e.global_to_derivatives(x_right, order)
+                actual = e.get_boundary_derivatives(order, False, False)
+                self.assertAlmostEqual(expect, actual)
+
 
 class TestLegendre(unittest.TestCase):
     """Test the Legendre class.
@@ -764,6 +829,22 @@ class TestLegendre(unittest.TestCase):
                 self.assertAlmostEqual(0.0, np.linalg.norm(
                     shifted.global_to_derivatives(x_global, k) -
                     expected.global_to_derivatives(x_global, k)))
+
+    def test_get_boundary_derivatives(self):
+        np.random.seed(31415926)
+        x_left = np.random.rand()
+        x_right = np.random.rand() + 2
+        coordinate = LinearCoordinate(x_left, x_right)
+        for degree in range(8):
+            e = expansion.Legendre(degree, coordinate)
+            e.set_coeff(np.random.rand(e.n_term()))
+            for order in range(degree + 1):
+                expect = e.global_to_derivatives(x_left, order)
+                actual = e.get_boundary_derivatives(order, True, False)
+                self.assertAlmostEqual(expect, actual)
+                expect = e.global_to_derivatives(x_right, order)
+                actual = e.get_boundary_derivatives(order, False, False)
+                self.assertAlmostEqual(expect, actual)
 
 
 class TestTruncatedLegendre(unittest.TestCase):

@@ -477,7 +477,7 @@ class LagrangeOnLegendreRoots(LagrangeOnGaussPoints):
         shape = (self.n_term(), self.n_term())
         self._basis_derivatives_at_left = np.ndarray(shape)
         self._basis_derivatives_at_right = np.ndarray(shape)
-        for k in range(degree):
+        for k in range(self.n_term()):
             self._basis_derivatives_at_left[k] = \
                 self.get_basis_derivatives(self.x_left(), k)
             self._basis_derivatives_at_right[k] = \
