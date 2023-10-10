@@ -455,28 +455,13 @@ class Lax(ShockTube):
         return 'Lax'
 
 
-class ShuOsher(SolverBase):
+
+class OtherEuler(SolverBase):
     """Demo the usage of Euler related classes.
     """
 
-    def __init__(self, u_mean: float, wave_number: int,
-            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
-            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
-        u_mean = 2.0
-        super().__init__(u_mean, s, d, l, v, ode_solver, 501)
-        self._x_mid = s.x_left() + 0.1 * s.length()
-        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
-
     def equation(self) -> equation.Euler:
         return self._spatial.equation()
-
-    def u_init(self, x_global):
-        e = self.equation()
-        if x_global < self._x_mid:
-            return e.primitive_to_conservative(3.857143, 2.629369, 10.33333)
-        else:
-            rho = 1 + np.sin(5 * (x_global - self._spatial.x_left())) / 5
-            return e.primitive_to_conservative(rho, 0, 1)
 
     def u_exact(self, x_global, t_curr):
         return None
@@ -491,8 +476,54 @@ class ShuOsher(SolverBase):
             approx_solution[i] = self._spatial.get_solution_value(point_i)
         return expect_solution, approx_solution
 
+
+class ShuOsher(OtherEuler):
+    """Demo the usage of Euler related classes.
+    """
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
+        u_mean = 2.0
+        SolverBase.__init__(self, u_mean, s, d, l, v, ode_solver, 501)
+        self._x_mid = s.x_left() + 0.1 * s.length()
+        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
+
+    def u_init(self, x_global):
+        e = self.equation()
+        if x_global < self._x_mid:
+            return e.primitive_to_conservative(3.857143, 2.629369, 10.33333)
+        else:
+            rho = 1 + np.sin(5 * (x_global - self._spatial.x_left())) / 5
+            return e.primitive_to_conservative(rho, 0, 1)
+
     def problem_name(self):
         return 'Shu-Osher'
+
+
+class BlastWaves(OtherEuler):
+    """Demo the usage of Euler related classes.
+    """
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
+        u_mean = 2.0
+        SolverBase.__init__(self, u_mean, s, d, l, v, ode_solver, 501)
+        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
+
+    def u_init(self, x_global):
+        if x_global < 0.1:
+            p = 1000
+        elif x_global < 0.9:
+            p = 0.01
+        else:
+            p = 100
+        e = self.equation()
+        return e.primitive_to_conservative(1, 0, p)
+
+    def problem_name(self):
+        return 'Blast Waves'
 
 
 if __name__ == '__main__':
@@ -542,7 +573,8 @@ if __name__ == '__main__':
         default=2, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
-        choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax', 'ShuOsher'],
+        choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax',
+            'ShuOsher', 'BlastWaves'],
         default='Smooth',
         help='problem to be solved')
     parser.add_argument('--u_mean',
@@ -634,6 +666,10 @@ if __name__ == '__main__':
         SolverClass = ShuOsher
         the_riemann = riemann.Roe(gamma=1.4)
         assert args.x_left == 0 and args.x_right == 10
+    elif args.problem == 'BlastWaves':
+        SolverClass = BlastWaves
+        the_riemann = riemann.Roe(gamma=1.4)
+        assert args.x_left == 0 and args.x_right == 1
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,
