@@ -455,7 +455,6 @@ class Lax(ShockTube):
         return 'Lax'
 
 
-
 class OtherEuler(SolverBase):
     """Demo the usage of Euler related classes.
     """
@@ -526,6 +525,33 @@ class BlastWaves(OtherEuler):
         return 'Blast Waves'
 
 
+class Sedov(OtherEuler):
+    """Demo the usage of Euler related classes.
+    """
+
+    def __init__(self, u_mean: float, wave_number: int,
+            s: concept.SpatialScheme, d: concept.Detector, l: concept.Limiter,
+            v: concept.Viscosity, ode_solver: concept.OdeSolver) -> None:
+        u_mean = 2.0
+        SolverBase.__init__(self, u_mean, s, d, l, v, ode_solver, 501)
+        self._h_inverse = 1 / s.delta_x(0)
+        self._h_half = s.delta_x(0) / 2
+        s.set_boundary_values(self.u_init(s.x_left()), self.u_init(s.x_right()))
+
+    def u_init(self, x_global):
+        u = np.ndarray(3)
+        u[0] = 1
+        u[1] = 0
+        if np.abs(x_global) <= self._h_half:
+            u[2] = 6.4e+6 * self._h_inverse
+        else:
+            u[2] = 1e-12
+        return u
+
+    def problem_name(self):
+        return 'Sedov'
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog = 'python3 solver.py',
@@ -574,7 +600,7 @@ if __name__ == '__main__':
         help='degree of polynomials for approximation')
     parser.add_argument('-p', '--problem',
         choices=['Smooth', 'Jumps', 'Burgers', 'Sod', 'Lax',
-            'ShuOsher', 'BlastWaves'],
+            'ShuOsher', 'BlastWaves', 'Sedov'],
         default='Smooth',
         help='problem to be solved')
     parser.add_argument('--u_mean',
@@ -670,6 +696,10 @@ if __name__ == '__main__':
         SolverClass = BlastWaves
         the_riemann = riemann.Roe(gamma=1.4)
         assert args.x_left == 0 and args.x_right == 1
+    elif args.problem == 'Sedov':
+        SolverClass = Sedov
+        the_riemann = riemann.Roe(gamma=1.4)
+        assert args.x_left == -2 and args.x_right == 2
     else:
         assert False
     solver = SolverClass(args.u_mean, args.wave_number,
