@@ -8,10 +8,10 @@ import sys
 def read(folder, degree_range, n_element_range) -> dict:
     """Read the data from CSV files in a given folder.
 
-    Suppose degree_range = (2,3,4), n_element_range = (10,20,40,80), then the CSV files could be obtained by running the following commands in shell:
+    Suppose degree_range = (2,3,4,5), n_element_range = (10,20,40,80), then the CSV files could be obtained by running the following commands in shell:
 
     1. Solve a problem with various (p, n) combinations:
-        for p in {2,3,4,5} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method FRonLegendreRoots --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --physical_viscosity 0.01 --output pdf > p=${p}_n=${n}.log & ; done ; done
+        for p in {2,3,4,5} ; do for n in {10,20,40,80} ; do python3 ~/code/miniCFD/python/solver.py --method FRonLegendreRoots --degree $p --n_element $n --rk_order 4 --n_step 100000 --t_end 2.0 --problem Smooth --wave_number 2 --convection_speed 0.0 --physical_viscosity 0.01 --output pdf > p=${p}_n=${n}.log & ; done ; done
 
     2. Filter out the errors:
         for x in *.log ; do cat $x | grep error > ${x%.log}.csv ; done
