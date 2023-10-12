@@ -204,6 +204,16 @@ class TestEuler(unittest.TestCase):
             a_upwind = self._equation.get_convective_jacobian(u_upwind)
             self.assertAlmostEqual(0.0, np.linalg.norm(
                 a_upwind @ (u_right - u_left) - (f_right - f_left)))
+            L, R = self._equation.get_convective_eigmats(u_upwind)
+            eigvals = self._equation.get_convective_eigvals(u_upwind)
+            lambdas = L @ a_upwind @ R
+            self.assertAlmostEqual(eigvals[0], lambdas[0][0])
+            self.assertAlmostEqual(eigvals[1], lambdas[1][1])
+            self.assertAlmostEqual(eigvals[2], lambdas[2][2])
+            f_upwind = 0.5 * (f_left + f_right
+                - R @ np.abs(lambdas) @ L @ (u_right - u_left))
+            self.assertAlmostEqual(0.0, np.linalg.norm(
+                f_upwind - solver.get_upwind_flux(u_left, u_right)))
 
 
 if __name__ == '__main__':

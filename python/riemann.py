@@ -415,7 +415,7 @@ class Roe(ApproximateEuler):
         ke = u * u / 2  # kinetic energy
         aa = eq._gas.gamma_minus_1() * (h0 - ke)
         p = rho * aa / eq._gas.gamma()
-        return eq.primitive_to_conservative(rho, u, p)
+        return np.array([rho, rho * u, rho * h0 - p])
 
     def get_upwind_flux(self, value_left, value_right):
         # algebraic averaging
