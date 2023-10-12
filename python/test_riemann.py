@@ -170,15 +170,40 @@ class TestEuler(unittest.TestCase):
         self._solvers = [
             riemann.Euler(), riemann.Roe(), riemann.LaxFriedrichs()
         ]
+        self._equation = equation.Euler()
 
     def test_consistency(self):
-        u_left = np.array([1.0, 0.0, 1.0])
-        u_right = u_left
-        for solver in self._solvers:
-            assert isinstance(solver, riemann.Euler)
+        np.random.seed(31415926)
+        for i in range(1000):
+            rho = np.random.rand()
+            u = np.random.rand()
+            p = np.random.rand()
+            u_left = self._equation.primitive_to_conservative(rho, u, p)
+            u_right = u_left
+            for solver in self._solvers:
+                assert isinstance(solver, riemann.Euler)
+                self.assertAlmostEqual(0.0, np.linalg.norm(
+                    solver.get_upwind_flux(u_left, u_right) -
+                    solver.equation().get_convective_flux(u_left)))
+
+    def test_upwind_value(self):
+        solver = riemann.Roe()
+        np.random.seed(31415926)
+        for i in range(1000):
+            rho = np.random.rand()
+            u = np.random.rand()
+            p = np.random.rand()
+            u_left = self._equation.primitive_to_conservative(rho, u, p)
+            f_left = self._equation.get_convective_flux(u_left)
+            rho = np.random.rand()
+            u = np.random.rand()
+            p = np.random.rand()
+            u_right = self._equation.primitive_to_conservative(rho, u, p)
+            f_right = self._equation.get_convective_flux(u_right)
+            u_upwind = solver.get_upwind_value(u_left, u_right)
+            a_upwind = self._equation.get_convective_jacobian(u_upwind)
             self.assertAlmostEqual(0.0, np.linalg.norm(
-                solver.get_upwind_flux(u_left, u_right) -
-                solver.equation().get_convective_flux(u_left)))
+                a_upwind @ (u_right - u_left) - (f_right - f_left)))
 
 
 if __name__ == '__main__':
