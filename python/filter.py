@@ -4,11 +4,11 @@ import numpy as np
 class Selective:
 
     coeff_ = np.array([
-        +0.001446093078167,
-        -0.012396449873964,
-        +0.049303775636020,
-        -0.120198310245186,
-        +0.199250131285813,
+        -0.001446093078167,
+        +0.012396449873964,
+        -0.049303775636020,
+        +0.120198310245186,
+        -0.199250131285813,
         0.234810479761700,  # d[0]
         -0.199250131285813,
         +0.120198310245186,
@@ -20,8 +20,9 @@ class Selective:
     def __init__(self, periodic) -> None:
         self._periodic = periodic
         width = 5
+        print(np.sum(self.coeff_) - 1)
         for i in range(1, 1 + width):
-            assert self.coeff_[width - i] == -self.coeff_[width + i]
+            assert self.coeff_[width - i] == self.coeff_[width + i]
 
     def filter(self, old_array: np.ndarray, sigma) -> np.ndarray:
         new_array = old_array.copy()
