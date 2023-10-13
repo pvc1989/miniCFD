@@ -1,4 +1,5 @@
 set (cases
+  taylor
   basis
   triangle
   quadrangle
