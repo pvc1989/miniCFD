@@ -22,6 +22,63 @@ double rand_f() {
 
 class TestTaylorBasis : public ::testing::Test {
 };
+TEST_F(TestTaylorBasis, In1dSpace) {
+  using Basis = mini::polynomial::Taylor<double, 1, 5>;
+  static_assert(Basis::N == 6);
+  std::srand(31415926);
+  double x{rand_f()};
+  EXPECT_NE(x, 0);
+  typename Basis::Vector res;
+  res = Basis::GetValues(x);
+  EXPECT_EQ(res[0], 1);
+  EXPECT_EQ(res[1], x);
+  EXPECT_EQ(res[2], x * x);
+  EXPECT_EQ(res[3], x * x * x);
+  EXPECT_EQ(res[4], x * x * x * x);
+  EXPECT_EQ(res[5], x * x * x * x * x);
+  res = Basis::GetDerivatives(x, 0);
+  EXPECT_EQ(res[0], 1);
+  EXPECT_EQ(res[1], x);
+  EXPECT_EQ(res[2], x * x);
+  EXPECT_EQ(res[3], x * x * x);
+  EXPECT_NEAR(res[4], x * x * x * x, 1e-16);
+  EXPECT_NEAR(res[5], x * x * x * x * x, 1e-16);
+  res = Basis::GetDerivatives(x, 1);
+  EXPECT_EQ(res[0], 0);
+  EXPECT_EQ(res[1], 1);
+  EXPECT_EQ(res[2], 2 * x);
+  EXPECT_EQ(res[3], 3 * x * x);
+  EXPECT_EQ(res[4], 4 * x * x * x);
+  EXPECT_EQ(res[5], 5 * x * x * x * x);
+  res = Basis::GetDerivatives(x, 2);
+  EXPECT_EQ(res[0], 0);
+  EXPECT_EQ(res[1], 0);
+  EXPECT_EQ(res[2], 2 * 1);
+  EXPECT_EQ(res[3], 3 * 2 * x);
+  EXPECT_EQ(res[4], 4 * 3 * x * x);
+  EXPECT_EQ(res[5], 5 * 4 * x * x * x);
+  res = Basis::GetDerivatives(x, 3);
+  EXPECT_EQ(res[0], 0);
+  EXPECT_EQ(res[1], 0);
+  EXPECT_EQ(res[2], 0);
+  EXPECT_EQ(res[3], 3 * 2 * 1);
+  EXPECT_EQ(res[4], 4 * 3 * 2 * x);
+  EXPECT_EQ(res[5], 5 * 4 * 3 * x * x);
+  res = Basis::GetDerivatives(x, 4);
+  EXPECT_EQ(res[0], 0);
+  EXPECT_EQ(res[1], 0);
+  EXPECT_EQ(res[2], 0);
+  EXPECT_EQ(res[3], 0);
+  EXPECT_EQ(res[4], 4 * 3 * 2 * 1);
+  EXPECT_EQ(res[5], 5 * 4 * 3 * 2 * x);
+  res = Basis::GetDerivatives(x, 5);
+  EXPECT_EQ(res[0], 0);
+  EXPECT_EQ(res[1], 0);
+  EXPECT_EQ(res[2], 0);
+  EXPECT_EQ(res[3], 0);
+  EXPECT_EQ(res[4], 0);
+  EXPECT_EQ(res[5], 5 * 4 * 3 * 2 * 1);
+}
 TEST_F(TestTaylorBasis, In2dSpace) {
   using Basis = mini::polynomial::Taylor<double, 2, 2>;
   static_assert(Basis::N == 6);

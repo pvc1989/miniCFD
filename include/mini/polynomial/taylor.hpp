@@ -25,6 +25,59 @@ namespace polynomial {
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Taylor;
 
+template <std::floating_point Scalar, int kDegree>
+class Taylor<Scalar, 1, kDegree> {
+ public:
+  static constexpr int P = kDegree;  // the maximum degree of members in this basis
+  static constexpr int N = P + 1;  // the number of terms in this basis
+  using Vector = algebra::Vector<Scalar, N>;
+
+  /**
+   * @brief Get the values of all basis functions at an arbitrary point.
+   * 
+   * @param x the coordinate of the query point
+   * @return Vector the values
+   */
+  static Vector GetValues(Scalar x) {
+    Vector vec;
+    Scalar x_power = 1;
+    vec[0] = x_power;
+    for (int k = 1; k < N; ++k) {
+      vec[k] = (x_power *= x);
+    }
+    assert(std::abs(x_power - std::pow(x, P)) < 1e-14);
+    return vec;
+  }
+
+  /**
+   * @brief Get the k-th order derivatives of all basis functions at an arbitrary point.
+   * 
+   * @param x the coordinate of the query point
+   * @param k the order of the derivatives to be taken
+   * @return Vector the derivatives
+   */
+  static Vector GetDerivatives(Scalar x, int k) {
+    assert(0 <= k && k <= P);
+    Vector vec;
+    vec.setZero();  // For all j < k, there is vec[j] = 0.
+    auto factorial_j = std::tgamma(Scalar(k + 1));  // factorial(j == k)
+    auto factorial_j_minus_k = Scalar(1);  // factorial(j - k == 0)
+    vec[k] = factorial_j / factorial_j_minus_k;  // j * (j - 1) * ... * (j - k + 1)
+    auto x_power = Scalar(1);
+    for (int j = k + 1; j < N; ++j) {
+      auto j_minus_k = j - k;
+      factorial_j_minus_k *= j_minus_k;
+      factorial_j *= j;
+      x_power *= x;
+      vec[j] = x_power * factorial_j / factorial_j_minus_k;
+    }
+    assert(std::abs(x_power - std::pow(x, P - k)) < 1e-14);
+    assert(factorial_j == std::tgamma(P + 1));
+    assert(factorial_j_minus_k == std::tgamma(P - k + 1));
+    return vec;
+  }
+};
+
 template <std::floating_point Scalar>
 class Taylor<Scalar, 2, 1> {
  public:
