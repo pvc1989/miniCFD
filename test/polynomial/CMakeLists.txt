@@ -1,5 +1,6 @@
 set (cases
   taylor
+  lagrange
   basis
   triangle
   quadrangle
