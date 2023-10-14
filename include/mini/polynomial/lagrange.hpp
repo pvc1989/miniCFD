@@ -244,14 +244,26 @@ class Hexahedron {
   /**
    * @brief Get the values of all basis functions at an arbitrary point.
    * 
+   * @param x the coordinate of the query point in the 1st dimension
+   * @param y the coordinate of the query point in the 2nd dimension
+   * @param z the coordinate of the query point in the 3rd dimension
+   * @return Vector the output values
+   */
+  Vector GetValues(Scalar x, Scalar y, Scalar z) const {
+    Vector vec;
+    auto *values = reinterpret_cast<Value *>(vec.data());
+    GetValues(x, y, z, values);
+    return vec;
+  }
+
+  /**
+   * @brief Get the values of all basis functions at an arbitrary point.
+   * 
    * @param coord the coordinates of the query point
    * @return Vector the output values
    */
   Vector GetValues(Coord const &coord) const {
-    Vector vec;
-    auto *values = reinterpret_cast<Value *>(vec.data());
-    GetValues(coord[0], coord[1], coord[2], values);
-    return vec;
+    return GetValues(coord[0], coord[1], coord[2]);
   }
 
   /**
