@@ -150,13 +150,14 @@ class Hexahedron {
   static constexpr int N = I * J * K;  // the number of terms in this basis
   using Vector = algebra::Matrix<Scalar, 1, N>;  // the 1D type of values of this basis
   using Value = Scalar[I][J][K];  // the 3D type of values of this basis
+  static_assert(sizeof(Value) == sizeof(Vector));
   using Coord = algebra::Vector<Scalar, 3>;  // the type of coordinates
 
  private:
   LineX line_x_;
   LineY line_y_;
   LineZ line_z_;
-  Value derivatives_[I][J][K][I][J][K];
+  Vector derivatives_[I][J][K][I][J][K];
 
  public:
   Hexahedron(LineX const &line_x, LineY const &line_y, LineZ const &line_z)
@@ -171,8 +172,8 @@ class Hexahedron {
               auto y = line_y_.GetNode(j);
               for (int k = 0; k < K; ++k) {
                 auto z = line_z_.GetNode(k);
-                GetDerivatives(x, y, z, a, b, c,
-                    &derivatives_[a][b][c][i][j][k]);
+                derivatives_[a][b][c][i][j][k] =
+                    GetDerivatives(x, y, z, a, b, c);
               }
             }
           }
@@ -226,33 +227,22 @@ class Hexahedron {
    * @param x the coordinate of the query point in the 1st dimension
    * @param y the coordinate of the query point in the 2nd dimension
    * @param z the coordinate of the query point in the 3rd dimension
-   * @param values the output values
-   */
-  void GetValues(Scalar x, Scalar y, Scalar z, Value *values) const {
-    auto value_x = line_x_.GetValues(x);
-    auto value_y = line_y_.GetValues(y);
-    auto value_z = line_z_.GetValues(z);
-    for (int i = 0; i < I; ++i) {
-      for (int j = 0; j < J; ++j) {
-        for (int k = 0; k < K; ++k) {
-          (*values)[i][j][k] = value_x[i] * value_y[j] * value_z[k];
-        }
-      }
-    }
-  }
-
-  /**
-   * @brief Get the values of all basis functions at an arbitrary point.
-   * 
-   * @param x the coordinate of the query point in the 1st dimension
-   * @param y the coordinate of the query point in the 2nd dimension
-   * @param z the coordinate of the query point in the 3rd dimension
    * @return Vector the output values
    */
   Vector GetValues(Scalar x, Scalar y, Scalar z) const {
     Vector vec;
-    auto *values = reinterpret_cast<Value *>(vec.data());
-    GetValues(x, y, z, values);
+    auto value_x = line_x_.GetValues(x);
+    auto value_y = line_y_.GetValues(y);
+    auto value_z = line_z_.GetValues(z);
+    int ijk = 0;
+    for (int i = 0; i < I; ++i) {
+      for (int j = 0; j < J; ++j) {
+        for (int k = 0; k < K; ++k) {
+          vec[ijk++] = value_x[i] * value_y[j] * value_z[k];
+        }
+      }
+    }
+    assert(ijk == N);
     return vec;
   }
 
@@ -275,20 +265,24 @@ class Hexahedron {
    * @param a the order of the derivatives to be taken in the 1st dimension
    * @param b the order of the derivatives to be taken in the 1st dimension
    * @param c the order of the derivatives to be taken in the 1st dimension
-   * @param values the output derivatives
+   * @return Vector the output derivatives
    */
-  void GetDerivatives(Scalar x, Scalar y, Scalar z, int a, int b, int c,
-      Value *values) const {
+  Vector GetDerivatives(Scalar x, Scalar y, Scalar z,
+      int a, int b, int c) const {
+    Vector vec;
     auto value_x = line_x_.GetDerivatives(x, a);
     auto value_y = line_y_.GetDerivatives(y, b);
     auto value_z = line_z_.GetDerivatives(z, c);
+    int ijk = 0;
     for (int i = 0; i < I; ++i) {
       for (int j = 0; j < J; ++j) {
         for (int k = 0; k < K; ++k) {
-          (*values)[i][j][k] = value_x[i] * value_y[j] * value_z[k];
+          vec[ijk++] = value_x[i] * value_y[j] * value_z[k];
         }
       }
     }
+    assert(ijk == N);
+    return vec;
   }
 
   /**
@@ -300,9 +294,9 @@ class Hexahedron {
    * @param a the order of the derivatives to be taken in the 1st dimension
    * @param b the order of the derivatives to be taken in the 1st dimension
    * @param c the order of the derivatives to be taken in the 1st dimension
-   * @return Value const& the derivatives
+   * @return Vector const& the derivatives
    */
-  Value const &GetDerivatives(int i, int j, int k, int a, int b, int c) const {
+  Vector const &GetDerivatives(int i, int j, int k, int a, int b, int c) const {
     return derivatives_[a][b][c][i][j][k];
   }
 };
