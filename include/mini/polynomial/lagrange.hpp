@@ -3,12 +3,14 @@
 #define MINI_POLYNOMIAL_LAGRANGE_HPP_
 
 #include <concepts>
+#include <ranges>
 
 #include <cassert>
 #include <cmath>
 
 #include <array>
 #include <initializer_list>
+#include <utility>
 
 #include "mini/algebra/eigen.hpp"
 
@@ -42,7 +44,8 @@ class Line {
   Matrix lagrange_to_taylor_;
 
  public:
-  Line(std::initializer_list<Scalar> nodes) : nodes_{nodes} {
+  template <std::ranges::random_access_range R>
+  explicit Line(R &&nodes) {
     assert(nodes.size() == N);
     /* An arbitrary polynomial can be expanded on Taylor and Lagrange:
      *     polynomial(x) = taylor_basis_row(x) @ taylor_coeff_col
@@ -62,7 +65,7 @@ class Line {
      */
     Matrix taylor_to_lagrange;
     for (int j = 0; j < N; ++j) {
-      auto x_j = nodes_[j];
+      auto x_j = (nodes_[j] = nodes[j]);
       taylor_to_lagrange.row(j) = Taylor::GetValues(x_j);
     }
     lagrange_to_taylor_ = taylor_to_lagrange.inverse();
@@ -73,6 +76,11 @@ class Line {
         derivatives_[k][j] = GetDerivatives(k, x_j);
       }
     }
+  }
+
+  explicit Line(std::initializer_list<Scalar> nodes)
+      : Line(std::views::iota(nodes.begin(), nodes.end())
+           | std::views::transform([](auto *ptr){ return *ptr; })) {
   }
 
   /**
@@ -150,8 +158,6 @@ class Hexahedron {
   static constexpr int K = LineZ::N;  // the number of terms in the 3rd dimension
   static constexpr int N = I * J * K;  // the number of terms in this basis
   using Vector = algebra::Matrix<Scalar, 1, N>;  // the 1D type of values of this basis
-  using Value = Scalar[I][J][K];  // the 3D type of values of this basis
-  static_assert(sizeof(Value) == sizeof(Vector));
   using Coord = algebra::Vector<Scalar, 3>;  // the type of coordinates
 
  private:
