@@ -44,9 +44,15 @@ TEST_F(TestPolynomialLagrangeLine, PartitionOfUnityProperty) {
   }
 }
 TEST_F(TestPolynomialLagrangeLine, GetDerivatives) {
-  // auto lagrange = GetUniformLagrange();
-  // std::srand(31415926);
   auto lagrange = GetRandomLagrange();
+  // check cached values
+  for (int i = 0; i < Lagrange::N; ++i) {
+    auto x = lagrange.GetNode(i);
+    for (int a = 0; a < Lagrange::N; ++a) {
+      EXPECT_EQ(lagrange.GetDerivatives(a, i), lagrange.GetDerivatives(x, a));
+    }
+  }
+  // check with finite differences
   auto delta = 1e-5;
   auto delta2 = delta * delta;
   for (int i = 1<<10; i >= 0; --i) {
@@ -99,9 +105,25 @@ TEST_F(TestPolynomialLagrangeHexahedron, PartitionOfUnityProperty) {
   }
 }
 TEST_F(TestPolynomialLagrangeHexahedron, GetDerivatives) {
-  // auto lagrange = GetUniformLagrange();
-  // std::srand(31415926);
   auto lagrange = GetRandomLagrange();
+  // check cached values
+  for (int i = 0; i < Lagrange::I; ++i) {
+    for (int j = 0; j < Lagrange::J; ++j) {
+      for (int k = 0; k < Lagrange::K; ++k) {
+        auto coord = lagrange.GetNode(i, j, k);
+        auto x = coord[0], y = coord[1], z = coord[2];
+        for (int a = 0; a < Lagrange::I; ++a) {
+          for (int b = 0; b < Lagrange::J; ++b) {
+            for (int c = 0; c < Lagrange::K; ++c) {
+              EXPECT_EQ(lagrange.GetDerivatives(i, j, k, a, b, c), 
+                  lagrange.GetDerivatives(x, y, z, a, b, c));
+            }
+          }
+        }
+      }
+    }
+  }
+  // check with finite differences
   auto delta = 1e-5;
   auto delta2 = delta * delta;
   for (int i = 1<<10; i >= 0; --i) {
