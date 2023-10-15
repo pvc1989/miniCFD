@@ -70,13 +70,13 @@ class Line {
     for (int k = 0; k < N; ++k) {
       for (int j = 0; j < N; ++j) {
         auto x_j = nodes_[j];
-        derivatives_[k][j] = GetDerivatives(x_j, k);
+        derivatives_[k][j] = GetDerivatives(k, x_j);
       }
     }
   }
 
   /**
-   * @brief Get the coordinate of the i-th node.
+   * @brief Get the coordinate of the \f$i\f$-th node.
    * 
    * @param i the (0-based) index of the query node
    * @return Scalar the coordinate
@@ -106,21 +106,22 @@ class Line {
   }
 
   /**
-   * @brief Get the k-th order derivatives of all basis functions at an arbitrary point.
+   * @brief Get the \f$k\f$-th order derivatives of all basis functions at an arbitrary point.
    * 
-   * @param x the coordinate of the query point
    * @param k the order of the derivatives to be taken
+   * @param x the coordinate of the query point
    * @return Vector the derivatives
    */
-  Vector GetDerivatives(Scalar x, int k) const {
-    Vector taylor_basis_row = Taylor::GetDerivatives(x, k);
+  Vector GetDerivatives(int k, Scalar x) const {
+    Vector taylor_basis_row = Taylor::GetDerivatives(k, x);
     return taylor_basis_row * lagrange_to_taylor_;
   }
 
   /**
-   * @brief Get the k-th order derivatives of all basis functions at the j-th node.
+   * @brief Get the \f$k\f$-th order derivatives of all basis functions at the \f$j\f$-th node.
    * 
    * @param k the order of the derivatives to be taken
+   * @param j the (0-based) index of the query node
    * @return Vector the derivatives
    */
   Vector const &GetDerivatives(int k, int j) const {
@@ -173,7 +174,7 @@ class Hexahedron {
               for (int k = 0; k < K; ++k) {
                 auto z = line_z_.GetNode(k);
                 derivatives_[a][b][c][i][j][k] =
-                    GetDerivatives(x, y, z, a, b, c);
+                    GetDerivatives(a, b, c, x, y, z);
               }
             }
           }
@@ -259,20 +260,20 @@ class Hexahedron {
   /**
    * @brief Get the \f$(a,b,c)\f$-th order derivatives of all basis functions at an arbitrary point.
    * 
-   * @param x the coordinate of the query point in the 1st dimension
-   * @param y the coordinate of the query point in the 2nd dimension
-   * @param z the coordinate of the query point in the 3rd dimension
    * @param a the order of the derivatives to be taken in the 1st dimension
    * @param b the order of the derivatives to be taken in the 1st dimension
    * @param c the order of the derivatives to be taken in the 1st dimension
+   * @param x the coordinate of the query point in the 1st dimension
+   * @param y the coordinate of the query point in the 2nd dimension
+   * @param z the coordinate of the query point in the 3rd dimension
    * @return Vector the output derivatives
    */
-  Vector GetDerivatives(Scalar x, Scalar y, Scalar z,
-      int a, int b, int c) const {
+  Vector GetDerivatives(
+      int a, int b, int c, Scalar x, Scalar y, Scalar z) const {
     Vector vec;
-    auto value_x = line_x_.GetDerivatives(x, a);
-    auto value_y = line_y_.GetDerivatives(y, b);
-    auto value_z = line_z_.GetDerivatives(z, c);
+    auto value_x = line_x_.GetDerivatives(a, x);
+    auto value_y = line_y_.GetDerivatives(b, y);
+    auto value_z = line_z_.GetDerivatives(c, z);
     int ijk = 0;
     for (int i = 0; i < I; ++i) {
       for (int j = 0; j < J; ++j) {
@@ -288,15 +289,15 @@ class Hexahedron {
   /**
    * @brief Get the \f$(a,b,c)\f$-th order derivatives of all basis functions at the \f$(i,j,k)\f$-th node.
    * 
-   * @param i the (0-based) index of the query node in the 1st dimension
-   * @param j the (0-based) index of the query node in the 2nd dimension
-   * @param k the (0-based) index of the query node in the 3rd dimension
    * @param a the order of the derivatives to be taken in the 1st dimension
    * @param b the order of the derivatives to be taken in the 1st dimension
    * @param c the order of the derivatives to be taken in the 1st dimension
+   * @param i the (0-based) index of the query node in the 1st dimension
+   * @param j the (0-based) index of the query node in the 2nd dimension
+   * @param k the (0-based) index of the query node in the 3rd dimension
    * @return Vector const& the derivatives
    */
-  Vector const &GetDerivatives(int i, int j, int k, int a, int b, int c) const {
+  Vector const &GetDerivatives(int a, int b, int c, int i, int j, int k) const {
     return derivatives_[a][b][c][i][j][k];
   }
 };

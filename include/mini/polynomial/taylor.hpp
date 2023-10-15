@@ -56,7 +56,7 @@ class Taylor<Scalar, 1, kDegree> {
    * @param k the order of the derivatives to be taken
    * @return Vector the derivatives
    */
-  static Vector GetDerivatives(Scalar x, int k) {
+  static Vector GetDerivatives(int k, Scalar x) {
     assert(0 <= k && k <= P);
     Vector vec;
     vec.setZero();  // For all j < k, there is vec[j] = 0.
