@@ -27,9 +27,6 @@ TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
   auto w1d = (18 - std::sqrt(30)) / 36.0;
   EXPECT_EQ(gauss.GetLocalWeight(0), w1d * w1d);
   EXPECT_NEAR(gauss.area(), 4.0, 1e-15);
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Coord(0, 0));
-  EXPECT_EQ(gauss.LocalToGlobal(1, 1), Coord(1, 1));
-  EXPECT_EQ(gauss.LocalToGlobal(-1, -1), Coord(-1, -1));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, gauss), 8.0);
   EXPECT_DOUBLE_EQ(Integrate([](Coord const&){ return 2.0; }, gauss), 8.0);
   auto f = [](Coord const& xy){ return xy[0]; };
@@ -51,9 +48,6 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
   EXPECT_NEAR(gauss.area(), sqrt(2) * 16.0, 1e-14);
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(+1, +1), Global(4, 4, 4));
-  EXPECT_EQ(gauss.LocalToGlobal(-1, -1), Global(0, 0, 0));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Local const&){ return 2.0; }, gauss), 8.0);
   EXPECT_DOUBLE_EQ(
@@ -89,9 +83,6 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
   EXPECT_NEAR(gauss.area(), sqrt(2) * 16.0, 1e-14);
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(+1, +1), Global(4, 4, 4));
-  EXPECT_EQ(gauss.LocalToGlobal(-1, -1), Global(0, 0, 0));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Local const&){ return 2.0; }, gauss), 8.0);
   EXPECT_DOUBLE_EQ(
@@ -128,9 +119,6 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle9) {
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);
   EXPECT_NEAR(gauss.area(), sqrt(2) * 16.0, 1e-14);
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(+1, +1), Global(4, 4, 4));
-  EXPECT_EQ(gauss.LocalToGlobal(-1, -1), Global(0, 0, 0));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Local const&){ return 2.0; }, gauss), 8.0);
   EXPECT_DOUBLE_EQ(

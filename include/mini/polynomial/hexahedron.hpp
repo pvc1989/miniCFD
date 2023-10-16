@@ -32,6 +32,7 @@ class Hexahedron {
  public:
   using Basis = lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
   using Gauss = gauss::Hexahedron< Scalar, Basis::I, Basis::J, Basis::K >;
+  using Lagrange = typename Gauss::Lagrange;
   static constexpr int N = Basis::N;
   static constexpr int K = kComponents;
   using Local = typename Gauss::Local;
@@ -73,12 +74,12 @@ class Hexahedron {
 
   Value LobalToValue(Local const &local) const {
     Value value = coeff_ * basis_ptr_->GetValues(local).transpose();
-    value /= gauss().lagrange().LocalToJacobian(local).determinant();
+    value /= lagrange().LocalToJacobian(local).determinant();
     return value;
   }
 
   Value GlobalToValue(Global const &global) const {
-    Local local = gauss_ptr_->GlobalToLocal(global);
+    Local local = lagrange().GlobalToLocal(global);
     return LobalToValue(local);
   }
 
@@ -93,6 +94,9 @@ class Hexahedron {
   }
   Gauss const &gauss() const {
     return *gauss_ptr_;
+  }
+  Lagrange const &lagrange() const {
+    return gauss().lagrange();
   }
   template <typename Callable>
   void Interpolate(Callable &&func) {

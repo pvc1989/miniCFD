@@ -300,7 +300,7 @@ struct Cell {
     return projection_(global);
   }
   int CountCorners() const {
-    return gauss().CountCorners();
+    return lagrange().CountCorners();
   }
 
   template <class Callable>

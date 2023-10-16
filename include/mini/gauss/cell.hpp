@@ -34,22 +34,6 @@ class Cell : public Element<Scalar, 3, 3> {
    * @return const Lagrange &  Reference to the lagrange::Cell object it uses for coordinate mapping.
    */
   virtual const Lagrange &lagrange() const = 0;
-
-  Global LocalToGlobal(Scalar x_local, Scalar y_local, Scalar z_local)
-      const {
-    return lagrange().LocalToGlobal(x_local, y_local, z_local);
-  }
-  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
-      const {
-    return lagrange().LocalToJacobian(x_local, y_local, z_local);
-  }
-  Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
-      const {
-    return lagrange().GlobalToLocal(x_global, y_global, z_global);
-  }
-  Local GlobalToLocal(const Global &xyz) const {
-    return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
-  }
 };
 
 }  // namespace gauss

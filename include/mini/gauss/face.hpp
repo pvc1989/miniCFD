@@ -50,15 +50,6 @@ class Face : public Element<Scalar, kPhysDim, 2> {
    * @return const Lagrange &  Reference to the lagrange::Face object it uses for coordinate mapping.
    */
   virtual const Lagrange &lagrange() const = 0;
-
-  Global LocalToGlobal(Scalar x_local, Scalar y_local)
-      const {
-    return lagrange().LocalToGlobal(x_local, y_local);
-  }
-  Jacobian LocalToJacobian(Scalar x_local, Scalar y_local)
-      const {
-    return lagrange().LocalToJacobian(x_local, y_local);
-  }
 };
 
 template <std::floating_point Scalar>
