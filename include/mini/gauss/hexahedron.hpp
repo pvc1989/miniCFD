@@ -27,11 +27,10 @@ namespace gauss {
  */
 template <std::floating_point Scalar, int Qx = 4, int Qy = 4, int Qz = 4>
 class Hexahedron : public Cell<Scalar> {
+ public:
   using GaussX = Legendre<Scalar, Qx>;
   using GaussY = Legendre<Scalar, Qy>;
   using GaussZ = Legendre<Scalar, Qz>;
-
- public:
   using Lagrange = lagrange::Hexahedron<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
