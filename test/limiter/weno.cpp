@@ -30,7 +30,7 @@
 
 class TestWenoLimiters : public ::testing::Test {
  protected:
-  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;

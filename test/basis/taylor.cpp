@@ -12,7 +12,7 @@
 #include "mini/lagrange/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/lagrange/quadrangle.hpp"
-#include "mini/polynomial/taylor.hpp"
+#include "mini/basis/taylor.hpp"
 
 #include "gtest/gtest.h"
 
@@ -20,10 +20,10 @@ double rand_f() {
   return std::rand() / (1.0 + RAND_MAX);
 }
 
-class TestTaylorBasis : public ::testing::Test {
+class TestBasisTaylor : public ::testing::Test {
 };
-TEST_F(TestTaylorBasis, In1dSpace) {
-  using Basis = mini::polynomial::Taylor<double, 1, 5>;
+TEST_F(TestBasisTaylor, In1dSpace) {
+  using Basis = mini::basis::Taylor<double, 1, 5>;
   static_assert(Basis::N == 6);
   std::srand(31415926);
   double x{rand_f()};
@@ -79,8 +79,8 @@ TEST_F(TestTaylorBasis, In1dSpace) {
   EXPECT_EQ(res[4], 0);
   EXPECT_EQ(res[5], 5 * 4 * 3 * 2 * 1);
 }
-TEST_F(TestTaylorBasis, In2dSpace) {
-  using Basis = mini::polynomial::Taylor<double, 2, 2>;
+TEST_F(TestBasisTaylor, In2dSpace) {
+  using Basis = mini::basis::Taylor<double, 2, 2>;
   static_assert(Basis::N == 6);
   std::srand(31415926);
   double x{rand_f()}, y{rand_f()};
@@ -101,8 +101,8 @@ TEST_F(TestTaylorBasis, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestTaylorBasis, In3dSpace) {
-  using Basis = mini::polynomial::Taylor<double, 3, 2>;
+TEST_F(TestBasisTaylor, In3dSpace) {
+  using Basis = mini::basis::Taylor<double, 3, 2>;
   static_assert(Basis::N == 10);
   std::srand(31415926);
   double x{rand_f()}, y{rand_f()}, z{rand_f()};

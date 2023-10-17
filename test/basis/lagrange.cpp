@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-#include "mini/polynomial/lagrange.hpp"
+#include "mini/basis/lagrange.hpp"
 
 #include "gtest/gtest.h"
 
@@ -10,10 +10,10 @@ double rand_f() {
   return -1 + 2 * std::rand() / (1.0 + RAND_MAX);
 }
 
-class TestPolynomialLagrangeLine : public ::testing::Test {
+class TestBasisLagrangeLine : public ::testing::Test {
  protected:
   using Scalar = double;
-  using Lagrange = mini::polynomial::lagrange::Line<Scalar, 4>;
+  using Lagrange = mini::basis::lagrange::Line<Scalar, 4>;
   static_assert(Lagrange::P == 4);
   static_assert(Lagrange::N == 5);
 
@@ -25,7 +25,7 @@ class TestPolynomialLagrangeLine : public ::testing::Test {
     return Lagrange{ -1, -0.5, 0, 0.5 , 1 };
   }
 };
-TEST_F(TestPolynomialLagrangeLine, KroneckerDeltaProperty) {
+TEST_F(TestBasisLagrangeLine, KroneckerDeltaProperty) {
   auto lagrange = GetRandomLagrange();
   for (int i = 0; i < Lagrange::N; ++i) {
     auto x_i = lagrange.GetNode(i);
@@ -35,7 +35,7 @@ TEST_F(TestPolynomialLagrangeLine, KroneckerDeltaProperty) {
     }
   }
 }
-TEST_F(TestPolynomialLagrangeLine, PartitionOfUnityProperty) {
+TEST_F(TestBasisLagrangeLine, PartitionOfUnityProperty) {
   auto lagrange = GetRandomLagrange();
   for (int i = 1<<10; i >= 0; --i) {
     auto x = rand_f();
@@ -43,7 +43,7 @@ TEST_F(TestPolynomialLagrangeLine, PartitionOfUnityProperty) {
     EXPECT_NEAR(values.sum(), 1.0, 1e-14);
   }
 }
-TEST_F(TestPolynomialLagrangeLine, GetDerivatives) {
+TEST_F(TestBasisLagrangeLine, GetDerivatives) {
   auto lagrange = GetRandomLagrange();
   // check cached values
   for (int i = 0; i < Lagrange::N; ++i) {
@@ -72,10 +72,10 @@ TEST_F(TestPolynomialLagrangeLine, GetDerivatives) {
   }
 }
 
-class TestPolynomialLagrangeHexahedron : public ::testing::Test {
+class TestBasisLagrangeHexahedron : public ::testing::Test {
  protected:
   using Scalar = double;
-  using Lagrange = mini::polynomial::lagrange::Hexahedron<Scalar, 2, 3, 4>;
+  using Lagrange = mini::basis::lagrange::Hexahedron<Scalar, 2, 3, 4>;
   static_assert(Lagrange::N == 3 * 4 * 5);
 
   static Lagrange GetRandomLagrange() {
@@ -87,7 +87,7 @@ class TestPolynomialLagrangeHexahedron : public ::testing::Test {
     );
   }
 };
-TEST_F(TestPolynomialLagrangeHexahedron, KroneckerDeltaProperty) {
+TEST_F(TestBasisLagrangeHexahedron, KroneckerDeltaProperty) {
   auto lagrange = GetRandomLagrange();
   for (int i = 0; i < Lagrange::N; ++i) {
     auto values = lagrange.GetValues(lagrange.GetNode(i));
@@ -96,7 +96,7 @@ TEST_F(TestPolynomialLagrangeHexahedron, KroneckerDeltaProperty) {
     }
   }
 }
-TEST_F(TestPolynomialLagrangeHexahedron, PartitionOfUnityProperty) {
+TEST_F(TestBasisLagrangeHexahedron, PartitionOfUnityProperty) {
   auto lagrange = GetRandomLagrange();
   for (int i = 1<<10; i >= 0; --i) {
     auto x = rand_f(), y = rand_f(), z = rand_f();
@@ -104,7 +104,7 @@ TEST_F(TestPolynomialLagrangeHexahedron, PartitionOfUnityProperty) {
     EXPECT_NEAR(values.sum(), 1.0, 1e-12);
   }
 }
-TEST_F(TestPolynomialLagrangeHexahedron, GetDerivatives) {
+TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
   auto lagrange = GetRandomLagrange();
   // check cached values
   for (int i = 0; i < Lagrange::I; ++i) {

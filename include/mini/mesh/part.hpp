@@ -38,7 +38,7 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/pyramid.hpp"
 #include "mini/gauss/wedge.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 
 namespace mini {
@@ -227,7 +227,7 @@ struct Cell {
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Basis = polynomial::OrthoNormal<Scalar, kPhysDim, kDegrees>;
+  using Basis = basis::OrthoNormal<Scalar, kPhysDim, kDegrees>;
   using Projection = polynomial::
       Projection<Scalar, kPhysDim, kDegrees, kComponents>;
   using Coord = typename Projection::Coord;

@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_POLYNOMIAL_BASIS_HPP_
-#define MINI_POLYNOMIAL_BASIS_HPP_
+#ifndef MINI_BASIS_LINEAR_HPP_
+#define MINI_BASIS_LINEAR_HPP_
 
 #include <concepts>
 
@@ -16,10 +16,10 @@
 #include "mini/gauss/face.hpp"
 #include "mini/gauss/cell.hpp"
 
-#include "mini/polynomial/taylor.hpp"
+#include "mini/basis/taylor.hpp"
 
 namespace mini {
-namespace polynomial {
+namespace basis {
 
 /**
  * @brief A basis of the linear space formed by polynomials less than or equal to a given degree.
@@ -140,7 +140,7 @@ class OrthoNormal {
   Linear<Scalar, kDimensions, kDegrees> basis_;
 };
 
-}  // namespace polynomial
+}  // namespace basis
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_BASIS_HPP_
+#endif  // MINI_BASIS_LINEAR_HPP_

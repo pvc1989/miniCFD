@@ -5,15 +5,15 @@
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/lagrange/hexahedron.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 
 #include "gtest/gtest.h"
 
 class TestProjection : public ::testing::Test {
  protected:
-  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
-  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Taylor = mini::basis::Taylor<double, 3, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;
@@ -98,7 +98,7 @@ TEST_F(TestProjection, CoeffConsistency) {
 }
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
+  using Taylor = mini::basis::Taylor<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);
@@ -137,7 +137,7 @@ TEST_F(TestProjection, PartialDerivatives) {
 }
 TEST_F(TestProjection, Smoothness) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using Taylor = mini::polynomial::Taylor<double, 3, 2>;
+  using Taylor = mini::basis::Taylor<double, 3, 2>;
   using MatKx1 = typename ProjFunc::MatKx1;
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);

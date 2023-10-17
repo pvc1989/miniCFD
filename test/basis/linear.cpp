@@ -12,7 +12,7 @@
 #include "mini/lagrange/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/lagrange/quadrangle.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 
 #include "gtest/gtest.h"
 
@@ -20,10 +20,10 @@ double rand_f() {
   return std::rand() / (1.0 + RAND_MAX);
 }
 
-class TestLinearBasis : public ::testing::Test {
+class TestBasisLinear : public ::testing::Test {
 };
-TEST_F(TestLinearBasis, In2dSpace) {
-  using Basis = mini::polynomial::Linear<double, 2, 2>;
+TEST_F(TestBasisLinear, In2dSpace) {
+  using Basis = mini::basis::Linear<double, 2, 2>;
   auto basis = Basis({0, 0});
   static_assert(Basis::N == 6);
   std::srand(31415926);
@@ -45,8 +45,8 @@ TEST_F(TestLinearBasis, In2dSpace) {
   EXPECT_EQ(res[4], x * y);
   EXPECT_EQ(res[5], y * y);
 }
-TEST_F(TestLinearBasis, In3dSpace) {
-  using Basis = mini::polynomial::Linear<double, 3, 2>;
+TEST_F(TestBasisLinear, In3dSpace) {
+  using Basis = mini::basis::Linear<double, 3, 2>;
   auto basis = Basis({0, 0, 0});
   static_assert(Basis::N == 10);
   std::srand(31415926);
@@ -77,16 +77,16 @@ TEST_F(TestLinearBasis, In3dSpace) {
   EXPECT_EQ(res[9], z * z);
 }
 
-class TestOrthoNormalBasis : public ::testing::Test {
+class TestBasisOrthoNormal : public ::testing::Test {
 };
-TEST_F(TestOrthoNormalBasis, OnTriangle) {
+TEST_F(TestBasisOrthoNormal, OnTriangle) {
   using Lagrange = mini::lagrange::Triangle3<double, 2>;
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Coord = Gauss::Global;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
   auto lagrange = Lagrange{ p0, p1, p2 };
   auto gauss = Gauss(lagrange);
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
@@ -100,14 +100,14 @@ TEST_F(TestOrthoNormalBasis, OnTriangle) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
 }
-TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
+TEST_F(TestBasisOrthoNormal, OnQuadrangle) {
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Coord = Gauss::Global;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
   auto lagrange = Lagrange(p0, p1, p2, p3);
   auto gauss = Gauss(lagrange);
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
@@ -121,14 +121,14 @@ TEST_F(TestOrthoNormalBasis, OnQuadrangle) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
+TEST_F(TestBasisOrthoNormal, OnTetrahedron) {
   using Gauss = mini::gauss::Tetrahedron<double, 24>;
   using Lagrange = mini::lagrange::Tetrahedron4<double>;
   using Coord = Gauss::Global;
   Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
   auto lagrange = Lagrange(p0, p1, p2, p3);
   auto gauss = Gauss(lagrange);
-  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
@@ -142,7 +142,7 @@ TEST_F(TestOrthoNormalBasis, OnTetrahedron) {
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
-TEST_F(TestOrthoNormalBasis, OnHexahedron) {
+TEST_F(TestBasisOrthoNormal, OnHexahedron) {
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = Gauss::Global;
@@ -150,7 +150,7 @@ TEST_F(TestOrthoNormalBasis, OnHexahedron) {
         p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};
   auto lagrange = Lagrange{ p0, p1, p2, p3, p4, p5, p6, p7 };
   auto gauss = Gauss(lagrange);
-  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   auto basis = Basis(gauss);
   EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
   std::cout << basis.coeff() << std::endl;

@@ -5,7 +5,7 @@
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/lagrange/quadrangle.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 
 #include "gtest/gtest.h"
@@ -15,7 +15,7 @@ using std::sqrt;
 class TestQuadrangle4x4 : public ::testing::Test {
 };
 TEST_F(TestQuadrangle4x4, OrthoNormal) {
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
@@ -45,7 +45,7 @@ TEST_F(TestQuadrangle4x4, OrthoNormal) {
   EXPECT_NEAR(residual, 0.0, 1e-12);
 }
 TEST_F(TestQuadrangle4x4, Projection) {
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;

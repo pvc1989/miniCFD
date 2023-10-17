@@ -1,6 +1,6 @@
 //  Copyright 2023 PEI Weicheng
-#ifndef MINI_POLYNOMIAL_LAGRANGE_HPP_
-#define MINI_POLYNOMIAL_LAGRANGE_HPP_
+#ifndef MINI_BASIS_LAGRANGE_HPP_
+#define MINI_BASIS_LAGRANGE_HPP_
 
 #include <concepts>
 #include <ranges>
@@ -14,11 +14,11 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/polynomial/taylor.hpp"
+#include "mini/basis/taylor.hpp"
 
 
 namespace mini {
-namespace polynomial {
+namespace basis {
 namespace lagrange {
 
 /**
@@ -36,7 +36,7 @@ class Line {
   static constexpr int N = P + 1;  // the number of terms in this basis
   using Vector = algebra::Matrix<Scalar, 1, N>;
   using Matrix = algebra::Matrix<Scalar, N, N>;
-  using Taylor = polynomial::Taylor<Scalar, 1, kDegree>;
+  using Taylor = basis::Taylor<Scalar, 1, kDegree>;
 
  private:
   std::array<std::array<Vector, N>, N> derivatives_;  // derivatives_[k][j][i] := k-th order derivatives at the j-th node of the i-th basis
@@ -309,7 +309,7 @@ class Hexahedron {
 };
 
 }  // namespace lagrange
-}  // namespace polynomial
+}  // namespace basis
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_LAGRANGE_HPP_
+#endif  // MINI_BASIS_LAGRANGE_HPP_

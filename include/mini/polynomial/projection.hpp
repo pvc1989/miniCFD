@@ -12,7 +12,7 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/gauss/function.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 
 namespace mini {
 namespace polynomial {
@@ -29,7 +29,7 @@ template <std::floating_point Scalar, int kDimensions, int kDegrees,
     int kComponents>
 class Projection {
  public:
-  using Basis = OrthoNormal<Scalar, kDimensions, kDegrees>;
+  using Basis = basis::OrthoNormal<Scalar, kDimensions, kDegrees>;
   static constexpr int N = Basis::N;
   static constexpr int K = kComponents;
   using Coord = typename Basis::Coord;
@@ -73,7 +73,7 @@ class Projection {
 
   MatKx1 operator()(Coord const &global) const {
     Coord local = global; local -= center();
-    MatNx1 col = Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
+    MatNx1 col = basis::Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
   }
   MatKxN GetCoeffOnOrthoNormalBasis() const {
@@ -101,7 +101,7 @@ class Projection {
   }
   MatKxN GetPdvValue(Coord const &global) const {
     auto local = global; local -= center();
-    return Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
+    return basis::Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
   }
   MatKx1 GetAverage() const {
     auto const &mat_a = basis_ptr_->coeff();
@@ -117,7 +117,7 @@ class Projection {
     };
     auto integral = gauss::Integrate(mat_pdv_func, basis_ptr_->GetGauss());
     auto volume = basis_ptr_->Measure();
-    return Taylor<Scalar, kDimensions, kDegrees>::GetSmoothness(
+    return basis::Taylor<Scalar, kDimensions, kDegrees>::GetSmoothness(
         integral, volume);
   }
   template <typename Callable>

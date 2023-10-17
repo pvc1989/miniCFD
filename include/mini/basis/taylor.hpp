@@ -1,6 +1,6 @@
 //  Copyright 2023 PEI Weicheng
-#ifndef MINI_POLYNOMIAL_TAYLOR_HPP_
-#define MINI_POLYNOMIAL_TAYLOR_HPP_
+#ifndef MINI_BASIS_TAYLOR_HPP_
+#define MINI_BASIS_TAYLOR_HPP_
 
 #include <concepts>
 
@@ -13,7 +13,7 @@
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
-namespace polynomial {
+namespace basis {
 
 /**
  * @brief The basis, formed by monomials, of the space spanned by polynomials.
@@ -502,7 +502,7 @@ class Taylor<Scalar, 3, 3> {
   }
 };
 
-}  // namespace polynomial
+}  // namespace basis
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_TAYLOR_HPP_
+#endif  // MINI_BASIS_TAYLOR_HPP_

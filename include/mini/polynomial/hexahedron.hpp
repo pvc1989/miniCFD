@@ -12,13 +12,13 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/polynomial/lagrange.hpp"
+#include "mini/basis/lagrange.hpp"
 
 namespace mini {
 namespace polynomial {
 
 /**
- * @brief A vector-valued function interpolated on an given lagrange::Hexahedron basis.
+ * @brief A vector-valued function interpolated on an given basis::lagrange::Hexahedron basis.
  * 
  * The interpolation nodes are collocated with quadrature points.
  * 
@@ -30,7 +30,7 @@ template <std::floating_point Scalar, int kDegreeX, int kDegreeY, int kDegreeZ,
     int kComponents>
 class Hexahedron {
  public:
-  using Basis = lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
+  using Basis = basis::lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
   using Gauss = gauss::Hexahedron< Scalar, Basis::I, Basis::J, Basis::K >;
   using Lagrange = typename Gauss::Lagrange;
   static constexpr int N = Basis::N;
