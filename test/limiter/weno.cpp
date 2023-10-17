@@ -21,7 +21,7 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/lagrange/hexahedron.hpp"
 #include "mini/polynomial/projection.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/riemann/euler/exact.hpp"
@@ -192,13 +192,13 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     return res;
   };
   part.Project(func);
-  // reconstruct using a `EigenWeno` limiter
+  // reconstruct using a `limiter::weno::Eigen` object
   using Cell = typename Part::Cell;
   using Projection = typename Cell::Projection;
   auto n_cells = part.CountLocalCells();
-  auto eigen_limiter = mini::polynomial::EigenWeno<Cell>(
+  auto eigen_limiter = mini::limiter::weno::Eigen<Cell>(
       /* w0 = */0.01, /* eps = */1e-6);
-  auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
+  auto lazy_limiter = mini::limiter::weno::Lazy<Cell>(
       /* w0 = */0.01, /* eps = */1e-6, /* verbose = */true);
   auto eigen_projections = std::vector<Projection>();
   eigen_projections.reserve(n_cells);

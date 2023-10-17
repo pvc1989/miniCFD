@@ -9,7 +9,7 @@
 #include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/solver/rkdg.hpp"
 #include "mini/aircraft/source.hpp"
 
@@ -31,7 +31,7 @@ using Coord = typename Cell::Coord;
 using Value = typename Cell::Value;
 using Coeff = typename Cell::Coeff;
 
-using Limiter = mini::polynomial::EigenWeno<Cell>;
+using Limiter = mini::limiter::weno::Eigen<Cell>;
 
 using Source = mini::aircraft::Rotorcraft<Part, Scalar>;
 using Rotor = mini::aircraft::Rotor<Scalar>;

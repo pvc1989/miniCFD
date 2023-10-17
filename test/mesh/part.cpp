@@ -10,7 +10,7 @@
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/vtk.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 
 // mpirun -n 4 ./part
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   using Cell = typename Part::Cell;
-  auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
+  auto lazy_limiter = mini::limiter::weno::Lazy<Cell>(
       /* w0 = */0.001, /* eps = */1e-6, /* verbose = */false);
   part.Reconstruct(lazy_limiter);
   std::printf("Run Write() on proc[%d/%d] at %f sec\n",

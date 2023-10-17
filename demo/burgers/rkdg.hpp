@@ -4,7 +4,7 @@
 
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/riemann/rotated/single.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/shuffler.hpp"
 #include "mini/solver/rkdg.hpp"
@@ -35,23 +35,26 @@ using Part2 = Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 }  // namespace part
 }  // namespace mesh
 
-namespace polynomial {
+namespace limiter {
+namespace weno {
 
 using Cell0 = mesh::part::Part0::Cell;
 using Cell2 = mesh::part::Part2::Cell;
 
-extern template class mini::polynomial::LazyWeno<Cell0>;
-extern template class mini::polynomial::LazyWeno<Cell2>;
+extern template class Lazy<Cell0>;
+extern template class Lazy<Cell2>;
 
-using Limiter0 = mini::polynomial::LazyWeno<Cell0>;
-using Limiter2 = mini::polynomial::LazyWeno<Cell2>;
+using Lazy0 = weno::Lazy<Cell0>;
+using Lazy2 = weno::Lazy<Cell2>;
 
-}  // namespace polynomial
+}  // namespace weno
+}  // namespace limiter
+
 }  // namespace mini
 
 extern template class RungeKutta<1, mini::mesh::part::Part0,
-    mini::polynomial::Limiter0>;
+    mini::limiter::weno::Lazy0>;
 extern template class RungeKutta<3, mini::mesh::part::Part2,
-    mini::polynomial::Limiter2>;
+    mini::limiter::weno::Lazy2>;
 
 #endif  // DEMO_BURGERS_RKDG_HPP_

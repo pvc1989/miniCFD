@@ -23,15 +23,18 @@ template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
 }  // namespace part
 }  // namespace mesh
 
-namespace polynomial {
+namespace limiter {
+namespace weno {
 
-template class mini::polynomial::LazyWeno<Cell0>;
-template class mini::polynomial::LazyWeno<Cell2>;
+template class Lazy<Cell0>;
+template class Lazy<Cell2>;
 
-}  // namespace polynomial
+}  // namespace weno
+}  // namespace limiter
+
 }  // namespace mini
 
 template class RungeKutta<1, mini::mesh::part::Part0,
-    mini::polynomial::Limiter0>;
+    mini::limiter::weno::Lazy0>;
 template class RungeKutta<3, mini::mesh::part::Part2,
-    mini::polynomial::Limiter2>;
+    mini::limiter::weno::Lazy2>;

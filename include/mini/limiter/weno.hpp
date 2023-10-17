@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_POLYNOMIAL_LIMITER_HPP_
-#define MINI_POLYNOMIAL_LIMITER_HPP_
+#ifndef MINI_LIMITER_WENO_HPP_
+#define MINI_LIMITER_WENO_HPP_
 
 #include <cassert>
 #include <cmath>
@@ -14,10 +14,11 @@
 #include <vector>
 
 namespace mini {
-namespace polynomial {
+namespace limiter {
+namespace weno {
 
 template <typename Cell>
-class LazyWeno {
+class Lazy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Basis = typename Projection::Basis;
@@ -32,7 +33,7 @@ class LazyWeno {
   bool verbose_;
 
  public:
-  LazyWeno(Scalar w0, Scalar eps, bool verbose = false)
+  Lazy(Scalar w0, Scalar eps, bool verbose = false)
       : eps_(eps), verbose_(verbose) {
     weights_.setOnes();
     weights_ *= w0;
@@ -112,7 +113,7 @@ class LazyWeno {
 };
 
 template <typename Cell>
-class EigenWeno {
+class Eigen {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Face = typename Cell::Face;
@@ -128,7 +129,7 @@ class EigenWeno {
   Scalar total_volume_;
 
  public:
-  EigenWeno(Scalar w0, Scalar eps)
+  Eigen(Scalar w0, Scalar eps)
       : eps_(eps) {
     weights_.setOnes();
     weights_ *= w0;
@@ -251,12 +252,12 @@ class EigenWeno {
 };
 
 template <typename Cell>
-class DummyWeno {
+class Dummy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
 
  public:
-  DummyWeno(Scalar w0, Scalar eps, bool verbose = false) {
+  Dummy(Scalar w0, Scalar eps, bool verbose = false) {
   }
   bool IsNotSmooth(const Cell &cell) {
     return true;
@@ -268,7 +269,8 @@ class DummyWeno {
   }
 };
 
-}  // namespace polynomial
+}  // namespace weno
+}  // namespace limiter
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_LIMITER_HPP_
+#endif  // MINI_LIMITER_WENO_HPP_

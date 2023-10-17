@@ -11,7 +11,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/gauss/function.hpp"
 #include "mini/solver/rkdg.hpp"
 
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"U"});
 
   /* Build a `Limiter` object. */
-  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Set initial conditions. */
