@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/line.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/gauss/triangle.hpp"
 #include "mini/lagrange/wedge.hpp"
@@ -24,14 +24,17 @@ namespace gauss {
  * @tparam Scalar  Type of scalar variables.
  * @tparam Qt  Number of qudrature points in each layer of triangle.
  * @tparam Qz  Number of qudrature points in the \f$\zeta\f$ direction.
+ * @tparam kRule  The type of Gaussian quadrature rule.
  */
-template <std::floating_point Scalar, int Qt, int Qz>
+template <std::floating_point Scalar, int Qt, int Qz,
+    Rule kRule = Rule::kLegendre>
 class Wedge : public Cell<Scalar> {
   static constexpr int kPoints = Qt * Qz;
-  using GaussT = _TriangleBuilder<Scalar, 2, Qt>;
-  using GaussZ = Legendre<Scalar, Qz>;
 
  public:
+  using GaussT = _TriangleBuilder<Scalar, 2, Qt>;
+  using GaussZ = std::conditional_t< kRule == Rule::kLegendre,
+      Legendre<Scalar, Qz>, Lobatto<Scalar, Qz> >;
   using Lagrange = lagrange::Wedge<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
@@ -126,15 +129,15 @@ class Wedge : public Cell<Scalar> {
   }
 };
 
-template <std::floating_point Scalar, int Qt, int Qz>
-std::array<typename Wedge<Scalar, Qt, Qz>::Local, Qt * Qz> const
-Wedge<Scalar, Qt, Qz>::local_coords_
-    = Wedge<Scalar, Qt, Qz>::BuildLocalCoords();
+template <std::floating_point Scalar, int Qt, int Qz, Rule R>
+std::array<typename Wedge<Scalar, Qt, Qz, R>::Local, Qt * Qz> const
+Wedge<Scalar, Qt, Qz, R>::local_coords_
+    = Wedge<Scalar, Qt, Qz, R>::BuildLocalCoords();
 
-template <std::floating_point Scalar, int Qt, int Qz>
+template <std::floating_point Scalar, int Qt, int Qz, Rule R>
 std::array<Scalar, Qt * Qz> const
-Wedge<Scalar, Qt, Qz>::local_weights_
-    = Wedge<Scalar, Qt, Qz>::BuildLocalWeights();
+Wedge<Scalar, Qt, Qz, R>::local_weights_
+    = Wedge<Scalar, Qt, Qz, R>::BuildLocalWeights();
 
 }  // namespace gauss
 }  // namespace mini

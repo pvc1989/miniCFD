@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/line.hpp"
 #include "mini/gauss/jacobi.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/lagrange/pyramid.hpp"
@@ -24,14 +24,17 @@ namespace gauss {
  * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
  * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
  * @tparam Qz  Number of qudrature points in the \f$\zeta\f$ direction.
+ * @tparam kRule  The type of Gaussian quadrature rule.
  */
-template <std::floating_point Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz,
+    Rule kRule = Rule::kLegendre>
 class Pyramid : public Cell<Scalar> {
-  using GaussX = Legendre<Scalar, Qx>;
-  using GaussY = Legendre<Scalar, Qy>;
-  using GaussZ = Jacobi<Scalar, Qz, 2, 0>;
-
  public:
+  using GaussX = std::conditional_t< kRule == Rule::kLegendre,
+      Legendre<Scalar, Qx>, Lobatto<Scalar, Qx> >;
+  using GaussY = std::conditional_t< kRule == Rule::kLegendre,
+      Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
+  using GaussZ = Jacobi<Scalar, Qz, 2, 0>;
   using Lagrange = lagrange::Pyramid<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
@@ -130,15 +133,15 @@ class Pyramid : public Cell<Scalar> {
   }
 };
 
-template <std::floating_point Scalar, int Qx, int Qy, int Qz>
-std::array<typename Pyramid<Scalar, Qx, Qy, Qz>::Local, Qx * Qy * Qz> const
-Pyramid<Scalar, Qx, Qy, Qz>::local_coords_
-    = Pyramid<Scalar, Qx, Qy, Qz>::BuildLocalCoords();
+template <std::floating_point Scalar, int Qx, int Qy, int Qz, Rule R>
+std::array<typename Pyramid<Scalar, Qx, Qy, Qz, R>::Local, Qx * Qy * Qz> const
+Pyramid<Scalar, Qx, Qy, Qz, R>::local_coords_
+    = Pyramid<Scalar, Qx, Qy, Qz, R>::BuildLocalCoords();
 
-template <std::floating_point Scalar, int Qx, int Qy, int Qz>
+template <std::floating_point Scalar, int Qx, int Qy, int Qz, Rule R>
 std::array<Scalar, Qx * Qy * Qz> const
-Pyramid<Scalar, Qx, Qy, Qz>::local_weights_
-    = Pyramid<Scalar, Qx, Qy, Qz>::BuildLocalWeights();
+Pyramid<Scalar, Qx, Qy, Qz, R>::local_weights_
+    = Pyramid<Scalar, Qx, Qy, Qz, R>::BuildLocalWeights();
 
 }  // namespace gauss
 }  // namespace mini
