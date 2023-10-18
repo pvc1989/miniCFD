@@ -1,5 +1,6 @@
 set (cases
   legendre
+  lobatto
   jacobi
 )
 foreach (case ${cases})
