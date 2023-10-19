@@ -95,7 +95,7 @@ class RungeKuttaBase {
     assert(coeffs.size() == part->CountLocalCells());
     part->ForEachLocalCell([&coeffs](Cell *cell_ptr){
       Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis_.coeff();
-      cell_ptr->projection_.UpdateCoeffs(new_coeff);
+      cell_ptr->projection_.coeff() = new_coeff;
     });
   }
   void InitializeResidual(const Part &part) {

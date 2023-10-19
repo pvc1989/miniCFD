@@ -267,7 +267,6 @@ struct Cell {
     lagrange_ptr_ = std::move(that.lagrange_ptr_);
     gauss_ptr_ = std::move(that.gauss_ptr_);
     projection_ = std::move(that.projection_);
-    projection_.basis_ptr_ = &basis_;  //
     metis_id = that.metis_id;
     id_ = that.id_;
     inner_ = that.inner_;
@@ -1352,7 +1351,7 @@ class Part {
     }
     int i = 0;
     for (Cell *cell_ptr : troubled_cells) {
-      cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
+      cell_ptr->projection_.coeff() = new_projections[i++].coeff();
     }
     assert(i == troubled_cells.size());
   }

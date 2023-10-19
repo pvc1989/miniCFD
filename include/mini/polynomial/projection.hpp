@@ -42,6 +42,10 @@ class Projection {
   using Value = MatKx1;
   using Coeff = MatKxN;
 
+ private:
+  MatKxN coeff_;
+  const Basis *basis_ptr_;
+
  public:
   template <typename Callable>
   Projection(Callable &&func, const Basis &basis)
@@ -66,9 +70,15 @@ class Projection {
     coeff_.setZero();
   }
   Projection(const Projection &) = default;
-  Projection(Projection &&) noexcept = default;
   Projection &operator=(const Projection &) = default;
-  Projection &operator=(Projection &&) noexcept = default;
+  Projection &operator=(Projection &&that) noexcept {
+    coeff_ = std::move(that.coeff_);
+    basis_ptr_ = that.basis_ptr_;
+    return *this;
+  }
+  Projection(Projection &&that) noexcept {
+    *this = std::move(that);
+  }
   ~Projection() noexcept = default;
 
   MatKx1 operator()(Coord const &global) const {
@@ -160,13 +170,6 @@ class Projection {
       }
     }
   }
-  void UpdateCoeffs(const MatKxN &new_coeff) {
-    coeff_ = new_coeff;
-  }
-
- public:
-  MatKxN coeff_;
-  const Basis *basis_ptr_;
 };
 
 }  // namespace polynomial
