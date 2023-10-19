@@ -18,7 +18,7 @@ double rand_f() {
   return -1 + 2 * std::rand() / (1.0 + RAND_MAX);
 }
 
-class TestPolynomialProjectionHexahedron : public ::testing::Test {
+class TestPolynomialHexahedronProjection : public ::testing::Test {
  protected:
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
@@ -32,7 +32,7 @@ class TestPolynomialProjectionHexahedron : public ::testing::Test {
   using Mat11x1 = mini::algebra::Matrix<double, 11, 1>;
   using Mat11x10 = mini::algebra::Matrix<double, 11, 10>;
 };
-TEST_F(TestPolynomialProjectionHexahedron, OrthoNormal) {
+TEST_F(TestPolynomialHexahedronProjection, OrthoNormal) {
   // build a hexa-gauss
   auto lagrange = Lagrange {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
@@ -71,7 +71,7 @@ TEST_F(TestPolynomialProjectionHexahedron, OrthoNormal) {
   }, hexa) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
-TEST_F(TestPolynomialProjectionHexahedron, Projection) {
+TEST_F(TestPolynomialHexahedronProjection, Projection) {
   auto lagrange = Lagrange{
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
@@ -100,16 +100,15 @@ TEST_F(TestPolynomialProjectionHexahedron, Projection) {
   EXPECT_NEAR(abs_diff.norm(), 0.0, 1e-14);
 }
 
-class TestPolynomialInterpolationHexahedron : public ::testing::Test {
+class TestPolynomialHexahedronInterpolation : public ::testing::Test {
  protected:
   using Lagrange = mini::lagrange::Hexahedron8<double>;
-  using ScalarPF = mini::polynomial::Hexahedron<double, 2, 3, 4, 1>;
   using VectorPF = mini::polynomial::Hexahedron<double, 2, 3, 4, 11>;
-  using Basis = typename ScalarPF::Basis;
-  using Gauss = typename ScalarPF::Gauss;
+  using Basis = typename VectorPF::Basis;
+  using Gauss = typename VectorPF::Gauss;
   using Global = typename Gauss::Global;
 };
-TEST_F(TestPolynomialInterpolationHexahedron, OnVectorFunction) {
+TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
   // build a hexa-gauss and a Lagrange basis on it
   auto a = 2.0, b = 3.0, c = 4.0;
   auto lagrange = Lagrange {
@@ -119,7 +118,6 @@ TEST_F(TestPolynomialInterpolationHexahedron, OnVectorFunction) {
     Global(+a, +b, +c), Global(-a, +b, +c),
   };
   auto gauss = Gauss(lagrange);
-  auto basis = ScalarPF::BuildInterpolationBasis();
   // build a vector function and its interpolation
   auto vector_func = [](Global const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
@@ -127,7 +125,7 @@ TEST_F(TestPolynomialInterpolationHexahedron, OnVectorFunction) {
         x * x, x * y, x * z, y * y, y * z, z * z };
     return value;
   };
-  auto vector_interp = VectorPF(vector_func, gauss, basis);
+  auto vector_interp = VectorPF(vector_func, gauss);
   // test values on nodes
   for (int ijk = 0; ijk < Basis::N; ++ijk) {
     auto &global = vector_interp.gauss().GetGlobalCoord(ijk);

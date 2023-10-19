@@ -37,20 +37,18 @@ class Hexahedron {
   static constexpr int K = kComponents;
   using Local = typename Gauss::Local;
   using Global = typename Gauss::Global;
-  using MatKxN = algebra::Matrix<Scalar, K, N>;
-  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
-  using Value = MatKx1;
-  using Coeff = MatKxN;
+  using Coeff = algebra::Matrix<Scalar, K, N>;
+  using Value = algebra::Matrix<Scalar, K, 1>;
 
  private:
+  static const Basis basis_;
   const Gauss *gauss_ptr_ = nullptr;
-  const Basis *basis_ptr_ = nullptr;
-  MatKxN coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
+  Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
 
  public:
   template <typename Callable>
-  Hexahedron(Callable &&global_to_value, const Gauss &gauss, const Basis &basis)
-      : gauss_ptr_(&gauss), basis_ptr_(&basis) {
+  Hexahedron(Callable &&global_to_value, const Gauss &gauss)
+      : gauss_ptr_(&gauss) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &global = gauss_ptr_->GetGlobalCoord(ijk);
       coeff_.col(ijk) = global_to_value(global);  // value in physical space
@@ -59,8 +57,8 @@ class Hexahedron {
       coeff_.col(ijk) *= jacobian_det;  // value in parametric space
     }
   }
-  explicit Hexahedron(const Gauss &gauss, const Basis &basis)
-      : gauss_ptr_(&gauss), basis_ptr_(&basis) {
+  explicit Hexahedron(const Gauss &gauss)
+      : gauss_ptr_(&gauss) {
     coeff_.setZero();
   }
   Hexahedron() {
@@ -73,7 +71,7 @@ class Hexahedron {
   ~Hexahedron() noexcept = default;
 
   Value LobalToValue(Local const &local) const {
-    Value value = coeff_ * basis_ptr_->GetValues(local).transpose();
+    Value value = coeff_ * basis_.GetValues(local).transpose();
     value /= lagrange().LocalToJacobian(local).determinant();
     return value;
   }
@@ -86,10 +84,10 @@ class Hexahedron {
   Global const &center() const {
     return gauss_ptr_->center();
   }
-  MatKxN const &coeff() const {
+  Coeff const &coeff() const {
     return coeff_;
   }
-  MatKxN &coeff() {
+  Coeff &coeff() {
     return coeff_;
   }
   Gauss const &gauss() const {
@@ -100,16 +98,20 @@ class Hexahedron {
   }
   template <typename Callable>
   void Interpolate(Callable &&func) {
-    *this = Hexahedron(std::forward<Callable>(func), gauss_ptr_, basis_ptr_);
+    *this = Hexahedron(std::forward<Callable>(func), gauss_ptr_);
   }
 
   static Basis BuildInterpolationBasis() {
-    auto line_x = typename Basis::LineX{ Gauss::GaussX::points };
-    auto line_y = typename Basis::LineY{ Gauss::GaussY::points };
-    auto line_z = typename Basis::LineZ{ Gauss::GaussZ::points };
+    auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };
+    auto line_y = typename Basis::LineY{ Gauss::GaussY::BuildPoints() };
+    auto line_z = typename Basis::LineZ{ Gauss::GaussZ::BuildPoints() };
     return Basis(line_x, line_y, line_z);
   }
 };
+template <std::floating_point Scalar, int kX, int kY, int kZ, int kC>
+typename Hexahedron<Scalar, kX, kY, kZ, kC>::Basis const
+Hexahedron<Scalar, kX, kY, kZ, kC>::basis_ =
+    Hexahedron<Scalar, kX, kY, kZ, kC>::BuildInterpolationBasis();
 
 }  // namespace polynomial
 }  // namespace mini
