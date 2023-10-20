@@ -40,31 +40,11 @@
 #include "mini/gauss/wedge.hpp"
 #include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/type/select.hpp"
 
 namespace mini {
 namespace mesh {
 namespace part {
-
-/**
- * @brief A K-way type selection mechanism that extends `std::conditional_t`.
- * 
- */
-// generic version, no instantiation:
-template<unsigned N, typename... Types>
-struct select;
-// specialization for N > 0:
-template <unsigned N, typename T, typename... Types>
-struct select<N, T, Types...> {
-  using type = typename select<N-1, Types...>::type;
-};
-// specialization for N == 0:
-template <typename T, typename... Types>
-struct select<0, T, Types...> {
-  using type = T;
-};
-// STL-style type aliasing:
-template<unsigned N, typename... Types>
-using select_t = typename select<N, Types...>::type;
 
 /**
  * @brief Index information of a Node.
@@ -459,37 +439,37 @@ class Part {
 
  private:
   using LagrangeOnTriangle = lagrange::Triangle3<Scalar, kPhysDim>;
-  using GaussOnTriangle = select_t<kDegrees,
+  using GaussOnTriangle = type::select_t<kDegrees,
     gauss::Triangle<Scalar, kPhysDim, 1>,
     gauss::Triangle<Scalar, kPhysDim, 3>,
     gauss::Triangle<Scalar, kPhysDim, 6>,
     gauss::Triangle<Scalar, kPhysDim, 12>>;
   using LagrangeOnQuadrangle = lagrange::Quadrangle4<Scalar, kPhysDim>;
-  using GaussOnQuadrangle = select_t<kDegrees,
+  using GaussOnQuadrangle = type::select_t<kDegrees,
     gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
     gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
     gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
     gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
   using LagrangeOnTetrahedron = lagrange::Tetrahedron4<Scalar>;
-  using GaussOnTetrahedron = select_t<kDegrees,
+  using GaussOnTetrahedron = type::select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
   using LagrangeOnHexahedron = lagrange::Hexahedron8<Scalar>;
-  using GaussOnHexahedron = select_t<kDegrees,
+  using GaussOnHexahedron = type::select_t<kDegrees,
     gauss::Hexahedron<Scalar, 1, 1, 1>,
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
     gauss::Hexahedron<Scalar, 4, 4, 4>>;
   using LagrangeOnPyramid = lagrange::Pyramid5<Scalar>;
-  using GaussOnPyramid = select_t<kDegrees,
+  using GaussOnPyramid = type::select_t<kDegrees,
     gauss::Pyramid<Scalar, 1, 1, 1>,
     gauss::Pyramid<Scalar, 2, 2, 2>,
     gauss::Pyramid<Scalar, 3, 3, 3>,
     gauss::Pyramid<Scalar, 4, 4, 4>>;
   using LagrangeOnWedge = lagrange::Wedge6<Scalar>;
-  using GaussOnWedge = select_t<kDegrees,
+  using GaussOnWedge = type::select_t<kDegrees,
     gauss::Wedge<Scalar, 1, 1>,
     gauss::Wedge<Scalar, 3, 2>,
     gauss::Wedge<Scalar, 6, 3>,
