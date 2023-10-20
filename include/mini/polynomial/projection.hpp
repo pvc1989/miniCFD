@@ -36,14 +36,12 @@ class Projection {
   using MatNx1 = typename Basis::MatNx1;
   using MatNxN = typename Basis::MatNxN;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
-  using MatKxN = algebra::Matrix<Scalar, K, N>;
-  using MatKx1 = algebra::Matrix<Scalar, K, 1>;
   using MatKxK = algebra::Matrix<Scalar, K, K>;
-  using Value = MatKx1;
-  using Coeff = MatKxN;
+  using Coeff = algebra::Matrix<Scalar, K, N>;
+  using Value = algebra::Matrix<Scalar, K, 1>;
 
  private:
-  MatKxN coeff_;
+  Coeff coeff_;
   const Basis *basis_ptr_;
 
  public:
@@ -51,11 +49,11 @@ class Projection {
   Projection(Callable &&func, const Basis &basis)
       : basis_ptr_(&basis) {
     using Return = decltype(func(basis.center()));
-    static_assert(std::is_same_v<Return, MatKx1> || std::is_scalar_v<Return>);
+    static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
     coeff_ = gauss::Integrate([&](Coord const &xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis(xyz).transpose();
-      MatKxN prod = f_col * b_row;
+      Coeff prod = f_col * b_row;
       return prod;
     }, basis.GetGauss());
     Coeff temp = coeff_ * basis.coeff();
@@ -81,14 +79,14 @@ class Projection {
   }
   ~Projection() noexcept = default;
 
-  MatKx1 operator()(Coord const &global) const {
+  Value operator()(Coord const &global) const {
     Coord local = global; local -= center();
     MatNx1 col = basis::Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
   }
-  MatKxN GetCoeffOnOrthoNormalBasis() const {
+  Coeff GetCoeffOnOrthoNormalBasis() const {
     auto const &mat_a = basis_ptr_->coeff();
-    MatKxN mat_x = coeff_;
+    Coeff mat_x = coeff_;
     for (int i = N-1; i >= 0; --i) {
       for (int j = i+1; j < N; ++j) {
         mat_x.col(i) -= mat_x.col(j) * mat_a(j, i);
@@ -97,29 +95,29 @@ class Projection {
     }
     return mat_x;
   }
-  MatKxN const &GetCoeffOnTaylorBasis() const {
+  Coeff const &GetCoeffOnTaylorBasis() const {
     return coeff_;
   }
   Coord const &center() const {
     return basis_ptr_->center();
   }
-  MatKxN const &coeff() const {
+  Coeff const &coeff() const {
     return coeff_;
   }
-  MatKxN &coeff() {
+  Coeff &coeff() {
     return coeff_;
   }
-  MatKxN GetPdvValue(Coord const &global) const {
+  Coeff GetPdvValue(Coord const &global) const {
     auto local = global; local -= center();
     return basis::Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
   }
-  MatKx1 GetAverage() const {
+  Value GetAverage() const {
     auto const &mat_a = basis_ptr_->coeff();
-    MatKxN mat_x = GetCoeffOnOrthoNormalBasis();
+    Coeff mat_x = GetCoeffOnOrthoNormalBasis();
     mat_x.col(0) *= mat_a(0, 0);
     return mat_x.col(0);
   }
-  MatKx1 GetSmoothness() const {
+  Value GetSmoothness() const {
     auto mat_pdv_func = [&](Coord const &xyz) {
       auto mat_pdv = GetPdvValue(xyz);
       mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
@@ -147,13 +145,13 @@ class Projection {
     coeff_ /= ratio;
     return *this;
   }
-  Projection &operator*=(const MatKx1& ratio) {
+  Projection &operator*=(const Value& ratio) {
     for (int i = 0; i < K; ++i) {
       coeff_.row(i) *= ratio[i];
     }
     return *this;
   }
-  Projection &operator+=(const MatKx1& offset) {
+  Projection &operator+=(const Value& offset) {
     coeff_.col(0) += offset;
     return *this;
   }

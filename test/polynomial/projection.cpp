@@ -49,10 +49,10 @@ TEST_F(TestProjection, ScalarFunction) {
 }
 TEST_F(TestProjection, VectorFunction) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using MatKx1 = typename ProjFunc::MatKx1;
+  using Value = typename ProjFunc::Value;
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
-    MatKx1 res = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    Value res = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return res;
   };
   auto basis = Basis(gauss_);
@@ -61,7 +61,7 @@ TEST_F(TestProjection, VectorFunction) {
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
   auto v_expect = Taylor::GetValue({0.3, 0.4, 0.5});
-  MatKx1 res = v_actual - v_expect;
+  Value res = v_actual - v_expect;
   EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
   EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
   EXPECT_NEAR(v_actual[2], v_expect[2], 1e-15);
@@ -82,10 +82,10 @@ TEST_F(TestProjection, VectorFunction) {
 TEST_F(TestProjection, CoeffConsistency) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 5>;
   using Coeff = typename ProjFunc::Coeff;
-  using MatKx1 = typename ProjFunc::MatKx1;
+  using Value = typename ProjFunc::Value;
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
-    MatKx1 res = { std::sin(x + y), std::cos(y + z), std::tan(x * z),
+    Value res = { std::sin(x + y), std::cos(y + z), std::tan(x * z),
         std::exp(y * z), std::log(z * z) };
     return res;
   };
@@ -99,7 +99,7 @@ TEST_F(TestProjection, CoeffConsistency) {
 TEST_F(TestProjection, PartialDerivatives) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
   using Taylor = mini::basis::Taylor<double, 3, 2>;
-  using MatKx1 = typename ProjFunc::MatKx1;
+  using Value = typename ProjFunc::Value;
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);
   };
@@ -110,11 +110,11 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto x = 0.3, y = 0.4, z = 0.5;
   auto point = Coord{ x, y, z };
   auto pdv_actual = projection.GetPdvValue(point);
-  auto coeff = ProjFunc::MatKxN(); coeff.setIdentity();
+  auto coeff = ProjFunc::Coeff(); coeff.setIdentity();
   auto pdv_expect = Taylor::GetPdvValue(point, coeff);
-  ProjFunc::MatKxN diff = pdv_actual - pdv_expect;
+  ProjFunc::Coeff diff = pdv_actual - pdv_expect;
   EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-  auto pdv_values = ProjFunc::MatKxN(); pdv_values.setZero();
+  auto pdv_values = ProjFunc::Coeff(); pdv_values.setZero();
   pdv_values(1, 1) = 1;  // (∂/∂x)(x)
   pdv_values(2, 2) = 1;  // (∂/∂y)(y)
   pdv_values(3, 3) = 1;  // (∂/∂z)(z)
@@ -138,7 +138,7 @@ TEST_F(TestProjection, PartialDerivatives) {
 TEST_F(TestProjection, Smoothness) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
   using Taylor = mini::basis::Taylor<double, 3, 2>;
-  using MatKx1 = typename ProjFunc::MatKx1;
+  using Value = typename ProjFunc::Value;
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);
   };
