@@ -46,8 +46,7 @@ int main(int argc, char* argv[]) {
   auto part = Part(case_name, i_core, n_core);
   double volume = 0.0, area = 0.0;
   int n_cells = 0, n_faces = 0;
-  const auto *part_ptr = &part;
-  part_ptr->ForEachConstLocalCell([&](const auto &cell){
+  for (const auto &cell : part.GetLocalCells()) {
     volume += cell.volume();
     n_cells += 1;
     n_faces += cell.adj_faces_.size();
@@ -55,7 +54,7 @@ int main(int argc, char* argv[]) {
       assert(face_ptr);
       area += face_ptr->area();
     }
-  });
+  }
   std::printf("On proc[%d/%d], avg_volume = %f = %f / %d\n",
       i_core, n_core, volume / n_cells, volume, n_cells);
   std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",

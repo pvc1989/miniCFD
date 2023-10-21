@@ -120,9 +120,9 @@ int main(int argc, char* argv[]) {
       std::printf("[Start] Project() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
     }
-    part.ForEachLocalCell([&](Cell *cell_ptr){
+    for (Cell *cell_ptr : part.GetLocalCellPointers()) {
       cell_ptr->Project(initial_condition);
-    });
+    }
 
     if (i_core == 0) {
       std::printf("[Start] Reconstruct() on %d cores at %f sec\n",

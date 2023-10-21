@@ -77,9 +77,9 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
 
   /* Initialization. */
   if (argc == 7) {
-    part.ForEachLocalCell([&](Cell *cell_ptr){
+    for (Cell *cell_ptr : part.GetLocalCellPointers()) {
       cell_ptr->Project(ic);
-    });
+    }
     if (i_core == 0) {
       std::printf("[Done] Project() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);

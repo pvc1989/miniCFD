@@ -290,9 +290,9 @@ class Writer {
     auto types = std::vector<CellType>();
     auto coords = std::vector<Coord>();
     auto values = std::vector<Value>();
-    part.ForEachConstLocalCell([&types, &coords, &values](const Cell &cell){
+    for (const Cell &cell : part.GetLocalCells()) {
       Prepare(cell, &types, &coords, &values);
-    });
+    }
     if (part.rank() == 0) {
       char temp[1024];
       std::snprintf(temp, sizeof(temp), "%s/%s.pvtu",

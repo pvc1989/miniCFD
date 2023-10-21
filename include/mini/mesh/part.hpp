@@ -3,6 +3,7 @@
 #define MINI_MESH_PART_HPP_
 
 #include <concepts>
+#include <ranges>
 
 #include <cassert>
 
@@ -1080,7 +1081,7 @@ class Part {
   template <class Callable>
   Value MeasureL1Error(Callable &&exact_solution, Scalar t_next) const {
     Value l1_error; l1_error.setZero();
-    auto visitor = [&t_next, &exact_solution, &l1_error](Cell const &cell){
+    for (Cell const &cell : GetLocalCells()) {
       auto func = [&t_next, &exact_solution, &cell](Coord const &xyz){
         auto value = cell.GetValue(xyz);
         value -= exact_solution(xyz, t_next);
@@ -1088,8 +1089,7 @@ class Part {
         return value;
       };
       l1_error += mini::gauss::Integrate(func, cell.gauss());
-    };
-    ForEachConstLocalCell(visitor);
+    }
     return l1_error;
   }
 
@@ -1336,16 +1336,28 @@ class Part {
     assert(i == troubled_cells.size());
   }
 
-  // Accessors:
-  template<class Visitor>
-  void ForEachConstLocalCell(Visitor &&visit) const {
-    for (const auto &[i_zone, zone] : local_cells_) {
-      for (const auto &[i_sect, sect] : zone) {
-        for (const auto &cell : sect) {
-          visit(cell);
-        }
-      }
-    }
+  // Viewers of `Cell`s and `Face`s:
+  /**
+   * @brief Get a range of `(Cell const &)`.
+   * 
+   * @return std::ranges::input_range 
+   */
+  std::ranges::input_range auto GetLocalCells() const {
+    return local_cells_     // range of pair<Index, Zone>
+        | std::views::values// range of (Zone = range of pair<Index, Section>)
+        | std::views::join  // range of pair<Index, Section>
+        | std::views::values// range of (Section = range of Cell)
+        | std::views::join; // range of Cell
+  }
+  /**
+   * @brief Get a range of `(Cell *)`.
+   * 
+   * @return std::ranges::input_range 
+   */
+  std::ranges::input_range auto GetLocalCellPointers() {
+    return const_cast<const Part *>(this)->GetLocalCells()
+        | std::views::transform([](const Cell &cell){
+            return const_cast<Cell *>(&cell); });
   }
   template<class Visitor>
   void ForEachConstLocalFace(Visitor &&visit) const {
@@ -1375,17 +1387,6 @@ class Part {
     const auto &faces = *name_to_faces_.at(name);
     for (const auto &face_uptr : faces) {
       visit(*face_uptr);
-    }
-  }
-  // Mutators:
-  template<class Visitor>
-  void ForEachLocalCell(Visitor &&visit) {
-    for (auto &[i_zone, zone] : local_cells_) {
-      for (auto &[i_sect, sect] : zone) {
-        for (auto &cell : sect) {
-          visit(&cell);
-        }
-      }
     }
   }
   template<class Visitor>

@@ -19,10 +19,9 @@ void WriteForces(Part const &part, Source *source, double t_curr,
   std::vector<Force> forces;
   std::vector<Coord> points;
   std::vector<Scalar> weights;
-  part.ForEachConstLocalCell(
-      [source, t_curr, &forces, &points, &weights](const Cell &cell){
+  for (const Cell &cell : part.GetLocalCells()) {
     source->GetForces(cell, t_curr, &forces, &points, &weights);
-  });
+  }
   auto out = part.GetFileStream(frame_name, false, "csv");
   out << "\"X\",\"Y\",\"Z\",\"ForceX\",\"ForceY\",\"ForceZ\",\"Weight\"\n";
   for (int i = 0, n = weights.size(); i < n; ++i) {
@@ -92,9 +91,9 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
 
   /* Initialization. */
   if (argc == 7) {
-    part.ForEachLocalCell([&](Cell *cell_ptr){
+    for (Cell *cell_ptr : part.GetLocalCellPointers()) {
       cell_ptr->Project(ic);
-    });
+    }
     if (i_core == 0) {
       std::printf("[Done] Project() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);

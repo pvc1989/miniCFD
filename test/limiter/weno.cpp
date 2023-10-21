@@ -204,7 +204,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   eigen_projections.reserve(n_cells);
   auto lazy_projections = std::vector<Projection>();
   lazy_projections.reserve(n_cells);
-  part.ForEachConstLocalCell([&](const Cell &cell){
+  for (const Cell &cell : part.GetLocalCells()) {
     //  lasy limiter
     lazy_projections.emplace_back(lazy_limiter(cell));
     auto lazy_smoothness = lazy_projections.back().GetSmoothness();
@@ -223,7 +223,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
     diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-  });
+  }
   std::cout << std::endl;
 }
 

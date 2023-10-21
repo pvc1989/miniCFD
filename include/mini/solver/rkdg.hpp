@@ -86,17 +86,17 @@ class RungeKuttaBase {
  public:
   static void ReadFromLocalCells(const Part &part, std::vector<Coeff> *coeffs) {
     coeffs->resize(part.CountLocalCells());
-    part.ForEachConstLocalCell([&coeffs](const auto &cell){
+    for (const auto &cell : part.GetLocalCells()) {
       coeffs->at(cell.id())
           = cell.projection_.GetCoeffOnOrthoNormalBasis();
-    });
+    }
   }
   static void WriteToLocalCells(const std::vector<Coeff> &coeffs, Part *part) {
     assert(coeffs.size() == part->CountLocalCells());
-    part->ForEachLocalCell([&coeffs](Cell *cell_ptr){
+    for (Cell *cell_ptr : part->GetLocalCellPointers()) {
       Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis_.coeff();
       cell_ptr->projection_.coeff() = new_coeff;
-    });
+    }
   }
   void InitializeResidual(const Part &part) {
     residual_.resize(part.CountLocalCells());
@@ -105,14 +105,14 @@ class RungeKuttaBase {
     }
     // Integrate the source term, if there is any.
     if (!std::is_same_v<Source, DummySource<Part>>) {
-      part.ForEachConstLocalCell([this](const Cell &cell){
+      for (const Cell &cell : part.GetLocalCells()) {
         auto &coeff = this->residual_.at(cell.id());
         source_.UpdateCoeff(cell, this->t_curr_, &coeff);
-      });
+      }
     }
     // Integrate the dot-product of flux and gradient, if there is any.
     if (Part::kDegrees > 0) {
-      part.ForEachConstLocalCell([this](const Cell &cell){
+      for (const Cell &cell : part.GetLocalCells()) {
         auto &coeff = this->residual_.at(cell.id());
         const auto &gauss = *(cell.gauss_ptr_);
         auto n = gauss.CountPoints();
@@ -125,7 +125,7 @@ class RungeKuttaBase {
           prod *= gauss.GetGlobalWeight(q);
           coeff += prod;
         }
-      });
+      }
     }
   }
   void UpdateLocalResidual(const Part &part) {
