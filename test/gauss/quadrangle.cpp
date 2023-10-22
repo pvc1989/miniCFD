@@ -41,9 +41,9 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
   using Lagrange = mini::lagrange::Quadrangle4<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Global(0, 0, 0), Global(4, 0, 0), Global(4, 4, 4), Global(0, 4, 4)
-  );
+  };
   auto gauss = Gauss(lagrange);
   static_assert(gauss.CellDim() == 2);
   static_assert(gauss.PhysDim() == 3);

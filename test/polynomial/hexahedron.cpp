@@ -136,7 +136,7 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
   // test values on random points
   std::srand(31415926);
   for (int i = 1 << 10; i >= 0; --i) {
-    auto global = Global( a * rand_f(), b * rand_f(), c * rand_f() );
+    auto global = Global{ a * rand_f(), b * rand_f(), c * rand_f() };
     auto value = vector_func(global);
     value -= vector_interp.GlobalToValue(global);
     EXPECT_NEAR(value.norm(), 0, 1e-10);

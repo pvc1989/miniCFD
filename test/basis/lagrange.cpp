@@ -80,11 +80,11 @@ class TestBasisLagrangeHexahedron : public ::testing::Test {
 
   static Lagrange GetRandomLagrange() {
     std::srand(31415926);
-    return Lagrange(
+    return Lagrange {
         Lagrange::LineX{ rand_f(), rand_f(), rand_f() },
         Lagrange::LineY{ rand_f(), rand_f(), rand_f(), rand_f() },
         Lagrange::LineZ{ rand_f(), rand_f(), rand_f(), rand_f(), rand_f() }
-    );
+    };
   }
 };
 TEST_F(TestBasisLagrangeHexahedron, KroneckerDeltaProperty) {
@@ -115,8 +115,8 @@ TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
         for (int a = 0; a < Lagrange::I; ++a) {
           for (int b = 0; b < Lagrange::J; ++b) {
             for (int c = 0; c < Lagrange::K; ++c) {
-              EXPECT_EQ(lagrange.GetDerivatives(a, b, c, i, j, k), 
-                  lagrange.GetDerivatives(a, b, c, x, y, z));
+              EXPECT_EQ(lagrange.GetDerivatives(a, b, c, i, j, k),
+                        lagrange.GetDerivatives(a, b, c, x, y, z));
             }
           }
         }

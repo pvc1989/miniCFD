@@ -22,10 +22,10 @@ class TestTetrahedron : public ::testing::Test {
 };
 TEST_F(TestTetrahedron, OrthoNormal) {
   // build a tetra-gauss
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Coord(10, 10, 0), Coord(0, 10, 10),
     Coord(10, 0, 10), Coord(10, 10, 10)
-  );
+  };
   auto tetra = Gauss(lagrange);
   // build an orthonormal basis on it
   auto basis = Basis(tetra);
@@ -38,12 +38,12 @@ TEST_F(TestTetrahedron, OrthoNormal) {
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another tetra-gauss
   Coord shift = {10, 20, 30};
-  lagrange = Lagrange(
+  lagrange = Lagrange {
     lagrange.GetGlobalCoord(0) + shift,
     lagrange.GetGlobalCoord(1) + shift,
     lagrange.GetGlobalCoord(2) + shift,
     lagrange.GetGlobalCoord(3) + shift
-  );
+  };
   tetra = Gauss(lagrange);
   // build another orthonormal basis on it
   basis = Basis(tetra);

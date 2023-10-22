@@ -28,6 +28,7 @@ template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4,
     Rule kRule = Rule::kLegendre>
 class Quadrangle : public Face<Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
+
  public:
   using GaussX = std::conditional_t< kRule == Rule::kLegendre,
       Legendre<Scalar, Qx>, Lobatto<Scalar, Qx> >;

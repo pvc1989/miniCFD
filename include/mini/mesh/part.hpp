@@ -1343,11 +1343,11 @@ class Part {
    * @return std::ranges::input_range 
    */
   std::ranges::input_range auto GetLocalCells() const {
-    return local_cells_     // range of pair<Index, Zone>
-        | std::views::values// range of (Zone = range of pair<Index, Section>)
-        | std::views::join  // range of pair<Index, Section>
-        | std::views::values// range of (Section = range of Cell)
-        | std::views::join; // range of Cell
+    return local_cells_       // range of pair<Index, Zone>
+        | std::views::values  // range of (Zone = range of pair<Index, Section>)
+        | std::views::join    // range of pair<Index, Section>
+        | std::views::values  // range of (Section = range of Cell)
+        | std::views::join;   // range of Cell
   }
   /**
    * @brief Get a range of `(Cell *)`.

@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cmath>
 
+#include <algorithm>
 #include <array>
 #include <initializer_list>
 #include <utility>
@@ -40,7 +41,7 @@ class Line {
 
  private:
   std::array<std::array<Vector, N>, N> derivatives_;  // derivatives_[k][j][i] := k-th order derivatives at the j-th node of the i-th basis
-  Vector nodes_;  // nodes_[j] := coorinate of the j-th node 
+  Vector nodes_;  // nodes_[j] := coorinate of the j-th node
   Matrix lagrange_to_taylor_;
 
  public:
