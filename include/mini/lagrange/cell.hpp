@@ -124,14 +124,14 @@ void SortNodesOnFace(const Cell<Scalar> &cell, const T *cell_nodes,
   size_t cell_nodes_copy[64], face_nodes_copy[32];
   size_t *cell_node_list, *face_node_list;
   if (sizeof(T) == sizeof(size_t)) {
-    cell_node_list = (size_t *)(cell_nodes);
+    cell_node_list = reinterpret_cast<size_t *>(const_cast<T *>(cell_nodes));
   } else {
     cell_node_list = cell_nodes_copy;
     auto n_nodes = cell.CountNodes();
     std::copy_n(cell_nodes, n_nodes, cell_node_list);
   }
   if (sizeof(U) == sizeof(size_t)) {
-    face_node_list = (size_t *)(face_nodes);
+    face_node_list = reinterpret_cast<size_t *>(const_cast<U *>(face_nodes));
   } else {
     face_node_list = face_nodes_copy;
     std::copy_n(face_nodes, face_n_node, face_node_list);

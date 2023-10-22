@@ -103,7 +103,7 @@ TEST_F(TestLagrangeTetrahedron4, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44 }, face_nodes, face_nodes_expect;
     face_nodes = { 11, 22, 33, 0 };
     face_nodes_expect = { 11, 33, 22, 0 };
@@ -223,7 +223,7 @@ TEST_F(TestLagrangeTetrahedron10, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010, 0 };
     Vector face_nodes, face_nodes_expect;
     face_nodes = { 11, 22, 33, 55, 66, 77, 0 };

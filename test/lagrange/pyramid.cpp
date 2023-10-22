@@ -179,7 +179,7 @@ TEST_F(TestLagrangePyramid5, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55 }, face_nodes, face_nodes_expect;
     int face_n_node = 3;
     face_nodes = { 55, 11, 22, 0 };
@@ -388,7 +388,7 @@ TEST_F(TestLagrangePyramid13, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010,
       1111, 1212, 1313, 00 };
     Vector face_nodes, face_nodes_expect;
@@ -603,7 +603,7 @@ TEST_F(TestLagrangePyramid14, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010,
       1111, 1212, 1313, 1414, 00 };
     Vector face_nodes, face_nodes_expect;
