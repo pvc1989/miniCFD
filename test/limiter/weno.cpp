@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/metis.hpp"
 #include "mini/mesh/mapper.hpp"
@@ -35,7 +35,7 @@ class TestWenoLimiters : public ::testing::Test {
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;
 
-  std::string const test_input_dir_{TEST_INPUT_DIR};
+  std::string const input_dir_{INPUT_DIR};
 };
 TEST_F(TestWenoLimiters, ReconstructScalar) {
   auto case_name = std::string("simple_cube");
@@ -48,7 +48,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/scalar/original.cgns";
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+      input_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;
@@ -161,7 +161,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + std::string("/original.cgns");
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), case_name, old_file_name.c_str());
+      input_dir_.c_str(), case_name, old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;

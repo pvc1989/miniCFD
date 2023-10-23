@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/cgns.hpp"
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 
 using mini::mesh::cgns::GridLocation;
 using mini::mesh::cgns::ElementType;
@@ -46,7 +46,7 @@ class TestMeshCgns : public ::testing::Test {
     }
   };
   // common data
-  std::string const abs_path_{std::string(TEST_INPUT_DIR) + "/ugrid_2d.cgns"};
+  std::string const abs_path_{std::string(INPUT_DIR) + "/ugrid_2d.cgns"};
   double const eps_ = 0.00001;
 };
 TEST_F(TestMeshCgns, Constructors) {
@@ -54,8 +54,8 @@ TEST_F(TestMeshCgns, Constructors) {
   // the absolute path version
   files.emplace_back(abs_path_);
   // the dir (with or without '/') + name version
-  files.emplace_back(std::string(TEST_INPUT_DIR) + "/", "ugrid_2d.cgns");
-  files.emplace_back(TEST_INPUT_DIR, "ugrid_2d.cgns");
+  files.emplace_back(std::string(INPUT_DIR) + "/", "ugrid_2d.cgns");
+  files.emplace_back(INPUT_DIR, "ugrid_2d.cgns");
 }
 TEST_F(TestMeshCgns, ReadBase) {
   // read by mini::mesh::cgns

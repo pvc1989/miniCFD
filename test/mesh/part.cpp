@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#include <string>
 
 #include "mpi.h"
 #include "pcgnslib.h"
@@ -12,8 +13,9 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
+#include "mini/input/path.hpp"  // defines DEMO_DIR
 
-// mpirun -n 4 ./part
+// mpirun -n 4 ./part [<case_name> [<input_dir>]]]
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
   int n_core, i_core;
@@ -24,13 +26,17 @@ int main(int argc, char* argv[]) {
   auto case_name = std::string("double_mach");
   if (argc > 1)
     case_name = argv[1];
+  auto input_dir = std::string(DEMO_DIR) + "/euler";
+  if (argc > 2)
+    input_dir = argv[2];
 
   auto time_begin = MPI_Wtime();
   if (i_core == 0) {
-    std::printf("Run `./shuffler %d %s` on proc[%d/%d] at %f sec\n",
-        n_core, case_name.c_str(),
+    std::printf("Run `./shuffler %d %s %s` on proc[%d/%d] at %f sec\n",
+        n_core, case_name.c_str(), input_dir.c_str(),
         i_core, n_core, MPI_Wtime() - time_begin);
-    auto cmd = "./shuffler " + std::to_string(n_core) + ' ' + case_name;
+    auto cmd = "./shuffler " + std::to_string(n_core) + ' ' + case_name + ' '
+        + input_dir;
     if (std::system(cmd.c_str()))
       throw std::runtime_error(cmd + std::string(" failed."));
   }

@@ -7,18 +7,18 @@
 #include "gtest/gtest.h"
 
 #include "mini/mesh/mapper.hpp"
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 
 class TestMeshMapper : public ::testing::Test {
  protected:
   using Mapper = mini::mesh::mapper::CgnsToMetis<idx_t, double>;
-  std::string const test_input_dir_{TEST_INPUT_DIR};
+  std::string const input_dir_{INPUT_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
 };
 TEST_F(TestMeshMapper, MapCgnsToMetis) {
   // convert cgns_mesh to metis_mesh
-  auto file_name = test_input_dir_ + "/ugrid_2d.cgns";
+  auto file_name = input_dir_ + "/ugrid_2d.cgns";
   auto cgns_mesh = Mapper::CgnsMesh(file_name);
   cgns_mesh.ReadBases();
   auto mapper = Mapper();
@@ -69,7 +69,7 @@ TEST_F(TestMeshMapper, MapCgnsToMetis) {
 TEST_F(TestMeshMapper, WriteMetisToCgns) {
   // convert cgns_mesh to metis_mesh
   auto file_name = "ugrid_2d.cgns";
-  auto cgns_mesh = Mapper::CgnsMesh(test_input_dir_, file_name);
+  auto cgns_mesh = Mapper::CgnsMesh(input_dir_, file_name);
   cgns_mesh.ReadBases();
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);

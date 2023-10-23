@@ -17,15 +17,15 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/metis.hpp"
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 
 idx_t n_parts = 4;
 char case_name[33] = "simple_cube";
+std::string input_dir = INPUT_DIR;
 
 class TestMeshShuffler : public ::testing::Test {
  protected:
   using Shuffler = mini::mesh::Shuffler<idx_t, double>;
-  std::string const test_input_dir_{TEST_INPUT_DIR};
 };
 TEST_F(TestMeshShuffler, GetNewOrder) {
   // Reorder the indices by parts
@@ -72,7 +72,7 @@ TEST_F(TestMeshShuffler, ParitionAndShuffle) {
   auto old_file_name = case_name + std::string("/original.cgns");
   /* Generate the original cgns file: */
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), case_name, old_file_name.c_str());
+      input_dir.c_str(), case_name, old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;
@@ -80,12 +80,18 @@ TEST_F(TestMeshShuffler, ParitionAndShuffle) {
 }
 
 int main(int argc, char* argv[]) {
+  /* Usage:
+      ./shuffler [<n_part> [<case_name> [<input_dir>]]]
+   */
   ::testing::InitGoogleTest(&argc, argv);
   if (argc > 1) {
     n_parts = std::atoi(argv[1]);
   }
   if (argc > 2) {
     std::strncpy(case_name, argv[2], sizeof(case_name));
+  }
+  if (argc > 3) {
+    input_dir = argv[3];
   }
   return RUN_ALL_TESTS();
 }
