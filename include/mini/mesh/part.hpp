@@ -284,8 +284,8 @@ struct Cell {
   }
 
   template <class Callable>
-  void Project(Callable &&func) {
-    projection_.Project(func, basis_);
+  void Approximate(Callable &&func) {
+    projection_.Approximate(func, basis_);
   }
 };
 
@@ -511,10 +511,10 @@ class Part {
   const std::string &GetDirectoryName() const {
     return directory_;
   }
-  int rank() const {
+  int mpi_rank() const {
     return rank_;
   }
-  int size() const {
+  int mpi_size() const {
     return size_;
   }
 
@@ -1067,17 +1067,6 @@ class Part {
   }
 
  public:
-  template <class Callable>
-  void Project(Callable &&new_func) {
-    for (auto &[i_zone, sects] : local_cells_) {
-      for (auto &[i_sect, cells] : sects) {
-        for (auto &cell : cells) {
-          cell.Project(new_func);
-        }
-      }
-    }
-  }
-
   template <class Callable>
   Value MeasureL1Error(Callable &&exact_solution, Scalar t_next) const {
     Value l1_error; l1_error.setZero();

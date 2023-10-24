@@ -293,7 +293,7 @@ class Writer {
     for (const Cell &cell : part.GetLocalCells()) {
       Prepare(cell, &types, &coords, &values);
     }
-    if (part.rank() == 0) {
+    if (part.mpi_rank() == 0) {
       char temp[1024];
       std::snprintf(temp, sizeof(temp), "%s/%s.pvtu",
           part.GetDirectoryName().c_str(), soln_name.c_str());
@@ -311,7 +311,7 @@ class Writer {
       pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" "
           << "NumberOfComponents=\"3\"/>\n";
       pvtu << "    </PPoints>\n";
-      for (int i_part = 0; i_part < part.size(); ++i_part) {
+      for (int i_part = 0; i_part < part.mpi_size(); ++i_part) {
         pvtu << "    <Piece Source=\"./" << soln_name << '/'
             << i_part << ".vtu\"/>\n";
       }

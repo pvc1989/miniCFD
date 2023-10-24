@@ -65,15 +65,18 @@ int main(int argc, char* argv[]) {
       i_core, n_core, volume / n_cells, volume, n_cells);
   std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",
       i_core, n_core, area / n_faces, area, n_faces);
-  std::printf("Run Project() on proc[%d/%d] at %f sec\n",
+  std::printf("Run Approximate() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
-  part.Project([](auto const& xyz){
+  auto func = [](auto const& xyz){
     auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
     mini::algebra::Matrix<double, 2, 1> col;
     col[0] = r;
     col[1] = 1 - r + (r >= 1);
     return col;
-  });
+  };
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
   std::printf("Run Reconstruct() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   using Cell = typename Part::Cell;

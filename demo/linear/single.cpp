@@ -103,11 +103,11 @@ int main(int argc, char* argv[]) {
 
   if (argc == 7) {
     if (i_core == 0) {
-      std::printf("[Start] Project() on %d cores at %f sec\n",
+      std::printf("[Start] Approximate() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
     }
     for (Cell *cell_ptr : part.GetLocalCellPointers()) {
-      cell_ptr->Project(initial_condition);
+      cell_ptr->Approximate(initial_condition);
     }
 
     if (i_core == 0) {

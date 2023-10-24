@@ -129,7 +129,7 @@ class Projection {
         integral, volume);
   }
   template <typename Callable>
-  void Project(Callable &&func, const Basis &basis) {
+  void Approximate(Callable &&func, const Basis &basis) {
     *this = Projection(std::forward<Callable>(func), basis);
   }
   Projection &LeftMultiply(const MatKxK &left) {

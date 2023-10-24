@@ -97,7 +97,7 @@ class Hexahedron {
     return gauss().lagrange();
   }
   template <typename Callable>
-  void Interpolate(Callable &&func) {
+  void Approximate(Callable &&func) {
     *this = Hexahedron(std::forward<Callable>(func), gauss_ptr_);
   }
 

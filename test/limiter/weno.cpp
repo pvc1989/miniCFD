@@ -100,7 +100,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     auto gauss_ptr = std::make_unique<Gauss>(*lagrange_uptr);
     cells.emplace_back(std::move(lagrange_uptr), std::move(gauss_ptr), i_cell);
     assert(&(cells[i_cell]) == &(cells.back()));
-    cells[i_cell].Project(func);
+    cells[i_cell].Approximate(func);
   }
   using Projection = typename Cell::Projection;
   auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
@@ -191,7 +191,9 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     res[4] = y * y + 90 * (x < y ? +1 : 0.5);
     return res;
   };
-  part.Project(func);
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
   // reconstruct using a `limiter::weno::Eigen` object
   using Cell = typename Part::Cell;
   using Projection = typename Cell::Projection;
