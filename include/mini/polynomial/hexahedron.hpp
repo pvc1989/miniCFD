@@ -28,9 +28,10 @@ namespace polynomial {
  * @tparam kDegreeY the degree of completeness in the 2nd dimension
  * @tparam kDegreeZ the degree of completeness in the 3rd dimension
  * @tparam kComponents the number of function components
+ * @tparam kLocal in local (parametric) space or not
  */
 template <std::floating_point Scalar, int kDegreeX, int kDegreeY, int kDegreeZ,
-    int kComponents>
+    int kComponents, bool kLocal = false>
 class Hexahedron {
  public:
   using Basis = basis::lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
@@ -63,7 +64,9 @@ class Hexahedron {
 
   Value LobalToValue(Local const &local) const {
     Value value = coeff_ * basis_.GetValues(local).transpose();
-    value /= lagrange().LocalToJacobian(local).determinant();
+    if (kLocal) {
+      value /= lagrange().LocalToJacobian(local).determinant();
+    }
     return value;
   }
 
@@ -92,9 +95,11 @@ class Hexahedron {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &global = gauss_ptr_->GetGlobalCoord(ijk);
       coeff_.col(ijk) = global_to_value(global);  // value in physical space
-      auto jacobian_det =
-          gauss_ptr_->GetGlobalWeight(ijk) / gauss_ptr_->GetLocalWeight(ijk);
-      coeff_.col(ijk) *= jacobian_det;  // value in parametric space
+      if (kLocal) {
+        auto jacobian_det =
+            gauss_ptr_->GetGlobalWeight(ijk) / gauss_ptr_->GetLocalWeight(ijk);
+        coeff_.col(ijk) *= jacobian_det;  // value in parametric space
+      }
     }
   }
 
@@ -105,10 +110,10 @@ class Hexahedron {
     return Basis(line_x, line_y, line_z);
   }
 };
-template <std::floating_point Scalar, int kX, int kY, int kZ, int kC>
-typename Hexahedron<Scalar, kX, kY, kZ, kC>::Basis const
-Hexahedron<Scalar, kX, kY, kZ, kC>::basis_ =
-    Hexahedron<Scalar, kX, kY, kZ, kC>::BuildInterpolationBasis();
+template <std::floating_point Scalar, int kX, int kY, int kZ, int kC, bool kL>
+typename Hexahedron<Scalar, kX, kY, kZ, kC, kL>::Basis const
+Hexahedron<Scalar, kX, kY, kZ, kC, kL>::basis_ =
+    Hexahedron<Scalar, kX, kY, kZ, kC, kL>::BuildInterpolationBasis();
 
 }  // namespace polynomial
 }  // namespace mini
