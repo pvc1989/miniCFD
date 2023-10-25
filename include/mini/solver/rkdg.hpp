@@ -94,7 +94,7 @@ class RungeKuttaBase {
   static void WriteToLocalCells(const std::vector<Coeff> &coeffs, Part *part) {
     assert(coeffs.size() == part->CountLocalCells());
     for (Cell *cell_ptr : part->GetLocalCellPointers()) {
-      Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis_.coeff();
+      Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis().coeff();
       cell_ptr->projection_.coeff() = new_coeff;
     }
   }
@@ -120,7 +120,7 @@ class RungeKuttaBase {
           const auto &xyz = gauss.GetGlobalCoord(q);
           Value cv = cell.GetValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
-          auto grad = cell.basis_.GetGradValue(xyz);
+          auto grad = cell.basis().GetGradValue(xyz);
           Coeff prod = flux * grad.transpose();
           prod *= gauss.GetGlobalWeight(q);
           coeff += prod;
@@ -143,9 +143,9 @@ class RungeKuttaBase {
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
-            -= flux * holder.basis_(coord).transpose();
+            -= flux * holder.basis()(coord).transpose();
         this->residual_.at(sharer.id())
-            += flux * sharer.basis_(coord).transpose();
+            += flux * sharer.basis()(coord).transpose();
       }
     });
   }
@@ -163,7 +163,7 @@ class RungeKuttaBase {
         Value u_sharer = sharer.GetValue(coord);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        Coeff temp = flux * holder.basis_(coord).transpose();
+        Coeff temp = flux * holder.basis()(coord).transpose();
         this->residual_.at(holder.id()) -= temp;
       }
     });
@@ -180,7 +180,7 @@ class RungeKuttaBase {
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
-            -= flux * holder.basis_(coord).transpose();
+            -= flux * holder.basis()(coord).transpose();
       }
     };
     for (const auto &name : solid_wall_) {
@@ -199,7 +199,7 @@ class RungeKuttaBase {
         Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
-            -= flux * holder.basis_(coord).transpose();
+            -= flux * holder.basis()(coord).transpose();
       }
     };
     for (const auto &name : supersonic_outlet_) {
@@ -220,7 +220,7 @@ class RungeKuttaBase {
           Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
-              -= flux * holder.basis_(coord).transpose();
+              -= flux * holder.basis()(coord).transpose();
         }
       };
       part.ForEachConstBoundaryFace(visit, iter->first);
@@ -241,7 +241,7 @@ class RungeKuttaBase {
           Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
-              -= flux * holder.basis_(coord).transpose();
+              -= flux * holder.basis()(coord).transpose();
         }
       };
       part.ForEachConstBoundaryFace(visit, iter->first);
@@ -262,7 +262,7 @@ class RungeKuttaBase {
           Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
-              -= flux * holder.basis_(coord).transpose();
+              -= flux * holder.basis()(coord).transpose();
         }
       };
       part.ForEachConstBoundaryFace(visit, iter->first);
@@ -283,7 +283,7 @@ class RungeKuttaBase {
           Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           this->residual_.at(holder.id())
-              -= flux * holder.basis_(coord).transpose();
+              -= flux * holder.basis()(coord).transpose();
         }
       };
       part.ForEachConstBoundaryFace(visit, iter->first);

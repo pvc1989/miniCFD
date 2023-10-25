@@ -35,8 +35,8 @@ TEST_F(TestProjection, ScalarFunction) {
     return x * x + y * y + z * z;
   };
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 1>;
-  auto basis = Basis(gauss_);
-  auto projection = ProjFunc(func, basis);
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
   static_assert(ProjFunc::K == 1);
   static_assert(ProjFunc::N == 10);
   EXPECT_NEAR(projection({0, 0, 0})[0], 0.0, 1e-14);
@@ -55,8 +55,8 @@ TEST_F(TestProjection, VectorFunction) {
     Value res = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return res;
   };
-  auto basis = Basis(gauss_);
-  auto projection = ProjFunc(func, basis);
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto v_actual = projection({0.3, 0.4, 0.5});
@@ -89,10 +89,11 @@ TEST_F(TestProjection, CoeffConsistency) {
         std::exp(y * z), std::log(z * z) };
     return res;
   };
-  auto basis = Basis(gauss_);
-  auto projection = ProjFunc(func, basis);
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
   Coeff coeff_diff = projection.GetCoeffOnTaylorBasis()
-      - projection.GetCoeffOnOrthoNormalBasis() * basis.coeff();
+      - projection.GetCoeffOnOrthoNormalBasis()
+      * projection.basis().coeff();
   std::cout << projection.GetCoeffOnTaylorBasis() << std::endl;
   EXPECT_NEAR(coeff_diff.norm(), 0.0, 1e-14);
 }
@@ -103,8 +104,8 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);
   };
-  auto basis = Basis(gauss_);
-  auto projection = ProjFunc(func, basis);
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
   static_assert(ProjFunc::K == 10);
   static_assert(ProjFunc::N == 10);
   auto x = 0.3, y = 0.4, z = 0.5;
@@ -142,8 +143,8 @@ TEST_F(TestProjection, Smoothness) {
   auto func = [](Coord const &point) {
     return Taylor::GetValue(point);
   };
-  auto basis = Basis(gauss_);
-  auto projection = ProjFunc(func, basis);
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
   auto s_actual = projection.GetSmoothness();
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
   EXPECT_NEAR(s_actual[1], 4.0, 1e-14);

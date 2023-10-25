@@ -208,9 +208,9 @@ struct Cell {
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Basis = basis::OrthoNormal<Scalar, kPhysDim, kDegrees>;
   using Projection = polynomial::
       Projection<Scalar, kPhysDim, kDegrees, kComponents>;
+  using Basis = typename Projection::Basis;
   using Coord = typename Projection::Coord;
   using Local = Coord;
   using Global = Coord;
@@ -223,7 +223,6 @@ struct Cell {
 
   std::vector<Cell *> adj_cells_;
   std::vector<Face *> adj_faces_;
-  Basis basis_;
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Projection projection_;
@@ -231,28 +230,15 @@ struct Cell {
   bool inner_ = true;
 
   Cell(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr, Int m_cell)
-      : basis_(*gauss_ptr), lagrange_ptr_(std::move(lagrange_ptr)),
+      : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
-        metis_id(m_cell), projection_(basis_) {
+        metis_id(m_cell), projection_(*gauss_ptr_) {
   }
   Cell() = default;
   Cell(Cell const &) = delete;
   Cell &operator=(Cell const &) = delete;
-  Cell(Cell &&that) noexcept {
-    *this = std::move(that);
-  }
-  Cell &operator=(Cell &&that) noexcept {
-    adj_cells_ = std::move(that.adj_cells_);
-    adj_faces_ = std::move(that.adj_faces_);
-    basis_ = std::move(that.basis_);
-    lagrange_ptr_ = std::move(that.lagrange_ptr_);
-    gauss_ptr_ = std::move(that.gauss_ptr_);
-    projection_ = std::move(that.projection_);
-    metis_id = that.metis_id;
-    id_ = that.id_;
-    inner_ = that.inner_;
-    return *this;
-  }
+  Cell(Cell &&that) noexcept = default;
+  Cell &operator=(Cell &&that) noexcept = default;
   ~Cell() noexcept = default;
 
   Scalar volume() const {
@@ -265,7 +251,7 @@ struct Cell {
     return inner_;
   }
   Coord const &center() const {
-    return basis_.center();
+    return gauss().center();
   }
   Gauss const &gauss() const {
     return *gauss_ptr_;
@@ -279,13 +265,16 @@ struct Cell {
   Value GetValue(const Coord &global) const {
     return projection_(global);
   }
+  Basis basis() const {
+    return projection_.basis();
+  }
   int CountCorners() const {
     return lagrange().CountCorners();
   }
 
   template <class Callable>
   void Approximate(Callable &&func) {
-    projection_.Approximate(func, basis_);
+    projection_.Approximate(func);
   }
 };
 

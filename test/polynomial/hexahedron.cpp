@@ -38,15 +38,15 @@ TEST_F(TestPolynomialHexahedronProjection, OrthoNormal) {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
   };
-  auto hexa = Gauss(lagrange);
+  auto gauss = Gauss(lagrange);
   // build an orthonormal basis on it
-  auto basis = Basis(hexa);
+  auto basis = Basis(gauss);
   // check orthonormality
   double residual = (Integrate([&basis](const Coord& xyz) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, hexa) - A::Identity()).norm();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   // build another hexa-gauss
   Coord shift = {-1, 2, 3};
@@ -60,15 +60,15 @@ TEST_F(TestPolynomialHexahedronProjection, OrthoNormal) {
     lagrange.GetGlobalCoord(6) + shift,
     lagrange.GetGlobalCoord(7) + shift,
   };
-  hexa = Gauss(lagrange);
+  gauss = Gauss(lagrange);
   // build another orthonormal basis on it
-  basis = Basis(hexa);
+  basis = Basis(gauss);
   // check orthonormality
   residual = (Integrate([&basis](const Coord& xyz) {
     auto col = basis(xyz);
     A prod = col * col.transpose();
     return prod;
-  }, hexa) - A::Identity()).norm();
+  }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
 }
 TEST_F(TestPolynomialHexahedronProjection, Projection) {
@@ -76,23 +76,21 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
   };
-  auto hexa = Gauss(lagrange);
-  auto basis = Basis(hexa);
-  auto scalar_f = [](Coord const& xyz){
+  auto gauss = Gauss(lagrange);
+  auto scalar_pf = ScalarPF(gauss);
+  scalar_pf.Approximate([](Coord const& xyz){
     return xyz[0] * xyz[1] + xyz[2];
-  };
-  auto scalar_pf = ScalarPF(scalar_f, basis);
-  double residual = (scalar_pf.coeff()
-      - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0)).norm();
-  EXPECT_NEAR(residual, 0.0, 1e-14);
-  auto vector_f = [](Coord const& xyz) {
+  });
+  Mat1x10 diff = scalar_pf.coeff() - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0);
+  EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
+  auto vector_pf = VectorPF(gauss);
+  vector_pf.Approximate([](Coord const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
     Mat11x1 func(0, 1,
                 x, y, z,
                 x * x, x * y, x * z, y * y, y * z, z * z);
     return func;
-  };
-  auto vector_pf = VectorPF(vector_f, basis);
+  });
   Mat11x10 exact_vector;
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();

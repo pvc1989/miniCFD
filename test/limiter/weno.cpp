@@ -113,8 +113,9 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].GetValue(xyz);
       };
-      adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      auto &adj_projection = adj_projections[i_cell].back();
+      auto &adj_projection =
+          adj_projections[i_cell].emplace_back(cell_i.gauss());
+      adj_projection.Approximate(adj_func);
       Mat1x1 diff = cell_i.projection_.GetAverage()
           - adj_projection.GetAverage();
       adj_projection += diff;

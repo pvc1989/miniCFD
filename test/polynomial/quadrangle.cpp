@@ -53,12 +53,12 @@ TEST_F(TestQuadrangle4x4, Projection) {
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
   };
   auto gauss = Gauss(lagrange);
-  auto basis = Basis(gauss);
   auto scalar_f = [](Coord const& xy){
     return xy[0] * xy[1];
   };
   using ScalarPF = mini::polynomial::Projection<double, 2, 2, 1>;
-  auto scalar_pf = ScalarPF(scalar_f, basis);
+  auto scalar_pf = ScalarPF(gauss);
+  scalar_pf.Approximate(scalar_f);
   using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
   double residual = (scalar_pf.coeff()
       - Mat1x6(0, 0, 0, 0, 1, 0)).norm();
@@ -70,7 +70,8 @@ TEST_F(TestQuadrangle4x4, Projection) {
     return func;
   };
   using VectorPF = mini::polynomial::Projection<double, 2, 2, 7>;
-  auto vector_pf = VectorPF(vector_f, basis);
+  auto vector_pf = VectorPF(gauss);
+  vector_pf.Approximate(vector_f);
   using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
   Mat7x6 exact_vector{
       {0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},

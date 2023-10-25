@@ -64,8 +64,8 @@ class Lazy {
     auto my_average = my_cell_->projection_.GetAverage();
     for (auto *adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
-      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto &adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      adj_proj.Approximate(adj_cell->projection_);
       adj_proj += my_average - adj_proj.GetAverage();
       if (verbose_) {
         std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
@@ -184,8 +184,8 @@ class Eigen {
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
     auto my_average = my_cell_->projection_.GetAverage();
     for (auto *adj_cell : my_cell_->adj_cells_) {
-      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto &adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      adj_proj.Approximate(adj_cell->projection_);
       adj_proj += my_average - adj_proj.GetAverage();
     }
     old_projections_.emplace_back(my_cell_->projection_);
@@ -242,7 +242,8 @@ class Eigen {
    * 
    */
   void Reconstruct() {
-    new_projection_ = Projection(my_cell_->basis_);
+    new_projection_ = Projection(my_cell_->gauss());
+    new_projection_.coeff().setZero();
     total_volume_ = 0.0;
     for (auto *adj_face : my_cell_->adj_faces_) {
       ReconstructOnFace(*adj_face);
