@@ -13,14 +13,17 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
+#include "mini/polynomial/projection.hpp"
+#include "mini/polynomial/hexahedron.hpp"
 #include "mini/input/path.hpp"  // defines DEMO_DIR
 
 int n_core, i_core;
 double time_begin;
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
+using Scalar = double;
 using Riemann = mini::
-    riemann::rotated::Multiple<double, kComponents, kDimensions>;
+    riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
 using Coord = typename Riemann::Vector;
 using Value = typename Riemann::Conservative;
 Value func(const Coord& xyz) {
@@ -97,7 +100,9 @@ int main(int argc, char* argv[]) {
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
       case_name.c_str(), i_core,
       i_core, n_core, MPI_Wtime() - time_begin);
-  using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+  using Projection = mini::polynomial::Projection<
+      Scalar, kDimensions, kDegrees, kComponents>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   Process(&part, "Projection");
 }
@@ -106,7 +111,9 @@ int main(int argc, char* argv[]) {
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
       case_name.c_str(), i_core,
       i_core, n_core, MPI_Wtime() - time_begin);
-  using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+  using Projection = mini::polynomial::Hexahedron<
+      Scalar, kDegrees, kDegrees, kDegrees, kComponents>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   Process(&part, "Interpolation");
 }

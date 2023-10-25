@@ -39,8 +39,6 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/pyramid.hpp"
 #include "mini/gauss/wedge.hpp"
-#include "mini/basis/linear.hpp"
-#include "mini/polynomial/projection.hpp"
 #include "mini/type/select.hpp"
 
 namespace mini {
@@ -135,12 +133,11 @@ struct Coordinates {
   }
 };
 
-template <std::integral Int, int kDegrees, class Riemann>
+template <std::integral Int, class Riemann, class Projection>
 struct Cell;
 
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class P>
 struct Face {
-  constexpr static int kDegrees = D;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
@@ -149,8 +146,8 @@ struct Face {
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Face<Scalar, kPhysDim>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
-  using Coord = typename Cell::Coord;
+  using Cell = part::Cell<Int, Riemann, P>;
+  using Global = typename Cell::Global;
 
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
@@ -178,7 +175,7 @@ struct Face {
   Riemann const &riemann() const {
     return riemann_;
   }
-  Coord center() const {
+  Global center() const {
     return gauss().center();
   }
   Scalar area() const {
@@ -197,29 +194,28 @@ struct Face {
   }
 };
 
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class Proj>
 struct Cell {
-  constexpr static int kDegrees = D;
   using Riemann = R;
+  using Projection = Proj;
   using Scalar = typename Riemann::Scalar;
-  constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kPhysDim = Riemann::kDimensions;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Projection = polynomial::
-      Projection<Scalar, kPhysDim, kDegrees, kComponents>;
   using Basis = typename Projection::Basis;
-  using Coord = typename Projection::Coord;
-  using Local = Coord;
-  using Global = Coord;
+  using Local = typename Projection::Local;
+  using Global = typename Projection::Global;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
+  static constexpr int P = Projection::P;  // degree of the basis
+  static constexpr int D = 3;  // dimension of the physical space
+  static_assert(Riemann::kComponents == Projection::K);
+  static_assert(Riemann::kDimensions == D);
   static constexpr int kFields = K * N;
-  using Face = part::Face<Int, kDegrees, R>;
+  using Face = part::Face<Int, Riemann, Projection>;
 
   std::vector<Cell *> adj_cells_;
   std::vector<Face *> adj_faces_;
@@ -250,7 +246,7 @@ struct Cell {
   bool inner() const {
     return inner_;
   }
-  Coord const &center() const {
+  Global const &center() const {
     return gauss().center();
   }
   Gauss const &gauss() const {
@@ -259,11 +255,11 @@ struct Cell {
   Lagrange const &lagrange() const {
     return gauss().lagrange();
   }
-  Coord LocalToGlobal(const Coord &local) const {
+  Global LocalToGlobal(const Local &local) const {
     return lagrange().LocalToGlobal(local);
   }
-  Value GetValue(const Coord &global) const {
-    return projection_(global);
+  Value GlobalToValue(const Global &global) const {
+    return projection_.GlobalToValue(global);
   }
   Basis basis() const {
     return projection_.basis();
@@ -282,12 +278,12 @@ struct Cell {
  * @brief Mimic CGNS's `Elements_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
- * @tparam kDegrees  Degree of the solution polynomials.
  * @tparam Riemann  Type of the Riemann solver on each Face.
+ * @tparam Projection  Type of the approximation on each Cell.
  */
-template <std::integral Int, int kDegrees, class Riemann>
+template <std::integral Int, class Riemann, class Projection>
 class Section {
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
+  using Cell = part::Cell<Int, Riemann, Projection>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
@@ -387,19 +383,20 @@ class Section {
  * @brief Mimic CGNS's `Base_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
- * @tparam D  Degree of the solution polynomials.
  * @tparam R  Type of the Riemann solver on each Face.
+ * @tparam P  Type of the approximation on each Cell.
  */
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class P>
 class Part {
  public:
-  constexpr static int kDegrees = D;
   using Riemann = R;
-  using Face = part::Face<Int, kDegrees, Riemann>;
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
+  using Projection = P;
+  using Face = part::Face<Int, Riemann, Projection>;
+  using Cell = part::Cell<Int, Riemann, Projection>;
   using Scalar = typename Riemann::Scalar;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Value = typename Cell::Value;
+  constexpr static int kDegrees = Projection::P;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kPhysDim = Riemann::kDimensions;
 
@@ -415,7 +412,7 @@ class Part {
   using NodeIndex = part::NodeIndex<Int>;
   using CellIndex = part::CellIndex<Int>;
   using Coordinates = part::Coordinates<Int, Scalar>;
-  using Section = part::Section<Int, kDegrees, R>;
+  using Section = part::Section<Int, R, P>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = Section::kFields;
   static constexpr int i_base = 1;
@@ -1060,8 +1057,8 @@ class Part {
   Value MeasureL1Error(Callable &&exact_solution, Scalar t_next) const {
     Value l1_error; l1_error.setZero();
     for (Cell const &cell : GetLocalCells()) {
-      auto func = [&t_next, &exact_solution, &cell](Coord const &xyz){
-        auto value = cell.GetValue(xyz);
+      auto func = [&t_next, &exact_solution, &cell](Global const &xyz){
+        auto value = cell.GlobalToValue(xyz);
         value -= exact_solution(xyz, t_next);
         value = value.cwiseAbs();
         return value;
@@ -1551,11 +1548,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <std::integral Int, int kDegrees, class Riemann>
-MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiIntType
+template <std::integral Int, class Riemann, class Projection>
+MPI_Datatype const Part<Int, Riemann, Projection>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <std::integral Int, int kDegrees, class Riemann>
-MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiRealType
+template <std::integral Int, class Riemann, class Projection>
+MPI_Datatype const Part<Int, Riemann, Projection>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace part

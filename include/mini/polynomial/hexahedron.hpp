@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/gauss/cell.hpp"
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/basis/lagrange.hpp"
 
@@ -23,7 +24,9 @@ namespace polynomial {
  * The interpolation nodes are collocated with quadrature points.
  * 
  * @tparam Scalar the data type of scalar components
- * @tparam kDegrees the degree of completeness
+ * @tparam kDegreeX the degree of completeness in the 1st dimension
+ * @tparam kDegreeY the degree of completeness in the 2nd dimension
+ * @tparam kDegreeZ the degree of completeness in the 3rd dimension
  * @tparam kComponents the number of function components
  */
 template <std::floating_point Scalar, int kDegreeX, int kDegreeY, int kDegreeZ,
@@ -32,9 +35,11 @@ class Hexahedron {
  public:
   using Basis = basis::lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
   using Gauss = gauss::Hexahedron< Scalar, Basis::I, Basis::J, Basis::K >;
+  using GaussBase = gauss::Cell<Scalar>;
   using Lagrange = typename Gauss::Lagrange;
   static constexpr int N = Basis::N;
   static constexpr int K = kComponents;
+  static constexpr int P = std::max({kDegreeX, kDegreeY, kDegreeZ});
   using Local = typename Gauss::Local;
   using Global = typename Gauss::Global;
   using Coeff = algebra::Matrix<Scalar, K, N>;
@@ -46,8 +51,8 @@ class Hexahedron {
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
 
  public:
-  explicit Hexahedron(const Gauss &gauss)
-      : gauss_ptr_(&gauss) {
+  explicit Hexahedron(const GaussBase &gauss)
+      : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
   }
   Hexahedron() = default;
   Hexahedron(const Hexahedron &) = default;

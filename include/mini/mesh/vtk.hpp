@@ -30,7 +30,7 @@ void Prepare(const typename Cell::Local locals[], int n, const Cell &cell,
     std::vector<typename Cell::Value> *values) {
   for (int i = 0; i < n; ++i) {
     coords->emplace_back(cell.LocalToGlobal(locals[i]));
-    values->emplace_back(cell.GetValue(coords->back()));
+    values->emplace_back(cell.GlobalToValue(coords->back()));
   }
 }
 
@@ -200,7 +200,7 @@ template <typename Part>
 class Writer {
   using Cell = typename Part::Cell;
   using Value = typename Cell::Value;
-  using Coord = typename Cell::Coord;
+  using Coord = typename Cell::Global;
 
   static CellType GetCellType(int n_corners) {
     CellType cell_type;

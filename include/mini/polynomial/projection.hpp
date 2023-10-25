@@ -32,8 +32,10 @@ class Projection {
   using Basis = basis::OrthoNormal<Scalar, kDimensions, kDegrees>;
   static constexpr int N = Basis::N;
   static constexpr int K = kComponents;
+  static constexpr int P = kDimensions;
   using Gauss = typename Basis::Gauss;
-  using Coord = typename Basis::Coord;
+  using Local = typename Gauss::Local;
+  using Global = typename Gauss::Global;
   using MatNx1 = typename Basis::MatNx1;
   using MatNxN = typename Basis::MatNxN;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
@@ -62,10 +64,13 @@ class Projection {
   }
   ~Projection() noexcept = default;
 
-  Value operator()(Coord const &global) const {
-    Coord local = global; local -= center();
+  Value GlobalToValue(Global const &global) const {
+    Local local = global; local -= center();
     MatNx1 col = basis::Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
+  }
+  Value operator()(Global const &global) const {
+    return GlobalToValue(global);
   }
   Coeff GetCoeffOnOrthoNormalBasis() const {
     auto const &mat_a = basis_.coeff();
@@ -87,7 +92,7 @@ class Projection {
   Gauss const &gauss() const {
     return basis().GetGauss();
   }
-  Coord const &center() const {
+  Global const &center() const {
     return basis_.center();
   }
   Coeff const &coeff() const {
@@ -96,7 +101,7 @@ class Projection {
   Coeff &coeff() {
     return coeff_;
   }
-  Coeff GetPdvValue(Coord const &global) const {
+  Coeff GetPdvValue(Global const &global) const {
     auto local = global; local -= center();
     return basis::Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
   }
@@ -107,7 +112,7 @@ class Projection {
     return mat_x.col(0);
   }
   Value GetSmoothness() const {
-    auto mat_pdv_func = [&](Coord const &xyz) {
+    auto mat_pdv_func = [&](Global const &xyz) {
       auto mat_pdv = GetPdvValue(xyz);
       mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
       return mat_pdv;
@@ -121,7 +126,7 @@ class Projection {
   void Approximate(Callable &&func) {
     using Return = decltype(func(basis_.center()));
     static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
-    coeff_ = gauss::Integrate([&](Coord const &xyz) {
+    coeff_ = gauss::Integrate([&](Global const &xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis_(xyz).transpose();
       Coeff prod = f_col * b_row;
