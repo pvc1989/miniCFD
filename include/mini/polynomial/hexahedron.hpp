@@ -46,24 +46,10 @@ class Hexahedron {
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
 
  public:
-  template <typename Callable>
-  Hexahedron(Callable &&global_to_value, const Gauss &gauss)
-      : gauss_ptr_(&gauss) {
-    for (int ijk = 0; ijk < N; ++ijk) {
-      auto &global = gauss_ptr_->GetGlobalCoord(ijk);
-      coeff_.col(ijk) = global_to_value(global);  // value in physical space
-      auto jacobian_det =
-          gauss_ptr_->GetGlobalWeight(ijk) / gauss_ptr_->GetLocalWeight(ijk);
-      coeff_.col(ijk) *= jacobian_det;  // value in parametric space
-    }
-  }
   explicit Hexahedron(const Gauss &gauss)
       : gauss_ptr_(&gauss) {
-    coeff_.setZero();
   }
-  Hexahedron() {
-    coeff_.setZero();
-  }
+  Hexahedron() = default;
   Hexahedron(const Hexahedron &) = default;
   Hexahedron(Hexahedron &&) noexcept = default;
   Hexahedron &operator=(const Hexahedron &) = default;
@@ -97,8 +83,14 @@ class Hexahedron {
     return gauss().lagrange();
   }
   template <typename Callable>
-  void Approximate(Callable &&func) {
-    *this = Hexahedron(std::forward<Callable>(func), gauss_ptr_);
+  void Approximate(Callable &&global_to_value) {
+    for (int ijk = 0; ijk < N; ++ijk) {
+      auto &global = gauss_ptr_->GetGlobalCoord(ijk);
+      coeff_.col(ijk) = global_to_value(global);  // value in physical space
+      auto jacobian_det =
+          gauss_ptr_->GetGlobalWeight(ijk) / gauss_ptr_->GetLocalWeight(ijk);
+      coeff_.col(ijk) *= jacobian_det;  // value in parametric space
+    }
   }
 
   static Basis BuildInterpolationBasis() {

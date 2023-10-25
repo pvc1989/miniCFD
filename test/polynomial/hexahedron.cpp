@@ -125,7 +125,8 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
         x * x, x * y, x * z, y * y, y * z, z * z };
     return value;
   };
-  auto vector_interp = VectorPF(vector_func, gauss);
+  auto vector_interp = VectorPF(gauss);
+  vector_interp.Approximate(vector_func);
   // test values on nodes
   for (int ijk = 0; ijk < Basis::N; ++ijk) {
     auto &global = vector_interp.gauss().GetGlobalCoord(ijk);
