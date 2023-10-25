@@ -35,12 +35,12 @@ class RungeKuttaBase {
   using Projection = typename Cell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
 
  protected:
   std::vector<Coeff> residual_;
   std::vector<std::string> supersonic_outlet_, solid_wall_;
-  using Function = std::function<Value(const Coord &, double)>;
+  using Function = std::function<Value(const Global &, double)>;
   std::unordered_map<std::string, Function> supersonic_inlet__,
       subsonic_inlet_, subsonic_outlet_, smart_boundary_;
   Limiter limiter_;
@@ -118,7 +118,7 @@ class RungeKuttaBase {
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &xyz = gauss.GetGlobalCoord(q);
-          Value cv = cell.GetValue(xyz);
+          Value cv = cell.GlobalToValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
           auto grad = cell.basis().GetGradValue(xyz);
           Coeff prod = flux * grad.transpose();
@@ -138,8 +138,8 @@ class RungeKuttaBase {
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GetValue(coord);
-        Value u_sharer = sharer.GetValue(coord);
+        Value u_holder = holder.GlobalToValue(coord);
+        Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
@@ -159,8 +159,8 @@ class RungeKuttaBase {
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GetValue(coord);
-        Value u_sharer = sharer.GetValue(coord);
+        Value u_holder = holder.GlobalToValue(coord);
+        Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff temp = flux * holder.basis()(coord).transpose();
@@ -176,7 +176,7 @@ class RungeKuttaBase {
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GetValue(coord);
+        Value u_holder = holder.GlobalToValue(coord);
         Value flux = riemann.GetFluxOnSolidWall(u_holder);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
@@ -195,7 +195,7 @@ class RungeKuttaBase {
       auto n = gauss.CountPoints();
       for (int q = 0; q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GetValue(coord);
+        Value u_holder = holder.GlobalToValue(coord);
         Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
         flux *= gauss.GetGlobalWeight(q);
         this->residual_.at(holder.id())
@@ -236,7 +236,7 @@ class RungeKuttaBase {
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
-          Value u_inner = holder.GetValue(coord);
+          Value u_inner = holder.GlobalToValue(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
@@ -257,7 +257,7 @@ class RungeKuttaBase {
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
-          Value u_inner = holder.GetValue(coord);
+          Value u_inner = holder.GlobalToValue(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
@@ -278,7 +278,7 @@ class RungeKuttaBase {
         auto n = gauss.CountPoints();
         for (int q = 0; q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
-          Value u_inner = holder.GetValue(coord);
+          Value u_inner = holder.GlobalToValue(coord);
           Value u_given = iter->second(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);

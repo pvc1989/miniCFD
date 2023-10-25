@@ -9,6 +9,7 @@
 #include "mini/riemann/euler/eigen.hpp"
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
+#include "mini/polynomial/projection.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/solver/rkdg.hpp"
 #include "mini/aircraft/source.hpp"
@@ -24,10 +25,11 @@ using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
 constexpr int kDegrees = 2;
-using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, 5>;
+using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
-using Coord = typename Cell::Coord;
+using Global = typename Cell::Global;
 using Value = typename Cell::Value;
 using Coeff = typename Cell::Coeff;
 
@@ -43,7 +45,7 @@ using Airfoil = typename Blade::Airfoil;
 constexpr int kOrders = std::min(3, kDegrees + 1);
 using Solver = RungeKutta<kOrders, Part, Limiter, Source>;
 
-using IC = Value(*)(const Coord &);
+using IC = Value(*)(const Global &);
 using BC = void(*)(const std::string &, Solver *);
 
 void WriteForces(Part const &part, Source *source, double t_curr,

@@ -17,8 +17,10 @@ template class Shuffler<idx_t, double>;
 
 namespace part {
 
-template class Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
-template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
+template class Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 0, 1>>;
+template class Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 2, 1>>;
 
 }  // namespace part
 }  // namespace mesh

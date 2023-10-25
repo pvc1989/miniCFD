@@ -4,6 +4,7 @@
 
 #include "mini/riemann/rotated/burgers.hpp"
 #include "mini/riemann/rotated/single.hpp"
+#include "mini/polynomial/projection.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/shuffler.hpp"
@@ -26,11 +27,15 @@ extern template class Shuffler<idx_t, double>;
 
 namespace part {
 
-extern template class Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
-extern template class Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
+extern template class Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 0, 1>>;
+extern template class Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 2, 1>>;
 
-using Part0 = Part<cgsize_t, 0, mini::riemann::rotated::Riemann>;
-using Part2 = Part<cgsize_t, 2, mini::riemann::rotated::Riemann>;
+using Part0 = Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 0, 1>>;
+using Part2 = Part<cgsize_t, mini::riemann::rotated::Riemann,
+    mini::polynomial::Projection<double, 3, 2, 1>>;
 
 }  // namespace part
 }  // namespace mesh

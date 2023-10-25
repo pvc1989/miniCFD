@@ -15,9 +15,9 @@
 
 void WriteForces(Part const &part, Source *source, double t_curr,
     std::string const &frame_name, int i_core) {
-  using Force = Coord;
+  using Force = Global;
   std::vector<Force> forces;
-  std::vector<Coord> points;
+  std::vector<Global> points;
   std::vector<Scalar> weights;
   for (const Cell &cell : part.GetLocalCells()) {
     source->GetForces(cell, t_curr, &forces, &points, &weights);

@@ -72,7 +72,8 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   }
   // build cells and project the function on them
   using Riemann = mini::riemann::rotated::Single<double, 3>;
-  using Cell = mini::mesh::part::Cell<cgsize_t, 2, Riemann>;
+  using Projection = mini::polynomial::Projection<double, 3, 2, 1>;
+  using Cell = mini::mesh::part::Cell<cgsize_t, Riemann, Projection>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto &zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -111,7 +112,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
-        return cells[j_cell].GetValue(xyz);
+        return cells[j_cell].GlobalToValue(xyz);
       };
       auto &adj_projection =
           adj_projections[i_cell].emplace_back(cell_i.gauss());
@@ -177,7 +178,8 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
-  using Part = mini::mesh::part::Part<cgsize_t, 2, Riemann>;
+  using Projection = mini::polynomial::Projection<double, 3, 2, 5>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   MPI_Finalize();
   // project the function

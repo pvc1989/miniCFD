@@ -18,14 +18,14 @@ Value value_after = Gas::PrimitiveToConservative(primitive_after);
 Value value_before = Gas::PrimitiveToConservative(primitive_before);
 double x_gap = 1.0 / 6.0;
 
-Value MyIC(const Coord &xyz) {
+Value MyIC(const Global &xyz) {
   auto x = xyz[0], y = xyz[1];
   return ((x - x_gap) * tan_60 < y) ? value_after : value_before;
 }
 
 /* Set boundary conditions. */
 auto u_x = u_nu / cos_30;
-auto moving_shock = [](const Coord& xyz, double t){
+auto moving_shock = [](const Global& xyz, double t){
   auto x = xyz[0], y = xyz[1];
   return ((x - (x_gap + u_x * t)) * tan_60 < y) ? value_after : value_before;
 };

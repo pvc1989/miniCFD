@@ -6,7 +6,7 @@
 auto primitive_left = Primitive(3.857143, 2.629369, 0.0, 0.0, 10.333333);
 auto value_left = Gas::PrimitiveToConservative(primitive_left);
 
-Value MyIC(const Coord &xyz) {
+Value MyIC(const Global &xyz) {
   auto x = xyz[0];
   if (x < 1.0) {
     return value_left;
@@ -19,8 +19,8 @@ Value MyIC(const Coord &xyz) {
 }
 
 /* Set boundary conditions. */
-auto state_left = [](const Coord& xyz, double t){ return value_left; };
-auto state_right = [](const Coord& xyz, double t){ return MyIC(xyz); };
+auto state_left = [](const Global& xyz, double t){ return value_left; };
+auto state_right = [](const Global& xyz, double t){ return MyIC(xyz); };
 
 void MyBC(const std::string &suffix, Solver *solver) {
   if (suffix == "tetra") {

@@ -11,6 +11,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
+#include "mini/polynomial/projection.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/gauss/function.hpp"
 #include "mini/solver/rkdg.hpp"
@@ -59,10 +60,11 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, 1>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Value = typename Cell::Value;
   using Coeff = typename Cell::Coeff;
 
@@ -80,7 +82,7 @@ int main(int argc, char* argv[]) {
   /* Set initial conditions. */
   Value value_right{ 10 }, value_left{ -10 };
   double x_0 = 2.0;
-  auto initial_condition = [&](const Coord& xyz){
+  auto initial_condition = [&](const Global& xyz){
     Value value = xyz[0] > x_0 ? value_right : value_left;
     return value;
   };
