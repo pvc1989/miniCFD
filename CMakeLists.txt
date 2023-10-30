@@ -113,6 +113,8 @@ set(METIS_INC "${METIS_BINARY_DIR}/include")
 set(EIGEN_INC "${PROJECT_SOURCE_DIR}/ThirdParty/eigen")
 include_directories(${EIGEN_INC})
 
+set(CGAL_INCLUDE "${PROJECT_SOURCE_DIR}/ThirdParty/CGAL/include")
+
 # Additional headers that depends on ${PROJECT_SOURCE_DIR}
 include_directories("${PROJECT_SOURCE_DIR}/include")
 # Additional headers that depends on ${PROJECT_BINARY_DIR}
