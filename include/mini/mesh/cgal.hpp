@@ -16,10 +16,10 @@ namespace mini {
 namespace mesh {
 namespace cgal {
 
-template <class Point>
+template <class Real>
 class NeighborSearching {
   using Kernel = CGAL::Simple_cartesian<double>;
-  using Point_d = Kernel::Point_3;
+  using Point = Kernel::Point_3;
   using TreeTraits = CGAL::Search_traits_3<Kernel>;
   using Searching = CGAL::Orthogonal_k_neighbor_search<TreeTraits>;
   using Tree = Searching::Tree;
@@ -27,22 +27,23 @@ class NeighborSearching {
   Tree tree_;
 
  public:
-  explicit NeighborSearching(std::vector<Point> const &points) {
-    for (auto &p : points) {
-      tree_.insert(Point_d(p[0], p[1], p[2]));
+  NeighborSearching(std::vector<Real> const &x, std::vector<Real> const &y,
+      std::vector<Real> const &z) {
+    assert(x.size() == y.size() && y.size() == z.size());
+    for (int i = 0, n = x.size(); i < n; ++i) {
+      tree_.insert(Point(x[i], y[i], z[i]));
     }
     tree_.build();
   }
 
   /* Search the k-nearest neighbors to a given point.
    */
-  std::vector<int> Search(Point const &query, int n_neighbor = 1) {
+  std::vector<int> Search(Real x, Real y, Real z, int n_neighbor = 1) {
     auto output = std::vector<int>(n_neighbor);
-    auto cgal_point = Point_d(query[0], query[1], query[2]);
-    auto search = Searching(tree_, cgal_point, n_neighbor);
+    auto search = Searching(tree_, Point(x, y, z), n_neighbor);
     int i = 0;
     for (auto it = search.begin(); it != search.end(); ++it) {
-      output[i++];
+      output[i++] = i;
       std::cout << it->first << "\n";
     }
     assert(i == n_neighbor);

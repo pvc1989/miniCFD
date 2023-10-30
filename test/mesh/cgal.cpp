@@ -14,18 +14,22 @@ class TestMeshCgal : public ::testing::Test {
  protected:
   double rand() { return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); }
 };
-TEST_F(TestMeshCgal, NeighborSearchOnRandomsources) {
-  using Point = std::array<double, 3>;
-  auto sources = std::vector<Point>();
+TEST_F(TestMeshCgal, NeighborSearchOnRandomCoordinates) {
   int n_source = 1<<10;
+  std::vector<double> x(n_source), y(n_source), z(n_source);
   for (int i = 0; i < n_source; ++i) {
-    sources.emplace_back(Point{ rand(), rand(), rand() });
+    x[i] = rand(); 
+    y[i] = rand();
+    z[i] = rand();
   }
-  auto searching = mini::mesh::cgal::NeighborSearching<Point>(sources);
+  auto searching = mini::mesh::cgal::NeighborSearching<double>(x, y, z);
   int n_query = 1<<4;
   int n_neighbor = 8;
-  for (int i = 0; i < n_source; ++i) {
-    auto query = Point{ rand(), rand(), rand() };
-    auto neighbors = searching.Search(query, n_neighbor);
+  for (int i = 0; i < n_query; ++i) {
+    auto a = rand(), b = rand(), c = rand();
+    auto indices = searching.Search(a, b, c, n_neighbor);
+    for (int i : indices) {
+      std::cout << i << "\n";
+    }
   }
 }
