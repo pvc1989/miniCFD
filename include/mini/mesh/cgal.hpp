@@ -5,7 +5,6 @@
 #include <cassert>
 #include <vector>
 #include <utility>
-#include <iostream>
 #include <tuple>
 
 #include <CGAL/Simple_cartesian.h>

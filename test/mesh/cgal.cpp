@@ -1,6 +1,7 @@
 // Copyright 2023 PEI Weicheng
 
 #include <array>
+#include <algorithm>
 #include <cstdlib>
 #include <vector>
 
@@ -15,6 +16,7 @@ class TestMeshCgal : public ::testing::Test {
   double rand() { return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); }
 };
 TEST_F(TestMeshCgal, NeighborSearchOnRandomCoordinates) {
+  std::srand(31415926);
   int n_source = 1<<10;
   std::vector<double> x(n_source), y(n_source), z(n_source);
   for (int i = 0; i < n_source; ++i) {
@@ -27,10 +29,15 @@ TEST_F(TestMeshCgal, NeighborSearchOnRandomCoordinates) {
   int n_neighbor = 8;
   for (int i = 0; i < n_query; ++i) {
     auto a = rand(), b = rand(), c = rand();
-    std::cout << "query: " << a << " " << b << " " << c << "\n";
-    auto indices = searching.Search(a, b, c, n_neighbor);
-    for (int i : indices) {
-      std::cout << i << " " << x[i] << " " << y[i] << " " << z[i] << "\n";
-    }
+    auto cmp = [&x, &y, &z, a, b, c](int i, int j) {
+      return std::hypot(x[i] - a, y[i] - b, z[i] - c)
+           < std::hypot(x[j] - a, y[j] - b, z[j] - c);
+    };
+    auto all_indices = std::vector<int>(n_source);
+    std::iota(all_indices.begin(), all_indices.end(), 0);
+    std::sort(all_indices.begin(), all_indices.end(), cmp);
+    auto neighbor_indices = searching.Search(a, b, c, n_neighbor);
+    EXPECT_TRUE(std::equal(neighbor_indices.begin(), neighbor_indices.end(),
+        all_indices.begin()));
   }
 }
