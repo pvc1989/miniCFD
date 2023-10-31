@@ -27,9 +27,10 @@ TEST_F(TestMeshCgal, NeighborSearchOnRandomCoordinates) {
   int n_neighbor = 8;
   for (int i = 0; i < n_query; ++i) {
     auto a = rand(), b = rand(), c = rand();
+    std::cout << "query: " << a << " " << b << " " << c << "\n";
     auto indices = searching.Search(a, b, c, n_neighbor);
     for (int i : indices) {
-      std::cout << i << "\n";
+      std::cout << i << " " << x[i] << " " << y[i] << " " << z[i] << "\n";
     }
   }
 }
