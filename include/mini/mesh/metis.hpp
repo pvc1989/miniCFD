@@ -26,134 +26,23 @@ namespace metis {
  */
 template <std::integral Int>
 class SparseGraph {
- private:
-  std::vector<Int> range_, index_;
-
- public:
-  SparseGraph() = default;
-  SparseGraph(std::vector<Int> const &range, std::vector<Int> const &index)
-      : range_(range), index_(index) {
-  }
-
- public:
-  Int const &range(Int i) const {
-    return range_[i];
-  }
-  Int const &index(Int i) const {
-    return index_[i];
-  }
-  Int CountVertices() const {
-    return range_.size() - 1;
-  }
-  Int CountEdges() const {
-    return index_.size();
-  }
-  Int &range(Int i) {
-    return range_[i];
-  }
-  Int &index(Int i) {
-    return index_[i];
-  }
-  /**
-   * @brief Resize the underling containers.
-   * 
-   * @param n_row the number of rows in the resized graph
-   * @param n_value the number of values in the resized graph
-   */
-  void resize(Int n_row, Int n_value) {
-    range_.resize(n_row + 1);
-    index_.resize(n_value);
-  }
-};
-
-/**
- * @brief A CSR (Compressed Sparse Row) representation of meshes.
- * 
- * In this representation, the global indices of nodes in the `i`th cell are `[ nodes(range(i)), nodes(range(i) + 1), ..., nodes(range(i + 1)) )`.
- * 
- * @tparam Int the index type
- */
-template <std::integral Int>
-class Mesh : private SparseGraph<Int> {
-  using Base = SparseGraph<Int>;
-  Int n_node_;
-
- public:
-  Mesh() = default;
-  Mesh(std::vector<Int> const &range,
-       std::vector<Int> const &index, Int n_nodes)
-      : Base(range, index), n_node_(n_nodes) {
-    assert(n_nodes > *(std::max_element(index.begin(), index.end())));
-  }
-
- public:
-  Int const &range(Int i) const {
-    return this->Base::range(i);
-  }
-  Int const &nodes(Int i) const {
-    return this->index(i);
-  }
-  Int CountCells() const {
-    return this->CountVertices();
-  }
-  Int CountFaces() const {
-    return this->CountEdges();
-  }
-  Int CountNodes() const {
-    return n_node_;
-  }
-  Int &range(Int i) {
-    return this->Base::range(i);
-  }
-  Int &nodes(Int i) {
-    return this->index(i);
-  }
-  /**
-   * @brief Resize the underling containers.
-   * 
-   * @param n_cell the number of cells in the resized mesh
-   * @param n_node_global the number of nodes counted globally (without duplication)
-   * @param n_node_local the number of nodes counted locally (with duplication)
-   */
-  void resize(Int n_cell, Int n_node_global, Int n_node_local) {
-    assert(0 < n_cell);
-    assert(0 < n_node_global);
-    assert(0 < n_node_local);
-    n_node_ = n_node_global;
-    Base::resize(n_cell, n_node_local);
-  }
-};
-
-/**
- * @brief A wrapper on SparseGraph, which holds arrays allocated by METIS.
- * 
- * @tparam Int the index type
- */
-template <std::integral Int>
-class SparseGraphWithDeleter {
+ protected:
   Int n_vertex_, *range_, *index_;
 
  public:
   /**
-   * @brief Construct a new SparseGraphWithDeleter object.
+   * @brief Construct a new object.
    * 
    * @param n_vertex the number of vertices
-   * @param range the address of the `range` array allocated by METIS
-   * @param index the address of the `index` array allocated by METIS
+   * @param range the address of the `range` array allocated by someone else
+   * @param index the address of the `index` array allocated by someone else
    */
-  SparseGraphWithDeleter(Int n_vertex, Int *range, Int *index)
+  SparseGraph(Int n_vertex, Int *range, Int *index)
       : n_vertex_(n_vertex), range_(range), index_(index) {
   }
-  /**
-   * @brief Destroy the SparseGraphWithDeleter object
-   *
-   * Explicitly free the arrays, which are allocated by METIS. 
-   */
-  ~SparseGraphWithDeleter() noexcept {
-    int errors = (METIS_Free(range_) != METIS_OK)
-               + (METIS_Free(index_) != METIS_OK);
-    assert(errors == 0);
-  }
+  SparseGraph() = default;
+
+ public:
   Int const &range(Int i) const {
     return range_[i];
   }
@@ -171,6 +60,103 @@ class SparseGraphWithDeleter {
   }
   Int &index(Int i) {
     return index_[i];
+  }
+};
+
+/**
+ * @brief A wrapper, which holds arrays allocated by METIS, on SparseGraph.
+ * 
+ * @tparam Int the index type
+ */
+template <std::integral Int>
+class SparseGraphWithDeleter : public SparseGraph<Int> {
+ public:
+  /**
+   * @brief Construct a new SparseGraphWithDeleter object.
+   * 
+   * @param n_vertex the number of vertices
+   * @param range the address of the `range` array allocated by METIS
+   * @param index the address of the `index` array allocated by METIS
+   */
+  SparseGraphWithDeleter(Int n_vertex, Int *range, Int *index)
+      : SparseGraph<Int>(n_vertex, range, index) {
+  }
+  /**
+   * @brief Destroy the SparseGraphWithDeleter object
+   *
+   * Explicitly free the arrays, which are allocated by METIS. 
+   */
+  ~SparseGraphWithDeleter() noexcept {
+    int errors = (METIS_Free(this->range_) != METIS_OK)
+               + (METIS_Free(this->index_) != METIS_OK);
+    assert(errors == 0);
+  }
+};
+
+/**
+ * @brief A CSR (Compressed Sparse Row) representation of meshes.
+ * 
+ * In this representation, the global indices of nodes in the `i`th cell are `[ nodes(range(i)), nodes(range(i) + 1), ..., nodes(range(i + 1)) )`.
+ * 
+ * @tparam Int the index type
+ */
+template <std::integral Int>
+class Mesh {
+  std::vector<Int> range_, index_;
+  SparseGraph<Int> graph_;
+  Int n_node_;
+
+ public:
+  Mesh() = default;
+  Mesh(Int *range, Int *index, Int n_cell, Int n_node)
+      : graph_(n_cell, range, index), n_node_(n_node) {
+    assert(n_node > *(std::max_element(index, index + range[n_cell])));
+  }
+  Mesh(std::vector<Int> const &range,
+       std::vector<Int> const &index, Int n_node)
+      : range_(range), index_(index),
+        graph_(range.size() - 1, range_.data(), index_.data()),
+        n_node_(n_node) {
+    assert(n_node > *(std::max_element(index.begin(), index.end())));
+  }
+
+ public:
+  Int const &range(Int i) const {
+    return graph_.range(i);
+  }
+  Int const &nodes(Int i) const {
+    return graph_.index(i);
+  }
+  Int CountCells() const {
+    return graph_.CountVertices();
+  }
+  Int CountFaces() const {
+    return graph_.CountEdges();
+  }
+  Int CountNodes() const {
+    return n_node_;
+  }
+  Int &range(Int i) {
+    return graph_.range(i);
+  }
+  Int &nodes(Int i) {
+    return graph_.index(i);
+  }
+  /**
+   * @brief Resize the underling containers.
+   * 
+   * @param n_cell the number of cells in the resized mesh
+   * @param n_node_global the number of nodes counted globally (without duplication)
+   * @param n_node_local the number of nodes counted locally (with duplication)
+   */
+  void resize(Int n_cell, Int n_node_global, Int n_node_local) {
+    assert(0 < n_cell);
+    assert(0 < n_node_global);
+    assert(0 < n_node_local);
+    range_.resize(n_cell + 1);
+    index_.resize(n_node_local);
+    graph_ = SparseGraph<Int>(n_cell, range_.data(), index_.data());
+    n_node_ = n_node_global;
   }
 };
 
