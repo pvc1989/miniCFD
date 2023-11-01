@@ -18,21 +18,20 @@ namespace mesh {
 namespace metis {
 
 /**
- * @brief The data structure for representing sparse graphs.
+ * @brief A CSR (Compressed Sparse Row) representation of sparse graphs.
  * 
- * In a real CSR (Compressed Sparse Row) matrix, the column indices for row `i` are stored in `index_[ range_[i], range_[i+1] )` and their corresponding values are stored in `value_[ range_[i], range_[i+1] )`.
- * To represent an unweighted graph, we only care about the positions of non-zero values, so we have ignored the `value_` array.
+ * In this representation, the indices of neighbors of the `i`th vertex are `[ index(range(i)), index(range(i) + 1), ..., index(range(i + 1)) )`.
  * 
  * @tparam Int index type
  */
 template <std::integral Int>
-class SparseMatrix {
+class SparseGraph {
  private:
-  std::vector<Int> range_, index_/* , value_ */;
+  std::vector<Int> range_, index_;
 
  public:
-  SparseMatrix() = default;
-  SparseMatrix(std::vector<Int> const &range, std::vector<Int> const &index)
+  SparseGraph() = default;
+  SparseGraph(std::vector<Int> const &range, std::vector<Int> const &index)
       : range_(range), index_(index) {
   }
 
@@ -43,7 +42,7 @@ class SparseMatrix {
   Int const &index(Int i) const {
     return index_[i];
   }
-  Int CountCorners() const {
+  Int CountVertices() const {
     return range_.size() - 1;
   }
   Int CountEdges() const {
@@ -58,30 +57,32 @@ class SparseMatrix {
   /**
    * @brief Resize the underling containers.
    * 
-   * @param n_vertices the number of vertices in this graph
-   * @param n_edges the number of edges in this graph
+   * @param n_row the number of rows in the resized graph
+   * @param n_value the number of values in the resized graph
    */
-  void resize(Int n_vertices, Int n_edges) {
-    range_.resize(n_vertices + 1);
-    index_.resize(n_edges);
+  void resize(Int n_row, Int n_value) {
+    range_.resize(n_row + 1);
+    index_.resize(n_value);
   }
 };
 
 /**
- * @brief The data structure for representing meshes.
+ * @brief A CSR (Compressed Sparse Row) representation of meshes.
+ * 
+ * In this representation, the global indices of nodes in the `i`th cell are `[ nodes(range(i)), nodes(range(i) + 1), ..., nodes(range(i + 1)) )`.
  * 
  * @tparam Int the index type
  */
 template <std::integral Int>
-class Mesh : private SparseMatrix<Int> {
-  using Base = SparseMatrix<Int>;
-  Int n_nodes_;
+class Mesh : private SparseGraph<Int> {
+  using Base = SparseGraph<Int>;
+  Int n_node_;
 
  public:
   Mesh() = default;
   Mesh(std::vector<Int> const &range,
        std::vector<Int> const &index, Int n_nodes)
-      : Base(range, index), n_nodes_(n_nodes) {
+      : Base(range, index), n_node_(n_nodes) {
     assert(n_nodes > *(std::max_element(index.begin(), index.end())));
   }
 
@@ -93,10 +94,13 @@ class Mesh : private SparseMatrix<Int> {
     return this->index(i);
   }
   Int CountCells() const {
-    return this->CountCorners();
+    return this->CountVertices();
+  }
+  Int CountFaces() const {
+    return this->CountEdges();
   }
   Int CountNodes() const {
-    return n_nodes_;
+    return n_node_;
   }
   Int &range(Int i) {
     return this->Base::range(i);
@@ -107,41 +111,41 @@ class Mesh : private SparseMatrix<Int> {
   /**
    * @brief Resize the underling containers.
    * 
-   * @param n_cells the number of cells in this mesh
-   * @param n_nodes_global the number of nodes counted globally (without duplication)
-   * @param n_nodes_local the number of nodes counted locally (with duplication)
+   * @param n_cell the number of cells in the resized mesh
+   * @param n_node_global the number of nodes counted globally (without duplication)
+   * @param n_node_local the number of nodes counted locally (with duplication)
    */
-  void resize(Int n_cells, Int n_nodes_global, Int n_nodes_local) {
-    assert(0 < n_cells);
-    assert(0 < n_nodes_global);
-    assert(0 < n_nodes_local);
-    n_nodes_ = n_nodes_global;
-    Base::resize(n_cells, n_nodes_local);
+  void resize(Int n_cell, Int n_node_global, Int n_node_local) {
+    assert(0 < n_cell);
+    assert(0 < n_node_global);
+    assert(0 < n_node_local);
+    n_node_ = n_node_global;
+    Base::resize(n_cell, n_node_local);
   }
 };
 
 /**
- * @brief The data structure for representing sparse graphs with deleter.
+ * @brief A wrapper on SparseGraph, which holds arrays allocated by METIS.
  * 
  * @tparam Int the index type
  */
 template <std::integral Int>
 class SparseGraphWithDeleter {
-  Int size_, *range_, *index_/* , *value_ */;
+  Int n_vertex_, *range_, *index_;
 
  public:
   /**
-   * @brief Construct a new Sparse Graph With Deleter object.
+   * @brief Construct a new SparseGraphWithDeleter object.
    * 
-   * @param size the number of vertices
-   * @param range the address of the explicitly allocated range array
-   * @param index the address of the explicitly allocated index array
+   * @param n_vertex the number of vertices
+   * @param range the address of the `range` array allocated by METIS
+   * @param index the address of the `index` array allocated by METIS
    */
-  SparseGraphWithDeleter(Int size, Int *range, Int *index)
-      : size_(size), range_(range), index_(index) {
+  SparseGraphWithDeleter(Int n_vertex, Int *range, Int *index)
+      : n_vertex_(n_vertex), range_(range), index_(index) {
   }
   /**
-   * @brief Destroy the Sparse Graph With Deleter object
+   * @brief Destroy the SparseGraphWithDeleter object
    *
    * Explicitly free the arrays, which are allocated by METIS. 
    */
@@ -156,11 +160,11 @@ class SparseGraphWithDeleter {
   Int const &index(Int i) const {
     return index_[i];
   }
-  Int CountCorners() const {
-    return size_;
+  Int CountVertices() const {
+    return n_vertex_;
   }
   Int CountEdges() const {
-    return range_[size_];
+    return range_[n_vertex_];
   }
   Int &range(Int i) {
     return range_[i];
@@ -204,7 +208,7 @@ std::vector<Int> PartGraph(
     const std::vector<Int> &options = {}) {
   static_assert(sizeof(Int) == sizeof(idx_t),
       "`Int` and `idx_t` must have the same size.");
-  Int n_vertices = graph.CountCorners();
+  Int n_vertices = graph.CountVertices();
   auto vertex_parts = std::vector<Int>(n_vertices);
   if (n_parts == 1)
     return vertex_parts;
