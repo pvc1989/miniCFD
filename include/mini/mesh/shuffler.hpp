@@ -3,6 +3,8 @@
 #ifndef MINI_MESH_SHUFFLER_HPP_
 #define MINI_MESH_SHUFFLER_HPP_
 
+#include <concepts>
+
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
@@ -107,7 +109,7 @@ void ShuffleConnectivity(std::vector<int> const &old_to_new_for_nodes,
  * @tparam Int
  * @tparam Real 
  */
-template <typename Int, class Real>
+template <std::integral Int, std::floating_point Real>
 class Shuffler {
  public:
   using CgnsMesh = mini::mesh::cgns::File<Real>;
@@ -145,7 +147,7 @@ class Shuffler {
   void FillFaceParts(CgnsMesh const &mesh, Mapper const &mapper);
 };
 
-template <typename Int, class Real>
+template <std::integral Int, std::floating_point Real>
 void Shuffler<Int, Real>::FillFaceParts(
     CgnsMesh const &mesh, Mapper const &mapper) {
   auto &m_to_c_nodes = mapper.metis_to_cgns_for_nodes;
@@ -236,7 +238,7 @@ void Shuffler<Int, Real>::FillFaceParts(
   }
 }
 
-template <typename Int, class Real>
+template <std::integral Int, std::floating_point Real>
 void Shuffler<Int, Real>::Shuffle() {
   FillFaceParts(*cgns_mesh_, *mapper_);
   auto &m_to_c_nodes = mapper_->metis_to_cgns_for_nodes;
@@ -311,7 +313,7 @@ void Shuffler<Int, Real>::Shuffle() {
   }
 }
 
-template <typename Int, class Real>
+template <std::integral Int, std::floating_point Real>
 void Shuffler<Int, Real>::WritePartitionInfo(std::string const &case_name) {
   auto &base = cgns_mesh_->GetBase(1);
   int n_zones = base.CountZones();
@@ -503,7 +505,7 @@ void Shuffler<Int, Real>::WritePartitionInfo(std::string const &case_name) {
   }
 }
 
-template <typename Int, class Real>
+template <std::integral Int, std::floating_point Real>
 void Shuffler<Int, Real>::PartitionAndShuffle(std::string const &case_name,
     std::string const &old_cgns_name, Int n_parts) {
   char cmd[1024];

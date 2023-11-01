@@ -2,6 +2,8 @@
 #ifndef MINI_MESH_CGAL_HPP_
 #define MINI_MESH_CGAL_HPP_
 
+#include <concepts>
+
 #include <cassert>
 #include <vector>
 #include <utility>
@@ -18,7 +20,7 @@ namespace mini {
 namespace mesh {
 namespace cgal {
 
-template <class Real>
+template <std:: floating_point Real>
 class NeighborSearching {
   using Kernel = CGAL::Simple_cartesian<double>;
   using Point = Kernel::Point_3;

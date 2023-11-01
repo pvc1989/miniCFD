@@ -5,6 +5,8 @@
 #ifndef MINI_MESH_CGNS_HPP_
 #define MINI_MESH_CGNS_HPP_
 
+#include <concepts>
+
 #include <algorithm>
 #include <array>
 #include <cassert>
@@ -74,18 +76,18 @@ int dim(ElementType type) {
   return -1;
 }
 
-template <class Real> class File;
-template <class Real> class Base;
-template <class Real> class Zone;
-template <class Real> class Coordinates;
-template <class Real> class Section;
-template <class Real> class ZoneBC;
-template <class Real> class Solution;
+template <std::floating_point Real> class File;
+template <std::floating_point Real> class Base;
+template <std::floating_point Real> class Zone;
+template <std::floating_point Real> class Coordinates;
+template <std::floating_point Real> class Section;
+template <std::floating_point Real> class ZoneBC;
+template <std::floating_point Real> class Solution;
 
-template <typename Int>
-class ShiftedVector : public std::vector<Int> {
+template <std::movable T>
+class ShiftedVector : public std::vector<T> {
  private:
-  using Base = std::vector<Int>;
+  using Base = std::vector<T>;
   using size_type = typename Base::size_type;
   size_type shift_{0};
 
@@ -100,16 +102,16 @@ class ShiftedVector : public std::vector<Int> {
   ShiftedVector &operator=(ShiftedVector &&) noexcept = default;
   ~ShiftedVector() noexcept = default;
 
-  Int const &operator[](size_type i) const {
+  T const &operator[](size_type i) const {
     return this->Base::operator[](i - shift_);
   }
-  Int const &at(size_type i) const {
+  T const &at(size_type i) const {
     return this->Base::at(i - shift_);
   }
-  Int &operator[](size_type i) {
+  T &operator[](size_type i) {
     return this->Base::operator[](i - shift_);
   }
-  Int &at(size_type i) {
+  T &at(size_type i) {
     return this->Base::at(i - shift_);
   }
 };
@@ -117,7 +119,7 @@ class ShiftedVector : public std::vector<Int> {
 /**
  * Wrapper of the `GridCoordinates_t` type.
  */
-template <class Real>
+template <std::floating_point Real>
 class Coordinates {
  public:  // Constructors:
   Coordinates(Zone<Real> const &zone, int size)
@@ -208,7 +210,7 @@ class Coordinates {
 /**
  * Wrapper of the `Elements_t` type.
  */
-template <class Real>
+template <std::floating_point Real>
 class Section {
   friend class Zone<Real>;
 
@@ -353,7 +355,7 @@ class Section {
   ElementType type_;
 };
 
-template <class Real>
+template <std::floating_point Real>
 struct BC {
   char name[32];
   cgsize_t ptset[2];
@@ -364,7 +366,7 @@ struct BC {
   GridLocation location;
   DataType normal_data_type;
 };
-template <class Real>
+template <std::floating_point Real>
 class ZoneBC {
   std::vector<BC<Real>> bocos_;
   Zone<Real> const *zone_ptr_;
@@ -436,7 +438,7 @@ class ZoneBC {
   }
 };
 
-template <class Real>
+template <std::floating_point Real>
 class Field {
  public:  // Constructor:
   Field(Solution<Real> const &solution, int fid, char const *name, int size)
@@ -483,7 +485,7 @@ class Field {
   int i_field_;
 };
 
-template <class Real>
+template <std::floating_point Real>
 class Solution {
  public:  // Constructors:
   Solution(Zone<Real> const &zone, int i_soln, char const *name,
@@ -573,7 +575,7 @@ class Solution {
   int i_soln_;
 };
 
-template <class Real>
+template <std::floating_point Real>
 class Zone {
  public:  // Constructors:
   /**
@@ -919,7 +921,7 @@ class Zone {
   }
 };
 
-template <class Real>
+template <std::floating_point Real>
 class Base {
  public:  // Constructors:
   Base(File<Real> const &file, int bid, char const *name,
@@ -1009,7 +1011,7 @@ class Base {
   int i_base_, cell_dim_, phys_dim_;
 };
 
-template <class Real>
+template <std::floating_point Real>
 class File {
  public:  // Constructors:
   explicit File(const std::string &name)

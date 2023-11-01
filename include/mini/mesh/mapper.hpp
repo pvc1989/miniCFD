@@ -3,6 +3,8 @@
 #ifndef MINI_MESH_MAPPER_HPP_
 #define MINI_MESH_MAPPER_HPP_
 
+#include <concepts>
+
 #include <cassert>
 #include <cstdio>
 #include <fstream>
@@ -25,20 +27,20 @@ namespace mapper {
 static_assert(sizeof(idx_t) == sizeof(cgsize_t),
     "METIS's `idx_t` and CGNS's `cgsize_t` must have the same size.");
 
-template <class Int>
+template <std::integral Int>
 struct NodeInfo {
   NodeInfo() = default;
   NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
   Int i_zone{0}, i_node{0};
 };
-template <class Int = int>
+template <std::integral Int = int>
 struct CellInfo {
   CellInfo() = default;
   CellInfo(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
   Int i_zone{0}, i_sect{0}, i_cell{0};
 };
 
-template <class Int, class Real>
+template <std::integral Int, std::floating_point Real>
 struct CgnsToMetis {
   using CgnsMesh = cgns::File<Real>;
   using MetisMesh = metis::Mesh<Int>;
@@ -69,7 +71,7 @@ struct CgnsToMetis {
   std::vector<std::vector<ShiftedVector>> cgns_to_metis_for_cells;
 };
 
-template <class Int, class Real>
+template <std::integral Int, std::floating_point Real>
 typename CgnsToMetis<Int, Real>::MetisMesh
 CgnsToMetis<Int, Real>::Map(CgnsMesh const &cgns_mesh) {
   assert(cgns_mesh.CountBases() == 1);
@@ -131,7 +133,7 @@ CgnsToMetis<Int, Real>::Map(CgnsMesh const &cgns_mesh) {
   return MetisMesh(cell_ptr, cell_idx, n_nodes_in_curr_base);
 }
 
-template <class Int, class Real>
+template <std::integral Int, std::floating_point Real>
 bool CgnsToMetis<Int, Real>::IsValid() const {
   Int metis_n_nodes = metis_to_cgns_for_nodes.size();
   for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
@@ -152,7 +154,7 @@ bool CgnsToMetis<Int, Real>::IsValid() const {
   return true;
 }
 
-template <class Int, class Real>
+template <std::integral Int, std::floating_point Real>
 void CgnsToMetis<Int, Real>::WriteParts(
     std::vector<idx_t> const &cell_parts,
     std::vector<idx_t> const &node_parts, CgnsMesh *cgns_mesh) const {

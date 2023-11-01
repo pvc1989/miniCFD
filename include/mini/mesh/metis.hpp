@@ -3,6 +3,8 @@
 #ifndef MINI_MESH_METIS_HPP_
 #define MINI_MESH_METIS_HPP_
 
+#include <concepts>
+
 #include <algorithm>
 #include <memory>
 #include <type_traits>
@@ -23,10 +25,9 @@ namespace metis {
  * 
  * @tparam Int index type
  */
-template <typename Int>
+template <std::integral Int>
 class SparseMatrix {
  private:
-  static_assert(std::is_integral_v<Int>, "Integral required.");
   std::vector<Int> range_, index_/* , value_ */;
 
  public:
@@ -71,9 +72,8 @@ class SparseMatrix {
  * 
  * @tparam Int the index type
  */
-template <typename Int>
+template <std::integral Int>
 class Mesh : private SparseMatrix<Int> {
-  static_assert(std::is_integral_v<Int>, "Integral required.");
   using Base = SparseMatrix<Int>;
   Int n_nodes_;
 
@@ -125,9 +125,8 @@ class Mesh : private SparseMatrix<Int> {
  * 
  * @tparam Int the index type
  */
-template <typename Int>
+template <std::integral Int>
 class SparseGraphWithDeleter {
-  static_assert(std::is_integral_v<Int>, "Integral required.");
   Int size_, *range_, *index_/* , *value_ */;
 
  public:
@@ -194,7 +193,7 @@ static inline bool valid(Container &&c, std::size_t size) {
  * @param[in] options the array of METIS options
  * @return the part id of each vertex
  */
-template <typename Graph, typename Int>
+template <typename Graph, std::integral Int>
 std::vector<Int> PartGraph(
     const Graph &graph, Int n_parts, Int n_constraints = 1,
     const std::vector<Int> &cost_of_each_vertex = {},
@@ -247,7 +246,7 @@ std::vector<Int> PartGraph(
  * @param[out] cell_parts the part id of each cell
  * @param[out] node_parts the part id of each node
  */
-template <typename Int>
+template <std::integral Int>
 std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
     const Mesh<Int> &mesh, Int n_parts, Int n_common_nodes = 2,
     const std::vector<Int> &cost_of_each_cell = {},
@@ -285,7 +284,7 @@ std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
  * @param[in] n_common_nodes the minimum number of nodes shared by two neighboring cells
  * @param[in] index_base the the base of indexing (0 or 1)
  */
-template <typename Int>
+template <std::integral Int>
 SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
     Int n_common_nodes, Int index_base = 0) {
   Int n_cells = mesh.CountCells();
@@ -309,7 +308,7 @@ SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
  * @param n_parts 
  * @return std::vector<Int> 
  */
-template <typename Int>
+template <std::integral Int>
 std::vector<Int> GetNodeParts(
     const metis::Mesh<Int>& mesh, const std::vector<Int>& cell_parts,
     Int n_parts) {
