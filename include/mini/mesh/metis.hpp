@@ -110,14 +110,19 @@ class Mesh {
   Mesh() = default;
   Mesh(Int *range, Int *index, Int n_cell, Int n_node)
       : graph_(n_cell, range, index), n_node_(n_node) {
-    assert(n_node > *(std::max_element(index, index + range[n_cell])));
+    assert(CountLocalNodes() == range[n_cell]);
+    assert(n_node > *(std::max_element(index, index + CountLocalNodes())));
   }
-  Mesh(std::vector<Int> const &range,
-       std::vector<Int> const &index, Int n_node)
-      : range_(range), index_(index),
-        graph_(range.size() - 1, range_.data(), index_.data()),
+  Mesh(std::vector<Int> const &range, std::vector<Int> const &index, Int n_node)
+      : Mesh(const_cast<Int *>(range.data()), const_cast<Int *>(index.data()),
+          range.size() - 1, n_node) {
+    assert(CountLocalNodes() == index.size());
+  }
+  Mesh(std::vector<Int> &&range, std::vector<Int> &&index, Int n_node)
+      : range_(std::move(range)), index_(std::move(index)),
+        graph_(range_.size() - 1, range_.data(), index_.data()),
         n_node_(n_node) {
-    assert(n_node > *(std::max_element(index.begin(), index.end())));
+    assert(CountLocalNodes() == index_.size());
   }
 
  public:
@@ -130,7 +135,7 @@ class Mesh {
   Int CountCells() const {
     return graph_.CountVertices();
   }
-  Int CountFaces() const {
+  Int CountLocalNodes() const {
     return graph_.CountEdges();
   }
   Int CountNodes() const {

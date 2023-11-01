@@ -130,7 +130,7 @@ CgnsToMetis<Int, Real>::Map(CgnsMesh const &cgns_mesh) {
     n_nodes_in_prev_zones += zone.CountNodes();
   }
   assert(metis_to_cgns_for_nodes.size() == n_nodes_in_curr_base);
-  return MetisMesh(cell_ptr, cell_idx, n_nodes_in_curr_base);
+  return MetisMesh(std::move(cell_ptr), std::move(cell_idx), n_nodes_in_curr_base);
 }
 
 template <std::integral Int, std::floating_point Real>
