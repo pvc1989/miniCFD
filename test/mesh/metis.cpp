@@ -10,6 +10,7 @@
 #include "gtest/gtest.h"
 #include "mini/mesh/metis.hpp"
 
+using mini::mesh::metis::SparseGraph;
 using mini::mesh::metis::Mesh;
 
 class Partitioner : public ::testing::Test {
@@ -96,6 +97,19 @@ void Partitioner::WritePartitionedMesh(
       ostrm << static_cast<float>(x) << "\n";
     }
   }
+}
+TEST_F(Partitioner, SparseGraph) {
+  using Vector = std::vector<Int>;
+  // Build a simple graph:
+  Vector range{ 0, 3, 5, 7, 10 }, index{
+      /* 0: */1, 2, 3, /* 1: */2, 3,
+      /* 2: */0, 3, /* 3: */0, 1, 2 };
+  int n_vertex = range.size() - 1;
+  auto graph = SparseGraph<Int>(n_vertex, range.data(), index.data());
+  EXPECT_TRUE(std::ranges::equal(graph.neighbors(0), Vector{1, 2, 3}));
+  EXPECT_TRUE(std::ranges::equal(graph.neighbors(1), Vector{2, 3}));
+  EXPECT_TRUE(std::ranges::equal(graph.neighbors(2), Vector{0, 3}));
+  EXPECT_TRUE(std::ranges::equal(graph.neighbors(3), Vector{0, 1, 2}));
 }
 TEST_F(Partitioner, PartMesh) {
   // Build a simple mesh:

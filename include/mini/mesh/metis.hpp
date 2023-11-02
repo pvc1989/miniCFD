@@ -4,6 +4,7 @@
 #define MINI_MESH_METIS_HPP_
 
 #include <concepts>
+#include <ranges>
 
 #include <algorithm>
 #include <memory>
@@ -20,7 +21,7 @@ namespace metis {
 /**
  * @brief A CSR (Compressed Sparse Row) representation of sparse graphs.
  * 
- * In this representation, the indices of neighbors of the `i`th vertex are `[ index(range(i)), index(range(i) + 1), ..., index(range(i + 1)) )`.
+ * In this representation, the indices of neighbors of the `i`th vertex are `[ index(range(i)), index(range(i) + 1), ..., index(range(i + 1)) )`, which can be obtained by the `neighbors()` method.
  * 
  * @tparam Int index type
  */
@@ -60,6 +61,16 @@ class SparseGraph {
   }
   Int &index(Int i) {
     return index_[i];
+  }
+  /**
+   * @brief Get a vector-like object that contains `[ index(range(i)), index(range(i) + 1), ..., index(range(i + 1)) )`.
+   * 
+   * @param i the index of the query vertex
+   * @return auto the vector-like object that contains the indices of its neighbors
+   */
+  std::ranges::forward_range auto neighbors(Int i) const {
+    auto ptr_view = std::views::iota(index_ + range(i), index_ + range(i + 1));
+    return ptr_view | std::views::transform([](Int *ptr){ return *ptr; });
   }
 };
 
