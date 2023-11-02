@@ -106,9 +106,13 @@ TEST_F(Partitioner, SparseGraph) {
       /* 2: */0, 3, /* 3: */0, 1, 2 };
   int n_vertex = range.size() - 1;
   auto graph = SparseGraph<Int>(n_vertex, range.data(), index.data());
+  EXPECT_EQ(graph.CountNeighbors(0), 3);
   EXPECT_TRUE(std::ranges::equal(graph.neighbors(0), Vector{1, 2, 3}));
+  EXPECT_EQ(graph.CountNeighbors(1), 2);
   EXPECT_TRUE(std::ranges::equal(graph.neighbors(1), Vector{2, 3}));
+  EXPECT_EQ(graph.CountNeighbors(2), 2);
   EXPECT_TRUE(std::ranges::equal(graph.neighbors(2), Vector{0, 3}));
+  EXPECT_EQ(graph.CountNeighbors(3), 3);
   EXPECT_TRUE(std::ranges::equal(graph.neighbors(3), Vector{0, 1, 2}));
 }
 TEST_F(Partitioner, PartMesh) {

@@ -62,6 +62,9 @@ class SparseGraph {
   Int &index(Int i) {
     return index_[i];
   }
+  Int CountNeighbors(Int i) const {
+    return range(i + 1) - range(i);
+  }
   /**
    * @brief Get a vector-like object that contains `[ index(range(i)), index(range(i) + 1), ..., index(range(i + 1)) )`.
    * 

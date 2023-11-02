@@ -57,6 +57,30 @@ int CountNodesByType(ElementType type) {
   return -1;
 }
 
+int CountFacesByType(ElementType type) {
+  switch (type) {
+  case CGNS_ENUMV( TRI_3 ):
+  case CGNS_ENUMV( TRI_6 ): return 3;
+  case CGNS_ENUMV( QUAD_4 ):
+  case CGNS_ENUMV( QUAD_8 ):
+  case CGNS_ENUMV( QUAD_9 ): return 4;
+  case CGNS_ENUMV( TETRA_4 ):
+  case CGNS_ENUMV( TETRA_10 ): return 4;
+  case CGNS_ENUMV( PYRA_5 ):
+  case CGNS_ENUMV( PYRA_13 ):
+  case CGNS_ENUMV( PYRA_14 ): return 5;
+  case CGNS_ENUMV( HEXA_8 ):
+  case CGNS_ENUMV( HEXA_20 ):
+  case CGNS_ENUMV( HEXA_27 ): return 6;
+  case CGNS_ENUMV( PENTA_6 ):
+  case CGNS_ENUMV( PENTA_15 ):
+  case CGNS_ENUMV( PENTA_18 ): return 5;
+  default:
+    int npe; cg_npe(type, &npe); return npe;
+  }
+  return -1;
+}
+
 int dim(ElementType type) {
   switch (type) {
   case CGNS_ENUMV(NODE):
@@ -258,6 +282,9 @@ class Section {
   }
   int CountNodesByType() const {
     return cgns::CountNodesByType(type_);
+  }
+  int CountFacesByType() const {
+    return cgns::CountFacesByType(type_);
   }
   int dim() const {
     return dim_;
