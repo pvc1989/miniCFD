@@ -185,8 +185,6 @@ static inline bool valid(Container &&c, std::size_t size) {
  * @brief A wrapper of `METIS_PartGraphKway()`, which partitions a graph into K parts.
  * 
  * @tparam Int index type
- * @tparam Graph sparse graph type
- * @tparam Real real number type
  * 
  * @param[in] graph the graph to be partitioned
  * @param[in] n_parts the number of parts to be partitioned
@@ -199,9 +197,9 @@ static inline bool valid(Container &&c, std::size_t size) {
  * @param[in] options the array of METIS options
  * @return the part id of each vertex
  */
-template <typename Graph, std::integral Int>
+template <std::integral Int>
 std::vector<Int> PartGraph(
-    const Graph &graph, Int n_parts, Int n_constraints = 1,
+    const SparseGraph<Int> &graph, Int n_parts, Int n_constraints = 1,
     const std::vector<Int> &cost_of_each_vertex = {},
     const std::vector<Int> &size_of_each_vertex = {},
     const std::vector<Int> &cost_of_each_edge = {},
