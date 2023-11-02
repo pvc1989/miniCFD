@@ -145,7 +145,7 @@ TEST_F(Partitioner, PartGraphKway) {
   auto mesh = BuildSimpleMesh(n_cells_x, n_cells_y);
   // Build the dual graph:
   Int n_common_nodes{2}, index_base{0};
-  auto graph = MeshToDual(mesh, n_common_nodes, index_base);
+  auto graph = mesh.GetDualGraph(n_common_nodes, index_base);
   // Partition the mesh:
   auto cell_weights = std::vector<Int>(n_cells, 1);
   for (Int j = 0; j != n_cells_y; ++j) {

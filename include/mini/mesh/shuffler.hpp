@@ -523,8 +523,8 @@ void Shuffler<Int, Real>::PartitionAndShuffle(std::string const &case_name,
   assert(mapper.IsValid());
   std::printf("[Done] %s\n", "mapper::CgnsToMetis");
   Int n_common_nodes{3};
-  auto graph = metis::MeshToDual(metis_mesh, n_common_nodes);
-  std::printf("[Done] %s\n", "metis::MeshToDual");
+  auto graph = metis_mesh.GetDualGraph(n_common_nodes);
+  std::printf("[Done] %s\n", "metis::Mesh::GetDualGraph");
   auto cell_parts = metis::PartGraph(graph, n_parts);
   std::printf("[Done] %s\n", "metis::PartGraph");
   auto node_parts = metis::GetNodeParts(metis_mesh, cell_parts, n_parts);

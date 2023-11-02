@@ -174,6 +174,26 @@ class Mesh {
     graph_ = SparseGraph<Int>(n_cell, range_.data(), index_.data());
     n_node_ = n_node_global;
   }
+  /**
+ * @brief A wrapper of `METIS_MeshToDual()`, which converts a Mesh to its dual graph.
+   * 
+   * @param n_common_nodes the minimum number of nodes shared by two neighboring cells
+   * @param index_base the the base of indexing (0 or 1)
+   * @return SparseGraphWithDeleter<Int> the dual graph
+   */
+  auto GetDualGraph(Int n_common_nodes, Int index_base = 0) const {
+    Int n_cells = CountCells();
+    Int n_nodes = CountNodes();
+    Int *vertex_range, *neighbors;
+    auto error_code = METIS_MeshToDual(
+        &n_cells, &n_nodes,
+        const_cast<Int *>(&(range(0))),
+        const_cast<Int *>(&(nodes(0))),
+        &n_common_nodes, &index_base,
+        &vertex_range, &neighbors);
+    assert(error_code == METIS_OK);
+    return SparseGraphWithDeleter<Int>(n_cells, vertex_range, neighbors);
+  }
 };
 
 template <class Container>
@@ -279,30 +299,7 @@ std::pair<std::vector<Int>, std::vector<Int>> PartMesh(
   assert(error_code == METIS_OK);
   return {cell_parts, node_parts};
 }
-/**
- * @brief A wrapper of `METIS_MeshToDual()`, which converts a mesh to its dual graph.
- * 
- * @tparam Int index type
- * 
- * @param[in] mesh the mesh to be converted
- * @param[in] n_common_nodes the minimum number of nodes shared by two neighboring cells
- * @param[in] index_base the the base of indexing (0 or 1)
- */
-template <std::integral Int>
-SparseGraphWithDeleter<Int> MeshToDual(const Mesh<Int> &mesh,
-    Int n_common_nodes, Int index_base = 0) {
-  Int n_cells = mesh.CountCells();
-  Int n_nodes = mesh.CountNodes();
-  Int *range, *neighbors;
-  auto error_code = METIS_MeshToDual(
-      &n_cells, &n_nodes,
-      const_cast<Int *>(&(mesh.range(0))),
-      const_cast<Int *>(&(mesh.nodes(0))),
-      &n_common_nodes, &index_base,
-      &range, &neighbors);
-  assert(error_code == METIS_OK);
-  return SparseGraphWithDeleter<Int>(n_cells, range, neighbors);
-}
+
 /**
  * @brief Get the partition of nodes from the partition of cells.
  * 

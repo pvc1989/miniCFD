@@ -61,7 +61,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   EXPECT_TRUE(mapper.IsValid());
   // get adjacency between cells
   idx_t n_common_nodes{3};
-  auto graph = mini::mesh::metis::MeshToDual(metis_mesh, n_common_nodes);
+  auto graph = metis_mesh.GetDualGraph(n_common_nodes);
   int n_cells = metis_mesh.CountCells();
   auto cell_adjs = std::vector<std::vector<int>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
