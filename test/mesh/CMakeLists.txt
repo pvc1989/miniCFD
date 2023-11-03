@@ -33,7 +33,7 @@ set_target_properties(test_mesh_cgal PROPERTIES OUTPUT_NAME cgal)
 add_test(NAME test_mesh_cgal COMMAND cgal)
 
 add_executable(test_mesh_overset overset.cpp)
-target_include_directories(test_mesh_overset PRIVATE ${CGNS_INC} ${METIS_INC})
+target_include_directories(test_mesh_overset PRIVATE ${CGNS_INC} ${METIS_INC} ${CGAL_INCLUDE})
 target_link_libraries(test_mesh_overset ${CGNS_LIB} metis)
 set_target_properties(test_mesh_overset PROPERTIES OUTPUT_NAME overset)
 add_test(NAME test_mesh_overset COMMAND overset)

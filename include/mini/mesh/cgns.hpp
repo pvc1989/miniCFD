@@ -6,6 +6,7 @@
 #define MINI_MESH_CGNS_HPP_
 
 #include <concepts>
+#include <ranges>
 
 #include <algorithm>
 #include <array>
@@ -182,6 +183,15 @@ class Coordinates {
   std::vector<Real> const &z() const {
     return z_;
   }
+  Real x(cgsize_t i_node/* 1-based */) const {
+    return x_[i_node - 1];
+  }
+  Real y(cgsize_t i_node/* 1-based */) const {
+    return y_[i_node - 1];
+  }
+  Real z(cgsize_t i_node/* 1-based */) const {
+    return z_[i_node - 1];
+  }
   /**
    * Write coordinates to a given `(file, base, zone)` tuple.
    */
@@ -321,11 +331,30 @@ class Section {
   }
 
  public:
+  std::ranges::input_range auto GetNodeIdRange(cgsize_t i_cell) const {
+    auto first = GetNodeIdList(i_cell);
+    auto ptr_view = std::views::iota(first, first + CountNodesByType());
+    return std::views::transform(ptr_view, [](auto *ptr){ return *ptr; });
+  }
   const cgsize_t *GetNodeIdList(cgsize_t i_cell) const {
     return _GetNodeIdList(i_cell - first_);
   }
   cgsize_t *GetNodeIdList(cgsize_t i_cell) {
     return _GetNodeIdList(i_cell - first_);
+  }
+
+  void GetCellCenter(cgsize_t i_cell, Real *x, Real *y, Real *z) const {
+    Real cx = 0., cy = 0., cz = 0.;
+    auto &coordinates = zone().GetCoordinates();
+    for (auto i_node : GetNodeIdRange(i_cell)) {
+      cx += coordinates.x(i_node);
+      cy += coordinates.y(i_node);
+      cz += coordinates.z(i_node);
+    }
+    auto n_node = CountNodesByType();
+    *x = cx / n_node;
+    *y = cy / n_node;
+    *z = cz / n_node;
   }
 
   /**

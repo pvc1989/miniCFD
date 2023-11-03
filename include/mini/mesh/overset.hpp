@@ -9,6 +9,7 @@
 #include <utility>
 #include <tuple>
 
+#include "mini/mesh/cgal.hpp"
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/metis.hpp"
 #include "mini/mesh/mapper.hpp"
@@ -24,6 +25,7 @@ class Mapping {
   using Mesh = cgns::File<Real>;
   using Graph = metis::SparseGraph<Int>;
   using Mapper = mapper::CgnsToMetis<Int, Real>;
+  using Tree = cgal::NeighborSearching<Real>;
 
   /**
    * @brief Fine fringe cells in the foreground mesh.
@@ -48,6 +50,30 @@ class Mapping {
       }
     }
     return result;
+  }
+
+  /**
+   * @brief Build a spatial search tree for cells.
+   * 
+   * The tree uses cell centers as the keys for searching.
+   * 
+   * @param mesh the mesh to be searched
+   * @param graph the dual graph of the foreground mesh
+   * @param mapper the mapper between the two representations
+   * @return Tree the object that supports fast spatial search
+   */
+  static Tree BuildCellSearchTree(
+      Mesh const &mesh, Graph const &graph, Mapper const &mapper) {
+    auto n_cell = graph.CountVertices();
+    std::vector<Real> x(n_cell), y(n_cell), z(n_cell);
+    assert(mesh.CountBases() == 1);
+    auto &base = mesh.GetBase(1);
+    for (Int i_cell = 0; i_cell < n_cell; ++i_cell) {
+      auto index = mapper.metis_to_cgns_for_cells[i_cell];
+      auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
+      sect.GetCellCenter(index.i_cell, &x[i_cell], &y[i_cell], &z[i_cell]);
+    }
+    return Tree(x, y, z);
   }
 };
 
