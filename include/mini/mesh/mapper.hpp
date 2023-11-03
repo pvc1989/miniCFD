@@ -28,15 +28,15 @@ static_assert(sizeof(idx_t) == sizeof(cgsize_t),
     "METIS's `idx_t` and CGNS's `cgsize_t` must have the same size.");
 
 template <std::integral Int>
-struct NodeInfo {
-  NodeInfo() = default;
-  NodeInfo(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
+struct NodeIndex {
+  NodeIndex() = default;
+  NodeIndex(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
   Int i_zone{0}, i_node{0};
 };
 template <std::integral Int = int>
-struct CellInfo {
-  CellInfo() = default;
-  CellInfo(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
+struct CellIndex {
+  CellIndex() = default;
+  CellIndex(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
   Int i_zone{0}, i_sect{0}, i_cell{0};
 };
 
@@ -55,14 +55,14 @@ struct CgnsToMetis {
     auto ostrm = std::ofstream(name);
     Int metis_n_nodes = metis_to_cgns_for_nodes.size();
     for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
-      auto info = metis_to_cgns_for_nodes.at(metis_i_node);
-      int zid = info.i_zone, nid = info.i_node;
+      auto index = metis_to_cgns_for_nodes.at(metis_i_node);
+      int zid = index.i_zone, nid = index.i_node;
       ostrm << metis_i_node << ' ' << zid << ' ' << nid << '\n';
     }
   }
 
-  std::vector<NodeInfo<Int>> metis_to_cgns_for_nodes;
-  std::vector<CellInfo<Int>> metis_to_cgns_for_cells;
+  std::vector<NodeIndex<Int>> metis_to_cgns_for_nodes;
+  std::vector<CellIndex<Int>> metis_to_cgns_for_cells;
   // metis_i_node =
   //     cgns_to_metis_for_nodes[i_zone][i_node];
   std::vector<std::vector<Int>>           cgns_to_metis_for_nodes;
@@ -137,17 +137,17 @@ template <std::integral Int, std::floating_point Real>
 bool CgnsToMetis<Int, Real>::IsValid() const {
   Int metis_n_nodes = metis_to_cgns_for_nodes.size();
   for (Int metis_i_node = 0; metis_i_node < metis_n_nodes; ++metis_i_node) {
-    auto info = metis_to_cgns_for_nodes.at(metis_i_node);
-    auto &nodes = cgns_to_metis_for_nodes.at(info.i_zone);
-    if (nodes.at(info.i_node) != metis_i_node) {
+    auto index = metis_to_cgns_for_nodes.at(metis_i_node);
+    auto &nodes = cgns_to_metis_for_nodes.at(index.i_zone);
+    if (nodes.at(index.i_node) != metis_i_node) {
       return false;
     }
   }
   Int metis_n_cells = metis_to_cgns_for_cells.size();
   for (Int metis_i_cell = 0; metis_i_cell < metis_n_cells; ++metis_i_cell) {
-    auto info = metis_to_cgns_for_cells.at(metis_i_cell);
-    auto &cells = cgns_to_metis_for_cells.at(info.i_zone).at(info.i_sect);
-    if (cells.at(info.i_cell) != metis_i_cell) {
+    auto index = metis_to_cgns_for_cells.at(metis_i_cell);
+    auto &cells = cgns_to_metis_for_cells.at(index.i_zone).at(index.i_sect);
+    if (cells.at(index.i_cell) != metis_i_cell) {
       return false;
     }
   }
