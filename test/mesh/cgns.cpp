@@ -131,6 +131,18 @@ TEST_F(TestMeshCgns, ReadCoordinates) {
     EXPECT_DOUBLE_EQ(z.at(583), 0.0);
   }
 }
+TEST_F(TestMeshCgns, Transforms) {
+  auto file = File(abs_path_);
+  file.ReadBases();
+  auto &base = file.GetBase(1);
+  // Originally, bounds = [-2, 2] x [-1, 1] x [0, 0].
+  auto dx = 10., dy = 20., dz = 30.;
+  base.Translate(dx, dy, dz);
+  auto s = 2.0;
+  base.Dilate(dx, dy, dz, s);
+  // Now, bounds = [6, 14] x [18, 22] x [30, 30].
+  file.Write("transformed.cgns");
+}
 TEST_F(TestMeshCgns, ReadSections) {
   // read by mini::mesh::cgns
   auto file = File(abs_path_);

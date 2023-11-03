@@ -207,6 +207,19 @@ class Coordinates {
   std::vector<Real> &z() {
     return z_;
   }
+
+  void Translate(Real dx, Real dy, Real dz) {
+    std::ranges::for_each(x_, [dx](Real &x){ x += dx; });
+    std::ranges::for_each(y_, [dy](Real &y){ y += dy; });
+    std::ranges::for_each(z_, [dz](Real &z){ z += dz; });
+  }
+
+  void Dilate(Real cx, Real cy, Real cz, Real s) {
+    std::ranges::for_each(x_, [cx, s](Real &x){ x = cx + s * (x - cx); });
+    std::ranges::for_each(y_, [cy, s](Real &y){ y = cy + s * (y - cy); });
+    std::ranges::for_each(z_, [cz, s](Real &z){ z = cz + s * (z - cz); });
+  }
+
   /**
    * Read coordinates from a given `(file, base, zone)` tuple.
    */
@@ -1028,6 +1041,18 @@ class Base {
           *this, i_zone, zone_name,
           /* n_cells */zone_size[1][0], /* n_nodes */zone_size[0][0]));
       zone->ReadSectionsWithDim(cell_dim_);
+    }
+  }
+
+  void Translate(Real dx, Real dy, Real dz) {
+    for (auto &zone : zones_) {
+      zone->GetCoordinates().Translate(dx, dy, dz);
+    }
+  }
+
+  void Dilate(Real cx, Real cy, Real cz, Real s) {
+    for (auto &zone : zones_) {
+      zone->GetCoordinates().Dilate(cx, cy, cz, s);
     }
   }
 
