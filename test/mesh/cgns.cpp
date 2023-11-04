@@ -141,6 +141,7 @@ TEST_F(TestMeshCgns, Transforms) {
   auto s = 2.0;
   base.Dilate(dx, dy, dz, s);
   // Now, bounds = [6, 14] x [18, 22] x [30, 30].
+  base.RotateZ(10, 20, 30);
   file.Write("transformed.cgns");
 }
 TEST_F(TestMeshCgns, ReadSections) {

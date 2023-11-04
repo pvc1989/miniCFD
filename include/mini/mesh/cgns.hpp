@@ -24,6 +24,8 @@
 
 #include "cgnslib.h"
 
+#include "mini/geometry/pi.hpp"
+
 namespace mini {
 namespace mesh {
 namespace cgns {
@@ -228,6 +230,16 @@ class Coordinates {
     std::ranges::for_each(x_, [cx, s](Real &x){ x = cx + s * (x - cx); });
     std::ranges::for_each(y_, [cy, s](Real &y){ y = cy + s * (y - cy); });
     std::ranges::for_each(z_, [cz, s](Real &z){ z = cz + s * (z - cz); });
+  }
+
+  void RotateZ(Real ox, Real oy, Real degree) {
+    auto [cos, sin] = mini::geometry::CosSin(degree);
+    for (int i = 0, n = x_.size(); i < n; ++i) {
+      auto x_new = x_[i] * cos - y_[i] * sin;
+      auto y_new = x_[i] * sin + y_[i] * cos;
+      x_[i] = x_new;
+      y_[i] = y_new;
+    }
   }
 
   /**
@@ -1082,6 +1094,12 @@ class Base {
   void Dilate(Real cx, Real cy, Real cz, Real s) {
     for (auto &zone : zones_) {
       zone->GetCoordinates().Dilate(cx, cy, cz, s);
+    }
+  }
+
+  void RotateZ(Real ox, Real oy, Real degree) {
+    for (auto &zone : zones_) {
+      zone->GetCoordinates().RotateZ(ox, oy, degree);
     }
   }
 

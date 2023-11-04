@@ -70,6 +70,7 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   auto cgns_mesh_fg = Mesh(file_name); cgns_mesh_fg.ReadBases();
   cgns_mesh_fg.GetBase(1).Translate(-9, -7, -3);
   // Now, center_fg = (0, 0, 0), bounds_fg = [-10, 10] x [-8, 8] x [-4, 4].
+  cgns_mesh_fg.GetBase(1).RotateZ(0, 0, 30);
   auto mapper_fg = Mapper();
   auto metis_mesh_fg = mapper_fg.Map(cgns_mesh_fg);
   auto metis_graph_fg = metis_mesh_fg.GetDualGraph(3);
