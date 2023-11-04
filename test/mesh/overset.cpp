@@ -54,6 +54,34 @@ TEST_F(TestMeshOverset, BuildCellSearchTree) {
   auto expect_result = std::vector<int>{0, 1, 20, 20*16};
   EXPECT_EQ(cell_indices, expect_result);
 }
+TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
+  auto file_name = test_input_dir_ + "/fixed_grid.cgns";
+  // Build the background mesh
+  auto cgns_mesh_bg = Mesh(file_name); cgns_mesh_bg.ReadBases();
+  cgns_mesh_bg.GetBase(1).Translate(-9, -7, -3);
+  cgns_mesh_bg.GetBase(1).Dilate(0, 0, 0, 2);
+  // Now, center_bg = (0, 0, 0), bounds_bg = [-20, 20] x [-16, 16] x [-8, 8].
+  auto mapper_bg = Mapper();
+  auto metis_mesh_bg = mapper_bg.Map(cgns_mesh_bg);
+  auto metis_graph_bg = metis_mesh_bg.GetDualGraph(3);
+  auto tree_bg = Mapping::BuildCellSearchTree(
+    cgns_mesh_bg, metis_graph_bg, mapper_bg);
+  // Build the foreground mesh:
+  auto cgns_mesh_fg = Mesh(file_name); cgns_mesh_fg.ReadBases();
+  cgns_mesh_fg.GetBase(1).Translate(-9, -7, -3);
+  // Now, center_fg = (0, 0, 0), bounds_fg = [-10, 10] x [-8, 8] x [-4, 4].
+  auto mapper_fg = Mapper();
+  auto metis_mesh_fg = mapper_fg.Map(cgns_mesh_fg);
+  auto metis_graph_fg = metis_mesh_fg.GetDualGraph(3);
+  // Call the methods:
+  auto fringe_fg = Mapping::FindForegroundFringeCells(
+    cgns_mesh_fg, metis_graph_fg, mapper_fg);
+  int n_donor = 4;
+  auto donors = Mapping::FindBackgroundDonorCells(
+    cgns_mesh_fg, metis_graph_fg, mapper_fg, fringe_fg, tree_bg, n_donor);
+  auto merged_donors = Mapping::merge(donors);
+  EXPECT_LT(merged_donors.size(), fringe_fg.size() * n_donor);
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

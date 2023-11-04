@@ -75,6 +75,44 @@ class Mapping {
     }
     return Tree(x, y, z);
   }
+
+  /**
+   * @brief Find donor cells in background for each fringe cell in foreground.
+   * 
+   * @param mesh_fg 
+   * @param graph_fg 
+   * @param mapper_fg 
+   * @param fringe_fg 
+   * @param tree_bg 
+   * @param n_neighbor 
+   * @return std::vector<std::vector<int>> 
+   */
+  static std::vector<std::vector<int>> FindBackgroundDonorCells(
+      Mesh const &mesh_fg, Graph const &graph_fg, Mapper const &mapper_fg,
+      std::vector<Int> const &fringe_fg, Tree const &tree_bg, int n_neighbor) {
+    auto result = std::vector<std::vector<int>>();
+    result.reserve(fringe_fg.size());
+    auto &base = mesh_fg.GetBase(1);
+    for (auto i_cell : fringe_fg) {
+      auto index = mapper_fg.metis_to_cgns_for_cells[i_cell];
+      auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
+      Real x, y, z;
+      sect.GetCellCenter(index.i_cell, &x, &y, &z);
+      result.emplace_back(tree_bg.Search(x, y, z, n_neighbor));
+    }
+    assert(result.size() == fringe_fg.size());
+    return result;
+  }
+  static std::unordered_set<Int> merge(
+      std::vector<std::vector<int>> const &indices) {
+    auto result = std::unordered_set<Int>();
+    for (auto &row : indices) {
+      for (auto i : row) {
+        result.insert(i);
+      }
+    }
+    return result;
+  }
 };
 
 }  // namespace overset

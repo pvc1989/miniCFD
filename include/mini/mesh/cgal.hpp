@@ -46,7 +46,7 @@ class NeighborSearching {
 
   /* Search the k-nearest neighbors to a given point.
    */
-  std::vector<int> Search(Real x, Real y, Real z, int n_neighbor = 1) {
+  std::vector<int> Search(Real x, Real y, Real z, int n_neighbor = 1) const {
     auto output = std::vector<int>(n_neighbor);
     auto search = Searching(tree_, Point(x, y, z), n_neighbor);
     int i = 0;
