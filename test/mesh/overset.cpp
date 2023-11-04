@@ -73,14 +73,21 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   auto mapper_fg = Mapper();
   auto metis_mesh_fg = mapper_fg.Map(cgns_mesh_fg);
   auto metis_graph_fg = metis_mesh_fg.GetDualGraph(3);
-  // Call the methods:
+  // Find fringe cells in foreground:
   auto fringe_fg = Mapping::FindForegroundFringeCells(
     cgns_mesh_fg, metis_graph_fg, mapper_fg);
+  Mapping::AddCellStatus(mini::mesh::overset::Status::kFringe, fringe_fg,
+      &cgns_mesh_fg, metis_graph_fg, mapper_fg);
+  cgns_mesh_fg.Write("foreground.cgns");
+  // Find donor cells in background:
   int n_donor = 4;
   auto donors = Mapping::FindBackgroundDonorCells(
     cgns_mesh_fg, metis_graph_fg, mapper_fg, fringe_fg, tree_bg, n_donor);
   auto merged_donors = Mapping::merge(donors);
   EXPECT_LT(merged_donors.size(), fringe_fg.size() * n_donor);
+  Mapping::AddCellStatus(mini::mesh::overset::Status::kDonor, merged_donors,
+      &cgns_mesh_bg, metis_graph_bg, mapper_bg);
+  cgns_mesh_bg.Write("background.cgns");
 }
 
 int main(int argc, char* argv[]) {

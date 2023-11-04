@@ -19,6 +19,10 @@ namespace mini {
 namespace mesh {
 namespace overset {
 
+enum class Status {
+  kUnknown, kFringe, kDonor, kHole,
+};
+
 template <std::integral Int, std::floating_point Real>
 class Mapping {
  public:
@@ -26,6 +30,18 @@ class Mapping {
   using Graph = metis::SparseGraph<Int>;
   using Mapper = mapper::CgnsToMetis<Int, Real>;
   using Tree = cgal::NeighborSearching<Real>;
+
+  template <std::ranges::input_range R>
+  static void AddCellStatus(Status status, R &&cells,
+      Mesh *mesh, Graph const &graph, Mapper const &mapper) {
+    auto &zone = mesh->GetBase(1).GetZone(1);
+    auto &solution = zone.AddSolution("CellData", CGNS_ENUMV(CellCenter));
+    auto &field = solution.AddField("OversetStatus");
+    for (auto i_cell : cells) {
+      auto &index = mapper.metis_to_cgns_for_cells[i_cell];
+      field.at(index.i_cell) = static_cast<Real>(status);
+    }
+  }
 
   /**
    * @brief Fine fringe cells in the foreground mesh.
@@ -69,7 +85,7 @@ class Mapping {
     assert(mesh.CountBases() == 1);
     auto &base = mesh.GetBase(1);
     for (Int i_cell = 0; i_cell < n_cell; ++i_cell) {
-      auto index = mapper.metis_to_cgns_for_cells[i_cell];
+      auto &index = mapper.metis_to_cgns_for_cells[i_cell];
       auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
       sect.GetCellCenter(index.i_cell, &x[i_cell], &y[i_cell], &z[i_cell]);
     }
@@ -94,7 +110,7 @@ class Mapping {
     result.reserve(fringe_fg.size());
     auto &base = mesh_fg.GetBase(1);
     for (auto i_cell : fringe_fg) {
-      auto index = mapper_fg.metis_to_cgns_for_cells[i_cell];
+      auto &index = mapper_fg.metis_to_cgns_for_cells[i_cell];
       auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
       Real x, y, z;
       sect.GetCellCenter(index.i_cell, &x, &y, &z);
