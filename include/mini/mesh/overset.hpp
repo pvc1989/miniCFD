@@ -4,10 +4,12 @@
 
 #include <concepts>
 
+#include <algorithm>
 #include <cassert>
 #include <vector>
 #include <utility>
 #include <tuple>
+#include <unordered_set>
 
 #include "mini/mesh/cgal.hpp"
 #include "mini/mesh/cgns.hpp"
@@ -46,24 +48,44 @@ class Mapping {
   /**
    * @brief Fine fringe cells in the foreground mesh.
    * 
-   * A cell is fringe, if the number of its neighbors < the number of its faces.
-   * 
+   * @param n_layer how many layers of cells are treated as fringe
    * @param mesh the foreground mesh
    * @param graph the dual graph of the foreground mesh
    * @param mapper the mapper between the two representations
    * @return std::vector<Int> the metis indices of all fringe cells
    */
-  static std::vector<Int> FindForegroundFringeCells(
+  static std::vector<Int> FindForegroundFringeCells(int n_layer,
       Mesh const &mesh, Graph const &graph, Mapper const &mapper) {
     std::vector<Int> result;
     assert(mesh.CountBases() == 1);
     auto &base = mesh.GetBase(1);
+    // Find the outmost layer according to #neighbors < #faces:
     for (Int i = 0, n = graph.CountVertices(); i < n; ++i) {
       auto cell = mapper.metis_to_cgns_for_cells[i];
       auto &sect = base.GetZone(cell.i_zone).GetSection(cell.i_sect);
       if (graph.CountNeighbors(i) < sect.CountFacesByType()) {
         result.push_back(i);
       }
+    }
+    // Run breadth-first search for more layers:
+    auto curr_begin = result.begin(), curr_end = result.end();
+    auto found = std::unordered_set<Int>(curr_begin, curr_end);
+    while (curr_begin != curr_end && --n_layer > 0) {
+      auto next = std::vector<Int>();
+      while (curr_begin != curr_end) {
+        auto i = *curr_begin++;  // for each i in current layer
+        for (auto j : graph.neighbors(i)) {
+          auto iter = found.find(j);
+          if (iter == found.end()) {
+            found.emplace_hint(iter, j);
+            next.push_back(j);
+          }
+        }
+      }
+      result.resize(result.size() + next.size());
+      curr_end = result.end();
+      curr_begin = curr_end - next.size();
+      std::ranges::copy(next, curr_begin);
     }
     return result;
   }

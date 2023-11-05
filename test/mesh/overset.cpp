@@ -31,7 +31,7 @@ TEST_F(TestMeshOverset, FindForegroundFringeCells) {
   EXPECT_EQ(metis_mesh.CountCells(), 2560);
   auto metis_graph = metis_mesh.GetDualGraph(3);
   EXPECT_EQ(metis_graph.CountVertices(), metis_mesh.CountCells());
-  auto fringe_cells = Mapping::FindForegroundFringeCells(
+  auto fringe_cells = Mapping::FindForegroundFringeCells(1,
     cgns_mesh, metis_graph, mapper);
   EXPECT_EQ(fringe_cells.size(), 2560 - 6 * 14 * 18);
 }
@@ -83,7 +83,7 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   auto metis_mesh_fg = mapper_fg.Map(cgns_mesh_fg);
   auto metis_graph_fg = metis_mesh_fg.GetDualGraph(3);
   // Find fringe cells in foreground:
-  auto fringe_fg = Mapping::FindForegroundFringeCells(
+  auto fringe_fg = Mapping::FindForegroundFringeCells(2,
     cgns_mesh_fg, metis_graph_fg, mapper_fg);
   Mapping::AddCellStatus(mini::mesh::overset::Status::kFringe, fringe_fg,
       &cgns_mesh_fg, metis_graph_fg, mapper_fg);
