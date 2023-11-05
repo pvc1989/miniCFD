@@ -58,8 +58,8 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   auto file_name = test_input_dir_ + "/fixed_grid.cgns";
   // Build the background mesh
   auto cgns_mesh_bg = Mesh(file_name); cgns_mesh_bg.ReadBases();
-  cgns_mesh_bg.GetBase(1).Translate(-9, -7, -3);
-  cgns_mesh_bg.GetBase(1).Dilate(0, 0, 0, 2);
+  cgns_mesh_bg.Translate(-9, -7, -3);
+  cgns_mesh_bg.Dilate(0, 0, 0, 2);
   // Now, center_bg = (0, 0, 0), bounds_bg = [-20, 20] x [-16, 16] x [-8, 8].
   auto mapper_bg = Mapper();
   auto metis_mesh_bg = mapper_bg.Map(cgns_mesh_bg);
@@ -68,9 +68,9 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
     cgns_mesh_bg, metis_graph_bg, mapper_bg);
   // Build the foreground mesh:
   auto cgns_mesh_fg = Mesh(file_name); cgns_mesh_fg.ReadBases();
-  cgns_mesh_fg.GetBase(1).Translate(-9, -7, -3);
+  cgns_mesh_fg.Translate(-9, -7, -3);
   // Now, center_fg = (0, 0, 0), bounds_fg = [-10, 10] x [-8, 8] x [-4, 4].
-  cgns_mesh_fg.GetBase(1).RotateZ(0, 0, 30);
+  cgns_mesh_fg.RotateZ(0, 0, 30);
   auto mapper_fg = Mapper();
   auto metis_mesh_fg = mapper_fg.Map(cgns_mesh_fg);
   auto metis_graph_fg = metis_mesh_fg.GetDualGraph(3);

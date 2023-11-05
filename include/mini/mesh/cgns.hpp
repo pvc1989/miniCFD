@@ -235,10 +235,12 @@ class Coordinates {
   void RotateZ(Real ox, Real oy, Real degree) {
     auto [cos, sin] = mini::geometry::CosSin(degree);
     for (int i = 0, n = x_.size(); i < n; ++i) {
-      auto x_new = x_[i] * cos - y_[i] * sin;
-      auto y_new = x_[i] * sin + y_[i] * cos;
-      x_[i] = x_new;
-      y_[i] = y_new;
+      auto dx = x_[i] - ox;
+      auto dy = y_[i] - oy;
+      auto dx_new = dx * cos - dy * sin;
+      auto dy_new = dx * sin + dy * cos;
+      x_[i] = ox + dx_new;
+      y_[i] = oy + dy_new;
     }
   }
 
@@ -1193,6 +1195,24 @@ class File {
       base->Write(min_dim, max_dim);
     }
     cg_close(i_file_);
+  }
+
+  void Translate(Real dx, Real dy, Real dz) {
+    for (auto &base : bases_) {
+      base->Translate(dx, dy, dz);
+    }
+  }
+
+  void Dilate(Real cx, Real cy, Real cz, Real s) {
+    for (auto &base : bases_) {
+      base->Dilate(cx, cy, cz, s);
+    }
+  }
+
+  void RotateZ(Real ox, Real oy, Real degree) {
+    for (auto &base : bases_) {
+      base->RotateZ(ox, oy, degree);
+    }
   }
 
  private:
