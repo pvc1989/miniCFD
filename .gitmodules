@@ -5,7 +5,7 @@
 [submodule "ThirdParty/GoogleTest"]
 	path = ThirdParty/GoogleTest
 	url = https://github.com/google/googletest.git
-	branch = master
+	branch = main
 [submodule "ThirdParty/METIS"]
 	path = ThirdParty/METIS
 	url = https://github.com/pvc1989/METIS.git
