@@ -71,9 +71,9 @@ class SparseGraph {
    * @param i the index of the query vertex
    * @return auto the vector-like object that contains the indices of its neighbors
    */
-  std::ranges::forward_range auto neighbors(Int i) const {
+  std::ranges::input_range auto neighbors(Int i) const {
     auto ptr_view = std::views::iota(index_ + range(i), index_ + range(i + 1));
-    return ptr_view | std::views::transform([](Int *ptr){ return *ptr; });
+    return ptr_view | std::views::transform([](auto *ptr){ return *ptr; });
   }
 };
 
