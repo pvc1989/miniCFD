@@ -96,7 +96,19 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   EXPECT_LT(merged_donors.size(), fringe_fg.size() * n_donor);
   Mapping::AddCellStatus(mini::mesh::overset::Status::kDonor, merged_donors,
       &cgns_mesh_bg, metis_graph_bg, mapper_bg);
-  cgns_mesh_bg.Write("background.cgns");
+  cgns_mesh_bg.Write("background_n_donor.cgns");
+  auto radius = 0.5;
+  donors = Mapping::FindBackgroundDonorCells(
+    cgns_mesh_fg, metis_graph_fg, mapper_fg, fringe_fg, tree_bg,
+    cgns_mesh_bg, metis_graph_bg, mapper_bg, radius);
+  merged_donors = Mapping::merge(donors);
+  EXPECT_LT(merged_donors.size(), fringe_fg.size() * n_donor);
+  auto all_cells = std::views::iota(0, metis_graph_bg.CountVertices());
+  Mapping::AddCellStatus(mini::mesh::overset::Status::kUnknown, all_cells,
+      &cgns_mesh_bg, metis_graph_bg, mapper_bg);
+  Mapping::AddCellStatus(mini::mesh::overset::Status::kDonor, merged_donors,
+      &cgns_mesh_bg, metis_graph_bg, mapper_bg);
+  cgns_mesh_bg.Write("background_radius.cgns");
 }
 
 int main(int argc, char* argv[]) {

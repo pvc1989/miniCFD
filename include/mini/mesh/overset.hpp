@@ -115,19 +115,23 @@ class Mapping {
   }
 
   /**
-   * @brief Find donor cells in background for each fringe cell in foreground.
+   * @brief Find a given number of donor cells in background for each fringe cell in foreground.
    * 
-   * @param mesh_fg 
-   * @param graph_fg 
-   * @param mapper_fg 
-   * @param fringe_fg 
-   * @param tree_bg 
-   * @param n_neighbor 
+   * @param mesh the mesh to be searched
+   * @param graph the dual graph of the foreground mesh
+   * @param mapper the mapper between the two representations
+   * 
+   * @param mesh_fg the foreground mesh
+   * @param graph_fg the dual graph of the foreground mesh
+   * @param mapper_fg the mapper between the two representations
+   * @param fringe_fg the indices of fringe cells in the foreground mesh
+   * @param tree_bg the spatial search tree of the background mesh
+   * @param n_donor the number of donors of each fringe cell
    * @return std::vector<std::vector<int>> 
    */
   static std::vector<std::vector<int>> FindBackgroundDonorCells(
       Mesh const &mesh_fg, Graph const &graph_fg, Mapper const &mapper_fg,
-      std::vector<Int> const &fringe_fg, Tree const &tree_bg, int n_neighbor) {
+      std::vector<Int> const &fringe_fg, Tree const &tree_bg, int n_donor) {
     auto result = std::vector<std::vector<int>>();
     result.reserve(fringe_fg.size());
     auto &base = mesh_fg.GetBase(1);
@@ -136,11 +140,81 @@ class Mapping {
       auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
       Real x, y, z;
       sect.GetCellCenter(index.i_cell, &x, &y, &z);
-      result.emplace_back(tree_bg.Search(x, y, z, n_neighbor));
+      result.emplace_back(tree_bg.Search(x, y, z, n_donor));
     }
     assert(result.size() == fringe_fg.size());
     return result;
   }
+
+  /**
+   * @brief Find all donor cells within a sphere in background for each fringe cell in foreground.
+   * 
+   * @param mesh_fg the foreground mesh
+   * @param graph_fg the dual graph of the foreground mesh
+   * @param mapper_fg the mapper between the two representations of the foreground mesh
+   * @param fringe_fg the indices of fringe cells in the foreground mesh
+   * @param tree_bg the spatial search tree of the background mesh
+   * @param mesh_bg the background mesh
+   * @param graph_bg the dual graph of the background mesh
+   * @param mapper_bg the mapper between the two representations of the background mesh
+   * @param radius the radius of the bounding ball of each fringe cell
+   * @return std::vector<std::vector<int>> 
+   */
+  static std::vector<std::vector<int>> FindBackgroundDonorCells(
+      Mesh const &mesh_fg, Graph const &graph_fg, Mapper const &mapper_fg,
+      std::vector<Int> const &fringe_fg, Tree const &tree_bg,
+      Mesh const &mesh_bg, Graph const &graph_bg, Mapper const &mapper_bg,
+      Real radius) {
+    auto result = std::vector<std::vector<int>>();
+    result.reserve(fringe_fg.size());
+    auto &base = mesh_fg.GetBase(1);
+    for (auto i_cell : fringe_fg) {
+      auto &index = mapper_fg.metis_to_cgns_for_cells[i_cell];
+      auto &sect = base.GetZone(index.i_zone).GetSection(index.i_sect);
+      Real x, y, z;
+      sect.GetCellCenter(index.i_cell, &x, &y, &z);
+      result.emplace_back(tree_bg.Search(x, y, z, 1));
+      // Run breadth-first search for more donor cells:
+      auto &curr = result.back();
+      auto curr_begin = curr.begin(), curr_end = curr.end();
+      auto found = std::unordered_set<Int>(curr_begin, curr_end);
+      while (curr_begin != curr_end) {
+        auto next = std::vector<Int>();
+        while (curr_begin != curr_end) {
+          auto i = *curr_begin++;  // for each i in current layer
+          for (auto j : graph_bg.neighbors(i)) {
+            auto iter = found.find(j);
+            if (iter != found.end()) {
+              continue;  // skip cells that are already found
+            }
+            auto &index_j = mapper_bg.metis_to_cgns_for_cells[j];
+            auto &zone_j = mesh_bg.GetBase(1).GetZone(index_j.i_zone);
+            auto &sect_j = zone_j.GetSection(index_j.i_sect);
+            Real x_j, y_j, z_j;
+            sect_j.GetCellCenter(index_j.i_cell, &x_j, &y_j, &z_j);
+            if (radius < std::hypot(x - x_j, y - y_j, z - z_j)) {
+              continue;  // skip cells that are out of the bounding ball
+            }
+            found.emplace_hint(iter, j);
+            next.push_back(j);
+          }
+        }
+        curr.resize(curr.size() + next.size());
+        curr_end = curr.end();
+        curr_begin = curr_end - next.size();
+        std::ranges::copy(next, curr_begin);
+      }
+    }
+    assert(result.size() == fringe_fg.size());
+    return result;
+  }
+
+  /**
+   * @brief Merge separated lists of indices into a single set.
+   * 
+   * @param indices the lists to be merged
+   * @return std::unordered_set<Int> the merged set of indices
+   */
   static std::unordered_set<Int> merge(
       std::vector<std::vector<int>> const &indices) {
     auto result = std::unordered_set<Int>();
