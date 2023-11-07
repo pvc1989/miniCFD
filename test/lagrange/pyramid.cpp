@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <numeric>
 #include <cstdlib>
 
 #include "mini/lagrange/cell.hpp"

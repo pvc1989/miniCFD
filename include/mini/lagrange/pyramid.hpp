@@ -8,6 +8,7 @@
 
 #include <array>
 #include <initializer_list>
+#include <numeric>
 #include <vector>
 
 #include "mini/lagrange/element.hpp"

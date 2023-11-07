@@ -1,5 +1,6 @@
 //  Copyright 2023 PEI Weicheng
 
+#include <numeric>
 #include <cmath>
 
 #include "mini/lagrange/face.hpp"

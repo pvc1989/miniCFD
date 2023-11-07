@@ -1,7 +1,9 @@
 //  Copyright 2023 PEI Weicheng
 
-#include <vector>
 #include <algorithm>
+#include <numeric>
+#include <vector>
+
 #include <cstdlib>
 
 #include "mini/lagrange/cell.hpp"

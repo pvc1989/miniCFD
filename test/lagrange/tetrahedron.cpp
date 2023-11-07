@@ -1,8 +1,10 @@
 //  Copyright 2023 PEI Weicheng
 
-#include <vector>
-#include <algorithm>
 #include <cstdlib>
+
+#include <algorithm>
+#include <numeric>
+#include <vector>
 
 #include "mini/lagrange/cell.hpp"
 #include "mini/lagrange/tetrahedron.hpp"
