@@ -11,7 +11,8 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/polynomial/projection.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/gauss/function.hpp"
 #include "mini/solver/rkdg.hpp"
 
@@ -73,10 +74,11 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, 1>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Value = typename Cell::Value;
   using Coeff = typename Cell::Coeff;
 
@@ -88,27 +90,27 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"U"});
 
   /* Build a `Limiter` object. */
-  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Set initial conditions. */
   Value value_right{ 10 }, value_left{ -10 };
   double x_0 = 4.0;
-  auto initial_condition = [&](const Coord& xyz){
+  auto initial_condition = [&](const Global& xyz){
     return (xyz[0] > x_0) ? value_right : value_left;
   };
-  auto exact_solution = [&](const Coord& xyz, double t){
+  auto exact_solution = [&](const Global& xyz, double t){
     return (xyz[0] - x_0 > a_x * t) ? value_right : value_left;
   };
 
   if (argc == 7) {
     if (i_core == 0) {
-      std::printf("[Start] Project() on %d cores at %f sec\n",
+      std::printf("[Start] Approximate() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
     }
-    part.ForEachLocalCell([&](Cell *cell_ptr){
-      cell_ptr->Project(initial_condition);
-    });
+    for (Cell *cell_ptr : part.GetLocalCellPointers()) {
+      cell_ptr->Approximate(initial_condition);
+    }
 
     if (i_core == 0) {
       std::printf("[Start] Reconstruct() on %d cores at %f sec\n",
@@ -144,10 +146,10 @@ int main(int argc, char* argv[]) {
   auto solver = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
 
   /* Set boundary conditions. */
-  auto state_right = [&value_right](const Coord& xyz, double t){
+  auto state_right = [&value_right](const Global& xyz, double t){
     return value_right;
   };
-  auto state_left = [&value_left](const Coord& xyz, double t){
+  auto state_left = [&value_left](const Global& xyz, double t){
     return value_left;
   };
   if (suffix == "tetra") {

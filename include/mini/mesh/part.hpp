@@ -3,6 +3,7 @@
 #define MINI_MESH_PART_HPP_
 
 #include <concepts>
+#include <ranges>
 
 #include <cassert>
 
@@ -38,33 +39,11 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/pyramid.hpp"
 #include "mini/gauss/wedge.hpp"
-#include "mini/polynomial/basis.hpp"
-#include "mini/polynomial/projection.hpp"
+#include "mini/type/select.hpp"
 
 namespace mini {
 namespace mesh {
 namespace part {
-
-/**
- * @brief A K-way type selection mechanism that extends `std::conditional_t`.
- * 
- */
-// generic version, no instantiation:
-template<unsigned N, typename... Types>
-struct select;
-// specialization for N > 0:
-template <unsigned N, typename T, typename... Types>
-struct select<N, T, Types...> {
-  using type = typename select<N-1, Types...>::type;
-};
-// specialization for N == 0:
-template <typename T, typename... Types>
-struct select<0, T, Types...> {
-  using type = T;
-};
-// STL-style type aliasing:
-template<unsigned N, typename... Types>
-using select_t = typename select<N, Types...>::type;
 
 /**
  * @brief Index information of a Node.
@@ -154,12 +133,11 @@ struct Coordinates {
   }
 };
 
-template <std::integral Int, int kDegrees, class Riemann>
+template <std::integral Int, class Riemann, class Projection>
 struct Cell;
 
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class P>
 struct Face {
-  constexpr static int kDegrees = D;
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
@@ -168,8 +146,8 @@ struct Face {
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Face<Scalar, kPhysDim>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
-  using Coord = typename Cell::Coord;
+  using Cell = part::Cell<Int, Riemann, P>;
+  using Global = typename Cell::Global;
 
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
@@ -197,7 +175,7 @@ struct Face {
   Riemann const &riemann() const {
     return riemann_;
   }
-  Coord center() const {
+  Global center() const {
     return gauss().center();
   }
   Scalar area() const {
@@ -216,33 +194,31 @@ struct Face {
   }
 };
 
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class Proj>
 struct Cell {
-  constexpr static int kDegrees = D;
   using Riemann = R;
+  using Projection = Proj;
   using Scalar = typename Riemann::Scalar;
-  constexpr static int kComponents = Riemann::kComponents;
-  constexpr static int kPhysDim = Riemann::kDimensions;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
   using Lagrange = lagrange::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
-  using Basis = polynomial::OrthoNormal<Scalar, kPhysDim, kDegrees>;
-  using Projection = polynomial::
-      Projection<Scalar, kPhysDim, kDegrees, kComponents>;
-  using Coord = typename Projection::Coord;
-  using Local = Coord;
-  using Global = Coord;
+  using Basis = typename Projection::Basis;
+  using Local = typename Projection::Local;
+  using Global = typename Projection::Global;
   using Value = typename Projection::Value;
   using Coeff = typename Projection::Coeff;
   static constexpr int K = Projection::K;  // number of functions
   static constexpr int N = Projection::N;  // size of the basis
+  static constexpr int P = Projection::P;  // degree of the basis
+  static constexpr int D = 3;  // dimension of the physical space
+  static_assert(Riemann::kComponents == Projection::K);
+  static_assert(Riemann::kDimensions == D);
   static constexpr int kFields = K * N;
-  using Face = part::Face<Int, kDegrees, R>;
+  using Face = part::Face<Int, Riemann, Projection>;
 
   std::vector<Cell *> adj_cells_;
   std::vector<Face *> adj_faces_;
-  Basis basis_;
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Projection projection_;
@@ -250,29 +226,15 @@ struct Cell {
   bool inner_ = true;
 
   Cell(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr, Int m_cell)
-      : basis_(*gauss_ptr), lagrange_ptr_(std::move(lagrange_ptr)),
+      : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
-        metis_id(m_cell), projection_(basis_) {
+        metis_id(m_cell), projection_(*gauss_ptr_) {
   }
   Cell() = default;
   Cell(Cell const &) = delete;
   Cell &operator=(Cell const &) = delete;
-  Cell(Cell &&that) noexcept {
-    *this = std::move(that);
-  }
-  Cell &operator=(Cell &&that) noexcept {
-    adj_cells_ = std::move(that.adj_cells_);
-    adj_faces_ = std::move(that.adj_faces_);
-    basis_ = std::move(that.basis_);
-    lagrange_ptr_ = std::move(that.lagrange_ptr_);
-    gauss_ptr_ = std::move(that.gauss_ptr_);
-    projection_ = std::move(that.projection_);
-    projection_.basis_ptr_ = &basis_;  //
-    metis_id = that.metis_id;
-    id_ = that.id_;
-    inner_ = that.inner_;
-    return *this;
-  }
+  Cell(Cell &&that) noexcept = default;
+  Cell &operator=(Cell &&that) noexcept = default;
   ~Cell() noexcept = default;
 
   Scalar volume() const {
@@ -284,8 +246,8 @@ struct Cell {
   bool inner() const {
     return inner_;
   }
-  Coord const &center() const {
-    return basis_.center();
+  Global const &center() const {
+    return gauss().center();
   }
   Gauss const &gauss() const {
     return *gauss_ptr_;
@@ -293,19 +255,22 @@ struct Cell {
   Lagrange const &lagrange() const {
     return gauss().lagrange();
   }
-  Coord LocalToGlobal(const Coord &local) const {
+  Global LocalToGlobal(const Local &local) const {
     return lagrange().LocalToGlobal(local);
   }
-  Value GetValue(const Coord &global) const {
-    return projection_(global);
+  Value GlobalToValue(const Global &global) const {
+    return projection_.GlobalToValue(global);
+  }
+  Basis basis() const {
+    return projection_.basis();
   }
   int CountCorners() const {
-    return gauss().CountCorners();
+    return lagrange().CountCorners();
   }
 
   template <class Callable>
-  void Project(Callable &&func) {
-    projection_.Project(func, basis_);
+  void Approximate(Callable &&func) {
+    projection_.Approximate(func);
   }
 };
 
@@ -313,12 +278,12 @@ struct Cell {
  * @brief Mimic CGNS's `Elements_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
- * @tparam kDegrees  Degree of the solution polynomials.
  * @tparam Riemann  Type of the Riemann solver on each Face.
+ * @tparam Projection  Type of the approximation on each Cell.
  */
-template <std::integral Int, int kDegrees, class Riemann>
+template <std::integral Int, class Riemann, class Projection>
 class Section {
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
+  using Cell = part::Cell<Int, Riemann, Projection>;
   using Scalar = typename Cell::Scalar;
 
   Int head_, size_;
@@ -418,19 +383,20 @@ class Section {
  * @brief Mimic CGNS's `Base_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
- * @tparam D  Degree of the solution polynomials.
  * @tparam R  Type of the Riemann solver on each Face.
+ * @tparam P  Type of the approximation on each Cell.
  */
-template <std::integral Int, int D, class R>
+template <std::integral Int, class R, class P>
 class Part {
  public:
-  constexpr static int kDegrees = D;
   using Riemann = R;
-  using Face = part::Face<Int, kDegrees, Riemann>;
-  using Cell = part::Cell<Int, kDegrees, Riemann>;
+  using Projection = P;
+  using Face = part::Face<Int, Riemann, Projection>;
+  using Cell = part::Cell<Int, Riemann, Projection>;
   using Scalar = typename Riemann::Scalar;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Value = typename Cell::Value;
+  constexpr static int kDegrees = Projection::P;
   constexpr static int kComponents = Riemann::kComponents;
   constexpr static int kPhysDim = Riemann::kDimensions;
 
@@ -446,7 +412,7 @@ class Part {
   using NodeIndex = part::NodeIndex<Int>;
   using CellIndex = part::CellIndex<Int>;
   using Coordinates = part::Coordinates<Int, Scalar>;
-  using Section = part::Section<Int, kDegrees, R>;
+  using Section = part::Section<Int, R, P>;
   static constexpr int kLineWidth = 128;
   static constexpr int kFields = Section::kFields;
   static constexpr int i_base = 1;
@@ -460,37 +426,37 @@ class Part {
 
  private:
   using LagrangeOnTriangle = lagrange::Triangle3<Scalar, kPhysDim>;
-  using GaussOnTriangle = select_t<kDegrees,
+  using GaussOnTriangle = type::select_t<kDegrees,
     gauss::Triangle<Scalar, kPhysDim, 1>,
     gauss::Triangle<Scalar, kPhysDim, 3>,
     gauss::Triangle<Scalar, kPhysDim, 6>,
     gauss::Triangle<Scalar, kPhysDim, 12>>;
   using LagrangeOnQuadrangle = lagrange::Quadrangle4<Scalar, kPhysDim>;
-  using GaussOnQuadrangle = select_t<kDegrees,
+  using GaussOnQuadrangle = type::select_t<kDegrees,
     gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
     gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
     gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
     gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
   using LagrangeOnTetrahedron = lagrange::Tetrahedron4<Scalar>;
-  using GaussOnTetrahedron = select_t<kDegrees,
+  using GaussOnTetrahedron = type::select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
   using LagrangeOnHexahedron = lagrange::Hexahedron8<Scalar>;
-  using GaussOnHexahedron = select_t<kDegrees,
+  using GaussOnHexahedron = type::select_t<kDegrees,
     gauss::Hexahedron<Scalar, 1, 1, 1>,
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
     gauss::Hexahedron<Scalar, 4, 4, 4>>;
   using LagrangeOnPyramid = lagrange::Pyramid5<Scalar>;
-  using GaussOnPyramid = select_t<kDegrees,
+  using GaussOnPyramid = type::select_t<kDegrees,
     gauss::Pyramid<Scalar, 1, 1, 1>,
     gauss::Pyramid<Scalar, 2, 2, 2>,
     gauss::Pyramid<Scalar, 3, 3, 3>,
     gauss::Pyramid<Scalar, 4, 4, 4>>;
   using LagrangeOnWedge = lagrange::Wedge6<Scalar>;
-  using GaussOnWedge = select_t<kDegrees,
+  using GaussOnWedge = type::select_t<kDegrees,
     gauss::Wedge<Scalar, 1, 1>,
     gauss::Wedge<Scalar, 3, 2>,
     gauss::Wedge<Scalar, 6, 3>,
@@ -531,10 +497,10 @@ class Part {
   const std::string &GetDirectoryName() const {
     return directory_;
   }
-  int rank() const {
+  int mpi_rank() const {
     return rank_;
   }
-  int size() const {
+  int mpi_size() const {
     return size_;
   }
 
@@ -1088,29 +1054,17 @@ class Part {
 
  public:
   template <class Callable>
-  void Project(Callable &&new_func) {
-    for (auto &[i_zone, sects] : local_cells_) {
-      for (auto &[i_sect, cells] : sects) {
-        for (auto &cell : cells) {
-          cell.Project(new_func);
-        }
-      }
-    }
-  }
-
-  template <class Callable>
   Value MeasureL1Error(Callable &&exact_solution, Scalar t_next) const {
     Value l1_error; l1_error.setZero();
-    auto visitor = [&t_next, &exact_solution, &l1_error](Cell const &cell){
-      auto func = [&t_next, &exact_solution, &cell](Coord const &xyz){
-        auto value = cell.GetValue(xyz);
+    for (Cell const &cell : GetLocalCells()) {
+      auto func = [&t_next, &exact_solution, &cell](Global const &xyz){
+        auto value = cell.GlobalToValue(xyz);
         value -= exact_solution(xyz, t_next);
         value = value.cwiseAbs();
         return value;
       };
       l1_error += mini::gauss::Integrate(func, cell.gauss());
-    };
-    ForEachConstLocalCell(visitor);
+    }
     return l1_error;
   }
 
@@ -1352,21 +1306,33 @@ class Part {
     }
     int i = 0;
     for (Cell *cell_ptr : troubled_cells) {
-      cell_ptr->projection_.UpdateCoeffs(new_projections[i++].coeff());
+      cell_ptr->projection_.coeff() = new_projections[i++].coeff();
     }
     assert(i == troubled_cells.size());
   }
 
-  // Accessors:
-  template<class Visitor>
-  void ForEachConstLocalCell(Visitor &&visit) const {
-    for (const auto &[i_zone, zone] : local_cells_) {
-      for (const auto &[i_sect, sect] : zone) {
-        for (const auto &cell : sect) {
-          visit(cell);
-        }
-      }
-    }
+  // Viewers of `Cell`s and `Face`s:
+  /**
+   * @brief Get a range of `(Cell const &)`.
+   * 
+   * @return std::ranges::input_range 
+   */
+  std::ranges::input_range auto GetLocalCells() const {
+    return local_cells_       // range of pair<Index, Zone>
+        | std::views::values  // range of (Zone = range of pair<Index, Section>)
+        | std::views::join    // range of pair<Index, Section>
+        | std::views::values  // range of (Section = range of Cell)
+        | std::views::join;   // range of Cell
+  }
+  /**
+   * @brief Get a range of `(Cell *)`.
+   * 
+   * @return std::ranges::input_range 
+   */
+  std::ranges::input_range auto GetLocalCellPointers() {
+    return const_cast<const Part *>(this)->GetLocalCells()
+        | std::views::transform([](const Cell &cell){
+            return const_cast<Cell *>(&cell); });
   }
   template<class Visitor>
   void ForEachConstLocalFace(Visitor &&visit) const {
@@ -1396,17 +1362,6 @@ class Part {
     const auto &faces = *name_to_faces_.at(name);
     for (const auto &face_uptr : faces) {
       visit(*face_uptr);
-    }
-  }
-  // Mutators:
-  template<class Visitor>
-  void ForEachLocalCell(Visitor &&visit) {
-    for (auto &[i_zone, zone] : local_cells_) {
-      for (auto &[i_sect, sect] : zone) {
-        for (auto &cell : sect) {
-          visit(&cell);
-        }
-      }
     }
   }
   template<class Visitor>
@@ -1593,11 +1548,11 @@ class Part {
         std::ios::out | (binary ? (std::ios::binary) : std::ios::out));
   }
 };
-template <std::integral Int, int kDegrees, class Riemann>
-MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiIntType
+template <std::integral Int, class Riemann, class Projection>
+MPI_Datatype const Part<Int, Riemann, Projection>::kMpiIntType
     = sizeof(Int) == 8 ? MPI_LONG : MPI_INT;
-template <std::integral Int, int kDegrees, class Riemann>
-MPI_Datatype const Part<Int, kDegrees, Riemann>::kMpiRealType
+template <std::integral Int, class Riemann, class Projection>
+MPI_Datatype const Part<Int, Riemann, Projection>::kMpiRealType
     = sizeof(Scalar) == 8 ? MPI_DOUBLE : MPI_FLOAT;
 
 }  // namespace part

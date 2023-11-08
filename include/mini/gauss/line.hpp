@@ -7,9 +7,12 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/gauss/legendre.hpp"
+#include "mini/gauss/lobatto.hpp"
 
 namespace mini {
 namespace gauss {
+
+enum class Rule { kLegendre, kLobatto };
 
 template <typename S, int D, int Q>
 class Line {

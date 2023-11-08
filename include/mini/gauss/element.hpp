@@ -76,20 +76,8 @@ class Element {
    */
   virtual const Lagrange &lagrange() const = 0;
 
-  int CountCorners() const {
-    return lagrange().CountCorners();
-  }
-  int CountNodes() const {
-    return lagrange().CountNodes();
-  }
   const Global &center() const {
     return lagrange().center();
-  }
-  Global LocalToGlobal(const Local &local) const {
-    return lagrange().LocalToGlobal(local);
-  }
-  Jacobian LocalToJacobian(const Local &local) const {
-    return lagrange().LocalToJacobian(local);
   }
 
  protected:

@@ -36,7 +36,7 @@ TEST_F(TestGaussJacobi, OnePoint) {
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
     auto *a = v.data();
     double sum = 0.0;
     for (int i = 0; i < kQuad; ++i) {
@@ -52,7 +52,7 @@ TEST_F(TestGaussJacobi, TwoPoint) {
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
     auto *a = v.data();
     double sum = 0.0;
     for (int i = 0; i < kQuad; ++i) {
@@ -68,7 +68,7 @@ TEST_F(TestGaussJacobi, ThreePoint) {
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
     auto *a = v.data();
     double sum = 0.0;
     for (int i = 0; i < kQuad; ++i) {
@@ -84,7 +84,7 @@ TEST_F(TestGaussJacobi, FourPoint) {
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
     auto *a = v.data();
     double sum = 0.0;
     for (int i = 0; i < kQuad; ++i) {
@@ -100,7 +100,7 @@ TEST_F(TestGaussJacobi, FivePoint) {
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); };
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
     auto *a = v.data();
     double sum = 0.0;
     for (int i = 0; i < kQuad; ++i) {

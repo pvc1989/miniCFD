@@ -6,12 +6,12 @@ auto [c, s] = mini::geometry::CosSin(45.0);
 auto primitive = Primitive(1.29, 5.0 * c, 5.0 * s, 0.0, 101325.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
-Value MyIC(const Coord &xyz) {
+Value MyIC(const Global &xyz) {
   return given_value;
 }
 
 /* Set boundary conditions. */
-auto given_state = [](const Coord& xyz, double t){
+auto given_state = [](const Global& xyz, double t){
   return given_value;
 };
 

@@ -10,7 +10,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/burgers.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/solver/rkdg.hpp"
 #include "rkdg.hpp"
 
@@ -66,10 +66,11 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Part = mini::mesh::part::Part<cgsize_t, kDegrees, Riemann>;
+  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, kComponents>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Value = typename Cell::Value;
   using Coeff = typename Cell::Coeff;
 
@@ -81,11 +82,11 @@ int main(int argc, char* argv[]) {
   part.SetFieldNames({"U"});
 
   /* Build a `Limiter` object. */
-  using Limiter = mini::polynomial::LazyWeno<Cell>;
+  using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 
   /* Set initial conditions. */
-  auto initial_condition = [&](const Coord& xyz){
+  auto initial_condition = [&](const Global& xyz){
     auto x = xyz[0];
     Value val;
     val[0] = x * (x - 2.0) * (x - 4.0);
@@ -94,12 +95,12 @@ int main(int argc, char* argv[]) {
 
   if (argc == 7) {
     if (i_core == 0) {
-      std::printf("[Start] Project() on %d cores at %f sec\n",
+      std::printf("[Start] Approximate() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
     }
-    part.ForEachLocalCell([&](Cell *cell_ptr){
-      cell_ptr->Project(initial_condition);
-    });
+    for (Cell *cell_ptr : part.GetLocalCellPointers()) {
+      cell_ptr->Approximate(initial_condition);
+    }
 
     if (i_core == 0) {
       std::printf("[Start] Reconstruct() on %d cores at %f sec\n",

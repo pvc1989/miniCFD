@@ -39,12 +39,6 @@ TEST_F(TestGaussHexahedron, OnLinearElement) {
     Coord(+10, +10, +10), Coord(-10, +10, +10)
   };
   hexa = Gauss(lagrange);
-  EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Coord(10, 10, 10));
-  EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Coord(15, 15, 15));
-  EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Coord(30, 40, 50));
-  EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
-  EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
-  EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, hexa), 16.0);
   EXPECT_NEAR(Integrate([](Coord const&){ return 2.0; }, hexa), 16000, 1e-10);
   auto f = [](Coord const& xyz){ return xyz[0]; };
@@ -92,12 +86,6 @@ TEST_F(TestGaussHexahedron, OnQuadraticElement) {
     Coord(0, +10, +10), Coord(-10, 0, +10),
   };
   hexa = Gauss(lagrange);
-  EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Coord(10, 10, 10));
-  EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Coord(15, 15, 15));
-  EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Coord(30, 40, 50));
-  EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
-  EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
-  EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, hexa), 16.0);
   EXPECT_NEAR(Integrate([](Coord const&){ return 2.0; }, hexa), 16000, 1e-10);
   auto f = [](Coord const& xyz){ return xyz[0]; };
@@ -154,12 +142,6 @@ TEST_F(TestGaussHexahedron, On27NodeQuadraticElement) {
     Coord(0, 0, 0),
   };
   hexa = Gauss(lagrange);
-  EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Coord(10, 10, 10));
-  EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Coord(15, 15, 15));
-  EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Coord(30, 40, 50));
-  EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
-  EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
-  EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, hexa), 16.0);
   EXPECT_NEAR(Integrate([](Coord const&){ return 2.0; }, hexa), 16000, 1e-10);
   auto f = [](Coord const& xyz){ return xyz[0]; };
@@ -214,12 +196,6 @@ TEST_F(TestGaussHexahedron, On26NodeQuadraticElement) {
     Coord(0, 0, +10),
   };
   hexa = Gauss(lagrange);
-  EXPECT_EQ(hexa.LocalToGlobal(1, 1, 1), Coord(10, 10, 10));
-  EXPECT_EQ(hexa.LocalToGlobal(1.5, 1.5, 1.5), Coord(15, 15, 15));
-  EXPECT_EQ(hexa.LocalToGlobal(3, 4, 5), Coord(30, 40, 50));
-  EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
-  EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
-  EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, hexa), 16.0);
   EXPECT_NEAR(Integrate([](Coord const&){ return 2.0; }, hexa), 16000, 1e-10);
   auto f = [](Coord const& xyz){ return xyz[0]; };

@@ -115,7 +115,7 @@ TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 00 };
     Vector face_nodes, face_nodes_expect;
     face_nodes = { 11, 22, 33, 44, 0 };
@@ -274,7 +274,7 @@ TEST_F(TestLagrangeHexahedron20, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010,
       1111, 1212, 1313, 1414, 1515, 1616, 1717, 1818, 1919, 2020, 00 };
     Vector face_nodes, face_nodes_expect;
@@ -449,7 +449,7 @@ TEST_F(TestLagrangeHexahedron27, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010,
       1111, 1212, 1313, 1414, 1515, 1616, 1717, 1818, 1919, 2020,
       2121, 2222, 2323, 2424, 2525, 2626, 2727, 00 };
@@ -622,7 +622,7 @@ TEST_F(TestLagrangeHexahedron26, SortNodesOnFace) {
   }
   // test the version with conversion:
   {
-    using Vector = std::vector<short>;
+    using Vector = std::vector<int16_t>;
     Vector cell_nodes{ 11, 22, 33, 44, 55, 66, 77, 88, 99, 1010,
       1111, 1212, 1313, 1414, 1515, 1616, 1717, 1818, 1919, 2020,
       2121, 2222, 2323, 2424, 2525, 2626, 00 };

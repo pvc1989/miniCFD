@@ -1,5 +1,4 @@
 set (cases
-  basis
   triangle
   quadrangle
   hexahedron
@@ -17,9 +16,3 @@ target_include_directories(test_polynomial_projection PRIVATE ${EIGEN_INC} ${CGN
 target_link_libraries(test_polynomial_projection ${CGNS_LIB} metis)
 set_target_properties(test_polynomial_projection PROPERTIES OUTPUT_NAME projection)
 add_test(NAME test_polynomial_projection COMMAND projection)
-
-add_executable(test_polynomial_limiter limiter.cpp)
-target_include_directories(test_polynomial_limiter PRIVATE ${EIGEN_INC} ${CGNS_INC} ${METIS_INC} ${MPI_INCLUDE_PATH})
-target_link_libraries(test_polynomial_limiter ${CGNS_LIB} ${MPI_LIBRARIES} metis)
-set_target_properties(test_polynomial_limiter PROPERTIES OUTPUT_NAME limiter)
-add_test(NAME test_polynomial_limiter COMMAND limiter)

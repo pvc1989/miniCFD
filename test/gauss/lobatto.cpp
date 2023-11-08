@@ -3,12 +3,12 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/lobatto.hpp"
 #include "mini/gauss/function.hpp"
 
 #include "gtest/gtest.h"
 
-class TestGaussLegendre : public ::testing::Test {
+class TestGaussLobatto : public ::testing::Test {
  protected:
   static double rand() {
     return std::rand() / (1.0 + RAND_MAX);
@@ -28,26 +28,10 @@ class TestGaussLegendre : public ::testing::Test {
     return val;
   }
 };
-TEST_F(TestGaussLegendre, OnePoint) {
-  constexpr int kQuad = 1;
-  constexpr int kTerm = 2 * kQuad - 1;
-  using Gauss = mini::gauss::Legendre<double, kQuad>;
-  std::srand(31415926);
-  for (int i = 0; i < 1000; ++i) {
-    auto v = std::vector<double>(kTerm);
-    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
-    auto *a = v.data();
-    double sum = 0.0;
-    for (int i = 0; i < kQuad; ++i) {
-      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
-    }
-    EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
-  }
-}
-TEST_F(TestGaussLegendre, TwoPoint) {
+TEST_F(TestGaussLobatto, TwoPoint) {
   constexpr int kQuad = 2;
-  constexpr int kTerm = 2 * kQuad - 1;
-  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  constexpr int kTerm = 2 * kQuad - 3;
+  using Gauss = mini::gauss::Lobatto<double, kQuad>;
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -60,10 +44,10 @@ TEST_F(TestGaussLegendre, TwoPoint) {
     EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
   }
 }
-TEST_F(TestGaussLegendre, ThreePoint) {
+TEST_F(TestGaussLobatto, ThreePoint) {
   constexpr int kQuad = 3;
-  constexpr int kTerm = 2 * kQuad - 1;
-  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  constexpr int kTerm = 2 * kQuad - 3;
+  using Gauss = mini::gauss::Lobatto<double, kQuad>;
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -76,10 +60,10 @@ TEST_F(TestGaussLegendre, ThreePoint) {
     EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
   }
 }
-TEST_F(TestGaussLegendre, FourPoint) {
+TEST_F(TestGaussLobatto, FourPoint) {
   constexpr int kQuad = 4;
-  constexpr int kTerm = 2 * kQuad - 1;
-  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  constexpr int kTerm = 2 * kQuad - 3;
+  using Gauss = mini::gauss::Lobatto<double, kQuad>;
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -92,10 +76,26 @@ TEST_F(TestGaussLegendre, FourPoint) {
     EXPECT_NEAR(sum, exact(a, kTerm), 1e-15);
   }
 }
-TEST_F(TestGaussLegendre, FivePoint) {
+TEST_F(TestGaussLobatto, FivePoint) {
   constexpr int kQuad = 5;
-  constexpr int kTerm = 2 * kQuad - 1;
-  using Gauss = mini::gauss::Legendre<double, kQuad>;
+  constexpr int kTerm = 2 * kQuad - 3;
+  using Gauss = mini::gauss::Lobatto<double, kQuad>;
+  std::srand(31415926);
+  for (int i = 0; i < 1000; ++i) {
+    auto v = std::vector<double>(kTerm);
+    for (int j = 0; j < kTerm; ++j) { v[j] = rand(); }
+    auto *a = v.data();
+    double sum = 0.0;
+    for (int i = 0; i < kQuad; ++i) {
+      sum += f(a, kTerm, Gauss::points[i]) * Gauss::weights[i];
+    }
+    EXPECT_NEAR(sum, exact(a, kTerm), 1e-14);
+  }
+}
+TEST_F(TestGaussLobatto, SixPoint) {
+  constexpr int kQuad = 6;
+  constexpr int kTerm = 2 * kQuad - 3;
+  using Gauss = mini::gauss::Lobatto<double, kQuad>;
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);

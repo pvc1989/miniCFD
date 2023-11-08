@@ -5,17 +5,17 @@
 /* Set initial conditions. */
 Value ambient_value = Gas::PrimitiveToConservative(
     Primitive(1.4, 0.3, 0.0, 0.0, 1.0));
-Value MyIC(const Coord &xyz) {
+Value MyIC(const Global &xyz) {
   return ambient_value;
 }
 
 /* Set boundary conditions. */
 Value exhaust_value = Gas::PrimitiveToConservative(
     Primitive(1.4, 2.4, 0.0, 0.0, 1.44));
-auto exhaust = [](const Coord& xyz, double t){
+auto exhaust = [](const Global& xyz, double t){
   return exhaust_value;
 };
-auto ambient = [](const Coord& xyz, double t){
+auto ambient = [](const Global& xyz, double t){
   return ambient_value;
 };
 void MyBC(const std::string &suffix, Solver *solver) {

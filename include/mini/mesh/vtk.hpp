@@ -30,7 +30,7 @@ void Prepare(const typename Cell::Local locals[], int n, const Cell &cell,
     std::vector<typename Cell::Value> *values) {
   for (int i = 0; i < n; ++i) {
     coords->emplace_back(cell.LocalToGlobal(locals[i]));
-    values->emplace_back(cell.GetValue(coords->back()));
+    values->emplace_back(cell.GlobalToValue(coords->back()));
   }
 }
 
@@ -200,7 +200,7 @@ template <typename Part>
 class Writer {
   using Cell = typename Part::Cell;
   using Value = typename Cell::Value;
-  using Coord = typename Cell::Coord;
+  using Coord = typename Cell::Global;
 
   static CellType GetCellType(int n_corners) {
     CellType cell_type;
@@ -290,10 +290,10 @@ class Writer {
     auto types = std::vector<CellType>();
     auto coords = std::vector<Coord>();
     auto values = std::vector<Value>();
-    part.ForEachConstLocalCell([&types, &coords, &values](const Cell &cell){
+    for (const Cell &cell : part.GetLocalCells()) {
       Prepare(cell, &types, &coords, &values);
-    });
-    if (part.rank() == 0) {
+    }
+    if (part.mpi_rank() == 0) {
       char temp[1024];
       std::snprintf(temp, sizeof(temp), "%s/%s.pvtu",
           part.GetDirectoryName().c_str(), soln_name.c_str());
@@ -311,7 +311,7 @@ class Writer {
       pvtu << "      <PDataArray type=\"Float64\" Name=\"Points\" "
           << "NumberOfComponents=\"3\"/>\n";
       pvtu << "    </PPoints>\n";
-      for (int i_part = 0; i_part < part.size(); ++i_part) {
+      for (int i_part = 0; i_part < part.mpi_size(); ++i_part) {
         pvtu << "    <Piece Source=\"./" << soln_name << '/'
             << i_part << ".vtu\"/>\n";
       }

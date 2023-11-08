@@ -21,9 +21,6 @@ TEST_F(TestGaussTriangle, OnScaledElementInTwoDimensionalSpace) {
   static_assert(gauss.PhysDim() == 2);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
   EXPECT_NEAR((gauss.center() - Coord(4./3, 2./3)).norm(), 0, 1e-15);
-  EXPECT_EQ(gauss.LocalToGlobal(1, 0), Coord(0, 0));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 1), Coord(2, 0));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Coord(2, 2));
   EXPECT_DOUBLE_EQ(Quadrature([](Coord const&){ return 2.0; }, gauss), 1.0);
   EXPECT_DOUBLE_EQ(Integrate([](Coord const&){ return 2.0; }, gauss), 4.0);
   auto f = [](Coord const& xy){ return xy[0]; };
@@ -46,9 +43,6 @@ TEST_F(TestGaussTriangle, OnMappedElementInThreeDimensionalSpace) {
   static_assert(gauss.PhysDim() == 3);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
   EXPECT_NEAR((gauss.center() - Global(4./3, 2./3, 2.)).norm(), 0, 1e-15);
-  EXPECT_EQ(gauss.LocalToGlobal(1, 0), Global(0, 0, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 1), Global(2, 0, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Local const&){ return 2.0; }, gauss), 1.0);
   EXPECT_DOUBLE_EQ(
@@ -84,9 +78,6 @@ TEST_F(TestGaussTriangle, OnQuadraticElementInThreeDimensionalSpace) {
   static_assert(gauss.PhysDim() == 3);
   EXPECT_DOUBLE_EQ(gauss.area(), 2.0);
   EXPECT_NEAR((gauss.center() - Global(4./3, 2./3, 2.)).norm(), 0, 1e-15);
-  EXPECT_EQ(gauss.LocalToGlobal(1, 0), Global(0, 0, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 1), Global(2, 0, 2));
-  EXPECT_EQ(gauss.LocalToGlobal(0, 0), Global(2, 2, 2));
   EXPECT_DOUBLE_EQ(
       Quadrature([](Local const&){ return 2.0; }, gauss), 1.0);
   EXPECT_DOUBLE_EQ(

@@ -8,7 +8,7 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/line.hpp"
 #include "mini/gauss/face.hpp"
 #include "mini/lagrange/quadrangle.hpp"
 
@@ -22,15 +22,18 @@ namespace gauss {
  * @tparam kPhysDim  Dimension of the physical space.
  * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
  * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
+ * @tparam kRule  The type of Gaussian quadrature rule.
  */
-template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4>
+template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4,
+    Rule kRule = Rule::kLegendre>
 class Quadrangle : public Face<Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
 
-  using GaussX = Legendre<Scalar, Qx>;
-  using GaussY = Legendre<Scalar, Qy>;
-
  public:
+  using GaussX = std::conditional_t< kRule == Rule::kLegendre,
+      Legendre<Scalar, Qx>, Lobatto<Scalar, Qx> >;
+  using GaussY = std::conditional_t< kRule == Rule::kLegendre,
+      Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
   using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
@@ -130,15 +133,15 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   }
 };
 
-template <std::floating_point Scalar, int D, int Qx, int Qy>
-std::array<typename Quadrangle<Scalar, D, Qx, Qy>::Local, Qx * Qy> const
-Quadrangle<Scalar, D, Qx, Qy>::local_coords_
-    = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalCoords();
+template <std::floating_point Scalar, int D, int Qx, int Qy, Rule R>
+std::array<typename Quadrangle<Scalar, D, Qx, Qy, R>::Local, Qx * Qy> const
+Quadrangle<Scalar, D, Qx, Qy, R>::local_coords_
+    = Quadrangle<Scalar, D, Qx, Qy, R>::BuildLocalCoords();
 
-template <std::floating_point Scalar, int D, int Qx, int Qy>
+template <std::floating_point Scalar, int D, int Qx, int Qy, Rule R>
 std::array<Scalar, Qx * Qy> const
-Quadrangle<Scalar, D, Qx, Qy>::local_weights_
-    = Quadrangle<Scalar, D, Qx, Qy>::BuildLocalWeights();
+Quadrangle<Scalar, D, Qx, Qy, R>::local_weights_
+    = Quadrangle<Scalar, D, Qx, Qy, R>::BuildLocalWeights();
 
 }  // namespace gauss
 }  // namespace mini

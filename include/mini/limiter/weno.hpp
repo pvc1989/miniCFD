@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_POLYNOMIAL_LIMITER_HPP_
-#define MINI_POLYNOMIAL_LIMITER_HPP_
+#ifndef MINI_LIMITER_WENO_HPP_
+#define MINI_LIMITER_WENO_HPP_
 
 #include <cassert>
 #include <cmath>
@@ -14,14 +14,15 @@
 #include <vector>
 
 namespace mini {
-namespace polynomial {
+namespace limiter {
+namespace weno {
 
 template <typename Cell>
-class LazyWeno {
+class Lazy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Basis = typename Projection::Basis;
-  using Coord = typename Projection::Coord;
+  using Global = typename Projection::Global;
   using Value = typename Projection::Value;
 
   std::vector<Projection> old_projections_;
@@ -32,7 +33,7 @@ class LazyWeno {
   bool verbose_;
 
  public:
-  LazyWeno(Scalar w0, Scalar eps, bool verbose = false)
+  Lazy(Scalar w0, Scalar eps, bool verbose = false)
       : eps_(eps), verbose_(verbose) {
     weights_.setOnes();
     weights_ *= w0;
@@ -63,8 +64,8 @@ class LazyWeno {
     auto my_average = my_cell_->projection_.GetAverage();
     for (auto *adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
-      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto &adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      adj_proj.Approximate(adj_cell->projection_);
       adj_proj += my_average - adj_proj.GetAverage();
       if (verbose_) {
         std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
@@ -112,12 +113,12 @@ class LazyWeno {
 };
 
 template <typename Cell>
-class EigenWeno {
+class Eigen {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
   using Face = typename Cell::Face;
   using Basis = typename Projection::Basis;
-  using Coord = typename Projection::Coord;
+  using Global = typename Projection::Global;
   using Value = typename Projection::Value;
 
   Projection new_projection_;
@@ -128,21 +129,21 @@ class EigenWeno {
   Scalar total_volume_;
 
  public:
-  EigenWeno(Scalar w0, Scalar eps)
+  Eigen(Scalar w0, Scalar eps)
       : eps_(eps) {
     weights_.setOnes();
     weights_ *= w0;
   }
   static bool IsNotSmooth(const Cell &cell) {
-    constexpr int components[] = { 0, Cell::kComponents-1 };
+    constexpr int components[] = { 0, Cell::K-1 };
     auto max_abs_averages = cell.projection_.GetAverage();
     for (int i : components) {
       max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
     }
     typename Cell::Value sum_abs_differences; sum_abs_differences.setZero();
-    auto my_values = cell.GetValue(cell.center());
+    auto my_values = cell.GlobalToValue(cell.center());
     for (const Cell *adj_cell : cell.adj_cells_) {
-      auto adj_values = adj_cell->GetValue(cell.center());
+      auto adj_values = adj_cell->GlobalToValue(cell.center());
       auto adj_averages = adj_cell->projection_.GetAverage();
       for (int i : components) {
         sum_abs_differences[i] += std::abs(my_values[i] - adj_values[i]);
@@ -150,10 +151,10 @@ class EigenWeno {
             std::abs(adj_averages[i]));
       }
     }
-    constexpr auto volume_power = (Cell::kDegrees+1.0) / 2.0 / Cell::kPhysDim;
+    constexpr auto volume_power = (Cell::P + 1.0) / 2.0 / Cell::D;
     auto divisor = std::pow(cell.volume(), volume_power);
     divisor *= cell.adj_cells_.size();
-    constexpr auto smoothness_reference = Cell::kDegrees < 3 ? 1.0 : 3.0;
+    constexpr auto smoothness_reference = Cell::P < 3 ? 1.0 : 3.0;
     for (int i : components) {
       auto smoothness = sum_abs_differences[i] / max_abs_averages[i] / divisor;
       if (smoothness > smoothness_reference) {
@@ -183,8 +184,8 @@ class EigenWeno {
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
     auto my_average = my_cell_->projection_.GetAverage();
     for (auto *adj_cell : my_cell_->adj_cells_) {
-      old_projections_.emplace_back(adj_cell->projection_, my_cell_->basis_);
-      auto &adj_proj = old_projections_.back();
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      adj_proj.Approximate(adj_cell->projection_);
       adj_proj += my_average - adj_proj.GetAverage();
     }
     old_projections_.emplace_back(my_cell_->projection_);
@@ -241,7 +242,8 @@ class EigenWeno {
    * 
    */
   void Reconstruct() {
-    new_projection_ = Projection(my_cell_->basis_);
+    new_projection_ = Projection(my_cell_->gauss());
+    new_projection_.coeff().setZero();
     total_volume_ = 0.0;
     for (auto *adj_face : my_cell_->adj_faces_) {
       ReconstructOnFace(*adj_face);
@@ -251,12 +253,12 @@ class EigenWeno {
 };
 
 template <typename Cell>
-class DummyWeno {
+class Dummy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
 
  public:
-  DummyWeno(Scalar w0, Scalar eps, bool verbose = false) {
+  Dummy(Scalar w0, Scalar eps, bool verbose = false) {
   }
   bool IsNotSmooth(const Cell &cell) {
     return true;
@@ -268,7 +270,8 @@ class DummyWeno {
   }
 };
 
-}  // namespace polynomial
+}  // namespace weno
+}  // namespace limiter
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_LIMITER_HPP_
+#endif  // MINI_LIMITER_WENO_HPP_

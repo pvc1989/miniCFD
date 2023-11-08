@@ -1,6 +1,6 @@
-//  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_POLYNOMIAL_BASIS_HPP_
-#define MINI_POLYNOMIAL_BASIS_HPP_
+//  Copyright 2023 PEI Weicheng
+#ifndef MINI_BASIS_TAYLOR_HPP_
+#define MINI_BASIS_TAYLOR_HPP_
 
 #include <concepts>
 
@@ -12,15 +12,71 @@
 
 #include "mini/algebra/eigen.hpp"
 
-#include "mini/gauss/function.hpp"
-#include "mini/gauss/face.hpp"
-#include "mini/gauss/cell.hpp"
-
 namespace mini {
-namespace polynomial {
+namespace basis {
 
+/**
+ * @brief The basis, formed by monomials, of the space spanned by polynomials.
+ * 
+ * @tparam Scalar the type of coordinates
+ * @tparam kDimensions the dimension of underlying space
+ * @tparam kDegrees the maximum degree of its members
+ */
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Taylor;
+
+template <std::floating_point Scalar, int kDegree>
+class Taylor<Scalar, 1, kDegree> {
+ public:
+  static constexpr int P = kDegree;  // the maximum degree of members in this basis
+  static constexpr int N = P + 1;  // the number of terms in this basis
+  using Vector = algebra::Vector<Scalar, N>;
+
+  /**
+   * @brief Get the values of all basis functions at an arbitrary point.
+   * 
+   * @param x the coordinate of the query point
+   * @return Vector the values
+   */
+  static Vector GetValues(Scalar x) {
+    Vector vec;
+    Scalar x_power = 1;
+    vec[0] = x_power;
+    for (int k = 1; k < N; ++k) {
+      vec[k] = (x_power *= x);
+    }
+    assert(std::abs(x_power - std::pow(x, P)) < 1e-14);
+    return vec;
+  }
+
+  /**
+   * @brief Get the k-th order derivatives of all basis functions at an arbitrary point.
+   * 
+   * @param x the coordinate of the query point
+   * @param k the order of the derivatives to be taken
+   * @return Vector the derivatives
+   */
+  static Vector GetDerivatives(int k, Scalar x) {
+    assert(0 <= k && k <= P);
+    Vector vec;
+    vec.setZero();  // For all j < k, there is vec[j] = 0.
+    auto factorial_j = std::tgamma(Scalar(k + 1));  // factorial(j == k)
+    auto factorial_j_minus_k = Scalar(1);  // factorial(j - k == 0)
+    vec[k] = factorial_j / factorial_j_minus_k;  // j * (j - 1) * ... * (j - k + 1)
+    auto x_power = Scalar(1);
+    for (int j = k + 1; j < N; ++j) {
+      auto j_minus_k = j - k;
+      factorial_j_minus_k *= j_minus_k;
+      factorial_j *= j;
+      x_power *= x;
+      vec[j] = x_power * factorial_j / factorial_j_minus_k;
+    }
+    assert(std::abs(x_power - std::pow(x, P - k)) < 1e-14);
+    assert(factorial_j == std::tgamma(P + 1));
+    assert(factorial_j_minus_k == std::tgamma(P - k + 1));
+    return vec;
+  }
+};
 
 template <std::floating_point Scalar>
 class Taylor<Scalar, 2, 1> {
@@ -446,126 +502,7 @@ class Taylor<Scalar, 3, 3> {
   }
 };
 
-/**
- * @brief A basis of the linear space formed by polynomials less than or equal to a given degree.
- * 
- * @tparam Scalar the data type of scalar components
- * @tparam kDimensions the dimension of the underlying physical space
- * @tparam kDegrees the degree of completeness
- */
-template <std::floating_point Scalar, int kDimensions, int kDegrees>
-class Linear {
-  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
-
- public:
-  static constexpr int N = TaylorBasis::N;
-  using Coord = typename TaylorBasis::Coord;
-  using MatNx1 = typename TaylorBasis::MatNx1;
-  using MatNxN = algebra::Matrix<Scalar, N, N>;
-  using Gauss = std::conditional_t<kDimensions == 2,
-      gauss::Face<Scalar, 2>, gauss::Cell<Scalar>>;
-
- public:
-  explicit Linear(Coord const &center)
-      : center_(center) {
-    coeff_.setIdentity();
-  }
-  Linear() {
-    center_.setZero();
-    coeff_.setIdentity();
-  }
-  Linear(const Linear &) = default;
-  Linear(Linear &&) noexcept = default;
-  Linear &operator=(const Linear &) = default;
-  Linear &operator=(Linear &&) noexcept = default;
-  ~Linear() noexcept = default;
-
-  MatNx1 operator()(Coord const &point) const {
-    MatNx1 col = TaylorBasis::GetValue(point - center_);
-    MatNx1 res = algebra::GetLowerTriangularView(coeff_) * col;
-    return res;
-  }
-  Coord const &center() const {
-    return center_;
-  }
-  MatNxN const &coeff() const {
-    return coeff_;
-  }
-  void Transform(MatNxN const &a) {
-    MatNxN temp = a * coeff_;
-    coeff_ = temp;
-  }
-  void Transform(algebra::LowerTriangularView<MatNxN> const &a) {
-    MatNxN temp;
-    algebra::GetLowerTriangularView(&temp) = a * coeff_;
-    algebra::GetLowerTriangularView(&coeff_) = temp;
-  }
-  void Shift(const Coord &new_center) {
-    center_ = new_center;
-  }
-
- private:
-  Coord center_;
-  MatNxN coeff_;
-};
-
-template <std::floating_point Scalar, int kDimensions, int kDegrees>
-class OrthoNormal {
-  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
-  using LinearBasis = Linear<Scalar, kDimensions, kDegrees>;
-
- public:
-  static constexpr int N = LinearBasis::N;
-  using Coord = typename LinearBasis::Coord;
-  using Gauss = typename LinearBasis::Gauss;
-  using MatNx1 = typename LinearBasis::MatNx1;
-  using MatNxN = typename LinearBasis::MatNxN;
-  using MatNxD = algebra::Matrix<Scalar, N, kDimensions>;
-
- public:
-  explicit OrthoNormal(const Gauss &gauss)
-      : gauss_ptr_(&gauss), basis_(gauss.center()) {
-    assert(gauss.PhysDim() == kDimensions);
-    OrthoNormalize(&basis_, gauss);
-  }
-  OrthoNormal() = default;
-  OrthoNormal(const OrthoNormal &) = default;
-  OrthoNormal(OrthoNormal &&) noexcept = default;
-  OrthoNormal &operator=(const OrthoNormal &) = default;
-  OrthoNormal &operator=(OrthoNormal &&) noexcept = default;
-  ~OrthoNormal() noexcept = default;
-
-  Coord const &center() const {
-    return basis_.center();
-  }
-  MatNxN const &coeff() const {
-    return basis_.coeff();
-  }
-  Gauss const &GetGauss() const {
-    return *gauss_ptr_;
-  }
-  MatNx1 operator()(const Coord &global) const {
-    auto local = global;
-    local -= center();
-    MatNx1 col = TaylorBasis::GetValue(local);
-    return coeff() * col;
-  }
-  Scalar Measure() const {
-    auto v = basis_.coeff()(0, 0);
-    return 1 / (v * v);
-  }
-  MatNxD GetGradValue(const Coord &global) const {
-    auto local = global;
-    local -= center();
-    return TaylorBasis::GetGradValue(local, coeff());
-  }
-
- private:
-  Gauss const *gauss_ptr_;
-  Linear<Scalar, kDimensions, kDegrees> basis_;
-};
-
-}  // namespace polynomial
+}  // namespace basis
 }  // namespace mini
 
-#endif  // MINI_POLYNOMIAL_BASIS_HPP_
+#endif  // MINI_BASIS_TAYLOR_HPP_

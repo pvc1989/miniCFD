@@ -6,17 +6,17 @@
 auto [c, s] = mini::geometry::CosSin(20.0);
 Value upstream_value = Gas::PrimitiveToConservative(
     Primitive(1.4, 0.3 * c, 0.0, 0.3 * s, 1.0));
-Value MyIC(const Coord &xyz) {
+Value MyIC(const Global &xyz) {
   return upstream_value;
 }
 
 /* Set boundary conditions. */
 Value exhaust_value = Gas::PrimitiveToConservative(
     Primitive(1.4, 2.4, 0.0, 0.0, 1.44));
-auto exhaust = [](const Coord& xyz, double t){
+auto exhaust = [](const Global& xyz, double t){
   return exhaust_value;
 };
-auto upstream = [](const Coord& xyz, double t){
+auto upstream = [](const Global& xyz, double t){
   return upstream_value;
 };
 void MyBC(const std::string &suffix, Solver *solver) {

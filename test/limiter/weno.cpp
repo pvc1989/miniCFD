@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/metis.hpp"
 #include "mini/mesh/mapper.hpp"
@@ -21,7 +21,7 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/lagrange/hexahedron.hpp"
 #include "mini/polynomial/projection.hpp"
-#include "mini/polynomial/limiter.hpp"
+#include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/riemann/euler/exact.hpp"
@@ -30,12 +30,12 @@
 
 class TestWenoLimiters : public ::testing::Test {
  protected:
-  using Basis = mini::polynomial::OrthoNormal<double, 3, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::lagrange::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;
 
-  std::string const test_input_dir_{TEST_INPUT_DIR};
+  std::string const input_dir_{INPUT_DIR};
 };
 TEST_F(TestWenoLimiters, ReconstructScalar) {
   auto case_name = std::string("simple_cube");
@@ -48,7 +48,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + "/scalar/original.cgns";
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
+      input_dir_.c_str(), case_name.c_str(), old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;
@@ -72,7 +72,8 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   }
   // build cells and project the function on them
   using Riemann = mini::riemann::rotated::Single<double, 3>;
-  using Cell = mini::mesh::part::Cell<cgsize_t, 2, Riemann>;
+  using Projection = mini::polynomial::Projection<double, 3, 2, 1>;
+  using Cell = mini::mesh::part::Cell<cgsize_t, Riemann, Projection>;
   auto cells = std::vector<Cell>();
   cells.reserve(n_cells);
   auto &zone = cgns_mesh.GetBase(1).GetZone(1);
@@ -100,7 +101,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     auto gauss_ptr = std::make_unique<Gauss>(*lagrange_uptr);
     cells.emplace_back(std::move(lagrange_uptr), std::move(gauss_ptr), i_cell);
     assert(&(cells[i_cell]) == &(cells.back()));
-    cells[i_cell].Project(func);
+    cells[i_cell].Approximate(func);
   }
   using Projection = typename Cell::Projection;
   auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
@@ -111,10 +112,11 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
-        return cells[j_cell].GetValue(xyz);
+        return cells[j_cell].GlobalToValue(xyz);
       };
-      adj_projections[i_cell].emplace_back(adj_func, cell_i.basis_);
-      auto &adj_projection = adj_projections[i_cell].back();
+      auto &adj_projection =
+          adj_projections[i_cell].emplace_back(cell_i.gauss());
+      adj_projection.Approximate(adj_func);
       Mat1x1 diff = cell_i.projection_.GetAverage()
           - adj_projection.GetAverage();
       adj_projection += diff;
@@ -161,7 +163,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   std::cout << "[Done] " << cmd << std::endl;
   auto old_file_name = case_name + std::string("/original.cgns");
   std::snprintf(cmd, kCommandLength, "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), case_name, old_file_name.c_str());
+      input_dir_.c_str(), case_name, old_file_name.c_str());
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   std::cout << "[Done] " << cmd << std::endl;
@@ -176,7 +178,8 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
   using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
-  using Part = mini::mesh::part::Part<cgsize_t, 2, Riemann>;
+  using Projection = mini::polynomial::Projection<double, 3, 2, 5>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   MPI_Finalize();
   // project the function
@@ -191,20 +194,22 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     res[4] = y * y + 90 * (x < y ? +1 : 0.5);
     return res;
   };
-  part.Project(func);
-  // reconstruct using a `EigenWeno` limiter
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
+  // reconstruct using a `limiter::weno::Eigen` object
   using Cell = typename Part::Cell;
   using Projection = typename Cell::Projection;
   auto n_cells = part.CountLocalCells();
-  auto eigen_limiter = mini::polynomial::EigenWeno<Cell>(
+  auto eigen_limiter = mini::limiter::weno::Eigen<Cell>(
       /* w0 = */0.01, /* eps = */1e-6);
-  auto lazy_limiter = mini::polynomial::LazyWeno<Cell>(
+  auto lazy_limiter = mini::limiter::weno::Lazy<Cell>(
       /* w0 = */0.01, /* eps = */1e-6, /* verbose = */true);
   auto eigen_projections = std::vector<Projection>();
   eigen_projections.reserve(n_cells);
   auto lazy_projections = std::vector<Projection>();
   lazy_projections.reserve(n_cells);
-  part.ForEachConstLocalCell([&](const Cell &cell){
+  for (const Cell &cell : part.GetLocalCells()) {
     //  lasy limiter
     lazy_projections.emplace_back(lazy_limiter(cell));
     auto lazy_smoothness = lazy_projections.back().GetSmoothness();
@@ -223,7 +228,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
     diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-  });
+  }
   std::cout << std::endl;
 }
 

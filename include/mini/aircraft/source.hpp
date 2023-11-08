@@ -29,13 +29,13 @@ class Rotorcraft {
   using Part = P;
   using Cell = typename Part::Cell;
   using Face = typename Cell::Face;
-  using Coord = typename Cell::Coord;
+  using Global = typename Cell::Global;
   using Coeff = typename Cell::Projection::Coeff;
   using Conservative = typename Part::Riemann::Conservative;
   using Rotor = mini::aircraft::Rotor<Scalar>;
   using Blade = typename Rotor::Blade;
   using Section = typename Blade::Section;
-  using Force = Coord;
+  using Force = Global;
 
  private:
   static bool Valid(Scalar ratio) {
@@ -44,9 +44,9 @@ class Rotorcraft {
 
   static std::pair<Scalar, Scalar>
   Intersect(const Cell &cell, const Blade &blade) {
-    const Coord &p = blade.P();
-    const Coord &q = blade.Q();
-    const Coord &pq = blade.PQ();
+    const Global &p = blade.P();
+    const Global &q = blade.Q();
+    const Global &pq = blade.PQ();
     Scalar r_ratio{-1}, s_ratio{-1};
     for (const Face *face : cell.adj_faces_) {
       if (Valid(r_ratio) && Valid(s_ratio)) {
@@ -54,10 +54,10 @@ class Rotorcraft {
       }
       const auto &gauss = face->gauss();
       // Currently, only triangle is supported.
-      assert(gauss.CountCorners() == 3);
-      Coord pa = gauss.lagrange().GetGlobalCoord(0) - p;
-      Coord pb = gauss.lagrange().GetGlobalCoord(1) - p;
-      Coord pc = gauss.lagrange().GetGlobalCoord(2) - p;
+      assert(gauss.lagrange().CountCorners() == 3);
+      Global pa = gauss.lagrange().GetGlobalCoord(0) - p;
+      Global pb = gauss.lagrange().GetGlobalCoord(1) - p;
+      Global pc = gauss.lagrange().GetGlobalCoord(2) - p;
       Scalar ratio = -1.0;
       mini::geometry::Intersect(pa, pb, pc, pq, &ratio);
       if (Valid(ratio)) {
@@ -85,8 +85,8 @@ class Rotorcraft {
   }
 
   static std::pair<Force, Scalar>
-  GetSourceValue(const Cell &cell, const Section &section, const Coord &xyz) {
-    auto value = cell.GetValue(xyz);
+  GetSourceValue(const Cell &cell, const Section &section, const Global &xyz) {
+    auto value = cell.GlobalToValue(xyz);
     auto &cv = *reinterpret_cast<Conservative *>(&value);
     auto uvw = cv.momentum() / cv.mass();
     Force force = section.GetForce(cv.mass(), uvw);
@@ -106,7 +106,7 @@ class Rotorcraft {
         auto xyz = section.GetOrigin();
         auto [force, power] = GetSourceValue(cell, section, xyz);
         using Mat1xN = mini::algebra::Matrix<Scalar, 1, Cell::N>;
-        Mat1xN basis_values = cell.basis_(xyz).transpose();
+        Mat1xN basis_values = cell.basis()(xyz).transpose();
         using Mat4xN = mini::algebra::Matrix<Scalar, 4, Cell::N>;
         Mat4xN product;
         product.row(0) = force[0] * basis_values;
@@ -134,8 +134,8 @@ class Rotorcraft {
     }
   }
 
-  void GetForces(const Cell &cell, double t_curr, std::vector<Coord> *forces,
-      std::vector<Coord> *points, std::vector<Scalar> *weights) {
+  void GetForces(const Cell &cell, double t_curr, std::vector<Global> *forces,
+      std::vector<Global> *points, std::vector<Scalar> *weights) {
     for (auto &rotor : rotors_) {
       rotor.UpdateAzimuth(t_curr);
       for (int i = 0, n = rotor.CountBlades(); i < n; ++i) {

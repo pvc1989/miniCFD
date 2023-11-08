@@ -1,3 +1,4 @@
 // These settings will be passed to "${PROJECT_BINARY_DIR}/include/mini/input/path.hpp".
-#define TEST_INPUT_DIR "@PROJECT_SOURCE_DIR@/input"
+#define INPUT_DIR "@PROJECT_SOURCE_DIR@/input"
+#define DEMO_DIR "@PROJECT_SOURCE_DIR@/demo"
 #define PROJECT_BINARY_DIR "@PROJECT_BINARY_DIR@"

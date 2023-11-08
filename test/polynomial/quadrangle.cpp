@@ -5,7 +5,7 @@
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/quadrangle.hpp"
 #include "mini/lagrange/quadrangle.hpp"
-#include "mini/polynomial/basis.hpp"
+#include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 
 #include "gtest/gtest.h"
@@ -15,14 +15,14 @@ using std::sqrt;
 class TestQuadrangle4x4 : public ::testing::Test {
 };
 TEST_F(TestQuadrangle4x4, OrthoNormal) {
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
   Coord origin = {0, 0}, left = {-1, 2}, right = {1, 3};
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
-  );
+  };
   auto gauss = Gauss(lagrange);
   auto basis = Basis(gauss);
   using A = typename Basis::MatNxN;
@@ -33,9 +33,9 @@ TEST_F(TestQuadrangle4x4, OrthoNormal) {
   }, gauss) - A::Identity()).norm();
   EXPECT_NEAR(residual, 0.0, 1e-14);
   auto x = left[0], y = left[1];
-  lagrange = Lagrange(
+  lagrange = Lagrange {
     Coord(x-1, y-1), Coord(x+1, y-1), Coord(x+1, y+1), Coord(x-1, y+1)
-  );
+  };
   basis = Basis(gauss);
   residual = (Integrate([&basis](Coord const& xy) {
     auto col = basis(xy);
@@ -45,20 +45,20 @@ TEST_F(TestQuadrangle4x4, OrthoNormal) {
   EXPECT_NEAR(residual, 0.0, 1e-12);
 }
 TEST_F(TestQuadrangle4x4, Projection) {
-  using Basis = mini::polynomial::OrthoNormal<double, 2, 2>;
+  using Basis = mini::basis::OrthoNormal<double, 2, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
-  auto lagrange = Lagrange(
+  auto lagrange = Lagrange {
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
-  );
+  };
   auto gauss = Gauss(lagrange);
-  auto basis = Basis(gauss);
   auto scalar_f = [](Coord const& xy){
     return xy[0] * xy[1];
   };
   using ScalarPF = mini::polynomial::Projection<double, 2, 2, 1>;
-  auto scalar_pf = ScalarPF(scalar_f, basis);
+  auto scalar_pf = ScalarPF(gauss);
+  scalar_pf.Approximate(scalar_f);
   using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
   double residual = (scalar_pf.coeff()
       - Mat1x6(0, 0, 0, 0, 1, 0)).norm();
@@ -70,7 +70,8 @@ TEST_F(TestQuadrangle4x4, Projection) {
     return func;
   };
   using VectorPF = mini::polynomial::Projection<double, 2, 2, 7>;
-  auto vector_pf = VectorPF(vector_f, basis);
+  auto vector_pf = VectorPF(gauss);
+  vector_pf.Approximate(vector_f);
   using Mat7x6 = mini::algebra::Matrix<double, 7, 6>;
   Mat7x6 exact_vector{
       {0, 0, 0, 0, 0, 0}, {1, 0, 0, 0, 0, 0}, {0, 1, 0, 0, 0, 0},
