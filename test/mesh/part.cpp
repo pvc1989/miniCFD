@@ -15,7 +15,7 @@
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
-#include "mini/input/path.hpp"  // defines DEMO_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 
 int n_core, i_core;
 double time_begin;
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
   auto case_name = std::string("double_mach");
   if (argc > 1)
     case_name = argv[1];
-  auto input_dir = std::string(DEMO_DIR) + "/euler";
+  auto input_dir =  std::string(INPUT_DIR);
   if (argc > 2)
     input_dir = argv[2];
 

@@ -9,7 +9,7 @@
 #include "mini/mesh/metis.hpp"
 #include "mini/mesh/mapper.hpp"
 #include "mini/mesh/overset.hpp"
-#include "mini/input/path.hpp"  // defines TEST_INPUT_DIR
+#include "mini/input/path.hpp"  // defines INPUT_DIR
 
 class TestMeshOverset : public ::testing::Test {
  protected:
@@ -18,13 +18,13 @@ class TestMeshOverset : public ::testing::Test {
   using Mesh = typename Mapping::Mesh;
   using Graph = typename Mapping::Graph;
   using Mapper = typename Mapping::Mapper;
-  std::string const test_input_dir_{TEST_INPUT_DIR};
+  std::string const input_dir_{INPUT_DIR};
   std::string const output_dir_{std::string(PROJECT_BINARY_DIR)
       + "/test/mesh/"};
 };
 TEST_F(TestMeshOverset, FindForegroundFringeCells) {
   // convert cgns_mesh to metis_mesh and metis_graph
-  auto file_name = test_input_dir_ + "/fixed_grid.cgns";
+  auto file_name = input_dir_ + "/fixed_grid.cgns";
   auto cgns_mesh = Mesh(file_name); cgns_mesh.ReadBases();
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
@@ -36,7 +36,7 @@ TEST_F(TestMeshOverset, FindForegroundFringeCells) {
   EXPECT_EQ(fringe_cells.size(), 2560 - 6 * 14 * 18);
 }
 TEST_F(TestMeshOverset, BuildCellSearchTree) {
-  auto file_name = test_input_dir_ + "/fixed_grid.cgns";
+  auto file_name = input_dir_ + "/fixed_grid.cgns";
   auto cgns_mesh = Mesh(file_name); cgns_mesh.ReadBases();
   auto mapper = Mapper();
   auto metis_mesh = mapper.Map(cgns_mesh);
@@ -59,7 +59,7 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   char cmd[1024];
   auto file_name = "unstructured.cgns";
   std::snprintf(cmd, sizeof(cmd), "gmsh %s/%s.geo -save -o %s",
-      test_input_dir_.c_str(), "../demo/euler/rotor_in_tunnel", file_name);
+      input_dir_.c_str(), "rotor_in_tunnel", file_name);
   if (std::system(cmd))
     throw std::runtime_error(cmd + std::string(" failed."));
   // Build the background mesh
@@ -73,7 +73,7 @@ TEST_F(TestMeshOverset, FindBackgroundDonorCells) {
   auto tree_bg = Mapping::BuildCellSearchTree(
     cgns_mesh_bg, metis_graph_bg, mapper_bg);
   // Build the foreground mesh:
-  auto cgns_mesh_fg = Mesh(test_input_dir_ + "/fixed_grid.cgns");
+  auto cgns_mesh_fg = Mesh(input_dir_ + "/fixed_grid.cgns");
   cgns_mesh_fg.ReadBases();
   cgns_mesh_fg.Translate(-9, -7, -3);
   cgns_mesh_fg.Dilate(0, 0, 0, 0.5);

@@ -35,4 +35,4 @@ Physical Surface("Front") = { 32 };
 Physical Surface("Back") = { 1 };
 Physical Volume("Fluid") = { 1 };
 
-Mesh 2;
+Mesh 3;
