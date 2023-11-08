@@ -124,7 +124,7 @@ class Projection {
   }
   template <typename Callable>
   void Approximate(Callable &&func) {
-    using Return = decltype(func(basis_.center()));
+    using Return = std::invoke_result_t<Callable, Global>;
     static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
     coeff_ = gauss::Integrate([&](Global const &xyz) {
       auto f_col = func(xyz);

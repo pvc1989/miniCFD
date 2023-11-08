@@ -14,106 +14,109 @@ namespace mini {
 namespace gauss {
 
 /**
- * @brief Perform Gaussian quadrature of a callable object on an integratable element in the parametric space.
+ * @brief Perform Gaussian quadrature of a callable object on a Gauss object in the parametric space.
  * 
  * @tparam Callable the type of the integrand
- * @tparam Element the type of the gauss
- * @param f_in_local the integrand using local coordinates as arguments
- * @param element the gauss
+ * @tparam Gauss the type of the gauss
+ * @param local_to_value the integrand using local coordinates as arguments
+ * @param gauss the Gauss object
  * @return auto the value of the integral
  */
-template <typename Callable, typename Element>
-auto Quadrature(Callable &&f_in_local, Element &&element) {
-  using E = std::remove_reference_t<Element>;
-  using Local = typename E::Local;
-  decltype(f_in_local(Local())) sum; algebra::SetZero(&sum);
-  auto n = element.CountPoints();
+template <typename Callable, typename Gauss>
+auto Quadrature(Callable &&local_to_value, Gauss &&gauss) {
+  using Local = typename std::remove_reference_t<Gauss>::Local;
+  static_assert(std::regular_invocable<Callable, Local>);
+  using Value = std::invoke_result_t<Callable, Local>;
+  Value sum; algebra::SetZero(&sum);
+  auto n = gauss.CountPoints();
   for (int i = 0; i < n; ++i) {
-    auto f_val = f_in_local(element.GetLocalCoord(i));
-    f_val *= element.GetLocalWeight(i);
+    auto f_val = local_to_value(gauss.GetLocalCoord(i));
+    f_val *= gauss.GetLocalWeight(i);
     sum += f_val;
   }
   return sum;
 }
 
 /**
- * @brief Perform Gaussian quadrature of a callable object on an integratable element in the physical space.
+ * @brief Perform Gaussian quadrature of a callable object on a Gauss object in the physical space.
  * 
  * @tparam Callable the type of the integrand
- * @tparam Element the type of the gauss
- * @param f_in_global the integrand using global coordinates as arguments
- * @param element the gauss
+ * @tparam Gauss the type of the gauss
+ * @param global_to_value the integrand using global coordinates as arguments
+ * @param gauss the Gauss object
  * @return auto the value of the integral
  */
-template <typename Callable, typename Element>
-auto Integrate(Callable &&f_in_global, Element &&element) {
-  using E = std::remove_reference_t<Element>;
-  using Global = typename E::Global;
-  decltype(f_in_global(Global())) sum; algebra::SetZero(&sum);
-  auto n = element.CountPoints();
-  auto const &gauss = element;
+template <typename Callable, typename Gauss>
+auto Integrate(Callable &&global_to_value, Gauss &&gauss) {
+  using Global = typename std::remove_reference_t<Gauss>::Global;
+  static_assert(std::regular_invocable<Callable, Global>);
+  using Value = std::invoke_result_t<Callable, Global>;
+  Value sum; algebra::SetZero(&sum);
+  auto n = gauss.CountPoints();
+  auto const &gauss_ref = gauss;
   for (int i = 0; i < n; ++i) {
-    auto f_val = f_in_global(gauss.GetGlobalCoord(i));
-    f_val *= gauss.GetGlobalWeight(i);
+    auto f_val = global_to_value(gauss_ref.GetGlobalCoord(i));
+    f_val *= gauss_ref.GetGlobalWeight(i);
     sum += f_val;
   }
   return sum;
 }
 
 /**
- * @brief Calculate the inner-product of two functions on an integratable element.
+ * @brief Calculate the inner-product of two functions on a Gauss object.
  * 
  * @tparam Func1 the type of the first function
  * @tparam Func2 the type of the second function
- * @tparam Element the type of the gauss
+ * @tparam Gauss the type of the gauss
  * @param f1 the first function
  * @param f2 the second function
- * @param element the gauss
+ * @param gauss the Gauss object
  * @return auto the value of the innerproduct
  */
-template <typename Func1, typename Func2, typename Element>
-auto Innerprod(Func1 &&f1, Func2 &&f2, Element &&element) {
-  using E = std::remove_reference_t<Element>;
-  using Global = typename E::Global;
+template <typename Func1, typename Func2, typename Gauss>
+auto Innerprod(Func1 &&f1, Func2 &&f2, Gauss &&gauss) {
+  using Global = typename std::remove_reference_t<Gauss>::Global;
+  static_assert(std::regular_invocable<Func1, Global>);
+  static_assert(std::regular_invocable<Func2, Global>);
   return Integrate([&f1, &f2](const Global &xyz_global){
     return f1(xyz_global) * f2(xyz_global);
-  }, element);
+  }, gauss);
 }
 
 /**
- * @brief Calculate the 2-norm of a function on an integratable element.
+ * @brief Calculate the 2-norm of a function on a Gauss object.
  * 
  * @tparam Callable type of the function
- * @tparam Element the type of the gauss
+ * @tparam Gauss the type of the gauss
  * @param f the function
- * @param element the gauss
+ * @param gauss the Gauss object
  * @return auto the value of the norm
  */
-template <typename Callable, typename Element>
-auto Norm(Callable &&f, Element &&element) {
-  return std::sqrt(Innerprod(f, f, element));
+template <typename Callable, typename Gauss>
+auto Norm(Callable &&f, Gauss &&gauss) {
+  return std::sqrt(Innerprod(f, f, gauss));
 }
 
 /**
  * @brief Change a group of linearly independent functions into an orthonormal basis.
  * 
  * @tparam Basis the type of the basis
- * @tparam Element the type of the gauss
+ * @tparam Gauss the type of the gauss
  * @param basis the basis to be orthonormalized, whose components are linearly independent from each other
- * @param elem the gauss
+ * @param gauss the Gauss object
  */
-template <class Basis, class Element>
-void OrthoNormalize(Basis *basis, const Element &elem) {
+template <class Basis, class Gauss>
+void OrthoNormalize(Basis *basis, const Gauss &gauss) {
   constexpr int N = Basis::N;
   using MatNxN = typename Basis::MatNxN;
-  using MatDx1 = typename Element::Global;
-  using Scalar = typename Element::Real;
+  using Global = typename Gauss::Global;
+  using Scalar = typename Gauss::Real;
   MatNxN S; S.setIdentity();
-  auto A = Integrate([basis](const MatDx1 &xyz){
+  auto A = Integrate([basis](const Global &xyz){
     auto col = (*basis)(xyz);
     MatNxN result = col * col.transpose();
     return result;
-  }, elem);
+  }, gauss);
   S(0, 0) = 1 / std::sqrt(A(0, 0));
   for (int i = 1; i < N; ++i) {
     for (int j = 0; j < i; ++j) {
