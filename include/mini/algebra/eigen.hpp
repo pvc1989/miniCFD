@@ -14,6 +14,30 @@ using Eigen::Array;
 using Eigen::Matrix;
 using Eigen::Vector;
 
+/**
+ * @brief Set the value of a scalar to be 0.
+ * 
+ * @tparam Scalar the type of the scalar
+ * @param s the address of the scalar
+ */
+template <std::floating_point Scalar>
+inline void SetZero(Scalar *s) {
+  *s = 0;
+}
+
+/**
+ * @brief Set all coefficients of a matrix to be 0.
+ * 
+ * @tparam Scalar the type of the matrix's coefficient
+ * @tparam M the number of rows of the matrix
+ * @tparam N the number of columns of the matrix
+ * @param m the address of the matrix
+ */
+template <std::floating_point Scalar, int M, int N>
+inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
+  m->setZero();
+}
+
 template <class MatrixType>
 using LowerTriangularView = Eigen::TriangularView<MatrixType, Eigen::Lower>;
 

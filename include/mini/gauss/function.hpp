@@ -14,30 +14,6 @@ namespace mini {
 namespace gauss {
 
 /**
- * @brief Set the value of a scalar to be 0.
- * 
- * @tparam Scalar the type of the scalar
- * @param s the address of the scalar
- */
-template <std::floating_point Scalar>
-inline void SetZero(Scalar *s) {
-  *s = 0;
-}
-
-/**
- * @brief Set all coefficients of a matrix to be 0.
- * 
- * @tparam Scalar the type of the matrix's coefficient
- * @tparam M the number of rows of the matrix
- * @tparam N the number of columns of the matrix
- * @param m the address of the matrix
- */
-template <std::floating_point Scalar, int M, int N>
-inline void SetZero(algebra::Matrix<Scalar, M, N>* m) {
-  m->setZero();
-}
-
-/**
  * @brief Perform Gaussian quadrature of a callable object on an integratable element in the parametric space.
  * 
  * @tparam Callable the type of the integrand
@@ -50,7 +26,7 @@ template <typename Callable, typename Element>
 auto Quadrature(Callable &&f_in_local, Element &&element) {
   using E = std::remove_reference_t<Element>;
   using Local = typename E::Local;
-  decltype(f_in_local(Local())) sum; SetZero(&sum);
+  decltype(f_in_local(Local())) sum; algebra::SetZero(&sum);
   auto n = element.CountPoints();
   for (int i = 0; i < n; ++i) {
     auto f_val = f_in_local(element.GetLocalCoord(i));
@@ -73,7 +49,7 @@ template <typename Callable, typename Element>
 auto Integrate(Callable &&f_in_global, Element &&element) {
   using E = std::remove_reference_t<Element>;
   using Global = typename E::Global;
-  decltype(f_in_global(Global())) sum; SetZero(&sum);
+  decltype(f_in_global(Global())) sum; algebra::SetZero(&sum);
   auto n = element.CountPoints();
   auto const &gauss = element;
   for (int i = 0; i < n; ++i) {
