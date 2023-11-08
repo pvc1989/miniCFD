@@ -10,7 +10,7 @@
 
 #include "mini/gauss/line.hpp"
 #include "mini/gauss/face.hpp"
-#include "mini/lagrange/quadrangle.hpp"
+#include "mini/geometry/quadrangle.hpp"
 
 namespace mini {
 namespace gauss {
@@ -34,7 +34,7 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
       Legendre<Scalar, Qx>, Lobatto<Scalar, Qx> >;
   using GaussY = std::conditional_t< kRule == Rule::kLegendre,
       Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
-  using Lagrange = lagrange::Quadrangle<Scalar, kPhysDim>;
+  using Lagrange = geometry::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

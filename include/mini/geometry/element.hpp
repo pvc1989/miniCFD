@@ -1,10 +1,11 @@
 //  Copyright 2023 PEI Weicheng
-#ifndef MINI_LAGRANGE_ELEMENT_HPP_
-#define MINI_LAGRANGE_ELEMENT_HPP_
+#ifndef MINI_GEOMETRY_ELEMENT_HPP_
+#define MINI_GEOMETRY_ELEMENT_HPP_
 
 #include <concepts>
 
 #include <cassert>
+#include <numeric>
 
 #include <initializer_list>
 #include <vector>
@@ -12,7 +13,7 @@
 #include "mini/algebra/eigen.hpp"
 
 namespace mini {
-namespace lagrange {
+namespace geometry {
 
 static constexpr int X{0}, Y{1}, Z{2};
 static constexpr int A{0}, B{1}, C{2}, D{3};
@@ -65,7 +66,7 @@ class Element {
   }
 };
 
-}  // namespace lagrange
+}  // namespace geometry
 }  // namespace mini
 
-#endif  // MINI_LAGRANGE_ELEMENT_HPP_
+#endif  // MINI_GEOMETRY_ELEMENT_HPP_

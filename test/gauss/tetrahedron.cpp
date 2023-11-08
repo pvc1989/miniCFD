@@ -4,7 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/tetrahedron.hpp"
-#include "mini/lagrange/tetrahedron.hpp"
+#include "mini/geometry/tetrahedron.hpp"
 
 #include "gtest/gtest.h"
 
@@ -15,7 +15,7 @@ class TestGaussTetrahedron : public ::testing::Test {
   using Coord = typename Gauss::Global;
 };
 TEST_F(TestGaussTetrahedron, OnLinearElement) {
-  using Lagrange = mini::lagrange::Tetrahedron4<double>;
+  using Lagrange = mini::geometry::Tetrahedron4<double>;
   auto lagrange = Lagrange{
     Coord(0, 0, 0), Coord(3, 0, 0), Coord(0, 3, 0), Coord(0, 0, 3)
   };
@@ -35,7 +35,7 @@ TEST_F(TestGaussTetrahedron, OnLinearElement) {
   EXPECT_DOUBLE_EQ(Norm(g, tetra), std::sqrt(Innerprod(g, g, tetra)));
 }
 TEST_F(TestGaussTetrahedron, OnQuadraticElement) {
-  using Lagrange = mini::lagrange::Tetrahedron10<double>;
+  using Lagrange = mini::geometry::Tetrahedron10<double>;
   double a = 1.5;
   auto lagrange = Lagrange{
     Coord(0, 0, 0), Coord(a*2, 0, 0), Coord(0, a*2, 0), Coord(0, 0, a*2),

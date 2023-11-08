@@ -13,7 +13,7 @@
 #include <utility>
 
 #include "mini/gauss/cell.hpp"
-#include "mini/lagrange/tetrahedron.hpp"
+#include "mini/geometry/tetrahedron.hpp"
 
 namespace mini {
 namespace gauss {
@@ -27,7 +27,7 @@ namespace gauss {
 template <std::floating_point Scalar, int kPoints>
 class Tetrahedron : public Cell<Scalar> {
  public:
-  using Lagrange = lagrange::Tetrahedron<Scalar>;
+  using Lagrange = geometry::Tetrahedron<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

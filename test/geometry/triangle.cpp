@@ -4,8 +4,8 @@
 
 #include <cmath>
 
-#include "mini/lagrange/face.hpp"
-#include "mini/lagrange/triangle.hpp"
+#include "mini/geometry/face.hpp"
+#include "mini/geometry/triangle.hpp"
 
 #include "gtest/gtest.h"
 
@@ -14,7 +14,7 @@ class TestLagrangeTriangle3 : public ::testing::Test {
 };
 TEST_F(TestLagrangeTriangle3, ThreeDimensional) {
   constexpr int D = 3;
-  using Lagrange = mini::lagrange::Triangle3<double, D>;
+  using Lagrange = mini::geometry::Triangle3<double, D>;
   using Coord = typename Lagrange::Global;
   using Local = typename Lagrange::Local;
   auto quadrangle = Lagrange {
@@ -31,7 +31,7 @@ TEST_F(TestLagrangeTriangle3, ThreeDimensional) {
                                     quadrangle.GetGlobalCoord(1));
   EXPECT_EQ(quadrangle.LocalToGlobal(quadrangle.GetLocalCoord(2)),
                                     quadrangle.GetGlobalCoord(2));
-  mini::lagrange::Face<typename Lagrange::Real, D> &face = quadrangle;
+  mini::geometry::Face<typename Lagrange::Real, D> &face = quadrangle;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
@@ -85,7 +85,7 @@ class TestLagrangeTriangle6 : public ::testing::Test {
 };
 TEST_F(TestLagrangeTriangle6, ThreeDimensional) {
   constexpr int D = 3;
-  using Lagrange = mini::lagrange::Triangle6<double, D>;
+  using Lagrange = mini::geometry::Triangle6<double, D>;
   using Coord = typename Lagrange::Global;
   using Local = typename Lagrange::Local;
   auto quadrangle = Lagrange {
@@ -109,7 +109,7 @@ TEST_F(TestLagrangeTriangle6, ThreeDimensional) {
                                     quadrangle.GetGlobalCoord(4));
   EXPECT_EQ(quadrangle.LocalToGlobal(quadrangle.GetLocalCoord(5)),
                                     quadrangle.GetGlobalCoord(5));
-  mini::lagrange::Face<typename Lagrange::Real, D> &face = quadrangle;
+  mini::geometry::Face<typename Lagrange::Real, D> &face = quadrangle;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };

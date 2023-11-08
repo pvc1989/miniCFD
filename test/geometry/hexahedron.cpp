@@ -4,14 +4,14 @@
 
 #include <cmath>
 
-#include "mini/lagrange/cell.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/cell.hpp"
+#include "mini/geometry/hexahedron.hpp"
 
 #include "gtest/gtest.h"
 
 class TestLagrangeHexahedron8 : public ::testing::Test {
  protected:
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
@@ -31,7 +31,7 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
-  mini::lagrange::Cell<typename Lagrange::Real> &cell = hexa;
+  mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
@@ -75,7 +75,7 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   }
 }
 TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
-  using mini::lagrange::SortNodesOnFace;
+  using mini::geometry::SortNodesOnFace;
   auto cell = Lagrange{
     Coord(-10, -10, -10), Coord(+10, -10, -10),
     Coord(+10, +10, -10), Coord(-10, +10, -10),
@@ -147,7 +147,7 @@ TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
 
 class TestLagrangeHexahedron20 : public ::testing::Test {
  protected:
-  using Lagrange = mini::lagrange::Hexahedron20<double>;
+  using Lagrange = mini::geometry::Hexahedron20<double>;
   using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
@@ -178,7 +178,7 @@ TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
-  mini::lagrange::Cell<typename Lagrange::Real> &cell = hexa;
+  mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
@@ -222,7 +222,7 @@ TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
   }
 }
 TEST_F(TestLagrangeHexahedron20, SortNodesOnFace) {
-  using mini::lagrange::SortNodesOnFace;
+  using mini::geometry::SortNodesOnFace;
   auto cell = Lagrange{
     // corner nodes on the bottom face
     Coord(-10, -10, -10), Coord(+10, -10, -10),
@@ -307,7 +307,7 @@ TEST_F(TestLagrangeHexahedron20, SortNodesOnFace) {
 
 class TestLagrangeHexahedron27 : public ::testing::Test {
  protected:
-  using Lagrange = mini::lagrange::Hexahedron27<double>;
+  using Lagrange = mini::geometry::Hexahedron27<double>;
   using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeHexahedron27, CoordinateMap) {
@@ -345,7 +345,7 @@ TEST_F(TestLagrangeHexahedron27, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
-  mini::lagrange::Cell<typename Lagrange::Real> &cell = hexa;
+  mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
@@ -389,7 +389,7 @@ TEST_F(TestLagrangeHexahedron27, CoordinateMap) {
   }
 }
 TEST_F(TestLagrangeHexahedron27, SortNodesOnFace) {
-  using mini::lagrange::SortNodesOnFace;
+  using mini::geometry::SortNodesOnFace;
   auto cell = Lagrange{
     // corner nodes on the bottom face
     Coord(-10, -10, -10), Coord(+10, -10, -10),
@@ -484,7 +484,7 @@ TEST_F(TestLagrangeHexahedron27, SortNodesOnFace) {
 
 class TestLagrangeHexahedron26 : public ::testing::Test {
  protected:
-  using Lagrange = mini::lagrange::Hexahedron26<double>;
+  using Lagrange = mini::geometry::Hexahedron26<double>;
   using Coord = typename Lagrange::Global;
 };
 TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
@@ -520,7 +520,7 @@ TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
   EXPECT_EQ(hexa.GlobalToLocal(30, 40, 20), Coord(3, 4, 2));
   EXPECT_EQ(hexa.GlobalToLocal(40, 55, 25), Coord(4, 5.5, 2.5));
   EXPECT_EQ(hexa.GlobalToLocal(70, 130, 60), Coord(7, 13, 6));
-  mini::lagrange::Cell<typename Lagrange::Real> &cell = hexa;
+  mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
   auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
@@ -564,7 +564,7 @@ TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
   }
 }
 TEST_F(TestLagrangeHexahedron26, SortNodesOnFace) {
-  using mini::lagrange::SortNodesOnFace;
+  using mini::geometry::SortNodesOnFace;
   auto cell = Lagrange{
     // corner nodes on the bottom face
     Coord(-10, -10, -10), Coord(+10, -10, -10),

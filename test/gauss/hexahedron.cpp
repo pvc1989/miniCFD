@@ -4,7 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 
 #include "gtest/gtest.h"
 
@@ -14,7 +14,7 @@ class TestGaussHexahedron : public ::testing::Test {
   using Coord = typename Gauss::Global;
 };
 TEST_F(TestGaussHexahedron, OnLinearElement) {
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   auto lagrange = Lagrange {
     Coord(-1, -1, -1), Coord(+1, -1, -1),
     Coord(+1, +1, -1), Coord(-1, +1, -1),
@@ -49,7 +49,7 @@ TEST_F(TestGaussHexahedron, OnLinearElement) {
   EXPECT_DOUBLE_EQ(Norm(g, hexa), std::sqrt(Innerprod(g, g, hexa)));
 }
 TEST_F(TestGaussHexahedron, OnQuadraticElement) {
-  using Lagrange = mini::lagrange::Hexahedron20<double>;
+  using Lagrange = mini::geometry::Hexahedron20<double>;
   auto lagrange = Lagrange {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
@@ -96,7 +96,7 @@ TEST_F(TestGaussHexahedron, OnQuadraticElement) {
   EXPECT_DOUBLE_EQ(Norm(g, hexa), std::sqrt(Innerprod(g, g, hexa)));
 }
 TEST_F(TestGaussHexahedron, On27NodeQuadraticElement) {
-  using Lagrange = mini::lagrange::Hexahedron27<double>;
+  using Lagrange = mini::geometry::Hexahedron27<double>;
   auto lagrange = Lagrange {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),
@@ -152,7 +152,7 @@ TEST_F(TestGaussHexahedron, On27NodeQuadraticElement) {
   EXPECT_DOUBLE_EQ(Norm(g, hexa), std::sqrt(Innerprod(g, g, hexa)));
 }
 TEST_F(TestGaussHexahedron, On26NodeQuadraticElement) {
-  using Lagrange = mini::lagrange::Hexahedron26<double>;
+  using Lagrange = mini::geometry::Hexahedron26<double>;
   auto lagrange = Lagrange {
     Coord(-1, -1, -1), Coord(+1, -1, -1), Coord(+1, +1, -1), Coord(-1, +1, -1),
     Coord(-1, -1, +1), Coord(+1, -1, +1), Coord(+1, +1, +1), Coord(-1, +1, +1),

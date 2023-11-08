@@ -1,16 +1,16 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_LAGRANGE_CELL_HPP_
-#define MINI_LAGRANGE_CELL_HPP_
+#ifndef MINI_GEOMETRY_CELL_HPP_
+#define MINI_GEOMETRY_CELL_HPP_
 
 #include <concepts>
 
 #include <algorithm>
 #include <vector>
 
-#include "mini/lagrange/element.hpp"
+#include "mini/geometry/element.hpp"
 
 namespace mini {
-namespace lagrange {
+namespace geometry {
 
 /**
  * @brief Abstract coordinate map on volume elements.
@@ -144,7 +144,7 @@ void SortNodesOnFace(const Cell<Scalar> &cell, const T *cell_nodes,
 }
 
 
-}  // namespace lagrange
+}  // namespace geometry
 }  // namespace mini
 
-#endif  // MINI_LAGRANGE_CELL_HPP_
+#endif  // MINI_GEOMETRY_CELL_HPP_

@@ -5,13 +5,13 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/tetrahedron.hpp"
-#include "mini/lagrange/tetrahedron.hpp"
+#include "mini/geometry/tetrahedron.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 #include "mini/gauss/triangle.hpp"
-#include "mini/lagrange/triangle.hpp"
+#include "mini/geometry/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
-#include "mini/lagrange/quadrangle.hpp"
+#include "mini/geometry/quadrangle.hpp"
 #include "mini/basis/linear.hpp"
 
 #include "gtest/gtest.h"
@@ -80,7 +80,7 @@ TEST_F(TestBasisLinear, In3dSpace) {
 class TestBasisOrthoNormal : public ::testing::Test {
 };
 TEST_F(TestBasisOrthoNormal, OnTriangle) {
-  using Lagrange = mini::lagrange::Triangle3<double, 2>;
+  using Lagrange = mini::geometry::Triangle3<double, 2>;
   using Gauss = mini::gauss::Triangle<double, 2, 16>;
   using Coord = Gauss::Global;
   Coord p0{0, 0}, p1{3, 0}, p2{0, 3};
@@ -101,7 +101,7 @@ TEST_F(TestBasisOrthoNormal, OnTriangle) {
   EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
 }
 TEST_F(TestBasisOrthoNormal, OnQuadrangle) {
-  using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
+  using Lagrange = mini::geometry::Quadrangle4<double, 2>;
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
   using Coord = Gauss::Global;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
@@ -123,7 +123,7 @@ TEST_F(TestBasisOrthoNormal, OnQuadrangle) {
 }
 TEST_F(TestBasisOrthoNormal, OnTetrahedron) {
   using Gauss = mini::gauss::Tetrahedron<double, 24>;
-  using Lagrange = mini::lagrange::Tetrahedron4<double>;
+  using Lagrange = mini::geometry::Tetrahedron4<double>;
   using Coord = Gauss::Global;
   Coord p0{0, 0, 0}, p1{3, 0, 0}, p2{0, 3, 0}, p3{0, 0, 3};
   auto lagrange = Lagrange(p0, p1, p2, p3);
@@ -143,7 +143,7 @@ TEST_F(TestBasisOrthoNormal, OnTetrahedron) {
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
 TEST_F(TestBasisOrthoNormal, OnHexahedron) {
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = Gauss::Global;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},

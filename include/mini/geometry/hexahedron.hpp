@@ -1,6 +1,6 @@
 //  Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_LAGRANGE_HEXAHEDRON_HPP_
-#define MINI_LAGRANGE_HEXAHEDRON_HPP_
+#ifndef MINI_GEOMETRY_HEXAHEDRON_HPP_
+#define MINI_GEOMETRY_HEXAHEDRON_HPP_
 
 #include <concepts>
 
@@ -10,11 +10,11 @@
 #include <initializer_list>
 #include <vector>
 
-#include "mini/lagrange/element.hpp"
-#include "mini/lagrange/cell.hpp"
+#include "mini/geometry/element.hpp"
+#include "mini/geometry/cell.hpp"
 
 namespace mini {
-namespace lagrange {
+namespace geometry {
 
 /**
  * @brief Abstract coordinate map on hexahedral elements.
@@ -656,7 +656,7 @@ class Hexahedron26 : public Hexahedron<Scalar> {
   }
 };
 
-}  // namespace lagrange
+}  // namespace geometry
 }  // namespace mini
 
-#endif  // MINI_LAGRANGE_HEXAHEDRON_HPP_
+#endif  // MINI_GEOMETRY_HEXAHEDRON_HPP_

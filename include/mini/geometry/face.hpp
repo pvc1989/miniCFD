@@ -1,6 +1,6 @@
 //  Copyright 2023 PEI Weicheng
-#ifndef MINI_LAGRANGE_FACE_HPP_
-#define MINI_LAGRANGE_FACE_HPP_
+#ifndef MINI_GEOMETRY_FACE_HPP_
+#define MINI_GEOMETRY_FACE_HPP_
 
 #include <concepts>
 
@@ -9,10 +9,10 @@
 #include <type_traits>
 #include <vector>
 
-#include "mini/lagrange/element.hpp"
+#include "mini/geometry/element.hpp"
 
 namespace mini {
-namespace lagrange {
+namespace geometry {
 
 template <std::floating_point Scalar, int kPhysDim>
 class Face;
@@ -105,7 +105,7 @@ struct _NormalFrameBuilder<Scalar, 3> {
   }
 };
 
-}  // namespace lagrange
+}  // namespace geometry
 }  // namespace mini
 
-#endif  // MINI_LAGRANGE_FACE_HPP_
+#endif  // MINI_GEOMETRY_FACE_HPP_

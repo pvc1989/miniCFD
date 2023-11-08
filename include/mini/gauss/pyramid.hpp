@@ -13,7 +13,7 @@
 #include "mini/gauss/line.hpp"
 #include "mini/gauss/jacobi.hpp"
 #include "mini/gauss/cell.hpp"
-#include "mini/lagrange/pyramid.hpp"
+#include "mini/geometry/pyramid.hpp"
 
 namespace mini {
 namespace gauss {
@@ -35,7 +35,7 @@ class Pyramid : public Cell<Scalar> {
   using GaussY = std::conditional_t< kRule == Rule::kLegendre,
       Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
   using GaussZ = Jacobi<Scalar, Qz, 2, 0>;
-  using Lagrange = lagrange::Pyramid<Scalar>;
+  using Lagrange = geometry::Pyramid<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

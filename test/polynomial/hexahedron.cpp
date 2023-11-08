@@ -5,7 +5,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 #include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
@@ -21,7 +21,7 @@ double rand_f() {
 class TestPolynomialHexahedronProjection : public ::testing::Test {
  protected:
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Coord = typename Basis::Coord;
   using Y = typename Basis::MatNx1;
@@ -100,7 +100,7 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
 
 class TestPolynomialHexahedronInterpolation : public ::testing::Test {
  protected:
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using VectorPF = mini::polynomial::Hexahedron<double, 2, 3, 4, 11>;
   using Basis = typename VectorPF::Basis;
   using Gauss = typename VectorPF::Gauss;

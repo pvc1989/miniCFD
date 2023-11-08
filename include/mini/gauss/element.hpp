@@ -2,7 +2,7 @@
 #ifndef MINI_GAUSS_ELEMENT_HPP_
 #define MINI_GAUSS_ELEMENT_HPP_
 
-#include "mini/lagrange/element.hpp"
+#include "mini/geometry/element.hpp"
 
 namespace mini {
 namespace gauss {
@@ -19,7 +19,7 @@ static constexpr int X{0}, Y{1}, Z{2};
 template <std::floating_point Scalar, int kPhysDim, int kCellDim>
 class Element {
  public:
-  using Lagrange = lagrange::Element<Scalar, kPhysDim, kCellDim>;
+  using Lagrange = geometry::Element<Scalar, kPhysDim, kCellDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
@@ -70,9 +70,9 @@ class Element {
   virtual const Real &GetGlobalWeight(int i) const = 0;
 
   /**
-   * @brief Get a reference to the lagrange::Element object it uses for coordinate mapping.
+   * @brief Get a reference to the geometry::Element object it uses for coordinate mapping.
    * 
-   * @return const Lagrange &  Reference to the lagrange::Element object it uses for coordinate mapping.
+   * @return const Lagrange &  Reference to the geometry::Element object it uses for coordinate mapping.
    */
   virtual const Lagrange &lagrange() const = 0;
 

@@ -4,7 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 #include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 
@@ -14,7 +14,7 @@ class TestProjection : public ::testing::Test {
  protected:
   using Taylor = mini::basis::Taylor<double, 3, 2>;
   using Basis = mini::basis::OrthoNormal<double, 3, 2>;
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;
   Lagrange lagrange_;

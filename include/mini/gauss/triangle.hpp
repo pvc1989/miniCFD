@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #include "mini/gauss/face.hpp"
-#include "mini/lagrange/triangle.hpp"
+#include "mini/geometry/triangle.hpp"
 
 namespace mini {
 namespace gauss {
@@ -29,7 +29,7 @@ class Triangle : public Face<Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
 
  public:
-  using Lagrange = lagrange::Triangle<Scalar, kPhysDim>;
+  using Lagrange = geometry::Triangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

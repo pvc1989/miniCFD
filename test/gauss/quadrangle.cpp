@@ -4,7 +4,7 @@
 
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/quadrangle.hpp"
-#include "mini/lagrange/quadrangle.hpp"
+#include "mini/geometry/quadrangle.hpp"
 
 #include "gtest/gtest.h"
 
@@ -12,7 +12,7 @@ class TestGaussQuadrangle : public ::testing::Test {
 };
 TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
   using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
-  using Lagrange = mini::lagrange::Quadrangle4<double, 2>;
+  using Lagrange = mini::geometry::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
   auto lagrange = Lagrange {
     Coord(-1, -1), Coord(1, -1), Coord(1, 1), Coord(-1, 1)
@@ -38,7 +38,7 @@ TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
   using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
-  using Lagrange = mini::lagrange::Quadrangle4<double, 3>;
+  using Lagrange = mini::geometry::Quadrangle4<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
   auto lagrange = Lagrange {
@@ -72,7 +72,7 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
   using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
-  using Lagrange = mini::lagrange::Quadrangle8<double, 3>;
+  using Lagrange = mini::geometry::Quadrangle8<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
   auto lagrange = Lagrange {
@@ -107,7 +107,7 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle9) {
   using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
-  using Lagrange = mini::lagrange::Quadrangle9<double, 3>;
+  using Lagrange = mini::geometry::Quadrangle9<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
   auto lagrange = Lagrange {

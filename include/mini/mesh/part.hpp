@@ -25,13 +25,13 @@
 #include "pcgnslib.h"
 #include "mini/algebra/eigen.hpp"
 #include "mini/mesh/cgns.hpp"
-#include "mini/lagrange/cell.hpp"
-#include "mini/lagrange/triangle.hpp"
-#include "mini/lagrange/quadrangle.hpp"
-#include "mini/lagrange/tetrahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
-#include "mini/lagrange/pyramid.hpp"
-#include "mini/lagrange/wedge.hpp"
+#include "mini/geometry/cell.hpp"
+#include "mini/geometry/triangle.hpp"
+#include "mini/geometry/quadrangle.hpp"
+#include "mini/geometry/tetrahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
+#include "mini/geometry/pyramid.hpp"
+#include "mini/geometry/wedge.hpp"
 #include "mini/gauss/cell.hpp"
 #include "mini/gauss/triangle.hpp"
 #include "mini/gauss/quadrangle.hpp"
@@ -144,7 +144,7 @@ struct Face {
   constexpr static int kPhysDim = Riemann::kDimensions;
   using Gauss = gauss::Face<Scalar, kPhysDim>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Lagrange = lagrange::Face<Scalar, kPhysDim>;
+  using Lagrange = geometry::Face<Scalar, kPhysDim>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
   using Cell = part::Cell<Int, Riemann, P>;
   using Global = typename Cell::Global;
@@ -201,7 +201,7 @@ struct Cell {
   using Scalar = typename Riemann::Scalar;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
-  using Lagrange = lagrange::Cell<Scalar>;
+  using Lagrange = geometry::Cell<Scalar>;
   using LagrangeUptr = std::unique_ptr<Lagrange>;
   using Basis = typename Projection::Basis;
   using Local = typename Projection::Local;
@@ -425,37 +425,37 @@ class Part {
   static const MPI_Datatype kMpiRealType;
 
  private:
-  using LagrangeOnTriangle = lagrange::Triangle3<Scalar, kPhysDim>;
+  using LagrangeOnTriangle = geometry::Triangle3<Scalar, kPhysDim>;
   using GaussOnTriangle = type::select_t<kDegrees,
     gauss::Triangle<Scalar, kPhysDim, 1>,
     gauss::Triangle<Scalar, kPhysDim, 3>,
     gauss::Triangle<Scalar, kPhysDim, 6>,
     gauss::Triangle<Scalar, kPhysDim, 12>>;
-  using LagrangeOnQuadrangle = lagrange::Quadrangle4<Scalar, kPhysDim>;
+  using LagrangeOnQuadrangle = geometry::Quadrangle4<Scalar, kPhysDim>;
   using GaussOnQuadrangle = type::select_t<kDegrees,
     gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
     gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
     gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
     gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
-  using LagrangeOnTetrahedron = lagrange::Tetrahedron4<Scalar>;
+  using LagrangeOnTetrahedron = geometry::Tetrahedron4<Scalar>;
   using GaussOnTetrahedron = type::select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
     gauss::Tetrahedron<Scalar, 4>,
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
-  using LagrangeOnHexahedron = lagrange::Hexahedron8<Scalar>;
+  using LagrangeOnHexahedron = geometry::Hexahedron8<Scalar>;
   using GaussOnHexahedron = type::select_t<kDegrees,
     gauss::Hexahedron<Scalar, 1, 1, 1>,
     gauss::Hexahedron<Scalar, 2, 2, 2>,
     gauss::Hexahedron<Scalar, 3, 3, 3>,
     gauss::Hexahedron<Scalar, 4, 4, 4>>;
-  using LagrangeOnPyramid = lagrange::Pyramid5<Scalar>;
+  using LagrangeOnPyramid = geometry::Pyramid5<Scalar>;
   using GaussOnPyramid = type::select_t<kDegrees,
     gauss::Pyramid<Scalar, 1, 1, 1>,
     gauss::Pyramid<Scalar, 2, 2, 2>,
     gauss::Pyramid<Scalar, 3, 3, 3>,
     gauss::Pyramid<Scalar, 4, 4, 4>>;
-  using LagrangeOnWedge = lagrange::Wedge6<Scalar>;
+  using LagrangeOnWedge = geometry::Wedge6<Scalar>;
   using GaussOnWedge = type::select_t<kDegrees,
     gauss::Wedge<Scalar, 1, 1>,
     gauss::Wedge<Scalar, 3, 2>,
@@ -996,7 +996,7 @@ class Part {
       holder.adj_cells_.emplace_back(&sharer);
       sharer.adj_cells_.emplace_back(&holder);
       auto *face_node_list = common_nodes.data();
-      lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
+      geometry::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
       auto [lagrange_uptr, gauss_uptr]
           = BuildGaussForFace(face_npe, i_zone, face_node_list);
@@ -1040,7 +1040,7 @@ class Part {
       auto &sharer = ghost_cells_.at(m_sharer);
       holder.adj_cells_.emplace_back(&sharer);
       auto *face_node_list = common_nodes.data();
-      lagrange::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
+      geometry::SortNodesOnFace(holder.lagrange(), &holder_nodes[holder_head],
           face_node_list, face_npe);
       auto [lagrange_uptr, gauss_uptr]
           = BuildGaussForFace(face_npe, i_zone, face_node_list);
@@ -1494,7 +1494,7 @@ class Part {
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
-            lagrange::SortNodesOnFace(holder_ptr->lagrange(),
+            geometry::SortNodesOnFace(holder_ptr->lagrange(),
                 &holder_nodes[holder_head], face_node_list, npe);
             break;
           }

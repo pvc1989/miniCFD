@@ -4,7 +4,7 @@
 
 #include <concepts>
 
-#include "mini/lagrange/face.hpp"
+#include "mini/geometry/face.hpp"
 #include "mini/gauss/element.hpp"
 #include "mini/gauss/function.hpp"
 
@@ -32,7 +32,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   static_assert(D == 2 || D == 3);
 
  public:
-  using Lagrange = lagrange::Face<Scalar, kPhysDim>;
+  using Lagrange = geometry::Face<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
@@ -45,9 +45,9 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   virtual Scalar area() const = 0;
 
   /**
-   * @brief Get a reference to the lagrange::Face object it uses for coordinate mapping.
+   * @brief Get a reference to the geometry::Face object it uses for coordinate mapping.
    * 
-   * @return const Lagrange &  Reference to the lagrange::Face object it uses for coordinate mapping.
+   * @return const Lagrange &  Reference to the geometry::Face object it uses for coordinate mapping.
    */
   virtual const Lagrange &lagrange() const = 0;
 };

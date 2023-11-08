@@ -13,7 +13,7 @@
 
 #include "mini/gauss/line.hpp"
 #include "mini/gauss/cell.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 
 namespace mini {
 namespace gauss {
@@ -36,7 +36,7 @@ class Hexahedron : public Cell<Scalar> {
       Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
   using GaussZ = std::conditional_t< kRule == Rule::kLegendre,
       Legendre<Scalar, Qz>, Lobatto<Scalar, Qz> >;
-  using Lagrange = lagrange::Hexahedron<Scalar>;
+  using Lagrange = geometry::Hexahedron<Scalar>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

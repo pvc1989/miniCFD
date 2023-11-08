@@ -19,7 +19,7 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/gauss/hexahedron.hpp"
-#include "mini/lagrange/hexahedron.hpp"
+#include "mini/geometry/hexahedron.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/single.hpp"
@@ -31,7 +31,7 @@
 class TestWenoLimiters : public ::testing::Test {
  protected:
   using Basis = mini::basis::OrthoNormal<double, 3, 2>;
-  using Lagrange = mini::lagrange::Hexahedron8<double>;
+  using Lagrange = mini::geometry::Hexahedron8<double>;
   using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
   using Coord = typename Gauss::Global;
 
