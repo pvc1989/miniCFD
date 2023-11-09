@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "mini/gauss/function.hpp"
+#include "mini/gauss/legendre.hpp"
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/geometry/hexahedron.hpp"
 
@@ -10,7 +11,10 @@
 
 class TestGaussHexahedron : public ::testing::Test {
  protected:
-  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gy = mini::gauss::Legendre<double, 4>;
+  using Gz = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Hexahedron<Gx, Gy, Gz>;
   using Coord = typename Gauss::Global;
 };
 TEST_F(TestGaussHexahedron, OnLinearElement) {

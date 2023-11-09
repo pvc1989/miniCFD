@@ -14,15 +14,17 @@ namespace gauss {
 /**
  * @brief Gauss--Lobatto quadrature rules, i.e. \f$ \int_{-1}^{1} f(\xi) \,\mathrm{d}\xi \approx \sum_{q=1}^{Q} w_q f(\xi_q) \f$, in which \f$ \xi_1 = -1 \f$ and \f$ \xi_Q = +1 \f$.
  * 
- * @tparam Scalar  Type of scalar variables.
+ * @tparam S  Type of scalar variables.
  * @tparam Q  Nnumber of quadrature points.
  */
-template <std::floating_point Scalar = double, int Q = 4>
+template <std::floating_point S = double, int Q = 4>
 struct Lobatto;
 
-template <std::floating_point Scalar>
-struct Lobatto<Scalar, 2> {
-  using Array = std::array<Scalar, 2>;
+template <std::floating_point S>
+struct Lobatto<S, 2> {
+  using Array = std::array<S, 2>;
+  using Scalar = S;
+  static constexpr int Q = 2;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -41,9 +43,11 @@ typename Lobatto<Scalar, 2>::Array const
 Lobatto<Scalar, 2>::weights =
     Lobatto<Scalar, 2>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Lobatto<Scalar, 3> {
-  using Array = std::array<Scalar, 3>;
+template <std::floating_point S>
+struct Lobatto<S, 3> {
+  using Array = std::array<S, 3>;
+  using Scalar = S;
+  static constexpr int Q = 3;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -62,9 +66,11 @@ typename Lobatto<Scalar, 3>::Array const
 Lobatto<Scalar, 3>::weights =
     Lobatto<Scalar, 3>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Lobatto<Scalar, 4> {
-  using Array = std::array<Scalar, 4>;
+template <std::floating_point S>
+struct Lobatto<S, 4> {
+  using Array = std::array<S, 4>;
+  using Scalar = S;
+  static constexpr int Q = 4;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -83,9 +89,11 @@ typename Lobatto<Scalar, 4>::Array const
 Lobatto<Scalar, 4>::weights =
     Lobatto<Scalar, 4>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Lobatto<Scalar, 5> {
-  using Array = std::array<Scalar, 5>;
+template <std::floating_point S>
+struct Lobatto<S, 5> {
+  using Array = std::array<S, 5>;
+  using Scalar = S;
+  static constexpr int Q = 5;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -104,9 +112,11 @@ typename Lobatto<Scalar, 5>::Array const
 Lobatto<Scalar, 5>::weights =
     Lobatto<Scalar, 5>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Lobatto<Scalar, 6> {
-  using Array = std::array<Scalar, 6>;
+template <std::floating_point S>
+struct Lobatto<S, 6> {
+  using Array = std::array<S, 6>;
+  using Scalar = S;
+  static constexpr int Q = 6;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {

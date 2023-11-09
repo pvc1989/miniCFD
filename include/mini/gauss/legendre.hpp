@@ -14,15 +14,17 @@ namespace gauss {
 /**
  * @brief Gauss--Legendre quadrature rules, i.e. \f$ \int_{-1}^{1} f(\xi) \,\mathrm{d}\xi \approx \sum_{q=1}^{Q} w_q f(\xi_q) \f$
  * 
- * @tparam Scalar  Type of scalar variables.
+ * @tparam S  Type of scalar variables.
  * @tparam Q  Nnumber of quadrature points.
  */
-template <std::floating_point Scalar = double, int Q = 4>
+template <std::floating_point S = double, int Q = 4>
 struct Legendre;
 
-template <std::floating_point Scalar>
-struct Legendre<Scalar, 1> {
-  using Array = std::array<Scalar, 1>;
+template <std::floating_point S>
+struct Legendre<S, 1> {
+  using Array = std::array<S, 1>;
+  using Scalar = S;
+  static constexpr int Q = 1;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -41,9 +43,11 @@ typename Legendre<Scalar, 1>::Array const
 Legendre<Scalar, 1>::weights =
     Legendre<Scalar, 1>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Legendre<Scalar, 2> {
-  using Array = std::array<Scalar, 2>;
+template <std::floating_point S>
+struct Legendre<S, 2> {
+  using Array = std::array<S, 2>;
+  using Scalar = S;
+  static constexpr int Q = 2;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -62,9 +66,11 @@ typename Legendre<Scalar, 2>::Array const
 Legendre<Scalar, 2>::weights =
     Legendre<Scalar, 2>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Legendre<Scalar, 3> {
-  using Array = std::array<Scalar, 3>;
+template <std::floating_point S>
+struct Legendre<S, 3> {
+  using Array = std::array<S, 3>;
+  using Scalar = S;
+  static constexpr int Q = 3;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -83,9 +89,11 @@ typename Legendre<Scalar, 3>::Array const
 Legendre<Scalar, 3>::weights =
     Legendre<Scalar, 3>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Legendre<Scalar, 4> {
-  using Array = std::array<Scalar, 4>;
+template <std::floating_point S>
+struct Legendre<S, 4> {
+  using Array = std::array<S, 4>;
+  using Scalar = S;
+  static constexpr int Q = 4;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {
@@ -114,9 +122,11 @@ typename Legendre<Scalar, 4>::Array const
 Legendre<Scalar, 4>::weights =
     Legendre<Scalar, 4>::BuildWeights();
 
-template <std::floating_point Scalar>
-struct Legendre<Scalar, 5> {
-  using Array = std::array<Scalar, 5>;
+template <std::floating_point S>
+struct Legendre<S, 5> {
+  using Array = std::array<S, 5>;
+  using Scalar = S;
+  static constexpr int Q = 5;
   static const Array points;
   static const Array weights;
   static Array BuildPoints() {

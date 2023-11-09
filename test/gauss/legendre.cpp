@@ -32,6 +32,7 @@ TEST_F(TestGaussLegendre, OnePoint) {
   constexpr int kQuad = 1;
   constexpr int kTerm = 2 * kQuad - 1;
   using Gauss = mini::gauss::Legendre<double, kQuad>;
+  static_assert(Gauss::Q == kQuad);
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -48,6 +49,7 @@ TEST_F(TestGaussLegendre, TwoPoint) {
   constexpr int kQuad = 2;
   constexpr int kTerm = 2 * kQuad - 1;
   using Gauss = mini::gauss::Legendre<double, kQuad>;
+  static_assert(Gauss::Q == kQuad);
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -64,6 +66,7 @@ TEST_F(TestGaussLegendre, ThreePoint) {
   constexpr int kQuad = 3;
   constexpr int kTerm = 2 * kQuad - 1;
   using Gauss = mini::gauss::Legendre<double, kQuad>;
+  static_assert(Gauss::Q == kQuad);
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -80,6 +83,7 @@ TEST_F(TestGaussLegendre, FourPoint) {
   constexpr int kQuad = 4;
   constexpr int kTerm = 2 * kQuad - 1;
   using Gauss = mini::gauss::Legendre<double, kQuad>;
+  static_assert(Gauss::Q == kQuad);
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
@@ -96,6 +100,7 @@ TEST_F(TestGaussLegendre, FivePoint) {
   constexpr int kQuad = 5;
   constexpr int kTerm = 2 * kQuad - 1;
   using Gauss = mini::gauss::Legendre<double, kQuad>;
+  static_assert(Gauss::Q == kQuad);
   std::srand(31415926);
   for (int i = 0; i < 1000; ++i) {
     auto v = std::vector<double>(kTerm);
