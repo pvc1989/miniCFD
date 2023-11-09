@@ -23,26 +23,28 @@ namespace polynomial {
  * 
  * The interpolation nodes are collocated with quadrature points.
  * 
- * @tparam Scalar the data type of scalar components
- * @tparam kDegreeX the degree of completeness in the 1st dimension
- * @tparam kDegreeY the degree of completeness in the 2nd dimension
- * @tparam kDegreeZ the degree of completeness in the 3rd dimension
+ * @tparam Gx  The quadrature rule in the 1st dimension.
+ * @tparam Gy  The quadrature rule in the 2nd dimension.
+ * @tparam Gz  The quadrature rule in the 3rd dimension.
  * @tparam kComponents the number of function components
  * @tparam kLocal in local (parametric) space or not
  */
-template <std::floating_point Scalar, int kDegreeX, int kDegreeY, int kDegreeZ,
-    int kComponents, bool kLocal = false>
+template <class Gx, class Gy, class Gz, int kComponents, bool kLocal = false>
 class Hexahedron {
  public:
-  using Basis = basis::lagrange::Hexahedron< Scalar, kDegreeX, kDegreeY, kDegreeZ >;
-  using Gauss = gauss::Hexahedron< Scalar, Basis::I, Basis::J, Basis::K >;
-  using GaussBase = gauss::Cell<Scalar>;
-  using Lagrange = typename Gauss::Lagrange;
-  static constexpr int N = Basis::N;
-  static constexpr int K = kComponents;
-  static constexpr int P = std::max({kDegreeX, kDegreeY, kDegreeZ});
+  using Gauss = gauss::Hexahedron<Gx, Gy, Gz>;
+  using Scalar = typename Gauss::Scalar;
   using Local = typename Gauss::Local;
   using Global = typename Gauss::Global;
+  using GaussBase = gauss::Cell<Scalar>;
+  using Lagrange = typename Gauss::Lagrange;
+  static constexpr int Px = Gx::Q - 1;
+  static constexpr int Py = Gy::Q - 1;
+  static constexpr int Pz = Gz::Q - 1;
+  static constexpr int P = std::max({Px, Py, Pz});
+  using Basis = basis::lagrange::Hexahedron<Scalar, Px, Py, Pz>;
+  static constexpr int N = Basis::N;
+  static constexpr int K = kComponents;
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
 
@@ -110,10 +112,10 @@ class Hexahedron {
     return Basis(line_x, line_y, line_z);
   }
 };
-template <std::floating_point Scalar, int kX, int kY, int kZ, int kC, bool kL>
-typename Hexahedron<Scalar, kX, kY, kZ, kC, kL>::Basis const
-Hexahedron<Scalar, kX, kY, kZ, kC, kL>::basis_ =
-    Hexahedron<Scalar, kX, kY, kZ, kC, kL>::BuildInterpolationBasis();
+template <class Gx, class Gy, class Gz, int kC, bool kL>
+typename Hexahedron<Gx, Gy, Gz, kC, kL>::Basis const
+Hexahedron<Gx, Gy, Gz, kC, kL>::basis_ =
+    Hexahedron<Gx, Gy, Gz, kC, kL>::BuildInterpolationBasis();
 
 }  // namespace polynomial
 }  // namespace mini

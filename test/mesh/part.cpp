@@ -111,8 +111,10 @@ int main(int argc, char* argv[]) {
   std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
       case_name.c_str(), i_core,
       i_core, n_core, MPI_Wtime() - time_begin);
-  using Projection = mini::polynomial::Hexahedron<
-      Scalar, kDegrees, kDegrees, kDegrees, kComponents>;
+  using Gx = mini::gauss::Legendre<double, kDegrees + 1>;
+  using Gy = mini::gauss::Lobatto<double, kDegrees + 1>;
+  using Gz = mini::gauss::Lobatto<double, kDegrees + 1>;
+  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   Process(&part, "Interpolation");

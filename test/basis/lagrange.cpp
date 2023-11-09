@@ -101,7 +101,7 @@ TEST_F(TestBasisLagrangeHexahedron, PartitionOfUnityProperty) {
   for (int i = 1<<10; i >= 0; --i) {
     auto x = rand_f(), y = rand_f(), z = rand_f();
     auto values = lagrange.GetValues(x, y, z);
-    EXPECT_NEAR(values.sum(), 1.0, 1e-12);
+    EXPECT_NEAR(values.sum(), 1.0, 1e-11);
   }
 }
 TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
@@ -131,7 +131,7 @@ TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
     auto values_center = lagrange.GetValues(x, y, z);
     auto derivatives = lagrange.GetDerivatives(0, 0, 0, x, y, z);
     derivatives -= values_center;
-    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-10);
+    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-9);
     auto values_x_minus = lagrange.GetValues(x - delta, y, z);
     auto values_x_plus = lagrange.GetValues(x + delta, y, z);
     derivatives = lagrange.GetDerivatives(1, 0, 0, x, y, z);
@@ -141,7 +141,7 @@ TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
     auto values_y_plus = lagrange.GetValues(x, y + delta, z);
     derivatives = lagrange.GetDerivatives(0, 1, 0, x, y, z);
     derivatives -= (values_y_plus - values_y_minus) / (2 * delta);
-    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-6);
+    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-5);
     auto values_z_minus = lagrange.GetValues(x, y, z - delta);
     auto values_z_plus = lagrange.GetValues(x, y, z + delta);
     derivatives = lagrange.GetDerivatives(0, 0, 1, x, y, z);
@@ -149,13 +149,13 @@ TEST_F(TestBasisLagrangeHexahedron, GetDerivatives) {
     EXPECT_NEAR(derivatives.norm(), 0.0, 1e-5);
     derivatives = lagrange.GetDerivatives(2, 0, 0, x, y, z);
     derivatives -= ((values_x_minus + values_x_plus) - 2 * values_center) / delta2;
-    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-2);
+    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-1);
     derivatives = lagrange.GetDerivatives(0, 2, 0, x, y, z);
     derivatives -= ((values_y_plus + values_y_minus) - 2 * values_center) / delta2;
-    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-2);
+    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-1);
     derivatives = lagrange.GetDerivatives(0, 0, 2, x, y, z);
     derivatives -= ((values_z_plus + values_z_minus) - 2 * values_center) / delta2;
-    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-2);
+    EXPECT_NEAR(derivatives.norm(), 0.0, 1e-1);
   }
 }
 

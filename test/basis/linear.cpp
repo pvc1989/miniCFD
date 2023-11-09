@@ -144,7 +144,8 @@ TEST_F(TestBasisOrthoNormal, OnTetrahedron) {
 }
 TEST_F(TestBasisOrthoNormal, OnHexahedron) {
   using Lagrange = mini::geometry::Hexahedron8<double>;
-  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 5>;
+  using Gauss = mini::gauss::Hexahedron<Gx, Gx, Gx>;
   using Coord = Gauss::Global;
   Coord p0{-1, -1, -1}, p1{+1, -1, -1}, p2{+1, +1, -1}, p3{-1, +1, -1},
         p4{-1, -1, +1}, p5{+1, -1, +1}, p6{+1, +1, +1}, p7{-1, +1, +1};

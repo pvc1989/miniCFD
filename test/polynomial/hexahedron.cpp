@@ -4,6 +4,8 @@
 #include <cmath>
 
 #include "mini/gauss/function.hpp"
+#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/lobatto.hpp"
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/geometry/hexahedron.hpp"
 #include "mini/basis/linear.hpp"
@@ -20,7 +22,8 @@ double rand_f() {
 
 class TestPolynomialHexahedronProjection : public ::testing::Test {
  protected:
-  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
+  using GaussX = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Hexahedron<GaussX, GaussX, GaussX>;
   using Lagrange = mini::geometry::Hexahedron8<double>;
   using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Coord = typename Basis::Coord;
@@ -101,9 +104,14 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
 class TestPolynomialHexahedronInterpolation : public ::testing::Test {
  protected:
   using Lagrange = mini::geometry::Hexahedron8<double>;
-  using VectorPF = mini::polynomial::Hexahedron<double, 2, 3, 4, 11>;
-  using Basis = typename VectorPF::Basis;
-  using Gauss = typename VectorPF::Gauss;
+  // To approximate quadratic functions in each dimension exactly, at least 3 nodes are needed.
+  using GaussX = mini::gauss::Legendre<double, 3>;
+  using GaussY = mini::gauss::Lobatto<double, 3>;
+  using GaussZ = mini::gauss::Lobatto<double, 4>;
+  using Interpolation = mini::polynomial::Hexahedron<GaussX, GaussY, GaussZ, 11>;
+  using Basis = typename Interpolation::Basis;
+  using Gauss = typename Interpolation::Gauss;
+  using Value = typename Interpolation::Value;
   using Global = typename Gauss::Global;
 };
 TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
@@ -119,11 +127,10 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
   // build a vector function and its interpolation
   auto vector_func = [](Global const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
-    VectorPF::Value value{ 0, 1, x, y, z,
-        x * x, x * y, x * z, y * y, y * z, z * z };
+    Value value{ 0, 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
     return value;
   };
-  auto vector_interp = VectorPF(gauss);
+  auto vector_interp = Interpolation(gauss);
   vector_interp.Approximate(vector_func);
   // test values on nodes
   for (int ijk = 0; ijk < Basis::N; ++ijk) {
@@ -138,7 +145,7 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
     auto global = Global{ a * rand_f(), b * rand_f(), c * rand_f() };
     auto value = vector_func(global);
     value -= vector_interp.GlobalToValue(global);
-    EXPECT_NEAR(value.norm(), 0, 1e-10);
+    EXPECT_NEAR(value.norm(), 0, 1e-12);
   }
 }
 

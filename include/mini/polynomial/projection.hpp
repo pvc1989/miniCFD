@@ -32,7 +32,7 @@ class Projection {
   using Basis = basis::OrthoNormal<Scalar, kDimensions, kDegrees>;
   static constexpr int N = Basis::N;
   static constexpr int K = kComponents;
-  static constexpr int P = kDimensions;
+  static constexpr int P = kDegrees;
   using Gauss = typename Basis::Gauss;
   using Local = typename Gauss::Local;
   using Global = typename Gauss::Global;

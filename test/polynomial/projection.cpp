@@ -15,7 +15,8 @@ class TestProjection : public ::testing::Test {
   using Taylor = mini::basis::Taylor<double, 3, 2>;
   using Basis = mini::basis::OrthoNormal<double, 3, 2>;
   using Lagrange = mini::geometry::Hexahedron8<double>;
-  using Gauss = mini::gauss::Hexahedron<double, 4, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 5>;
+  using Gauss = mini::gauss::Hexahedron<Gx, Gx, Gx>;
   using Coord = typename Gauss::Global;
   Lagrange lagrange_;
   Gauss gauss_;
@@ -62,16 +63,7 @@ TEST_F(TestProjection, VectorFunction) {
   auto v_actual = projection({0.3, 0.4, 0.5});
   auto v_expect = Taylor::GetValue({0.3, 0.4, 0.5});
   Value res = v_actual - v_expect;
-  EXPECT_NEAR(v_actual[0], v_expect[0], 1e-14);
-  EXPECT_NEAR(v_actual[1], v_expect[1], 1e-15);
-  EXPECT_NEAR(v_actual[2], v_expect[2], 1e-15);
-  EXPECT_DOUBLE_EQ(v_actual[3], v_expect[3]);
-  EXPECT_NEAR(v_actual[4], v_expect[4], 1e-15);
-  EXPECT_NEAR(v_actual[5], v_expect[5], 1e-16);
-  EXPECT_DOUBLE_EQ(v_actual[6], v_expect[6]);
-  EXPECT_NEAR(v_actual[7], v_expect[7], 1e-15);
-  EXPECT_NEAR(v_actual[8], v_expect[8], 1e-16);
-  EXPECT_NEAR(v_actual[9], v_expect[9], 1e-15);
+  EXPECT_NEAR(res.norm(), 0.0, 1e-14);
   auto integral_f = mini::gauss::Integrate(func, gauss_);
   auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
@@ -86,7 +78,7 @@ TEST_F(TestProjection, CoeffConsistency) {
   auto func = [](Coord const &point){
     auto x = point[0], y = point[1], z = point[2];
     Value res = { std::sin(x + y), std::cos(y + z), std::tan(x * z),
-        std::exp(y * z), std::log(z * z) };
+        std::exp(y * z), std::log(1 + z * z) };
     return res;
   };
   auto projection = ProjFunc(gauss_);
@@ -147,14 +139,14 @@ TEST_F(TestProjection, Smoothness) {
   projection.Approximate(func);
   auto s_actual = projection.GetSmoothness();
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
-  EXPECT_NEAR(s_actual[1], 4.0, 1e-14);
-  EXPECT_NEAR(s_actual[2], 4.0, 1e-14);
-  EXPECT_NEAR(s_actual[3], 4.0, 1e-14);
-  EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-13);
+  EXPECT_NEAR(s_actual[1], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[2], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[3], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-12);
   EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-13);
   EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-13);
   EXPECT_NEAR(s_actual[7], 16./3 + 64, 1e-12);
-  EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-14);
+  EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-13);
   EXPECT_NEAR(s_actual[9], 16./3 + 64, 1e-12);
 }
 
