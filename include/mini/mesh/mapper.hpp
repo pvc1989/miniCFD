@@ -27,19 +27,6 @@ namespace mapper {
 static_assert(sizeof(idx_t) == sizeof(cgsize_t),
     "METIS's `idx_t` and CGNS's `cgsize_t` must have the same size.");
 
-template <std::integral Int>
-struct NodeIndex {
-  NodeIndex() = default;
-  NodeIndex(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
-  Int i_zone{0}, i_node{0};
-};
-template <std::integral Int = int>
-struct CellIndex {
-  CellIndex() = default;
-  CellIndex(Int zi, Int si, Int ci) : i_zone(zi), i_sect(si), i_cell(ci) {}
-  Int i_zone{0}, i_sect{0}, i_cell{0};
-};
-
 template <std::integral Int, std::floating_point Real>
 struct CgnsToMetis {
   using CgnsMesh = cgns::File<Real>;
@@ -61,8 +48,8 @@ struct CgnsToMetis {
     }
   }
 
-  std::vector<NodeIndex<Int>> metis_to_cgns_for_nodes;
-  std::vector<CellIndex<Int>> metis_to_cgns_for_cells;
+  std::vector<cgns::NodeIndex<Int>> metis_to_cgns_for_nodes;
+  std::vector<cgns::CellIndex<Int>> metis_to_cgns_for_cells;
   // metis_i_node =
   //     cgns_to_metis_for_nodes[i_zone][i_node];
   std::vector<std::vector<Int>>           cgns_to_metis_for_nodes;

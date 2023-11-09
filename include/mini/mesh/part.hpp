@@ -47,41 +47,6 @@ namespace mesh {
 namespace part {
 
 /**
- * @brief Index information of a Node.
- * 
- * @tparam Int  Type of integers.
- */
-template <std::integral Int>
-struct NodeIndex {
-  NodeIndex() = default;
-  NodeIndex(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
-  NodeIndex(NodeIndex const &) = default;
-  NodeIndex &operator=(NodeIndex const &) = default;
-  NodeIndex(NodeIndex &&) noexcept = default;
-  NodeIndex &operator=(NodeIndex &&) noexcept = default;
-  ~NodeIndex() noexcept = default;
-  Int i_zone{0}, i_node{0};
-};
-
-/**
- * @brief Index information of a Cell.
- * 
- * @tparam Int  Type of integers.
- */
-template <std::integral Int>
-struct CellIndex {
-  CellIndex() = default;
-  CellIndex(Int z, Int s, Int c, Int n)
-      : i_zone(z), i_sect(s), i_cell(c), npe(n) {}
-  CellIndex(CellIndex const &) = default;
-  CellIndex &operator=(CellIndex const &) = default;
-  CellIndex(CellIndex &&) noexcept = default;
-  CellIndex &operator=(CellIndex &&) noexcept = default;
-  ~CellIndex() noexcept = default;
-  Int i_zone{0}, i_sect{0}, i_cell{0}, npe{0};
-};
-
-/**
  * @brief Mimic CGNS's `GridCoordinates_t`, but partitioned.
  * 
  * @tparam Int  Type of integers.
@@ -410,8 +375,8 @@ class Part {
     char name[33];
   };
   using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
-  using NodeIndex = part::NodeIndex<Int>;
-  using CellIndex = part::CellIndex<Int>;
+  using NodeIndex = cgns::NodeIndex<Int>;
+  using CellIndex = cgns::CellIndex<Int>;
   using Coordinates = part::Coordinates<Int, Scalar>;
   using Section = part::Section<Int, R, P>;
   static constexpr int kLineWidth = 128;
@@ -587,7 +552,7 @@ class Part {
       }
       for (int i_node = head; i_node < tail; ++i_node) {
         auto m_node = node_group.metis_id_[i_node];
-        m_to_node_index_[m_node] = NodeIndex(i_zone, i_node);
+        m_to_node_index_.emplace(m_node, NodeIndex(i_zone, i_node));
       }
       local_nodes_[i_zone] = std::move(node_group);
     }
@@ -609,8 +574,8 @@ class Part {
     for (auto &[i_part, nodes] : send_nodes) {
       auto &coords = send_bufs.emplace_back();
       for (auto m_node : nodes) {
-        auto &info = m_to_node_index_.at(m_node);
-        auto const &coord = GetCoord(info.i_zone, info.i_node);
+        auto [i_zone, i_node] = m_to_node_index_.at(m_node);
+        auto const &coord = GetCoord(i_zone, i_node);
         coords.emplace_back(coord[0]);
         coords.emplace_back(coord[1]);
         coords.emplace_back(coord[2]);
@@ -628,7 +593,7 @@ class Part {
       int i_part, m_node, i_zone, i_node;
       std::sscanf(line, "%d %d %d %d", &i_part, &m_node, &i_zone, &i_node);
       recv_nodes[i_part].emplace_back(m_node);
-      m_to_node_index_[m_node] = part::NodeIndex<Int>(i_zone, i_node);
+      m_to_node_index_.emplace(m_node, NodeIndex(i_zone, i_node));
     }
     std::vector<std::vector<Scalar>> recv_coords;
     for (auto &[i_part, nodes] : recv_nodes) {
@@ -653,8 +618,8 @@ class Part {
     for (auto &[i_part, nodes] : recv_nodes) {
       auto *xyz = recv_coords[i_source++].data();
       for (auto m_node : nodes) {
-        auto &info = m_to_node_index_[m_node];
-        ghost_nodes_[info.i_zone][info.i_node] = { xyz[0], xyz[1] , xyz[2] };
+        auto [i_zone, i_node] = m_to_node_index_[m_node];
+        ghost_nodes_[i_zone][i_node] = { xyz[0], xyz[1] , xyz[2] };
         xyz += 3;
       }
     }
@@ -788,7 +753,8 @@ class Part {
       int npe = cgns::CountNodesByType(conn.type);
       for (int i_cell = head; i_cell < tail; ++i_cell) {
         auto m_cell = metis_ids[i_cell];
-        m_to_cell_index_[m_cell] = CellIndex(i_zone, i_sect, i_cell, npe);
+        m_to_cell_index_.emplace(m_cell,
+            CellIndex(i_zone, i_sect, i_cell, npe));
       }
       // TODO(PVC): only for non-mixed Section
       nodes.resize(npe * mem_dimensions[0]);
@@ -869,10 +835,9 @@ class Part {
     std::vector<MPI_Request> requests;
     for (auto &[i_part, npes] : send_npes) {
       auto &send_buf = send_cells.emplace_back();
-      for (auto &[m_cell, npe] : npes) {
-        auto &info = m_to_cell_index_[m_cell];
-        assert(npe == info.npe);
-        Int i_zone = info.i_zone, i_sect = info.i_sect, i_cell = info.i_cell;
+      for (auto [m_cell, npe] : npes) {
+        auto [i_zone, i_sect, i_cell, n_node] = m_to_cell_index_[m_cell];
+        assert(npe == n_node);
         auto &conn = connectivities_.at(i_zone).at(i_sect);
         auto &index = conn.index;
         auto &nodes = conn.nodes;
@@ -893,7 +858,7 @@ class Part {
     for (auto &[i_part, npes] : recv_npes) {
       auto &recv_buf = recv_cells.emplace_back();
       int n_ints = 0;
-      for (auto &[m_cell, npe] : npes) {
+      for (auto [m_cell, npe] : npes) {
         ++n_ints;
         n_ints += npe;
       }
@@ -910,7 +875,7 @@ class Part {
     return recv_cells;
   }
   struct GhostCellIndex {
-    int source, head, npe;
+    int source, head, n_node;
   };
   std::unordered_map<Int, GhostCellIndex> BuildGhostCells(
       GhostAdj const &ghost_adj,
@@ -922,10 +887,9 @@ class Part {
     for (auto &[i_part, npes] : recv_npes) {
       auto &recv_buf = recv_cells.at(i_source);
       int index = 0;
-      for (auto &[m_cell, npe] : npes) {
-        m_to_recv_cells[m_cell].source = i_source;
-        m_to_recv_cells[m_cell].head = index + 1;
-        m_to_recv_cells[m_cell].npe = npe;
+      for (auto [m_cell, npe] : npes) {
+        m_to_recv_cells.emplace(m_cell,
+            GhostCellIndex(i_source, index + 1, npe));
         int i_zone = recv_buf[index++];
         auto *i_node_list = &recv_buf[index];
         auto [lagrange_uptr, gauss_uptr]
@@ -944,9 +908,10 @@ class Part {
     for (auto &[i_part, npes] : ghost_adj.send_npes) {
       auto &curr_part = send_cell_ptrs_[i_part];
       assert(curr_part.empty());
-      for (auto &[m_cell, npe] : npes) {
-        auto &info = m_to_cell_index_[m_cell];
-        auto &cell = local_cells_.at(info.i_zone).at(info.i_sect)[info.i_cell];
+      for (auto [m_cell, npe] : npes) {
+        auto [i_zone, i_sect, i_cell, n_node] = m_to_cell_index_[m_cell];
+        assert(npe == n_node);
+        auto &cell = local_cells_.at(i_zone).at(i_sect)[i_cell];
         cell.inner_ = false;
         curr_part.emplace_back(&cell);
       }
@@ -956,7 +921,7 @@ class Part {
     for (auto &[i_part, npes] : ghost_adj.recv_npes) {
       auto &curr_part = recv_cell_ptrs_[i_part];
       assert(curr_part.empty());
-      for (auto &[m_cell, npe] : npes) {
+      for (auto [m_cell, npe] : npes) {
         auto &cell = ghost_cells_.at(m_cell);
         curr_part.emplace_back(&cell);
       }
@@ -981,9 +946,9 @@ class Part {
       auto &sharer_nodes = sharer_conn.nodes;
       auto holder_head = holder_conn.index[holder_info.i_cell];
       auto sharer_head = sharer_conn.index[sharer_info.i_cell];
-      for (int i = 0; i < holder_info.npe; ++i)
+      for (int i = 0; i < holder_info.n_node; ++i)
         ++i_node_cnt[holder_nodes[holder_head + i]];
-      for (int i = 0; i < sharer_info.npe; ++i)
+      for (int i = 0; i < sharer_info.n_node; ++i)
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(9/* at most 9 nodes on a Face */);
@@ -1026,9 +991,9 @@ class Part {
       auto &sharer_nodes = recv_cells[sharer_info.source];
       auto holder_head = holder_conn.index[holder_info.i_cell];
       auto sharer_head = sharer_info.head;
-      for (int i = 0; i < holder_info.npe; ++i)
+      for (int i = 0; i < holder_info.n_node; ++i)
         ++i_node_cnt[holder_nodes[holder_head + i]];
-      for (int i = 0; i < sharer_info.npe; ++i)
+      for (int i = 0; i < sharer_info.n_node; ++i)
         ++i_node_cnt[sharer_nodes[sharer_head + i]];
       auto common_nodes = std::vector<Int>();
       common_nodes.reserve(4);
@@ -1491,8 +1456,8 @@ class Part {
         for (auto [m_cell, cnt] : cell_cnt) {
           assert(cnt <= npe);
           if (cnt == npe) {  // this cell holds this face
-            auto &info = m_to_cell_index_[m_cell];
-            Int z = info.i_zone, s = info.i_sect, c = info.i_cell;
+            auto [z, s, c, n] = m_to_cell_index_[m_cell];
+            assert(npe == n);
             holder_ptr = &(local_cells_.at(z).at(s).at(c));
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;

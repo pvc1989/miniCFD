@@ -103,6 +103,47 @@ int dim(ElementType type) {
   return -1;
 }
 
+/**
+ * @brief Index information of a Node.
+ * 
+ * @tparam Int  Type of integers.
+ */
+template <std::integral Int>
+struct NodeIndex {
+  Int i_zone, i_node;
+
+  NodeIndex(Int zi, Int ni) : i_zone(zi), i_node(ni) {}
+
+  NodeIndex() = default;
+  NodeIndex(NodeIndex const &) = default;
+  NodeIndex &operator=(NodeIndex const &) = default;
+  NodeIndex(NodeIndex &&) noexcept = default;
+  NodeIndex &operator=(NodeIndex &&) noexcept = default;
+  ~NodeIndex() noexcept = default;
+};
+
+/**
+ * @brief Index information of a Cell.
+ * 
+ * @tparam Int  Type of integers.
+ */
+template <std::integral Int = int>
+struct CellIndex {
+  Int i_zone, i_sect, i_cell, n_node;
+
+  CellIndex(Int zi, Int si, Int ci, Int ni)
+      : i_zone(zi), i_sect(si), i_cell(ci), n_node(ni) {}
+  CellIndex(Int zi, Int si, Int ci)
+      : i_zone(zi), i_sect(si), i_cell(ci) {}
+
+  CellIndex() = default;
+  CellIndex(CellIndex const &) = default;
+  CellIndex &operator=(CellIndex const &) = default;
+  CellIndex(CellIndex &&) noexcept = default;
+  CellIndex &operator=(CellIndex &&) noexcept = default;
+  ~CellIndex() noexcept = default;
+};
+
 template <std::floating_point Real> class File;
 template <std::floating_point Real> class Base;
 template <std::floating_point Real> class Zone;
