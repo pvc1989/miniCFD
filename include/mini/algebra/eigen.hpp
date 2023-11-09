@@ -14,6 +14,12 @@ using Eigen::Array;
 using Eigen::Matrix;
 using Eigen::Vector;
 
+template <typename Scalar>
+using DynamicMatrix = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
+
+template <typename Scalar>
+using DynamicVector = Eigen::Vector<Scalar, Eigen::Dynamic>;
+
 /**
  * @brief Set the value of a scalar to be 0.
  * 
