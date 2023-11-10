@@ -67,6 +67,7 @@ int main(int argc, char* argv[]) {
   column -= spatial.GetSolutionColumn();
   std::printf("column.norm() == %6.2e on proc[%d/%d] at %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  column = spatial.GetResidualColumn();
 }
   MPI_Finalize();
 }

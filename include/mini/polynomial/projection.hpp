@@ -101,6 +101,9 @@ class Projection {
   Coeff &coeff() {
     return coeff_;
   }
+  auto GlobalToBasisGradients(Global const &global) const {
+    return basis_.GetGradValue(global);
+  }
   Coeff GetPdvValue(Global const &global) const {
     auto local = global; local -= center();
     return basis::Taylor<Scalar, kDimensions, kDegrees>::GetPdvValue(local, coeff());
@@ -162,15 +165,22 @@ class Projection {
     coeff_ += that.coeff_;
     return *this;
   }
-  const Scalar * GetCoeffFrom(const Scalar *input) {
+  const Scalar *GetCoeffFrom(const Scalar *input) {
     Coeff coeff;  // on OrthoNormal basis
     std::copy_n(input, coeff.size(), coeff.data());
     coeff_ = coeff * basis_.coeff();
     return input + coeff.size();
   }
-  Scalar * WriteCoeffTo(Scalar *output) const {
+  Scalar *WriteCoeffTo(Scalar *output) const {
     Coeff coeff = GetCoeffOnOrthoNormalBasis();
     return std::copy_n(coeff.data(), coeff.size(), output);
+  }
+  static void AddCoeffTo(Coeff const &coeff, Scalar *output) {
+    for (int c = 0; c < N; ++c) {
+      for (int r = 0; r < K; ++r) {
+        *output++ += coeff(r, c);
+      }
+    }
   }
 };
 
