@@ -1,6 +1,6 @@
 // Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_SOLVER_RKDG_HPP_
-#define MINI_SOLVER_RKDG_HPP_
+#ifndef MINI_SPATIAL_DG_HPP_
+#define MINI_SPATIAL_DG_HPP_
 
 #include <cassert>
 #include <functional>
@@ -11,6 +11,10 @@
 #include <unordered_map>
 
 #include "mini/mesh/part.hpp"
+#include "mini/temporal/ode.hpp"
+
+namespace mini {
+namespace spatial {
 
 template <typename P>
 class DummySource {
@@ -24,7 +28,7 @@ class DummySource {
 };
 
 template <typename P, typename L, typename S>
-class RungeKuttaBase {
+class DiscontinuousGalerkin : public temporal::System<typename P::Scalar> {
  public:
   using Part = P;
   using Limiter = L;
@@ -48,16 +52,16 @@ class RungeKuttaBase {
   double dt_, t_curr_;
 
  public:
-  RungeKuttaBase(double dt, const Limiter &limiter,
+  DiscontinuousGalerkin(double dt, const Limiter &limiter,
       const Source &source = Source())
       : dt_(dt), limiter_(limiter), source_(source) {
     assert(dt > 0.0);
   }
-  RungeKuttaBase(const RungeKuttaBase &) = default;
-  RungeKuttaBase &operator=(const RungeKuttaBase &) = default;
-  RungeKuttaBase(RungeKuttaBase &&) noexcept = default;
-  RungeKuttaBase &operator=(RungeKuttaBase &&) noexcept = default;
-  ~RungeKuttaBase() noexcept = default;
+  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
+  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
+  ~DiscontinuousGalerkin() noexcept = default;
 
  public:  // set BCs
   template <typename Callable>
@@ -301,13 +305,13 @@ class RungeKuttaBase {
 
 template <int kOrders, typename Part, typename Limiter,
     typename Source = DummySource<Part>
-> struct RungeKutta;
+> struct DiscontinuousGalerkin;
 
 template <typename P, typename L, typename S>
-struct RungeKutta<1, P, L, S>
-    : public RungeKuttaBase<P, L, S> {
+struct DiscontinuousGalerkin<1, P, L, S>
+    : public DiscontinuousGalerkin<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L, S>;
+  using Base = DiscontinuousGalerkin<P, L, S>;
 
  public:
   using Part = typename Base::Part;
@@ -325,11 +329,11 @@ struct RungeKutta<1, P, L, S>
 
  public:
   using Base::Base;
-  RungeKutta(const RungeKutta &) = default;
-  RungeKutta &operator=(const RungeKutta &) = default;
-  RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta &operator=(RungeKutta &&) noexcept = default;
-  ~RungeKutta() noexcept = default;
+  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
+  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
+  ~DiscontinuousGalerkin() noexcept = default;
 
  public:
   void Update(Part *part_ptr, double t_curr) {
@@ -361,10 +365,10 @@ struct RungeKutta<1, P, L, S>
 };
 
 template <typename P, typename L, typename S>
-struct RungeKutta<2, P, L, S>
-    : public RungeKuttaBase<P, L, S> {
+struct DiscontinuousGalerkin<2, P, L, S>
+    : public DiscontinuousGalerkin<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L, S>;
+  using Base = DiscontinuousGalerkin<P, L, S>;
 
  public:
   using Part = typename Base::Part;
@@ -382,11 +386,11 @@ struct RungeKutta<2, P, L, S>
 
  public:
   using Base::Base;
-  RungeKutta(const RungeKutta &) = default;
-  RungeKutta &operator=(const RungeKutta &) = default;
-  RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta &operator=(RungeKutta &&) noexcept = default;
-  ~RungeKutta() noexcept = default;
+  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
+  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
+  ~DiscontinuousGalerkin() noexcept = default;
 
  public:
   void Update(Part *part_ptr, double t_curr) {
@@ -442,10 +446,10 @@ struct RungeKutta<2, P, L, S>
 };
 
 template <typename P, typename L, typename S>
-struct RungeKutta<3, P, L, S>
-    : public RungeKuttaBase<P, L, S> {
+struct DiscontinuousGalerkin<3, P, L, S>
+    : public DiscontinuousGalerkin<P, L, S> {
  private:
-  using Base = RungeKuttaBase<P, L, S>;
+  using Base = DiscontinuousGalerkin<P, L, S>;
 
  public:
   using Part = typename Base::Part;
@@ -463,11 +467,11 @@ struct RungeKutta<3, P, L, S>
 
  public:
   using Base::Base;
-  RungeKutta(const RungeKutta &) = default;
-  RungeKutta &operator=(const RungeKutta &) = default;
-  RungeKutta(RungeKutta &&) noexcept = default;
-  RungeKutta &operator=(RungeKutta &&) noexcept = default;
-  ~RungeKutta() noexcept = default;
+  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
+  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
+  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
+  ~DiscontinuousGalerkin() noexcept = default;
 
  public:
   void Update(Part *part_ptr, double t_curr) {
@@ -550,4 +554,7 @@ struct RungeKutta<3, P, L, S>
   }
 };
 
-#endif  // MINI_SOLVER_RKDG_HPP_
+}  // namespace spatial
+}  // namespace mini
+
+#endif  // MINI_SPATIAL_DG_HPP_
