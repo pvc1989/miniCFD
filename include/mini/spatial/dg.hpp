@@ -27,35 +27,36 @@ class DummySource {
   }
 };
 
-template <typename P, typename L, typename S>
-class DiscontinuousGalerkin : public temporal::System<typename P::Scalar> {
+template <typename Part, typename Limiter, typename Source = DummySource<Part>>
+class DiscontinuousGalerkin : public temporal::System<typename Part::Scalar> {
  public:
-  using Part = P;
-  using Limiter = L;
-  using Source = S;
   using Riemann = typename Part::Riemann;
-  using Cell = typename Part::Cell;
+  using Scalar = typename Part::Scalar;
   using Face = typename Part::Face;
+  using Cell = typename Part::Cell;
+  using Global = typename Cell::Global;
   using Projection = typename Cell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;
-  using Global = typename Cell::Global;
+  using Temporal = temporal::System<typename Part::Scalar>;
+  using Column = typename Temporal::Column;
 
  protected:
-  std::vector<Coeff> residual_;
   std::vector<std::string> supersonic_outlet_, solid_wall_;
   using Function = std::function<Value(const Global &, double)>;
   std::unordered_map<std::string, Function> supersonic_inlet__,
       subsonic_inlet_, subsonic_outlet_, smart_boundary_;
+  Part *part_ptr_;
   Limiter limiter_;
   Source source_;
-  double dt_, t_curr_;
+  Column residual_;
+  double t_curr_;
 
  public:
-  DiscontinuousGalerkin(double dt, const Limiter &limiter,
-      const Source &source = Source())
-      : dt_(dt), limiter_(limiter), source_(source) {
-    assert(dt > 0.0);
+  explicit DiscontinuousGalerkin(Part *part_ptr,
+      const Limiter &limiter, const Source &source = Source())
+      : part_ptr_(part_ptr), limiter_(limiter), source_(source) {
+    residual_.resize(part_ptr_->GetCellDataSize());
   }
   DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
   DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
@@ -87,21 +88,38 @@ class DiscontinuousGalerkin : public temporal::System<typename P::Scalar> {
     supersonic_outlet_.emplace_back(name);
   }
 
- public:
-  static void ReadFromLocalCells(const Part &part, std::vector<Coeff> *coeffs) {
-    coeffs->resize(part.CountLocalCells());
-    for (const auto &cell : part.GetLocalCells()) {
-      coeffs->at(cell.id())
-          = cell.projection_.GetCoeffOnOrthoNormalBasis();
-    }
+ public:  // implement pure virtual methods declared in Temporal
+  void SetTime(double t_curr) override {
+    t_curr_ = t_curr;
   }
-  static void WriteToLocalCells(const std::vector<Coeff> &coeffs, Part *part) {
-    assert(coeffs.size() == part->CountLocalCells());
-    for (Cell *cell_ptr : part->GetLocalCellPointers()) {
-      Coeff new_coeff = coeffs.at(cell_ptr->id()) * cell_ptr->basis().coeff();
-      cell_ptr->projection_.coeff() = new_coeff;
+  void SetSolutionColumn(Column const &column) override {
+    for (Cell *cell_ptr: part_ptr_->GetLocalCellPointers()) {
+      auto i_cell = cell_ptr->id();
+      Scalar const *data = column.data() + part_ptr_->GetCellDataOffset(i_cell);
+      cell_ptr->projection_.GetCoeffFrom(data);
     }
+    part_ptr_->Reconstruct(limiter_);
   }
+  Column GetSolutionColumn() const override {
+    Column column(residual_.size());
+    for (const auto &cell : part_ptr_->GetLocalCells()) {
+      auto i_cell = cell.id();
+      Scalar *data = column.data() + part_ptr_->GetCellDataOffset(i_cell);
+      cell.projection_.WriteCoeffTo(data);
+    }
+    return column;
+  }
+  Column GetResidualColumn() const override {
+    // part_ptr_->ShareGhostCellCoeffs();
+    // this->InitializeResidual(*part_ptr_);
+    // this->UpdateLocalResidual(*part_ptr_);
+    // this->UpdateBoundaryResidual(*part_ptr_);
+    // part_ptr_->UpdateGhostCellCoeffs();
+    // this->UpdateGhostResidual(*part_ptr_);
+    return this->residual_;
+  }
+
+ protected:
   void InitializeResidual(const Part &part) {
     residual_.resize(part.CountLocalCells());
     for (auto &coeff : residual_) {
@@ -300,257 +318,6 @@ class DiscontinuousGalerkin : public temporal::System<typename P::Scalar> {
     ApplySubsonicInlet(part);
     ApplySubsonicOutlet(part);
     ApplySmartBoundary(part);
-  }
-};
-
-template <int kOrders, typename Part, typename Limiter,
-    typename Source = DummySource<Part>
-> struct DiscontinuousGalerkin;
-
-template <typename P, typename L, typename S>
-struct DiscontinuousGalerkin<1, P, L, S>
-    : public DiscontinuousGalerkin<P, L, S> {
- private:
-  using Base = DiscontinuousGalerkin<P, L, S>;
-
- public:
-  using Part = typename Base::Part;
-  using Riemann = typename Base::Riemann;
-  using Limiter = typename Base::Limiter;
-  using Source = typename Base::Source;
-  using Cell = typename Base::Cell;
-  using Face = typename Base::Face;
-  using Projection = typename Base::Projection;
-  using Coeff = typename Base::Coeff;
-  using Value = typename Base::Value;
-
- private:
-  std::vector<Coeff> u_old_, u_new_;
-
- public:
-  using Base::Base;
-  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
-  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
-  ~DiscontinuousGalerkin() noexcept = default;
-
- public:
-  void Update(Part *part_ptr, double t_curr) {
-    const Part &part = *part_ptr;
-
-    this->t_curr_ = t_curr;
-    Base::ReadFromLocalCells(part, &u_old_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac11();
-    Base::WriteToLocalCells(u_new_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-  }
-
- private:
-  void SolveFrac11() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    u_new_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_new_[i_cell] *= this->dt_;
-      u_new_[i_cell] += u_old_[i_cell];
-    }
-  }
-};
-
-template <typename P, typename L, typename S>
-struct DiscontinuousGalerkin<2, P, L, S>
-    : public DiscontinuousGalerkin<P, L, S> {
- private:
-  using Base = DiscontinuousGalerkin<P, L, S>;
-
- public:
-  using Part = typename Base::Part;
-  using Riemann = typename Base::Riemann;
-  using Limiter = typename Base::Limiter;
-  using Source = typename Base::Source;
-  using Cell = typename Base::Cell;
-  using Face = typename Base::Face;
-  using Projection = typename Base::Projection;
-  using Coeff = typename Base::Coeff;
-  using Value = typename Base::Value;
-
- private:
-  std::vector<Coeff> u_old_, u_frac12_, u_new_;
-
- public:
-  using Base::Base;
-  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
-  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
-  ~DiscontinuousGalerkin() noexcept = default;
-
- public:
-  void Update(Part *part_ptr, double t_curr) {
-    const Part &part = *part_ptr;
-
-    this->t_curr_ = t_curr;
-    Base::ReadFromLocalCells(part, &u_old_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac12();
-    Base::WriteToLocalCells(u_frac12_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-
-    this->t_curr_ = t_curr + this->dt_;
-    Base::ReadFromLocalCells(part, &u_frac12_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac22();
-    Base::WriteToLocalCells(u_new_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-  }
-
- private:
-  void SolveFrac12() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    u_frac12_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_frac12_[i_cell] *= this->dt_;
-      u_frac12_[i_cell] += u_old_[i_cell];
-    }
-  }
-  void SolveFrac22() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    assert(n_cells == u_frac12_.size());
-    u_new_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_new_[i_cell] *= this->dt_;
-      u_new_[i_cell] += u_frac12_[i_cell];
-      u_new_[i_cell] += u_old_[i_cell];
-      u_new_[i_cell] /= 2;
-    }
-  }
-};
-
-template <typename P, typename L, typename S>
-struct DiscontinuousGalerkin<3, P, L, S>
-    : public DiscontinuousGalerkin<P, L, S> {
- private:
-  using Base = DiscontinuousGalerkin<P, L, S>;
-
- public:
-  using Part = typename Base::Part;
-  using Riemann = typename Base::Riemann;
-  using Limiter = typename Base::Limiter;
-  using Source = typename Base::Source;
-  using Cell = typename Base::Cell;
-  using Face = typename Base::Face;
-  using Projection = typename Base::Projection;
-  using Coeff = typename Base::Coeff;
-  using Value = typename Base::Value;
-
- private:
-  std::vector<Coeff> u_old_, u_frac13_, u_frac23_, u_new_;
-
- public:
-  using Base::Base;
-  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
-  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
-  ~DiscontinuousGalerkin() noexcept = default;
-
- public:
-  void Update(Part *part_ptr, double t_curr) {
-    const Part &part = *part_ptr;
-
-    this->t_curr_ = t_curr;
-    Base::ReadFromLocalCells(part, &u_old_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac13();
-    Base::WriteToLocalCells(u_frac13_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-
-    this->t_curr_ = t_curr + this->dt_;
-    Base::ReadFromLocalCells(part, &u_frac13_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac23();
-    Base::WriteToLocalCells(u_frac23_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-
-    this->t_curr_ = t_curr + this->dt_ / 2.0;
-    Base::ReadFromLocalCells(part, &u_frac23_);
-    part_ptr->ShareGhostCellCoeffs();
-    this->InitializeResidual(part);
-    this->UpdateLocalResidual(part);
-    this->UpdateBoundaryResidual(part);
-    part_ptr->UpdateGhostCellCoeffs();
-    this->UpdateGhostResidual(part);
-    this->SolveFrac33();
-    Base::WriteToLocalCells(u_new_, part_ptr);
-    part_ptr->Reconstruct(this->limiter_);
-  }
-
- private:
-  void SolveFrac13() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    u_frac13_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_frac13_[i_cell] *= this->dt_;
-      u_frac13_[i_cell] += u_old_[i_cell];
-    }
-  }
-  void SolveFrac23() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    assert(n_cells == u_frac13_.size());
-    u_frac23_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_frac23_[i_cell] *= this->dt_;
-      u_frac23_[i_cell] += u_frac13_[i_cell];
-      u_frac23_[i_cell] += u_old_[i_cell];
-      u_frac23_[i_cell] += u_old_[i_cell];
-      u_frac23_[i_cell] += u_old_[i_cell];
-      u_frac23_[i_cell] /= 4;
-    }
-  }
-  void SolveFrac33() {
-    auto n_cells = u_old_.size();
-    assert(n_cells == this->residual_.size());
-    assert(n_cells == u_frac13_.size());
-    assert(n_cells == u_frac23_.size());
-    u_new_ = this->residual_;
-    for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
-      u_new_[i_cell] *= 2 * this->dt_;
-      u_new_[i_cell] += u_frac23_[i_cell];
-      u_new_[i_cell] += u_frac23_[i_cell];
-      u_new_[i_cell] += u_old_[i_cell];
-      u_new_[i_cell] /= 3;
-    }
   }
 };
 
