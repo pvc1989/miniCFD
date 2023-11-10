@@ -44,7 +44,10 @@ void Process(Part *part, const std::string &solution_name) {
       assert(face_ptr);
       area += face_ptr->area();
     }
+    assert(part->GetCellDataOffset(cell.id()) == cell.id() * cell.K * cell.N);
   }
+  using Cell = typename Part::Cell;
+  assert(part->GetCellDataSize() == n_cells * Cell::K * Cell::N);
   std::printf("On proc[%d/%d], avg_volume = %f = %f / %d\n",
       i_core, n_core, volume / n_cells, volume, n_cells);
   std::printf("On proc[%d/%d], avg_area = %f = %f / %d\n",

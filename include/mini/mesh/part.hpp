@@ -212,6 +212,9 @@ struct Cell {
   bool inner() const {
     return inner_;
   }
+  bool inter() const {
+    return !inner_;
+  }
   Global const &center() const {
     return gauss().center();
   }
@@ -232,6 +235,9 @@ struct Cell {
   }
   int CountCorners() const {
     return lagrange().CountCorners();
+  }
+  int CountFields() const {
+    return projection_.coeff().cols() * projection_.coeff().rows();
   }
 
   template <class Callable>
@@ -783,22 +789,41 @@ class Part {
     for (auto &[i_zone, zone] : local_cells_) {
       for (auto &[i_sect, sect] : zone) {
         for (auto &cell : sect) {
-          if (cell.inner()) {
-            inner_cells_.emplace_back(&cell);
-          } else {
-            inter_cells_.emplace_back(&cell);
-          }
+          inner_and_inter_cells_[cell.inter()].emplace_back(&cell);
         }
       }
     }
     Int id = 0;
-    for (auto cell_ptr : inner_cells_) {
+    cell_data_.push_back(0);
+    for (auto cell_ptr : GetLocalCellPointers()) {
       cell_ptr->id_ = id++;
+      cell_data_.push_back(cell_data_.back() + cell_ptr->CountFields());
     }
-    for (auto cell_ptr : inter_cells_) {
-      cell_ptr->id_ = id++;
-    }
+    assert(id == CountLocalCells());
+    assert(id + 1 == cell_data_.size());
   }
+
+ public:
+  /**
+   * @brief Get the global i_dof of the Cell's 0th local i_dof.
+   * 
+   * @param i_cell 
+   * @return Int 
+   */
+  Int GetCellDataOffset(Int i_cell) const {
+    assert(0 <= i_cell && i_cell <= CountLocalCells());
+    return cell_data_[i_cell];
+  }
+  /**
+   * @brief Get the number of `Scalar`s in cell data.
+   * 
+   * @return Int 
+   */
+  Int GetCellDataSize() const {
+    return GetCellDataOffset(CountLocalCells());
+  }
+
+ private:
   struct GhostAdj {
     std::map<Int, std::map<Int, Int>>
         send_npes, recv_npes;  // [i_part][m_cell] -> npe
@@ -1037,7 +1062,7 @@ class Part {
   }
 
   Int CountLocalCells() const {
-    return inner_cells_.size() + inter_cells_.size();
+    return cell_data_.size() - 1;
   }
   void GatherSolutions() {
     int n_zones = local_nodes_.size();
@@ -1253,17 +1278,16 @@ class Part {
     }
     // run the limiter on inner cells that need no ghost cells
     ShareGhostCellCoeffs();
-    Reconstruct(limiter, inner_cells_.begin(), inner_cells_.end());
+    Reconstruct(limiter, inner_and_inter_cells_[0]);
     // run the limiter on inter cells that need ghost cells
     UpdateGhostCellCoeffs();
-    Reconstruct(limiter, inter_cells_.begin(), inter_cells_.end());
+    Reconstruct(limiter, inner_and_inter_cells_[1]);
   }
 
-  template <typename Limiter, typename CellPtrIter>
-  void Reconstruct(Limiter &&limiter, CellPtrIter iter, CellPtrIter end) {
+  template <typename Limiter>
+  void Reconstruct(Limiter &&limiter, std::vector<Cell *> const &cell_ptrs) {
     auto troubled_cells = std::vector<Cell *>();
-    while (iter != end) {
-      Cell *cell_ptr = *iter++;
+    for (Cell *cell_ptr : cell_ptrs) {
       if (limiter.IsNotSmooth(*cell_ptr)) {
         troubled_cells.push_back(cell_ptr);
       }
@@ -1298,9 +1322,7 @@ class Part {
    * @return std::ranges::input_range 
    */
   std::ranges::input_range auto GetLocalCellPointers() {
-    return const_cast<const Part *>(this)->GetLocalCells()
-        | std::views::transform([](const Cell &cell){
-            return const_cast<Cell *>(&cell); });
+    return inner_and_inter_cells_ | std::views::join;
   }
   template<class Visitor>
   void ForEachConstLocalFace(Visitor &&visit) const {
@@ -1368,8 +1390,10 @@ class Part {
       connectivities_;  // [i_zone][i_sect] -> a Connectivity obj
   std::map<Int, std::map<Int, Section>>
       local_cells_;  // [i_zone][i_sect][i_cell] -> a Cell obj
-  std::vector<Cell *>
-      inner_cells_, inter_cells_;  // [i_cell] -> Cell *
+  std::array<std::vector<Cell *>, 2>
+      inner_and_inter_cells_;  // 0 = inner, 1 = inter
+  std::vector<Int>
+      cell_data_;  // [i_cell] -> global i_dof of the Cell's 0th local i_dof
   std::map<Int, std::vector<Cell *>>
       send_cell_ptrs_, recv_cell_ptrs_;  // [i_part] -> vector<Cell *>
   std::vector<std::vector<Scalar>>
@@ -1457,8 +1481,8 @@ class Part {
           assert(cnt <= npe);
           if (cnt == npe) {  // this cell holds this face
             auto [z, s, c, n] = m_to_cell_index_[m_cell];
-            assert(npe == n);
             holder_ptr = &(local_cells_.at(z).at(s).at(c));
+            assert(n == holder_ptr->lagrange().CountNodes());
             auto &holder_conn = connectivities_.at(z).at(s);
             auto &holder_nodes = holder_conn.nodes;
             auto holder_head = holder_conn.index[c];
