@@ -100,8 +100,7 @@ int main(int argc, char* argv[]) {
 
   /* aproximated by Projection on OrthoNormal basis */
 {
-  std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
-      case_name.c_str(), i_core,
+  std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   using Projection = mini::polynomial::Projection<
       Scalar, kDimensions, kDegrees, kComponents>;
@@ -111,8 +110,7 @@ int main(int argc, char* argv[]) {
 }
   /* aproximated by Interpolation on Lagrange basis */
 {
-  std::printf("Run Part(%s, %d) on proc[%d/%d] at %f sec\n",
-      case_name.c_str(), i_core,
+  std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   using Gx = mini::gauss::Legendre<double, kDegrees + 1>;
   using Gy = mini::gauss::Lobatto<double, kDegrees + 1>;

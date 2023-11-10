@@ -126,14 +126,13 @@ class Projection {
   void Approximate(Callable &&func) {
     using Return = std::invoke_result_t<Callable, Global>;
     static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
-    coeff_ = gauss::Integrate([&](Global const &xyz) {
+    Coeff coeff = gauss::Integrate([&](Global const &xyz) {
       auto f_col = func(xyz);
       Mat1xN b_row = basis_(xyz).transpose();
       Coeff prod = f_col * b_row;
       return prod;
     }, gauss());
-    Coeff temp = coeff_ * basis_.coeff();
-    coeff_ = temp;
+    coeff_ = coeff * basis_.coeff();
   }
   Projection &LeftMultiply(const MatKxK &left) {
     Coeff temp = left * coeff_;
@@ -163,13 +162,15 @@ class Projection {
     coeff_ += that.coeff_;
     return *this;
   }
-  template <class T>
-  void UpdateCoeffs(const T *new_coeffs) {
-    for (int c = 0; c < N; ++c) {
-      for (int r = 0; r < K; ++r) {
-        coeff_(r, c) = *new_coeffs++;
-      }
-    }
+  const Scalar * GetCoeffFrom(const Scalar *input) {
+    Coeff coeff;  // on OrthoNormal basis
+    std::copy_n(input, coeff.size(), coeff.data());
+    coeff_ = coeff * basis_.coeff();
+    return input + coeff.size();
+  }
+  Scalar * WriteCoeffTo(Scalar *output) const {
+    Coeff coeff = GetCoeffOnOrthoNormalBasis();
+    return std::copy_n(coeff.data(), coeff.size(), output);
   }
 };
 

@@ -1227,16 +1227,11 @@ class Part {
     int i_buf = 0;
     for (auto &[i_part, cell_ptrs] : send_cell_ptrs_) {
       auto &send_buf = send_coeffs_[i_buf++];
-      int i_real = 0;
+      Scalar *data = send_buf.data();
       for (auto *cell_ptr : cell_ptrs) {
-        const auto &coeff = cell_ptr->projection_.coeff();
-        static_assert(kFields == Cell::K * Cell::N);
-        for (int c = 0; c < Cell::N; ++c) {
-          for (int r = 0; r < Cell::K; ++r) {
-            send_buf[i_real++] = coeff(r, c);
-          }
-        }
+        data = cell_ptr->projection_.WriteCoeffTo(data);
       }
+      assert(data == send_buf.data() + send_buf.size());
       int tag = i_part;
       auto &request = requests_[i_req++];
       MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
@@ -1263,11 +1258,12 @@ class Part {
     // update coeffs
     int i_buf = 0;
     for (auto &[i_part, cell_ptrs] : recv_cell_ptrs_) {
-      auto *recv_buf = recv_coeffs_[i_buf++].data();
+      auto &recv_buf = recv_coeffs_[i_buf++];
+      Scalar const *data = recv_buf.data();
       for (auto *cell_ptr : cell_ptrs) {
-        cell_ptr->projection_.UpdateCoeffs(recv_buf);
-        recv_buf += kFields;
+        data = cell_ptr->projection_.GetCoeffFrom(data);
       }
+      assert(data == recv_buf.data() + recv_buf.size());
     }
   }
 

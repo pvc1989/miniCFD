@@ -104,6 +104,13 @@ class Hexahedron {
       }
     }
   }
+  const Scalar * GetCoeffFrom(const Scalar *input) {
+    std::copy_n(input, coeff_.size(), coeff_.data());
+    return input + coeff_.size();
+  }
+  Scalar * WriteCoeffTo(Scalar *output) const {
+    return std::copy_n(coeff_.data(), coeff_.size(), output);
+  }
 
   static Basis BuildInterpolationBasis() {
     auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };
