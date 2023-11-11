@@ -154,6 +154,10 @@ struct Face {
     assert(holder_);
     return *holder_;
   }
+  Cell const &sharer() const {
+    assert(sharer_);
+    return *sharer_;
+  }
   Cell const *other(Cell const *cell) const {
     assert(cell == sharer_ || cell == holder_);
     return cell == holder_ ? sharer_ : holder_;
@@ -1320,57 +1324,36 @@ class Part {
   std::ranges::input_range auto GetLocalCellPointers() {
     return inner_and_inter_cells_ | std::views::join;
   }
-  template<class Visitor>
-  void ForEachConstLocalFace(Visitor &&visit) const {
-    for (auto &face_uptr : local_faces_) {
-      visit(*face_uptr);
-    }
+  /**
+   * @brief Get a range of `(const Face &)` for local `Face`s.
+   * 
+   * @return std::ranges::input_range the range of `Face`s
+   */
+  std::ranges::input_range auto GetLocalFaces() const {
+    auto t = [](auto &uptr) -> const Face & { return *uptr; };
+    return local_faces_ | std::views::transform(t);
   }
-  template<class Visitor>
-  void ForEachConstGhostFace(Visitor &&visit) const {
-    for (auto &face_uptr : ghost_faces_) {
-      visit(*face_uptr);
-    }
+  /**
+   * @brief Get a range of `(const Face &)` for ghost `Face`s.
+   * 
+   * @return std::ranges::input_range the range of `Face`s
+   */
+  std::ranges::input_range auto GetGhostFaces() const {
+    auto t = [](auto &uptr) -> const Face & { return *uptr; };
+    return ghost_faces_ | std::views::transform(t);
   }
-  template<class Visitor>
-  void ForEachConstBoundaryFace(Visitor &&visit) const {
-    for (auto &[i_zone, zone] : bound_faces_) {
-      for (auto &[i_sect, sect] : zone) {
-        for (auto &face_uptr : sect) {
-          visit(*face_uptr);
-        }
-      }
-    }
-  }
-  template<class Visitor>
-  void ForEachConstBoundaryFace(Visitor &&visit,
-      std::string const &name) const {
-    const auto &faces = *name_to_faces_.at(name);
-    for (const auto &face_uptr : faces) {
-      visit(*face_uptr);
-    }
-  }
-  template<class Visitor>
-  void ForEachLocalFace(Visitor &&visit) {
-    for (auto &face_uptr : local_faces_) {
-      visit(face_uptr.get());
-    }
-  }
-  template<class Visitor>
-  void ForEachGhostFace(Visitor &&visit) {
-    for (auto &face_uptr : ghost_faces_) {
-      visit(face_uptr.get());
-    }
-  }
-  template<class Visitor>
-  void ForEachBoundaryFace(Visitor &&visit) {
-    for (auto &[i_zone, zone] : bound_faces_) {
-      for (auto &[i_sect, sect] : zone) {
-        for (auto &face_uptr : sect) {
-          visit(face_uptr.get());
-        }
-      }
-    }
+  /**
+   * @brief Get a range of `(const Face &)` for `Face`s on a given `Section`.
+   * 
+   * @param name the name of the `Section`
+   * @return std::ranges::input_range the range of `Face`s
+   */
+  std::ranges::input_range auto
+  GetBoundaryFaces(std::string const &name) const {
+    cgns::ShiftedVector<std::unique_ptr<Face>> const &faces
+        = *name_to_faces_.at(name);
+    auto t = [](auto &uptr) -> const Face & { return *uptr; };
+    return faces | std::views::transform(t);
   }
 
  private:

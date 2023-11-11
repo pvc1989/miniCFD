@@ -144,11 +144,11 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     }
   }
   virtual void AddFluxOnLocalFaces(Column *residual) const {
-    part_ptr_->ForEachConstLocalFace([residual, this](const Face &face){
-      const auto &gauss = *(face.gauss_ptr_);
-      const auto &holder = *(face.holder_);
-      const auto &sharer = *(face.sharer_);
-      const auto &riemann = (face.riemann_);
+    for (const Face &face : part_ptr_->GetLocalFaces()) {
+      const auto &gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &sharer = face.sharer();
+      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + part_ptr_->GetCellDataOffset(holder.id());
       auto *sharer_data = residual->data()
@@ -164,14 +164,14 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
         prod = flux * sharer.basis()(coord).transpose();
         sharer.projection_.AddCoeffTo(prod, sharer_data);
       }
-    });
+    }
   }
   virtual void AddFluxOnGhostFaces(Column *residual) const {
-    part_ptr_->ForEachConstGhostFace([residual, this](const Face &face){
-      const auto &gauss = *(face.gauss_ptr_);
-      const auto &holder = *(face.holder_);
-      const auto &sharer = *(face.sharer_);
-      const auto &riemann = (face.riemann_);
+    for (const Face &face : part_ptr_->GetGhostFaces()) {
+      const auto &gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &sharer = face.sharer();
+      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + part_ptr_->GetCellDataOffset(holder.id());
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
@@ -183,7 +183,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
         Coeff prod = -flux * holder.basis()(coord).transpose();
         holder.projection_.AddCoeffTo(prod, holder_data);
       }
-    });
+    }
   }
   void AddFluxOnBoundaries(Column *residual) const {
     this->ApplySolidWall(residual);
@@ -194,48 +194,46 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     this->ApplySmartBoundary(residual);
   }
   virtual void ApplySolidWall(Column *residual) const {
-    auto visit = [residual, this](const Face &face){
-      const auto &gauss = face.gauss();
-      const auto &holder = face.holder();
-      const auto &riemann = face.riemann();
-      auto *holder_data = residual->data()
-          + part_ptr_->GetCellDataOffset(holder.id());
-      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GlobalToValue(coord);
-        Value flux = riemann.GetFluxOnSolidWall(u_holder);
-        flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.basis()(coord).transpose();
-        holder.projection_.AddCoeffTo(prod, holder_data);
-      }
-    };
     for (const auto &name : this->solid_wall_) {
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + part_ptr_->GetCellDataOffset(holder.id());
+        for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+          const auto &coord = gauss.GetGlobalCoord(q);
+          Value u_holder = holder.GlobalToValue(coord);
+          Value flux = riemann.GetFluxOnSolidWall(u_holder);
+          flux *= gauss.GetGlobalWeight(q);
+          Coeff prod = -flux * holder.basis()(coord).transpose();
+          holder.projection_.AddCoeffTo(prod, holder_data);
+        }
+      }
     }
   }
   virtual void ApplySupersonicOutlet(Column *residual) const {
-    auto visit = [residual, this](const Face &face){
-      const auto &gauss = face.gauss();
-      const auto &holder = face.holder();
-      const auto &riemann = face.riemann();
-      auto *holder_data = residual->data()
-          + part_ptr_->GetCellDataOffset(holder.id());
-      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        const auto &coord = gauss.GetGlobalCoord(q);
-        Value u_holder = holder.GlobalToValue(coord);
-        Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
-        flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.basis()(coord).transpose();
-        holder.projection_.AddCoeffTo(prod, holder_data);
-      }
-    };
     for (const auto &name : this->supersonic_outlet_) {
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + part_ptr_->GetCellDataOffset(holder.id());
+        for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+          const auto &coord = gauss.GetGlobalCoord(q);
+          Value u_holder = holder.GlobalToValue(coord);
+          Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
+          flux *= gauss.GetGlobalWeight(q);
+          Coeff prod = -flux * holder.basis()(coord).transpose();
+          holder.projection_.AddCoeffTo(prod, holder_data);
+        }
+      }
     }
   }
   virtual void ApplySupersonicInlet(Column *residual) const {
     for (auto &[name, func] : supersonic_inlet_) {
-      auto visit = [residual, this, &func](const Face &face){
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         const auto &riemann = face.riemann();
@@ -249,13 +247,12 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Coeff prod = -flux * holder.basis()(coord).transpose();
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
-      };
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      }
     }
   }
   virtual void ApplySubsonicInlet(Column *residual) const {
     for (auto &[name, func] : subsonic_inlet_) {
-      auto visit = [residual, this, &func](const Face &face){
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         const auto &riemann = face.riemann();
@@ -270,13 +267,12 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Coeff prod = -flux * holder.basis()(coord).transpose();
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
-      };
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      }
     }
   }
   virtual void ApplySubsonicOutlet(Column *residual) const {
     for (auto &[name, func] : subsonic_outlet_) {
-      auto visit = [residual, this, &func](const Face &face){
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         const auto &riemann = face.riemann();
@@ -291,13 +287,12 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Coeff prod = -flux * holder.basis()(coord).transpose();
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
-      };
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      }
     }
   }
   virtual void ApplySmartBoundary(Column *residual) const {
     for (auto &[name, func] : smart_boundary_) {
-      auto visit = [residual, this, &func](const Face &face){
+      for (const Face &face : part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         const auto &riemann = face.riemann();
@@ -312,8 +307,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Coeff prod = -flux * holder.basis()(coord).transpose();
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
-      };
-      part_ptr_->ForEachConstBoundaryFace(visit, name);
+      }
     }
   }
 };
