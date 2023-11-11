@@ -5,6 +5,7 @@
 #include <concepts>
 
 #include <cmath>
+#include <cstring>
 
 #include <iostream>
 #include <type_traits>
@@ -165,15 +166,13 @@ class Projection {
     coeff_ += that.coeff_;
     return *this;
   }
-  const Scalar *GetCoeffFrom(const Scalar *input) {
-    Coeff coeff;  // on OrthoNormal basis
-    std::copy_n(input, coeff.size(), coeff.data());
-    coeff_ = coeff * basis_.coeff();
-    return input + coeff.size();
+  const Scalar * GetCoeffFrom(const Scalar *input) {
+    std::memcpy(coeff_.data(), input, sizeof(Scalar) * coeff_.size());
+    return input + coeff_.size();
   }
-  Scalar *WriteCoeffTo(Scalar *output) const {
-    Coeff coeff = GetCoeffOnOrthoNormalBasis();
-    return std::copy_n(coeff.data(), coeff.size(), output);
+  Scalar * WriteCoeffTo(Scalar *output) const {
+    std::memcpy(output, coeff_.data(), sizeof(Scalar) * coeff_.size());
+    return output + coeff_.size();
   }
   static void AddCoeffTo(Coeff const &coeff, Scalar *output) {
     for (int c = 0; c < N; ++c) {

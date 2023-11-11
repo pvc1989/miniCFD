@@ -5,6 +5,7 @@
 #include <concepts>
 
 #include <cmath>
+#include <cstring>
 
 #include <iostream>
 #include <type_traits>
@@ -105,11 +106,12 @@ class Hexahedron {
     }
   }
   const Scalar * GetCoeffFrom(const Scalar *input) {
-    std::copy_n(input, coeff_.size(), coeff_.data());
+    std::memcpy(coeff_.data(), input, sizeof(Scalar) * coeff_.size());
     return input + coeff_.size();
   }
   Scalar * WriteCoeffTo(Scalar *output) const {
-    return std::copy_n(coeff_.data(), coeff_.size(), output);
+    std::memcpy(output, coeff_.data(), sizeof(Scalar) * coeff_.size());
+    return output + coeff_.size();
   }
 
   static Basis BuildInterpolationBasis() {
