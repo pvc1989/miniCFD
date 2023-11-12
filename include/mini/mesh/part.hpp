@@ -234,7 +234,7 @@ struct Cell {
   Value GlobalToValue(const Global &global) const {
     return projection_.GlobalToValue(global);
   }
-  Basis basis() const {
+  Basis const &basis() const {
     return projection_.basis();
   }
   int CountCorners() const {
@@ -246,7 +246,7 @@ struct Cell {
 
   template <class Callable>
   void Approximate(Callable &&func) {
-    projection_.Approximate(func);
+    projection_.Approximate(std::forward<Callable>(func));
   }
 };
 
@@ -1292,7 +1292,7 @@ class Part {
         troubled_cells.push_back(cell_ptr);
       }
     }
-    auto new_projections = std::vector<typename Cell::Projection>();
+    auto new_projections = std::vector<typename Projection::Wrapper>();
     for (Cell *cell_ptr : troubled_cells) {
       new_projections.emplace_back(limiter(*cell_ptr));
     }

@@ -21,12 +21,13 @@ template <typename Cell>
 class Lazy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
+  using ProjectionWrapper = typename Projection::Wrapper;
   using Basis = typename Projection::Basis;
   using Global = typename Projection::Global;
   using Value = typename Projection::Value;
 
-  std::vector<Projection> old_projections_;
-  Projection *new_projection_ptr_ = nullptr;
+  std::vector<ProjectionWrapper> old_projections_;
+  ProjectionWrapper *new_projection_ptr_ = nullptr;
   const Cell *my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
@@ -41,16 +42,12 @@ class Lazy {
   bool IsNotSmooth(const Cell &cell) {
     return true;
   }
-  Projection operator()(const Cell &cell) {
+  ProjectionWrapper operator()(const Cell &cell) {
     my_cell_ = &cell;
     Borrow();
     Reconstruct();
     assert(new_projection_ptr_);
     return *new_projection_ptr_;
-  }
-  void operator()(Cell *cell_ptr) {
-    assert(cell_ptr);
-    cell_ptr->projection_ = operator()(*cell_ptr);
   }
 
  private:
@@ -61,25 +58,28 @@ class Lazy {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto my_average = my_cell_->projection_.GetAverage();
+    auto my_average = my_cell_->projection_.average();
     for (auto *adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
-      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->basis());
+      assert(&(adj_proj.basis()) == &(my_cell_->basis()));
       adj_proj.Approximate(adj_cell->projection_);
-      adj_proj += my_average - adj_proj.GetAverage();
+      adj_proj += my_average - adj_proj.average();
       if (verbose_) {
         std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
         std::cout << std::scientific << std::setprecision(3) <<
-            adj_proj.GetSmoothness().transpose();
+            mini::polynomial::projection::GetSmoothness(adj_proj).transpose();
       }
     }
     old_projections_.emplace_back(my_cell_->projection_);
     if (verbose_) {
+      auto &old_proj = old_projections_.back();
       std::cout << "\n  old smoothness[" << my_cell_->metis_id << "] = ";
       std::cout << std::scientific << std::setprecision(3) <<
-          old_projections_.back().GetSmoothness().transpose();
+          mini::polynomial::projection::GetSmoothness(old_proj).transpose();
     }
     new_projection_ptr_ = &(old_projections_.back());
+    assert(&(new_projection_ptr_->basis()) == &(my_cell_->basis()));
   }
   void Reconstruct() {
     int adj_cnt = my_cell_->adj_cells_.size();
@@ -90,7 +90,7 @@ class Lazy {
     // modify weights by smoothness
     for (int i = 0; i <= adj_cnt; ++i) {
       auto &projection_i = old_projections_[i];
-      auto beta = projection_i.GetSmoothness();
+      auto beta = mini::polynomial::projection::GetSmoothness(projection_i);
       beta.array() += eps_;
       beta.array() *= beta.array();
       weights[i].array() /= beta.array();
@@ -116,13 +116,14 @@ template <typename Cell>
 class Eigen {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
+  using ProjectionWrapper = typename Projection::Wrapper;
   using Face = typename Cell::Face;
   using Basis = typename Projection::Basis;
   using Global = typename Projection::Global;
   using Value = typename Projection::Value;
 
-  Projection new_projection_;
-  std::vector<Projection> old_projections_;
+  ProjectionWrapper new_projection_;
+  std::vector<ProjectionWrapper> old_projections_;
   const Cell *my_cell_ = nullptr;
   Value weights_;
   Scalar eps_;
@@ -136,7 +137,7 @@ class Eigen {
   }
   static bool IsNotSmooth(const Cell &cell) {
     constexpr int components[] = { 0, Cell::K-1 };
-    auto max_abs_averages = cell.projection_.GetAverage();
+    auto max_abs_averages = cell.projection_.average();
     for (int i : components) {
       max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
     }
@@ -144,7 +145,7 @@ class Eigen {
     auto my_values = cell.GlobalToValue(cell.center());
     for (const Cell *adj_cell : cell.adj_cells_) {
       auto adj_values = adj_cell->GlobalToValue(cell.center());
-      auto adj_averages = adj_cell->projection_.GetAverage();
+      auto adj_averages = adj_cell->projection_.average();
       for (int i : components) {
         sum_abs_differences[i] += std::abs(my_values[i] - adj_values[i]);
         max_abs_averages[i] = std::max(max_abs_averages[i],
@@ -163,15 +164,11 @@ class Eigen {
     }
     return false;  // if all components are smooth
   }
-  Projection operator()(const Cell &cell) {
+  ProjectionWrapper operator()(const Cell &cell) {
     my_cell_ = &cell;
     Borrow();
     Reconstruct();
     return new_projection_;
-  }
-  void operator()(Cell *cell_ptr) {
-    assert(cell_ptr);
-    cell_ptr->projection_ = operator()(*cell_ptr);
   }
 
  private:
@@ -182,11 +179,11 @@ class Eigen {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto my_average = my_cell_->projection_.GetAverage();
+    auto my_average = my_cell_->projection_.average();
     for (auto *adj_cell : my_cell_->adj_cells_) {
-      auto &adj_proj = old_projections_.emplace_back(my_cell_->gauss());
+      auto &adj_proj = old_projections_.emplace_back(my_cell_->basis());
       adj_proj.Approximate(adj_cell->projection_);
-      adj_proj += my_average - adj_proj.GetAverage();
+      adj_proj += my_average - adj_proj.average();
     }
     old_projections_.emplace_back(my_cell_->projection_);
   }
@@ -198,7 +195,7 @@ class Eigen {
     assert(my_cell_->adj_faces_.size() == my_cell_->adj_cells_.size());
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
-    const auto &big_u = my_cell_->projection_.GetAverage();
+    const auto &big_u = my_cell_->projection_.average();
     auto *riemann = const_cast<typename Face::Riemann *>(&adj_face.riemann_);
     riemann->UpdateEigenMatrices(big_u);
     // initialize weights
@@ -210,7 +207,7 @@ class Eigen {
     for (int i = 0; i <= adj_cnt; ++i) {
       auto &projection_i = rotated_projections[i];
       projection_i.LeftMultiply(riemann->L());
-      auto beta = projection_i.GetSmoothness();
+      auto beta = mini::polynomial::projection::GetSmoothness(projection_i);
       beta.array() += eps_;
       beta.array() *= beta.array();
       weights[i].array() /= beta.array();
@@ -242,7 +239,7 @@ class Eigen {
    * 
    */
   void Reconstruct() {
-    new_projection_ = Projection(my_cell_->gauss());
+    new_projection_ = ProjectionWrapper(my_cell_->basis());
     new_projection_.coeff().setZero();
     total_volume_ = 0.0;
     for (auto *adj_face : my_cell_->adj_faces_) {

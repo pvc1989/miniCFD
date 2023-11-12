@@ -46,7 +46,7 @@ TEST_F(TestProjection, ScalarFunction) {
   auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
   }, gauss_);
-  EXPECT_NEAR(projection.GetAverage()[0], integral_f / integral_1, 1e-14);
+  EXPECT_NEAR(projection.average()[0], integral_f / integral_1, 1e-14);
 }
 TEST_F(TestProjection, VectorFunction) {
   using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
@@ -68,7 +68,7 @@ TEST_F(TestProjection, VectorFunction) {
   auto integral_1 = mini::gauss::Integrate([](auto const &){
     return 1.0;
   }, gauss_);
-  res = projection.GetAverage() - integral_f / integral_1;
+  res = projection.average() - integral_f / integral_1;
   EXPECT_NEAR(res.norm(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, CoeffConsistency) {
@@ -84,7 +84,7 @@ TEST_F(TestProjection, CoeffConsistency) {
   auto projection = ProjFunc(gauss_);
   projection.Approximate(func);
   Coeff coeff_diff = projection.GetCoeffOnTaylorBasis()
-      - projection.GetCoeffOnOrthoNormalBasis()
+      - mini::polynomial::projection::GetCoeffOnOrthoNormalBasis(projection)
       * projection.basis().coeff();
   std::cout << projection.GetCoeffOnTaylorBasis() << std::endl;
   EXPECT_NEAR(coeff_diff.norm(), 0.0, 1e-14);
@@ -102,7 +102,8 @@ TEST_F(TestProjection, PartialDerivatives) {
   static_assert(ProjFunc::N == 10);
   auto x = 0.3, y = 0.4, z = 0.5;
   auto point = Coord{ x, y, z };
-  auto pdv_actual = projection.GetPdvValue(point);
+  auto pdv_actual = Taylor::GetPdvValue(point - projection.center(),
+      projection.coeff());
   auto coeff = ProjFunc::Coeff(); coeff.setIdentity();
   auto pdv_expect = Taylor::GetPdvValue(point, coeff);
   ProjFunc::Coeff diff = pdv_actual - pdv_expect;
@@ -137,7 +138,7 @@ TEST_F(TestProjection, Smoothness) {
   };
   auto projection = ProjFunc(gauss_);
   projection.Approximate(func);
-  auto s_actual = projection.GetSmoothness();
+  auto s_actual = mini::polynomial::projection::GetSmoothness(projection);
   EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
   EXPECT_NEAR(s_actual[1], 4.0, 1e-13);
   EXPECT_NEAR(s_actual[2], 4.0, 1e-13);

@@ -105,25 +105,28 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     cells[i_cell].Approximate(func);
   }
   using Projection = typename Cell::Projection;
-  auto adj_projections = std::vector<std::vector<Projection>>(n_cells);
+  using ProjectionWrapper = typename Projection::Wrapper;
+  auto adj_projections = std::vector<std::vector<ProjectionWrapper>>(n_cells);
   using Mat1x1 = mini::algebra::Matrix<double, 1, 1>;
   auto adj_smoothness = std::vector<std::vector<Mat1x1>>(n_cells);
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto &cell_i = cells[i_cell];
-    adj_smoothness[i_cell].emplace_back(cell_i.projection_.GetSmoothness());
+    adj_smoothness[i_cell].emplace_back(
+        mini::polynomial::projection::GetSmoothness(cell_i.projection_));
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].GlobalToValue(xyz);
       };
       auto &adj_projection =
-          adj_projections[i_cell].emplace_back(cell_i.gauss());
+          adj_projections[i_cell].emplace_back(cell_i.basis());
       adj_projection.Approximate(adj_func);
-      Mat1x1 diff = cell_i.projection_.GetAverage()
-          - adj_projection.GetAverage();
+      Mat1x1 diff = cell_i.projection_.average()
+          - adj_projection.average();
       adj_projection += diff;
-      diff = cell_i.projection_.GetAverage() - adj_projection.GetAverage();
+      diff = cell_i.projection_.average() - adj_projection.average();
       EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-      adj_smoothness[i_cell].emplace_back(adj_projection.GetSmoothness());
+      adj_smoothness[i_cell].emplace_back(
+          mini::polynomial::projection::GetSmoothness(adj_projection));
     }
   }
   const double eps = 1e-6, w0 = 0.001;
@@ -140,12 +143,13 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
       weights[j_cell] /= sum;
     }
     auto &projection_i = cells[i_cell].projection_;
-    projection_i *= weights.back();
+    projection_i.coeff() *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
-      projection_i += adj_projections[i_cell][j_cell] *= weights[j_cell];
+      projection_i.coeff() +=
+          (adj_projections[i_cell][j_cell].coeff() *= weights[j_cell]);
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
-        projection_i.GetSmoothness()[0], i_cell,
+        mini::polynomial::projection::GetSmoothness(projection_i)[0], i_cell,
         adj_smoothness[i_cell].back()[0]);
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell)
       std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j_cell][0],
@@ -181,13 +185,12 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
   using Projection = mini::polynomial::Projection<double, 3, 2, 5>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
+  using Value = typename Part::Value;
   auto part = Part(case_name, i_core, n_core);
-  MPI_Finalize();
   // project the function
-  using Mat5x1 = mini::algebra::Matrix<double, 5, 1>;
   auto func = [](Coord const &xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
-    Mat5x1 res;
+    Value res;
     res[0] = x * x + 10 * (x < y ? +1 : 0.125);
     res[1] =          2 * (x < y ? -2 : 2);
     res[2] =          2 * (x < y ? -2 : 2);
@@ -200,37 +203,37 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   }
   // reconstruct using a `limiter::weno::Eigen` object
   using Cell = typename Part::Cell;
-  using Projection = typename Cell::Projection;
   auto n_cells = part.CountLocalCells();
   auto eigen_limiter = mini::limiter::weno::Eigen<Cell>(
       /* w0 = */0.01, /* eps = */1e-6);
   auto lazy_limiter = mini::limiter::weno::Lazy<Cell>(
       /* w0 = */0.01, /* eps = */1e-6, /* verbose = */true);
-  auto eigen_projections = std::vector<Projection>();
+  using ProjectionWrapper = typename Projection::Wrapper;
+  auto eigen_projections = std::vector<ProjectionWrapper>();
   eigen_projections.reserve(n_cells);
-  auto lazy_projections = std::vector<Projection>();
+  auto lazy_projections = std::vector<ProjectionWrapper>();
   lazy_projections.reserve(n_cells);
   for (const Cell &cell : part.GetLocalCells()) {
     //  lasy limiter
-    lazy_projections.emplace_back(lazy_limiter(cell));
-    auto lazy_smoothness = lazy_projections.back().GetSmoothness();
+    auto lazy_smoothness = mini::polynomial::projection::GetSmoothness(
+        lazy_projections.emplace_back(lazy_limiter(cell)));
     std::cout << "\n lazy smoothness[" << cell.metis_id << "] = ";
     std::cout << std::scientific << std::setprecision(3)
         << lazy_smoothness.transpose();
-    // eigen limiter
-    eigen_projections.emplace_back(eigen_limiter(cell));
-    auto eigen_smoothness = eigen_projections.back().GetSmoothness();
+    // eigen limiter;
+    auto eigen_smoothness = mini::polynomial::projection::GetSmoothness(
+        eigen_projections.emplace_back(eigen_limiter(cell)));
     std::cout << "\neigen smoothness[" << cell.metis_id << "] = ";
     std::cout << std::scientific << std::setprecision(3)
         << eigen_smoothness.transpose();
     std::cout << std::endl;
-    Mat5x1 diff = cell.projection_.GetAverage()
-        - eigen_projections.back().GetAverage();
+    Value diff = cell.projection_.average()
+        - eigen_projections.back().average();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-    diff = cell.projection_.GetAverage() - lazy_projections.back().GetAverage();
+    diff = cell.projection_.average() - lazy_projections.back().average();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
   }
-  std::cout << std::endl;
+  MPI_Finalize();
 }
 
 int main(int argc, char* argv[]) {
