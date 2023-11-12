@@ -30,12 +30,11 @@ namespace basis {
  */
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class Linear {
-  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
-
  public:
-  static constexpr int N = TaylorBasis::N;
-  using Coord = typename TaylorBasis::Coord;
-  using MatNx1 = typename TaylorBasis::MatNx1;
+  using Taylor = basis::Taylor<Scalar, kDimensions, kDegrees>;
+  static constexpr int N = Taylor::N;
+  using Coord = typename Taylor::Coord;
+  using MatNx1 = typename Taylor::MatNx1;
   using MatNxN = algebra::Matrix<Scalar, N, N>;
   using Gauss = std::conditional_t<kDimensions == 2,
       gauss::Face<Scalar, 2>, gauss::Cell<Scalar>>;
@@ -56,7 +55,7 @@ class Linear {
   ~Linear() noexcept = default;
 
   MatNx1 operator()(Coord const &point) const {
-    MatNx1 col = TaylorBasis::GetValue(point - center_);
+    MatNx1 col = Taylor::GetValue(point - center_);
     MatNx1 res = algebra::GetLowerTriangularView(coeff_) * col;
     return res;
   }
@@ -86,15 +85,14 @@ class Linear {
 
 template <std::floating_point Scalar, int kDimensions, int kDegrees>
 class OrthoNormal {
-  using TaylorBasis = Taylor<Scalar, kDimensions, kDegrees>;
-  using LinearBasis = Linear<Scalar, kDimensions, kDegrees>;
-
  public:
-  static constexpr int N = LinearBasis::N;
-  using Coord = typename LinearBasis::Coord;
-  using Gauss = typename LinearBasis::Gauss;
-  using MatNx1 = typename LinearBasis::MatNx1;
-  using MatNxN = typename LinearBasis::MatNxN;
+  using Taylor = basis::Taylor<Scalar, kDimensions, kDegrees>;
+  using Linear = basis::Linear<Scalar, kDimensions, kDegrees>;
+  static constexpr int N = Linear::N;
+  using Coord = typename Linear::Coord;
+  using Gauss = typename Linear::Gauss;
+  using MatNx1 = typename Linear::MatNx1;
+  using MatNxN = typename Linear::MatNxN;
   using MatNxD = algebra::Matrix<Scalar, N, kDimensions>;
 
  public:
@@ -122,7 +120,7 @@ class OrthoNormal {
   MatNx1 operator()(const Coord &global) const {
     auto local = global;
     local -= center();
-    MatNx1 col = TaylorBasis::GetValue(local);
+    MatNx1 col = Taylor::GetValue(local);
     return coeff() * col;
   }
   Scalar Measure() const {
@@ -132,12 +130,12 @@ class OrthoNormal {
   MatNxD GetGradValue(const Coord &global) const {
     auto local = global;
     local -= center();
-    return TaylorBasis::GetGradValue(local, coeff());
+    return Taylor::GetGradValue(local, coeff());
   }
 
  private:
   Gauss const *gauss_ptr_;
-  Linear<Scalar, kDimensions, kDegrees> basis_;
+  Linear basis_;
 };
 
 }  // namespace basis
