@@ -17,6 +17,22 @@ namespace mini {
 namespace limiter {
 namespace weno {
 
+template <typename Projection>
+auto GetSmoothness(const Projection &proj) {
+  using Coeff = typename Projection::Coeff;
+  using Global = typename Projection::Global;
+  using Taylor = typename Projection::Taylor;
+  auto mat_pdv_func = [&proj](Global const &xyz) {
+    auto local = xyz; local -= proj.center();
+    auto mat_pdv = Taylor::GetPdvValue(local, proj.coeff());
+    mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
+    return mat_pdv;
+  };
+  auto integral = gauss::Integrate(mat_pdv_func, proj.gauss());
+  auto volume = proj.basis().Measure();
+  return Taylor::GetSmoothness(integral, volume);
+}
+
 template <typename Cell>
 class Lazy {
   using Scalar = typename Cell::Scalar;
@@ -68,15 +84,14 @@ class Lazy {
       if (verbose_) {
         std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
         std::cout << std::scientific << std::setprecision(3) <<
-            mini::polynomial::projection::GetSmoothness(adj_proj).transpose();
+            GetSmoothness(adj_proj).transpose();
       }
     }
     old_projections_.emplace_back(my_cell_->projection_);
     if (verbose_) {
-      auto &old_proj = old_projections_.back();
       std::cout << "\n  old smoothness[" << my_cell_->metis_id << "] = ";
       std::cout << std::scientific << std::setprecision(3) <<
-          mini::polynomial::projection::GetSmoothness(old_proj).transpose();
+          GetSmoothness(old_projections_.back()).transpose();
     }
     new_projection_ptr_ = &(old_projections_.back());
     assert(&(new_projection_ptr_->basis()) == &(my_cell_->basis()));
@@ -89,8 +104,7 @@ class Lazy {
     weights.back().array() += 1.0;
     // modify weights by smoothness
     for (int i = 0; i <= adj_cnt; ++i) {
-      auto &projection_i = old_projections_[i];
-      auto beta = mini::polynomial::projection::GetSmoothness(projection_i);
+      auto beta = GetSmoothness(old_projections_[i]);
       beta.array() += eps_;
       beta.array() *= beta.array();
       weights[i].array() /= beta.array();
@@ -207,7 +221,7 @@ class Eigen {
     for (int i = 0; i <= adj_cnt; ++i) {
       auto &projection_i = rotated_projections[i];
       projection_i.LeftMultiply(riemann->L());
-      auto beta = mini::polynomial::projection::GetSmoothness(projection_i);
+      auto beta = GetSmoothness(projection_i);
       beta.array() += eps_;
       beta.array() *= beta.array();
       weights[i].array() /= beta.array();

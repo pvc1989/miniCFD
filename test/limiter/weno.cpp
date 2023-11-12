@@ -38,6 +38,38 @@ class TestWenoLimiters : public ::testing::Test {
 
   std::string const input_dir_{INPUT_DIR};
 };
+TEST_F(TestWenoLimiters, Smoothness) {
+  using Lagrange = mini::geometry::Hexahedron8<double>;
+  using Gx = mini::gauss::Legendre<double, 5>;
+  using Gauss = mini::gauss::Hexahedron<Gx, Gx, Gx>;
+  using Projection = mini::polynomial::Projection<double, 3, 2, 10>;
+  using Taylor = typename Projection::Taylor;
+  using Value = typename Projection::Value;
+  using Global = typename Projection::Global;
+  auto lagrange = Lagrange {
+      Global{-1, -1, -1}, Global{+1, -1, -1},
+      Global{+1, +1, -1}, Global{-1, +1, -1},
+      Global{-1, -1, +1}, Global{+1, -1, +1},
+      Global{+1, +1, +1}, Global{-1, +1, +1}
+  };
+  auto gauss = Gauss(lagrange);
+  auto func = [](Coord const &point) {
+    return Taylor::GetValue(point);
+  };
+  auto projection = Projection(gauss);
+  projection.Approximate(func);
+  auto s_actual = mini::limiter::weno::GetSmoothness(projection);
+  EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
+  EXPECT_NEAR(s_actual[1], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[2], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[3], 4.0, 1e-13);
+  EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-12);
+  EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-13);
+  EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-13);
+  EXPECT_NEAR(s_actual[7], 16./3 + 64, 1e-12);
+  EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-13);
+  EXPECT_NEAR(s_actual[9], 16./3 + 64, 1e-12);
+}
 TEST_F(TestWenoLimiters, ReconstructScalar) {
   auto case_name = std::string("simple_cube");
   // build mesh files
@@ -112,7 +144,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto &cell_i = cells[i_cell];
     adj_smoothness[i_cell].emplace_back(
-        mini::polynomial::projection::GetSmoothness(cell_i.projection_));
+        mini::limiter::weno::GetSmoothness(cell_i.projection_));
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].GlobalToValue(xyz);
@@ -126,7 +158,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
       diff = cell_i.projection_.average() - adj_projection.average();
       EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
       adj_smoothness[i_cell].emplace_back(
-          mini::polynomial::projection::GetSmoothness(adj_projection));
+          mini::limiter::weno::GetSmoothness(adj_projection));
     }
   }
   const double eps = 1e-6, w0 = 0.001;
@@ -149,7 +181,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
           (adj_projections[i_cell][j_cell].coeff() *= weights[j_cell]);
     }
     std::printf("%8.2f (%2d) <- {%8.2f",
-        mini::polynomial::projection::GetSmoothness(projection_i)[0], i_cell,
+        mini::limiter::weno::GetSmoothness(projection_i)[0], i_cell,
         adj_smoothness[i_cell].back()[0]);
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell)
       std::printf(" %8.2f (%2d <- %-2d)", adj_smoothness[i_cell][j_cell][0],
@@ -215,13 +247,13 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   lazy_projections.reserve(n_cells);
   for (const Cell &cell : part.GetLocalCells()) {
     //  lasy limiter
-    auto lazy_smoothness = mini::polynomial::projection::GetSmoothness(
+    auto lazy_smoothness = mini::limiter::weno::GetSmoothness(
         lazy_projections.emplace_back(lazy_limiter(cell)));
     std::cout << "\n lazy smoothness[" << cell.metis_id << "] = ";
     std::cout << std::scientific << std::setprecision(3)
         << lazy_smoothness.transpose();
     // eigen limiter;
-    auto eigen_smoothness = mini::polynomial::projection::GetSmoothness(
+    auto eigen_smoothness = mini::limiter::weno::GetSmoothness(
         eigen_projections.emplace_back(eigen_limiter(cell)));
     std::cout << "\neigen smoothness[" << cell.metis_id << "] = ";
     std::cout << std::scientific << std::setprecision(3)

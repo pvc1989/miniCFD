@@ -129,27 +129,6 @@ TEST_F(TestProjection, PartialDerivatives) {
   pdv_values(9, 9) = 2;  // (∂/∂z)(∂/∂z)(z*z)
   EXPECT_EQ(pdv_expect, pdv_values);
 }
-TEST_F(TestProjection, Smoothness) {
-  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
-  using Taylor = mini::basis::Taylor<double, 3, 2>;
-  using Value = typename ProjFunc::Value;
-  auto func = [](Coord const &point) {
-    return Taylor::GetValue(point);
-  };
-  auto projection = ProjFunc(gauss_);
-  projection.Approximate(func);
-  auto s_actual = mini::polynomial::projection::GetSmoothness(projection);
-  EXPECT_NEAR(s_actual[0], 0.0, 1e-14);
-  EXPECT_NEAR(s_actual[1], 4.0, 1e-13);
-  EXPECT_NEAR(s_actual[2], 4.0, 1e-13);
-  EXPECT_NEAR(s_actual[3], 4.0, 1e-13);
-  EXPECT_NEAR(s_actual[4], 16./3 + 64, 1e-12);
-  EXPECT_NEAR(s_actual[5], 8.0/3 + 16, 1e-13);
-  EXPECT_NEAR(s_actual[6], 8.0/3 + 16, 1e-13);
-  EXPECT_NEAR(s_actual[7], 16./3 + 64, 1e-12);
-  EXPECT_NEAR(s_actual[8], 8.0/3 + 16, 1e-13);
-  EXPECT_NEAR(s_actual[9], 16./3 + 64, 1e-12);
-}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);

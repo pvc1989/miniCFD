@@ -60,22 +60,6 @@ typename Projection::Value GetAverage(const Projection &proj) {
   return mat_x.col(0);
 }
 
-template <typename Projection>
-auto GetSmoothness(const Projection &proj) {
-  using Coeff = typename Projection::Coeff;
-  using Global = typename Projection::Global;
-  using Taylor = typename Projection::Taylor;
-  auto mat_pdv_func = [&proj](Global const &xyz) {
-    auto local = xyz; local -= proj.center();
-    auto mat_pdv = Taylor::GetPdvValue(local, proj.coeff());
-    mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
-    return mat_pdv;
-  };
-  auto integral = gauss::Integrate(mat_pdv_func, proj.gauss());
-  auto volume = proj.basis().Measure();
-  return Taylor::GetSmoothness(integral, volume);
-}
-
 }  // namespace projection
 
 template <std::floating_point Scalar, int kDimensions, int kDegrees,
