@@ -12,30 +12,30 @@ Value MyIC(const Global &xyz) {
 /* Set boundary conditions. */
 auto given_state = [](const Global& xyz, double t){ return given_value; };
 
-void MyBC(const std::string &suffix, Solver *solver) {
+void MyBC(const std::string &suffix, Spatial *spatial) {
   if (suffix == "tetra") {
-    solver->SetSupersonicInlet("3_S_53", given_state);  // Left-Upper
-    solver->SetSupersonicInlet("3_S_31", given_state);  // Left-Lower
-    solver->SetSolidWall("3_S_49"); solver->SetSolidWall("3_S_71");  // Top
-    solver->SetSolidWall("3_S_1"); solver->SetSolidWall("3_S_2");
-    solver->SetSolidWall("3_S_3");  // Back
-    solver->SetSolidWall("3_S_54"); solver->SetSolidWall("3_S_76");
-    solver->SetSolidWall("3_S_32");  // Front
-    solver->SetSolidWall("3_S_19"); solver->SetSolidWall("3_S_23");
-    solver->SetSolidWall("3_S_63");  // Step
-    solver->SetSupersonicOutlet("3_S_67");  // Right
+    spatial->SetSupersonicInlet("3_S_53", given_state);  // Left-Upper
+    spatial->SetSupersonicInlet("3_S_31", given_state);  // Left-Lower
+    spatial->SetSolidWall("3_S_49"); spatial->SetSolidWall("3_S_71");  // Top
+    spatial->SetSolidWall("3_S_1"); spatial->SetSolidWall("3_S_2");
+    spatial->SetSolidWall("3_S_3");  // Back
+    spatial->SetSolidWall("3_S_54"); spatial->SetSolidWall("3_S_76");
+    spatial->SetSolidWall("3_S_32");  // Front
+    spatial->SetSolidWall("3_S_19"); spatial->SetSolidWall("3_S_23");
+    spatial->SetSolidWall("3_S_63");  // Step
+    spatial->SetSupersonicOutlet("3_S_67");  // Right
   } else {
     assert(suffix == "hexa");
-    solver->SetSupersonicInlet("4_S_53", given_state);  // Left-Upper
-    solver->SetSupersonicInlet("4_S_31", given_state);  // Left-Lower
-    solver->SetSolidWall("4_S_49"); solver->SetSolidWall("4_S_71");  // Top
-    solver->SetSolidWall("4_S_1"); solver->SetSolidWall("4_S_2");
-    solver->SetSolidWall("4_S_3");  // Back
-    solver->SetSolidWall("4_S_54"); solver->SetSolidWall("4_S_76");
-    solver->SetSolidWall("4_S_32");  // Front
-    solver->SetSolidWall("4_S_19"); solver->SetSolidWall("4_S_23");
-    solver->SetSolidWall("4_S_63");  // Step
-    solver->SetSupersonicOutlet("4_S_67");  // Right
+    spatial->SetSupersonicInlet("4_S_53", given_state);  // Left-Upper
+    spatial->SetSupersonicInlet("4_S_31", given_state);  // Left-Lower
+    spatial->SetSolidWall("4_S_49"); spatial->SetSolidWall("4_S_71");  // Top
+    spatial->SetSolidWall("4_S_1"); spatial->SetSolidWall("4_S_2");
+    spatial->SetSolidWall("4_S_3");  // Back
+    spatial->SetSolidWall("4_S_54"); spatial->SetSolidWall("4_S_76");
+    spatial->SetSolidWall("4_S_32");  // Front
+    spatial->SetSolidWall("4_S_19"); spatial->SetSolidWall("4_S_23");
+    spatial->SetSolidWall("4_S_63");  // Step
+    spatial->SetSupersonicOutlet("4_S_67");  // Right
   }
 }
 

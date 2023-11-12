@@ -12,9 +12,10 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
-#include "mini/gauss/function.hpp"
-#include "mini/solver/rkdg.hpp"
+#include "mini/temporal/rk.hpp"
+#include "mini/spatial/dg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -60,11 +61,12 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
+  using Scalar = double;
   /* Define the Double-wave equation. */
   constexpr int kComponents = 2;
   constexpr int kDimensions = 3;
   using Riemann = mini::
-      riemann::rotated::Multiple<double, kComponents, kDimensions>;
+      riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
   Riemann::global_coefficient[1].setZero();
@@ -72,13 +74,13 @@ int main(int argc, char* argv[]) {
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {
-    using Shuffler = mini::mesh::Shuffler<idx_t, double>;
+    using Shuffler = mini::mesh::Shuffler<idx_t, Scalar>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_core);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, kComponents>;
+  using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
@@ -155,9 +157,13 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  /* Choose the time-stepping scheme. */
+  using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter>;
+  auto spatial = Spatial(&part, limiter);
+
+  /* Define the temporal solver. */
   constexpr int kOrders = std::min(3, kDegrees + 1);
-  auto solver = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
+  using Temporal = mini::temporal::RungeKutta<kOrders, Scalar>;
+  auto temporal = Temporal();
 
   /* Set boundary conditions. */
   auto state_right = [&value_right](const Global& xyz, double t){
@@ -167,29 +173,29 @@ int main(int argc, char* argv[]) {
     return value_left;
   };
   if (suffix == "tetra") {
-    solver.SetSupersonicInlet("3_S_31", state_left);   // Left
-    solver.SetSupersonicInlet("3_S_23", state_right);  // Right
-    solver.SetSolidWall("3_S_27");  // Top
-    solver.SetSolidWall("3_S_1");   // Back
-    solver.SetSolidWall("3_S_32");  // Front
-    solver.SetSolidWall("3_S_19");  // Bottom
-    solver.SetSolidWall("3_S_15");  // Gap
+    spatial.SetSupersonicInlet("3_S_31", state_left);   // Left
+    spatial.SetSupersonicInlet("3_S_23", state_right);  // Right
+    spatial.SetSolidWall("3_S_27");  // Top
+    spatial.SetSolidWall("3_S_1");   // Back
+    spatial.SetSolidWall("3_S_32");  // Front
+    spatial.SetSolidWall("3_S_19");  // Bottom
+    spatial.SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    solver.SetSupersonicInlet("4_S_31", state_left);   // Left
-    solver.SetSupersonicInlet("4_S_23", state_right);  // Right
-    solver.SetSolidWall("4_S_27");  // Top
-    solver.SetSolidWall("4_S_1");   // Back
-    solver.SetSolidWall("4_S_32");  // Front
-    solver.SetSolidWall("4_S_19");  // Bottom
-    solver.SetSolidWall("4_S_15");  // Gap
+    spatial.SetSupersonicInlet("4_S_31", state_left);   // Left
+    spatial.SetSupersonicInlet("4_S_23", state_right);  // Right
+    spatial.SetSolidWall("4_S_27");  // Top
+    spatial.SetSolidWall("4_S_1");   // Back
+    spatial.SetSolidWall("4_S_32");  // Front
+    spatial.SetSolidWall("4_S_19");  // Bottom
+    spatial.SetSolidWall("4_S_15");  // Gap
   }
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
-    solver.Update(&part, t_curr);
+    temporal.Update(&spatial, t_curr, dt);
 
     double t_next = t_curr + dt;
     auto l1_error = part.MeasureL1Error(exact_solution, t_next);

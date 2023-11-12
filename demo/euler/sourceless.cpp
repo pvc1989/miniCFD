@@ -111,18 +111,19 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
           i_frame, n_core, MPI_Wtime() - time_begin);
     }
   }
+  auto spatial = Spatial(&part, limiter);
 
-  /* Choose the time-stepping scheme. */
-  auto solver = Solver(dt, limiter);
+  /* Define the temporal solver. */
+  auto temporal = Temporal();
 
   /* Set boundary conditions. */
-  bc(suffix, &solver);
+  bc(suffix, &spatial);
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
-    solver.Update(&part, t_curr);
+    temporal.Update(&spatial, t_curr, dt);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_total = wtime_curr * n_steps / i_step;

@@ -10,9 +10,10 @@
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/burgers.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
-#include "mini/solver/rkdg.hpp"
-#include "rkdg.hpp"
+#include "mini/temporal/rk.hpp"
+#include "mini/spatial/dg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -52,21 +53,23 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
+
+  using Scalar = double;
   /* Define the Burgers equation. */
   constexpr int kComponents = 1;
   constexpr int kDimensions = 3;
-  using Riemann = mini::riemann::rotated::Burgers<double, kDimensions>;
+  using Riemann = mini::riemann::rotated::Burgers<Scalar, kDimensions>;
   Riemann::global_coefficient = { 1, 0, 0 };
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {
-    using Shuffler = mini::mesh::Shuffler<idx_t, double>;
+    using Shuffler = mini::mesh::Shuffler<idx_t, Scalar>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_core);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, kComponents>;
+  using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
@@ -131,35 +134,39 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  /* Choose the time-stepping scheme. */
+  using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter>;
+  auto spatial = Spatial(&part, limiter);
+
+  /* Define the temporal solver. */
   constexpr int kOrders = std::min(3, kDegrees + 1);
-  auto solver = RungeKutta<kOrders, Part, Limiter>(dt, limiter);
+  using Temporal = mini::temporal::RungeKutta<kOrders, Scalar>;
+  auto temporal = Temporal();
 
   /* Set boundary conditions. */
   if (suffix == "tetra") {
-    solver.SetSolidWall("3_S_27");  // Top
-    solver.SetSolidWall("3_S_31");  // Left
-    solver.SetSolidWall("3_S_1");   // Back
-    solver.SetSolidWall("3_S_32");  // Front
-    solver.SetSolidWall("3_S_19");  // Bottom
-    solver.SetSolidWall("3_S_23");  // Right
-    solver.SetSolidWall("3_S_15");  // Gap
+    spatial.SetSolidWall("3_S_27");  // Top
+    spatial.SetSolidWall("3_S_31");  // Left
+    spatial.SetSolidWall("3_S_1");   // Back
+    spatial.SetSolidWall("3_S_32");  // Front
+    spatial.SetSolidWall("3_S_19");  // Bottom
+    spatial.SetSolidWall("3_S_23");  // Right
+    spatial.SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    solver.SetSolidWall("4_S_27");  // Top
-    solver.SetSolidWall("4_S_31");  // Left
-    solver.SetSolidWall("4_S_1");   // Back
-    solver.SetSolidWall("4_S_32");  // Front
-    solver.SetSolidWall("4_S_19");  // Bottom
-    solver.SetSolidWall("4_S_23");  // Right
-    solver.SetSolidWall("4_S_15");  // Gap
+    spatial.SetSolidWall("4_S_27");  // Top
+    spatial.SetSolidWall("4_S_31");  // Left
+    spatial.SetSolidWall("4_S_1");   // Back
+    spatial.SetSolidWall("4_S_32");  // Front
+    spatial.SetSolidWall("4_S_19");  // Bottom
+    spatial.SetSolidWall("4_S_23");  // Right
+    spatial.SetSolidWall("4_S_15");  // Gap
   }
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
   for (int i_step = 1; i_step <= n_steps; ++i_step) {
     double t_curr = t_start + dt * (i_step - 1);
-    solver.Update(&part, t_curr);
+    temporal.Update(&spatial, t_curr, dt);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_total = wtime_curr * n_steps / i_step;

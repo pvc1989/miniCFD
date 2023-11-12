@@ -18,15 +18,15 @@ auto exhaust = [](const Global& xyz, double t){
 auto ambient = [](const Global& xyz, double t){
   return ambient_value;
 };
-void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSupersonicInlet("3_S_8", exhaust);
-  solver->SetSubsonicInlet("3_S_1", ambient);
-  solver->SetSupersonicOutlet("3_S_7");
-  solver->SetSolidWall("3_S_2");
-  solver->SetSolidWall("3_S_3");
-  solver->SetSolidWall("3_S_4");
-  solver->SetSolidWall("3_S_5");
-  solver->SetSolidWall("3_S_6");
+void MyBC(const std::string &suffix, Spatial *spatial) {
+  spatial->SetSupersonicInlet("3_S_8", exhaust);
+  spatial->SetSubsonicInlet("3_S_1", ambient);
+  spatial->SetSupersonicOutlet("3_S_7");
+  spatial->SetSolidWall("3_S_2");
+  spatial->SetSolidWall("3_S_3");
+  spatial->SetSolidWall("3_S_4");
+  spatial->SetSolidWall("3_S_5");
+  spatial->SetSolidWall("3_S_6");
 }
 
 int main(int argc, char* argv[]) {

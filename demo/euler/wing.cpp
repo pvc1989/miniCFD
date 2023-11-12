@@ -14,19 +14,19 @@ auto given_state = [](const Global& xyz, double t){
   return given_value;
 };
 
-void MyBC(const std::string &suffix, Solver *solver) {
+void MyBC(const std::string &suffix, Spatial *spatial) {
   // Left
-  solver->SetSubsonicInlet("3_S_10", given_state);
+  spatial->SetSubsonicInlet("3_S_10", given_state);
   // Right
-  solver->SetSubsonicOutlet("3_S_15", given_state);
+  spatial->SetSubsonicOutlet("3_S_15", given_state);
   // Top & Bottom
-  solver->SetSolidWall("3_S_12");
-  solver->SetSolidWall("3_S_14");
+  spatial->SetSolidWall("3_S_12");
+  spatial->SetSolidWall("3_S_14");
   // Front & Back
-  solver->SetSolidWall("3_S_7");
-  solver->SetSolidWall("3_S_9");
-  solver->SetSolidWall("3_S_11");
-  solver->SetSolidWall("3_S_13");
+  spatial->SetSolidWall("3_S_7");
+  spatial->SetSolidWall("3_S_9");
+  spatial->SetSolidWall("3_S_11");
+  spatial->SetSolidWall("3_S_13");
 }
 
 int main(int argc, char* argv[]) {

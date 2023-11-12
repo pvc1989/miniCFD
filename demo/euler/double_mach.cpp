@@ -30,24 +30,24 @@ auto moving_shock = [](const Global& xyz, double t){
   return ((x - (x_gap + u_x * t)) * tan_60 < y) ? value_after : value_before;
 };
 
-void MyBC(const std::string &suffix, Solver *solver) {
+void MyBC(const std::string &suffix, Spatial *spatial) {
   if (suffix == "tetra") {
-    solver->SetSupersonicInlet("3_S_27", moving_shock);  // Top
-    solver->SetSupersonicInlet("3_S_31", moving_shock);  // Left
-    solver->SetSolidWall("3_S_1");   // Back
-    solver->SetSolidWall("3_S_32");  // Front
-    solver->SetSolidWall("3_S_19");  // Bottom
-    solver->SetSupersonicOutlet("3_S_23");  // Right
-    solver->SetSupersonicOutlet("3_S_15");  // Gap
+    spatial->SetSupersonicInlet("3_S_27", moving_shock);  // Top
+    spatial->SetSupersonicInlet("3_S_31", moving_shock);  // Left
+    spatial->SetSolidWall("3_S_1");   // Back
+    spatial->SetSolidWall("3_S_32");  // Front
+    spatial->SetSolidWall("3_S_19");  // Bottom
+    spatial->SetSupersonicOutlet("3_S_23");  // Right
+    spatial->SetSupersonicOutlet("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    solver->SetSupersonicInlet("4_S_27", moving_shock);  // Top
-    solver->SetSupersonicInlet("4_S_31", moving_shock);  // Left
-    solver->SetSolidWall("4_S_1");   // Back
-    solver->SetSolidWall("4_S_32");  // Front
-    solver->SetSolidWall("4_S_19");  // Bottom
-    solver->SetSupersonicOutlet("4_S_23");  // Right
-    solver->SetSupersonicOutlet("4_S_15");  // Gap
+    spatial->SetSupersonicInlet("4_S_27", moving_shock);  // Top
+    spatial->SetSupersonicInlet("4_S_31", moving_shock);  // Left
+    spatial->SetSolidWall("4_S_1");   // Back
+    spatial->SetSolidWall("4_S_32");  // Front
+    spatial->SetSolidWall("4_S_19");  // Bottom
+    spatial->SetSupersonicOutlet("4_S_23");  // Right
+    spatial->SetSupersonicOutlet("4_S_15");  // Gap
   }
 }
 

@@ -12,9 +12,8 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
-#include "mini/gauss/function.hpp"
-#include "mini/solver/rkdg.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -46,21 +45,22 @@ int main(int argc, char* argv[]) {
 
   auto time_begin = MPI_Wtime();
 
+  using Scalar = double;
   /* Define the single-wave equation. */
   constexpr int kDimensions = 3;
-  using Riemann = mini::riemann::rotated::Single<double, kDimensions>;
+  using Riemann = mini::riemann::rotated::Single<Scalar, kDimensions>;
   auto a_x = -10.0;
   Riemann::global_coefficient = { a_x, 0, 0 };
 
   /* Partition the mesh. */
   if (i_core == 0) {
-    using Shuffler = mini::mesh::Shuffler<idx_t, double>;
+    using Shuffler = mini::mesh::Shuffler<idx_t, Scalar>;
     Shuffler::PartitionAndShuffle(case_name, old_file_name, n_core);
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
   constexpr int kDegrees = 2;
-  using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, 1>;
+  using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 1>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;

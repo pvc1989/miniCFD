@@ -123,12 +123,13 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
           i_frame, n_core, MPI_Wtime() - time_begin);
     }
   }
+  auto spatial = Spatial(&part, limiter);
 
-  /* Choose the time-stepping scheme. */
-  auto solver = Solver(dt, limiter, source);
+  /* Define the temporal solver. */
+  auto temporal = Temporal();
 
   /* Set boundary conditions. */
-  bc("tetra", &solver);
+  bc("tetra", &spatial);
 
   /* Main Loop */
   auto wtime_start = MPI_Wtime();
@@ -154,7 +155,7 @@ int Main(int argc, char* argv[], IC ic, BC bc, Source source) {
       }
       continue;
     }
-    solver.Update(&part, t_curr);
+    temporal.Update(&spatial, t_curr, dt);
 
     auto wtime_curr = MPI_Wtime() - wtime_start;
     auto wtime_total = wtime_curr * n_steps / i_step;

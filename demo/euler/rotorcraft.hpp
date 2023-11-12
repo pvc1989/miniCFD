@@ -10,8 +10,10 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
-#include "mini/solver/rkdg.hpp"
+#include "mini/temporal/rk.hpp"
+#include "mini/spatial/dg.hpp"
 #include "mini/aircraft/source.hpp"
 
 using Scalar = double;
@@ -24,6 +26,7 @@ using Gas = mini::riemann::euler::IdealGas<Scalar, 1, 4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
+/* Define spatial discretization. */
 constexpr int kDegrees = 2;
 using Projection = mini::polynomial::Projection<double, kDimensions, kDegrees, 5>;
 using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
@@ -41,12 +44,14 @@ using Blade = typename Rotor::Blade;
 using Frame = typename Blade::Frame;
 using Airfoil = typename Blade::Airfoil;
 
+using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter, Source>;
+
 /* Choose the time-stepping scheme. */
 constexpr int kOrders = std::min(3, kDegrees + 1);
-using Solver = RungeKutta<kOrders, Part, Limiter, Source>;
+using Temporal = mini::temporal::RungeKutta<kOrders, Scalar>;
 
 using IC = Value(*)(const Global &);
-using BC = void(*)(const std::string &, Solver *);
+using BC = void(*)(const std::string &, Spatial *);
 
 void WriteForces(Part const &part, Source *source, double t_curr,
     std::string const &frame_name, int i_core);

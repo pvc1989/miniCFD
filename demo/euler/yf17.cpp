@@ -19,21 +19,21 @@ auto exhaust = [](const Global& xyz, double t){
 auto upstream = [](const Global& xyz, double t){
   return upstream_value;
 };
-void MyBC(const std::string &suffix, Solver *solver) {
-  solver->SetSubsonicInlet("upstream", upstream);
-  solver->SetSupersonicInlet("exhaust", exhaust);
-  solver->SetSubsonicOutlet("downstream", upstream);
-  solver->SetSubsonicOutlet("intake", upstream);
-  solver->SetSolidWall("intake ramp");
-  solver->SetSubsonicInlet("lower", upstream);
-  solver->SetSubsonicOutlet("upper", upstream);
-  solver->SetSolidWall("strake");
-  solver->SetSolidWall("vertical tail");
-  solver->SetSolidWall("horizontal tail");
-  solver->SetSolidWall("side");
-  solver->SetSolidWall("wing");
-  solver->SetSolidWall("fuselage");
-  solver->SetSolidWall("symmetry");
+void MyBC(const std::string &suffix, Spatial *spatial) {
+  spatial->SetSubsonicInlet("upstream", upstream);
+  spatial->SetSupersonicInlet("exhaust", exhaust);
+  spatial->SetSubsonicOutlet("downstream", upstream);
+  spatial->SetSubsonicOutlet("intake", upstream);
+  spatial->SetSolidWall("intake ramp");
+  spatial->SetSubsonicInlet("lower", upstream);
+  spatial->SetSubsonicOutlet("upper", upstream);
+  spatial->SetSolidWall("strake");
+  spatial->SetSolidWall("vertical tail");
+  spatial->SetSolidWall("horizontal tail");
+  spatial->SetSolidWall("side");
+  spatial->SetSolidWall("wing");
+  spatial->SetSolidWall("fuselage");
+  spatial->SetSolidWall("symmetry");
 }
 
 int main(int argc, char* argv[]) {
