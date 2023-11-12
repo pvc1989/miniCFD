@@ -23,8 +23,8 @@ namespace gauss {
  * @return auto the value of the integral
  */
 template <typename Callable, typename Gauss>
-auto Quadrature(Callable &&local_to_value, Gauss &&gauss) {
-  using Local = typename std::remove_reference_t<Gauss>::Local;
+auto Quadrature(Callable &&local_to_value, const Gauss &gauss) {
+  using Local = typename Gauss::Local;
   static_assert(std::regular_invocable<Callable, Local>);
   using Value = std::invoke_result_t<Callable, Local>;
   Value sum; algebra::SetZero(&sum);
@@ -47,16 +47,15 @@ auto Quadrature(Callable &&local_to_value, Gauss &&gauss) {
  * @return auto the value of the integral
  */
 template <typename Callable, typename Gauss>
-auto Integrate(Callable &&global_to_value, Gauss &&gauss) {
-  using Global = typename std::remove_reference_t<Gauss>::Global;
+auto Integrate(Callable &&global_to_value, const Gauss &gauss) {
+  using Global = typename Gauss::Global;
   static_assert(std::regular_invocable<Callable, Global>);
   using Value = std::invoke_result_t<Callable, Global>;
   Value sum; algebra::SetZero(&sum);
   auto n = gauss.CountPoints();
-  auto const &gauss_ref = gauss;
   for (int i = 0; i < n; ++i) {
-    auto f_val = global_to_value(gauss_ref.GetGlobalCoord(i));
-    f_val *= gauss_ref.GetGlobalWeight(i);
+    auto f_val = global_to_value(gauss.GetGlobalCoord(i));
+    f_val *= gauss.GetGlobalWeight(i);
     sum += f_val;
   }
   return sum;
@@ -74,8 +73,8 @@ auto Integrate(Callable &&global_to_value, Gauss &&gauss) {
  * @return auto the value of the innerproduct
  */
 template <typename Func1, typename Func2, typename Gauss>
-auto Innerprod(Func1 &&f1, Func2 &&f2, Gauss &&gauss) {
-  using Global = typename std::remove_reference_t<Gauss>::Global;
+auto Innerprod(Func1 &&f1, Func2 &&f2, const Gauss &gauss) {
+  using Global = typename Gauss::Global;
   static_assert(std::regular_invocable<Func1, Global>);
   static_assert(std::regular_invocable<Func2, Global>);
   return Integrate([&f1, &f2](const Global &xyz_global){
@@ -93,8 +92,10 @@ auto Innerprod(Func1 &&f1, Func2 &&f2, Gauss &&gauss) {
  * @return auto the value of the norm
  */
 template <typename Callable, typename Gauss>
-auto Norm(Callable &&f, Gauss &&gauss) {
-  return std::sqrt(Innerprod(f, f, gauss));
+auto Norm(Callable &&f, const Gauss &gauss) {
+  auto ip = Innerprod(std::forward<Callable>(f), std::forward<Callable>(f),
+      gauss);
+  return std::sqrt(ip);
 }
 
 /**
