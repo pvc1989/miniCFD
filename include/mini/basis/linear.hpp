@@ -114,7 +114,7 @@ class OrthoNormal {
   MatNxN const &coeff() const {
     return basis_.coeff();
   }
-  Gauss const &GetGauss() const {
+  Gauss const &gauss() const {
     return *gauss_ptr_;
   }
   MatNx1 operator()(const Coord &global) const {

@@ -91,12 +91,12 @@ TEST_F(TestBasisOrthoNormal, OnTriangle) {
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto area = mini::gauss::Integrate(
-        [](const Coord &){ return 1.0; }, basis.GetGauss());
+        [](const Coord &){ return 1.0; }, basis.gauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), area);
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.gauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
 }
@@ -112,12 +112,12 @@ TEST_F(TestBasisOrthoNormal, OnQuadrangle) {
   EXPECT_DOUBLE_EQ(gauss.area(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto area = mini::gauss::Integrate(
-        [](const Coord &){ return 1.0; }, basis.GetGauss());
+        [](const Coord &){ return 1.0; }, basis.gauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), area);
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.gauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
@@ -133,12 +133,12 @@ TEST_F(TestBasisOrthoNormal, OnTetrahedron) {
   EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto volume = mini::gauss::Integrate(
-        [](const Coord &){ return 1.0; }, basis.GetGauss());
+        [](const Coord &){ return 1.0; }, basis.gauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), volume);
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.gauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }
@@ -156,12 +156,12 @@ TEST_F(TestBasisOrthoNormal, OnHexahedron) {
   EXPECT_DOUBLE_EQ(gauss.volume(), basis.Measure());
   std::cout << basis.coeff() << std::endl;
   auto volume = mini::gauss::Integrate(
-        [](const Coord &){ return 1.0; }, basis.GetGauss());
+        [](const Coord &){ return 1.0; }, basis.gauss());
   EXPECT_DOUBLE_EQ(basis.Measure(), volume);
   auto f = [&basis](const Coord &coord){
       return Basis::MatNxN(basis(coord) * basis(coord).transpose());
   };
-  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.GetGauss())
+  Basis::MatNxN diff = mini::gauss::Integrate(f, basis.gauss())
       - Basis::MatNxN::Identity();
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
 }

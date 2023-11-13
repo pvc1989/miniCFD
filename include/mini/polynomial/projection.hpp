@@ -122,7 +122,7 @@ class Projection {
     return basis_;
   }
   Gauss const &gauss() const {
-    return basis().GetGauss();
+    return basis().gauss();
   }
   Global const &center() const {
     return basis().center();
@@ -213,7 +213,7 @@ class ProjectionWrapper {
     return *basis_ptr_;
   }
   Gauss const &gauss() const {
-    return basis().GetGauss();
+    return basis().gauss();
   }
   Coeff const &coeff() const {
     return coeff_;
