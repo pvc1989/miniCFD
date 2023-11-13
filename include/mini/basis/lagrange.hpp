@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <array>
 #include <initializer_list>
+#include <tuple>
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
@@ -214,6 +215,18 @@ class Hexahedron {
   static int index(int i, int j, int k) {
     return i * J * K + j * K + k;
   }
+  /**
+   * @brief Get the 3D index from the 1D index.
+   * 
+   * @param ijk the (0-based) 1D index
+   * @return int the 1D index
+   */
+  static std::tuple<int, int, int> index(int ijk) {
+    int k = ijk % K;
+    int j = ijk / K;  // i * J + j
+    int i = j / J; j %= J;
+    return std::make_tuple(i, j, k);
+  }
 
   /**
    * @brief Get the coordinate of the \f$ijk\f$-th node.
@@ -222,9 +235,7 @@ class Hexahedron {
    * @return Scalar the coordinate
    */
   Coord GetNode(int ijk) const {
-    int k = ijk % K;
-    int j = ijk / K;  // i * J + j
-    int i = j / J; j %= J;
+    auto [i, j, k] = index(ijk);
     assert(index(i, j, k) == ijk);
     return GetNode(i, j, k);
   }
@@ -291,6 +302,20 @@ class Hexahedron {
     }
     assert(ijk == N);
     return vec;
+  }
+
+  /**
+   * @brief Get the \f$(a,b,c)\f$-th order derivatives of all basis functions at an arbitrary point.
+   * 
+   * @param a the order of the derivatives to be taken in the 1st dimension
+   * @param b the order of the derivatives to be taken in the 1st dimension
+   * @param c the order of the derivatives to be taken in the 1st dimension
+   * @param coord the coordinate of the query point
+   * @return Vector the output derivatives
+   */
+  Vector GetDerivatives(
+      int a, int b, int c, const Coord &coord) const {
+    return GetDerivatives(a, b, c, coord[0], coord[1], coord[2]);
   }
 
   /**

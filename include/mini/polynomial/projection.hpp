@@ -30,7 +30,7 @@ void Project(Projection *proj, Callable &&func) {
   static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
   Coeff coeff = gauss::Integrate([&](Global const &xyz) {
     auto f_col = std::forward<Callable>(func)(xyz);
-    Mat1xN b_row = proj->basis()(xyz).transpose();
+    Mat1xN b_row = proj->GlobalToBasisValues(xyz);
     Coeff prod = f_col * b_row;
     return prod;
   }, proj->gauss());
@@ -112,6 +112,13 @@ class Projection {
     MatNx1 col = basis::Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
     return coeff_ * col;
   }
+  Value GetValueOnGaussianPoint(int i) const {
+    auto &global = gauss().GetGlobalCoord(i);
+    return GlobalToValue(global);
+  }
+  Mat1xN GlobalToBasisValues(Global const &global) const {
+    return basis_(global);
+  }
   Value operator()(Global const &global) const {
     return GlobalToValue(global);
   }
@@ -137,7 +144,7 @@ class Projection {
     return projection::GetAverage(*this);
   }
   auto GlobalToBasisGradients(Global const &global) const {
-    return basis_.GetGradValue(global);
+    return basis_.GetGradValue(global).transpose();
   }
 
   template <typename Callable>
@@ -226,6 +233,9 @@ class ProjectionWrapper {
   }
   Value average() const {
     return projection::GetAverage(*this);
+  }
+  Mat1xN GlobalToBasisValues(Global const &global) const {
+    return basis()(global);
   }
   template <typename Callable>
   void Approximate(Callable &&func) {
