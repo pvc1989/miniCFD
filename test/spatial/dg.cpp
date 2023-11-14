@@ -17,9 +17,6 @@
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/dg.hpp"
 
-int n_core, i_core;
-double time_begin;
-
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
 using Riemann = mini::
@@ -34,14 +31,14 @@ Value func(const Coord& xyz) {
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./dg
 int main(int argc, char* argv[]) {
+  int n_core, i_core;
+  double time_begin;
   MPI_Init(NULL, NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &n_core);
   MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   auto case_name = std::string("../mesh/double_mach");
-
-  time_begin = MPI_Wtime();
 
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
@@ -50,6 +47,7 @@ int main(int argc, char* argv[]) {
 
   /* aproximated by Projection on OrthoNormal basis */
 {
+  time_begin = MPI_Wtime();
   using Projection = mini::polynomial::Projection<
       Scalar, kDimensions, kDegrees, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
@@ -63,21 +61,26 @@ int main(int argc, char* argv[]) {
     cell_ptr->Approximate(func);
   }
   part.Reconstruct(limiter);
-  std::printf("Start test on proc[%d/%d] at %f sec\n",
-      i_core, n_core, MPI_Wtime() - time_begin);
   spatial.SetTime(1.5);
+  std::printf("Part on basis::OrthoNormal proc[%d/%d] cost %f sec\n",
+      i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
   column -= spatial.GetSolutionColumn();
-  std::printf("column.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
 }
   /* aproximated by Projection on Lagrange basis on Legendre roots */
 {
+  time_begin = MPI_Wtime();
   using Gx = mini::gauss::Legendre<Scalar, kDegrees>;
   using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
   using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 2>;
@@ -89,17 +92,21 @@ int main(int argc, char* argv[]) {
   for (auto *cell_ptr : part.GetLocalCellPointers()) {
     cell_ptr->Approximate(func);
   }
-  std::printf("Start test on proc[%d/%d] at %f sec\n",
-      i_core, n_core, MPI_Wtime() - time_begin);
   spatial.SetTime(1.5);
+  std::printf("Part on basis::lagrange::Hexahedron proc[%d/%d] cost %f sec\n",
+      i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
   column -= spatial.GetSolutionColumn();
-  std::printf("column.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
 }
   MPI_Finalize();
