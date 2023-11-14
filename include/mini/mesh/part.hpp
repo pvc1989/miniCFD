@@ -168,6 +168,7 @@ template <std::integral Int, class R, class Proj>
 struct Cell {
   using Riemann = R;
   using Projection = Proj;
+  using FluxMatrix = typename Riemann::FluxMatrix;
   using Scalar = typename Riemann::Scalar;
   using Gauss = gauss::Cell<Scalar>;
   using GaussUptr = std::unique_ptr<Gauss>;
@@ -242,6 +243,13 @@ struct Cell {
   }
   int CountFields() const {
     return projection_.coeff().cols() * projection_.coeff().rows();
+  }
+  FluxMatrix GetFluxOnGaussianPoint(int i) const {
+    Value value = projection_.GetValueOnGaussianPoint(i);
+    return Riemann::GetFluxMatrix(value);
+  }
+  auto GlobalToBasisValues(const Global &global) const {
+    return projection_.GlobalToBasisValues(global);
   }
 
   template <class Callable>

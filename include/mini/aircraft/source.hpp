@@ -106,7 +106,7 @@ class Rotorcraft {
         auto xyz = section.GetOrigin();
         auto [force, power] = GetSourceValue(cell, section, xyz);
         using Mat1xN = mini::algebra::Matrix<Scalar, 1, Cell::N>;
-        Mat1xN basis_values = cell.basis()(xyz).transpose();
+        Mat1xN basis_values = cell.GlobalToBasisValues(xyz);
         using Mat4xN = mini::algebra::Matrix<Scalar, 4, Cell::N>;
         Mat4xN product;
         product.row(0) = force[0] * basis_values;

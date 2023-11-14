@@ -136,7 +136,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value cv = cell.GlobalToValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
           auto grad = cell.projection_.GlobalToBasisGradients(xyz);
-          Coeff prod = flux * grad.transpose();
+          Coeff prod = flux * grad;
           prod *= gauss.GetGlobalWeight(q);
           cell.projection_.AddCoeffTo(prod, data);
         }
@@ -159,9 +159,9 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
         Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.basis()(coord).transpose();
+        Coeff prod = -flux * holder.GlobalToBasisValues(coord);
         holder.projection_.AddCoeffTo(prod, holder_data);
-        prod = flux * sharer.basis()(coord).transpose();
+        prod = flux * sharer.GlobalToBasisValues(coord);
         sharer.projection_.AddCoeffTo(prod, sharer_data);
       }
     }
@@ -180,7 +180,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
         Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.basis()(coord).transpose();
+        Coeff prod = -flux * holder.GlobalToBasisValues(coord);
         holder.projection_.AddCoeffTo(prod, holder_data);
       }
     }
@@ -206,7 +206,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_holder = holder.GlobalToValue(coord);
           Value flux = riemann.GetFluxOnSolidWall(u_holder);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }
@@ -225,7 +225,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_holder = holder.GlobalToValue(coord);
           Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }
@@ -244,7 +244,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }
@@ -264,7 +264,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }
@@ -284,7 +284,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }
@@ -304,7 +304,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.basis()(coord).transpose();
+          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection_.AddCoeffTo(prod, holder_data);
         }
       }

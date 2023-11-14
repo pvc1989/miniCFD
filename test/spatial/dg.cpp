@@ -43,6 +43,11 @@ int main(int argc, char* argv[]) {
 
   time_begin = MPI_Wtime();
 
+  using Jacobi = typename Riemann::Jacobi;
+  Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
+  Riemann::global_coefficient[1].setZero();
+  Riemann::global_coefficient[2].setZero();
+
   /* aproximated by Projection on OrthoNormal basis */
 {
   using Projection = mini::polynomial::Projection<
@@ -68,6 +73,34 @@ int main(int argc, char* argv[]) {
   std::printf("column.norm() == %6.2e on proc[%d/%d] at %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   column = spatial.GetResidualColumn();
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+}
+  /* aproximated by Projection on Lagrange basis on Legendre roots */
+{
+  using Gx = mini::gauss::Legendre<Scalar, kDegrees>;
+  using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
+  using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 2>;
+  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
+  using Spatial = mini::spatial::DGonGaussianPoints<Part>;
+  auto part = Part(case_name, i_core, n_core);
+  auto spatial = Spatial(&part);
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
+  std::printf("Start test on proc[%d/%d] at %f sec\n",
+      i_core, n_core, MPI_Wtime() - time_begin);
+  spatial.SetTime(1.5);
+  auto column = spatial.GetSolutionColumn();
+  assert(column.size() == part.GetCellDataSize());
+  spatial.SetSolutionColumn(column);
+  column -= spatial.GetSolutionColumn();
+  std::printf("column.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  column = spatial.GetResidualColumn();
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] at %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
 }
   MPI_Finalize();
 }

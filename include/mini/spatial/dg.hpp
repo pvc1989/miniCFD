@@ -34,7 +34,6 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
  protected:
   Limiter limiter_;
   Source source_;
-  Column residual_;
 
  public:
   DiscontinuousGalerkin(Part *part_ptr,
@@ -51,6 +50,74 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
   void SetSolutionColumn(Column const &column) override {
     this->Base::SetSolutionColumn(column);
     this->part_ptr_->Reconstruct(limiter_);
+  }
+};
+
+/**
+ * @brief A specialized version of DG using a Lagrange expansion on Gaussian quadrature points. 
+ * 
+ * @tparam Part 
+ */
+template <typename Part>
+class DGonGaussianPoints : public FiniteElement<Part> {
+  using Base = FiniteElement<Part>;
+
+ public:
+  using Riemann = typename Base::Riemann;
+  using Scalar = typename Base::Scalar;
+  using Face = typename Base::Face;
+  using Cell = typename Base::Cell;
+  using Global = typename Base::Global;
+  using Projection = typename Base::Projection;
+  using Coeff = typename Base::Coeff;
+  using Value = typename Base::Value;
+  using Temporal = typename Base::Temporal;
+  using Column = typename Base::Column;
+
+ protected:
+
+ public:
+  explicit DGonGaussianPoints(Part *part_ptr)
+      : Base(part_ptr) {
+  }
+  DGonGaussianPoints(const DGonGaussianPoints &) = default;
+  DGonGaussianPoints &operator=(const DGonGaussianPoints &) = default;
+  DGonGaussianPoints(DGonGaussianPoints &&) noexcept = default;
+  DGonGaussianPoints &operator=(DGonGaussianPoints &&) noexcept = default;
+  ~DGonGaussianPoints() noexcept = default;
+
+ protected:  // override virtual methods defined in Base
+  void AddFluxDivergence(Column *residual) const override {
+    if (Part::kDegrees > 0) {
+      for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+        auto i_cell = cell.id();
+        auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+        const auto &gauss = cell.gauss();
+        for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+          auto const &flux = cell.GetFluxOnGaussianPoint(q);
+          auto const &grad = cell.projection_.GetBasisGradientsOnGaussianPoint(q);
+          Coeff prod = flux * grad;
+          prod *= gauss.GetGlobalWeight(q);
+          cell.projection_.AddCoeffTo(prod, data);
+        }
+      }
+    }
+  }
+  void AddFluxOnLocalFaces(Column *residual) const override {
+  }
+  void AddFluxOnGhostFaces(Column *residual) const override {
+  }
+  void ApplySolidWall(Column *residual) const override {
+  }
+  void ApplySupersonicInlet(Column *residual) const override {
+  }
+  void ApplySupersonicOutlet(Column *residual) const override {
+  }
+  void ApplySubsonicInlet(Column *residual) const override {
+  }
+  void ApplySubsonicOutlet(Column *residual) const override {
+  }
+  void ApplySmartBoundary(Column *residual) const override {
   }
 };
 
