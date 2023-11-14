@@ -15,7 +15,7 @@
 #include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
-#include "mini/spatial/dg.hpp"
+#include "mini/spatial/fem.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
-  using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter>;
+  using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
 
   /* Define the temporal solver. */

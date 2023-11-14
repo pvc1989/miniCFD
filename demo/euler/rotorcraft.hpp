@@ -13,7 +13,7 @@
 #include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
-#include "mini/spatial/dg.hpp"
+#include "mini/spatial/fem.hpp"
 #include "mini/aircraft/source.hpp"
 
 using Scalar = double;
@@ -44,7 +44,7 @@ using Blade = typename Rotor::Blade;
 using Frame = typename Blade::Frame;
 using Airfoil = typename Blade::Airfoil;
 
-using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter, Source>;
+using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter, Source>;
 
 /* Choose the time-stepping scheme. */
 constexpr int kOrders = std::min(3, kDegrees + 1);

@@ -15,7 +15,8 @@
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
-#include "mini/spatial/dg.hpp"
+#include "mini/spatial/fem.hpp"
+#include "mini/spatial/sem.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
   using Cell = typename Part::Cell;
   using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
-  using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter>;
+  using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
   for (Cell *cell_ptr : part.GetLocalCellPointers()) {
     cell_ptr->Approximate(func);
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]) {
   using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 2>;
   using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-  using Spatial = mini::spatial::DGonGaussianPoints<Part>;
+  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
   auto part = Part(case_name, i_core, n_core);
   auto spatial = Spatial(&part);
   for (auto *cell_ptr : part.GetLocalCellPointers()) {

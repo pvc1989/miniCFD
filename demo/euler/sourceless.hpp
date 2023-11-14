@@ -13,7 +13,7 @@
 #include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
-#include "mini/spatial/dg.hpp"
+#include "mini/spatial/fem.hpp"
 
 using Scalar = double;
 
@@ -37,7 +37,7 @@ using Coeff = typename Cell::Coeff;
 
 using Limiter = mini::limiter::weno::Eigen<Cell>;
 
-using Spatial = mini::spatial::DiscontinuousGalerkin<Part, Limiter>;
+using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
 
 /* Choose the time-stepping scheme. */
 constexpr int kOrders = std::min(3, kDegrees + 1);
