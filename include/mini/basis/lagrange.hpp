@@ -256,8 +256,9 @@ class Hexahedron {
     int ijk = 0;
     for (int i = 0; i < I; ++i) {
       for (int j = 0; j < J; ++j) {
+        auto value_xy = value_x[i] * value_y[j];
         for (int k = 0; k < K; ++k) {
-          vec[ijk++] = value_x[i] * value_y[j] * value_z[k];
+          vec[ijk++] = value_xy * value_z[k];
         }
       }
     }
@@ -295,8 +296,9 @@ class Hexahedron {
     int ijk = 0;
     for (int i = 0; i < I; ++i) {
       for (int j = 0; j < J; ++j) {
+        auto value_xy = value_x[i] * value_y[j];
         for (int k = 0; k < K; ++k) {
-          vec[ijk++] = value_x[i] * value_y[j] * value_z[k];
+          vec[ijk++] = value_xy * value_z[k];
         }
       }
     }
