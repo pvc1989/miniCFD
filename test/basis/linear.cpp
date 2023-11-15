@@ -102,7 +102,8 @@ TEST_F(TestBasisOrthoNormal, OnTriangle) {
 }
 TEST_F(TestBasisOrthoNormal, OnQuadrangle) {
   using Lagrange = mini::geometry::Quadrangle4<double, 2>;
-  using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Quadrangle<2, Gx, Gx>;
   using Coord = Gauss::Global;
   Coord p0{-1, -1}, p1{+1, -1}, p2{+1, +1}, p3{-1, +1};
   auto lagrange = Lagrange(p0, p1, p2, p3);

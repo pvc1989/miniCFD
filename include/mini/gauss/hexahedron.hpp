@@ -33,6 +33,8 @@ class Hexahedron : public Cell<typename Gx::Scalar> {
   using GaussY = Gy;
   using GaussZ = Gz;
   using Scalar = typename GaussX::Scalar;
+  static_assert(std::is_same_v<Scalar, typename Gy::Scalar>);
+  static_assert(std::is_same_v<Scalar, typename Gz::Scalar>);
   using Lagrange = geometry::Hexahedron<Scalar>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

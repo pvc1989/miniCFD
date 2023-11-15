@@ -11,7 +11,8 @@
 class TestGaussQuadrangle : public ::testing::Test {
 };
 TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
-  using Gauss = mini::gauss::Quadrangle<double, 2, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Quadrangle<2, Gx, Gx>;
   using Lagrange = mini::geometry::Quadrangle4<double, 2>;
   using Coord = typename Lagrange::Global;
   auto lagrange = Lagrange {
@@ -37,7 +38,8 @@ TEST_F(TestGaussQuadrangle, TwoDimensionalQuadrangle4) {
   EXPECT_DOUBLE_EQ(Norm(g, gauss), std::sqrt(Innerprod(g, g, gauss)));
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
-  using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Quadrangle<3, Gx, Gx>;
   using Lagrange = mini::geometry::Quadrangle4<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
@@ -71,7 +73,8 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle4) {
   }
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
-  using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Quadrangle<3, Gx, Gx>;
   using Lagrange = mini::geometry::Quadrangle8<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;
@@ -106,7 +109,8 @@ TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle8) {
   }
 }
 TEST_F(TestGaussQuadrangle, ThreeDimensionalQuadrangle9) {
-  using Gauss = mini::gauss::Quadrangle<double, 3, 4, 4>;
+  using Gx = mini::gauss::Legendre<double, 4>;
+  using Gauss = mini::gauss::Quadrangle<3, Gx, Gx>;
   using Lagrange = mini::geometry::Quadrangle9<double, 3>;
   using Local = typename Lagrange::Local;
   using Global = typename Lagrange::Global;

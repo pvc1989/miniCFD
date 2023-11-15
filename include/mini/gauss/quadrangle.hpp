@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include <type_traits>
+
 #include "mini/algebra/eigen.hpp"
 
 #include "mini/gauss/line.hpp"
@@ -18,22 +20,19 @@ namespace gauss {
 /**
  * @brief Numerical integrators on quadrilateral elements.
  * 
- * @tparam Scalar  Type of scalar variables.
  * @tparam kPhysDim  Dimension of the physical space.
- * @tparam Qx  Number of qudrature points in the \f$\xi\f$ direction.
- * @tparam Qy  Number of qudrature points in the \f$\eta\f$ direction.
- * @tparam kRule  The type of Gaussian quadrature rule.
+ * @tparam Gx  The quadrature rule in the \f$\xi\f$ direction.
+ * @tparam Gy  The quadrature rule in the \f$\eta\f$ direction.
  */
-template <std::floating_point Scalar, int kPhysDim, int Qx = 4, int Qy = 4,
-    Rule kRule = Rule::kLegendre>
-class Quadrangle : public Face<Scalar, kPhysDim> {
+template <int kPhysDim, class Gx, class Gy>
+class Quadrangle : public Face<typename Gx::Scalar, kPhysDim> {
   static constexpr int D = kPhysDim;
 
  public:
-  using GaussX = std::conditional_t< kRule == Rule::kLegendre,
-      Legendre<Scalar, Qx>, Lobatto<Scalar, Qx> >;
-  using GaussY = std::conditional_t< kRule == Rule::kLegendre,
-      Legendre<Scalar, Qy>, Lobatto<Scalar, Qy> >;
+  using GaussX = Gx;
+  using GaussY = Gy;
+  using Scalar = typename GaussX::Scalar;
+  static_assert(std::is_same_v<Scalar, typename Gy::Scalar>);
   using Lagrange = geometry::Quadrangle<Scalar, kPhysDim>;
   using Real = typename Lagrange::Real;
   using Local = typename Lagrange::Local;
@@ -42,8 +41,11 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   using Frame = typename Lagrange::Frame;
 
  private:
-  static const std::array<Local, Qx * Qy> local_coords_;
-  static const std::array<Scalar, Qx * Qy> local_weights_;
+  static constexpr int Qx = GaussX::Q;
+  static constexpr int Qy = GaussY::Q;
+  static constexpr int Q = Qx * Qy;
+  static const std::array<Local, Q> local_coords_;
+  static const std::array<Scalar, Q> local_weights_;
   std::array<Global, Qx * Qy> global_coords_;
   std::array<Scalar, Qx * Qy> global_weights_;
   std::array<Frame, Qx * Qy> normal_frames_;
@@ -133,15 +135,17 @@ class Quadrangle : public Face<Scalar, kPhysDim> {
   }
 };
 
-template <std::floating_point Scalar, int D, int Qx, int Qy, Rule R>
-std::array<typename Quadrangle<Scalar, D, Qx, Qy, R>::Local, Qx * Qy> const
-Quadrangle<Scalar, D, Qx, Qy, R>::local_coords_
-    = Quadrangle<Scalar, D, Qx, Qy, R>::BuildLocalCoords();
+template <int D, class Gx, class Gy>
+std::array<typename Quadrangle<D, Gx, Gy>::Local,
+    Quadrangle<D, Gx, Gy>::Q> const
+Quadrangle<D, Gx, Gy>::local_coords_
+    = Quadrangle<D, Gx, Gy>::BuildLocalCoords();
 
-template <std::floating_point Scalar, int D, int Qx, int Qy, Rule R>
-std::array<Scalar, Qx * Qy> const
-Quadrangle<Scalar, D, Qx, Qy, R>::local_weights_
-    = Quadrangle<Scalar, D, Qx, Qy, R>::BuildLocalWeights();
+template <int D, class Gx, class Gy>
+std::array<typename Quadrangle<D, Gx, Gy>::Scalar,
+    Quadrangle<D, Gx, Gy>::Q> const
+Quadrangle<D, Gx, Gy>::local_weights_
+    = Quadrangle<D, Gx, Gy>::BuildLocalWeights();
 
 }  // namespace gauss
 }  // namespace mini

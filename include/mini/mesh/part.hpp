@@ -425,11 +425,8 @@ class Part {
     gauss::Triangle<Scalar, kPhysDim, 6>,
     gauss::Triangle<Scalar, kPhysDim, 12>>;
   using LagrangeOnQuadrangle = geometry::Quadrangle4<Scalar, kPhysDim>;
-  using GaussOnQuadrangle = type::select_t<kDegrees,
-    gauss::Quadrangle<Scalar, kPhysDim, 1, 1>,
-    gauss::Quadrangle<Scalar, kPhysDim, 2, 2>,
-    gauss::Quadrangle<Scalar, kPhysDim, 3, 3>,
-    gauss::Quadrangle<Scalar, kPhysDim, 4, 4>>;
+  using GaussOnQuadrangle =
+    gauss::Quadrangle<kPhysDim, GaussOnLine, GaussOnLine>;
   using LagrangeOnTetrahedron = geometry::Tetrahedron4<Scalar>;
   using GaussOnTetrahedron = type::select_t<kDegrees,
     gauss::Tetrahedron<Scalar, 1>,
@@ -437,7 +434,8 @@ class Part {
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
   using LagrangeOnHexahedron = geometry::Hexahedron8<Scalar>;
-  using GaussOnHexahedron = gauss::Hexahedron<GaussOnLine, GaussOnLine, GaussOnLine>;
+  using GaussOnHexahedron =
+      gauss::Hexahedron<GaussOnLine, GaussOnLine, GaussOnLine>;
   using LagrangeOnPyramid = geometry::Pyramid5<Scalar>;
   using GaussOnPyramid = type::select_t<kDegrees,
     gauss::Pyramid<Scalar, 1, 1, 1>,
