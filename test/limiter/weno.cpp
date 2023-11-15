@@ -144,7 +144,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
   for (int i_cell = 0; i_cell < n_cells; ++i_cell) {
     auto &cell_i = cells[i_cell];
     adj_smoothness[i_cell].emplace_back(
-        mini::limiter::weno::GetSmoothness(cell_i.projection_));
+        mini::limiter::weno::GetSmoothness(cell_i.projection()));
     for (auto j_cell : cell_adjs[i_cell]) {
       auto adj_func = [&](Coord const &xyz) {
         return cells[j_cell].GlobalToValue(xyz);
@@ -152,10 +152,10 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
       auto &adj_projection =
           adj_projections[i_cell].emplace_back(cell_i.basis());
       adj_projection.Approximate(adj_func);
-      Mat1x1 diff = cell_i.projection_.average()
+      Mat1x1 diff = cell_i.projection().average()
           - adj_projection.average();
       adj_projection += diff;
-      diff = cell_i.projection_.average() - adj_projection.average();
+      diff = cell_i.projection().average() - adj_projection.average();
       EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
       adj_smoothness[i_cell].emplace_back(
           mini::limiter::weno::GetSmoothness(adj_projection));
@@ -174,7 +174,7 @@ TEST_F(TestWenoLimiters, ReconstructScalar) {
     for (int j_cell = 0; j_cell <= adj_cnt; ++j_cell) {
       weights[j_cell] /= sum;
     }
-    auto &projection_i = cells[i_cell].projection_;
+    auto &projection_i = cells[i_cell].projection();
     projection_i.coeff() *= weights.back();
     for (int j_cell = 0; j_cell < adj_cnt; ++j_cell) {
       projection_i.coeff() +=
@@ -259,10 +259,10 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
     std::cout << std::scientific << std::setprecision(3)
         << eigen_smoothness.transpose();
     std::cout << std::endl;
-    Value diff = cell.projection_.average()
+    Value diff = cell.projection().average()
         - eigen_projections.back().average();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
-    diff = cell.projection_.average() - lazy_projections.back().average();
+    diff = cell.projection().average() - lazy_projections.back().average();
     EXPECT_NEAR(diff.norm(), 0.0, 1e-13);
   }
   MPI_Finalize();

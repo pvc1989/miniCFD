@@ -58,10 +58,10 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           auto const &flux = cell.GetFluxOnGaussianPoint(q);
-          auto const &grad = cell.projection_.GetBasisGradientsOnGaussianPoint(q);
+          auto const &grad = cell.projection().GetBasisGradientsOnGaussianPoint(q);
           Coeff prod = flux * grad;
           prod *= gauss.GetGlobalWeight(q);
-          cell.projection_.AddCoeffTo(prod, data);
+          cell.projection().AddCoeffTo(prod, data);
         }
       }
     }

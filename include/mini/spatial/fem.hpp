@@ -92,7 +92,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     for (Cell *cell_ptr: this->part_ptr_->GetLocalCellPointers()) {
       auto i_cell = cell_ptr->id();
       Scalar const *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
-      cell_ptr->projection_.GetCoeffFrom(data);
+      cell_ptr->projection().GetCoeffFrom(data);
     }
   }
   Column GetSolutionColumn() const override {
@@ -100,7 +100,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     for (const auto &cell : this->part_ptr_->GetLocalCells()) {
       auto i_cell = cell.id();
       Scalar *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
-      cell.projection_.WriteCoeffTo(data);
+      cell.projection().WriteCoeffTo(data);
     }
     return column;
   }
@@ -170,10 +170,10 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           const auto &xyz = gauss.GetGlobalCoord(q);
           Value cv = cell.GlobalToValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
-          auto grad = cell.projection_.GlobalToBasisGradients(xyz);
+          auto grad = cell.projection().GlobalToBasisGradients(xyz);
           Coeff prod = flux * grad;
           prod *= gauss.GetGlobalWeight(q);
-          cell.projection_.AddCoeffTo(prod, data);
+          cell.projection().AddCoeffTo(prod, data);
         }
       }
     }
@@ -195,9 +195,9 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-        holder.projection_.AddCoeffTo(prod, holder_data);
+        holder.projection().AddCoeffTo(prod, holder_data);
         prod = flux * sharer.GlobalToBasisValues(coord);
-        sharer.projection_.AddCoeffTo(prod, sharer_data);
+        sharer.projection().AddCoeffTo(prod, sharer_data);
       }
     }
   }
@@ -216,7 +216,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-        holder.projection_.AddCoeffTo(prod, holder_data);
+        holder.projection().AddCoeffTo(prod, holder_data);
       }
     }
   }
@@ -244,7 +244,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSolidWall(u_holder);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }
@@ -263,7 +263,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }
@@ -282,7 +282,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }
@@ -302,7 +302,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }
@@ -322,7 +322,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }
@@ -342,7 +342,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection_.AddCoeffTo(prod, holder_data);
+          holder.projection().AddCoeffTo(prod, holder_data);
         }
       }
     }

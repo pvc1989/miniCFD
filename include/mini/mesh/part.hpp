@@ -168,6 +168,7 @@ template <std::integral Int, class R, class Proj>
 struct Cell {
   using Riemann = R;
   using Projection = Proj;
+  using ProjectionUptr = std::unique_ptr<Proj>;
   using FluxMatrix = typename Riemann::FluxMatrix;
   using Scalar = typename Riemann::Scalar;
   using Gauss = gauss::Cell<Scalar>;
@@ -192,14 +193,15 @@ struct Cell {
   std::vector<Face *> adj_faces_;
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
-  Projection projection_;
+  ProjectionUptr projection_ptr_;
   Int metis_id{-1}, id_{-1};
   bool inner_ = true;
 
   Cell(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr, Int m_cell)
       : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
-        metis_id(m_cell), projection_(*gauss_ptr_) {
+        projection_ptr_(std::make_unique<Proj>(*gauss_ptr_)),
+        metis_id(m_cell) {
   }
   Cell() = default;
   Cell(Cell const &) = delete;
@@ -229,32 +231,38 @@ struct Cell {
   Lagrange const &lagrange() const {
     return gauss().lagrange();
   }
+  Projection const &projection() const {
+    return *projection_ptr_;
+  }
+  Projection &projection() {
+    return *projection_ptr_;
+  }
   Global LocalToGlobal(const Local &local) const {
     return lagrange().LocalToGlobal(local);
   }
   Value GlobalToValue(const Global &global) const {
-    return projection_.GlobalToValue(global);
+    return projection().GlobalToValue(global);
   }
   Basis const &basis() const {
-    return projection_.basis();
+    return projection().basis();
   }
   int CountCorners() const {
     return lagrange().CountCorners();
   }
   int CountFields() const {
-    return projection_.coeff().cols() * projection_.coeff().rows();
+    return projection().coeff().cols() * projection().coeff().rows();
   }
   FluxMatrix GetFluxOnGaussianPoint(int i) const {
-    Value value = projection_.GetValueOnGaussianPoint(i);
+    Value value = projection().GetValueOnGaussianPoint(i);
     return Riemann::GetFluxMatrix(value);
   }
   auto GlobalToBasisValues(const Global &global) const {
-    return projection_.GlobalToBasisValues(global);
+    return projection().GlobalToBasisValues(global);
   }
 
   template <class Callable>
   void Approximate(Callable &&func) {
-    projection_.Approximate(std::forward<Callable>(func));
+    projection().Approximate(std::forward<Callable>(func));
   }
 };
 
@@ -346,7 +354,7 @@ class Section {
   void GatherFields() {
     for (int i_cell = head(); i_cell < tail(); ++i_cell) {
       const auto &cell = cells_.at(i_cell);
-      const auto &coeff = cell.projection_.coeff();
+      const auto &coeff = cell.projection().coeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         fields_.at(i_field).at(i_cell) = coeff.reshaped()[i_field-1];
       }
@@ -355,7 +363,7 @@ class Section {
   void ScatterFields() {
     for (int i_cell = head(); i_cell < tail(); ++i_cell) {
       auto &cell = cells_.at(i_cell);
-      auto &coeff = cell.projection_.coeff();
+      auto &coeff = cell.projection().coeff();
       for (int i_field = 1; i_field <= kFields; ++i_field) {
         coeff.reshaped()[i_field-1] = fields_.at(i_field).at(i_cell);
       }
@@ -1235,13 +1243,13 @@ class Part {
   }
   void ShareGhostCellCoeffs() {
     int i_req = 0;
-    // send cell.projection_.coeff_
+    // send cell.projection().coeff_
     int i_buf = 0;
     for (auto &[i_part, cell_ptrs] : send_cell_ptrs_) {
       auto &send_buf = send_coeffs_[i_buf++];
       Scalar *data = send_buf.data();
       for (auto *cell_ptr : cell_ptrs) {
-        data = cell_ptr->projection_.WriteCoeffTo(data);
+        data = cell_ptr->projection().WriteCoeffTo(data);
       }
       assert(data == send_buf.data() + send_buf.size());
       int tag = i_part;
@@ -1249,7 +1257,7 @@ class Part {
       MPI_Isend(send_buf.data(), send_buf.size(), kMpiRealType, i_part, tag,
           MPI_COMM_WORLD, &request);
     }
-    // recv cell.projection_.coeff_
+    // recv cell.projection().coeff_
     i_buf = 0;
     for (auto &[i_part, cell_ptrs] : recv_cell_ptrs_) {
       auto &recv_buf = recv_coeffs_[i_buf++];
@@ -1273,7 +1281,7 @@ class Part {
       auto &recv_buf = recv_coeffs_[i_buf++];
       Scalar const *data = recv_buf.data();
       for (auto *cell_ptr : cell_ptrs) {
-        data = cell_ptr->projection_.GetCoeffFrom(data);
+        data = cell_ptr->projection().GetCoeffFrom(data);
       }
       assert(data == recv_buf.data() + recv_buf.size());
     }
@@ -1306,7 +1314,7 @@ class Part {
     }
     int i = 0;
     for (Cell *cell_ptr : troubled_cells) {
-      cell_ptr->projection_.coeff() = new_projections[i++].coeff();
+      cell_ptr->projection().coeff() = new_projections[i++].coeff();
     }
     assert(i == troubled_cells.size());
   }

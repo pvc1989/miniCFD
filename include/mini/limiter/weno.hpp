@@ -74,12 +74,12 @@ class Lazy {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto my_average = my_cell_->projection_.average();
+    auto my_average = my_cell_->projection().average();
     for (auto *adj_cell : my_cell_->adj_cells_) {
       assert(adj_cell);
       auto &adj_proj = old_projections_.emplace_back(my_cell_->basis());
       assert(&(adj_proj.basis()) == &(my_cell_->basis()));
-      adj_proj.Approximate(adj_cell->projection_);
+      adj_proj.Approximate(adj_cell->projection());
       adj_proj += my_average - adj_proj.average();
       if (verbose_) {
         std::cout << "\n  adj smoothness[" << adj_cell->metis_id << "] = ";
@@ -87,7 +87,7 @@ class Lazy {
             GetSmoothness(adj_proj).transpose();
       }
     }
-    old_projections_.emplace_back(my_cell_->projection_);
+    old_projections_.emplace_back(my_cell_->projection());
     if (verbose_) {
       std::cout << "\n  old smoothness[" << my_cell_->metis_id << "] = ";
       std::cout << std::scientific << std::setprecision(3) <<
@@ -151,7 +151,7 @@ class Eigen {
   }
   static bool IsNotSmooth(const Cell &cell) {
     constexpr int components[] = { 0, Cell::K-1 };
-    auto max_abs_averages = cell.projection_.average();
+    auto max_abs_averages = cell.projection().average();
     for (int i : components) {
       max_abs_averages[i] = std::max(1e-9, std::abs(max_abs_averages[i]));
     }
@@ -159,7 +159,7 @@ class Eigen {
     auto my_values = cell.GlobalToValue(cell.center());
     for (const Cell *adj_cell : cell.adj_cells_) {
       auto adj_values = adj_cell->GlobalToValue(cell.center());
-      auto adj_averages = adj_cell->projection_.average();
+      auto adj_averages = adj_cell->projection().average();
       for (int i : components) {
         sum_abs_differences[i] += std::abs(my_values[i] - adj_values[i]);
         max_abs_averages[i] = std::max(max_abs_averages[i],
@@ -193,13 +193,13 @@ class Eigen {
   void Borrow() {
     old_projections_.clear();
     old_projections_.reserve(my_cell_->adj_cells_.size() + 1);
-    auto my_average = my_cell_->projection_.average();
+    auto my_average = my_cell_->projection().average();
     for (auto *adj_cell : my_cell_->adj_cells_) {
       auto &adj_proj = old_projections_.emplace_back(my_cell_->basis());
-      adj_proj.Approximate(adj_cell->projection_);
+      adj_proj.Approximate(adj_cell->projection());
       adj_proj += my_average - adj_proj.average();
     }
-    old_projections_.emplace_back(my_cell_->projection_);
+    old_projections_.emplace_back(my_cell_->projection());
   }
   /**
    * @brief Rotate borrowed projections onto the interface between cells
@@ -209,7 +209,7 @@ class Eigen {
     assert(my_cell_->adj_faces_.size() == my_cell_->adj_cells_.size());
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
-    const auto &big_u = my_cell_->projection_.average();
+    const auto &big_u = my_cell_->projection().average();
     auto *riemann = const_cast<typename Face::Riemann *>(&adj_face.riemann_);
     riemann->UpdateEigenMatrices(big_u);
     // initialize weights
