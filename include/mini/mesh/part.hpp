@@ -417,8 +417,7 @@ class Part {
   static const MPI_Datatype kMpiRealType;
 
  private:
-  using GaussLegendre = gauss::Legendre<Scalar, kDegrees + 1>;
-  using GaussLobatto = gauss::Lobatto<Scalar, kDegrees + 1>;
+  using GaussOnLine = typename Projection::GaussOnLine;
   using LagrangeOnTriangle = geometry::Triangle3<Scalar, kPhysDim>;
   using GaussOnTriangle = type::select_t<kDegrees,
     gauss::Triangle<Scalar, kPhysDim, 1>,
@@ -438,11 +437,7 @@ class Part {
     gauss::Tetrahedron<Scalar, 14>,
     gauss::Tetrahedron<Scalar, 24>>;
   using LagrangeOnHexahedron = geometry::Hexahedron8<Scalar>;
-  using GaussOnHexahedron = std::conditional_t<
-    std::is_same_v< std::remove_reference_t<Projection>,
-        polynomial::Projection< Scalar, kPhysDim, kDegrees, kComponents > >,
-    gauss::Hexahedron<GaussLegendre, GaussLegendre, GaussLegendre>,
-    typename Projection::Gauss>;
+  using GaussOnHexahedron = gauss::Hexahedron<GaussOnLine, GaussOnLine, GaussOnLine>;
   using LagrangeOnPyramid = geometry::Pyramid5<Scalar>;
   using GaussOnPyramid = type::select_t<kDegrees,
     gauss::Pyramid<Scalar, 1, 1, 1>,

@@ -13,6 +13,7 @@
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/gauss/cell.hpp"
+#include "mini/gauss/lobatto.hpp"
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/basis/lagrange.hpp"
 
@@ -33,6 +34,9 @@ namespace polynomial {
 template <class Gx, class Gy, class Gz, int kComponents, bool kLocal = false>
 class Hexahedron {
  public:
+  using GaussX = Gx;
+  using GaussY = Gy;
+  using GaussZ = Gz;
   using Gauss = gauss::Hexahedron<Gx, Gy, Gz>;
   using Scalar = typename Gauss::Scalar;
   using Local = typename Gauss::Local;
@@ -51,6 +55,8 @@ class Hexahedron {
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
+
+  using GaussOnLine = GaussX;
 
  private:
   static const Basis basis_;

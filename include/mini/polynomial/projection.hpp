@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/gauss/legendre.hpp"
+#include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/function.hpp"
 #include "mini/basis/linear.hpp"
 
@@ -91,6 +93,8 @@ class Projection {
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
+
+  using GaussOnLine = gauss::Legendre<Scalar, kDegrees + 1>;
 
  public:
   Coeff coeff_;
