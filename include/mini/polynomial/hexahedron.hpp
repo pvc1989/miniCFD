@@ -114,6 +114,11 @@ class Hexahedron {
     LocalGradientsToGlobalGradients(jacobian, &grad);
     return grad;
   }
+  Mat1xN GetBasisValuesOnGaussianPoint(int ijk) const {
+    Mat1xN values; values.setZero();
+    values[ijk] = 1;
+    return values;
+  }
   const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const {
     return basis_gradients_[ijk];
   }

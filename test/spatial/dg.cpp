@@ -82,9 +82,9 @@ int main(int argc, char* argv[]) {
   /* aproximated by Projection on Lagrange basis on Legendre roots */
 {
   time_begin = MPI_Wtime();
-  using Gx = mini::gauss::Legendre<Scalar, kDegrees>;
+  using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
   using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 2>;
+  using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
   using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
