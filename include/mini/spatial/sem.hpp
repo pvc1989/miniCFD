@@ -2,6 +2,9 @@
 #ifndef MINI_SPATIAL_SEM_HPP_
 #define MINI_SPATIAL_SEM_HPP_
 
+#include <concepts>
+#include <ranges>
+
 #include <array>
 #include <cassert>
 #include <functional>
@@ -50,10 +53,10 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
     return (x - y).norm() < 1e-12;
   }
 
-  void MatchGaussianPoints() {
-    auto faces = this->part_ptr_->GetLocalFaces();
-    i_node_on_holder_.resize(faces.size());
-    i_node_on_sharer_.resize(faces.size());
+  template <std::ranges::input_range R>
+  void MatchGaussianPoints(R &&faces) {
+    i_node_on_holder_.resize(i_node_on_holder_.size() + faces.size());
+    i_node_on_sharer_.resize(i_node_on_sharer_.size() + faces.size());
     for (const Face &face : faces) {
       const auto &face_gauss = face.gauss();
       const auto &holder_gauss = face.holder().gauss();
@@ -83,7 +86,8 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
  public:
   explicit DiscontinuousGalerkin(Part *part_ptr)
       : Base(part_ptr) {
-    MatchGaussianPoints();
+    MatchGaussianPoints(part_ptr->GetLocalFaces());
+    MatchGaussianPoints(part_ptr->GetGhostFaces());
   }
   DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
   DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
@@ -133,7 +137,25 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
     }
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
-    this->Base::AddFluxOnGhostFaces(residual);
+    for (const Face &face : this->part_ptr_->GetGhostFaces()) {
+      const auto &gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &sharer = face.sharer();
+      const auto &riemann = face.riemann();
+      auto *holder_data = residual->data()
+          + this->part_ptr_->GetCellDataOffset(holder.id());
+      auto &i_node_on_holder = i_node_on_holder_[face.id()];
+      auto &i_node_on_sharer = i_node_on_sharer_[face.id()];
+      for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        auto c_holder = i_node_on_holder[f];
+        auto c_sharer = i_node_on_sharer[f];
+        Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
+        Value u_sharer = sharer.projection().GetValueOnGaussianPoint(c_sharer);
+        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
+        flux *= gauss.GetGlobalWeight(f);
+        holder.projection().AddValueTo(-flux, holder_data, c_holder);
+      }
+    }
   }
   void ApplySolidWall(Column *residual) const override {
     this->Base::ApplySolidWall(residual);
