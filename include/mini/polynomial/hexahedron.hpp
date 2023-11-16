@@ -114,11 +114,6 @@ class Hexahedron {
     LocalGradientsToGlobalGradients(jacobian, &grad);
     return grad;
   }
-  Mat1xN GetBasisValuesOnGaussianPoint(int ijk) const {
-    Mat1xN values; values.setZero();
-    values[ijk] = 1;
-    return values;
-  }
   const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const {
     return basis_gradients_[ijk];
   }
@@ -167,11 +162,30 @@ class Hexahedron {
     std::memcpy(output, coeff_.data(), sizeof(Scalar) * coeff_.size());
     return output + coeff_.size();
   }
+  /**
+   * @brief Add the given Coeff to the dofs corresponding to the given basis.
+   * 
+   * @param coeff the coeff to be added
+   * @param output the beginning of all dofs
+   */
   static void AddCoeffTo(Coeff const &coeff, Scalar *output) {
     for (int c = 0; c < N; ++c) {
       for (int r = 0; r < K; ++r) {
         *output++ += coeff(r, c);
       }
+    }
+  }
+  /**
+   * @brief Add the given Value to the dofs corresponding to the given basis.
+   * 
+   * @param value the value to be added
+   * @param output the beginning of all dofs
+   * @param i_basis the (0-based) index of basis
+   */
+  static void AddValueTo(Value const &value, Scalar *output, int i_basis) {
+    output += K * i_basis;
+    for (int r = 0; r < K; ++r) {
+      *output++ += value[r];
     }
   }
 

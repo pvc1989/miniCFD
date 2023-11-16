@@ -127,10 +127,8 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         Value u_sharer = sharer.projection().GetValueOnGaussianPoint(c_sharer);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(f);
-        Coeff prod = -flux * holder.projection().GetBasisValuesOnGaussianPoint(c_holder);
-        holder.projection().AddCoeffTo(prod, holder_data);
-        prod = flux * sharer.projection().GetBasisValuesOnGaussianPoint(c_sharer);
-        sharer.projection().AddCoeffTo(prod, sharer_data);
+        holder.projection().AddValueTo(-flux, holder_data, c_holder);
+        sharer.projection().AddValueTo(flux, sharer_data, c_sharer);
       }
     }
   }
