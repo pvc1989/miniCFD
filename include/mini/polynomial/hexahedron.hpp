@@ -188,6 +188,19 @@ class Hexahedron {
       *output++ += value[r];
     }
   }
+  /**
+   * @brief Multiply the given scale to the Value at the given address.
+   * 
+   * @param scale the scale to be multiplied
+   * @param output the address of the value
+   * @return the address of the next value
+   */
+  static Scalar *ScaleValueAt(double scale, Scalar *output) {
+    for (int r = 0; r < K; ++r) {
+      *output++ *= scale;
+    }
+    return output;
+  }
 
   static Basis BuildInterpolationBasis() {
     auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };

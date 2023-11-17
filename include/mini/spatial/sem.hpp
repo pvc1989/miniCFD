@@ -117,6 +117,23 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
   ~DiscontinuousGalerkin() noexcept = default;
 
+  Column GetResidualColumn() const override {
+    Column residual = this->Base::GetResidualColumn();
+    // divide mass matrix for each cell
+    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+      auto i_cell = cell.id();
+      auto *data = residual.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      const auto &gauss = cell.gauss();
+      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+        auto scale = 1.0 / gauss.GetGlobalWeight(q);
+        data = cell.projection().ScaleValueAt(scale, data);
+      }
+      assert(data ==
+          residual.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
+    }
+    return residual;
+  }
+
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
     if (Part::kDegrees > 0) {
