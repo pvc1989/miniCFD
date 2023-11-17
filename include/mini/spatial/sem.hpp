@@ -27,9 +27,8 @@ namespace sem {
  */
 template <typename Part>
 class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
-  using Base = fem::DiscontinuousGalerkin<Part>;
-
  public:
+  using Base = fem::DiscontinuousGalerkin<Part>;
   using Riemann = typename Base::Riemann;
   using Scalar = typename Base::Scalar;
   using Face = typename Base::Face;
@@ -142,7 +141,8 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-          auto const &flux = cell.GetFluxOnGaussianPoint(q);
+          auto const &value = cell.projection().GetValueOnGaussianPoint(q);
+          auto const &flux = Riemann::GetFluxMatrix(value);
           auto const &grad = cell.projection().GetBasisGradientsOnGaussianPoint(q);
           Coeff prod = flux * grad;
           prod *= gauss.GetGlobalWeight(q);

@@ -252,10 +252,6 @@ struct Cell {
   int CountFields() const {
     return projection().coeff().cols() * projection().coeff().rows();
   }
-  FluxMatrix GetFluxOnGaussianPoint(int i) const {
-    Value value = projection().GetValueOnGaussianPoint(i);
-    return Riemann::GetFluxMatrix(value);
-  }
   auto GlobalToBasisValues(const Global &global) const {
     return projection().GlobalToBasisValues(global);
   }

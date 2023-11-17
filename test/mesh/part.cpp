@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 {
   std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
-  using Gx = mini::gauss::Legendre<double, kDegrees + 1>;
+  using Gx = mini::gauss::Lobatto<double, kDegrees + 1>;
   using Gy = mini::gauss::Lobatto<double, kDegrees + 1>;
   using Gz = mini::gauss::Lobatto<double, kDegrees + 1>;
   using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;

@@ -168,7 +168,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &xyz = gauss.GetGlobalCoord(q);
-          Value cv = cell.GlobalToValue(xyz);
+          Value cv = cell.projection().GlobalToValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
           auto grad = cell.projection().GlobalToBasisGradients(xyz);
           Coeff prod = flux * grad;

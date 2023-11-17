@@ -147,6 +147,16 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
     value -= vector_interp.GlobalToValue(global);
     EXPECT_NEAR(value.norm(), 0, 1e-12);
   }
+  // test value query methods
+  for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+    Global global = vector_interp.gauss().GetGlobalCoord(q);
+    Value value = vector_interp.GlobalToValue(global);
+    value -= vector_interp.GetValueOnGaussianPoint(q);
+    EXPECT_NEAR(value.norm(), 0, 1e-14);
+    auto grad = vector_interp.GlobalToBasisGradients(global);
+    grad -= vector_interp.GetBasisGradientsOnGaussianPoint(q);
+    EXPECT_NEAR(grad.norm(), 0, 1e-15);
+  }
 }
 
 int main(int argc, char* argv[]) {

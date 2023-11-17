@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
   std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
 }
-  /* aproximated by Projection on Lagrange basis on Legendre roots */
+  /* aproximated by Projection on Lagrange basis on Lobatto roots */
 {
   time_begin = MPI_Wtime();
   using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
@@ -126,6 +126,75 @@ int main(int argc, char* argv[]) {
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
   std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  /* Check the consistency between FEM and SEM implementations. */
+  class Test : public Spatial {
+    using SEM = Spatial;
+    using FEM = typename Spatial::Base;
+
+   public:
+    explicit Test(Part *part_ptr)
+        : Spatial(part_ptr) {
+    }
+
+    void AddFluxDivergence(Column *residual) const override {
+      residual->setZero();
+      this->SEM::AddFluxDivergence(residual);
+      *residual *= -1.0;
+      this->FEM::AddFluxDivergence(residual);
+    }
+    void AddFluxOnLocalFaces(Column *residual) const override {
+      residual->setZero();
+      this->SEM::AddFluxOnLocalFaces(residual);
+      *residual *= -1.0;
+      this->FEM::AddFluxOnLocalFaces(residual);
+    }
+    void AddFluxOnGhostFaces(Column *residual) const override {
+      residual->setZero();
+      this->SEM::AddFluxOnGhostFaces(residual);
+      *residual *= -1.0;
+      this->FEM::AddFluxOnGhostFaces(residual);
+    }
+    void AddFluxOnBoundaries(Column *residual) const override {
+      residual->setZero();
+      this->SEM::AddFluxOnBoundaries(residual);
+      *residual *= -1.0;
+      this->FEM::ApplySolidWall(residual);
+      this->FEM::ApplySupersonicInlet(residual);
+      this->FEM::ApplySupersonicOutlet(residual);
+      this->FEM::ApplySubsonicInlet(residual);
+      this->FEM::ApplySubsonicOutlet(residual);
+      this->FEM::ApplySmartBoundary(residual);
+    }
+  };
+  auto test = Test(&part);
+  test.SetSmartBoundary("4_S_27", moving);  // Top
+  test.SetSmartBoundary("4_S_31", moving);  // Left
+  test.SetSolidWall("4_S_1");   // Back
+  test.SetSubsonicInlet("4_S_32", moving);  // Front
+  test.SetSupersonicInlet("4_S_19", moving);  // Bottom
+  test.SetSubsonicOutlet("4_S_23", moving);  // Right
+  test.SetSupersonicOutlet("4_S_15");  // Gap
+
+  time_begin = MPI_Wtime();
+  test.AddFluxDivergence(&column);
+  std::printf("AddFluxDivergence.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
+  test.AddFluxOnLocalFaces(&column);
+  std::printf("AddFluxOnLocalFaces.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
+  test.AddFluxOnGhostFaces(&column);
+  std::printf("AddFluxOnGhostFaces.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+
+  time_begin = MPI_Wtime();
+  test.AddFluxOnBoundaries(&column);
+  std::printf("AddFluxOnBoundaries.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
 }
   MPI_Finalize();
