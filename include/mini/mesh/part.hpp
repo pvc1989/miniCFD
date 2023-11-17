@@ -1364,6 +1364,19 @@ class Part {
     auto t = [](auto &uptr) -> const Face & { return *uptr; };
     return faces | std::views::transform(t);
   }
+  /**
+   * @brief Get a range of `(const Face &)` for `Face`s on boundaries.
+   * 
+   * @return std::ranges::input_range the range of `Face`s sorted by their id's.
+   */
+  std::ranges::input_range auto
+  GetBoundaryFaces() const {
+    auto t = [](auto &uptr) -> const Face & { return *uptr; };
+    return bound_faces_
+        | std::views::values | std::views::join
+        | std::views::values | std::views::join
+        | std::views::transform(t);
+  }
 
  private:
   std::map<Int, Coordinates>

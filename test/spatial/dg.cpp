@@ -28,6 +28,10 @@ Value func(const Coord& xyz) {
   auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
   return Value(r, 1 - r + (r >= 1));
 }
+Value moving(const Coord& xyz, double t) {
+  auto x = xyz[0], y = xyz[1];
+  return Value(x + y, x - y);
+}
 
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./dg
@@ -58,6 +62,13 @@ int main(int argc, char* argv[]) {
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
   using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
+  spatial.SetSmartBoundary("4_S_27", moving);  // Top
+  spatial.SetSmartBoundary("4_S_31", moving);  // Left
+  spatial.SetSolidWall("4_S_1");   // Back
+  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
+  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
+  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
+  spatial.SetSupersonicOutlet("4_S_15");  // Gap
   for (Cell *cell_ptr : part.GetLocalCellPointers()) {
     cell_ptr->Approximate(func);
   }
@@ -90,6 +101,13 @@ int main(int argc, char* argv[]) {
   using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
   auto part = Part(case_name, i_core, n_core);
   auto spatial = Spatial(&part);
+  spatial.SetSmartBoundary("4_S_27", moving);  // Top
+  spatial.SetSmartBoundary("4_S_31", moving);  // Left
+  spatial.SetSolidWall("4_S_1");   // Back
+  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
+  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
+  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
+  spatial.SetSupersonicOutlet("4_S_15");  // Gap
   for (auto *cell_ptr : part.GetLocalCellPointers()) {
     cell_ptr->Approximate(func);
   }

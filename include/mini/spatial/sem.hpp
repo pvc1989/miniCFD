@@ -83,11 +83,33 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
     }
   }
 
+  template <std::ranges::input_range R>
+  void MatchGaussianPointsOnBoundaries(R &&faces) {
+    for (const Face &face : faces) {
+      assert(i_node_on_holder_.size() == face.id());
+      auto &curr_face = i_node_on_holder_.emplace_back();
+      const auto &face_gauss = face.gauss();
+      const auto &holder_gauss = face.holder().gauss();
+      for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
+        auto &p = face_gauss.GetGlobalCoord(f);
+        curr_face.at(f) = -1;
+        for (int h = 0, H = holder_gauss.CountPoints(); h < H; ++h) {
+          if (AlmostEqual(p, holder_gauss.GetGlobalCoord(h))) {
+            curr_face[f] = h;
+            break;
+          }
+        }
+        assert(curr_face[f] >= 0);
+      }
+    }
+  }
+
  public:
   explicit DiscontinuousGalerkin(Part *part_ptr)
       : Base(part_ptr) {
     MatchGaussianPoints(part_ptr->GetLocalFaces());
     MatchGaussianPoints(part_ptr->GetGhostFaces());
+    MatchGaussianPointsOnBoundaries(part_ptr->GetBoundaryFaces());
   }
   DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
   DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
@@ -152,28 +174,127 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
         Value u_sharer = sharer.projection().GetValueOnGaussianPoint(c_sharer);
         Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
-        flux *= gauss.GetGlobalWeight(f);
-        holder.projection().AddValueTo(-flux, holder_data, c_holder);
+        flux *= -gauss.GetGlobalWeight(f);
+        holder.projection().AddValueTo(flux, holder_data, c_holder);
       }
     }
   }
   void ApplySolidWall(Column *residual) const override {
-    this->Base::ApplySolidWall(residual);
-  }
-  void ApplySupersonicInlet(Column *residual) const override {
-    this->Base::ApplySupersonicInlet(residual);
+    for (const auto &name : this->solid_wall_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
+          Value flux = riemann.GetFluxOnSolidWall(u_holder);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
   }
   void ApplySupersonicOutlet(Column *residual) const override {
-    this->Base::ApplySupersonicOutlet(residual);
+    for (const auto &name : this->supersonic_outlet_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
+          Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
+  }
+  void ApplySupersonicInlet(Column *residual) const override {
+    for (auto &[name, func] : this->supersonic_inlet_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
+          Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
   }
   void ApplySubsonicInlet(Column *residual) const override {
-    this->Base::ApplySubsonicInlet(residual);
+    for (auto &[name, func] : this->subsonic_inlet_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
+          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
+          Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
   }
   void ApplySubsonicOutlet(Column *residual) const override {
-    this->Base::ApplySubsonicOutlet(residual);
+    for (auto &[name, func] : this->subsonic_outlet_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
+          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
+          Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
   }
   void ApplySmartBoundary(Column *residual) const override {
-    this->Base::ApplySmartBoundary(residual);
+    for (auto &[name, func] : this->smart_boundary_) {
+      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+        const auto &gauss = face.gauss();
+        const auto &holder = face.holder();
+        const auto &riemann = face.riemann();
+        auto *holder_data = residual->data()
+            + this->part_ptr_->GetCellDataOffset(holder.id());
+        auto &i_node_on_holder = i_node_on_holder_[face.id()];
+        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+          auto c_holder = i_node_on_holder[f];
+          Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
+          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
+          Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
+          flux *= -gauss.GetGlobalWeight(f);
+          holder.projection().AddValueTo(flux, holder_data, c_holder);
+        }
+      }
+    }
   }
 };
 
