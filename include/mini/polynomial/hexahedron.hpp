@@ -110,13 +110,21 @@ class Hexahedron {
     grad.row(0) = basis_.GetDerivatives(1, 0, 0, local);
     grad.row(1) = basis_.GetDerivatives(0, 1, 0, local);
     grad.row(2) = basis_.GetDerivatives(0, 0, 1, local);
-    auto jacobian = lagrange().LocalToJacobian(local);
+    Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
     LocalGradientsToGlobalGradients(jacobian, &grad);
     return grad;
   }
   const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const {
     return basis_gradients_[ijk];
   }
+  /**
+   * @brief Convert the gradients in local coordinates to the gradients in global coordinates.
+   * 
+   * \f$ \begin{bmatrix}\partial\phi/\partial\xi\\ \partial\phi/\partial\eta\\ \cdots \end{bmatrix} = \begin{bmatrix}\partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix}\begin{bmatrix}\partial\phi/\partial x\\\partial\phi/\partial y\\ \cdots \end{bmatrix} \f$
+   * 
+   * @param jacobian the Jacobian matrix, which is the transpose of `geometry::Element::Jacobian`.
+   * @param local the gradients in local coordinates
+   */
   static void LocalGradientsToGlobalGradients(const Jacobian &jacobian,
       Mat3xN *local) {
     if (kLocal) return;

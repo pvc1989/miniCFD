@@ -31,6 +31,11 @@ class Element {
   using Real = Scalar;
   using Local = algebra::Matrix<Scalar, kCellDim, 1>;
   using Global = algebra::Matrix<Scalar, kPhysDim, 1>;
+
+  /**
+   * @brief The type of (geometric) Jacobian matrix, which is defined as \f$ \begin{bmatrix} \partial x / \partial\xi & \partial x / \partial\eta & \cdots \\ \partial y / \partial\xi & \partial y / \partial\eta & \cdots \\ \cdots & \cdots & \cdots \\ \end{bmatrix} \f$.
+   * 
+   */
   using Jacobian = algebra::Matrix<Scalar, kPhysDim, kCellDim>;
 
   static constexpr int CellDim() { return kCellDim; }
