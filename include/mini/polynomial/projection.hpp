@@ -90,6 +90,7 @@ class Projection {
   using Local = typename Gauss::Local;
   using Global = typename Gauss::Global;
   using MatNx1 = typename Basis::MatNx1;
+  using Mat3xN = algebra::Matrix<Scalar, 3, N>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
@@ -147,7 +148,7 @@ class Projection {
   Value average() const {
     return projection::GetAverage(*this);
   }
-  auto GlobalToBasisGradients(Global const &global) const {
+  Mat3xN GlobalToBasisGradients(Global const &global) const {
     return basis_.GetGradValue(global).transpose();
   }
 
