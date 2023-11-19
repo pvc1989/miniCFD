@@ -20,9 +20,9 @@ class DummySource {
  public:
   using Part = P;
   using Cell = typename Part::Cell;
-  using Coeff = typename Cell::Projection::Coeff;
+  using Scalar = typename Cell::Scalar;
 
-  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
+  void UpdateCoeff(const Cell &cell, double t_curr, Scalar *coeff) {
   }
 };
 
@@ -153,13 +153,6 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
 
  protected:  // implement pure virtual methods declared in Base
   void AddFluxDivergence(Column *residual) const override {
-    // Integrate the source term, if there is any.
-    // if (!std::is_same_v<Source, DummySource<Part>>) {
-    //   for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-    //     auto &coeff = residual_.at(cell.id());
-    //     source_.UpdateCoeff(cell, this->t_curr_, &coeff);
-    //   }
-    // }
     // Integrate the dot-product of flux and basis gradient, if there is any.
     if (Part::kDegrees > 0) {
       for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
@@ -384,6 +377,26 @@ class DGwithLimiterAndSource : public DiscontinuousGalerkin<Part> {
   void SetSolutionColumn(Column const &column) override {
     this->Base::SetSolutionColumn(column);
     this->part_ptr_->Reconstruct(limiter_);
+  }
+
+  Column GetResidualColumn() const override {
+    auto residual = this->Base::GetResidualColumn();
+    this->AddSourceIntegral(&residual);
+    return residual;
+  }
+
+ protected:
+  virtual void AddSourceIntegral(Column *residual) const {
+    // Integrate the source term, if there is any.
+    if (!std::is_same_v<Source, DummySource<Part>>) {
+      for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+        auto i_cell = cell.id();
+        Scalar *data = residual->data() +
+            this->part_ptr_->GetCellDataOffset(i_cell);
+        const_cast<DGwithLimiterAndSource *>(this)->source_.UpdateCoeff(
+            cell, this->t_curr_, data);
+      }
+    }
   }
 };
 

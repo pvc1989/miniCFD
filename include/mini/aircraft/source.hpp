@@ -5,6 +5,7 @@
 #include <concepts>
 
 #include <algorithm>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -29,6 +30,7 @@ class Rotorcraft {
   using Part = P;
   using Cell = typename Part::Cell;
   using Face = typename Cell::Face;
+  static_assert(std::is_same_v<Scalar, typename Cell::Scalar>);
   using Global = typename Cell::Global;
   using Coeff = typename Cell::Projection::Coeff;
   using Conservative = typename Part::Riemann::Conservative;
@@ -94,7 +96,7 @@ class Rotorcraft {
     return {force, power};
   }
 
-  void UpdateCoeff(const Cell &cell, const Blade &blade, Coeff *coeff) {
+  void UpdateCoeff(const Cell &cell, const Blade &blade, Scalar *coeff_data) {
     auto [r_ratio, s_ratio] = Intersect(cell, blade);
     if (r_ratio < s_ratio) {
       // r_ratio is always set before s_ratio
@@ -117,6 +119,7 @@ class Rotorcraft {
       };
       auto integral = mini::gauss::Integrate(integrand, line);
       integral *= blade.GetSpan();
+      auto *coeff = reinterpret_cast<Coeff *>(coeff_data);
       coeff->row(1) += integral.row(0);
       coeff->row(2) += integral.row(1);
       coeff->row(3) += integral.row(2);
@@ -125,11 +128,11 @@ class Rotorcraft {
   }
 
  public:
-  void UpdateCoeff(const Cell &cell, double t_curr, Coeff *coeff) {
+  void UpdateCoeff(const Cell &cell, double t_curr, Scalar *coeff_data) {
     for (auto &rotor : rotors_) {
       rotor.UpdateAzimuth(t_curr);
       for (int i = 0, n = rotor.CountBlades(); i < n; ++i) {
-        UpdateCoeff(cell, rotor.GetBlade(i), coeff);
+        UpdateCoeff(cell, rotor.GetBlade(i), coeff_data);
       }
     }
   }
