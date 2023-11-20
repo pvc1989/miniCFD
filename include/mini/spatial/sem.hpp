@@ -340,6 +340,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
   using GaussOnLine = typename GaussOnCell::GaussX;
   static constexpr int kLineQ = GaussOnLine::Q;
   static constexpr int kFaceQ = kLineQ * kLineQ;
+  static constexpr int kCellQ = kLineQ * kFaceQ;
 
  public:
   explicit FluxReconstruction(Part *part_ptr)
@@ -353,6 +354,25 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
 
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
+    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+      auto i_cell = cell.id();
+      auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      const auto &gauss = cell.gauss();
+      using FluxMatrix = typename Riemann::FluxMatrix;
+      std::array<FluxMatrix, kCellQ> flux;
+      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+        auto const &value = cell.projection().GetValueOnGaussianPoint(q);
+        flux[q] = Riemann::GetFluxMatrix(value);
+      }
+      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+        auto const &grad = cell.projection().GetBasisGradientsOnGaussianPoint(q);
+        Value value = flux[0] * grad.col(0);
+        for (int k = 1; k < n; ++k) {
+          value += flux[k] * grad.col(k);
+        }
+        cell.projection().AddValueTo(value, data, q);
+      }
+    }
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
   }
