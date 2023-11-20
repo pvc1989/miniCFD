@@ -15,6 +15,7 @@
 #include "mini/gauss/cell.hpp"
 #include "mini/gauss/lobatto.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/geometry/element.hpp"
 #include "mini/basis/lagrange.hpp"
 
 namespace mini {
@@ -208,6 +209,133 @@ class Hexahedron {
       *output++ *= scale;
     }
     return output;
+  }
+
+  int FindFaceId(Global const &face_center) const {
+    int i_face;
+    auto almost_equal = [&face_center](Global point) {
+      point -= face_center;
+      return point.norm() < 1e-10;
+    };
+    if (almost_equal(lagrange().LocalToGlobal(0, 0, -1))) { i_face = 0; }
+    else if (almost_equal(lagrange().LocalToGlobal(0, -1, 0))) { i_face = 1; }
+    else if (almost_equal(lagrange().LocalToGlobal(+1, 0, 0))) { i_face = 2; }
+    else if (almost_equal(lagrange().LocalToGlobal(0, +1, 0))) { i_face = 3; }
+    else if (almost_equal(lagrange().LocalToGlobal(-1, 0, 0))) { i_face = 4; }
+    else if (almost_equal(lagrange().LocalToGlobal(0, 0, +1))) { i_face = 5; }
+    else { assert(false); }
+    return i_face;
+  }
+  std::vector<int> FindCollinearPoints(Global const &global, int i_face) const {
+    std::vector<int> indices;
+    using mini::geometry::X;
+    using mini::geometry::Y;
+    using mini::geometry::Z;
+    auto local = lagrange().GlobalToLocal(global);
+    int i, j, k;
+    auto almost_equal = [](Scalar x, Scalar y) {
+      return std::abs(x - y) < 1e-10;
+    };
+    switch (i_face) {
+    case 0:
+      assert(almost_equal(local[Z], -1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    case 1:
+      assert(almost_equal(local[Y], -1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    case 2:
+      assert(almost_equal(local[X], +1));
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      for (i = 0; i < GaussX::Q; ++i) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    case 3:
+      assert(almost_equal(local[Y], +1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    case 4:
+      assert(almost_equal(local[X], -1));
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      for (i = 0; i < GaussX::Q; ++i) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    case 5:
+      assert(almost_equal(local[Z], +1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        indices.push_back(basis().index(i, j, k));
+      }
+      break;
+    default: assert(false);
+    }
+    return indices;
   }
 
   static Basis BuildInterpolationBasis() {

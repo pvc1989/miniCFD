@@ -6,7 +6,9 @@
 #include "mini/gauss/function.hpp"
 #include "mini/gauss/legendre.hpp"
 #include "mini/gauss/lobatto.hpp"
+#include "mini/gauss/quadrangle.hpp"
 #include "mini/gauss/hexahedron.hpp"
+#include "mini/geometry/quadrangle.hpp"
 #include "mini/geometry/hexahedron.hpp"
 #include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
@@ -156,6 +158,139 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
     auto grad = vector_interp.GlobalToBasisGradients(global);
     grad -= vector_interp.GetBasisGradientsOnGaussianPoint(q);
     EXPECT_NEAR(grad.norm(), 0, 1e-15);
+  }
+}
+TEST_F(TestPolynomialHexahedronInterpolation, FindCollinearPoints) {
+  // build a hexa-gauss and a Lagrange interpolation on it
+  auto a = 2.0, b = 3.0, c = 4.0;
+  auto cell_lagrange = Lagrange {
+    Global(-a, -b, -c), Global(+a, -b, -c),
+    Global(+a, +b, -c), Global(-a, +b, -c),
+    Global(-a, -b, +c), Global(+a, -b, +c),
+    Global(+a, +b, +c), Global(-a, +b, +c),
+  };
+  auto cell_gauss = Gauss(cell_lagrange);
+  auto interp = Interpolation(cell_gauss);
+  using LagrangeOnFace = mini::geometry::Quadrangle4<double, 3>;
+  /* test on the x_local == +1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(+a, -b, -c), Global(+a, +b, -c),
+      Global(+a, +b, +c), Global(+a, -b, +c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussY, GaussZ>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 2);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussX::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[0], GaussX::points[i]);
+      }
+    }
+  }
+  /* test on the x_local == -1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(-a, -b, -c), Global(-a, +b, -c),
+      Global(-a, +b, +c), Global(-a, -b, +c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussY, GaussZ>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 4);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussX::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[0], GaussX::points[i]);
+      }
+    }
+  }
+  /* test on the y_local == +1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(-a, +b, -c), Global(+a, +b, -c),
+      Global(+a, +b, +c), Global(-a, +b, +c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussX, GaussZ>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 3);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussY::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[1], GaussY::points[j]);
+      }
+    }
+  }
+  /* test on the y_local == -1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(-a, -b, -c), Global(+a, -b, -c),
+      Global(+a, -b, +c), Global(-a, -b, +c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussX, GaussZ>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 1);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussY::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[1], GaussY::points[j]);
+      }
+    }
+  }
+  /* test on the z_local == +1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(-a, -b, +c), Global(+a, -b, +c),
+      Global(+a, +b, +c), Global(-a, +b, +c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussX, GaussY>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 5);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussZ::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[2], GaussZ::points[k]);
+      }
+    }
+  }
+  /* test on the z_local == -1 face */{
+    auto face_lagrange = LagrangeOnFace {
+      Global(-a, -b, -c), Global(+a, -b, -c),
+      Global(+a, +b, -c), Global(-a, +b, -c),
+    };
+    auto face_gauss = mini::gauss::Quadrangle<3, GaussX, GaussY>(face_lagrange);
+    auto const &face_gauss_ref = face_gauss;
+    int i_face = interp.FindFaceId(face_lagrange.center());
+    EXPECT_EQ(i_face, 0);
+    for (int f = 0; f < face_gauss.CountPoints(); ++f) {
+      Global global = face_gauss_ref.GetGlobalCoord(f);
+      auto ijk_found = interp.FindCollinearPoints(global, i_face);
+      EXPECT_EQ(ijk_found.size(), GaussZ::Q);
+      for (int ijk : ijk_found) {
+        auto [i, j, k] = interp.basis().index(ijk);
+        auto local = cell_gauss.GetLocalCoord(ijk);
+        EXPECT_EQ(local[2], GaussZ::points[k]);
+      }
+    }
   }
 }
 
