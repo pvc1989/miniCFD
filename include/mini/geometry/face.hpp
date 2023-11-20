@@ -57,6 +57,10 @@ class Face : public Element<Scalar, kPhysDim, 2> {
       const final {
     return LocalToShapeGradients(xy[X], xy[Y]);
   }
+  Global LocalToNormalVector(Scalar x_local, Scalar y_local) const {
+    auto jacobian = LocalToJacobian(x_local, y_local);
+    return jacobian.col(X).cross(jacobian.col(Y)).normalized();
+  }
   Frame LocalToNormalFrame(Scalar x_local, Scalar y_local) const {
     return _NormalFrameBuilder<Scalar, kPhysDim>
         ::Build(*this, x_local, y_local);

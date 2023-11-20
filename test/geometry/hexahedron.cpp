@@ -82,6 +82,12 @@ TEST_F(TestLagrangeHexahedron8, SortNodesOnFace) {
     Coord(-10, -10, +10), Coord(+10, -10, +10),
     Coord(+10, +10, +10), Coord(-10, +10, +10)
   };
+  EXPECT_EQ(cell.GetOutwardNormalVector(0), Coord(0, 0, -1));
+  EXPECT_EQ(cell.GetOutwardNormalVector(1), Coord(0, -1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(2), Coord(+1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(3), Coord(0, +1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(4), Coord(-1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(5), Coord(0, 0, +1));
   int face_n_node = 4;
   // test the version without conversion:
   {
@@ -240,6 +246,12 @@ TEST_F(TestLagrangeHexahedron20, SortNodesOnFace) {
     Coord(0, -10, +10), Coord(+10, 0, +10),
     Coord(0, +10, +10), Coord(-10, 0, +10),
   };
+  EXPECT_EQ(cell.GetOutwardNormalVector(0), Coord(0, 0, -1));
+  EXPECT_EQ(cell.GetOutwardNormalVector(1), Coord(0, -1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(2), Coord(+1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(3), Coord(0, +1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(4), Coord(-1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(5), Coord(0, 0, +1));
   int face_n_node = 8;
   // test the version without conversion:
   {
@@ -414,6 +426,12 @@ TEST_F(TestLagrangeHexahedron27, SortNodesOnFace) {
     // center node
     Coord(0, 0, 0),
   };
+  EXPECT_EQ(cell.GetOutwardNormalVector(0), Coord(0, 0, -1));
+  EXPECT_EQ(cell.GetOutwardNormalVector(1), Coord(0, -1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(2), Coord(+1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(3), Coord(0, +1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(4), Coord(-1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(5), Coord(0, 0, +1));
   int face_n_node = 9;
   // test the version without conversion:
   {
@@ -587,6 +605,12 @@ TEST_F(TestLagrangeHexahedron26, SortNodesOnFace) {
     Coord(0, +10, 0), Coord(-10, 0, 0),
     Coord(0, 0, +10),
   };
+  EXPECT_EQ(cell.GetOutwardNormalVector(0), Coord(0, 0, -1));
+  EXPECT_EQ(cell.GetOutwardNormalVector(1), Coord(0, -1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(2), Coord(+1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(3), Coord(0, +1, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(4), Coord(-1, 0, 0));
+  EXPECT_EQ(cell.GetOutwardNormalVector(5), Coord(0, 0, +1));
   int face_n_node = 9;
   // test the version without conversion:
   {

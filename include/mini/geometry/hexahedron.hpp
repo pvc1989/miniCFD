@@ -37,6 +37,39 @@ class Hexahedron : public Cell<Scalar> {
   const Global &center() const final {
     return center_;
   }
+  Global GetOutwardNormalVector(int i_face) const {
+    Jacobian jacobian;
+    Global normal;
+    switch (i_face) {
+    case 0:
+      jacobian = this->LocalToJacobian(0, 0, -1);
+      normal = -jacobian.col(Z).normalized();
+      break;
+    case 1:
+      jacobian = this->LocalToJacobian(0, -1, 0);
+      normal = -jacobian.col(Y).normalized();
+      break;
+    case 2:
+      jacobian = this->LocalToJacobian(+1, 0, 0);
+      normal = jacobian.col(X).normalized();
+      break;
+    case 3:
+      jacobian = this->LocalToJacobian(0, +1, 0);
+      normal = jacobian.col(Y).normalized();
+      break;
+    case 4:
+      jacobian = this->LocalToJacobian(-1, 0, 0);
+      normal = -jacobian.col(X).normalized();
+      break;
+    case 5:
+      jacobian = this->LocalToJacobian(0, 0, +1);
+      normal = jacobian.col(Z).normalized();
+      break;
+    default:
+      assert(false);
+    }
+    return normal;
+  }
 
  protected:
   Global center_;
