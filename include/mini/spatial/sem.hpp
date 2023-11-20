@@ -315,6 +315,63 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   }
 };
 
+/**
+ * @brief A specialized version of FR using a Lagrange expansion on Gaussian quadrature points. 
+ * 
+ * @tparam Part 
+ */
+template <typename Part>
+class FluxReconstruction : public spatial::FiniteElement<Part> {
+ public:
+  using Base = spatial::FiniteElement<Part>;
+  using Riemann = typename Base::Riemann;
+  using Scalar = typename Base::Scalar;
+  using Face = typename Base::Face;
+  using Cell = typename Base::Cell;
+  using Global = typename Base::Global;
+  using Projection = typename Base::Projection;
+  using Coeff = typename Base::Coeff;
+  using Value = typename Base::Value;
+  using Temporal = typename Base::Temporal;
+  using Column = typename Base::Column;
+
+ protected:
+  using GaussOnCell = typename Projection::Gauss;
+  using GaussOnLine = typename GaussOnCell::GaussX;
+  static constexpr int kLineQ = GaussOnLine::Q;
+  static constexpr int kFaceQ = kLineQ * kLineQ;
+
+ public:
+  explicit FluxReconstruction(Part *part_ptr)
+      : Base(part_ptr) {
+  }
+  FluxReconstruction(const FluxReconstruction &) = default;
+  FluxReconstruction &operator=(const FluxReconstruction &) = default;
+  FluxReconstruction(FluxReconstruction &&) noexcept = default;
+  FluxReconstruction &operator=(FluxReconstruction &&) noexcept = default;
+  ~FluxReconstruction() noexcept = default;
+
+ protected:  // override virtual methods defined in Base
+  void AddFluxDivergence(Column *residual) const override {
+  }
+  void AddFluxOnLocalFaces(Column *residual) const override {
+  }
+  void AddFluxOnGhostFaces(Column *residual) const override {
+  }
+  void ApplySolidWall(Column *residual) const override {
+  }
+  void ApplySupersonicInlet(Column *residual) const override {
+  }
+  void ApplySupersonicOutlet(Column *residual) const override {
+  }
+  void ApplySubsonicInlet(Column *residual) const override {
+  }
+  void ApplySubsonicOutlet(Column *residual) const override {
+  }
+  void ApplySmartBoundary(Column *residual) const override {
+  }
+};
+
 }  // namespace sem
 }  // namespace spatial
 }  // namespace mini

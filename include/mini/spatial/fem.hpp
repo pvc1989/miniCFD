@@ -115,12 +115,26 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     this->AddFluxOnGhostFaces(&residual);
     return residual;
   }
-  
+
+  void AddFluxOnBoundaries(Column *residual) const {
+    this->ApplySolidWall(residual);
+    this->ApplySupersonicInlet(residual);
+    this->ApplySupersonicOutlet(residual);
+    this->ApplySubsonicInlet(residual);
+    this->ApplySubsonicOutlet(residual);
+    this->ApplySmartBoundary(residual);
+  }
+
  protected:  // declare pure virtual methods to be implemented in subclasses
   virtual void AddFluxDivergence(Column *residual) const = 0;
   virtual void AddFluxOnLocalFaces(Column *residual) const = 0;
-  virtual void AddFluxOnBoundaries(Column *residual) const = 0;
   virtual void AddFluxOnGhostFaces(Column *residual) const = 0;
+  virtual void ApplySolidWall(Column *residual) const = 0;
+  virtual void ApplySupersonicInlet(Column *residual) const = 0;
+  virtual void ApplySupersonicOutlet(Column *residual) const = 0;
+  virtual void ApplySubsonicInlet(Column *residual) const = 0;
+  virtual void ApplySubsonicOutlet(Column *residual) const = 0;
+  virtual void ApplySmartBoundary(Column *residual) const = 0;
 };
 
 namespace fem {
@@ -213,17 +227,9 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  void AddFluxOnBoundaries(Column *residual) const override {
-    this->ApplySolidWall(residual);
-    this->ApplySupersonicInlet(residual);
-    this->ApplySupersonicOutlet(residual);
-    this->ApplySubsonicInlet(residual);
-    this->ApplySubsonicOutlet(residual);
-    this->ApplySmartBoundary(residual);
-  }
 
  protected:  // virtual methods that might be overriden in subclasses
-  virtual void ApplySolidWall(Column *residual) const {
+  void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
@@ -242,7 +248,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  virtual void ApplySupersonicOutlet(Column *residual) const {
+  void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
@@ -261,7 +267,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  virtual void ApplySupersonicInlet(Column *residual) const {
+  void ApplySupersonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->supersonic_inlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
@@ -280,7 +286,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  virtual void ApplySubsonicInlet(Column *residual) const {
+  void ApplySubsonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_inlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
@@ -300,7 +306,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  virtual void ApplySubsonicOutlet(Column *residual) const {
+  void ApplySubsonicOutlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
@@ -320,7 +326,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       }
     }
   }
-  virtual void ApplySmartBoundary(Column *residual) const {
+  void ApplySmartBoundary(Column *residual) const override {
     for (auto &[name, func] : this->smart_boundary_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
