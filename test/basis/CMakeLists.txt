@@ -2,6 +2,7 @@ set (cases
   taylor
   lagrange
   linear
+  vincent
 )
 foreach(case ${cases})
   add_executable(test_basis_${case} ${case}.cpp)

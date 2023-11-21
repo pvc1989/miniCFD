@@ -157,6 +157,43 @@ typename Legendre<Scalar, 5>::Array const
 Legendre<Scalar, 5>::weights =
     Legendre<Scalar, 5>::BuildWeights();
 
+template <std::floating_point S>
+struct Legendre<S, 6> {
+  using Array = std::array<S, 6>;
+  using Scalar = S;
+  static constexpr int Q = 6;
+  static const Array points;
+  static const Array weights;
+  static Array BuildPoints() {
+    return {
+        -0.932469514203152,
+        -0.6612093864662645,
+        -0.23861918608319693,
+        +0.23861918608319693,
+        +0.6612093864662645,
+        +0.932469514203152,
+    };
+  }
+  static Array BuildWeights() {
+    return {
+        0.17132449237917016,
+        0.36076157304813855,
+        0.4679139345726912,
+        0.4679139345726912,
+        0.36076157304813855,
+        0.17132449237917016,
+    };
+  }
+};
+template <std::floating_point Scalar>
+typename Legendre<Scalar, 6>::Array const
+Legendre<Scalar, 6>::points =
+    Legendre<Scalar, 6>::BuildPoints();
+template <std::floating_point Scalar>
+typename Legendre<Scalar, 6>::Array const
+Legendre<Scalar, 6>::weights =
+    Legendre<Scalar, 6>::BuildWeights();
+
 }  // namespace gauss
 }  // namespace mini
 
