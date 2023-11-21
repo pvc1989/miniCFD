@@ -22,6 +22,10 @@ namespace mini {
 namespace spatial {
 namespace sem {
 
+static bool Near(auto const &x, auto const &y) {
+  return (x - y).norm() < 1e-12;
+}
+
 /**
  * @brief A specialized version of DG using a Lagrange expansion on Gaussian quadrature points. 
  * 
@@ -50,10 +54,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   std::vector<std::array<int16_t, kFaceQ>> i_node_on_holder_;
   std::vector<std::array<int16_t, kFaceQ>> i_node_on_sharer_;
 
-  static bool AlmostEqual(Global const &x, Global const &y) {
-    return (x - y).norm() < 1e-12;
-  }
-
   template <std::ranges::input_range R>
   void MatchGaussianPoints(R &&faces) {
     i_node_on_holder_.resize(i_node_on_holder_.size() + faces.size());
@@ -63,10 +63,10 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       const auto &holder_gauss = face.holder().gauss();
       const auto &sharer_gauss = face.sharer().gauss();
       for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
-        auto &p = face_gauss.GetGlobalCoord(f);
+        auto &flux_point = face_gauss.GetGlobalCoord(f);
         i_node_on_holder_.at(face.id()).at(f) = -1;
         for (int h = 0, H = holder_gauss.CountPoints(); h < H; ++h) {
-          if (AlmostEqual(p, holder_gauss.GetGlobalCoord(h))) {
+          if (Near(flux_point, holder_gauss.GetGlobalCoord(h))) {
             i_node_on_holder_[face.id()][f] = h;
             break;
           }
@@ -74,7 +74,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         assert(i_node_on_holder_[face.id()][f] >= 0);
         i_node_on_sharer_.at(face.id()).at(f) = -1;
         for (int s = 0, S = sharer_gauss.CountPoints(); s < S; ++s) {
-          if (AlmostEqual(p, sharer_gauss.GetGlobalCoord(s))) {
+          if (Near(flux_point, sharer_gauss.GetGlobalCoord(s))) {
             i_node_on_sharer_[face.id()][f] = s;
             break;
           }
@@ -92,10 +92,10 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       const auto &face_gauss = face.gauss();
       const auto &holder_gauss = face.holder().gauss();
       for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
-        auto &p = face_gauss.GetGlobalCoord(f);
+        auto &flux_point = face_gauss.GetGlobalCoord(f);
         curr_face.at(f) = -1;
         for (int h = 0, H = holder_gauss.CountPoints(); h < H; ++h) {
-          if (AlmostEqual(p, holder_gauss.GetGlobalCoord(h))) {
+          if (Near(flux_point, holder_gauss.GetGlobalCoord(h))) {
             curr_face[f] = h;
             break;
           }
@@ -351,8 +351,10 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
     int ijk;
   };
 
-  std::vector<std::array<std::array<Cache, kLineQ>, kFaceQ>> holder_cache_;
-  std::vector<std::array<std::array<Cache, kLineQ>, kFaceQ>> sharer_cache_;
+  using LineCache = std::array<Cache, kLineQ>;
+  using FaceCache = std::array<std::pair<LineCache, int>, kFaceQ>;
+  std::vector<FaceCache> holder_cache_;
+  std::vector<FaceCache> sharer_cache_;
 
   using Vincent = mini::basis::Vincent<Scalar>;
   Vincent vincent_;
@@ -363,7 +365,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
 
   template <std::ranges::input_range R, class FaceToCell>
   void CacheCorrectionGradients(R &&faces, FaceToCell &&face_to_cell,
-      std::vector<std::array<std::array<Cache, kLineQ>, kFaceQ>> *cache) {
+      std::vector<FaceCache> *cache) {
     for (const Face &face : faces) {
       assert(cache->size() == face.id());
       auto &curr_face = cache->emplace_back();
@@ -375,12 +377,14 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       const auto &cell_projection = cell.projection();
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
       for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
-        auto &curr_line = curr_face.at(f);
+        auto &[curr_line, flux_point_ijk] = curr_face.at(f);
         auto &flux_point = face_gauss.GetGlobalCoord(f);
         auto [i, j, k] = cell_projection.FindCollinearIndex(flux_point, i_face);
         switch (i_face) {
         case 0:
           assert(k == -1);
+          flux_point_ijk = cell_basis.index(i, j, 0);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (k = 0; k < GaussOnLine::Q; ++k) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
@@ -393,6 +397,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           break;
         case 1:
           assert(j == -1);
+          flux_point_ijk = cell_basis.index(i, 0, k);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (j = 0; j < GaussOnLine::Q; ++j) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
@@ -405,6 +411,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           break;
         case 2:
           assert(i == -1);
+          flux_point_ijk = cell_basis.index(GaussOnLine::Q - 1, j, k);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (i = 0; i < GaussOnLine::Q; ++i) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
@@ -417,6 +425,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           break;
         case 3:
           assert(j == -1);
+          flux_point_ijk = cell_basis.index(i, GaussOnLine::Q - 1, k);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (j = 0; j < GaussOnLine::Q; ++j) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
@@ -429,6 +439,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           break;
         case 4:
           assert(i == -1);
+          flux_point_ijk = cell_basis.index(0, j, k);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (i = 0; i < GaussOnLine::Q; ++i) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
@@ -441,6 +453,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           break;
         case 5:
           assert(k == -1);
+          flux_point_ijk = cell_basis.index(i, j, GaussOnLine::Q - 1);
+          assert(Near(flux_point, cell_gauss.GetGlobalCoord(flux_point_ijk)));
           for (k = 0; k < GaussOnLine::Q; ++k) {
             auto ijk = cell_basis.index(i, j, k);
             auto &local = cell_gauss.GetLocalCoord(ijk);
