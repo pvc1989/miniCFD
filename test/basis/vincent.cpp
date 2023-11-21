@@ -9,6 +9,10 @@
 
 #include "gtest/gtest.h"
 
+double rand_f() {
+  return -1 + 2 * std::rand() / (1.0 + RAND_MAX);
+}
+
 class TestBasisVincent : public ::testing::Test {
  protected:
   using Scalar = double;
@@ -31,6 +35,16 @@ TEST_F(TestBasisVincent, DiscontinuousGalerkin) {
           line_gauss);
       EXPECT_NEAR(ip, 0, 1e-15);
     }
+    // check derivatives
+    std::srand(31415926);
+    for (int i = 1 << 10; i >= 0; --i) {
+      auto local = rand_f();
+      EXPECT_EQ(vincent.LocalToRightDerivative(local),
+               -vincent.LocalToLeftDerivative(-local));
+      auto approx = (vincent.LocalToLeftValue(local + 1e-6)
+                   - vincent.LocalToLeftValue(local - 1e-6)) / 2e-6;
+      EXPECT_NEAR(vincent.LocalToLeftDerivative(local) / approx, 1, 1e-6);
+    }
   }
 }
 TEST_F(TestBasisVincent, HuynhLumpingLobatto) {
@@ -50,6 +64,18 @@ TEST_F(TestBasisVincent, HuynhLumpingLobatto) {
           line_gauss);
       EXPECT_NEAR(ip, 0, 1e-15);
     }
+    // check derivatives
+    std::srand(31415926);
+    for (int i = 1 << 10; i >= 0; --i) {
+      auto local = rand_f();
+      EXPECT_EQ(vincent.LocalToRightDerivative(local),
+               -vincent.LocalToLeftDerivative(-local));
+      auto approx = (vincent.LocalToLeftValue(local + 1e-6)
+                   - vincent.LocalToLeftValue(local - 1e-6)) / 2e-6;
+      EXPECT_NEAR(vincent.LocalToLeftDerivative(local) / approx, 1, 1e-6);
+    }
+    EXPECT_NEAR(vincent.LocalToRightDerivative(-1.0), 0, 1e-15);
+    EXPECT_NEAR(vincent.LocalToLeftDerivative(+1.0), 0, 1e-15);
   }
 }
 
