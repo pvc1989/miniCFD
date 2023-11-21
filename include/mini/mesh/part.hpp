@@ -138,6 +138,10 @@ struct Face {
     assert(gauss_ptr_);
     return *gauss_ptr_;
   }
+  Lagrange const &lagrange() const {
+    assert(lagrange_ptr_);
+    return *lagrange_ptr_;
+  }
   Riemann const &riemann() const {
     return riemann_;
   }
@@ -226,10 +230,12 @@ struct Cell {
     return gauss().center();
   }
   Gauss const &gauss() const {
+    assert(gauss_ptr_);
     return *gauss_ptr_;
   }
   Lagrange const &lagrange() const {
-    return gauss().lagrange();
+    assert(lagrange_ptr_);
+    return *lagrange_ptr_;
   }
   Projection const &projection() const {
     return *projection_ptr_;

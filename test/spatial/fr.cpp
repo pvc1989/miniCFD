@@ -16,6 +16,7 @@
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fem.hpp"
 #include "mini/spatial/sem.hpp"
+#include "mini/basis/vincent.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
@@ -31,6 +32,7 @@ Value moving(const Coord& xyz, double t) {
   auto x = xyz[0], y = xyz[1];
   return Value(x + y, x - y);
 }
+using Vincent = mini::basis::Vincent<Scalar>;
 
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./fr
@@ -59,7 +61,8 @@ int main(int argc, char* argv[]) {
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Spatial = mini::spatial::sem::FluxReconstruction<Part>;
   auto part = Part(case_name, i_core, n_core);
-  auto spatial = Spatial(&part);
+  auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
+  auto spatial = Spatial(&part, vincent);
   spatial.SetSmartBoundary("4_S_27", moving);  // Top
   spatial.SetSmartBoundary("4_S_31", moving);  // Left
   spatial.SetSolidWall("4_S_1");   // Back

@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include <iostream>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -336,6 +337,98 @@ class Hexahedron {
     default: assert(false);
     }
     return indices;
+  }
+  std::tuple<int, int, int> FindCollinearIndex(Global const &global, int i_face) const {
+    int i{-1}, j{-1}, k{-1};
+    using mini::geometry::X;
+    using mini::geometry::Y;
+    using mini::geometry::Z;
+    auto local = lagrange().GlobalToLocal(global);
+    auto almost_equal = [](Scalar x, Scalar y) {
+      return std::abs(x - y) < 1e-10;
+    };
+    switch (i_face) {
+    case 0:
+      assert(almost_equal(local[Z], -1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      break;
+    case 1:
+      assert(almost_equal(local[Y], -1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      break;
+    case 2:
+      assert(almost_equal(local[X], +1));
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      break;
+    case 3:
+      assert(almost_equal(local[Y], +1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      break;
+    case 4:
+      assert(almost_equal(local[X], -1));
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      for (k = 0; k < GaussZ::Q; ++k) {
+        if (almost_equal(local[Z], GaussZ::points[k])) {
+          break;
+        }
+      }
+      break;
+    case 5:
+      assert(almost_equal(local[Z], +1));
+      for (i = 0; i < GaussX::Q; ++i) {
+        if (almost_equal(local[X], GaussX::points[i])) {
+          break;
+        }
+      }
+      for (j = 0; j < GaussY::Q; ++j) {
+        if (almost_equal(local[Y], GaussY::points[j])) {
+          break;
+        }
+      }
+      break;
+    default: assert(false);
+    }
+    return std::make_tuple(i, j, k);
   }
 
   static Basis BuildInterpolationBasis() {
