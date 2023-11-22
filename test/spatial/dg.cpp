@@ -16,7 +16,7 @@
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fem.hpp"
-#include "mini/spatial/sem.hpp"
+#include "mini/spatial/sem/dg.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;

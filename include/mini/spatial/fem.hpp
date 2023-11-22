@@ -15,6 +15,10 @@
 namespace mini {
 namespace spatial {
 
+static bool Near(auto const &x, auto const &y) {
+  return (x - y).norm() < 1e-12;
+}
+
 template <typename P>
 class DummySource {
  public:

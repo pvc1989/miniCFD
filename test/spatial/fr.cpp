@@ -15,7 +15,7 @@
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fem.hpp"
-#include "mini/spatial/sem.hpp"
+#include "mini/spatial/sem/fr.hpp"
 #include "mini/basis/vincent.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
