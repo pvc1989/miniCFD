@@ -64,6 +64,8 @@ class Hexahedron {
   static const Basis basis_;
   const Gauss *gauss_ptr_ = nullptr;
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
+  std::array<Scalar, N> jacobian_det_;  // det(J)
+  std::array<Jacobian, N> jacobian_det_inv_;  // det(J) J^{-1}
   std::array<Mat3xN, N> basis_gradients_;
 
  public:
@@ -77,7 +79,12 @@ class Hexahedron {
       grad.row(2) = basis_.GetDerivatives(0, 0, 1, i, j, k);
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
       Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
-      LocalGradientsToGlobalGradients(jacobian, &grad);
+      if (kLocal) {
+        jacobian_det_[ijk] = jacobian.determinant();
+        jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
+      } else {
+        LocalGradientsToGlobalGradients(jacobian, &grad);
+      }
     }
   }
   Hexahedron() = default;
@@ -86,6 +93,10 @@ class Hexahedron {
   Hexahedron &operator=(const Hexahedron &) = default;
   Hexahedron &operator=(Hexahedron &&) noexcept = default;
   ~Hexahedron() noexcept = default;
+
+  static constexpr bool IsLocal() {
+    return kLocal;
+  }
 
   Value LobalToValue(Local const &local) const {
     Value value = coeff_ * basis_.GetValues(local).transpose();
@@ -100,7 +111,8 @@ class Hexahedron {
     return LobalToValue(local);
   }
   Value GetValueOnGaussianPoint(int i) const {
-    return coeff_.col(i);
+    Value value = coeff_.col(i);
+    return kLocal ? value / jacobian_det_[i] : value;
   }
   Mat1xN GlobalToBasisValues(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
@@ -129,9 +141,34 @@ class Hexahedron {
    */
   static void LocalGradientsToGlobalGradients(const Jacobian &jacobian,
       Mat3xN *local) {
-    if (kLocal) return;
     Mat3xN global = jacobian.fullPivLu().solve(*local);
     *local = global;
+  }
+
+  /**
+   * @brief Convert a flux matrix from global to local at a given Gaussian point.
+   * 
+   * @tparam FluxMatrix a matrix type which has 3 columns
+   * @param global_flux the global flux
+   * @param ijk the index of the Gaussian point
+   * @return FluxMatrix the local flux
+   */
+  template <class FluxMatrix>
+  FluxMatrix GlobalFluxToLocalFlux(const FluxMatrix &global_flux, int ijk) const {
+    FluxMatrix local_flux = global_flux * jacobian_det_inv_[ijk];
+    return local_flux;
+  }
+
+  /**
+   * @brief Get the associated matrix of the Jacobian at a given Gaussian point.
+   * 
+   * \f$ J^{*} = \det(J)\,J^{-1} = \det(J) \begin{bmatrix} \partial_x\xi & \partial_x\eta & \partial_x\zeta \\ \partial_y\xi & \partial_y\eta & \partial_y\zeta \\ \partial_z\xi & \partial_z\eta & \partial_z\zeta \\ \end{bmatrix} \f$
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return Jacobian const& the associated matrix of \f$ J \f$.
+   */
+  Jacobian const &GetJacobianAssociated(int ijk) const {
+    return jacobian_det_inv_[ijk];
   }
 
   Global const &center() const {
