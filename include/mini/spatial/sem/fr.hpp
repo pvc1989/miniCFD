@@ -43,6 +43,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
   using Column = typename Base::Column;
 
  protected:
+  using FluxMatrix = typename Riemann::FluxMatrix;
   using GaussOnCell = typename Projection::Gauss;
   using GaussOnLine = typename GaussOnCell::GaussX;
   static_assert(std::is_same_v<GaussOnLine, typename GaussOnCell::GaussY>);
@@ -203,7 +204,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       auto i_cell = cell.id();
       auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
       const auto &gauss = cell.gauss();
-      using FluxMatrix = typename Riemann::FluxMatrix;
       std::array<FluxMatrix, kCellQ> flux;
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         auto const &value = cell.projection().GetValueOnGaussianPoint(q);
@@ -215,11 +215,42 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
         for (int k = 1; k < n; ++k) {
           value += flux[k] * grad.col(k);
         }
-        cell.projection().AddValueTo(value, data, q);
+        Projection::AddValueTo(value, data, q);
       }
     }
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
+    for (const Face &face : this->part_ptr_->GetLocalFaces()) {
+      const auto &face_gauss = face.gauss();
+      const auto &holder = face.holder();
+      const auto &sharer = face.sharer();
+      const auto &riemann = face.riemann();
+      auto *holder_data = residual->data()
+          + this->part_ptr_->GetCellDataOffset(holder.id());
+      auto *sharer_data = residual->data()
+          + this->part_ptr_->GetCellDataOffset(sharer.id());
+      auto &holder_cache = holder_cache_[face.id()];
+      auto &sharer_cache = sharer_cache_[face.id()];
+      for (int f = 0, n = face_gauss.CountPoints(); f < n; ++f) {
+        auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
+        auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
+        Value u_holder =
+            holder.projection().GetValueOnGaussianPoint(holder_flux_point);
+        Value u_sharer =
+            sharer.projection().GetValueOnGaussianPoint(sharer_flux_point);
+        Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Global const &normal = face_gauss.GetNormalFrame(f)[0];
+        assert(normal.dot(sharer.center() - holder.center()) > 0);
+        Value f_holder = f_upwind - Riemann::GetFluxMatrix(u_holder) * normal;
+        for (auto [g_prime, ijk] : holder_solution_points) {
+          Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+        }
+        Value f_sharer = Riemann::GetFluxMatrix(u_sharer) * normal - f_upwind;
+        for (auto [g_prime, ijk] : sharer_solution_points) {
+          Projection::AddValueTo(f_sharer * g_prime, sharer_data, ijk);
+        }
+      }
+    }
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
   }

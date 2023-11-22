@@ -193,6 +193,7 @@ class Hexahedron {
    * @param i_basis the (0-based) index of basis
    */
   static void AddValueTo(Value const &value, Scalar *output, int i_basis) {
+    assert(0 <= i_basis && i_basis < N);
     output += K * i_basis;
     for (int r = 0; r < K; ++r) {
       *output++ += value[r];
