@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
   using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
   using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
   using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
+  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents, true>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Spatial = mini::spatial::sem::FluxReconstruction<Part>;
   auto part = Part(case_name, i_core, n_core);
