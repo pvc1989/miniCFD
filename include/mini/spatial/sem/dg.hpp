@@ -47,51 +47,24 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   using GaussOnLine = typename GaussOnCell::GaussX;
   static constexpr int kLineQ = GaussOnLine::Q;
   static constexpr int kFaceQ = kLineQ * kLineQ;
-  std::vector<std::array<int16_t, kFaceQ>> i_node_on_holder_;
-  std::vector<std::array<int16_t, kFaceQ>> i_node_on_sharer_;
 
-  template <std::ranges::input_range R>
-  void MatchGaussianPoints(R &&faces) {
-    i_node_on_holder_.resize(i_node_on_holder_.size() + faces.size());
-    i_node_on_sharer_.resize(i_node_on_sharer_.size() + faces.size());
-    for (const Face &face : faces) {
-      const auto &face_gauss = face.gauss();
-      const auto &holder_gauss = face.holder().gauss();
-      const auto &sharer_gauss = face.sharer().gauss();
-      for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
-        auto &flux_point = face_gauss.GetGlobalCoord(f);
-        i_node_on_holder_.at(face.id()).at(f) = -1;
-        for (int h = 0, H = holder_gauss.CountPoints(); h < H; ++h) {
-          if (Near(flux_point, holder_gauss.GetGlobalCoord(h))) {
-            i_node_on_holder_[face.id()][f] = h;
-            break;
-          }
-        }
-        assert(i_node_on_holder_[face.id()][f] >= 0);
-        i_node_on_sharer_.at(face.id()).at(f) = -1;
-        for (int s = 0, S = sharer_gauss.CountPoints(); s < S; ++s) {
-          if (Near(flux_point, sharer_gauss.GetGlobalCoord(s))) {
-            i_node_on_sharer_[face.id()][f] = s;
-            break;
-          }
-        }
-        assert(i_node_on_sharer_[face.id()][f] >= 0);
-      }
-    }
-  }
+  using FaceCache = std::array<int16_t, kFaceQ>;
+  std::vector<FaceCache> i_node_on_holder_;
+  std::vector<FaceCache> i_node_on_sharer_;
 
-  template <std::ranges::input_range R>
-  void MatchGaussianPointsOnBoundaries(R &&faces) {
+  template <std::ranges::input_range R, class FaceToCell>
+  void MatchGaussianPoints(R &&faces, FaceToCell &&face_to_cell,
+      std::vector<FaceCache> *cache) {
     for (const Face &face : faces) {
-      assert(i_node_on_holder_.size() == face.id());
-      auto &curr_face = i_node_on_holder_.emplace_back();
+      assert(cache->size() == face.id());
+      auto &curr_face = cache->emplace_back();
       const auto &face_gauss = face.gauss();
-      const auto &holder_gauss = face.holder().gauss();
+      const auto &cell_gauss = face_to_cell(face).gauss();
       for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
         auto &flux_point = face_gauss.GetGlobalCoord(f);
         curr_face.at(f) = -1;
-        for (int h = 0, H = holder_gauss.CountPoints(); h < H; ++h) {
-          if (Near(flux_point, holder_gauss.GetGlobalCoord(h))) {
+        for (int h = 0, H = cell_gauss.CountPoints(); h < H; ++h) {
+          if (Near(flux_point, cell_gauss.GetGlobalCoord(h))) {
             curr_face[f] = h;
             break;
           }
@@ -104,9 +77,15 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
  public:
   explicit DiscontinuousGalerkin(Part *part_ptr)
       : Base(part_ptr) {
-    MatchGaussianPoints(part_ptr->GetLocalFaces());
-    MatchGaussianPoints(part_ptr->GetGhostFaces());
-    MatchGaussianPointsOnBoundaries(part_ptr->GetBoundaryFaces());
+    auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
+    auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
+    auto local_cells = this->part_ptr_->GetLocalFaces();
+    MatchGaussianPoints(local_cells, face_to_holder, &i_node_on_holder_);
+    MatchGaussianPoints(local_cells, face_to_sharer, &i_node_on_sharer_);
+    auto ghost_cells = this->part_ptr_->GetGhostFaces();
+    MatchGaussianPoints(ghost_cells, face_to_holder, &i_node_on_holder_);
+    MatchGaussianPoints(ghost_cells, face_to_sharer, &i_node_on_sharer_);    auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
+    MatchGaussianPoints(boundary_cells, face_to_holder, &i_node_on_holder_);
   }
   DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
   DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
