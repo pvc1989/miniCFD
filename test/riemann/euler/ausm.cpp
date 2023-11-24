@@ -21,7 +21,7 @@ double ratio(double x, double y) {
 
 class TestAusm : public ::testing::Test {
  protected:
-  using Gas = IdealGas<double, 1, 4>;
+  using Gas = IdealGas<double, 1.4>;
   using Solver = Ausm<Gas, 1>;
   using Primitive = Solver::Primitive;
   using Flux = Solver::Flux;
@@ -67,7 +67,7 @@ TEST_F(TestAusm, TestBlastFromRight) {
 
 class Ausm2dTest : public ::testing::Test {
  protected:
-  using Solver = Ausm<IdealGas<double, 1, 4>, 2>;
+  using Solver = Ausm<IdealGas<double, 1.4>, 2>;
   using Primitive = Solver::Primitive;
   using Speed = Solver::Scalar;
   using Flux = Solver::Flux;

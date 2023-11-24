@@ -212,7 +212,7 @@ TEST_F(TestWenoLimiters, For3dEulerEquations) {
   cgp_mpi_comm(MPI_COMM_WORLD);
   using Shuffler = mini::mesh::Shuffler<idx_t, double>;
   Shuffler::PartitionAndShuffle(case_name, old_file_name, n_core);
-  using Gas = mini::riemann::euler::IdealGas<double, 1, 4>;
+  using Gas = mini::riemann::euler::IdealGas<double, 1.4>;
   using Unrotated = mini::riemann::euler::Exact<Gas, 3>;
   using Riemann = mini::riemann::rotated::Euler<Unrotated>;
   using Projection = mini::polynomial::Projection<double, 3, 2, 5>;

@@ -13,7 +13,7 @@ namespace mini {
 namespace riemann {
 namespace euler {
 
-using Gas = IdealGas<double, 1, 4>;
+using Gas = IdealGas<double, 1.4>;
 
 template <class Solver>
 auto run() {

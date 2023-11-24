@@ -185,17 +185,13 @@ struct Conservatives : public Tuple<ScalarType, kDimensions> {
   using Base::Base;
 };
 
-template <std::floating_point ScalarType, int kInteger = 1, int kDecimal = 4>
+template <std::floating_point ScalarType, double kGamma>
 class IdealGas {
  public:
   using Scalar = ScalarType;
 
  private:
-  static_assert(kInteger >= 1 && kDecimal >= 0);
-  static constexpr Scalar Shift(Scalar x) {
-    return x < 1.0 ? x : Shift(x / 10.0);
-  }
-  static constexpr Scalar gamma_ = kInteger + Shift(kDecimal);
+  static_assert(kGamma >= 1);
 
   template <typename Primitive>
   static void SetZeroIfNegative(Primitive *primitive) {
@@ -209,7 +205,9 @@ class IdealGas {
 
  public:
   // Constants:
-  static constexpr Scalar Gamma() { return gamma_; }
+  static constexpr Scalar Gamma() {
+    return kGamma;
+  }
   static constexpr Scalar OneOverGamma() {
     return 1 / Gamma();
   }

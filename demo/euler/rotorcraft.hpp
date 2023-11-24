@@ -22,7 +22,7 @@ using Scalar = double;
 constexpr int kDimensions = 3;
 using Primitive = mini::riemann::euler::Primitives<Scalar, kDimensions>;
 using Conservative = mini::riemann::euler::Conservatives<Scalar, kDimensions>;
-using Gas = mini::riemann::euler::IdealGas<Scalar, 1, 4>;
+using Gas = mini::riemann::euler::IdealGas<Scalar, 1.4>;
 using Unrotated = mini::riemann::euler::Exact<Gas, kDimensions>;
 using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 

@@ -21,7 +21,7 @@ double ratio(double x, double y) {
 
 class TestHllc : public ::testing::Test {
  protected:
-  using Gas = IdealGas<double, 1, 4>;
+  using Gas = IdealGas<double, 1.4>;
   using Solver = Hllc<Gas, 1>;
   using Primitive = Solver::Primitive;
   using Flux = Solver::Flux;
@@ -68,7 +68,7 @@ TEST_F(TestHllc, TestBlastFromRight) {
 
 class TestHllc2d : public ::testing::Test {
  protected:
-  using Solver = Hllc<IdealGas<double, 1, 4>, 2>;
+  using Solver = Hllc<IdealGas<double, 1.4>, 2>;
   using Primitive = Solver::Primitive;
   using Speed = Solver::Scalar;
   using Flux = Solver::Flux;

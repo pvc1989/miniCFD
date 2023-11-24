@@ -30,7 +30,7 @@ TEST_F(TestTypes, TestTuples) {
 TEST_F(TestTypes, TestConverters) {
   auto rho{0.1}, u{+0.2}, v{-0.2}, p{0.3};
   auto primitive = Primitives<double, 2>{rho, u, v, p};
-  using Gas = IdealGas<double, 1, 4>;
+  using Gas = IdealGas<double, 1.4>;
   constexpr auto gamma = Gas::Gamma();
   auto conservative = Conservatives<double, 2>{
     rho, rho*u, rho*v, p/(gamma-1) + 0.5*rho*(u*u + v*v)
