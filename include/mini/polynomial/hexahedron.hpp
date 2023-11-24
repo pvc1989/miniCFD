@@ -62,27 +62,46 @@ class Hexahedron {
 
  private:
   static const Basis basis_;
+  static Basis BuildInterpolationBasis() {
+    auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };
+    auto line_y = typename Basis::LineY{ Gauss::GaussY::BuildPoints() };
+    auto line_z = typename Basis::LineZ{ Gauss::GaussZ::BuildPoints() };
+    return Basis(line_x, line_y, line_z);
+  }
+
+  static const std::array<Mat3xN, N> basis_local_gradients_;
+  static std::array<Mat3xN, N> BuildBasisLocalGradients() {
+    std::array<Mat3xN, N> gradients;
+    auto basis = BuildInterpolationBasis();
+    for (int ijk = 0; ijk < N; ++ijk) {
+      auto &grad = gradients[ijk];
+      auto [i, j, k] = basis.index(ijk);
+      grad.row(0) = basis.GetDerivatives(1, 0, 0, i, j, k);
+      grad.row(1) = basis.GetDerivatives(0, 1, 0, i, j, k);
+      grad.row(2) = basis.GetDerivatives(0, 0, 1, i, j, k);
+    }
+    return gradients;
+  }
+
+ protected:
   const Gauss *gauss_ptr_ = nullptr;
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
   std::array<Scalar, N> jacobian_det_;  // det(J)
   std::array<Jacobian, N> jacobian_det_inv_;  // det(J) J^{-1}
-  std::array<Mat3xN, N> basis_gradients_;
+  std::array<Mat3xN, N> basis_global_gradients_;
 
  public:
   explicit Hexahedron(const GaussBase &gauss)
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
-      auto &grad = basis_gradients_[ijk];
-      auto [i, j, k] = basis_.index(ijk);
-      grad.row(0) = basis_.GetDerivatives(1, 0, 0, i, j, k);
-      grad.row(1) = basis_.GetDerivatives(0, 1, 0, i, j, k);
-      grad.row(2) = basis_.GetDerivatives(0, 0, 1, i, j, k);
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
       Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
       if (kLocal) {
         jacobian_det_[ijk] = jacobian.determinant();
         jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
       } else {
+        basis_global_gradients_[ijk] = basis_local_gradients_[ijk];
+        auto &grad = basis_global_gradients_[ijk];
         LocalGradientsToGlobalGradients(jacobian, &grad);
       }
     }
@@ -129,7 +148,7 @@ class Hexahedron {
     return grad;
   }
   const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const {
-    return basis_gradients_[ijk];
+    return kLocal ? basis_local_gradients_[ijk] : basis_global_gradients_[ijk];
   }
   /**
    * @brief Convert the gradients in local coordinates to the gradients in global coordinates.
@@ -589,18 +608,17 @@ class Hexahedron {
     }
     return std::make_tuple(i, j, k);
   }
-
-  static Basis BuildInterpolationBasis() {
-    auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };
-    auto line_y = typename Basis::LineY{ Gauss::GaussY::BuildPoints() };
-    auto line_z = typename Basis::LineZ{ Gauss::GaussZ::BuildPoints() };
-    return Basis(line_x, line_y, line_z);
-  }
 };
 template <class Gx, class Gy, class Gz, int kC, bool kL>
 typename Hexahedron<Gx, Gy, Gz, kC, kL>::Basis const
 Hexahedron<Gx, Gy, Gz, kC, kL>::basis_ =
     Hexahedron<Gx, Gy, Gz, kC, kL>::BuildInterpolationBasis();
+
+template <class Gx, class Gy, class Gz, int kC, bool kL>
+std::array<typename Hexahedron<Gx, Gy, Gz, kC, kL>::Mat3xN,
+                    Hexahedron<Gx, Gy, Gz, kC, kL>::N> const
+Hexahedron<Gx, Gy, Gz, kC, kL>::basis_local_gradients_ =
+    Hexahedron<Gx, Gy, Gz, kC, kL>::BuildBasisLocalGradients();
 
 }  // namespace polynomial
 }  // namespace mini
