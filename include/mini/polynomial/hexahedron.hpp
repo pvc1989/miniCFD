@@ -61,8 +61,32 @@ class Hexahedron {
   using GaussOnLine = GaussX;
 
  private:
+  const Gauss *gauss_ptr_ = nullptr;
+  Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
+
+  struct E { };
+  /* \f$ \det(J) \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, std::array<Scalar, N>, E>
+      jacobian_det_;
+  /* \f$ \det(J)\,J^{-1} \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, std::array<Jacobian, N>, E>
+      jacobian_det_inv_;
+  [[no_unique_address]] std::conditional_t<kLocal, E, std::array<Mat3xN, N>>
+      basis_global_gradients_;
+
+  static void CheckSize() {
+    constexpr size_t large_member_size = kLocal
+        ? sizeof(std::array<Scalar, N>) + sizeof(std::array<Jacobian, N>)
+        : sizeof(std::array<Mat3xN, N>);
+    constexpr size_t all_member_size = large_member_size
+        + sizeof(gauss_ptr_) + sizeof(coeff_);
+    static_assert(sizeof(Hexahedron) >= all_member_size);
+    static_assert(sizeof(Hexahedron) <= all_member_size + 16);
+  }
+
   static const Basis basis_;
   static Basis BuildInterpolationBasis() {
+    CheckSize();
     auto line_x = typename Basis::LineX{ Gauss::GaussX::BuildPoints() };
     auto line_y = typename Basis::LineY{ Gauss::GaussY::BuildPoints() };
     auto line_z = typename Basis::LineZ{ Gauss::GaussZ::BuildPoints() };
@@ -83,27 +107,23 @@ class Hexahedron {
     return gradients;
   }
 
- protected:
-  const Gauss *gauss_ptr_ = nullptr;
-  Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
-  std::array<Scalar, N> jacobian_det_;  // det(J)
-  std::array<Jacobian, N> jacobian_det_inv_;  // det(J) J^{-1}
-  std::array<Mat3xN, N> basis_global_gradients_;
-
  public:
-  explicit Hexahedron(const GaussBase &gauss)
+  explicit Hexahedron(const GaussBase &gauss) requires (kLocal)
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
       Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
-      if (kLocal) {
-        jacobian_det_[ijk] = jacobian.determinant();
-        jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
-      } else {
-        basis_global_gradients_[ijk] = basis_local_gradients_[ijk];
-        auto &grad = basis_global_gradients_[ijk];
-        LocalGradientsToGlobalGradients(jacobian, &grad);
-      }
+      jacobian_det_[ijk] = jacobian.determinant();
+      jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
+    }
+  }
+  explicit Hexahedron(const GaussBase &gauss) requires (!kLocal)
+      : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
+    for (int ijk = 0; ijk < N; ++ijk) {
+      auto &local = gauss_ptr_->GetLocalCoord(ijk);
+      Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
+      basis_global_gradients_[ijk] = LocalGradientsToGlobalGradients(
+          jacobian, basis_local_gradients_[ijk]);
     }
   }
   Hexahedron() = default;
@@ -117,38 +137,48 @@ class Hexahedron {
     return kLocal;
   }
 
-  Value LobalToValue(Local const &local) const {
+  Value LobalToValue(Local const &local) const requires (kLocal) {
     Value value = coeff_ * basis_.GetValues(local).transpose();
-    if (kLocal) {
-      value /= lagrange().LocalToJacobian(local).determinant();
-    }
+    value /= lagrange().LocalToJacobian(local).determinant();
     return value;
+  }
+  Value LobalToValue(Local const &local) const requires (!kLocal) {
+    return coeff_ * basis_.GetValues(local).transpose();
   }
 
   Value GlobalToValue(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
     return LobalToValue(local);
   }
-  Value GetValueOnGaussianPoint(int i) const {
-    Value value = coeff_.col(i);
-    return kLocal ? value / jacobian_det_[i] : value;
+  Value GetValueOnGaussianPoint(int i) const
+      requires (kLocal) {
+    return coeff_.col(i) / jacobian_det_[i];
+  }
+  Value GetValueOnGaussianPoint(int i) const
+      requires (!kLocal) {
+    return coeff_.col(i);
   }
   Mat1xN GlobalToBasisValues(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
     return basis_.GetValues(local);
   }
-  Mat3xN GlobalToBasisGradients(Global const &global) const {
+  Mat3xN GlobalToBasisGradients(Global const &global) const
+      requires (!kLocal) {
     Local local = lagrange().GlobalToLocal(global);
     Mat3xN grad;
     grad.row(0) = basis_.GetDerivatives(1, 0, 0, local);
     grad.row(1) = basis_.GetDerivatives(0, 1, 0, local);
     grad.row(2) = basis_.GetDerivatives(0, 0, 1, local);
     Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
-    LocalGradientsToGlobalGradients(jacobian, &grad);
-    return grad;
+    return LocalGradientsToGlobalGradients(jacobian, grad);
   }
-  const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const {
-    return kLocal ? basis_local_gradients_[ijk] : basis_global_gradients_[ijk];
+  const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const
+      requires (kLocal) {
+    return basis_local_gradients_[ijk];
+  }
+  const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const
+      requires (!kLocal) {
+    return basis_global_gradients_[ijk];
   }
   /**
    * @brief Convert the gradients in local coordinates to the gradients in global coordinates.
@@ -156,12 +186,12 @@ class Hexahedron {
    * \f$ \begin{bmatrix}\partial\phi/\partial\xi\\ \partial\phi/\partial\eta\\ \cdots \end{bmatrix} = \begin{bmatrix}\partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix}\begin{bmatrix}\partial\phi/\partial x\\\partial\phi/\partial y\\ \cdots \end{bmatrix} \f$
    * 
    * @param jacobian the Jacobian matrix, which is the transpose of `geometry::Element::Jacobian`.
-   * @param local the gradients in local coordinates
+   * @param local_grad the gradients in local coordinates
+   * @return Mat3xN the gradients in global coordinates
    */
-  static void LocalGradientsToGlobalGradients(const Jacobian &jacobian,
-      Mat3xN *local) {
-    Mat3xN global = jacobian.fullPivLu().solve(*local);
-    *local = global;
+  static Mat3xN LocalGradientsToGlobalGradients(const Jacobian &jacobian,
+      Mat3xN const &local_grad) requires (!kLocal) {
+    return jacobian.fullPivLu().solve(local_grad);
   }
 
   /**
@@ -173,7 +203,8 @@ class Hexahedron {
    * @return FluxMatrix the local flux
    */
   template <class FluxMatrix>
-  FluxMatrix GlobalFluxToLocalFlux(const FluxMatrix &global_flux, int ijk) const {
+  FluxMatrix GlobalFluxToLocalFlux(const FluxMatrix &global_flux, int ijk) const
+      requires (kLocal) {
     FluxMatrix local_flux = global_flux * jacobian_det_inv_[ijk];
     return local_flux;
   }
@@ -186,7 +217,8 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return Jacobian const& the associated matrix of \f$ J \f$.
    */
-  Jacobian const &GetJacobianAssociated(int ijk) const {
+  Jacobian const &GetJacobianAssociated(int ijk) const
+      requires (kLocal) {
     return jacobian_det_inv_[ijk];
   }
 
@@ -209,15 +241,18 @@ class Hexahedron {
     return gauss().lagrange();
   }
   template <typename Callable>
-  void Approximate(Callable &&global_to_value) {
+  void Approximate(Callable &&global_to_value) requires (kLocal) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &global = gauss_ptr_->GetGlobalCoord(ijk);
       coeff_.col(ijk) = global_to_value(global);  // value in physical space
-      if (kLocal) {
-        auto jacobian_det =
-            gauss_ptr_->GetGlobalWeight(ijk) / gauss_ptr_->GetLocalWeight(ijk);
-        coeff_.col(ijk) *= jacobian_det;  // value in parametric space
-      }
+      coeff_.col(ijk) *= jacobian_det_[ijk];  // value in parametric space
+    }
+  }
+  template <typename Callable>
+  void Approximate(Callable &&global_to_value) requires (!kLocal) {
+    for (int ijk = 0; ijk < N; ++ijk) {
+      auto &global = gauss_ptr_->GetGlobalCoord(ijk);
+      coeff_.col(ijk) = global_to_value(global);  // value in physical space
     }
   }
   const Scalar *GetCoeffFrom(const Scalar *input) {
