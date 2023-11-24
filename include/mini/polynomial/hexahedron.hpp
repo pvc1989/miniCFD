@@ -381,7 +381,17 @@ class Hexahedron {
     using mini::geometry::X;
     using mini::geometry::Y;
     using mini::geometry::Z;
-    auto local = lagrange().GlobalToLocal(global);
+    Local local_hint(0, 0, 0);
+    switch (i_face) {
+    case 0: local_hint[Z] = -1; break;
+    case 1: local_hint[Y] = -1; break;
+    case 2: local_hint[X] = +1; break;
+    case 3: local_hint[Y] = +1; break;
+    case 4: local_hint[X] = -1; break;
+    case 5: local_hint[Z] = +1; break;
+    default: assert(false);
+    }
+    auto local = lagrange().GlobalToLocal(global, local_hint);
     auto almost_equal = [](Scalar x, Scalar y) {
       return std::abs(x - y) < 1e-10;
     };

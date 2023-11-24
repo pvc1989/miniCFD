@@ -67,8 +67,8 @@ class Cell : public Element<Scalar, 3, 3> {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
 
-  Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global)
-      const {
+  Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global,
+      const Local &hint = Local(0, 0, 0)) const {
     Global xyz_global = {x_global, y_global, z_global};
     auto func = [this, &xyz_global](Local const &xyz_local) {
       auto res = LocalToGlobal(xyz_local);
@@ -77,11 +77,10 @@ class Cell : public Element<Scalar, 3, 3> {
     auto jac = [this](Local const &xyz_local) {
       return LocalToJacobian(xyz_local);
     };
-    Global xyz0 = {0, 0, 0};
-    return root(func, xyz0, jac);
+    return root(func, hint, jac);
   }
-  Local GlobalToLocal(const Global &xyz) const {
-    return GlobalToLocal(xyz[X], xyz[Y], xyz[Z]);
+  Local GlobalToLocal(const Global &xyz, const Local &hint = Local(0, 0, 0)) const {
+    return GlobalToLocal(xyz[X], xyz[Y], xyz[Z], hint);
   }
 
   /**
