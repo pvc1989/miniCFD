@@ -377,6 +377,117 @@ class Hexahedron {
     return indices;
   }
   std::tuple<int, int, int> FindCollinearIndex(Global const &global, int i_face) const {
+    return FindCollinearIndexByGlobal(global, i_face);
+  }
+  std::tuple<int, int, int> FindCollinearIndexByGlobal(Global const &global, int i_face) const {
+    int i{-1}, j{-1}, k{-1};
+    using mini::geometry::X;
+    using mini::geometry::Y;
+    using mini::geometry::Z;
+    Global global_temp;
+    bool done = false;
+    switch (i_face) {
+    case 0:
+      for (i = 0; i < GaussX::Q; ++i) {
+        for (j = 0; j < GaussY::Q; ++j) {
+          global_temp = lagrange().LocalToGlobal(
+              GaussX::points[i], GaussY::points[j], -1);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    case 1:
+      for (i = 0; i < GaussX::Q; ++i) {
+        for (k = 0; k < GaussZ::Q; ++k) {
+          global_temp = lagrange().LocalToGlobal(
+              GaussX::points[i], -1, GaussZ::points[k]);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    case 2:
+      for (j = 0; j < GaussY::Q; ++j) {
+        for (k = 0; k < GaussZ::Q; ++k) {
+          global_temp = lagrange().LocalToGlobal(
+              +1, GaussY::points[j], GaussZ::points[k]);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    case 3:
+      for (i = 0; i < GaussX::Q; ++i) {
+        for (k = 0; k < GaussZ::Q; ++k) {
+          global_temp = lagrange().LocalToGlobal(
+              GaussX::points[i], +1, GaussZ::points[k]);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    case 4:
+      for (j = 0; j < GaussY::Q; ++j) {
+        for (k = 0; k < GaussZ::Q; ++k) {
+          global_temp = lagrange().LocalToGlobal(
+              -1, GaussY::points[j], GaussZ::points[k]);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    case 5:
+      for (i = 0; i < GaussX::Q; ++i) {
+        for (j = 0; j < GaussY::Q; ++j) {
+          global_temp = lagrange().LocalToGlobal(
+              GaussX::points[i], GaussY::points[j], +1);
+          global_temp -= global;
+          if (global_temp.norm() < 1e-8) {
+            done = true;
+            break;
+          }
+        }
+        if (done) {
+          break;
+        }
+      }
+      break;
+    default: assert(false);
+    }
+    return std::make_tuple(i, j, k);
+  }
+  std::tuple<int, int, int> FindCollinearIndexByLocal(Global const &global, int i_face) const {
     int i{-1}, j{-1}, k{-1};
     using mini::geometry::X;
     using mini::geometry::Y;
