@@ -14,6 +14,7 @@
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
 #include "mini/spatial/fem.hpp"
+#include "mini/polynomial/projection.hpp"
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);

@@ -39,7 +39,6 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/pyramid.hpp"
 #include "mini/gauss/wedge.hpp"
-#include "mini/polynomial/projection.hpp"
 #include "mini/type/select.hpp"
 
 namespace mini {
