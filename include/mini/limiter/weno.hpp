@@ -267,6 +267,7 @@ template <typename Cell>
 class Dummy {
   using Scalar = typename Cell::Scalar;
   using Projection = typename Cell::Projection;
+  using ProjectionWrapper = typename Projection::Wrapper;
 
  public:
   Dummy(Scalar w0, Scalar eps, bool verbose = false) {
@@ -274,10 +275,8 @@ class Dummy {
   bool IsNotSmooth(const Cell &cell) {
     return true;
   }
-  Projection operator()(const Cell &cell) {
-    return cell.projection_;
-  }
-  void operator()(Cell *cell_ptr) {
+  ProjectionWrapper operator()(const Cell &cell) {
+    return ProjectionWrapper(cell.projection());
   }
 };
 
