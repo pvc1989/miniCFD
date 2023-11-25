@@ -251,7 +251,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto *sharer_data = residual->data()
@@ -265,7 +264,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
             holder.projection().GetValueOnGaussianPoint(holder_flux_point.ijk);
         Value u_sharer =
             sharer.projection().GetValueOnGaussianPoint(sharer_flux_point.ijk);
-        Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value f_upwind = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
         assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
         Value f_holder = f_upwind * holder_flux_point.scale -
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
@@ -285,7 +284,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto &holder_cache = holder_cache_[face.id()];
@@ -297,7 +295,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
             holder.projection().GetValueOnGaussianPoint(holder_flux_point.ijk);
         Value u_sharer =
             sharer.projection().GetValueOnGaussianPoint(sharer_flux_point.ijk);
-        Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value f_upwind = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
         assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
         Value f_holder = f_upwind * holder_flux_point.scale -
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
@@ -312,7 +310,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -320,7 +317,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
-          Value f_upwind = riemann.GetFluxOnSolidWall(u_holder);
+          Value f_upwind = face.riemann(f).GetFluxOnSolidWall(u_holder);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -335,7 +332,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -343,7 +339,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
-          Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
+          Value f_upwind = face.riemann(f).GetFluxOnSupersonicOutlet(u_holder);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -358,7 +354,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -367,7 +362,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value f_upwind = riemann.GetFluxOnSupersonicInlet(u_given);
+          Value f_upwind = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -382,7 +377,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -391,7 +385,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value f_upwind = riemann.GetFluxOnSubsonicInlet(u_holder, u_given);
+          Value f_upwind = face.riemann(f).GetFluxOnSubsonicInlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -406,7 +400,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -415,7 +408,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value f_upwind = riemann.GetFluxOnSubsonicOutlet(u_holder, u_given);
+          Value f_upwind = face.riemann(f).GetFluxOnSubsonicOutlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -430,7 +423,6 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
@@ -439,7 +431,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value u_holder = holder.projection().GetValueOnGaussianPoint(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value f_upwind = riemann.GetFluxOnSmartBoundary(u_holder, u_given);
+          Value f_upwind = face.riemann(f).GetFluxOnSmartBoundary(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {

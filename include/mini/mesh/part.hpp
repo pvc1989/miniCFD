@@ -117,15 +117,19 @@ struct Face {
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
-  Riemann riemann_;
+  std::vector<Riemann> riemann_;
   Int id_{-1};
 
   Face(LagrangeUptr &&lagrange_ptr, GaussUptr &&gauss_ptr,
       Cell *holder, Cell *sharer, Int id = 0)
       : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
-        holder_(holder), sharer_(sharer), id_(id) {
-    riemann_.Rotate(gauss_ptr_->GetNormalFrame(0));
+        holder_(holder), sharer_(sharer),
+        riemann_(gauss_ptr_->CountPoints()),
+        id_(id) {
+    for (int i = 0, n = riemann_.size(); i < n; ++i) {
+      riemann_[i].Rotate(gauss_ptr_->GetNormalFrame(i));
+    }
   }
   Face(const Face &) = delete;
   Face &operator=(const Face &) = delete;
@@ -141,8 +145,8 @@ struct Face {
     assert(lagrange_ptr_);
     return *lagrange_ptr_;
   }
-  Riemann const &riemann() const {
-    return riemann_;
+  Riemann const &riemann(int i) const {
+    return riemann_[i];
   }
   Global center() const {
     return gauss().center();

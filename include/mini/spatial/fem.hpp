@@ -194,7 +194,6 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto *sharer_data = residual->data()
@@ -203,7 +202,7 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GlobalToValue(coord);
         Value u_sharer = sharer.GlobalToValue(coord);
-        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value flux = face.riemann(q).GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff prod = -flux * holder.GlobalToBasisValues(coord);
         holder.projection().AddCoeffTo(prod, holder_data);
@@ -217,14 +216,13 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GlobalToValue(coord);
         Value u_sharer = sharer.GlobalToValue(coord);
-        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value flux = face.riemann(q).GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
         Coeff prod = -flux * holder.GlobalToBasisValues(coord);
         holder.projection().AddCoeffTo(prod, holder_data);
@@ -238,13 +236,12 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_holder = holder.GlobalToValue(coord);
-          Value flux = riemann.GetFluxOnSolidWall(u_holder);
+          Value flux = face.riemann(q).GetFluxOnSolidWall(u_holder);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);
@@ -257,13 +254,12 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_holder = holder.GlobalToValue(coord);
-          Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
+          Value flux = face.riemann(q).GetFluxOnSupersonicOutlet(u_holder);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);
@@ -276,13 +272,12 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_given = func(coord, this->t_curr_);
-          Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
+          Value flux = face.riemann(q).GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);
@@ -295,14 +290,13 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
           Value u_given = func(coord, this->t_curr_);
-          Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
+          Value flux = face.riemann(q).GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);
@@ -315,14 +309,13 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
           Value u_given = func(coord, this->t_curr_);
-          Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
+          Value flux = face.riemann(q).GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);
@@ -335,14 +328,13 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
           Value u_given = func(coord, this->t_curr_);
-          Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
+          Value flux = face.riemann(q).GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
           Coeff prod = -flux * holder.GlobalToBasisValues(coord);
           holder.projection().AddCoeffTo(prod, holder_data);

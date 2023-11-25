@@ -210,7 +210,7 @@ class Eigen {
     int adj_cnt = my_cell_->adj_faces_.size();
     // build eigen-matrices in the rotated coordinate system
     const auto &big_u = my_cell_->projection().average();
-    auto *riemann = const_cast<typename Face::Riemann *>(&adj_face.riemann_);
+    auto *riemann = const_cast<typename Face::Riemann *>(&adj_face.riemann(0));
     riemann->UpdateEigenMatrices(big_u);
     // initialize weights
     auto weights = std::vector<Value>(adj_cnt + 1, weights_);

@@ -133,7 +133,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto *sharer_data = residual->data()
@@ -145,7 +144,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         auto c_sharer = i_node_on_sharer[f];
         Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
         Value u_sharer = sharer.projection().GetValueOnGaussianPoint(c_sharer);
-        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value flux = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(f);
         holder.projection().AddValueTo(-flux, holder_data, c_holder);
         sharer.projection().AddValueTo(flux, sharer_data, c_sharer);
@@ -157,7 +156,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      const auto &riemann = face.riemann();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto &i_node_on_holder = i_node_on_holder_[face.id()];
@@ -167,7 +165,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         auto c_sharer = i_node_on_sharer[f];
         Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
         Value u_sharer = sharer.projection().GetValueOnGaussianPoint(c_sharer);
-        Value flux = riemann.GetFluxUpwind(u_holder, u_sharer);
+        Value flux = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
         flux *= -gauss.GetGlobalWeight(f);
         holder.projection().AddValueTo(flux, holder_data, c_holder);
       }
@@ -178,14 +176,13 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
           Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
-          Value flux = riemann.GetFluxOnSolidWall(u_holder);
+          Value flux = face.riemann(f).GetFluxOnSolidWall(u_holder);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
@@ -197,14 +194,13 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
           Value u_holder = holder.projection().GetValueOnGaussianPoint(c_holder);
-          Value flux = riemann.GetFluxOnSupersonicOutlet(u_holder);
+          Value flux = face.riemann(f).GetFluxOnSupersonicOutlet(u_holder);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
@@ -216,14 +212,13 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value flux = riemann.GetFluxOnSupersonicInlet(u_given);
+          Value flux = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
@@ -235,7 +230,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
@@ -243,7 +237,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
           auto c_holder = i_node_on_holder[f];
           Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value flux = riemann.GetFluxOnSubsonicInlet(u_inner, u_given);
+          Value flux = face.riemann(f).GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
@@ -255,7 +249,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
@@ -263,7 +256,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
           auto c_holder = i_node_on_holder[f];
           Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value flux = riemann.GetFluxOnSubsonicOutlet(u_inner, u_given);
+          Value flux = face.riemann(f).GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
@@ -275,7 +268,6 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        const auto &riemann = face.riemann();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
@@ -283,7 +275,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
           auto c_holder = i_node_on_holder[f];
           Value u_inner = holder.projection().GetValueOnGaussianPoint(c_holder);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value flux = riemann.GetFluxOnSmartBoundary(u_inner, u_given);
+          Value flux = face.riemann(f).GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= -gauss.GetGlobalWeight(f);
           holder.projection().AddValueTo(flux, holder_data, c_holder);
         }
