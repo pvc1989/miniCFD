@@ -29,8 +29,9 @@ void Prepare(const typename Cell::Local locals[], int n, const Cell &cell,
     std::vector<typename Cell::Global> *coords,
     std::vector<typename Cell::Value> *values) {
   for (int i = 0; i < n; ++i) {
-    coords->emplace_back(cell.LocalToGlobal(locals[i]));
-    values->emplace_back(cell.GlobalToValue(coords->back()));
+    auto &global = coords->emplace_back();
+    auto &value = values->emplace_back();
+    cell.projection().LocalToGlobalAndValue(locals[i], &global, &value);
   }
 }
 

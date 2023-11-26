@@ -145,6 +145,11 @@ class Hexahedron {
   Value LobalToValue(Local const &local) const requires (!kLocal) {
     return coeff_ * basis_.GetValues(local).transpose();
   }
+  void LocalToGlobalAndValue(Local const &local,
+      Global *global, Value *value) const {
+    *global = gauss().lagrange().LocalToGlobal(local);
+    *value = GlobalToValue(*global);
+  }
 
   Value GlobalToValue(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
