@@ -30,36 +30,20 @@ void Project(Projection *proj, Callable &&func) {
   using Coeff = typename Projection::Coeff;
   using Return = std::invoke_result_t<Callable, Global>;
   static_assert(std::is_same_v<Return, Value> || std::is_scalar_v<Return>);
-  Coeff coeff = gauss::Integrate([&](Global const &xyz) {
+  proj->coeff() = gauss::Integrate([&](Global const &xyz) {
     auto f_col = std::forward<Callable>(func)(xyz);
     Mat1xN b_row = proj->GlobalToBasisValues(xyz);
     Coeff prod = f_col * b_row;
     return prod;
   }, proj->gauss());
-  proj->coeff() = coeff * proj->basis().coeff();
 }
 
 template <typename Projection>
-auto GetCoeffOnOrthoNormalBasis(const Projection &proj) {
-  using Coeff = typename Projection::Coeff;
+auto GetAverage(const Projection &proj) {
   auto const &mat_a = proj.basis().coeff();
-  Coeff mat_x = proj.coeff();
-  int N = Projection::N;
-  for (int i = N-1; i >= 0; --i) {
-    for (int j = i+1; j < N; ++j) {
-      mat_x.col(i) -= mat_x.col(j) * mat_a(j, i);
-    }
-    mat_x.col(i) /= mat_a(i, i);
-  }
-  return mat_x;
-}
-
-template <typename Projection>
-typename Projection::Value GetAverage(const Projection &proj) {
-  auto const &mat_a = proj.basis().coeff();
-  auto mat_x = GetCoeffOnOrthoNormalBasis(proj);
-  mat_x.col(0) *= mat_a(0, 0);
-  return mat_x.col(0);
+  typename Projection::Value col_0 = proj.coeff().col(0);
+  col_0 *= mat_a(0, 0);
+  return col_0;
 }
 
 }  // namespace projection
@@ -112,23 +96,21 @@ class Projection {
   Projection(Projection &&that) noexcept = default;
   ~Projection() noexcept = default;
 
+  Mat1xN GlobalToBasisValues(Global const &global) const {
+    return basis_(global);
+  }
   Value GlobalToValue(Global const &global) const {
-    Local local = global; local -= center();
-    MatNx1 col = basis::Taylor<Scalar, kDimensions, kDegrees>::GetValue(local);
-    return coeff_ * col;
+    return coeff_ * basis_(global);
+  }
+  Value operator()(Global const &global) const {
+    return GlobalToValue(global);
   }
   Value GetValueOnGaussianPoint(int i) const {
     auto &global = gauss().GetGlobalCoord(i);
     return GlobalToValue(global);
   }
-  Mat1xN GlobalToBasisValues(Global const &global) const {
-    return basis_(global);
-  }
-  Value operator()(Global const &global) const {
-    return GlobalToValue(global);
-  }
-  Coeff const &GetCoeffOnTaylorBasis() const {
-    return coeff_;
+  Coeff GetCoeffOnTaylorBasis() const {
+    return coeff_ * basis_.coeff();
   }
   Basis const &basis() const {
     return basis_;

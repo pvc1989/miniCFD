@@ -84,9 +84,7 @@ TEST_F(TestProjection, CoeffConsistency) {
   auto projection = ProjFunc(gauss_);
   projection.Approximate(func);
   Coeff coeff_diff = projection.GetCoeffOnTaylorBasis()
-      - mini::polynomial::projection::GetCoeffOnOrthoNormalBasis(projection)
-      * projection.basis().coeff();
-  std::cout << projection.GetCoeffOnTaylorBasis() << std::endl;
+      - projection.coeff() * projection.basis().coeff();
   EXPECT_NEAR(coeff_diff.norm(), 0.0, 1e-14);
 }
 TEST_F(TestProjection, PartialDerivatives) {
@@ -103,7 +101,7 @@ TEST_F(TestProjection, PartialDerivatives) {
   auto x = 0.3, y = 0.4, z = 0.5;
   auto point = Coord{ x, y, z };
   auto pdv_actual = Taylor::GetPdvValue(point - projection.center(),
-      projection.coeff());
+      projection.GetCoeffOnTaylorBasis());
   auto coeff = ProjFunc::Coeff(); coeff.setIdentity();
   auto pdv_expect = Taylor::GetPdvValue(point, coeff);
   ProjFunc::Coeff diff = pdv_actual - pdv_expect;
