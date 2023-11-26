@@ -24,7 +24,7 @@ auto GetSmoothness(const Projection &proj) {
   using Taylor = typename Projection::Taylor;
   auto mat_pdv_func = [&proj](Global const &xyz) {
     auto local = xyz; local -= proj.center();
-    auto mat_pdv = Taylor::GetPdvValue(local, proj.coeff());
+    auto mat_pdv = Taylor::GetPdvValue(local, proj.GetCoeffOnTaylorBasis());
     mat_pdv = mat_pdv.cwiseProduct(mat_pdv);
     return mat_pdv;
   };

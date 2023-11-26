@@ -62,7 +62,7 @@ TEST_F(TestQuadrangle4x4, Projection) {
   auto scalar_pf = ScalarPF(gauss);
   scalar_pf.Approximate(scalar_f);
   using Mat1x6 = mini::algebra::Matrix<double, 1, 6>;
-  double residual = (scalar_pf.coeff()
+  double residual = (scalar_pf.GetCoeffOnTaylorBasis()
       - Mat1x6(0, 0, 0, 0, 1, 0)).norm();
   EXPECT_NEAR(residual, 0.0, 1e-15);
   using Mat7x1 = mini::algebra::Matrix<double, 7, 1>;
@@ -80,7 +80,7 @@ TEST_F(TestQuadrangle4x4, Projection) {
       {0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0}, {0, 0, 0, 0, 1, 0},
       {0, 0, 0, 0, 0, 1}
   };
-  Mat7x6 abs_diff = vector_pf.coeff() - exact_vector;
+  Mat7x6 abs_diff = vector_pf.GetCoeffOnTaylorBasis() - exact_vector;
   EXPECT_NEAR(abs_diff.norm(), 0.0, 1e-14);
 }
 

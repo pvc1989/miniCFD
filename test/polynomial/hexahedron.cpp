@@ -86,8 +86,15 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
   scalar_pf.Approximate([](Coord const& xyz){
     return xyz[0] * xyz[1] + xyz[2];
   });
-  Mat1x10 diff = scalar_pf.coeff() - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0);
+  Mat1x10 diff = scalar_pf.GetCoeffOnTaylorBasis()
+      - Mat1x10(0, 0, 0, 1, 0, 1, 0, 0, 0, 0);
   EXPECT_NEAR(diff.norm(), 0.0, 1e-14);
+  Mat1x10 scalar_coeff = Mat1x10::Random();
+  scalar_pf.coeff().setZero();
+  scalar_pf.AddCoeffTo(scalar_coeff, scalar_pf.coeff().data());
+  EXPECT_EQ(scalar_pf.coeff(), scalar_coeff);
+  scalar_pf.AddCoeffTo(scalar_coeff, scalar_pf.coeff().data());
+  EXPECT_EQ(scalar_pf.coeff(), scalar_coeff * 2);
   auto vector_pf = VectorPF(gauss);
   vector_pf.Approximate([](Coord const& xyz) {
     auto x = xyz[0], y = xyz[1], z = xyz[2];
@@ -99,8 +106,14 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
   Mat11x10 exact_vector;
   exact_vector.row(0).setZero();
   exact_vector.bottomRows(10).setIdentity();
-  Mat11x10 abs_diff = vector_pf.coeff() - exact_vector;
+  Mat11x10 abs_diff = vector_pf.GetCoeffOnTaylorBasis() - exact_vector;
   EXPECT_NEAR(abs_diff.norm(), 0.0, 1e-14);
+  Mat11x10 vector_coeff = Mat11x10::Random();
+  vector_pf.coeff().setZero();
+  vector_pf.AddCoeffTo(vector_coeff, vector_pf.coeff().data());
+  EXPECT_EQ(vector_pf.coeff(), vector_coeff);
+  vector_pf.AddCoeffTo(vector_coeff, vector_pf.coeff().data());
+  EXPECT_EQ(vector_pf.coeff(), vector_coeff * 2);
 }
 
 class TestPolynomialHexahedronInterpolation : public ::testing::Test {

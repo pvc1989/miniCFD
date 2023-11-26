@@ -209,6 +209,9 @@ class ProjectionWrapper {
   Gauss const &gauss() const {
     return basis().gauss();
   }
+  Coeff GetCoeffOnTaylorBasis() const {
+    return coeff_ * basis().coeff();
+  }
   Coeff const &coeff() const {
     return coeff_;
   }
@@ -247,7 +250,8 @@ class ProjectionWrapper {
     }
     return *this;
   }
-  ProjectionWrapper &operator+=(const Value& offset) {
+  ProjectionWrapper &operator+=(Value offset) {
+    offset /= basis().coeff()(0, 0);
     coeff_.col(0) += offset;
     return *this;
   }

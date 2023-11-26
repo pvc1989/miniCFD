@@ -127,6 +127,35 @@ TEST_F(TestProjection, PartialDerivatives) {
   pdv_values(9, 9) = 2;  // (∂/∂z)(∂/∂z)(z*z)
   EXPECT_EQ(pdv_expect, pdv_values);
 }
+TEST_F(TestProjection, ArithmaticOperations) {
+  using ProjFunc = mini::polynomial::Projection<double, 3, 2, 10>;
+  using Value = typename ProjFunc::Value;
+  auto func = [](Coord const &point){
+    auto x = point[0], y = point[1], z = point[2];
+    Value res = { 1, x, y, z, x * x, x * y, x * z, y * y, y * z, z * z };
+    return res;
+  };
+  auto projection = ProjFunc(gauss_);
+  projection.Approximate(func);
+  using Wrapper = typename ProjFunc::Wrapper;
+  auto projection_wrapper = Wrapper(projection);
+  EXPECT_EQ(projection_wrapper.coeff(), projection.coeff());
+  EXPECT_EQ(projection_wrapper.GetCoeffOnTaylorBasis(),
+      projection.GetCoeffOnTaylorBasis());
+  EXPECT_EQ(projection_wrapper.average(), projection.average());
+  projection_wrapper *= 2;
+  EXPECT_EQ(projection_wrapper.coeff(), projection.coeff() * 2);
+  projection_wrapper /= 2;
+  EXPECT_EQ(projection_wrapper.coeff(), projection.coeff());
+  projection_wrapper += projection_wrapper;
+  EXPECT_EQ(projection_wrapper.coeff(), projection.coeff() * 2);
+  Value value; value.setOnes(); value /= 2;
+  projection_wrapper *= value;
+  EXPECT_EQ(projection_wrapper.coeff(), projection.coeff());
+  projection_wrapper += value;
+  value += projection.average();
+  EXPECT_NEAR((value - projection_wrapper.average()).norm(), 0, 1e-15);
+}
 
 int main(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
