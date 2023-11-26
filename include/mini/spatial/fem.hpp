@@ -96,7 +96,8 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     for (Cell *cell_ptr: this->part_ptr_->GetLocalCellPointers()) {
       auto i_cell = cell_ptr->id();
       Scalar const *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
-      cell_ptr->projection().GetCoeffFrom(data);
+      data = cell_ptr->projection().GetCoeffFrom(data);
+      assert(data == column.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
     }
   }
   Column GetSolutionColumn() const override {
@@ -104,7 +105,8 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     for (const auto &cell : this->part_ptr_->GetLocalCells()) {
       auto i_cell = cell.id();
       Scalar *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
-      cell.projection().WriteCoeffTo(data);
+      data = cell.projection().WriteCoeffTo(data);
+      assert(data == column.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
     }
     return column;
   }

@@ -55,6 +55,7 @@ class Simple {
   }
   void Rotate(const Frame3d &frame) {
     const auto &nu = frame[0];
+    assert(std::abs(1 - nu.norm()) < 1e-6);
     Rotate(nu[x], nu[y], nu[z]);
   }
   Flux GetFluxUpwind(const Conservative& left,
