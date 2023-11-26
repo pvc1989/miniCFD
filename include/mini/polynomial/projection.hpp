@@ -158,6 +158,13 @@ class Projection {
       }
     }
   }
+  static void MinusCoeff(Coeff const &coeff, Scalar *output) {
+    for (int c = 0; c < N; ++c) {
+      for (int r = 0; r < K; ++r) {
+        *output++ -= coeff(r, c);
+      }
+    }
+  }
 };
 
 /**

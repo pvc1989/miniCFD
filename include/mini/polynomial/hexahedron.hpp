@@ -281,6 +281,13 @@ class Hexahedron {
       }
     }
   }
+  static void MinusCoeff(Coeff const &coeff, Scalar *output) {
+    for (int c = 0; c < N; ++c) {
+      for (int r = 0; r < K; ++r) {
+        *output++ -= coeff(r, c);
+      }
+    }
+  }
   /**
    * @brief Add the given Value to the dofs corresponding to the given basis.
    * 
@@ -293,6 +300,13 @@ class Hexahedron {
     output += K * i_basis;
     for (int r = 0; r < K; ++r) {
       *output++ += value[r];
+    }
+  }
+  static void MinusValue(Value const &value, Scalar *output, int i_basis) {
+    assert(0 <= i_basis && i_basis < N);
+    output += K * i_basis;
+    for (int r = 0; r < K; ++r) {
+      *output++ -= value[r];
     }
   }
   /**

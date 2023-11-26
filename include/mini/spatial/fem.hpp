@@ -183,9 +183,9 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           const auto &xyz = gauss.GetGlobalCoord(q);
           Value cv = cell.projection().GlobalToValue(xyz);
           auto flux = Riemann::GetFluxMatrix(cv);
+          flux *= gauss.GetGlobalWeight(q);
           auto grad = cell.projection().GlobalToBasisGradients(xyz);
           Coeff prod = flux * grad;
-          prod *= gauss.GetGlobalWeight(q);
           cell.projection().AddCoeffTo(prod, data);
         }
       }
@@ -206,8 +206,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = face.riemann(q).GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-        holder.projection().AddCoeffTo(prod, holder_data);
+        Coeff prod = flux * holder.GlobalToBasisValues(coord);
+        holder.projection().MinusCoeff(prod, holder_data);
         prod = flux * sharer.GlobalToBasisValues(coord);
         sharer.projection().AddCoeffTo(prod, sharer_data);
       }
@@ -226,8 +226,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
         Value u_sharer = sharer.GlobalToValue(coord);
         Value flux = face.riemann(q).GetFluxUpwind(u_holder, u_sharer);
         flux *= gauss.GetGlobalWeight(q);
-        Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-        holder.projection().AddCoeffTo(prod, holder_data);
+        Coeff prod = flux * holder.GlobalToBasisValues(coord);
+        holder.projection().MinusCoeff(prod, holder_data);
       }
     }
   }
@@ -245,8 +245,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_holder = holder.GlobalToValue(coord);
           Value flux = face.riemann(q).GetFluxOnSolidWall(u_holder);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
@@ -263,8 +263,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_holder = holder.GlobalToValue(coord);
           Value flux = face.riemann(q).GetFluxOnSupersonicOutlet(u_holder);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
@@ -281,8 +281,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = face.riemann(q).GetFluxOnSupersonicInlet(u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
@@ -300,8 +300,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = face.riemann(q).GetFluxOnSubsonicInlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
@@ -319,8 +319,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = face.riemann(q).GetFluxOnSubsonicOutlet(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
@@ -338,8 +338,8 @@ class DiscontinuousGalerkin : public FiniteElement<Part> {
           Value u_given = func(coord, this->t_curr_);
           Value flux = face.riemann(q).GetFluxOnSmartBoundary(u_inner, u_given);
           flux *= gauss.GetGlobalWeight(q);
-          Coeff prod = -flux * holder.GlobalToBasisValues(coord);
-          holder.projection().AddCoeffTo(prod, holder_data);
+          Coeff prod = flux * holder.GlobalToBasisValues(coord);
+          holder.projection().MinusCoeff(prod, holder_data);
         }
       }
     }
