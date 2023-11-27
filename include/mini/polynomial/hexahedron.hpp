@@ -167,8 +167,7 @@ class Hexahedron {
     Local local = lagrange().GlobalToLocal(global);
     return basis_.GetValues(local);
   }
-  Mat3xN GlobalToBasisGradients(Global const &global) const
-      requires (!kLocal) {
+  Mat3xN GlobalToBasisGradients(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
     Mat3xN grad;
     grad.row(0) = basis_.GetDerivatives(1, 0, 0, local);
@@ -195,7 +194,7 @@ class Hexahedron {
    * @return Mat3xN the gradients in global coordinates
    */
   static Mat3xN LocalGradientsToGlobalGradients(const Jacobian &jacobian,
-      Mat3xN const &local_grad) requires (!kLocal) {
+      Mat3xN const &local_grad) {
     return jacobian.fullPivLu().solve(local_grad);
   }
 

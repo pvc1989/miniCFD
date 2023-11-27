@@ -12,10 +12,15 @@
 #include "mini/mesh/vtk.hpp"
 #include "mini/riemann/rotated/single.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/polynomial/hexahedron.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
 #include "mini/spatial/fem.hpp"
+#include "mini/spatial/sem/dg.hpp"
+#include "mini/spatial/sem/fr.hpp"
+
+#define FR
 
 int main(int argc, char* argv[]) {
   MPI_Init(NULL, NULL);
@@ -75,8 +80,18 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kDegrees = 2;
+  constexpr int kDegrees = 1;
+#ifdef DGFEM
   using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 1>;
+#else
+  using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
+#endif
+#ifdef DGSEM
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, 1, false>;
+#endif
+#ifdef FR
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, 1, true>;
+#endif
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Cell = typename Part::Cell;
   using Face = typename Part::Face;
@@ -91,18 +106,28 @@ int main(int argc, char* argv[]) {
   auto part = Part(case_name, i_core, n_core);
   part.SetFieldNames({"U"});
 
+#ifdef DGFEM
   /* Build a `Limiter` object. */
   using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
+#endif
 
   /* Set initial conditions. */
   Value value_right{ 10 }, value_left{ -10 };
-  double x_0 = 4.0;
   auto initial_condition = [&](const Global& xyz){
-    return (xyz[0] > x_0) ? value_right : value_left;
+    auto x = xyz[0];
+    if (x < 2) {
+      return value_left;
+    } else if (x > 3) {
+      return value_right;
+    }
+    Value result = value_left;
+    result += (value_right - value_left) * (x - 2);
+    return result;
   };
-  auto exact_solution = [&](const Global& xyz, double t){
-    return (xyz[0] - x_0 > a_x * t) ? value_right : value_left;
+  auto exact_solution = [&](Global xyz, double t){
+    xyz[0] -= a_x * t;
+    return initial_condition(xyz);
   };
 
   if (argc == 7) {
@@ -118,12 +143,14 @@ int main(int argc, char* argv[]) {
       std::printf("[Start] Reconstruct() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
     }
+#ifdef DGFEM
     if (kDegrees > 0) {
       part.Reconstruct(limiter);
       if (suffix == "tetra") {
         part.Reconstruct(limiter);
       }
     }
+#endif
 
     part.GatherSolutions();
     if (i_core == 0) {
@@ -143,8 +170,20 @@ int main(int argc, char* argv[]) {
     part.ScatterSolutions();
   }
 
+#ifdef DGFEM
   using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
+#endif
+#ifdef DGSEM
+  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
+  auto spatial = Spatial(&part);
+#endif
+#ifdef FR
+  using Spatial = mini::spatial::sem::FluxReconstruction<Part>;
+  using Vincent = mini::basis::Vincent<Scalar>;
+  auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
+  auto spatial = Spatial(&part, vincent);
+#endif
 
   /* Define the temporal solver. */
   constexpr int kOrders = std::min(3, kDegrees + 1);
