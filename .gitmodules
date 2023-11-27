@@ -13,8 +13,8 @@
 [submodule "ThirdParty/eigen"]
 	path = ThirdParty/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-  branch = master
-[submodule "ThirdParty/CGAL"]
+	branch = master
+[submodule "CGAL"]
 	path = ThirdParty/CGAL
 	url = https://github.com/CGAL/cgal.git
 	branch = master

@@ -3,6 +3,8 @@ project(miniCFD)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_FLAGS "-Wno-format")
 
+enable_testing()
+
 set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries." FORCE)
 if (${BUILD_SHARED_LIBS})
   set(SHARED TRUE CACHE BOOL "Build a shared library for METIS." FORCE)
