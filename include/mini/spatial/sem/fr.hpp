@@ -242,7 +242,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
         for (int k = 1; k < n; ++k) {
           value += flux[k] * grad.col(k);
         }
-        Projection::AddValueTo(value, data, q);
+        Projection::MinusValue(value, data, q);
       }
     }
   }
@@ -268,13 +268,13 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
         assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
         Value f_holder = f_upwind * holder_flux_point.scale -
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-        Value f_sharer = f_upwind * sharer_flux_point.scale -
+        Value f_sharer = f_upwind * (-sharer_flux_point.scale) -
             Riemann::GetFluxMatrix(u_sharer) * sharer_flux_point.normal;
         for (auto [g_prime, ijk] : holder_solution_points) {
-          Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
         }
         for (auto [g_prime, ijk] : sharer_solution_points) {
-          Projection::AddValueTo(f_sharer * g_prime, sharer_data, ijk);
+          Projection::MinusValue(f_sharer * g_prime, sharer_data, ijk);
         }
       }
     }
@@ -300,7 +300,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
         Value f_holder = f_upwind * holder_flux_point.scale -
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
         for (auto [g_prime, ijk] : holder_solution_points) {
-          Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
         }
       }
     }
@@ -321,7 +321,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
@@ -343,7 +343,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
@@ -366,7 +366,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
@@ -389,7 +389,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
@@ -412,7 +412,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
@@ -435,7 +435,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::AddValueTo(f_holder * g_prime, holder_data, ijk);
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }
         }
       }
