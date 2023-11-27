@@ -1065,16 +1065,17 @@ class Part {
 
  public:
   template <class Callable>
-  Value MeasureL1Error(Callable &&exact_solution, Scalar t_next) const {
+  Value MeasureL1Error(Callable &&exact_solution, Scalar t_curr) const {
     Value l1_error; l1_error.setZero();
     for (Cell const &cell : GetLocalCells()) {
-      auto func = [&t_next, &exact_solution, &cell](Global const &xyz){
-        auto value = cell.GlobalToValue(xyz);
-        value -= exact_solution(xyz, t_next);
-        value = value.cwiseAbs();
-        return value;
-      };
-      l1_error += mini::gauss::Integrate(func, cell.gauss());
+      auto &gauss = cell.gauss();
+      auto &projection = cell.projection();
+      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+        Value value = projection.GetValueOnGaussianPoint(q);
+        value -= exact_solution(gauss.GetGlobalCoord(q), t_curr);
+        value = value.cwiseAbs() * gauss.GetGlobalWeight(q);
+        l1_error += value;
+      }
     }
     return l1_error;
   }

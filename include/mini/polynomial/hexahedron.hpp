@@ -148,7 +148,7 @@ class Hexahedron {
   void LocalToGlobalAndValue(Local const &local,
       Global *global, Value *value) const {
     *global = gauss().lagrange().LocalToGlobal(local);
-    *value = GlobalToValue(*global);
+    *value = LobalToValue(local);
   }
 
   Value GlobalToValue(Global const &global) const {
