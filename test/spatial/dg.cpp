@@ -17,9 +17,14 @@
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fem.hpp"
 #include "mini/spatial/sem/dg.hpp"
+#include "mini/temporal/ode.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
+
+mini::temporal::Euler<Scalar> temporal;
+double t_curr = 1.5, dt = 1e-3;
+
 using Riemann = mini::
     riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
 using Coord = typename Riemann::Vector;
@@ -31,6 +36,18 @@ Value func(const Coord& xyz) {
 Value moving(const Coord& xyz, double t) {
   auto x = xyz[0], y = xyz[1];
   return Value(x + y, x - y);
+}
+
+template <class Part>
+Scalar Norm1(Part const &part){
+  auto norm_1 = 0.0;
+  for (auto &cell : part.GetLocalCells()) {
+    for (int i = 0, n = cell.gauss().CountPoints(); i < n; ++i) {
+      auto v = cell.projection().GetValue(i);
+      norm_1 += std::abs(v[0]) + std::abs(v[1]);
+    }
+  }
+  return norm_1;
 }
 
 // mpirun -n 4 ./part must be run in ../mesh
@@ -97,9 +114,10 @@ int main(int argc, char* argv[]) {
 {
   time_begin = MPI_Wtime();
   using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
+
+  /* Check equivalence between local and global formulation. */
+{
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
   auto part = Part(case_name, i_core, n_core);
@@ -115,7 +133,7 @@ int main(int argc, char* argv[]) {
     cell_ptr->Approximate(func);
   }
   spatial.SetTime(1.5);
-  std::printf("Part on basis::lagrange::Hexahedron proc[%d/%d] cost %f sec\n",
+  std::printf("Part on basis::lagrange::Hexahedron<Local> proc[%d/%d] cost %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -134,7 +152,65 @@ int main(int argc, char* argv[]) {
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
-  /* Check the consistency between FEM and SEM implementations. */
+  time_begin = MPI_Wtime();
+  std::printf("val_curr.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  temporal.Update(&spatial, t_curr, dt);
+  std::printf("val_next.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents>;
+  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
+  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
+  auto part = Part(case_name, i_core, n_core);
+  auto spatial = Spatial(&part);
+  spatial.SetSmartBoundary("4_S_27", moving);  // Top
+  spatial.SetSmartBoundary("4_S_31", moving);  // Left
+  spatial.SetSolidWall("4_S_1");   // Back
+  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
+  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
+  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
+  spatial.SetSupersonicOutlet("4_S_15");  // Gap
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
+  spatial.SetTime(1.5);
+  std::printf("Part on basis::lagrange::Hexahedron<Global> proc[%d/%d] cost %f sec\n",
+      i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  auto column = spatial.GetSolutionColumn();
+  assert(column.size() == part.GetCellDataSize());
+  spatial.SetSolutionColumn(column);
+  column -= spatial.GetSolutionColumn();
+  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  column = spatial.GetResidualColumn();
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  std::printf("val_curr.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  temporal.Update(&spatial, t_curr, dt);
+  std::printf("val_next.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  std::printf("Check the consistency between FEM and SEM implementations.\n");
+  MPI_Barrier(MPI_COMM_WORLD);
   class Test : public Spatial {
     using SEM = Spatial;
     using FEM = typename Spatial::Base;
