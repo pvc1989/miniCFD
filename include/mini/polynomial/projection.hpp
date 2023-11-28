@@ -64,6 +64,7 @@ template <std::floating_point Scalar, int kDimensions, int kDegrees,
     int kComponents>
 class Projection {
  public:
+  static constexpr bool kLocal = false;
   using Wrapper = ProjectionWrapper<Scalar, kDimensions, kDegrees, kComponents>;
   using Basis = basis::OrthoNormal<Scalar, kDimensions, kDegrees>;
   using Taylor = typename Basis::Taylor;
@@ -105,7 +106,13 @@ class Projection {
   Value operator()(Global const &global) const {
     return GlobalToValue(global);
   }
-  Value GetValueOnGaussianPoint(int i) const {
+  /**
+   * @brief Get the value of \f$ u(x,y,z) \f$ at a Gaussian point.
+   * 
+   * @param i the index of the Gaussian point
+   * @return Value the value
+   */
+  Value GetValue(int i) const {
     auto &global = gauss().GetGlobalCoord(i);
     return GlobalToValue(global);
   }

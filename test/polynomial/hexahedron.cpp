@@ -166,10 +166,10 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
   for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
     Global global = vector_interp.gauss().GetGlobalCoord(q);
     Value value = vector_interp.GlobalToValue(global);
-    value -= vector_interp.GetValueOnGaussianPoint(q);
+    value -= vector_interp.GetValue(q);
     EXPECT_NEAR(value.norm(), 0, 1e-14);
     auto grad = vector_interp.GlobalToBasisGradients(global);
-    grad -= vector_interp.GetBasisGradientsOnGaussianPoint(q);
+    grad -= vector_interp.GetBasisGradients(q);
     EXPECT_NEAR(grad.norm(), 0, 1e-15);
   }
 }

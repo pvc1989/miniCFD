@@ -30,12 +30,13 @@ namespace polynomial {
  * @tparam Gx  The quadrature rule in the 1st dimension.
  * @tparam Gy  The quadrature rule in the 2nd dimension.
  * @tparam Gz  The quadrature rule in the 3rd dimension.
- * @tparam kComponents the number of function components
- * @tparam kLocal in local (parametric) space or not
+ * @tparam kC  The number of function components.
+ * @tparam kL  Formulate in local (parametric) space or not.
  */
-template <class Gx, class Gy, class Gz, int kComponents, bool kLocal = false>
+template <class Gx, class Gy, class Gz, int kC, bool kL = false>
 class Hexahedron {
  public:
+  static constexpr bool kLocal = kL;
   using GaussX = Gx;
   using GaussY = Gy;
   using GaussZ = Gz;
@@ -52,7 +53,7 @@ class Hexahedron {
   static constexpr int P = std::max({Px, Py, Pz});
   using Basis = basis::lagrange::Hexahedron<Scalar, Px, Py, Pz>;
   static constexpr int N = Basis::N;
-  static constexpr int K = kComponents;
+  static constexpr int K = kC;
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
@@ -133,10 +134,6 @@ class Hexahedron {
   Hexahedron &operator=(Hexahedron &&) noexcept = default;
   ~Hexahedron() noexcept = default;
 
-  static constexpr bool IsLocal() {
-    return kLocal;
-  }
-
   Value LobalToValue(Local const &local) const requires (kLocal) {
     Value value = coeff_ * basis_.GetValues(local).transpose();
     value /= lagrange().LocalToJacobian(local).determinant();
@@ -155,12 +152,26 @@ class Hexahedron {
     Local local = lagrange().GlobalToLocal(global);
     return LobalToValue(local);
   }
-  Value GetValueOnGaussianPoint(int i) const
-      requires (kLocal) {
+  /**
+   * @brief Get the value of \f$ u(x,y,z) \equiv J^{-1}\,\tilde{u}(\xi,\eta,\zeta) \f$ at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `true`.
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return Value the value \f$ u(x_i,y_i,z_i) \f$
+   */
+  Value GetValue(int i) const requires (kLocal) {
     return coeff_.col(i) / jacobian_det_[i];
   }
-  Value GetValueOnGaussianPoint(int i) const
-      requires (!kLocal) {
+  /**
+   * @brief Get the value of \f$ u(x,y,z) \f$ at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `false`.
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return Value the value \f$ u(x_i,y_i,z_i) \f$
+   */
+  Value GetValue(int i) const requires (!kLocal) {
     return coeff_.col(i);
   }
   Mat1xN GlobalToBasisValues(Global const &global) const {
@@ -176,12 +187,26 @@ class Hexahedron {
     Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
     return LocalGradientsToGlobalGradients(jacobian, grad);
   }
-  const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const
-      requires (kLocal) {
+  /**
+   * @brief Get the local gradients of basis at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `true`.
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return const Mat3xN& the local gradients of basis
+   */
+  const Mat3xN &GetBasisGradients(int ijk) const requires (kLocal) {
     return basis_local_gradients_[ijk];
   }
-  const Mat3xN &GetBasisGradientsOnGaussianPoint(int ijk) const
-      requires (!kLocal) {
+  /**
+   * @brief Get the global gradients of basis at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `false`.
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return const Mat3xN& the global gradients of basis
+   */
+  const Mat3xN &GetBasisGradients(int ijk) const requires (!kLocal) {
     return basis_global_gradients_[ijk];
   }
   /**
