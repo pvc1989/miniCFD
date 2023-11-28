@@ -36,6 +36,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   using Face = typename Base::Face;
   using Cell = typename Base::Cell;
   using Global = typename Base::Global;
+  using Gauss = typename Base::Gauss;
   using Projection = typename Base::Projection;
   using Coeff = typename Base::Coeff;
   using Value = typename Base::Value;
@@ -74,6 +75,28 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
     }
   }
 
+  static constexpr bool kLocal = Projection::kLocal;
+  static Scalar GetWeight(const Gauss &gauss, int q) requires (kLocal) {
+    return gauss.GetLocalWeight(q);
+  }
+  static Scalar GetWeight(const Gauss &gauss, int q) requires (!kLocal) {
+    return gauss.GetGlobalWeight(q);
+  }
+  using FluxMatrix = typename Riemann::FluxMatrix;
+  static FluxMatrix GetWeightedFluxMatrix(const Value &value,
+      const Cell &cell, int q) requires (kLocal) {
+    auto flux = Riemann::GetFluxMatrix(value);
+    flux = cell.projection().GlobalFluxToLocalFlux(flux, q);
+    flux *= GetWeight(cell.gauss(), q);
+    return flux;
+  }
+  static FluxMatrix GetWeightedFluxMatrix(const Value &value,
+      const Cell &cell, int q) requires (!kLocal) {
+    auto flux = Riemann::GetFluxMatrix(value);
+    flux *= GetWeight(cell.gauss(), q);
+    return flux;
+  }
+
  public:
   explicit DiscontinuousGalerkin(Part *part_ptr)
       : Base(part_ptr) {
@@ -102,7 +125,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
       auto *data = residual.data() + this->part_ptr_->GetCellDataOffset(i_cell);
       const auto &gauss = cell.gauss();
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        auto scale = 1.0 / gauss.GetGlobalWeight(q);
+        auto scale = 1.0 / GetWeight(gauss, q);
         data = cell.projection().ScaleValueAt(scale, data);
       }
       assert(data ==
@@ -120,8 +143,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           auto const &value = cell.projection().GetValue(q);
-          auto flux = Riemann::GetFluxMatrix(value);
-          flux *= gauss.GetGlobalWeight(q);
+          auto flux = GetWeightedFluxMatrix(value, cell, q);
           auto const &grad = cell.projection().GetBasisGradients(q);
           Coeff prod = flux * grad;
           cell.projection().AddCoeffTo(prod, data);

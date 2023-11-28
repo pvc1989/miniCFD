@@ -38,6 +38,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   using Face = typename Part::Face;
   using Cell = typename Part::Cell;
   using Global = typename Cell::Global;
+  using Gauss = typename Cell::Gauss;
   using Projection = typename Cell::Projection;
   using Coeff = typename Projection::Coeff;
   using Value = typename Projection::Value;
