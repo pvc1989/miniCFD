@@ -1,6 +1,6 @@
-// Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_SPATIAL_SEM_DG_HPP_
-#define MINI_SPATIAL_SEM_DG_HPP_
+// Copyright 2023 PEI Weicheng
+#ifndef MINI_SPATIAL_DG_LOBATTO_HPP_
+#define MINI_SPATIAL_DG_LOBATTO_HPP_
 
 #include <concepts>
 #include <ranges>
@@ -15,22 +15,21 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "mini/spatial/fem.hpp"
-#include "mini/basis/vincent.hpp"
+#include "mini/spatial/dg/general.hpp"
 
 namespace mini {
 namespace spatial {
-namespace sem {
+namespace dg {
 
 /**
- * @brief A specialized version of DG using a Lagrange expansion on Gaussian quadrature points. 
+ * @brief A specialized version of DG using a Lagrange expansion on Lobatto roots. 
  * 
  * @tparam Part 
  */
 template <typename Part>
-class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
+class Lobatto : public General<Part> {
  public:
-  using Base = fem::DiscontinuousGalerkin<Part>;
+  using Base = General<Part>;
   using Riemann = typename Base::Riemann;
   using Scalar = typename Base::Scalar;
   using Face = typename Base::Face;
@@ -98,7 +97,7 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   }
 
  public:
-  explicit DiscontinuousGalerkin(Part *part_ptr)
+  explicit Lobatto(Part *part_ptr)
       : Base(part_ptr) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
@@ -111,11 +110,11 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
     auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
     MatchGaussianPoints(boundary_cells, face_to_holder, &i_node_on_holder_);
   }
-  DiscontinuousGalerkin(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin &operator=(const DiscontinuousGalerkin &) = default;
-  DiscontinuousGalerkin(DiscontinuousGalerkin &&) noexcept = default;
-  DiscontinuousGalerkin &operator=(DiscontinuousGalerkin &&) noexcept = default;
-  ~DiscontinuousGalerkin() noexcept = default;
+  Lobatto(const Lobatto &) = default;
+  Lobatto &operator=(const Lobatto &) = default;
+  Lobatto(Lobatto &&) noexcept = default;
+  Lobatto &operator=(Lobatto &&) noexcept = default;
+  ~Lobatto() noexcept = default;
 
   Column GetResidualColumn() const override {
     Column residual = this->Base::GetResidualColumn();
@@ -307,8 +306,8 @@ class DiscontinuousGalerkin : public fem::DiscontinuousGalerkin<Part> {
   }
 };
 
-}  // namespace sem
+}  // namespace dg
 }  // namespace spatial
 }  // namespace mini
 
-#endif  // MINI_SPATIAL_SEM_DG_HPP_
+#endif  // MINI_SPATIAL_DG_LOBATTO_HPP_

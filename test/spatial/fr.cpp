@@ -14,8 +14,7 @@
 #include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/hexahedron.hpp"
-#include "mini/spatial/fem.hpp"
-#include "mini/spatial/sem/fr.hpp"
+#include "mini/spatial/fr/lobatto.hpp"
 #include "mini/basis/vincent.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
@@ -55,11 +54,9 @@ int main(int argc, char* argv[]) {
 {
   time_begin = MPI_Wtime();
   using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Gy = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Gz = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents, true>;
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-  using Spatial = mini::spatial::sem::FluxReconstruction<Part>;
+  using Spatial = mini::spatial::fr::Lobatto<Part>;
   auto part = Part(case_name, i_core, n_core);
   auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
   auto spatial = Spatial(&part, vincent);

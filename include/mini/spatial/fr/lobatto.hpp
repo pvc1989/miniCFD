@@ -1,6 +1,6 @@
-// Copyright 2021 PEI Weicheng and JIANG Yuyan
-#ifndef MINI_SPATIAL_SEM_FR_HPP_
-#define MINI_SPATIAL_SEM_FR_HPP_
+// Copyright 2023 PEI Weicheng
+#ifndef MINI_SPATIAL_FR_LOBATTO_HPP_
+#define MINI_SPATIAL_FR_LOBATTO_HPP_
 
 #include <concepts>
 #include <ranges>
@@ -20,15 +20,15 @@
 
 namespace mini {
 namespace spatial {
-namespace sem {
+namespace fr {
 
 /**
- * @brief A specialized version of FR using a Lagrange expansion on Gaussian quadrature points. 
+ * @brief A specialized version of FR using a Lagrange expansion on Lobatto roots. 
  * 
  * @tparam Part 
  */
 template <typename Part>
-class FluxReconstruction : public spatial::FiniteElement<Part> {
+class Lobatto : public spatial::FiniteElement<Part> {
  public:
   using Base = spatial::FiniteElement<Part>;
   using Riemann = typename Base::Riemann;
@@ -205,7 +205,7 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
   }
 
  public:
-  FluxReconstruction(Part *part_ptr, Vincent const &vincent)
+  Lobatto(Part *part_ptr, Vincent const &vincent)
       : Base(part_ptr), vincent_(vincent) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
@@ -218,11 +218,11 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
     auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
     CacheCorrectionGradients(boundary_cells, face_to_holder, &holder_cache_);
   }
-  FluxReconstruction(const FluxReconstruction &) = default;
-  FluxReconstruction &operator=(const FluxReconstruction &) = default;
-  FluxReconstruction(FluxReconstruction &&) noexcept = default;
-  FluxReconstruction &operator=(FluxReconstruction &&) noexcept = default;
-  ~FluxReconstruction() noexcept = default;
+  Lobatto(const Lobatto &) = default;
+  Lobatto &operator=(const Lobatto &) = default;
+  Lobatto(Lobatto &&) noexcept = default;
+  Lobatto &operator=(Lobatto &&) noexcept = default;
+  ~Lobatto() noexcept = default;
 
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
@@ -443,8 +443,8 @@ class FluxReconstruction : public spatial::FiniteElement<Part> {
   }
 };
 
-}  // namespace sem
+}  // namespace fr
 }  // namespace spatial
 }  // namespace mini
 
-#endif  // MINI_SPATIAL_SEM_FR_HPP_
+#endif  // MINI_SPATIAL_FR_LOBATTO_HPP_

@@ -16,7 +16,8 @@
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fem.hpp"
-#include "mini/spatial/sem/dg.hpp"
+#include "mini/spatial/dg/general.hpp"
+#include "mini/spatial/dg/lobatto.hpp"
 #include "mini/temporal/ode.hpp"
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
@@ -77,7 +78,7 @@ int main(int argc, char* argv[]) {
   using Cell = typename Part::Cell;
   using Limiter = mini::limiter::weno::Lazy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
-  using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
+  using Spatial = mini::spatial::dg::WithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
   spatial.SetSmartBoundary("4_S_27", moving);  // Top
   spatial.SetSmartBoundary("4_S_31", moving);  // Left
@@ -119,7 +120,7 @@ int main(int argc, char* argv[]) {
 {
   using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
+  using Spatial = mini::spatial::dg::Lobatto<Part>;
   auto part = Part(case_name, i_core, n_core);
   auto spatial = Spatial(&part);
   spatial.SetSmartBoundary("4_S_27", moving);  // Top
@@ -165,7 +166,7 @@ int main(int argc, char* argv[]) {
 }
   using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
+  using Spatial = mini::spatial::dg::Lobatto<Part>;
   auto part = Part(case_name, i_core, n_core);
   auto spatial = Spatial(&part);
   spatial.SetSmartBoundary("4_S_27", moving);  // Top

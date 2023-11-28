@@ -17,8 +17,9 @@
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
 #include "mini/spatial/fem.hpp"
-#include "mini/spatial/sem/dg.hpp"
-#include "mini/spatial/sem/fr.hpp"
+#include "mini/spatial/dg/general.hpp"
+#include "mini/spatial/dg/lobatto.hpp"
+#include "mini/spatial/fr/lobatto.hpp"
 
 #define FR
 
@@ -171,15 +172,15 @@ int main(int argc, char* argv[]) {
   }
 
 #ifdef DGFEM
-  using Spatial = mini::spatial::fem::DGwithLimiterAndSource<Part, Limiter>;
+  using Spatial = mini::spatial::dg::WithLimiterAndSource<Part, Limiter>;
   auto spatial = Spatial(&part, limiter);
 #endif
 #ifdef DGSEM
-  using Spatial = mini::spatial::sem::DiscontinuousGalerkin<Part>;
+  using Spatial = mini::spatial::dg::Lobatto<Part>;
   auto spatial = Spatial(&part);
 #endif
 #ifdef FR
-  using Spatial = mini::spatial::sem::FluxReconstruction<Part>;
+  using Spatial = mini::spatial::fr::Lobatto<Part>;
   using Vincent = mini::basis::Vincent<Scalar>;
   auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
   auto spatial = Spatial(&part, vincent);
