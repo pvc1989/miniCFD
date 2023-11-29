@@ -2,7 +2,7 @@
 #include "sourceless.hpp"
 
 /* Set initial conditions. */
-auto primitive = Primitive(1.4, 0.04, 0.0, 0.03, 1.0);
+auto primitive = Primitive(1.4, 0.04, 0.03, 0.0, 1.0);
 Value given_value = Gas::PrimitiveToConservative(primitive);
 
 Value MyIC(const Global &xyz) {
@@ -15,15 +15,13 @@ auto given_state = [](const Global& xyz, double t){
 };
 
 void MyBC(const std::string &suffix, Spatial *spatial) {
-  spatial->SetSubsonicInlet("3_S_1", given_state);
-  spatial->SetSubsonicInlet("3_S_5", given_state);
-  spatial->SetSubsonicOutlet("3_S_3", given_state);
-  spatial->SetSubsonicOutlet("3_S_6", given_state);
-  // spatial->SetSupersonicOutlet("3_S_3");
-  // spatial->SetSupersonicOutlet("3_S_6");
-  spatial->SetSolidWall("3_S_2");
-  spatial->SetSolidWall("3_S_4");
-  spatial->SetSolidWall("3_S_7");
+  spatial->SetSubsonicInlet("4_S_5", given_state);  // Left
+  spatial->SetSubsonicInlet("4_S_4", given_state);  // Bottom
+  spatial->SetSubsonicOutlet("4_S_6", given_state);  // Right
+  spatial->SetSubsonicOutlet("4_S_7", given_state);  // Top
+  spatial->SetSolidWall("4_S_9");  // Front
+  spatial->SetSolidWall("4_S_3");  // Back
+  spatial->SetSolidWall("4_S_8");  // Cylinder
 }
 
 int main(int argc, char* argv[]) {

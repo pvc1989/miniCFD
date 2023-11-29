@@ -1,18 +1,26 @@
 SetFactory("OpenCASCADE");
-Box(1) = {-2, -1, -2, 4, 2, 4};
-Cylinder(2) = { /* origin */0, -2, 0, /* axis */0, 4, 0, /* radius */0.4 };
-BooleanDifference(3) = { Volume{1}; Delete; }{ Volume{2}; Delete; };
 
-Physical Surface("Left") = { 1 };
-Physical Surface("Front") = { 2 };
-Physical Surface("Top") = { 3 };
-Physical Surface("Back") = { 4 };
-Physical Surface("Bottom") = { 5 };
+Field[1] = MathEval;
+Field[1].F = "0.2 * sqrt(x * x + y * y)";
+Background Field = 1;
+
+LX = 20;
+LY = 20;
+Rectangle(1) = {-LX, -LY, 0, LX+LX, LY+LY};
+Disk(2) = {0, 0, 0, 1};
+BooleanDifference(3) = { Surface{1}; Delete; }{ Surface{2}; Delete; };
+Recombine Surface {3};
+out[] = Extrude{ 0, 0, 10 }{
+  Surface{ 3 }; Layers{ 1 }; Recombine;
+};
+
+Physical Surface("Left") = { 5 };
 Physical Surface("Right") = { 6 };
-Physical Surface("Cylinder") = { 7 };
-Physical Volume("Fluid") = { 3 };
+Physical Surface("Front") = { 9 };
+Physical Surface("Back") = { 3 };
+Physical Surface("Top") = { 7 };
+Physical Surface("Bottom") = { 4 };
+Physical Surface("Cylinder") = { 8 };
+Physical Volume("Fluid") = { 1 };
 
-LC = 0.4;
-Characteristic Length{ PointsOf{ Volume{3};} } = LC;
-Characteristic Length{ PointsOf{ Surface{7};} } = LC/1.0;
-Mesh 2;
+Mesh 3;
