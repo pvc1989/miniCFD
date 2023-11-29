@@ -1,6 +1,6 @@
 // Copyright 2023 PEI Weicheng
-#ifndef MINI_SPATIAL_FR_LOBATTO_HPP_
-#define MINI_SPATIAL_FR_LOBATTO_HPP_
+#ifndef MINI_SPATIAL_FR_GENERAL_HPP_
+#define MINI_SPATIAL_FR_GENERAL_HPP_
 
 #include <concepts>
 #include <ranges>
@@ -15,8 +15,7 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "mini/gauss/lobatto.hpp"
-#include "mini/spatial/fr/general.hpp"
+#include "mini/spatial/fem.hpp"
 #include "mini/basis/vincent.hpp"
 
 namespace mini {
@@ -24,16 +23,14 @@ namespace spatial {
 namespace fr {
 
 /**
- * @brief A specialized version of FR using a Lagrange expansion on Lobatto roots with the "Lumping Lobatto" correction function.
- * 
- * The \f$ g_\mathrm{right} \f$ only corrects the flux divergence at the rightest solution point, which is a flux point.
+ * @brief A general version of FR using a Lagrange expansion whose flux points are also solution points.
  * 
  * @tparam Part 
  */
 template <typename Part>
-class Lobatto : public General<Part> {
+class General : public spatial::FiniteElement<Part> {
  public:
-  using Base = General<Part>;
+  using Base = spatial::FiniteElement<Part>;
   using Riemann = typename Base::Riemann;
   using Scalar = typename Base::Scalar;
   using Face = typename Base::Face;
@@ -45,7 +42,6 @@ class Lobatto : public General<Part> {
   using Value = typename Base::Value;
   using Temporal = typename Base::Temporal;
   using Column = typename Base::Column;
-  using Vincent = typename Base::Vincent;
 
  protected:
   using FluxMatrix = typename Riemann::FluxMatrix;
@@ -54,20 +50,29 @@ class Lobatto : public General<Part> {
   static_assert(std::is_same_v<GaussOnLine, typename GaussOnCell::GaussY>);
   static_assert(std::is_same_v<GaussOnLine, typename GaussOnCell::GaussZ>);
   static constexpr int kLineQ = GaussOnLine::Q;
-  static_assert(std::is_same_v<GaussOnLine,
-      mini::gauss::Lobatto<Scalar, kLineQ>>);
   static constexpr int kFaceQ = kLineQ * kLineQ;
   static constexpr int kCellQ = kLineQ * kFaceQ;
 
-  struct FluxPointCache {
-    Global normal;  // normal_flux = normal * flux_matrix
-    Scalar scale;  // riemann_flux_local = scale * riemann_flux_global
+  struct SolutionPointCache {
     Scalar g_prime;
     int ijk;
   };
-  using FaceCache = std::array<FluxPointCache, kFaceQ>;
+  struct FluxPointCache {
+    Global normal;  // normal_flux = normal * flux_matrix
+    Scalar scale;  // riemann_flux_local = scale * riemann_flux_global
+    int ijk;
+  };
+  using LineCache = std::pair<
+      std::array<SolutionPointCache, kLineQ>,
+      FluxPointCache
+  >;
+
+  using FaceCache = std::array<LineCache, kFaceQ>;
   std::vector<FaceCache> holder_cache_;
   std::vector<FaceCache> sharer_cache_;
+
+  using Vincent = mini::basis::Vincent<Scalar>;
+  Vincent vincent_;
 
   static constexpr int X = 0;
   static constexpr int Y = 1;
@@ -80,7 +85,6 @@ class Lobatto : public General<Part> {
   template <std::ranges::input_range R, class FaceToCell>
   void CacheCorrectionGradients(R &&faces, FaceToCell &&face_to_cell,
       std::vector<FaceCache> *cache) {
-    Scalar g_prime = this->vincent_.LocalToRightDerivative(1);
     for (const Face &face : faces) {
       assert(cache->size() == face.id());
       auto &curr_face = cache->emplace_back();
@@ -93,7 +97,7 @@ class Lobatto : public General<Part> {
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
       for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
         Global const &face_normal = face_gauss.GetNormalFrame(f)[0];
-        auto &flux_point = curr_face.at(f);
+        auto &[curr_line, flux_point] = curr_face.at(f);
         auto &flux_point_coord = face_gauss.GetGlobalCoord(f);
         auto [i, j, k] = cell_projection.FindCollinearIndex(flux_point_coord, i_face);
         switch (i_face) {
@@ -103,9 +107,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(Z);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = -flux_point.normal.norm();
-          flux_point.g_prime = -g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (k = 0; k < GaussOnLine::Q; ++k) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToLeftDerivative(local[Z]);
+            curr_line[k].g_prime = g_prime;
+            curr_line[k].ijk = ijk;
+          }
           break;
         case 1:
           assert(j == -1);
@@ -113,9 +123,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(Y);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = -flux_point.normal.norm();
-          flux_point.g_prime = -g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (j = 0; j < GaussOnLine::Q; ++j) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToLeftDerivative(local[Y]);
+            curr_line[j].g_prime = g_prime;
+            curr_line[j].ijk = ijk;
+          }
           break;
         case 2:
           assert(i == -1);
@@ -123,9 +139,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(X);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = +flux_point.normal.norm();
-          flux_point.g_prime = +g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (i = 0; i < GaussOnLine::Q; ++i) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToRightDerivative(local[X]);
+            curr_line[i].g_prime = g_prime;
+            curr_line[i].ijk = ijk;
+          }
           break;
         case 3:
           assert(j == -1);
@@ -133,9 +155,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(Y);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = +flux_point.normal.norm();
-          flux_point.g_prime = +g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (j = 0; j < GaussOnLine::Q; ++j) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToRightDerivative(local[Y]);
+            curr_line[j].g_prime = g_prime;
+            curr_line[j].ijk = ijk;
+          }
           break;
         case 4:
           assert(i == -1);
@@ -143,9 +171,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(X);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = -flux_point.normal.norm();
-          flux_point.g_prime = -g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (i = 0; i < GaussOnLine::Q; ++i) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToLeftDerivative(local[X]);
+            curr_line[i].g_prime = g_prime;
+            curr_line[i].ijk = ijk;
+          }
           break;
         case 5:
           assert(k == -1);
@@ -153,9 +187,15 @@ class Lobatto : public General<Part> {
           assert(Near(flux_point_coord, cell_gauss.GetGlobalCoord(flux_point.ijk)));
           flux_point.normal =
               cell_projection.GetJacobianAssociated(flux_point.ijk).col(Z);
-          assert(Collinear(face_normal, flux_point.normal));
           flux_point.scale = +flux_point.normal.norm();
-          flux_point.g_prime = +g_prime;
+          assert(Collinear(face_normal, flux_point.normal));
+          for (k = 0; k < GaussOnLine::Q; ++k) {
+            auto ijk = cell_basis.index(i, j, k);
+            auto &local = cell_gauss.GetLocalCoord(ijk);
+            auto g_prime = vincent_.LocalToRightDerivative(local[Z]);
+            curr_line[k].g_prime = g_prime;
+            curr_line[k].ijk = ijk;
+          }
           break;
         default:
           assert(false);
@@ -165,8 +205,8 @@ class Lobatto : public General<Part> {
   }
 
  public:
-  explicit Lobatto(Part *part_ptr)
-      : Base(part_ptr, Vincent::HuynhLumpingLobatto(Part::kDegrees)) {
+  General(Part *part_ptr, Scalar c_next)
+      : Base(part_ptr), vincent_(Part::kDegrees, c_next) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
     auto local_cells = this->part_ptr_->GetLocalFaces();
@@ -178,11 +218,11 @@ class Lobatto : public General<Part> {
     auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
     CacheCorrectionGradients(boundary_cells, face_to_holder, &holder_cache_);
   }
-  Lobatto(const Lobatto &) = default;
-  Lobatto &operator=(const Lobatto &) = default;
-  Lobatto(Lobatto &&) noexcept = default;
-  Lobatto &operator=(Lobatto &&) noexcept = default;
-  ~Lobatto() noexcept = default;
+  General(const General &) = default;
+  General &operator=(const General &) = default;
+  General(General &&) noexcept = default;
+  General &operator=(General &&) noexcept = default;
+  ~General() noexcept = default;
 
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
@@ -218,8 +258,8 @@ class Lobatto : public General<Part> {
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-        auto &holder_flux_point = holder_cache[f];
-        auto &sharer_flux_point = sharer_cache[f];
+        auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
+        auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         Value u_holder =
             holder.projection().GetValue(holder_flux_point.ijk);
         Value u_sharer =
@@ -230,10 +270,12 @@ class Lobatto : public General<Part> {
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
         Value f_sharer = f_upwind * (-sharer_flux_point.scale) -
             Riemann::GetFluxMatrix(u_sharer) * sharer_flux_point.normal;
-        Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                  holder_data, holder_flux_point.ijk);
-        Projection::MinusValue(sharer_flux_point.g_prime * f_sharer,
-                  sharer_data, sharer_flux_point.ijk);
+        for (auto [g_prime, ijk] : holder_solution_points) {
+          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+        }
+        for (auto [g_prime, ijk] : sharer_solution_points) {
+          Projection::MinusValue(f_sharer * g_prime, sharer_data, ijk);
+        }
       }
     }
   }
@@ -247,8 +289,8 @@ class Lobatto : public General<Part> {
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-        auto &holder_flux_point = holder_cache[f];
-        auto &sharer_flux_point = sharer_cache[f];
+        auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
+        auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         Value u_holder =
             holder.projection().GetValue(holder_flux_point.ijk);
         Value u_sharer =
@@ -257,8 +299,9 @@ class Lobatto : public General<Part> {
         assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
         Value f_holder = f_upwind * holder_flux_point.scale -
             Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-        Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                  holder_data, holder_flux_point.ijk);
+        for (auto [g_prime, ijk] : holder_solution_points) {
+          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+        }
       }
     }
   }
@@ -271,14 +314,15 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value f_upwind = face.riemann(f).GetFluxOnSolidWall(u_holder);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -292,14 +336,15 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value f_upwind = face.riemann(f).GetFluxOnSupersonicOutlet(u_holder);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -313,15 +358,16 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
           Value f_upwind = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -335,15 +381,16 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
           Value f_upwind = face.riemann(f).GetFluxOnSubsonicInlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -357,15 +404,16 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
           Value f_upwind = face.riemann(f).GetFluxOnSubsonicOutlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -379,15 +427,16 @@ class Lobatto : public General<Part> {
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
-          auto &holder_flux_point = holder_cache[f];
+          auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
           Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
           Value f_upwind = face.riemann(f).GetFluxOnSmartBoundary(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          for (auto [g_prime, ijk] : holder_solution_points) {
+            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          }
         }
       }
     }
@@ -398,4 +447,4 @@ class Lobatto : public General<Part> {
 }  // namespace spatial
 }  // namespace mini
 
-#endif  // MINI_SPATIAL_FR_LOBATTO_HPP_
+#endif  // MINI_SPATIAL_FR_GENERAL_HPP_

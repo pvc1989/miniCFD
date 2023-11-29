@@ -14,6 +14,7 @@
 #include "mini/limiter/weno.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
 #include "mini/polynomial/hexahedron.hpp"
+#include "mini/spatial/fr/general.hpp"
 #include "mini/spatial/fr/lobatto.hpp"
 #include "mini/basis/vincent.hpp"
 
@@ -31,7 +32,9 @@ Value moving(const Coord& xyz, double t) {
   auto x = xyz[0], y = xyz[1];
   return Value(x + y, x - y);
 }
-using Vincent = mini::basis::Vincent<Scalar>;
+using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
+using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
+using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
 
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./fr
@@ -50,16 +53,13 @@ int main(int argc, char* argv[]) {
   Riemann::global_coefficient[1] = Jacobi{ {5., 0.}, {0., 6.} };
   Riemann::global_coefficient[2] = Jacobi{ {7., 0.}, {0., 8.} };
 
-  /* aproximated by Projection on Lagrange basis on Lobatto roots */
+  /* aproximated by Lagrange basis on Lobatto roots with general correction functions */
 {
   time_begin = MPI_Wtime();
-  using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
-  using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-  using Spatial = mini::spatial::fr::Lobatto<Part>;
+  using Spatial = mini::spatial::fr::General<Part>;
   auto part = Part(case_name, i_core, n_core);
-  auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
-  auto spatial = Spatial(&part, vincent);
+  using Vincent = mini::basis::Vincent<Scalar>;
+  auto spatial = Spatial(&part, Vincent::HuynhLumpingLobatto(kDegrees));
   spatial.SetSmartBoundary("4_S_27", moving);  // Top
   spatial.SetSmartBoundary("4_S_31", moving);  // Left
   spatial.SetSolidWall("4_S_1");   // Back
@@ -71,7 +71,43 @@ int main(int argc, char* argv[]) {
     cell_ptr->Approximate(func);
   }
   spatial.SetTime(1.5);
-  std::printf("Part on basis::lagrange::Hexahedron proc[%d/%d] cost %f sec\n",
+  std::printf("fr::General(&part, c_huynh) proc[%d/%d] cost %f sec\n",
+      i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  auto column = spatial.GetSolutionColumn();
+  assert(column.size() == part.GetCellDataSize());
+  spatial.SetSolutionColumn(column);
+  column -= spatial.GetSolutionColumn();
+  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  column = spatial.GetResidualColumn();
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+  /* aproximated by Lagrange basis on Lobatto roots with Huynh's correction functions */
+{
+  time_begin = MPI_Wtime();
+  using Spatial = mini::spatial::fr::Lobatto<Part>;
+  auto part = Part(case_name, i_core, n_core);
+  auto spatial = Spatial(&part);
+  spatial.SetSmartBoundary("4_S_27", moving);  // Top
+  spatial.SetSmartBoundary("4_S_31", moving);  // Left
+  spatial.SetSolidWall("4_S_1");   // Back
+  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
+  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
+  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
+  spatial.SetSupersonicOutlet("4_S_15");  // Gap
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
+  spatial.SetTime(1.5);
+  std::printf("fr::Lobatto(&part) proc[%d/%d] cost %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 

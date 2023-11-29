@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kDegrees = 1;
+  constexpr int kDegrees = 2;
 #ifdef DGFEM
   using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 1>;
 #else
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef DGFEM
   /* Build a `Limiter` object. */
-  using Limiter = mini::limiter::weno::Lazy<Cell>;
+  using Limiter = mini::limiter::weno::Dummy<Cell>;
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
 #endif
 
@@ -181,9 +181,7 @@ int main(int argc, char* argv[]) {
 #endif
 #ifdef FR
   using Spatial = mini::spatial::fr::Lobatto<Part>;
-  using Vincent = mini::basis::Vincent<Scalar>;
-  auto vincent = Vincent(kDegrees, Vincent::HuynhLumpingLobatto(kDegrees));
-  auto spatial = Spatial(&part, vincent);
+  auto spatial = Spatial(&part);
 #endif
 
   /* Define the temporal solver. */
