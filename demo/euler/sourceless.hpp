@@ -10,10 +10,15 @@
 #include "mini/riemann/euler/exact.hpp"
 #include "mini/riemann/rotated/euler.hpp"
 #include "mini/polynomial/projection.hpp"
+#include "mini/polynomial/hexahedron.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/limiter/weno.hpp"
 #include "mini/temporal/rk.hpp"
 #include "mini/spatial/dg/general.hpp"
+#include "mini/spatial/dg/lobatto.hpp"
+#include "mini/spatial/fr/lobatto.hpp"
+
+#define FR
 
 using Scalar = double;
 
@@ -27,7 +32,18 @@ using Riemann = mini::riemann::rotated::Euler<Unrotated>;
 
 /* Define spatial discretization. */
 constexpr int kDegrees = 2;
-using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 5>;
+#ifdef DGFEM
+  using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 5>;
+#else
+  using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
+#endif
+#ifdef DGSEM
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, 5, false>;
+#endif
+#ifdef FR
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, 5, true>;
+#endif
+
 using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
 using Cell = typename Part::Cell;
 using Face = typename Part::Face;
@@ -35,9 +51,19 @@ using Global = typename Cell::Global;
 using Value = typename Cell::Value;
 using Coeff = typename Cell::Coeff;
 
-using Limiter = mini::limiter::weno::Eigen<Cell>;
+#ifdef DGFEM
+using Limiter = mini::limiter::weno::Dummy<Cell>;
+#endif
 
+#ifdef DGFEM
 using Spatial = mini::spatial::dg::WithLimiterAndSource<Part, Limiter>;
+#endif
+#ifdef DGSEM
+using Spatial = mini::spatial::dg::Lobatto<Part>;
+#endif
+#ifdef FR
+using Spatial = mini::spatial::fr::Lobatto<Part>;
+#endif
 
 /* Choose the time-stepping scheme. */
 constexpr int kOrders = std::min(3, kDegrees + 1);

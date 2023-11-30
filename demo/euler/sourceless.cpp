@@ -72,8 +72,10 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
   part.SetFieldNames({"Density", "MomentumX", "MomentumY", "MomentumZ",
       "EnergyStagnationDensity"});
 
+#ifdef DGFEM
   /* Build a `Limiter` object. */
   auto limiter = Limiter(/* w0 = */0.001, /* eps = */1e-6);
+#endif
 
   /* Initialization. */
   if (argc == 7) {
@@ -85,10 +87,12 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
           n_core, MPI_Wtime() - time_begin);
     }
 
+#ifdef DGFEM
     part.Reconstruct(limiter);
     if (suffix == "tetra") {
       part.Reconstruct(limiter);
     }
+#endif
     if (i_core == 0) {
       std::printf("[Done] Reconstruct() on %d cores at %f sec\n",
           n_core, MPI_Wtime() - time_begin);
@@ -111,7 +115,12 @@ int Main(int argc, char* argv[], IC ic, BC bc) {
           i_frame, n_core, MPI_Wtime() - time_begin);
     }
   }
+
+#ifdef DGFEM
   auto spatial = Spatial(&part, limiter);
+#else
+  auto spatial = Spatial(&part);
+#endif
 
   /* Define the temporal solver. */
   auto temporal = Temporal();
