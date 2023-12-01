@@ -246,7 +246,8 @@ class LagrangeFR(FluxReconstruction):
         return flux_gradient
 
     def get_interior_residual(self) -> np.ndarray:
-        residual = np.ndarray((self.n_term(), self.equation().n_component()))
+        residual = np.ndarray((self.n_term(), self.equation().n_component()),
+            dtype=self.expansion().scalar_type())
         points = self.expansion().get_sample_points()
         for i_sample in range(self.n_term()):
             x_sample = points[i_sample]
@@ -389,8 +390,9 @@ class FRonGaussPoints(LagrangeFR):
         return Element.expansion(self)
 
     def get_interior_residual(self):
-        residual = np.ndarray((self.n_term(), self.equation().n_component()))
         e = self.expansion()
+        residual = np.ndarray((self.n_term(), self.equation().n_component()),
+            dtype=e.scalar_type())
         x_samples = self.expansion().get_sample_points()
         f_samples = np.ndarray(self.n_term(), self.value_type())
         for i in range(self.n_term()):

@@ -202,8 +202,9 @@ class WaveNumberDisplayer:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog='python3 wave_number.py')
     parser.add_argument('-m', '--method',
-        choices=['LagrangeDG', 'LagrangeFR', 'LegendreDG', 'LegendreFR'],
-        default='LagrangeFR',
+        choices=['DGonLegendreRoots', 'DGonLobattoRoots', 'DGonUniformRoots', 'LegendreDG',
+                 'FRonLegendreRoots', 'FRonLobattoRoots', 'FRonUniformRoots',],
+        default='LegendreDG',
         help='method for spatial discretization')
     parser.add_argument('-d', '--degree',
         default=2, type=int,
@@ -225,18 +226,25 @@ if __name__ == '__main__':
         help='whether the range of input wavenumbers is compressed')
     args = parser.parse_args()
     print(args)
-    if args.method == 'LagrangeDG':
-        SpatialClass = spatial.LagrangeDG
-    elif args.method == 'LagrangeFR':
-        SpatialClass = spatial.LagrangeFR
+    if args.method == 'FRonLegendreRoots':
+        SpatialClass = spatial.FRonLegendreRoots
+    elif args.method == 'FRonLobattoRoots':
+        SpatialClass = spatial.FRonLobattoRoots
+    elif args.method == 'FRonUniformRoots':
+        SpatialClass = spatial.FRonUniformRoots
+    elif args.method == 'DGonLegendreRoots':
+        SpatialClass = spatial.DGonLegendreRoots
+    elif args.method == 'DGonLobattoRoots':
+        SpatialClass = spatial.DGonLobattoRoots
+    elif args.method == 'DGonUniformRoots':
+        SpatialClass = spatial.DGonUniformRoots
     elif args.method == 'LegendreDG':
         SpatialClass = spatial.LegendreDG
-    elif args.method == 'LegendreFR':
-        SpatialClass = spatial.LegendreFR
     else:
         assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
     wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
-    wnd.compare_wave_numbers(methods=[spatial.LegendreDG, spatial.LagrangeFR,
-        spatial.LegendreFR], degrees=[1, 3, 5], n_sample=args.n_sample,
-        compressed=args.compressed)
+    wnd.compare_wave_numbers(methods=[spatial.LegendreDG,
+        spatial.DGonLegendreRoots, spatial.DGonLobattoRoots,
+        spatial.FRonLegendreRoots, spatial.FRonUniformRoots,],
+        degrees=[3], n_sample=args.n_sample, compressed=args.compressed)

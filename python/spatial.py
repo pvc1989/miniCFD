@@ -218,7 +218,7 @@ class DGonUniformRoots(DiscontinuousGalerkin):
             n_element, x_left, x_right, element.DGonUniformRoots)
 
     def name(self, verbose=True):
-        my_name = 'LagrangeDG'
+        my_name = 'DGonUniformRoots'
         if verbose:
             my_name += r' ($p=$' + f'{self.degree()})'
         return my_name
