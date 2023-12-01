@@ -499,7 +499,7 @@ class LagrangeOnLegendreRoots(LagrangeOnGaussPoints):
 
 
 class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
-    """Specialized Lagrange expansion using Legendre roots as nodes.
+    """Specialized Lagrange expansion using Lobatto roots as nodes.
     """
 
     def __init__(self, degree: int, coordinate: concept.Coordinate,
@@ -518,8 +518,6 @@ class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
             j_node = 0
         else:
             j_node = -1
-        if k_order == 0:
-            return self._sample_values[j_node]
         return self.get_derivatives_at_node(j_node, k_order, basis)
 
 
