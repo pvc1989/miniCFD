@@ -24,6 +24,11 @@ class Viewer:
             self._expect_points = np.linspace(0, self._n_element, n_point)
             n_point = self._actual.shape[1]
             self._actual_points = np.linspace(0, self._n_element, n_point)
+            self._ymin = min(self._expect.min(), self._actual.min())
+            self._ymax = max(self._expect.max(), self._actual.max())
+            delta_y = (self._ymax - self._ymin) * 0.05
+            self._ymax += delta_y
+            self._ymin -= delta_y
 
     @staticmethod
     def load(path, scalar_name):
@@ -61,21 +66,22 @@ class Viewer:
                 arrays.append(Viewer.load(path, name_i))
         return arrays
 
-    def plot_frame(self):
+    def plot_frame(self, i_frame=100, suffix='svg'):
         if self._actual is None:
             return
         fig, ax = plt.subplots()
         ax.set_xlabel('Element Index')
         ax.set_ylabel(self._scalar_name)
-        i_frame = 100
         ydata = self._expect[i_frame]
         ax.plot(self._expect_points, ydata, 'b--', label='Expect')
         ydata = self._actual[i_frame]
         ax.plot(self._actual_points, ydata, 'r-', label='Actual')
+        ax.set_ylim(self._ymin, self._ymax)
         plt.legend()
         plt.grid()
         plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/Frame{i_frame}.svg')
+        plt.savefig(f'{self._actual_path}/Frame{i_frame}.{suffix}')
+        plt.close()
 
     def plot_error(self):
         if self._actual is None:
