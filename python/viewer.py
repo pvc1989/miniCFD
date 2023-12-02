@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import vtk
+import imageio
 from matplotlib import pyplot as plt
 from matplotlib import colors
 
@@ -66,7 +67,7 @@ class Viewer:
                 arrays.append(Viewer.load(path, name_i))
         return arrays
 
-    def plot_frame(self, i_frame=100, suffix='svg'):
+    def plot_frame(self, i_frame, suffix='svg'):
         if self._actual is None:
             return
         fig, ax = plt.subplots()
@@ -80,8 +81,20 @@ class Viewer:
         plt.legend()
         plt.grid()
         plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/Frame{i_frame}.{suffix}')
+        file_name = f'{self._actual_path}/Frame{i_frame}.{suffix}'
+        plt.savefig(file_name)
         plt.close()
+        return file_name
+
+    def plot_animation(self, fps=10):
+        frames = []
+        for i_frame in range(101):
+            png_name = self.plot_frame(i_frame, 'png')
+            print(png_name, 'done')
+            frames.append(imageio.v2.imread(png_name))
+        gif_name = 'Animation.gif'
+        imageio.mimsave(gif_name, frames, fps=fps, loop=0)
+        print(gif_name, 'done')
 
     def plot_error(self):
         if self._actual is None:
@@ -121,6 +134,7 @@ class Viewer:
 
 if __name__ == '__main__':
     viewer = Viewer(sys.argv)
-    viewer.plot_frame()
+    viewer.plot_frame(100)
+    viewer.plot_animation()
     viewer.plot_error()
     viewer.plot_viscosity()
