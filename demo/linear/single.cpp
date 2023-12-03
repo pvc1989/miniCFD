@@ -114,16 +114,16 @@ int main(int argc, char* argv[]) {
 #endif
 
   /* Set initial conditions. */
-  Value value_right{ 10 }, value_left{ -10 };
+  Value value_right{ 1 }, value_left{ -1 };
   auto initial_condition = [&](const Global& xyz){
-    auto x = xyz[0];
-    if (x < 2) {
-      return value_left;
-    } else if (x > 3) {
-      return value_right;
-    }
     Value result = value_left;
-    result += (value_right - value_left) * (x - 2);
+    auto x = xyz[0];
+    if (x > 3) {
+      result = value_right;
+    } else if (x > 2) {
+      // result += (value_right - value_left) * (x - 2);
+      result[0] = std::sin((x - 2.5) * 9 * 3.1415926);
+    }
     return result;
   };
   auto exact_solution = [&](Global xyz, double t){
