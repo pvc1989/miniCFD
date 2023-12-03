@@ -217,6 +217,7 @@ class SolverBase(abc.ABC):
         dt_per_frame = (t_stop - t_start) / n_frame
         self._spatial.initialize(lambda x_global: self.u_init(x_global),
             self._temp_detector, self._temp_limiter)
+        self._spatial.apply_viscosity()
         t_curr = t_start
         for i_frame in range(n_frame+1):
             print(f'i_frame = {i_frame}, t = {t_curr:.2e}')
@@ -235,6 +236,7 @@ class SolverBase(abc.ABC):
                     f', dt_actual = {dt_actual:.2e}')
                 try:
                     self._ode_solver.update(self._spatial, dt_actual, t_curr)
+                    self._spatial.apply_viscosity()
                 except Exception as e:
                     self._write_to_vtu(f'broken_at_t={t_curr:.2e}.vtu', t_curr)
                     raise e

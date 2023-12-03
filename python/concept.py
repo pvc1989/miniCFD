@@ -1010,16 +1010,18 @@ class SpatialScheme(Grid, OdeSystem):
         if isinstance(viscosity, Viscosity):
             self._viscosity = viscosity
 
-    def suppress_oscillations(self):
-        if self._detector:
+    def apply_limiter(self):
+        if self._detector and self._limiter:
             indices = self._detector.get_troubled_cell_indices(self)
-            if self._limiter:
-                self._limiter.reconstruct(indices, self)
-            if self._viscosity:
-                self._viscosity.generate(indices, self)
-                for i_cell in range(self.n_element()):
-                    self.get_element_by_index(i_cell)._extra_viscosity = \
-                        self._viscosity.get_cell_viscosity(i_cell)
+            self._limiter.reconstruct(indices, self)
+
+    def apply_viscosity(self):
+        if self._detector and self._viscosity:
+            indices = self._detector.get_troubled_cell_indices(self)
+            self._viscosity.generate(indices, self)
+            for i_cell in range(self.n_element()):
+                self.get_element_by_index(i_cell)._extra_viscosity = \
+                    self._viscosity.get_cell_viscosity(i_cell)
 
     def suggest_delta_t(self, delta_t):
         for i_cell in range(self.n_element()):

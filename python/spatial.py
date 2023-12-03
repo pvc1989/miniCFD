@@ -122,7 +122,7 @@ class FiniteElement(concept.SpatialScheme):
             element_i.set_solution_coeff(column[first:last])
             first = last
         assert first == self.n_dof()
-        self.suppress_oscillations()
+        self.apply_limiter()
 
     def get_solution_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
@@ -157,7 +157,7 @@ class FiniteElement(concept.SpatialScheme):
             indices = temp_detector.get_troubled_cell_indices(self)
             assert isinstance(temp_limiter, concept.Limiter)
             temp_limiter.reconstruct(indices, self)
-        self.suppress_oscillations()
+        self.apply_limiter()
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
