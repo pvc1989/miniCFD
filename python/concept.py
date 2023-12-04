@@ -477,6 +477,37 @@ class RiemannSolver(abc.ABC):
         return flux
 
 
+class Face(abc.ABC):
+    """An object for carrying a given state or the Riemann solution between two elements.
+    """
+
+    def __init__(self, riemann: RiemannSolver) -> None:
+        self._riemann = riemann
+        self._state = None
+        self._flux = None
+        self._jump = None
+
+    @abc.abstractmethod
+    def solve(self):
+        """Solve the Riemann problem on this face.
+        """
+
+    def u(self):
+        """Get the state on this face.
+        """
+        return self._state
+
+    def flux(self):
+        """Get the flux on this face.
+        """
+        return self._flux
+
+    def jump(self):
+        """Get the jump on this face.
+        """
+        return self._jump
+
+
 class Element(abc.ABC):
     """A cell-like object that carries some expansion of the solution.
     """
@@ -488,11 +519,18 @@ class Element(abc.ABC):
         self._expansion = expansion
         self._coordinate = expansion.coordinate()
         self._integrator = expansion.integrator()
+        self._left_face = None
+        self._right_face = None
         self._left_expansion = None
         self._right_expansion = None
         self._extra_viscosity = None
         if isinstance(self.equation(), EquationSystem):
             self._eigen_matrices = None
+
+    def riemann(self) -> RiemannSolver:
+        """Get a refenece to the underlying RiemannSolver object.
+        """
+        return self._riemann
 
     def equation(self) -> Equation:
         """Get a refenece to the underlying Equation object.
@@ -525,6 +563,9 @@ class Element(abc.ABC):
         """Get a refenece to the underlying Expansion object.
         """
         return self._expansion
+
+    def get_faces(self) -> tuple[Face, Face]:
+        return self._left_face, self._right_face
 
     def neighbor_expansions(self) -> tuple[Expansion, Expansion]:
         return self._left_expansion, self._right_expansion
@@ -767,22 +808,62 @@ class Element(abc.ABC):
         return self._eigen_matrices
 
 
+class Interface(Face):
+    """The common interface of two elements.
+    """
+
+    def __init__(self, left: Element, right: Element):
+        Face.__init__(self, left.riemann())
+        self._left = left
+        self._right = right
+
+    def solve(self):
+        self._flux, self._jump = \
+            self._riemann.get_interface_flux_and_bjump(self._left, self._right)
+
+
+class Inlet(Face):
+    """A Face object at the boundary with a given state.
+    """
+
+    def __init__(self, u_given, element: Element, left: bool):
+        Face.__init__(self, element.riemann())
+        self._u_given = u_given
+        self._expansion = element.expansion()
+        self._left = left
+        self._jump = 0 * u_given
+
+    def solve(self):
+        if self._left:
+            u_left = self._u_given
+            u_right = self._expansion.get_boundary_derivatives(0, True, False)
+        else:
+            u_right = self._u_given
+            u_left = self._expansion.get_boundary_derivatives(0, False, False)
+        self._flux = self._riemann.get_upwind_flux(u_left, u_right)
+
+
 class Grid(abc.ABC):
 
     def __init__(self, n_element: int):
         self._elements = np.ndarray(n_element, Element)
-        self._u_left = None
-        self._u_right = None
+        self._faces = np.ndarray(n_element + 1, Face)
+        self._periodic = True
 
     @abc.abstractmethod
     def get_element_index(self, point) -> int:
         """Get the index of the element in which the given point locates.
         """
 
-    def get_element_by_index(self, index: int) -> Element:
-        """Get the index of the element in which the point locates.
+    def get_face_by_index(self, i: int) -> Face:
+        """Get the `Face` object at the left of the `i`th `Element`.
         """
-        return self._elements[index]
+        return self._faces[i]
+
+    def get_element_by_index(self, i: int) -> Element:
+        """Get the `i`th `Element` object.
+        """
+        return self._elements[i]
 
     def get_element(self, point) -> Element:
         """Get the element in which the given point locates.
@@ -817,24 +898,38 @@ class Grid(abc.ABC):
     def value_type(self):
         return self.get_element_by_index(0).value_type()
 
+    def build_interface(self, i: int):
+        """Set the `Interface` at the left of `i`th `Element`.
+        """
+        right = self.get_element_by_index(i)
+        left = self.get_element_by_index(i - 1)
+        face = Interface(left, right)
+        right._left_face = face
+        left._right_face = face
+        self._faces[i] = face
+        if i == 0:
+            self._faces[-1] = face
+
     def set_boundary_values(self, u_left, u_right):
         """Set prescribed (far-field) boundary values.
         """
+        self._periodic = False
         assert u_left is None or isinstance(u_left, self.value_type())
         assert u_right is None or isinstance(u_right, self.value_type())
-        self._u_left = u_left
-        self._u_right = u_right
+        right = self.get_element_by_index(0)
+        face = Inlet(u_left, right, True)
+        right._left_face = face
+        self._faces[0] = face
+        left = self.get_element_by_index(-1)
+        face = Inlet(u_right, left, False)
+        left._right_face = face
+        self._faces[-1] = face
         self.link_neighbors()
-
-    def get_boundary_values(self):
-        """Get prescribed (far-field) boundary values.
-        """
-        return self._u_left, self._u_right
 
     def is_periodic(self):
         """Whether a periodic boundary condition is applied.
         """
-        return self._u_left is None and self._u_right is None
+        return self._periodic
 
     @abc.abstractmethod
     def link_neighbors(self):
@@ -969,11 +1064,6 @@ class SpatialScheme(Grid, OdeSystem):
     @abc.abstractmethod
     def name(self, verbose: bool) -> str:
         """Get the compact string representation of the method.
-        """
-
-    @abc.abstractmethod
-    def link_neighbors(self):
-        """Link each element to its neighbors' expansions.
         """
 
     @abc.abstractmethod

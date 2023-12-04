@@ -47,43 +47,6 @@ class FiniteElement(concept.SpatialScheme):
         # bisect_right(a, x) gives such an i that a[:i] <= x < a[i:]
         return i_element - 1
 
-    def get_interface_fluxes_and_bjumps(self):
-        interface_fluxes = np.ndarray(self.n_element() + 1, self.value_type())
-        interface_bjumps = np.ndarray(self.n_element() + 1, self.value_type())
-        # interface_flux[i] := flux on interface(element[i-1], element[i])
-        for i in range(1, self.n_element()):
-            curr = self.get_element_by_index(i)
-            prev = self.get_element_by_index(i-1)
-            try:
-                interface_fluxes[i], interface_bjumps[i] = \
-                    self._riemann.get_interface_flux_and_bjump(prev, curr)
-            except Exception as e:
-                print(f'Riemann solver failed between element[{i-1}] and element[{i}].')
-                raise e
-        if self.is_periodic():
-            i_prev = self.n_element() - 1
-            curr = self.get_element_by_index(0)
-            prev = self.get_element_by_index(i_prev)
-            interface_fluxes[0], interface_bjumps[0] = \
-                self._riemann.get_interface_flux_and_bjump(prev, curr)
-            interface_fluxes[-1] = interface_fluxes[0]
-            interface_bjumps[-1] = interface_bjumps[0]
-        else:  # TODO: support other boundary condtions
-            u_left, u_right = self.get_boundary_values()
-            if u_left is not None:
-                curr = self.get_element_by_index(0)
-                interface_fluxes[0] = self._riemann.get_upwind_flux(
-                    u_left,
-                    curr.expansion().get_boundary_derivatives(0, True, False))
-            interface_bjumps[0] = interface_bjumps[1] * 0
-            if u_right is not None:
-                curr = self.get_element_by_index(-1)
-                interface_fluxes[-1] = self._riemann.get_upwind_flux(
-                    curr.expansion().get_boundary_derivatives(0, False, False),
-                    u_right)
-            interface_bjumps[-1] = interface_bjumps[0]
-        return interface_fluxes, interface_bjumps
-
     def get_solution_value(self, point):
         return self.get_element(point).get_solution_value(point)
 
@@ -97,19 +60,28 @@ class FiniteElement(concept.SpatialScheme):
         self.get_element_by_index(0)._right_expansion = \
             self.get_element_by_index(1).expansion()
         for i_cell in range(1, self.n_element() - 1):
+            self.build_interface(i_cell)
             cell_i = self.get_element_by_index(i_cell)
             cell_i._left_expansion = \
                 self.get_element_by_index(i_cell - 1).expansion()
             cell_i._right_expansion = \
                 self.get_element_by_index(i_cell + 1).expansion()
+        self.build_interface(self.n_element() - 1)
         self.get_element_by_index(-1)._left_expansion = \
             self.get_element_by_index(-2).expansion()
         if self.is_periodic():
+            assert self.get_face_by_index(0) is None
+            assert self.get_face_by_index(-1) is None
+            self.build_interface(0)
+            assert self.get_face_by_index(0) == self.get_face_by_index(-1)
+            assert isinstance(self.get_face_by_index(0), concept.Interface)
             self.get_element_by_index(0)._left_expansion = \
                 self._get_shifted_expansion(-1, -self.length())
             self.get_element_by_index(-1)._right_expansion = \
                 self._get_shifted_expansion(0, +self.length())
         else:
+            assert isinstance(self.get_face_by_index(0), concept.Inlet)
+            assert isinstance(self.get_face_by_index(-1), concept.Inlet)
             self.get_element_by_index(0)._left_expansion = None
             self.get_element_by_index(-1)._right_expansion = None
 
@@ -161,8 +133,13 @@ class FiniteElement(concept.SpatialScheme):
 
     def get_residual_column(self):
         column = np.zeros(self.n_dof(), self.scalar_type())
-        interface_fluxes, interface_jumps = \
-            self.get_interface_fluxes_and_bjumps()
+        # solve Riemann problems
+        for i in range(self.n_element() + (not self.is_periodic())):
+            try:
+                self.get_face_by_index(i).solve()
+            except Exception as e:
+                print(f'Riemann solver failed between element[{i-1}] and element[{i}].')
+                raise e
         i_dof = 0
         for i in range(self.n_element()):
             element_i = self.get_element_by_index(i)
@@ -170,10 +147,11 @@ class FiniteElement(concept.SpatialScheme):
             # 1st: evaluate the internal integral
             residual = element_i.get_interior_residual()
             # 2nd: evaluate the boundary integral
+            left_face, right_face = element_i.get_faces()
             element_i.add_interface_residual(
-                interface_fluxes[i], interface_fluxes[i+1], residual)
+                left_face.flux(), right_face.flux(), residual)
             element_i.add_interface_correction(
-                interface_jumps[i], interface_jumps[i+1], residual)
+                left_face.jump(), right_face.jump(), residual)
             # 3rd: multiply the inverse of the mass matrix
             residual = element_i.divide_mass_matrix(residual)
             # write to the global column
