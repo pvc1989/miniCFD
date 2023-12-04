@@ -391,31 +391,14 @@ class ApproximateEuler(Euler):
         assert False
 
     def _get_value(self, slope):
-        assert False
+        assert False, type(self)
 
 
 class Roe(ApproximateEuler):
 
     def __init__(self, gamma=1.4):
         Euler.__init__(self, gamma)
-
-    def get_upwind_value(self, value_left, value_right):
-        eq = self.equation()
-        # Roe averaging
-        rho_left, u_left, p_left = eq.conservative_to_primitive(value_left)
-        rho_right, u_right, p_right = eq.conservative_to_primitive(value_right)
-        h0_left = eq.primitive_to_total_enthalpy(rho_left, u_left, p_left)
-        h0_right = eq.primitive_to_total_enthalpy(rho_right, u_right, p_right)
-        rho_left_sqrt = np.sqrt(rho_left)
-        rho_right_sqrt = np.sqrt(rho_right)
-        rho_sqrt_sum = rho_left_sqrt + rho_right_sqrt
-        rho = rho_sqrt_sum**2 / 4
-        u = (rho_left_sqrt * u_left + rho_right_sqrt * u_right) / rho_sqrt_sum
-        h0 = (rho_left_sqrt * h0_left + rho_right_sqrt * h0_right) / rho_sqrt_sum
-        ke = u * u / 2  # kinetic energy
-        aa = eq._gas.gamma_minus_1() * (h0 - ke)
-        p = rho * aa / eq._gas.gamma()
-        return np.array([rho, rho * u, rho * h0 - p])
+        self._roe_average = np.ndarray(3)
 
     def get_upwind_flux(self, value_left, value_right):
         # algebraic averaging
@@ -431,11 +414,14 @@ class Roe(ApproximateEuler):
         rho_left_sqrt = np.sqrt(rho_left)
         rho_right_sqrt = np.sqrt(rho_right)
         rho_sqrt_sum = rho_left_sqrt + rho_right_sqrt
+        self._roe_average[0] = rho_sqrt_sum**2 / 4
         rho = rho_left_sqrt * rho_right_sqrt
         u = (rho_left_sqrt * u_left + rho_right_sqrt * u_right) / rho_sqrt_sum
+        self._roe_average[1] = self._roe_average[0] * u
         ke = u * u / 2  # kinetic energy
         h0 = (rho_left_sqrt * h0_left + rho_right_sqrt * h0_right) / rho_sqrt_sum
         aa = eq._gas.gamma_minus_1() * (h0 - ke)
+        self._roe_average[2] = self._roe_average[0] * (h0 - aa/eq._gas.gamma())
         a = np.sqrt(aa)
         ua = u * a
         # 1st wave
@@ -452,6 +438,9 @@ class Roe(ApproximateEuler):
         flux -= 0.5 * alpha * np.abs(u + a) * \
             np.array([1, u + a, h0 + ua])
         return flux
+
+    def get_upwind_value(self):
+        return self._roe_average
 
 
 class LaxFriedrichs(ApproximateEuler):

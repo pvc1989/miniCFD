@@ -454,6 +454,13 @@ class RiemannSolver(abc.ABC):
         """Get the value of the convective flux on the interface.
         """
 
+    def get_upwind_value(self):
+        """Get the value of the Riemann solution on the interface.
+
+        The `get_upwind_flux()` method should be called just before calling this method.
+        """
+        return self.get_value(0, 1)
+
     # TODO: move to a DDG class
     @abc.abstractmethod
     def get_interface_gradient(self, h_left: float, h_right: float,
@@ -820,6 +827,7 @@ class Interface(Face):
     def solve(self):
         self._flux, self._jump = \
             self._riemann.get_interface_flux_and_bjump(self._left, self._right)
+        self._state = self._riemann.get_upwind_value()
 
 
 class Inlet(Face):
@@ -841,6 +849,7 @@ class Inlet(Face):
             u_right = self._u_given
             u_left = self._expansion.get_boundary_derivatives(0, False, False)
         self._flux = self._riemann.get_upwind_flux(u_left, u_right)
+        self._state = self._riemann.get_upwind_value()
 
 
 class Grid(abc.ABC):

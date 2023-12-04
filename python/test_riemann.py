@@ -32,11 +32,13 @@ class TestLinearAdvection(unittest.TestCase):
         solver = riemann.LinearAdvection(a_const=+1)
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_left))
+        self.assertEqual(solver.get_upwind_value(), u_left)
         # left running wave
         pde = equation.LinearAdvection(a_const=-1)
         solver = riemann.LinearAdvection(a_const=-1)
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_right))
+        self.assertEqual(solver.get_upwind_value(), u_right)
         # standing wave
         pde = equation.LinearAdvection(a_const=0)
         solver = riemann.LinearAdvection(a_const=0)
@@ -44,6 +46,8 @@ class TestLinearAdvection(unittest.TestCase):
             pde.get_convective_flux(u_left))
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_right))
+        self.assertEqual(solver.get_upwind_flux(u_left, u_right),
+            pde.get_convective_flux(solver.get_upwind_value()))
 
 
 class TestInviscidBurgers(unittest.TestCase):
@@ -66,6 +70,7 @@ class TestInviscidBurgers(unittest.TestCase):
         # on t-axis
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_left))
+        self.assertEqual(solver.get_upwind_value(), u_left)
 
     def test_left_running_shock(self):
         u_left, u_right = 0, -2
@@ -85,6 +90,7 @@ class TestInviscidBurgers(unittest.TestCase):
         # on t-axis
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_right))
+        self.assertEqual(solver.get_upwind_value(), u_right)
 
     def test_standing_shock(self):
         u_left, u_right = +1, -1
@@ -106,6 +112,8 @@ class TestInviscidBurgers(unittest.TestCase):
             pde.get_convective_flux(u_left))
         self.assertEqual(solver.get_upwind_flux(u_left, u_right),
             pde.get_convective_flux(u_right))
+        self.assertEqual(solver.get_upwind_flux(u_left, u_right),
+            pde.get_convective_flux(solver.get_upwind_value()))
 
     def test_rarefaction(self):
         u_left, u_right = -1, +1
@@ -200,7 +208,8 @@ class TestEuler(unittest.TestCase):
             p = np.random.rand()
             u_right = self._equation.primitive_to_conservative(rho, u, p)
             f_right = self._equation.get_convective_flux(u_right)
-            u_upwind = solver.get_upwind_value(u_left, u_right)
+            f_upwind = solver.get_upwind_flux(u_left, u_right)
+            u_upwind = solver.get_upwind_value()
             a_upwind = self._equation.get_convective_jacobian(u_upwind)
             self.assertAlmostEqual(0.0, np.linalg.norm(
                 a_upwind @ (u_right - u_left) - (f_right - f_left)))
@@ -210,10 +219,9 @@ class TestEuler(unittest.TestCase):
             self.assertAlmostEqual(eigvals[0], lambdas[0][0])
             self.assertAlmostEqual(eigvals[1], lambdas[1][1])
             self.assertAlmostEqual(eigvals[2], lambdas[2][2])
-            f_upwind = 0.5 * (f_left + f_right
+            f_upwind -= 0.5 * (f_left + f_right
                 - R @ np.abs(lambdas) @ L @ (u_right - u_left))
-            self.assertAlmostEqual(0.0, np.linalg.norm(
-                f_upwind - solver.get_upwind_flux(u_left, u_right)))
+            self.assertAlmostEqual(0.0, np.linalg.norm(f_upwind))
 
 
 if __name__ == '__main__':
