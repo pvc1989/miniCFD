@@ -1,5 +1,5 @@
 import numpy as np
-
+import abc
 import concept
 import expansion
 import equation
@@ -72,34 +72,15 @@ class Energy(concept.Viscosity):
         super().__init__()
         self._tau = tau
         self._index_to_nu = dict()
-        self._index_to_a_inv = dict()
 
-    def name(self, verbose=False) -> str:
-        if verbose:
-            return 'Energy(' + r'$\tau=$' + f'{self._tau})'
-        else:
-            return 'Energy'
-
-    @staticmethod
-    def _jumps_to_energy(jumps: np.ndarray, cell: concept.Element,
+    @abc.abstractmethod
+    def _jumps_to_energy(self, jumps: np.ndarray, cell: concept.Element,
             indices=None):
-        if not indices:
-            indices = range(len(jumps))
-        curr = cell.expansion()
-        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
-        if cell.is_system():
-            left_eigmat, _ = cell.get_convective_eigmats()
-            new_jumps = np.ndarray(len(jumps), np.ndarray)
-            for i_node in indices:
-                new_jumps[i_node] = left_eigmat @ jumps[i_node]
-            jumps = new_jumps
-            energy = np.zeros(cell.equation().n_component())
-        else:
-            assert cell.is_scalar()
-            energy = 0.0
-        for k in indices:
-            energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
-        return energy
+        pass
+
+    @abc.abstractmethod
+    def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+        pass
 
     @staticmethod
     def _min(x, y):
@@ -109,15 +90,14 @@ class Energy(concept.Viscosity):
     def _min3(x, y, z):
         return Energy._min(x, Energy._min(y, z))
 
-    @staticmethod
-    def _min_energy(left, left_jumps, right, right_jumps, cell):
+    def _min_energy(self, left, left_jumps, right, right_jumps, cell):
         if left is None:
-            return Energy._jumps_to_energy(right_jumps, cell)
+            return self._jumps_to_energy(right_jumps, cell)
         elif right is None:
-            return Energy._jumps_to_energy(left_jumps, cell)
+            return self._jumps_to_energy(left_jumps, cell)
         else:
-            return Energy._min(Energy._jumps_to_energy(left_jumps, cell),
-                               Energy._jumps_to_energy(right_jumps, cell))
+            return Energy._min(self._jumps_to_energy(left_jumps, cell),
+                               self._jumps_to_energy(right_jumps, cell))
 
     def _get_high_order_energy(self, cell: element.FRonLegendreRoots,
             points: np.ndarray, values: np.ndarray):
@@ -181,8 +161,8 @@ class Energy(concept.Viscosity):
                 low_jumps[indices[-1]] /= np.sqrt(2)
                 high_jumps[indices[-1]] /= np.sqrt(2)
             left_energy = Energy._min(
-                Energy._jumps_to_energy(low_jumps, cell, indices),
-                Energy._jumps_to_energy(high_jumps, cell, indices))
+                self._jumps_to_energy(low_jumps, cell, indices),
+                self._jumps_to_energy(high_jumps, cell, indices))
         # build right_energy
         right_energy = 0
         if right:
@@ -196,8 +176,8 @@ class Energy(concept.Viscosity):
                 low_jumps[indices[0]] /= np.sqrt(2)
                 high_jumps[indices[0]] /= np.sqrt(2)
             right_energy = Energy._min(
-                Energy._jumps_to_energy(low_jumps, cell, indices),
-                Energy._jumps_to_energy(high_jumps, cell, indices))
+                self._jumps_to_energy(low_jumps, cell, indices),
+                self._jumps_to_energy(high_jumps, cell, indices))
         return left_energy + right_energy
 
     def _get_exact_half_energy(self, cell: element.FRonLegendreRoots):
@@ -313,6 +293,49 @@ class Energy(concept.Viscosity):
         else:
             return 0.0
 
+    def generate(self, troubled_cell_indices, grid: concept.Grid):
+        self._index_to_nu.clear()
+        self._index_to_coeff.clear()
+        for i_cell in troubled_cell_indices:
+            nu = self._get_constant_coeff(grid, i_cell)
+            self._index_to_nu[i_cell] = nu
+        for i_cell in troubled_cell_indices:
+            coeff = self._get_callable_coeff(grid, i_cell)
+            self._index_to_coeff[i_cell] = coeff
+
+
+class Quadratic(Energy):
+
+    def __init__(self, tau=0.01) -> None:
+        super().__init__(tau)
+        self._index_to_a_inv = dict()
+
+    def name(self, verbose=False) -> str:
+        if verbose:
+            return 'Quadratic(' + r'$\tau=$' + f'{self._tau})'
+        else:
+            return 'Quadratic'
+
+    def _jumps_to_energy(self, jumps: np.ndarray, cell: concept.Element,
+            indices=None):
+        if not indices:
+            indices = range(len(jumps))
+        curr = cell.expansion()
+        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
+        if cell.is_system():
+            left_eigmat, _ = cell.get_convective_eigmats()
+            new_jumps = np.ndarray(len(jumps), np.ndarray)
+            for i_node in indices:
+                new_jumps[i_node] = left_eigmat @ jumps[i_node]
+            jumps = new_jumps
+            energy = np.zeros(cell.equation().n_component())
+        else:
+            assert cell.is_scalar()
+            energy = 0.0
+        for k in indices:
+            energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
+        return energy
+
     def _build_a_on_centers(self, cell: element.FRonLegendreRoots):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
@@ -420,23 +443,14 @@ class Energy(concept.Viscosity):
         b = np.array([nu_const, nu_const, nu_const])
         left, right = cell.neighbor_expansions()
         if left:
-            b[1] = Energy._common(b[0], self._get_nu(i_cell - 1, n_cell))
+            b[1] = Quadratic._common(b[0], self._get_nu(i_cell - 1, n_cell))
         if right:
-            b[2] = Energy._common(b[0], self._get_nu(i_cell + 1, n_cell))
+            b[2] = Quadratic._common(b[0], self._get_nu(i_cell + 1, n_cell))
         if type(nu_const) is np.ndarray:
             return self._get_callable_vector(b, i_cell, cell)
         else:
             return self._get_callable_scalar(b, i_cell, cell)
 
-    def generate(self, troubled_cell_indices, grid: concept.Grid):
-        self._index_to_nu.clear()
-        self._index_to_coeff.clear()
-        for i_cell in troubled_cell_indices:
-            nu = self._get_constant_coeff(grid, i_cell)
-            self._index_to_nu[i_cell] = nu
-        for i_cell in troubled_cell_indices:
-            coeff = self._get_callable_coeff(grid, i_cell)
-            self._index_to_coeff[i_cell] = coeff
 
 
 if __name__ == '__main__':
