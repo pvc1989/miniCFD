@@ -528,6 +528,16 @@ class Linear(Energy):
         else:
             return Linear._get_upwind_scalar(eigvals, left_nu, right_nu)
 
+    @staticmethod
+    def _span(diag: np.ndarray, left: np.ndarray, right: np.ndarray) -> np.ndarray:
+        """sum_i diag[i] * right.col(i) @ left.row(i)
+        """
+        n = len(diag)
+        result = np.zeros((n, n))
+        for i in range(n):
+            result += right[:, i] @ (diag[i] * left[i])
+        return result
+
     def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
         cell = grid.get_element_by_index(i_cell)
         n_cell = grid.n_element()
@@ -546,10 +556,10 @@ class Linear(Energy):
             self._index_to_nu[i_cell], right_nu)
         # eigen-wise viscosity to physical viscosity
         if isinstance(left_nu, np.ndarray):
-            L_on_left, R_on_left = self._face_to_eigmats(left_face)
-            left_nu = (R_on_left @ left_nu) @ L_on_left
-            L_on_right, R_on_right = self._face_to_eigmats(right_face)
-            right_nu = (R_on_right @ right_nu) @ L_on_right
+            left_L, left_R = self._face_to_eigmats(left_face)
+            left_nu = Linear._span(left_nu, left_L, left_R)
+            right_L, right_R = self._face_to_eigmats(right_face)
+            right_nu = Linear._span(right_nu, right_L, right_R)
         def coeff(x_global: float):
             l, r = Linear._get_convex_ratios(x_global, cell)
             return left_nu * l + right_nu * r

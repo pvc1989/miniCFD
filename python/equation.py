@@ -202,29 +202,30 @@ class Euler(concept.EquationSystem):
         enthalpy = aa / self._gas.gamma_minus_1()
         return enthalpy + u*u/2
 
-    def _get_diffusive_flux_physically(self, U, dx_U, nu_extra):
+    def _get_diffusive_flux(self, U, dx_U, nu_scalar, prandtl=1e100):
         rho, u, p = self.conservative_to_primitive(U)
         dx_rho = dx_U[0]
         dx_u = (dx_U[1] - u * dx_rho) / rho
-        mu = rho * nu_extra
+        mu = rho * nu_scalar
         tau = (4.0/3) * mu * dx_u
         dx_e0 = dx_U[2]
-        prandtl = 1e100
         q = self._gas.get_heat_flux(rho, dx_rho, u, dx_u, p, dx_e0, mu, prandtl)
         return np.array([0, tau, tau * u - q])
 
-    def _get_diffusive_flux_eigenwisely(self, U, dx_U, nu_extra):
+    def _get_matrix_nu(self, U, nu_vector):
         L, R = self.get_convective_eigmats(U)
         B = np.zeros((3, 3))
         for i in range(3):
-            B += nu_extra[i] * np.tensordot(R[:, i], L[i], 0)
-        return B @ dx_U
+            B += nu_vector[i] * np.tensordot(R[:, i], L[i], 0)
+        return B
 
     def get_diffusive_flux(self, U, dx_U, nu_extra):
         if type(nu_extra) is np.ndarray:
-            return self._get_diffusive_flux_eigenwisely(U, dx_U, nu_extra)
+            if np.size(nu_extra) == 3:
+                nu_extra = self._get_matrix_nu(U, nu_extra)
+            return nu_extra @ dx_U
         else:
-            return self._get_diffusive_flux_physically(U, dx_U, nu_extra)
+            return self._get_diffusive_flux(U, dx_U, nu_extra)
 
     def get_convective_flux(self, U):
         rho, u, p = self.conservative_to_primitive(U)
