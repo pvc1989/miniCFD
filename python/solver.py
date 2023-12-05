@@ -592,7 +592,7 @@ if __name__ == '__main__':
         choices=['LWA', 'ZXH', 'XXR'],
         help='method for limiting numerical oscillations')
     parser.add_argument('--viscosity_model',
-        choices=['Constant', 'Persson', 'Quadratic'],
+        choices=['Constant', 'Persson', 'Linear', 'Quadratic'],
         help='method for adding artificial viscosity')
     parser.add_argument('--viscosity_model_const',
         default=0.0, type=float,
@@ -670,6 +670,8 @@ if __name__ == '__main__':
         the_viscosity = viscosity.Constant(args.viscosity_model_const)
     elif args.viscosity_model == 'Persson':
         the_viscosity = viscosity.Persson2006(args.viscosity_model_const)
+    elif args.viscosity_model == 'Linear':
+        the_viscosity = viscosity.Linear(args.viscosity_model_const)
     elif args.viscosity_model == 'Quadratic':
         the_viscosity = viscosity.Quadratic(args.viscosity_model_const)
     else:

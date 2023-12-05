@@ -466,6 +466,11 @@ class Linear(Energy):
         i_to_L, i_to_R = self._cell_to_eigmats[cell]
         return i_to_L[i_node], i_to_R[i_node]
 
+    @staticmethod
+    def _get_convex_ratios(cell: concept.Element, x_global: float):
+        r = (x_global - cell.x_left()) / cell.length()
+        return 1 - r, r
+
     def generate(self, troubled_cell_indices, grid: concept.Grid):
         self._face_to_eigmats.clear()
         for i_cell in troubled_cell_indices:
@@ -496,13 +501,59 @@ class Linear(Energy):
             i_to_L = np.ndarray(n_point, np.ndarray)
             i_to_R = np.ndarray(n_point, np.ndarray)
             for i in range(len(points)):
-                l = (points[i] - lagrange.x_left()) / lagrange.length()
-                r = 1 - l
-                i_to_L[i] = L_on_left * r + L_on_right * l
-                i_to_R[i] = R_on_left * r + R_on_right * l
+                l, r = Linear._get_convex_ratios(points[i], cell_i)
+                i_to_L[i] = L_on_left * l + L_on_right * r
+                i_to_R[i] = R_on_left * l + R_on_right * r
             self._cell_to_eigmats[cell_i] = (i_to_L, i_to_R)
         # call the base version
         Energy.generate(self, troubled_cell_indices, grid)
+
+    @staticmethod
+    def _get_upwind_scalar(speed, left, right) -> float:
+        if speed > 0:
+            return left
+        elif speed < 0:
+            return right
+        else:
+            return (left + right) / 2
+
+    @staticmethod
+    def _get_upwind_nu(eigvals, left_nu, right_nu):
+        if isinstance(left_nu, np.ndarray):
+            upwind = np.ndarray(len(left_nu), left_nu.dtype)
+            for i in range(len(left_nu)):
+                upwind[i] = Linear._get_upwind_scalar(
+                    eigvals[i], left_nu[i], right_nu[i])
+            return upwind
+        else:
+            return Linear._get_upwind_scalar(eigvals, left_nu, right_nu)
+
+    def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
+        cell = grid.get_element_by_index(i_cell)
+        n_cell = grid.n_element()
+        assert i_cell in self._index_to_nu
+        left_face, right_face = cell.get_faces()
+        left_cell, right_cell = cell.neighbor_expansions()
+        left_nu = self._get_nu(i_cell - 1, n_cell)
+        if left_cell is None:
+            left_nu = left_nu * 0
+        left_nu = self._get_upwind_nu(self._face_to_eigvals[left_face],
+            left_nu, self._index_to_nu[i_cell])
+        right_nu = self._get_nu(i_cell + 1, n_cell)
+        if right_cell is None:
+            right_nu = right_nu * 0
+        right_nu = self._get_upwind_nu(self._face_to_eigvals[right_face],
+            self._index_to_nu[i_cell], right_nu)
+        # eigen-wise viscosity to physical viscosity
+        if isinstance(left_nu, np.ndarray):
+            L_on_left, R_on_left = self._face_to_eigmats(left_face)
+            left_nu = (R_on_left @ left_nu) @ L_on_left
+            L_on_right, R_on_right = self._face_to_eigmats(right_face)
+            right_nu = (R_on_right @ right_nu) @ L_on_right
+        def coeff(x_global: float):
+            l, r = Linear._get_convex_ratios(x_global, cell)
+            return left_nu * l + right_nu * r
+        return coeff
 
 
 if __name__ == '__main__':
