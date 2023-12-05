@@ -74,9 +74,28 @@ class Energy(concept.Viscosity):
         self._index_to_nu = dict()
 
     @abc.abstractmethod
+    def _get_convective_eigmats(self, cell: concept.Element, i_node: int):
+        pass
+
     def _jumps_to_energy(self, jumps: np.ndarray, cell: concept.Element,
             indices=None):
-        pass
+        if not indices:
+            indices = range(len(jumps))
+        curr = cell.expansion()
+        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
+        if cell.is_system():
+            new_jumps = np.ndarray(len(jumps), np.ndarray)
+            for i_node in indices:
+                left_eigmat, _ = self._get_convective_eigmats(cell, i_node)
+                new_jumps[i_node] = left_eigmat @ jumps[i_node]
+            jumps = new_jumps
+            energy = np.zeros(cell.equation().n_component())
+        else:
+            assert cell.is_scalar()
+            energy = 0.0
+        for k in indices:
+            energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
+        return energy
 
     @abc.abstractmethod
     def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
@@ -316,25 +335,8 @@ class Quadratic(Energy):
         else:
             return 'Quadratic'
 
-    def _jumps_to_energy(self, jumps: np.ndarray, cell: concept.Element,
-            indices=None):
-        if not indices:
-            indices = range(len(jumps))
-        curr = cell.expansion()
-        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
-        if cell.is_system():
-            left_eigmat, _ = cell.get_convective_eigmats()
-            new_jumps = np.ndarray(len(jumps), np.ndarray)
-            for i_node in indices:
-                new_jumps[i_node] = left_eigmat @ jumps[i_node]
-            jumps = new_jumps
-            energy = np.zeros(cell.equation().n_component())
-        else:
-            assert cell.is_scalar()
-            energy = 0.0
-        for k in indices:
-            energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
-        return energy
+    def _get_convective_eigmats(self, cell: concept.Element, i_node: int):
+        return cell.get_convective_eigmats()
 
     def _build_a_on_centers(self, cell: element.FRonLegendreRoots):
         a = np.eye(3)
@@ -451,6 +453,56 @@ class Quadratic(Energy):
         else:
             return self._get_callable_scalar(b, i_cell, cell)
 
+
+class Linear(Energy):
+
+    def __init__(self, tau=0.01) -> None:
+        super().__init__(tau)
+        self._face_to_eigvals = dict()
+        self._face_to_eigmats = dict()
+        self._cell_to_eigmats = dict()
+
+    def _get_convective_eigmats(self, cell: concept.Element, i_node: int):
+        i_to_L, i_to_R = self._cell_to_eigmats[cell]
+        return i_to_L[i_node], i_to_R[i_node]
+
+    def generate(self, troubled_cell_indices, grid: concept.Grid):
+        self._face_to_eigmats.clear()
+        for i_cell in troubled_cell_indices:
+            cell_i = grid.get_element_by_index(i_cell)
+            eq = cell_i.equation()
+            # solve Riemann problems and cache eigvals on faces
+            for face in cell_i.get_faces():
+                if face in self._face_to_eigmats:
+                    continue
+                face.solve()
+                u = face.u()
+                if isinstance(eq, concept.EquationSystem):
+                    self._face_to_eigvals[face] = eq.get_convective_eigvals(u)
+                    self._face_to_eigmats[face] = eq.get_convective_eigmats(u)
+                else:
+                    assert isinstance(eq, concept.ScalarEquation)
+                    self._face_to_eigvals[face] = eq.get_convective_speed(u)
+            if isinstance(eq, concept.ScalarEquation):
+                continue
+            # linearize eigmats on cells and cache them on nodes
+            left_face, right_face = cell_i.get_faces()
+            L_on_left, R_on_left = self._face_to_eigmats(left_face)
+            L_on_right, R_on_right = self._face_to_eigmats(right_face)
+            lagrange = cell_i.expansion()
+            assert isinstance(lagrange, expansion.Lagrange)
+            points = lagrange.get_sample_points()
+            n_point = len(points)
+            i_to_L = np.ndarray(n_point, np.ndarray)
+            i_to_R = np.ndarray(n_point, np.ndarray)
+            for i in range(len(points)):
+                l = (points[i] - lagrange.x_left()) / lagrange.length()
+                r = 1 - l
+                i_to_L[i] = L_on_left * r + L_on_right * l
+                i_to_R[i] = R_on_left * r + R_on_right * l
+            self._cell_to_eigmats[cell_i] = (i_to_L, i_to_R)
+        # call the base version
+        Energy.generate(self, troubled_cell_indices, grid)
 
 
 if __name__ == '__main__':

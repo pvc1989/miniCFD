@@ -514,6 +514,12 @@ class Face(abc.ABC):
         """
         return self._jump
 
+    def get_convective_eigmats(self):
+        """Get the eigen-matrices computed by the Riemann solution on this Face.
+        """
+        eq = self._riemann.equation()
+        return EquationSystem.get_convective_eigmats(eq, self.u())
+
 
 class Element(abc.ABC):
     """A cell-like object that carries some expansion of the solution.
@@ -812,6 +818,8 @@ class Element(abc.ABC):
         self._eigen_matrices = equation.get_convective_eigmats(u_average)
 
     def get_convective_eigmats(self) -> tuple[np.ndarray, np.ndarray]:
+        """Get the eigen-matrices computed by the average value on this Element.
+        """
         return self._eigen_matrices
 
 
