@@ -154,10 +154,10 @@ class SolverBase(abc.ABC):
                 assert len(nu) == n_component
                 viscosity = []
                 viscosity_names = []
-                for i_component in range(n_component):
+                for i_scalar in range(np.size(nu)):
                     viscosity.append(vtk.vtkFloatArray())
-                    viscosity_i = _get_ith_array(viscosity, i_component)
-                    name = f'Viscosity{i_component + 1}'
+                    viscosity_i = _get_ith_array(viscosity, i_scalar)
+                    name = f'Viscosity{i_scalar + 1}'
                     viscosity_names.append(name)
                     viscosity_i.SetName(name)
                     viscosity_i.SetNumberOfComponents(1)
@@ -179,10 +179,11 @@ class SolverBase(abc.ABC):
                 solution_i.InsertNextValue(_get_ith_float(value, i_component))
             if self._spatial.viscosity():
                 nu = cell_i.get_extra_viscosity(x)
-                if type(nu) is np.ndarray:
-                    for i_component in range(n_component):
-                        viscosity_i = _get_ith_array(viscosity, i_component)
-                        viscosity_i.InsertNextValue(nu[i_component])
+                if isinstance(nu, np.ndarray):
+                    nu = nu.flatten()
+                    for i_scalar in range(len(nu)):
+                        viscosity_i = _get_ith_array(viscosity, i_scalar)
+                        viscosity_i.InsertNextValue(nu[i_scalar])
                 else:
                     viscosity.InsertNextValue(nu)
         assert i_point == len(values)
@@ -193,7 +194,7 @@ class SolverBase(abc.ABC):
             grid.GetPointData().SetScalars(solutions[i_component])
         if self._spatial.viscosity():
             if type(nu) is np.ndarray:
-                for i_component in range(n_component):
+                for i_component in range(len(nu)):
                     name = viscosity_names[i_component]
                     grid.GetPointData().SetActiveScalars(name)
                     grid.GetPointData().SetScalars(viscosity[i_component])

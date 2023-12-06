@@ -462,12 +462,18 @@ class Linear(Energy):
         self._face_to_eigmats = dict()
         self._cell_to_eigmats = dict()
 
+    def name(self, verbose=False) -> str:
+        if verbose:
+            return 'Linear(' + r'$\tau=$' + f'{self._tau})'
+        else:
+            return 'Linear'
+
     def _get_convective_eigmats(self, cell: concept.Element, i_node: int):
         i_to_L, i_to_R = self._cell_to_eigmats[cell]
         return i_to_L[i_node], i_to_R[i_node]
 
     @staticmethod
-    def _get_convex_ratios(cell: concept.Element, x_global: float):
+    def _get_convex_ratios(x_global: float, cell: concept.Element):
         r = (x_global - cell.x_left()) / cell.length()
         return 1 - r, r
 
@@ -492,8 +498,8 @@ class Linear(Energy):
                 continue
             # linearize eigmats on cells and cache them on nodes
             left_face, right_face = cell_i.get_faces()
-            L_on_left, R_on_left = self._face_to_eigmats(left_face)
-            L_on_right, R_on_right = self._face_to_eigmats(right_face)
+            L_on_left, R_on_left = self._face_to_eigmats[left_face]
+            L_on_right, R_on_right = self._face_to_eigmats[right_face]
             lagrange = cell_i.expansion()
             assert isinstance(lagrange, expansion.Lagrange)
             points = lagrange.get_sample_points()
@@ -556,9 +562,9 @@ class Linear(Energy):
             self._index_to_nu[i_cell], right_nu)
         # eigen-wise viscosity to physical viscosity
         if isinstance(left_nu, np.ndarray):
-            left_L, left_R = self._face_to_eigmats(left_face)
+            left_L, left_R = self._face_to_eigmats[left_face]
             left_nu = Linear._span(left_nu, left_L, left_R)
-            right_L, right_R = self._face_to_eigmats(right_face)
+            right_L, right_R = self._face_to_eigmats[right_face]
             right_nu = Linear._span(right_nu, right_L, right_R)
         def coeff(x_global: float):
             l, r = Linear._get_convex_ratios(x_global, cell)
