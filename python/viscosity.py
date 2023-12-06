@@ -97,6 +97,39 @@ class Energy(concept.Viscosity):
             energy += curr.get_sample_weight(k) * jumps[k]**2 / 2
         return energy
 
+    def _get_dissipation_rate(self, cell: element.FRonGaussPoints):
+        if not cell._disspation_matrices:
+            mat_b, mat_c, mat_d, mat_e, mat_f = cell.get_dissipation_matrices()
+            mat_d += mat_b - mat_c
+            mat_w = np.eye(cell.n_term())
+            for k in range(cell.n_term()):
+                mat_w[k][k] = cell.expansion().get_sample_weight(k)
+            cell._disspation_matrices = (mat_w@mat_d, mat_w@mat_e, mat_w@mat_f)
+        mat_d, mat_e, mat_f = cell._disspation_matrices
+        n_component = cell.equation().n_component()
+        if n_component == 1:
+            column = cell.get_solution_column()
+            dissipation = mat_d @ column
+            # left, right = cell.neighbor_expansions()
+            # dissipation += mat_e @ left.get_coeff_ref()
+            # dissipation += mat_f @ right.get_coeff_ref()
+            dissipation = column.transpose() @ dissipation
+            assert dissipation < 0, dissipation
+        else:
+            U = cell.expansion().get_sample_values()
+            V = np.ndarray((cell.n_term(), n_component))
+            for i_node in range(cell.n_term()):
+                L, _ = self._get_convective_eigmats(cell, i_node)
+                V[i_node, :] = L @ U[i_node]
+            dissipation = np.ndarray(n_component)
+            for i_comp in range(n_component):
+                column = V[:, i_comp]
+                dissipation_i = column.transpose() @ (mat_d @ column)
+                assert dissipation_i < 0, dissipation_i
+                dissipation[i_comp] = dissipation_i
+        # print(f'dissipation = {dissipation:.2e}')
+        return dissipation
+
     @abc.abstractmethod
     def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
         pass
@@ -291,7 +324,7 @@ class Energy(concept.Viscosity):
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
         assert isinstance(curr, element.FRonLegendreRoots)
-        dissipation = curr.get_dissipation_rate()
+        dissipation = self._get_dissipation_rate(curr)
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
         # if type(nu) is np.ndarray:
