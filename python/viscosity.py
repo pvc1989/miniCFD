@@ -541,7 +541,7 @@ class Linear(Energy):
         n = len(diag)
         result = np.zeros((n, n))
         for i in range(n):
-            result += right[:, i] @ (diag[i] * left[i])
+            result += np.tensordot(right[:, i], diag[i] * left[i], 0)
         return result
 
     def _get_callable_coeff(self, grid: concept.Grid, i_cell: int) -> callable:
@@ -564,6 +564,7 @@ class Linear(Energy):
         if isinstance(left_nu, np.ndarray):
             left_L, left_R = self._face_to_eigmats[left_face]
             left_nu = Linear._span(left_nu, left_L, left_R)
+            print(left_nu)
             right_L, right_R = self._face_to_eigmats[right_face]
             right_nu = Linear._span(right_nu, right_L, right_R)
         def coeff(x_global: float):

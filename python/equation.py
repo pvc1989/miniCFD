@@ -216,7 +216,7 @@ class Euler(concept.EquationSystem):
         L, R = self.get_convective_eigmats(U)
         B = np.zeros((3, 3))
         for i in range(3):
-            B += nu_vector[i] * np.tensordot(R[:, i], L[i], 0)
+            B += np.tensordot(R[:, i], nu_vector[i] * L[i], 0)
         return B
 
     def get_diffusive_flux(self, U, dx_U, nu_extra):
