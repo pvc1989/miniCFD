@@ -12,7 +12,7 @@ jobs:
     steps:
     - name: Install Dependencies on Linux
       if: startsWith(runner.os, 'Linux')
-      run: sudo apt update && sudo apt install libhdf5-mpi-dev
+      run: sudo apt update && sudo apt install libhdf5-mpi-dev libboost-all-dev
     - name: Install Dependencies on macOS
       if: startsWith(runner.os, 'macOS')
       run: brew install hdf5-mpi
