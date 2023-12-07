@@ -520,6 +520,14 @@ class LagrangeOnLobattoRoots(LagrangeOnGaussPoints):
             j_node = -1
         return self.get_derivatives_at_node(j_node, k_order, basis)
 
+    def approximate(self, function):
+        self._sample_values[0] = function(self._sample_points[0] + 1e-10)
+        for i in range(1, self._basis.n_term() - 1):
+            self._sample_values[i] = function(self._sample_points[i])
+        self._sample_values[-1] = function(self._sample_points[-1] - 1e-10)
+        self._set_taylor_coeff()
+        self._update_cached_average()
+
 
 class Legendre(Taylor):
     """Approximate a general function based on Legendre polynomials.
