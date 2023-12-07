@@ -28,7 +28,8 @@ target_link_libraries(test_mesh_part ${CGNS_LIB} ${MPI_LIBRARIES})
 set_target_properties(test_mesh_part PROPERTIES OUTPUT_NAME part)
 
 add_executable(test_mesh_cgal cgal.cpp)
-target_include_directories(test_mesh_cgal PRIVATE ${CGAL_INCLUDE_DIRS})
+target_include_directories(test_mesh_cgal PRIVATE ${CGAL_INCLUDE_DIRS} ${CGNS_INC})
+target_link_libraries(test_mesh_cgal ${CGNS_LIB})
 set_target_properties(test_mesh_cgal PROPERTIES OUTPUT_NAME cgal)
 add_test(NAME test_mesh_cgal COMMAND cgal)
 
