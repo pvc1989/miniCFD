@@ -211,7 +211,7 @@ class SolverBase(abc.ABC):
         writer.Write()
 
     def solve_and_write(self, t_start: float, t_stop: float,  n_step: int,
-            n_frame: int, format: str):
+            n_frame: int, format: str, plot_all: bool):
         """Solve the problem in a given time range and write to vtu/pdf files.
         """
         dt_max = (t_stop - t_start) / n_step
@@ -220,6 +220,7 @@ class SolverBase(abc.ABC):
             self._temp_detector, self._temp_limiter)
         self._spatial.apply_viscosity()
         t_curr = t_start
+        i_moment = 0
         for i_frame in range(n_frame+1):
             print(f'i_frame = {i_frame}, t = {t_curr:.2e}')
             if format == 'vtu':
@@ -235,11 +236,15 @@ class SolverBase(abc.ABC):
                 print(f't = {t_curr:.2e}, dt_max = {dt_max:.2e}',
                     f', dt_suggested = {dt_suggested:.2e}',
                     f', dt_actual = {dt_actual:.2e}')
+                if plot_all:
+                    self._write_to_vtu(f'Moment{i_moment}.vtu', t_curr)
+                i_moment += 1
                 try:
                     self._ode_solver.update(self._spatial, dt_actual, t_curr)
                     self._spatial.apply_viscosity()
                 except Exception as e:
-                    self._write_to_vtu(f'broken_at_t={t_curr:.2e}.vtu', t_curr)
+                    print(f'broken at Moment{i_moment}')
+                    self._write_to_vtu(f'Moment{i_moment}.vtu', t_curr)
                     raise e
                 t_curr += dt_actual
 
@@ -560,6 +565,8 @@ if __name__ == '__main__':
         prog = 'python3 solver.py',
         description = 'What the program does',
         epilog = 'Text at the bottom of help')
+    parser.add_argument('--plot_all',    # on/off flag
+        action='store_true')
     parser.add_argument('-n', '--n_element',
         default=23, type=int,
         help='number of elements')
@@ -716,5 +723,5 @@ if __name__ == '__main__':
         solver.animate(args.t_begin, args.t_end, args.n_step, args.n_frame)
     else:
         solver.solve_and_write(args.t_begin, args.t_end, args.n_step,
-            args.n_frame, args.output)
+            args.n_frame, args.output, args.plot_all)
 
