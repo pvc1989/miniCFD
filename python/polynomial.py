@@ -1,7 +1,7 @@
 """Implement some special polynomials.
 """
 import numpy as np
-from scipy.special import eval_legendre
+from scipy.special import eval_legendre, roots_legendre
 
 from concept import Polynomial
 
@@ -34,6 +34,56 @@ class Radau(Polynomial):
         left = (legendre_derivative_curr + legendre_derivative_prev) / 2
         right = legendre_derivative_curr - legendre_derivative_prev
         right *= (-1)**self._k / 2
+        return (left, right)
+
+
+class Huynh(Polynomial):
+
+    def __init__(self, degree: int, n_lump: int) -> None:
+        super().__init__()
+        assert 0 <= degree <= 9
+        assert 1 <= n_lump <= degree
+        n_term = degree + 1
+        a = np.zeros((n_term, n_term))
+        b = np.zeros(n_term)
+        # lumping conditions
+        factorials = np.ones(n_term)
+        for i in range(2, n_term):
+            factorials[i] = factorials[i - 1] * i
+        for l in range(n_lump):
+            for i in range(n_term):
+                if i >= l:
+                    a[l][i] = (-1)**(i - l) * factorials[i] / factorials[i - l]
+        # orthogonality conditions
+        x, w = roots_legendre(degree)
+        for l in range(n_lump, degree):
+            p_legendre = l - n_lump
+            for i in range(n_term):
+                for q in range(len(x)):
+                    a[l][i] += x[q]**i * eval_legendre(p_legendre, x[q]) * w[q]
+        # boundary value condition
+        a[degree] = 1
+        b[degree] = 1
+        self._value_coeff = np.linalg.solve(a, b)
+        self._grad_coeff = b
+        for i in range(n_term):
+            self._grad_coeff[i] = self._value_coeff[i] * i
+        self._powers = np.arange(n_term)
+
+    def _local_to_right_value(self, x_local):
+        return self._value_coeff.dot(x_local ** self._powers)
+
+    def local_to_value(self, x_local):
+        left = self._local_to_right_value(-x_local)
+        right = self._local_to_right_value(x_local)
+        return (left, right)
+
+    def _local_to_right_grad(self, x_local):
+        return self._grad_coeff.dot(x_local ** self._powers)
+
+    def local_to_gradient(self, x_local):
+        left = self._local_to_right_grad(-x_local)
+        right = self._local_to_right_grad(x_local)
         return (left, right)
 
 

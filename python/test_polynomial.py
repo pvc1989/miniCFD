@@ -5,7 +5,7 @@ import numpy as np
 from scipy import integrate
 from matplotlib import pyplot as plt
 
-from polynomial import Radau, Vincent, LagrangeBasis
+from polynomial import Radau, Huynh, Vincent, LagrangeBasis
 
 
 class TestRadau(unittest.TestCase):
@@ -57,6 +57,39 @@ class TestRadau(unittest.TestCase):
         plt.legend()
         # plt.show()
         plt.savefig("radau.svg")
+
+
+class TestHuynh(unittest.TestCase):
+    """Test the Huynh class.
+    """
+
+    def __init__(self, method_name: str = "") -> None:
+        super().__init__(method_name)
+
+    def test_plot(self):
+        """Plot the curves of the two Radau polynomials and their derivatives."""
+        n_point = 201
+        points = np.linspace(-1.0, 1.0, n_point)
+        right_values = np.zeros(n_point)
+        right_derivatives = np.zeros(n_point)
+        degree = 5
+        plt.figure()
+        for n_lump in range(1, degree + 1):
+            huynh = Huynh(degree, n_lump)
+            for i in range(n_point):
+                point_i = points[i]
+                _, right_values[i] = huynh.local_to_value(point_i)
+                _, right_derivatives[i] = huynh.local_to_gradient(point_i)
+            plt.subplot(1, 2, 1)
+            plt.plot(points, right_values, label=r'$g$'+f'({degree}, {n_lump})')
+            plt.subplot(1, 2, 2)
+            plt.plot(points, right_derivatives, label=r"$g'$"+f'({degree}, {n_lump})')
+        plt.subplot(1, 2, 1)
+        plt.legend()
+        plt.subplot(1, 2, 2)
+        plt.legend()
+        # plt.show()
+        plt.savefig("HuynhLumping.svg")
 
 
 class TestVincent(unittest.TestCase):
@@ -132,7 +165,7 @@ class TestVincent(unittest.TestCase):
         plt.plot(points, right_derivatives, 'b-', label= r'$dg_{+1}/d\xi$')
         plt.legend()
         # plt.show()
-        plt.savefig("huyhn.svg")
+        plt.savefig("HuynhFromVincent.svg")
 
 
 class TestLagrangeBasis(unittest.TestCase):
