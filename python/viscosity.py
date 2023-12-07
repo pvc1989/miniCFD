@@ -82,7 +82,7 @@ class Energy(concept.Viscosity):
         if not indices:
             indices = range(len(jumps))
         curr = cell.expansion()
-        assert isinstance(curr, expansion.LagrangeOnLegendreRoots)
+        assert isinstance(curr, expansion.LagrangeOnGaussPoints)
         if cell.is_system():
             new_jumps = np.ndarray(len(jumps), np.ndarray)
             for i_node in indices:
@@ -151,7 +151,7 @@ class Energy(concept.Viscosity):
             return Energy._min(self._jumps_to_energy(left_jumps, cell),
                                self._jumps_to_energy(right_jumps, cell))
 
-    def _get_high_order_energy(self, cell: element.FRonLegendreRoots,
+    def _get_high_order_energy(self, cell: element.FRonGaussPoints,
             points: np.ndarray, values: np.ndarray):
         """Compare with polynomials on neighbors.
         """
@@ -168,7 +168,7 @@ class Energy(concept.Viscosity):
                 right_jumps[i] = values[i] - right.global_to_value(x_curr)
         return Energy._min_energy(left, left_jumps, right, right_jumps, cell)
 
-    def _get_low_order_energy(self, cell: element.FRonLegendreRoots,
+    def _get_low_order_energy(self, cell: element.FRonGaussPoints,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=1 polynomials borrowed from neighbors.
         """
@@ -191,7 +191,7 @@ class Energy(concept.Viscosity):
                 right_jumps[i] = values[i] - right_low.global_to_value(points[i])
         return Energy._min_energy(left, left_jumps, right, right_jumps, cell)
 
-    def _get_lazy_half_energy(self, cell: element.FRonLegendreRoots,
+    def _get_lazy_half_energy(self, cell: element.FRonGaussPoints,
             points: np.ndarray, values: np.ndarray):
         """Compare with p=k and p=1 extensions from neighbors in the closer half using the integrator on cell.
         """
@@ -232,7 +232,7 @@ class Energy(concept.Viscosity):
                 self._jumps_to_energy(high_jumps, cell, indices))
         return left_energy + right_energy
 
-    def _get_exact_half_energy(self, cell: element.FRonLegendreRoots):
+    def _get_exact_half_energy(self, cell: element.FRonGaussPoints):
         """Same as _get_lazy_half_energy, but using integrators on subcells.
         """
         def get_energy(coord: concept.Coordinate,
@@ -264,7 +264,7 @@ class Energy(concept.Viscosity):
                                get_energy(right_coord, curr, right_low))
         return left_energy + right_energy
 
-    def _get_interface_jump_energy(self, cell: element.FRonLegendreRoots):
+    def _get_interface_jump_energy(self, cell: element.FRonGaussPoints):
         """Compute derivative jumps on interfaces.
         """
         curr = cell.expansion()
@@ -295,7 +295,7 @@ class Energy(concept.Viscosity):
         else:
             return right_energy
 
-    def _get_oscillation_energy(self, cell: element.FRonLegendreRoots):
+    def _get_oscillation_energy(self, cell: element.FRonGaussPoints):
         """Compare with four polynomials borrowed from neighbors.
         """
         lagrange = cell.expansion()
@@ -323,7 +323,7 @@ class Energy(concept.Viscosity):
 
     def _get_constant_coeff(self, grid: concept.Grid, i_curr: int):
         curr = grid.get_element_by_index(i_curr)
-        assert isinstance(curr, element.FRonLegendreRoots)
+        assert isinstance(curr, element.FRonGaussPoints)
         dissipation = self._get_dissipation_rate(curr)
         oscillation_energy = self._get_oscillation_energy(curr)
         nu = oscillation_energy / (-dissipation * self._tau)
@@ -371,7 +371,7 @@ class Quadratic(Energy):
     def _get_convective_eigmats(self, cell: concept.Element, i_node: int):
         return cell.get_convective_eigmats()
 
-    def _build_a_on_centers(self, cell: element.FRonLegendreRoots):
+    def _build_a_on_centers(self, cell: element.FRonGaussPoints):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         left, right = cell.neighbor_expansions()
@@ -388,7 +388,7 @@ class Quadratic(Energy):
         a[2][2] = h*h
         return a
 
-    def _build_a_on_interfaces(self, cell: element.FRonLegendreRoots):
+    def _build_a_on_interfaces(self, cell: element.FRonGaussPoints):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         h = cell.length() / 2
@@ -397,7 +397,7 @@ class Quadratic(Energy):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_on_interfaces_with_average(self, cell: element.FRonLegendreRoots):
+    def _build_a_on_interfaces_with_average(self, cell: element.FRonGaussPoints):
         a = np.eye(3)
         a[1][0] = a[2][0] = 1.0
         a[0][0] = cell.length()
@@ -408,7 +408,7 @@ class Quadratic(Energy):
         a[1][2] = a[2][2] = h*h
         return a
 
-    def _build_a_with_averages(self, cell: element.FRonLegendreRoots):
+    def _build_a_with_averages(self, cell: element.FRonGaussPoints):
         left, right = cell.neighbor_expansions()
         a = np.ndarray((3,3))
         a[0][0] = cell.length()

@@ -582,8 +582,8 @@ if __name__ == '__main__':
         default=500, type=int,
         help='number of time steps')
     parser.add_argument('-m', '--method',
-        choices=['DGonUniformRoots', 'DGonLegendreRoots', 'LegendreDG',
-                 'FRonUniformRoots', 'FRonLegendreRoots', 'LegendreFR'],
+        choices=['DGonUniformRoots', 'DGonLegendreRoots', 'DGonLobattoRoots', 'LegendreDG',
+                 'FRonUniformRoots', 'FRonLegendreRoots', 'FRonLobattoRoots', 'LegendreFR'],
         default='FRonLegendreRoots',
         help='method for spatial discretization')
     parser.add_argument('--detector',
