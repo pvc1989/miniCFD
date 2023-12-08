@@ -117,7 +117,10 @@ include_directories(${EIGEN_INC})
 
 set(CGAL_DISABLE_GMP ON)
 find_package(CGAL REQUIRED PATHS "${PROJECT_SOURCE_DIR}/ThirdParty/CGAL/Installation/lib/cmake/CGAL")
-# message("${CGAL_INCLUDE_DIRS}")
+
+find_package(Boost REQUIRED)
+list(PREPEND CGAL_INCLUDE_DIRS "${Boost_INCLUDE_DIR}")
+message("${CGAL_INCLUDE_DIRS}")
 
 # Additional headers that depends on ${PROJECT_SOURCE_DIR}
 include_directories("${PROJECT_SOURCE_DIR}/include")
