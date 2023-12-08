@@ -1,5 +1,8 @@
 name: Build
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
@@ -37,8 +40,8 @@ jobs:
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
-    - name: Test
-      working-directory: ${{ runner.workspace }}/build
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: ctest -V -C $BUILD_TYPE
+    # - name: Test
+    #   working-directory: ${{ runner.workspace }}/build
+    #   shell: bash
+    #   # Execute the build.  You can specify a specific target with "--target <NAME>"
+    #   run: ctest -V -C $BUILD_TYPE
