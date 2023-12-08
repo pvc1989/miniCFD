@@ -2,7 +2,7 @@
 """
 import unittest
 import numpy as np
-from scipy import integrate
+from scipy import integrate, special
 from matplotlib import pyplot as plt
 
 from polynomial import Radau, Huynh, Vincent, LagrangeBasis
@@ -91,6 +91,18 @@ class TestHuynh(unittest.TestCase):
         # plt.show()
         plt.savefig("HuynhLumping.svg")
 
+    def test_orthogonality(self):
+        """Test g(degree, n_lump) ⟂ Polynpmial_{k-2}.
+        """
+        for degree in range(2, 8):
+            for n_lump in range(1, degree + 1):
+                huynh = Huynh(degree, n_lump)
+                for p in range(degree - n_lump):
+                    integral, _ = integrate.quad(lambda x:
+                        special.eval_legendre(p, x) * huynh.local_to_value(x)[1],
+                        -1.0, 1.0)
+                    self.assertAlmostEqual(0.0, integral)
+
 
 class TestVincent(unittest.TestCase):
     """Test the Vincent class.
@@ -132,9 +144,9 @@ class TestVincent(unittest.TestCase):
         self.assertAlmostEqual(0.0, right)
 
     def test_orthogonality(self):
-        """Test Huynh_{k} ≡ g_{k+1} ⟂ Polynpmial_{k-2}.
+        """Test Huynh_{k} ⟂ Polynpmial_{k-2}.
         """
-        huynh = Vincent(self._degree, lambda k: 2 * (k+1) / (2*k + 1) / k)
+        huynh = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
         for k in range(self._degree - 1):
             integral, _ = integrate.quad(lambda x: x**k * huynh.local_to_value(x)[0],
                 -1.0, 1.0)
