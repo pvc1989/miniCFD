@@ -7,7 +7,15 @@ from concept import Polynomial
 
 
 class Radau(Polynomial):
-    """The left- and right- Radau polynomials.
+    r"""The left and right Radau polynomials.
+
+    The \f$ k \f$-degree left and right Radau polynomial are defined as
+      \f[
+        \mathrm{R}_{k,\mathrm{left}}(\xi) = \frac{\mathrm{P}_{k}(\xi)}{2} 
+                                 + \frac{\mathrm{P}_{k-1}(\xi)}{2},\quad
+        \mathrm{R}_{k,\mathrm{right}}(\xi) = \mathrm{R}_{k,\mathrm{left}}(-\xi),
+      \f]
+    where \f$ \mathrm{P}_{k} \f$ is the \f$ k \f$-degree Legendre polynomial.
     """
 
     def __init__(self, degree: int) -> None:
@@ -38,6 +46,13 @@ class Radau(Polynomial):
 
 
 class Huynh(Polynomial):
+    r"""The left and right \f$ g(\xi) \f$ in Huynh's FR schemes.
+
+    The right \f$ g(\xi) \f$ with lumping conditions up to the \f$ m \f$th derivative for a \f$ k \f$-degree \f$ u^h \f$ is a \f$ (k+1) \f$-degree polynomial, which satisfies 
+    (a) \f$ (m+1) \f$ lumping conditions \f$ g^{(0)}(-1) = \dots = g^{(m)}(-1) = 0 \f$, and 
+    (b) \f$ (k-m) \f$ orthogonality conditions \f$ g \perp \mathbb{P}_{0} \land \cdots \land g \perp \mathbb{P}_{k-m-1} \f$, and
+    (c) \f$ 1 \f$ boundary value condition \f$ g(1) = 1 \f$.
+    """
 
     def __init__(self, degree: int, n_lump: int) -> None:
         super().__init__()
@@ -88,10 +103,15 @@ class Huynh(Polynomial):
 
 
 class Vincent(Polynomial):
-    """The left- and right- g(ξ) in Vincent's ESFR schemes.
+    r"""The left and right \f$ g(\xi) \f$ in Vincent's ESFR schemes.
 
-    The right g(ξ) for a k-degree u^h is defined as
-        (P_{k} + prev_ratio * P_{k-1} + next_ratio * P_{k+1}) / 2
+    The right \f$ g(\xi) \f$ for a \f$ k \f$-degree \f$ u^h \f$ is defined as
+      \f[
+        g(\xi) = \frac{\mathrm{P}_{k}(\xi)}{2}
+        + (1 - \mu) \frac{\mathrm{P}_{k-1}(\xi)}{2}
+        +      \mu  \frac{\mathrm{P}_{k+1}(\xi)}{2},
+      \f]
+    where \f$ \mathrm{P}_{k} \f$ is the \f$ k \f$-degree Legendre polynomial.
     """
 
     @staticmethod
@@ -106,11 +126,11 @@ class Vincent(Polynomial):
     def huyhn_lump_lobatto(k: int):
         return k / (2*k + 1)
 
-    def __init__(self, degree: int, next_ratio=huyhn_lump_lobatto) -> None:
+    def __init__(self, degree: int, mu: callable = huyhn_lump_lobatto) -> None:
         super().__init__()
         assert 0 <= degree <= 9
         self._k = degree  # degree of solution, not the polynomial
-        self._next_ratio = next_ratio(degree)
+        self._next_ratio = mu(degree)
         self._prev_ratio = 1 - self._next_ratio
         self._local_to_gradient = dict()
 
