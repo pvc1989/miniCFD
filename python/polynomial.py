@@ -123,10 +123,10 @@ class Vincent(Polynomial):
         return (k + 1) / (2*k + 1)
 
     @staticmethod
-    def huyhn_lump_lobatto(k: int):
+    def huynh_lumping_lobatto(k: int):
         return k / (2*k + 1)
 
-    def __init__(self, degree: int, mu: callable = huyhn_lump_lobatto) -> None:
+    def __init__(self, degree: int, mu: callable = huynh_lumping_lobatto) -> None:
         super().__init__()
         assert 0 <= degree <= 9
         self._k = degree  # degree of solution, not the polynomial

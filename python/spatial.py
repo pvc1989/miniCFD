@@ -303,7 +303,7 @@ class FRonLobattoRoots(FluxReconstruction):
 
 
 class LegendreFR(FluxReconstruction):
-    """The ODE system given by Huyhn's FR method.
+    """The ODE system given by the FR method using a Legendre expansion.
     """
 
     def __init__(self, riemann: concept.RiemannSolver, degree: int,

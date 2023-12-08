@@ -175,7 +175,7 @@ class FluxReconstruction(Element):
 
     def __init__(self, r: RiemannSolver, e: Expansion) -> None:
         Element.__init__(self, r, e)
-        self._correction = Vincent(e.degree(), Vincent.huyhn_lump_lobatto)
+        self._correction = Vincent(e.degree(), Vincent.huynh_lumping_lobatto)
 
     def suggest_cfl(self, rk_order: int) -> float:
         return 2 * DiscontinuousGalerkin.suggest_cfl(self, rk_order)

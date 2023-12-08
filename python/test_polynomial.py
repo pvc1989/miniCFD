@@ -99,7 +99,7 @@ class TestVincent(unittest.TestCase):
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
         self._degree = 4
-        self._huyhn = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
+        self._huynh = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
 
     def test_radau_equivalence(self):
         """Test Vincent_{k} ≡ Radau_{k+1}, except for the meaning of left/right.
@@ -120,26 +120,26 @@ class TestVincent(unittest.TestCase):
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.
         """
-        left, right = self._huyhn.local_to_value(+1.0)
+        left, right = self._huynh.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
         self.assertAlmostEqual(1.0, right)
-        left, right = self._huyhn.local_to_value(-1.0)
+        left, right = self._huynh.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
         self.assertAlmostEqual(1.0, left)
-        left, right = self._huyhn.local_to_value(+1.0)
+        left, right = self._huynh.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
-        left, right = self._huyhn.local_to_value(-1.0)
+        left, right = self._huynh.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
 
     def test_orthogonality(self):
-        """Test Huyhn_{k} ≡ g_{k+1} ⟂ Polynpmial_{k-2}.
+        """Test Huynh_{k} ≡ g_{k+1} ⟂ Polynpmial_{k-2}.
         """
-        huyhn = Vincent(self._degree, lambda k: 2 * (k+1) / (2*k + 1) / k)
+        huynh = Vincent(self._degree, lambda k: 2 * (k+1) / (2*k + 1) / k)
         for k in range(self._degree - 1):
-            integral, _ = integrate.quad(lambda x: x**k * huyhn.local_to_value(x)[0],
+            integral, _ = integrate.quad(lambda x: x**k * huynh.local_to_value(x)[0],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
-            integral, _ = integrate.quad(lambda x: x**k * huyhn.local_to_value(x)[1],
+            integral, _ = integrate.quad(lambda x: x**k * huynh.local_to_value(x)[1],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
 
@@ -153,8 +153,8 @@ class TestVincent(unittest.TestCase):
         right_derivatives = np.zeros(n_point)
         for i in range(n_point):
             point_i = points[i]
-            left_values[i], right_values[i] = self._huyhn.local_to_value(point_i)
-            left_derivatives[i], right_derivatives[i] = self._huyhn.local_to_gradient(point_i)
+            left_values[i], right_values[i] = self._huynh.local_to_value(point_i)
+            left_derivatives[i], right_derivatives[i] = self._huynh.local_to_gradient(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         plt.plot(points, left_values, 'r--', label=r'$g_{-1}(\xi)$')

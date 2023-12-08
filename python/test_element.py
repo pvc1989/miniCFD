@@ -161,7 +161,7 @@ class TestFRonLegendreRoots(unittest.TestCase):
         self.assertAlmostEqual(upwind_flux_right,
             self._element.get_fr_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
-        vincent = Vincent(self._degree, Vincent.huyhn_lump_lobatto)
+        vincent = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
         for x_global in self._test_points:
             flux_actual = self._element.get_fr_flux(x_global,
                 upwind_flux_left, upwind_flux_right)
