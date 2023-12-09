@@ -16,6 +16,7 @@ class TestRadau(unittest.TestCase):
         super().__init__(method_name)
         self._degree = 5
         self._radau = Radau(self._degree)
+        assert self._radau.degree() == self._degree
 
     def test_values_at_ends(self):
         """Test values and -1 and +1.
@@ -72,10 +73,11 @@ class TestHuynh(unittest.TestCase):
         points = np.linspace(-1.0, 1.0, n_point)
         right_values = np.zeros(n_point)
         right_derivatives = np.zeros(n_point)
-        degree = 5
+        degree = 4
         plt.figure()
         for n_lump in range(1, degree + 1):
             huynh = Huynh(degree, n_lump)
+            self.assertEqual(huynh.degree(), degree)
             for i in range(n_point):
                 point_i = points[i]
                 _, right_values[i] = huynh.local_to_value(point_i)
@@ -92,9 +94,9 @@ class TestHuynh(unittest.TestCase):
         plt.savefig("HuynhLumping.svg")
 
     def test_orthogonality(self):
-        """Test g(degree, n_lump) ⟂ Polynpmial_{k-2}.
+        """Test g(degree, n_lump) ⟂ Polynpmial_{degree - n_lump - 1}.
         """
-        for degree in range(2, 8):
+        for degree in range(1, 8):
             for n_lump in range(1, degree + 1):
                 huynh = Huynh(degree, n_lump)
                 for p in range(degree - n_lump):
@@ -110,14 +112,15 @@ class TestVincent(unittest.TestCase):
 
     def __init__(self, method_name: str = "") -> None:
         super().__init__(method_name)
-        self._degree = 4
-        self._huynh = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
+        self._degree = 5
+        self._vincent = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
 
     def test_radau_equivalence(self):
         """Test Vincent_{k} ≡ Radau_{k+1}, except for the meaning of left/right.
         """
-        radau = Radau(self._degree + 1)
+        radau = Radau(self._degree)
         vincent = Vincent(self._degree, Vincent.discontinuous_galerkin)
+        self.assertEqual(radau.degree(), vincent.degree())
         points = np.linspace(-1, 1, num=3)
         for x in points:
             radau_left, radau_right = radau.local_to_value(x)
@@ -132,22 +135,22 @@ class TestVincent(unittest.TestCase):
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.
         """
-        left, right = self._huynh.local_to_value(+1.0)
+        left, right = self._vincent.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
         self.assertAlmostEqual(1.0, right)
-        left, right = self._huynh.local_to_value(-1.0)
+        left, right = self._vincent.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
         self.assertAlmostEqual(1.0, left)
-        left, right = self._huynh.local_to_value(+1.0)
+        left, right = self._vincent.local_to_value(+1.0)
         self.assertAlmostEqual(0.0, left)
-        left, right = self._huynh.local_to_value(-1.0)
+        left, right = self._vincent.local_to_value(-1.0)
         self.assertAlmostEqual(0.0, right)
 
     def test_orthogonality(self):
-        """Test Huynh_{k} ⟂ Polynpmial_{k-2}.
+        """Test Huynh_{k} ⟂ Polynpmial_{k-3}.
         """
         huynh = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
-        for k in range(self._degree - 1):
+        for k in range(self._degree - 2):
             integral, _ = integrate.quad(lambda x: x**k * huynh.local_to_value(x)[0],
                 -1.0, 1.0)
             self.assertAlmostEqual(0.0, integral)
@@ -165,8 +168,8 @@ class TestVincent(unittest.TestCase):
         right_derivatives = np.zeros(n_point)
         for i in range(n_point):
             point_i = points[i]
-            left_values[i], right_values[i] = self._huynh.local_to_value(point_i)
-            left_derivatives[i], right_derivatives[i] = self._huynh.local_to_gradient(point_i)
+            left_values[i], right_values[i] = self._vincent.local_to_value(point_i)
+            left_derivatives[i], right_derivatives[i] = self._vincent.local_to_gradient(point_i)
         plt.figure()
         plt.subplot(2, 1, 1)
         plt.plot(points, left_values, 'r--', label=r'$g_{-1}(\xi)$')
@@ -189,6 +192,7 @@ class TestLagrangeBasis(unittest.TestCase):
         self._n_point = 5
         points = np.linspace(-1.0, 1.0, self._n_point)
         self._lagrange = LagrangeBasis(points)
+        assert self._lagrange.degree() == self._n_point - 1
 
     def test_plot(self):
         """Plot the curves of each Lagrange polynomial.

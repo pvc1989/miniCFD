@@ -23,6 +23,9 @@ class Radau(Polynomial):
         assert 1 <= degree
         self._k = degree
 
+    def degree(self):
+        return self._k
+
     def local_to_value(self, x_local):
         legendre_value_curr = eval_legendre(self._k, x_local)
         legendre_value_prev = eval_legendre(self._k-1, x_local)
@@ -56,7 +59,7 @@ class Huynh(Polynomial):
 
     def __init__(self, degree: int, n_lump: int) -> None:
         super().__init__()
-        assert 0 <= degree <= 9
+        assert 1 <= degree <= 10
         assert 1 <= n_lump <= degree
         n_term = degree + 1
         a = np.zeros((n_term, n_term))
@@ -84,6 +87,9 @@ class Huynh(Polynomial):
         for i in range(n_term):
             self._grad_coeff[i] = self._value_coeff[i] * i
         self._powers = np.arange(n_term)
+
+    def degree(self):
+        return len(self._value_coeff) - 1
 
     def _local_to_right_value(self, x_local):
         return self._value_coeff.dot(x_local ** self._powers)
@@ -128,11 +134,14 @@ class Vincent(Polynomial):
 
     def __init__(self, degree: int, mu: callable = huynh_lumping_lobatto) -> None:
         super().__init__()
-        assert 0 <= degree <= 9
-        self._k = degree  # degree of solution, not the polynomial
-        self._next_ratio = mu(degree)
+        assert 1 <= degree <= 10
+        self._k = degree - 1  # degree of solution
+        self._next_ratio = mu(self._k)
         self._prev_ratio = 1 - self._next_ratio
         self._local_to_gradient = dict()
+
+    def degree(self):
+        return self._k + 1
 
     def local_to_value(self, x_local):
         def right(xi):
@@ -177,6 +186,9 @@ class IthLagrange(Polynomial):
     def n_point(self):
         return len(self._points)
 
+    def degree(self):
+        return len(self._points) - 1
+
     def local_to_value(self, x_local: float):
         value = 1.0
         for j in range(self.n_point()):
@@ -217,6 +229,9 @@ class LagrangeBasis(Polynomial):
 
     def n_term(self):
         return len(self._points)
+
+    def degree(self):
+        return len(self._points) - 1
 
     def local_to_value(self, x_local):
         values = np.ndarray(self.n_term())
