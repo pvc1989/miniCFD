@@ -62,7 +62,10 @@ class TestFRonGaussPoints(unittest.TestCase):
         for method in (element.FRonLegendreRoots, element.FRonLobattoRoots):
             for r in (self._vector_riemann, self._scalar_riemann):
                 for p in range(1, 8):
-                    self._elements.append(method(r, p, c))
+                    e = method(r, p, c)
+                    g = Vincent(p + 1, Vincent.huynh_lumping_lobatto)
+                    e.add_correction_function(g)
+                    self._elements.append(e)
 
     def test_interior_residuals(self):
         np.random.seed(31415926)
@@ -110,9 +113,11 @@ class TestFRonLegendreRoots(unittest.TestCase):
         self._x_left = 0.0
         self._x_right = np.pi * 2
         self._test_points = np.linspace(self._x_left, self._x_right)
-        self.coordinate = coordinate.Linear(self._x_left, self._x_right)
+        self._coordinate = coordinate.Linear(self._x_left, self._x_right)
+        self._g = Vincent(self._degree + 1, Vincent.huynh_lumping_lobatto)
         self._element = element.FRonLegendreRoots(self._riemann, self._degree,
-            self.coordinate)
+            self._coordinate)
+        self._element.add_correction_function(self._g)
         self._element.approximate(np.sin)
 
     def test_plot(self):
@@ -161,13 +166,13 @@ class TestFRonLegendreRoots(unittest.TestCase):
         self.assertAlmostEqual(upwind_flux_right,
             self._element.get_fr_flux(self._x_right,
                 upwind_flux_left, upwind_flux_right))
-        vincent = Vincent(self._degree, Vincent.huynh_lumping_lobatto)
+        vincent = Vincent(self._degree + 1, Vincent.huynh_lumping_lobatto)
         for x_global in self._test_points:
             flux_actual = self._element.get_fr_flux(x_global,
                 upwind_flux_left, upwind_flux_right)
             # fr_flux = dg_flux + correction
             flux_expect = self._element.get_dg_flux(x_global)
-            x_local = self.coordinate.global_to_local(x_global)
+            x_local = self._coordinate.global_to_local(x_global)
             left, right = vincent.local_to_value(x_local)
             flux_expect += left * (upwind_flux_left
                 - self._element.get_dg_flux(self._x_left))

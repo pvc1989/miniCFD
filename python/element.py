@@ -3,8 +3,7 @@
 import abc
 import numpy as np
 
-from concept import Expansion, Element, RiemannSolver, Coordinate
-from polynomial import Vincent
+from concept import Expansion, Element, RiemannSolver, Coordinate, Polynomial
 from expansion import LagrangeOnGaussPoints
 from expansion import LagrangeOnUniformRoots
 from expansion import LagrangeOnLegendreRoots
@@ -175,10 +174,14 @@ class FluxReconstruction(Element):
 
     def __init__(self, r: RiemannSolver, e: Expansion) -> None:
         Element.__init__(self, r, e)
-        self._correction = Vincent(e.degree(), Vincent.huynh_lumping_lobatto)
+        self._correction = None
 
     def suggest_cfl(self, rk_order: int) -> float:
         return 2 * DiscontinuousGalerkin.suggest_cfl(self, rk_order)
+
+    def add_correction_function(self, g: Polynomial):
+        assert g.degree() == self.degree() + 1
+        self._correction = g
 
     def get_correction_gradients(self, x_global):
         """Get the gradients of the correction functions at a given point.
@@ -209,6 +212,18 @@ class LagrangeFR(FluxReconstruction):
     def __init__(self, r: RiemannSolver, e: expansion.Lagrange) -> None:
         FluxReconstruction.__init__(self, r, e)
         self._disspation_matrices = None
+        self._correction_gradients = None
+
+    def add_correction_function(self, g: Polynomial):
+        super().add_correction_function(g)
+        self._correction_gradients = np.ndarray(self.n_term(), tuple)
+        points = self.expansion().get_sample_points()
+        i_sample = 0
+        for x_global in points:
+            self._correction_gradients[i_sample] = \
+                self.get_correction_gradients(x_global)
+            i_sample += 1
+        assert i_sample == self.n_term()
 
     def expansion(self) -> expansion.Lagrange:
         return Element.expansion(self)
@@ -377,14 +392,6 @@ class FRonGaussPoints(LagrangeFR):
         e = LagrangeExpansion(degree, coordinate, riemann.value_type())
         FluxReconstruction.__init__(self, riemann, e)
         self._disspation_matrices = None
-        self._correction_gradients = np.ndarray(self.n_term(), tuple)
-        points = self.expansion().get_sample_points()
-        i_sample = 0
-        for x_global in points:
-            self._correction_gradients[i_sample] = \
-                self.get_correction_gradients(x_global)
-            i_sample += 1
-        assert i_sample == self.n_term()
 
     def expansion(self) -> LagrangeOnGaussPoints:
         return Element.expansion(self)
