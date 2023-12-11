@@ -105,6 +105,21 @@ class TestHuynh(unittest.TestCase):
                         -1.0, 1.0)
                     self.assertAlmostEqual(0.0, integral)
 
+    def test_symmetry(self):
+        """Test g_left(x) = g_right(-x).
+        """
+        points = -1 + 2 * np.random.rand(1024)
+        for degree in range(1, 8):
+            for n_lump in range(1, degree + 1):
+                huynh = Huynh(degree, n_lump)
+                for x in points:
+                    left, _ = huynh.local_to_value(x)
+                    _, right = huynh.local_to_value(-x)
+                    self.assertEqual(left, right)
+                    left, _ = huynh.local_to_gradient(x)
+                    _, right = huynh.local_to_gradient(-x)
+                    self.assertEqual(left, -right)
+
 
 class TestVincent(unittest.TestCase):
     """Test the Vincent class.
@@ -131,6 +146,29 @@ class TestVincent(unittest.TestCase):
             vincent_left, vincent_right = vincent.local_to_gradient(x)
             self.assertAlmostEqual(radau_left, vincent_right)
             self.assertAlmostEqual(radau_right, vincent_left)
+
+    def test_huynh_equivalence(self):
+        """Test g_huynh(p, 1) = g_vincent(p, dg) and
+                g_huynh(p, 2) = g_vincent(p, fr).
+        """
+        points = -1 + 2 * np.random.rand(1024)
+        for degree in range(2, 8):
+            pairs = [
+                (Huynh(degree, 1),
+                 Vincent(degree, Vincent.discontinuous_galerkin)),
+                (Huynh(degree, 2),
+                 Vincent(degree, Vincent.huynh_lumping_lobatto)),
+            ]
+            for huynh, vincent in pairs:
+                for x in points:
+                    huynh_left, huynh_right = huynh.local_to_value(x)
+                    vincent_left, vincent_right = vincent.local_to_value(x)
+                    self.assertAlmostEqual(huynh_left, vincent_left)
+                    self.assertAlmostEqual(huynh_right, vincent_right)
+                    huynh_left, huynh_right = huynh.local_to_gradient(x)
+                    vincent_left, vincent_right = vincent.local_to_gradient(x)
+                    self.assertAlmostEqual(huynh_left, vincent_left)
+                    self.assertAlmostEqual(huynh_right, vincent_right)
 
     def test_values_at_ends(self):
         """Test values and derivatives and -1 and +1.

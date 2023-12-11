@@ -86,13 +86,15 @@ class Huynh(Polynomial):
         self._grad_coeff = b
         for i in range(n_term):
             self._grad_coeff[i] = self._value_coeff[i] * i
-        self._powers = np.arange(n_term)
+        self._value_powers = np.arange(n_term)
+        self._grad_powers = np.arange(n_term) - 1
+        self._grad_powers[0] = 0
 
     def degree(self):
         return len(self._value_coeff) - 1
 
     def _local_to_right_value(self, x_local):
-        return self._value_coeff.dot(x_local ** self._powers)
+        return self._value_coeff.dot(x_local ** self._value_powers)
 
     def local_to_value(self, x_local):
         left = self._local_to_right_value(-x_local)
@@ -100,10 +102,10 @@ class Huynh(Polynomial):
         return (left, right)
 
     def _local_to_right_grad(self, x_local):
-        return self._grad_coeff.dot(x_local ** self._powers)
+        return self._grad_coeff.dot(x_local ** self._grad_powers)
 
     def local_to_gradient(self, x_local):
-        left = self._local_to_right_grad(-x_local)
+        left = -self._local_to_right_grad(-x_local)
         right = self._local_to_right_grad(x_local)
         return (left, right)
 
