@@ -147,7 +147,7 @@ class WaveNumberDisplayer:
         plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.svg')
 
     def compare_wave_numbers(self, methods, degrees, degree_to_corrections,
-            n_sample: int, compressed=False):
+            n_sample: int, compressed: bool, name: str):
         linestyles = [
             ('dotted',                (0, (1, 1))),
             ('loosely dotted',        (0, (1, 4))),
@@ -205,7 +205,7 @@ class WaveNumberDisplayer:
         plt.legend(handlelength=4)
         plt.tight_layout()
         # plt.show()
-        plt.savefig(f'compare_wave_numbers.svg')
+        plt.savefig(f'{name}.svg')
 
 
 if __name__ == '__main__':
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         default='LegendreDG',
         help='method for spatial discretization')
     parser.add_argument('-d', '--degree',
-        default=2, type=int,
+        default=3, type=int,
         help='degree of polynomials for approximation')
     parser.add_argument('-n', '--n_element',
         default=10, type=int,
@@ -252,13 +252,22 @@ if __name__ == '__main__':
     else:
         assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
-    g = Vincent(args.degree + 1, Vincent.huynh_lumping_lobatto)
-    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, g, args.n_sample)
-    wnd.compare_wave_numbers(methods=[spatial.LegendreDG,
+    wnd.plot_modified_wavenumbers(SpatialClass, args.degree,
+        Vincent(args.degree + 1, Vincent.huynh_lumping_lobatto), args.n_sample)
+    wnd.compare_wave_numbers([spatial.LegendreDG,
         spatial.DGonLegendreRoots, spatial.DGonLobattoRoots,
         spatial.FRonLegendreRoots, spatial.FRonUniformRoots,],
-        degrees=[3],
-        degree_to_corrections=[
-            lambda p: Vincent(p + 1, Vincent.huynh_lumping_lobatto)
-        ],
-        n_sample=args.n_sample, compressed=args.compressed)
+        [args.degree], [lambda p: Huynh(p + 1, 2)],
+        args.n_sample, args.compressed, 'DGvsFR')
+    degree_to_corrections = [
+        lambda p: Vincent(p + 1, Vincent.discontinuous_galerkin),
+        lambda p: Vincent(p + 1, Vincent.huynh_lumping_lobatto),
+        lambda p: Huynh(p + 1, 1),
+        lambda p: Huynh(p + 1, 2),
+        lambda p: Huynh(p + 1, 3),
+        lambda p: Huynh(p + 1, 4),
+        lambda p: Huynh(p + 1, 5),
+    ]
+    wnd.compare_wave_numbers([spatial.FRonLobattoRoots],
+        [5], degree_to_corrections,
+        args.n_sample, args.compressed, 'HuynhFR')
