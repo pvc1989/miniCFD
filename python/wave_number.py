@@ -4,8 +4,10 @@ import argparse
 import numpy as np
 from matplotlib import pyplot as plt
 
+import concept
 import spatial
 import riemann
+from polynomial import Huynh, Vincent
 
 
 class WaveNumberDisplayer:
@@ -19,10 +21,12 @@ class WaveNumberDisplayer:
         self._x_right = x_right
         self._n_element = n_element
 
-    def build_scheme(self, Method, degree: int):
+    def build_scheme(self, Method, degree: int, g: concept.Polynomial):
         assert issubclass(Method, spatial.FiniteElement)
         scheme = Method(self._riemann,
             degree, self._n_element, self._x_left, self._x_right)
+        if isinstance(scheme, spatial.FluxReconstruction):
+            scheme.add_correction_function(g)
         return scheme
 
     def get_spatial_matrix(self, scheme: spatial.FiniteElement, kappa_h: float):
@@ -52,14 +56,13 @@ class WaveNumberDisplayer:
                 matrix[:, col] /= np.exp(1j * i_element * kappa_h)
         return matrices[-1]
 
-    def get_modified_wavenumbers(self, Method, degree: int,
+    def get_modified_wavenumbers(self, scheme: spatial.FiniteElement,
             sampled_wavenumbers: np.ndarray):
         """Get the eigenvalues of a scheme at a given set of wavenumbers.
         """
         n_sample = len(sampled_wavenumbers)
-        n_term = degree + 1
+        n_term = scheme.degree() + 1
         modified_wavenumbers = np.ndarray((n_sample, n_term), dtype=complex)
-        scheme = self.build_scheme(Method, degree)
         for i_sample in range(n_sample):
             kappa_h = sampled_wavenumbers[i_sample]
             matrix = self.get_spatial_matrix(scheme, kappa_h)
@@ -94,7 +97,8 @@ class WaveNumberDisplayer:
             physical_eigvals[i_sample] = pairs[i_mode][0]
         return physical_eigvals
 
-    def plot_modified_wavenumbers(self, Method, degree: int, n_sample: int):
+    def plot_modified_wavenumbers(self, Method, degree: int,
+            g: concept.Polynomial, n_sample: int):
         """Plot the tilde-kappa_h - kappa_h curves for a given scheme.
         """
         xticks_labels = np.linspace(-degree-1, degree+1, 2*degree+3, dtype=int)
@@ -102,8 +106,9 @@ class WaveNumberDisplayer:
         xticks_ticks = xticks_labels * np.pi
         kh_min, kh_max = xticks_ticks[0], xticks_ticks[-1]
         sampled_wavenumbers = np.linspace(kh_min, kh_max, n_sample)
-        modified_wavenumbers = self.get_modified_wavenumbers(Method,
-            degree, sampled_wavenumbers)
+        scheme = self.build_scheme(Method, degree, g)
+        modified_wavenumbers = self.get_modified_wavenumbers(
+            scheme, sampled_wavenumbers)
         physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
             modified_wavenumbers)
         plt.figure(figsize=(6,9))
@@ -138,11 +143,11 @@ class WaveNumberDisplayer:
         plt.legend()
         plt.tight_layout()
         # plt.show()
-        scheme = self.build_scheme(Method, degree)
+        scheme = self.build_scheme(Method, degree, g)
         plt.savefig(f'all_modes_of_{scheme.name(False)}_p={degree}.svg')
 
-    def compare_wave_numbers(self, methods, degrees, n_sample: int,
-            compressed=False):
+    def compare_wave_numbers(self, methods, degrees, degree_to_corrections,
+            n_sample: int, compressed=False):
         linestyles = [
             ('dotted',                (0, (1, 1))),
             ('loosely dotted',        (0, (1, 4))),
@@ -172,19 +177,23 @@ class WaveNumberDisplayer:
             kh_max = (degree + 1) * np.pi
             sampled_wavenumbers = np.linspace(0, kh_max, n_sample)
             scale = (degree * compressed + 1) * np.pi
-            for method in methods:
-                scheme = self.build_scheme(method, degree)
-                modified_wavenumbers = self.get_modified_wavenumbers(method,
-                    degree, sampled_wavenumbers)
-                physical_eigvals = self.get_physical_mode(sampled_wavenumbers,
-                    modified_wavenumbers)
-                plt.subplot(2,1,1)
-                plt.plot(sampled_wavenumbers/scale, physical_eigvals.real/scale,
-                    label=scheme.name(), linestyle=linestyles[i][1])
-                plt.subplot(2,1,2)
-                plt.plot(sampled_wavenumbers/scale, physical_eigvals.imag/scale,
-                    label=scheme.name(), linestyle=linestyles[i][1])
-                i += 1
+            for degree_to_correction in degree_to_corrections:
+                g = degree_to_correction(degree)
+                for method in methods:
+                    scheme = self.build_scheme(method, degree, g)
+                    modified_wavenumbers = self.get_modified_wavenumbers(
+                        scheme, sampled_wavenumbers)
+                    physical_eigvals = self.get_physical_mode(
+                        sampled_wavenumbers, modified_wavenumbers)
+                    plt.subplot(2,1,1)
+                    plt.plot(sampled_wavenumbers/scale,
+                             physical_eigvals.real/scale,
+                             label=scheme.name(), linestyle=linestyles[i][1])
+                    plt.subplot(2,1,2)
+                    plt.plot(sampled_wavenumbers/scale,
+                             physical_eigvals.imag/scale,
+                             label=scheme.name(), linestyle=linestyles[i][1])
+                    i += 1
         x_max = np.max(degrees) * (not compressed) + 1
         plt.subplot(2,1,1)
         plt.plot([0, x_max], [0, x_max], '-', label='Exact')
@@ -243,8 +252,13 @@ if __name__ == '__main__':
     else:
         assert False
     wnd = WaveNumberDisplayer(args.x_left, args.x_right, args.n_element)
-    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, args.n_sample)
+    g = Vincent(args.degree + 1, Vincent.huynh_lumping_lobatto)
+    wnd.plot_modified_wavenumbers(SpatialClass, args.degree, g, args.n_sample)
     wnd.compare_wave_numbers(methods=[spatial.LegendreDG,
         spatial.DGonLegendreRoots, spatial.DGonLobattoRoots,
         spatial.FRonLegendreRoots, spatial.FRonUniformRoots,],
-        degrees=[3], n_sample=args.n_sample, compressed=args.compressed)
+        degrees=[3],
+        degree_to_corrections=[
+            lambda p: Vincent(p + 1, Vincent.huynh_lumping_lobatto)
+        ],
+        n_sample=args.n_sample, compressed=args.compressed)

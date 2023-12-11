@@ -248,10 +248,17 @@ class FluxReconstruction(FiniteElement):
         left = self.get_element_by_index(curr)
         right = self.get_element_by_index((curr + 1) % self.n_element())
         upwind_flux_right = self._riemann.get_interface_flux(left, right)
-        assert (isinstance(left, element.LagrangeFR)
-            or isinstance(left, element.LegendreFR))
+        assert isinstance(left, element.FluxReconstruction)
         return left.get_fr_flux(point,
             upwind_flux_left, upwind_flux_right)
+
+    def get_element_by_index(self, i: int) -> element.FluxReconstruction:
+        return super().get_element_by_index(i)
+
+    def add_correction_function(self, g: concept.Polynomial):
+        for i in range(self.n_element()):
+            e = self.get_element_by_index(i)
+            e.add_correction_function(g)
 
 
 class FRonUniformRoots(FluxReconstruction):

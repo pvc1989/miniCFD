@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import spatial
 import element
 import riemann
+from polynomial import Vincent
 
 
 class TestFRonLegendreRoots(unittest.TestCase):
@@ -23,6 +24,8 @@ class TestFRonLegendreRoots(unittest.TestCase):
         self._spatial = spatial.FRonLegendreRoots(
             riemann.LinearAdvection(self._a_const), self._degree,
             self._n_element, self._x_left, self._x_right)
+        g = Vincent(self._degree + 1, Vincent.huynh_lumping_lobatto)
+        self._spatial.add_correction_function(g)
 
     def test_reconstruction(self):
         """Plot the curves of the approximate solution and the two fluxes.
@@ -71,6 +74,8 @@ class TestFRonLegendreRoots(unittest.TestCase):
         scheme = spatial.FRonLegendreRoots(
             riemann.LinearAdvection(self._a_const), degree,
             self._n_element, self._x_left, self._x_right)
+        g = Vincent(degree + 1, Vincent.huynh_lumping_lobatto)
+        scheme.add_correction_function(g)
         points = np.linspace(scheme.x_left(), scheme.x_right(), 201)
         x_data = points / scheme.delta_x(0)
         plt.figure(figsize=(6, degree*2))
@@ -134,12 +139,16 @@ class TestFRonLegendreRoots(unittest.TestCase):
             scheme = spatial.FRonLegendreRoots(
                 riemann.LinearAdvection(a_const=1.0),
                 degree, n_element, x_left, x_right)
+            g = Vincent(degree + 1, Vincent.huynh_lumping_lobatto)
+            scheme.add_correction_function(g)
             s_prev, s_curr, s_next = self._get_spatial_matrices(scheme, i_curr)
             # viscosity
             nu = np.random.rand()
             scheme = spatial.FRonLegendreRoots(
                 riemann.LinearAdvectionDiffusion(a_const=1.0, b_const=nu),
                 degree, n_element, x_left, x_right)
+            g = Vincent(degree + 1, Vincent.huynh_lumping_lobatto)
+            scheme.add_correction_function(g)
             r_prev, r_curr, r_next = self._get_spatial_matrices(scheme, i_curr)
             # compare
             cell_curr = scheme.get_element_by_index(i_curr)
