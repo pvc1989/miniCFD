@@ -23,6 +23,9 @@ class Radau(Polynomial):
         assert 1 <= degree
         self._k = degree
 
+    def name(self, verbose=True) -> str:
+        return f'Radau(p={self.degree()})'
+
     def degree(self):
         return self._k
 
@@ -61,6 +64,7 @@ class Huynh(Polynomial):
         super().__init__()
         assert 1 <= degree <= 10
         assert 1 <= n_lump <= degree
+        self._n_lump = n_lump
         n_term = degree + 1
         a = np.zeros((n_term, n_term))
         b = np.zeros(n_term)
@@ -89,6 +93,9 @@ class Huynh(Polynomial):
         self._value_powers = np.arange(n_term)
         self._grad_powers = np.arange(n_term) - 1
         self._grad_powers[0] = 0
+
+    def name(self, verbose=True) -> str:
+        return f'Huynh(p={self.degree()}, lump={self._n_lump})'
 
     def degree(self):
         return len(self._value_coeff) - 1
@@ -142,6 +149,9 @@ class Vincent(Polynomial):
         self._prev_ratio = 1 - self._next_ratio
         self._local_to_gradient = dict()
 
+    def name(self, verbose=True) -> str:
+        return f'Vincent(p={self.degree()}, c={self._next_ratio:.2f})'
+
     def degree(self):
         return self._k + 1
 
@@ -184,6 +194,9 @@ class IthLagrange(Polynomial):
         self._i = index
         assert 0 <= index < len(points)
         self._points = points
+
+    def name(self, verbose=True) -> str:
+        return f'Lagrange(p={self.degree()}, i={self._i})'
 
     def n_point(self):
         return len(self._points)
@@ -228,6 +241,9 @@ class LagrangeBasis(Polynomial):
         self._lagranges = np.ndarray(n_point, IthLagrange)
         for i in range(n_point):
             self._lagranges[i] = IthLagrange(i, self._points)
+
+    def name(self, verbose=True) -> str:
+        return f'LagrangeBasis(p={self.degree()})'
 
     def n_term(self):
         return len(self._points)

@@ -83,9 +83,10 @@ class TestHuynh(unittest.TestCase):
                 _, right_values[i] = huynh.local_to_value(point_i)
                 _, right_derivatives[i] = huynh.local_to_gradient(point_i)
             plt.subplot(1, 2, 1)
-            plt.plot(points, right_values, label=r'$g$'+f'({degree}, {n_lump})')
+            plt.plot(points, right_values, label=huynh.name())
             plt.subplot(1, 2, 2)
-            plt.plot(points, right_derivatives, label=r"$g'$"+f'({degree}, {n_lump})')
+            plt.plot(points, right_derivatives,
+                     label=r'$(\mathrm{d}/\mathrm{d}\xi)$'+huynh.name())
         plt.subplot(1, 2, 1)
         plt.legend()
         plt.subplot(1, 2, 2)

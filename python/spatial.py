@@ -260,6 +260,9 @@ class FluxReconstruction(FiniteElement):
             e = self.get_element_by_index(i)
             e.add_correction_function(g)
 
+    def _info(self):
+        return f'g={self._elements[0]._correction.name()}'
+
 
 class FRonUniformRoots(FluxReconstruction):
     """The ODE system given by the DG method using a Lagrange expansion on uniform roots.
@@ -273,7 +276,7 @@ class FRonUniformRoots(FluxReconstruction):
     def name(self, verbose=True):
         my_name = 'FRonUniformRoots'
         if verbose:
-            my_name += r' ($p=$' + f'{self.degree()})'
+            my_name += f'({self._info()})'
         return my_name
 
 
@@ -289,7 +292,7 @@ class FRonLegendreRoots(FluxReconstruction):
     def name(self, verbose=True):
         my_name = 'FRonLegendreRoots'
         if verbose:
-            my_name += r' ($p=$' + f'{self.degree()})'
+            my_name += f'({self._info()})'
         return my_name
 
 
@@ -305,7 +308,7 @@ class FRonLobattoRoots(FluxReconstruction):
     def name(self, verbose=True):
         my_name = 'FRonLobattoRoots'
         if verbose:
-            my_name += r' ($p=$' + f'{self.degree()})'
+            my_name += f'({self._info()})'
         return my_name
 
 
@@ -321,7 +324,7 @@ class LegendreFR(FluxReconstruction):
     def name(self, verbose=True):
         my_name = 'LegendreFR'
         if verbose:
-            my_name += r' ($p=$' + f'{self.degree()})'
+            my_name += f'({self._info()})'
         return my_name
 
 

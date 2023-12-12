@@ -10,6 +10,11 @@ class Polynomial(abc.ABC):
     # TODO: rename to LocalPolynomial
 
     @abc.abstractmethod
+    def name(self, verbose: bool) -> str:
+        """Get the name of the polynomial.
+        """
+
+    @abc.abstractmethod
     def degree(self):
         """Degree of the polynomial.
         """
