@@ -10,11 +10,13 @@ from matplotlib import colors
 
 class Viewer:
 
-    def __init__(self, argv) -> None:
-        self._expect_path = argv[1]
-        self._actual_path = argv[2]
-        self._n_element = int(argv[3])
-        self._scalar_name = argv[4]
+    def __init__(self, expect_path, actual_path, n_element, scalar_name,
+            suffix) -> None:
+        self._expect_path = expect_path
+        self._actual_path = actual_path
+        self._n_element = n_element
+        self._scalar_name = scalar_name
+        self._suffix = suffix
         self._actual = self._viscosity = None
         if self._scalar_name == 'Viscosity':
             self._viscosity = Viewer.load_viscosity(self._actual_path)
@@ -87,6 +89,8 @@ class Viewer:
         return file_name
 
     def plot_animation(self, fps=10):
+        if self._actual is None:
+            return
         frames = []
         for i_frame in range(101):
             png_name = self.plot_frame(i_frame, 'png')
@@ -107,7 +111,7 @@ class Viewer:
             norm=colors.LogNorm(vmin=1e-6, vmax=1e0, clip=True))
         fig.colorbar(mappable, location='top', label='Pointwise Errors')
         plt.tight_layout()
-        plt.savefig(f'{self._actual_path}/Error.svg')
+        plt.savefig(f'{self._actual_path}/Error.{self._suffix}')
 
     def plot_viscosity(self):
         if self._viscosity is None:
@@ -129,12 +133,17 @@ class Viewer:
             im.set_norm(norm)
         fig.colorbar(images[0], ax=ax, orientation='vertical')
         # fig.tight_layout()
-        plt.savefig(f'{self._actual_path}/Viscosity.svg')
+        plt.savefig(f'{self._actual_path}/Viscosity.{self._suffix}')
 
 
 if __name__ == '__main__':
-    viewer = Viewer(sys.argv)
-    viewer.plot_frame(100)
+    expect_path = sys.argv[1]
+    actual_path = sys.argv[2]
+    n_element = int(sys.argv[3])
+    scalar_name = sys.argv[4]
+    suffix = sys.argv[5]
+    viewer = Viewer(expect_path, actual_path, n_element, scalar_name, suffix)
+    viewer.plot_frame(100, suffix)
     viewer.plot_animation()
     viewer.plot_error()
     viewer.plot_viscosity()
