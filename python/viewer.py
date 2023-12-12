@@ -118,7 +118,6 @@ class Viewer:
             return
         n_array = len(self._viscosity)
         fig, ax = plt.subplots(n_array, 1, sharex=True, figsize=(7, 5))
-        fig.suptitle('Viscosity')
         vmin = 0
         vmax = 0
         images = []
@@ -127,13 +126,19 @@ class Viewer:
             zdata = self._viscosity[i]
             vmax = max(vmax, np.max(zdata))
             images.append(ax[i].imshow(zdata, aspect='auto', origin='lower', cmap='coolwarm'))
-        ax[-1].set_xlabel('Point Index')
+        ax[-1].set_xlabel('Element Index')
+        _, n_x = zdata.shape
+        positions = np.arange(0, n_x, n_x // 5, dtype='int')
+        labels = positions // (n_x // self._n_element)
+        # print(n_x, positions, labels)
+        ax[-1].set_xticks(positions, labels)
         norm = colors.Normalize(vmin, vmax)
         for im in images:
             im.set_norm(norm)
-        fig.colorbar(images[0], ax=ax, orientation='vertical')
+        fig.colorbar(images[0], ax=ax, location='right')
         # fig.tight_layout()
-        plt.savefig(f'{self._actual_path}/Viscosity.{self._suffix}')
+        plt.savefig(f'{self._actual_path}/Viscosity.{self._suffix}',
+            bbox_inches='tight')
 
 
 if __name__ == '__main__':
