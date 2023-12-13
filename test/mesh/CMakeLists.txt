@@ -26,6 +26,7 @@ add_executable(test_mesh_part part.cpp)
 target_include_directories(test_mesh_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_INCLUDE_PATH})
 target_link_libraries(test_mesh_part ${CGNS_LIB} ${MPI_LIBRARIES})
 set_target_properties(test_mesh_part PROPERTIES OUTPUT_NAME part)
+add_test(NAME test_mesh_part COMMAND mpirun -n 4 part)
 
 add_executable(test_mesh_cgal cgal.cpp)
 target_include_directories(test_mesh_cgal PRIVATE ${CGAL_INCLUDE_DIRS} ${CGNS_INC})
