@@ -18,3 +18,7 @@
 	path = ThirdParty/CGAL
 	url = https://github.com/CGAL/cgal.git
 	branch = master
+[submodule "GTestMPI"]
+	path = ThirdParty/GTestMPI
+	url = https://github.com/AdhocMan/gtest_mpi.git
+	branch = master

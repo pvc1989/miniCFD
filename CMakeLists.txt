@@ -67,6 +67,7 @@ if (${PROJECT_NAME}_ENABLE_MPI)
   message("MPI_LIBRARIES = ${MPI_LIBRARIES}")
   message("MPI_C_LIBRARIES = ${MPI_C_LIBRARIES}")
   message("MPI_CXX_LIBRARIES = ${MPI_CXX_LIBRARIES}")
+  set(GTestMPI_INC "${PROJECT_SOURCE_DIR}/ThirdParty/GTestMPI/include")
 endif (${PROJECT_NAME}_ENABLE_MPI)
 
 option(${PROJECT_NAME}_64BIT_INDEX "Enable 64-bit indexing." "ON")

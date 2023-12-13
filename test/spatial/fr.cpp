@@ -6,7 +6,8 @@
 #include <string>
 
 #include "mpi.h"
-#include "pcgnslib.h"
+#include "gtest/gtest.h"
+#include "gtest_mpi/gtest_mpi.hpp"
 
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
@@ -36,25 +37,23 @@ using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
 using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
 using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
 
-// mpirun -n 4 ./part must be run in ../mesh
-// mpirun -n 4 ./fr
-int main(int argc, char* argv[]) {
-  int n_core, i_core;
-  double time_begin;
-  MPI_Init(NULL, NULL);
-  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
-  MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
-  cgp_mpi_comm(MPI_COMM_WORLD);
+int n_core, i_core;
+double time_begin;
 
-  auto case_name = std::string("../mesh/double_mach");
+auto case_name = std::string("../mesh/double_mach");
 
+class TestSpatialFR : public ::testing::Test {
+ protected:
+  void SetUp() override;
+};
+void TestSpatialFR::SetUp() {
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {3., 0.}, {0., 4.} };
   Riemann::global_coefficient[1] = Jacobi{ {5., 0.}, {0., 6.} };
   Riemann::global_coefficient[2] = Jacobi{ {7., 0.}, {0., 8.} };
-
+}
+TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
   /* aproximated by Lagrange basis on Lobatto roots with general correction functions */
-{
   time_begin = MPI_Wtime();
   using Spatial = mini::spatial::fr::General<Part>;
   auto part = Part(case_name, i_core, n_core);
@@ -90,8 +89,8 @@ int main(int argc, char* argv[]) {
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 }
+TEST_F(TestSpatialFR, SpecialCorrectionFunction) {
   /* aproximated by Lagrange basis on Lobatto roots with Huynh's correction functions */
-{
   time_begin = MPI_Wtime();
   using Spatial = mini::spatial::fr::Lobatto<Part>;
   auto part = Part(case_name, i_core, n_core);
@@ -126,5 +125,34 @@ int main(int argc, char* argv[]) {
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 }
+
+// mpirun -n 4 ./part must be run in ../mesh
+// mpirun -n 4 ./fr
+int main(int argc, char* argv[]) {
+  // Initialize MPI before any call to gtest_mpi
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
+  MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
+  cgp_mpi_comm(MPI_COMM_WORLD);
+
+  // Intialize google test
+  ::testing::InitGoogleTest(&argc, argv);
+
+  // Add a test environment, which will initialize a test communicator
+  // (a duplicate of MPI_COMM_WORLD)
+  ::testing::AddGlobalTestEnvironment(new gtest_mpi::MPITestEnvironment());
+
+  auto& test_listeners = ::testing::UnitTest::GetInstance()->listeners();
+
+  // Remove default listener and replace with the custom MPI listener
+  delete test_listeners.Release(test_listeners.default_result_printer());
+  test_listeners.Append(new gtest_mpi::PrettyMPIUnitTestResultPrinter());
+
+  // run tests
+  auto exit_code = RUN_ALL_TESTS();
+
+  // Finalize MPI before exiting
   MPI_Finalize();
+
+  return exit_code;
 }
