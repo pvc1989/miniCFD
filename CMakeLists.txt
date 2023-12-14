@@ -56,6 +56,7 @@ endif (${PROJECT_NAME}_SUBMODULE_GOOGLETEST)
 
 option(${PROJECT_NAME}_ENABLE_MPI "Enable MPI-based parallel computating." "ON")
 if (${PROJECT_NAME}_ENABLE_MPI)
+  set(N_CORE "4" CACHE STRING "Number of cores used in MPI tests.")
   find_package(MPI REQUIRED)
   message("MPIEXEC_EXECUTABLE = ${MPIEXEC_EXECUTABLE}")
   message("MPI_INCLUDE_PATH = ${MPI_INCLUDE_PATH}")
