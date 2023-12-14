@@ -19,6 +19,7 @@
 #include "mini/spatial/dg/general.hpp"
 #include "mini/spatial/dg/lobatto.hpp"
 #include "mini/temporal/ode.hpp"
+#include "mini/input/path.hpp"  // defines PROJECT_BINARY_DIR
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
@@ -51,6 +52,8 @@ Scalar Norm1(Part const &part){
   return norm_1;
 }
 
+auto case_name = PROJECT_BINARY_DIR + std::string("/test/mesh/double_mach");
+
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./dg
 int main(int argc, char* argv[]) {
@@ -60,8 +63,6 @@ int main(int argc, char* argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD, &n_core);
   MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
   cgp_mpi_comm(MPI_COMM_WORLD);
-
-  auto case_name = std::string("../mesh/double_mach");
 
   using Jacobi = typename Riemann::Jacobi;
   Riemann::global_coefficient[0] = Jacobi{ {3., 0.}, {0., 4.} };

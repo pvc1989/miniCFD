@@ -18,6 +18,7 @@
 #include "mini/spatial/fr/general.hpp"
 #include "mini/spatial/fr/lobatto.hpp"
 #include "mini/basis/vincent.hpp"
+#include "mini/input/path.hpp"  // defines PROJECT_BINARY_DIR
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
@@ -40,7 +41,7 @@ using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
 int n_core, i_core;
 double time_begin;
 
-auto case_name = std::string("../mesh/double_mach");
+auto case_name = PROJECT_BINARY_DIR + std::string("/test/mesh/double_mach");
 
 class TestSpatialFR : public ::testing::Test {
  protected:
