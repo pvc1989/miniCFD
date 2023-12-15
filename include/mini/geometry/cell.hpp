@@ -12,6 +12,8 @@
 namespace mini {
 namespace geometry {
 
+static constexpr int XX{0}, XY{1}, XZ{2}, YY{3}, YZ{4}, ZZ{5};
+
 /**
  * @brief Abstract coordinate map on volume elements.
  * 
@@ -27,10 +29,35 @@ class Cell : public Element<Scalar, 3, 3> {
   using Global = typename Base::Global;
   using Jacobian = typename Base::Jacobian;
 
+  /**
+   * @brief The type of (geometric) Hessian matrix of a scalar function \f$ f \f$, which is defined as \f$ \begin{bmatrix}\partial_{\xi}\partial_{\xi}f & \partial_{\xi}\partial_{\eta}f & \partial_{\xi}\partial_{\zeta}f\\ \partial_{\eta}\partial_{\xi}f & \partial_{\eta}\partial_{\eta}f & \partial_{\eta}\partial_{\zeta}f\\ \partial_{\zeta}\partial_{\xi}f & \partial_{\zeta}\partial_{\eta}f & \partial_{\zeta}\partial_{\zeta}f \end{bmatrix} \f$.
+   * 
+   * Since Hessian matrices are symmetric, only the upper part are stored.
+   */
+  using Hessian = algebra::Vector<Scalar, 6>;
+  static Scalar &Get(Hessian &hessian, int row, int col) {
+    if (row > col) { std::swap(row, col); }
+    int i;
+    switch (row) {
+    case X: i = col; break;
+    case Y: i = XZ + col; break;
+    case Z: i = ZZ; break;
+    default: assert(false);
+    }
+    return hessian[i];
+  }
+  static Scalar const &Get(Hessian const &hessian, int row, int col) {
+    return Get(const_cast<Hessian &>(hessian), row, col);
+  }
+
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar)
       const = 0;
   virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar, Scalar)
       const = 0;
+  virtual std::vector<Hessian> LocalToShapeHessians(Local const &)
+      const {
+    return {};
+  }
 
   std::vector<Scalar> LocalToShapeFunctions(const Local &xyz)
       const final {
@@ -65,6 +92,52 @@ class Cell : public Element<Scalar, 3, 3> {
   }
   Jacobian LocalToJacobian(const Local &xyz) const final {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
+  }
+  /**
+   * @brief \f$ \frac{\partial}{\partial\xi}\mathbf{J} = \frac{\partial}{\partial\xi}\begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ in which \f$ \mathbf{J} = \begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ is the transpose of `Element::Jacobian`.
+   * 
+   * @param xyz 
+   * @return algebra::Vector<Jacobian, 3> 
+   */
+  algebra::Vector<Jacobian, 3> LocalToJacobianGradient(Local const &xyz)
+      const {
+    constexpr int YX = XY, ZY = YZ, ZX = XZ;
+    auto hessians = LocalToShapeHessians(xyz);
+    algebra::Vector<Jacobian, 3> grad;
+    grad[X].setZero(); grad[Y].setZero(); grad[Z].setZero();
+    for (int i = 0, n = this->CountNodes(); i < n; ++i) {
+      auto &xyz = this->GetGlobalCoord(i);
+      auto &hessian = hessians[i];
+      grad[X].row(X) += xyz * hessian[XX];
+      grad[X].row(Y) += xyz * hessian[XY];
+      grad[X].row(Z) += xyz * hessian[XZ];
+      grad[Y].row(X) += xyz * hessian[YX];
+      grad[Y].row(Y) += xyz * hessian[YY];
+      grad[Y].row(Z) += xyz * hessian[YZ];
+      grad[Z].row(X) += xyz * hessian[ZX];
+      grad[Z].row(Y) += xyz * hessian[ZY];
+      grad[Z].row(Z) += xyz * hessian[ZZ];
+    }
+    return grad;
+  }
+
+  /**
+   * @brief \f$ \frac{\partial J}{\partial \xi} = J\,\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1} \frac{\partial \mathbf{J}}{\partial \xi}\right) \f$, in which \f$ \mathbf{J} = \begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ is the transpose of `Element::Jacobian` and \f$ \frac{\partial}{\partial \xi}\mathbf{J} \f$ is returned by `Cell::LocalToJacobianGradient`.
+   * 
+   * @param xyz 
+   * @return algebra::Vector<Scalar, 3> 
+   */
+  algebra::Vector<Scalar, 3> LocalToJacobianDeterminantGradient(
+      const Local &xyz) const {
+    algebra::Vector<Scalar, 3> det_grad;
+    auto mat_grad = LocalToJacobianGradient(xyz);
+    Jacobian mat = LocalToJacobian(xyz).transpose();
+    Scalar det = mat.determinant();
+    Jacobian inv = mat.inverse();
+    det_grad[X] = det * (inv * mat_grad[X]).trace();
+    det_grad[Y] = det * (inv * mat_grad[Y]).trace();
+    det_grad[Z] = det * (inv * mat_grad[Z]).trace();
+    return det_grad;
   }
 
   Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global,

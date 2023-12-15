@@ -30,6 +30,7 @@ class Hexahedron : public Cell<Scalar> {
   using typename Base::Local;
   using typename Base::Global;
   using typename Base::Jacobian;
+  using typename Base::Hessian;
 
   int CountCorners() const final {
     return 8;
@@ -294,6 +295,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   using typename Base::Local;
   using typename Base::Global;
   using typename Base::Jacobian;
+  using typename Base::Hessian;
 
   static constexpr int kNodes = 8;
 
@@ -355,6 +357,29 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     auto grads = std::vector<Local>(kNodes);
     LocalToShapeGradients(x_local, y_local, z_local, grads.data());
     return grads;
+  }
+  static void LocalToShapeHessians(Scalar x_local, Scalar y_local,
+      Scalar z_local, Hessian *hessians) {
+    std::array<Scalar, kNodes> factor_x, factor_y, factor_z;
+    for (int i = 0; i < kNodes; ++i) {
+      auto &local_i = Hexahedron27<Scalar>::local_coords_[i];
+      factor_x[i] = (1 + local_i[X] * x_local) / 8;
+      factor_y[i] = (1 + local_i[Y] * y_local) / 8;
+      factor_z[i] = (1 + local_i[Z] * z_local) / 8;
+    }
+    for (int i = 0; i < kNodes; ++i) {
+      auto &local_i = Hexahedron27<Scalar>::local_coords_[i];
+      auto &hessian_i = hessians[i];
+      hessian_i[XX] = hessian_i[YY] = hessian_i[ZZ] = 0;
+      hessian_i[XY] = local_i[X] * local_i[Y] * factor_z[i];
+      hessian_i[XZ] = local_i[X] * local_i[Z] * factor_y[i];
+      hessian_i[YZ] = local_i[Y] * local_i[Z] * factor_x[i];
+    }
+  }
+  std::vector<Hessian> LocalToShapeHessians(Local const &xyz) const final {
+    auto hessians = std::vector<Hessian>(kNodes);
+    LocalToShapeHessians(xyz[X], xyz[Y], xyz[Z], hessians.data());
+    return hessians;
   }
 
  public:
