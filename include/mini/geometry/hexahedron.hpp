@@ -44,27 +44,27 @@ class Hexahedron : public Cell<Scalar> {
     switch (i_face) {
     case 0:
       jacobian = this->LocalToJacobian(0, 0, -1);
-      normal = -jacobian.col(Z).normalized();
+      normal = -jacobian.row(Z).normalized();
       break;
     case 1:
       jacobian = this->LocalToJacobian(0, -1, 0);
-      normal = -jacobian.col(Y).normalized();
+      normal = -jacobian.row(Y).normalized();
       break;
     case 2:
       jacobian = this->LocalToJacobian(+1, 0, 0);
-      normal = jacobian.col(X).normalized();
+      normal = jacobian.row(X).normalized();
       break;
     case 3:
       jacobian = this->LocalToJacobian(0, +1, 0);
-      normal = jacobian.col(Y).normalized();
+      normal = jacobian.row(Y).normalized();
       break;
     case 4:
       jacobian = this->LocalToJacobian(-1, 0, 0);
-      normal = -jacobian.col(X).normalized();
+      normal = -jacobian.row(X).normalized();
       break;
     case 5:
       jacobian = this->LocalToJacobian(0, 0, +1);
-      normal = jacobian.col(Z).normalized();
+      normal = jacobian.row(Z).normalized();
       break;
     default:
       assert(false);

@@ -33,16 +33,22 @@ class Element {
   using Global = algebra::Matrix<Scalar, kPhysDim, 1>;
 
   /**
-   * @brief The type of (geometric) Jacobian matrix, which is defined as \f$ \begin{bmatrix} \partial x / \partial\xi & \partial x / \partial\eta & \cdots \\ \partial y / \partial\xi & \partial y / \partial\eta & \cdots \\ \cdots & \cdots & \cdots \\ \end{bmatrix} \f$.
+   * @brief The type of (geometric) Jacobian matrix, which is defined as \f$ \begin{bmatrix} \partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix} \f$.
    * 
    */
-  using Jacobian = algebra::Matrix<Scalar, kPhysDim, kCellDim>;
+  using Jacobian = algebra::Matrix<Scalar, kCellDim, kPhysDim>;
 
   static constexpr int CellDim() { return kCellDim; }
   static constexpr int PhysDim() { return kPhysDim; }
 
   virtual ~Element() noexcept = default;
   virtual std::vector<Scalar> LocalToShapeFunctions(const Local &) const = 0;
+
+  /**
+   * @brief \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \cdots \end{bmatrix}\begin{bmatrix}\phi_{1} & \phi_{2} & \cdots\end{bmatrix}=\begin{bmatrix}\partial_{\xi}\phi_{1} & \partial_{\xi}\phi_{2} & \cdots\\ \partial_{\eta}\phi_{1} & \partial_{\eta}\phi_{2} & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix} \f$
+   * 
+   * @return std::vector<Local> 
+   */
   virtual std::vector<Local> LocalToShapeGradients(const Local &) const = 0;
   virtual Global LocalToGlobal(const Local &) const = 0;
   virtual Jacobian LocalToJacobian(const Local &) const = 0;

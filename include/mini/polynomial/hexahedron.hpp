@@ -113,7 +113,7 @@ class Hexahedron {
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
-      Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
+      Jacobian jacobian = lagrange().LocalToJacobian(local);
       jacobian_det_[ijk] = jacobian.determinant();
       jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
     }
@@ -122,7 +122,7 @@ class Hexahedron {
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
-      Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
+      Jacobian jacobian = lagrange().LocalToJacobian(local);
       basis_global_gradients_[ijk] = LocalGradientsToGlobalGradients(
           jacobian, basis_local_gradients_[ijk]);
     }
@@ -184,7 +184,7 @@ class Hexahedron {
     grad.row(0) = basis_.GetDerivatives(1, 0, 0, local);
     grad.row(1) = basis_.GetDerivatives(0, 1, 0, local);
     grad.row(2) = basis_.GetDerivatives(0, 0, 1, local);
-    Jacobian jacobian = lagrange().LocalToJacobian(local).transpose();
+    Jacobian jacobian = lagrange().LocalToJacobian(local);
     return LocalGradientsToGlobalGradients(jacobian, grad);
   }
   /**
@@ -214,7 +214,7 @@ class Hexahedron {
    * 
    * \f$ \begin{bmatrix}\partial\phi/\partial\xi\\ \partial\phi/\partial\eta\\ \cdots \end{bmatrix} = \begin{bmatrix}\partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix}\begin{bmatrix}\partial\phi/\partial x\\\partial\phi/\partial y\\ \cdots \end{bmatrix} \f$
    * 
-   * @param jacobian the Jacobian matrix, which is the transpose of `geometry::Element::Jacobian`.
+   * @param jacobian the Jacobian matrix of the type `geometry::Element::Jacobian`.
    * @param local_grad the gradients in local coordinates
    * @return Mat3xN the gradients in global coordinates
    */

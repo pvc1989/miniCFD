@@ -59,7 +59,7 @@ class Face : public Element<Scalar, kPhysDim, 2> {
   }
   Global LocalToNormalVector(Scalar x_local, Scalar y_local) const {
     auto jacobian = LocalToJacobian(x_local, y_local);
-    return jacobian.col(X).cross(jacobian.col(Y)).normalized();
+    return jacobian.row(X).cross(jacobian.row(Y)).normalized();
   }
   Frame LocalToNormalFrame(Scalar x_local, Scalar y_local) const {
     return _NormalFrameBuilder<Scalar, kPhysDim>
@@ -83,9 +83,9 @@ class Face : public Element<Scalar, kPhysDim, 2> {
 
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local) const {
     auto shapes = LocalToShapeGradients(x_local, y_local);
-    Jacobian sum = this->GetGlobalCoord(0) * shapes[0].transpose();
+    Jacobian sum = shapes[0] * this->GetGlobalCoord(0).transpose();
     for (int i = 1, n = this->CountNodes(); i < n; ++i) {
-      sum += this->GetGlobalCoord(i) * shapes[i].transpose();
+      sum += shapes[i] * this->GetGlobalCoord(i).transpose();
     }
     return sum;
   }
@@ -102,8 +102,8 @@ struct _NormalFrameBuilder<Scalar, 3> {
     Frame frame;
     auto &normal = frame[X], &tangent = frame[Y], &bitangent = frame[Z];
     auto jacobian = face.LocalToJacobian(x_local, y_local);
-    normal = jacobian.col(X).cross(jacobian.col(Y)).normalized();
-    tangent = jacobian.col(X).normalized();
+    normal = jacobian.row(X).cross(jacobian.row(Y)).normalized();
+    tangent = jacobian.row(X).normalized();
     bitangent = normal.cross(tangent);
     return frame;
   }

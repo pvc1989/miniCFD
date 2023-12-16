@@ -90,7 +90,7 @@ class Element {
       GetGlobalCoord(i) = lagrange().LocalToGlobal(local_i);
       auto mat_j = lagrange().LocalToJacobian(local_i);
       auto det_j = CellDim() < PhysDim()
-          ? std::sqrt((mat_j.transpose() * mat_j).determinant())
+          ? std::sqrt((mat_j * mat_j.transpose()).determinant())
           : std::abs(mat_j.determinant());
       GetGlobalWeight(i) = GetLocalWeight(i) * det_j;
       sum += GetGlobalWeight(i);

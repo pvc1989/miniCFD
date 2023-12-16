@@ -84,9 +84,9 @@ class Cell : public Element<Scalar, 3, 3> {
   Jacobian LocalToJacobian(Scalar x_local, Scalar y_local, Scalar z_local)
       const {
     auto shapes = LocalToShapeGradients(x_local, y_local, z_local);
-    Jacobian sum = this->GetGlobalCoord(0) * shapes[0].transpose();
+    Jacobian sum = shapes[0] * this->GetGlobalCoord(0).transpose();
     for (int i = 1, n = this->CountNodes(); i < n; ++i) {
-      sum += this->GetGlobalCoord(i) * shapes[i].transpose();
+      sum += shapes[i] * this->GetGlobalCoord(i).transpose();
     }
     return sum;
   }
@@ -94,7 +94,7 @@ class Cell : public Element<Scalar, 3, 3> {
     return LocalToJacobian(xyz[X], xyz[Y], xyz[Z]);
   }
   /**
-   * @brief \f$ \frac{\partial}{\partial\xi}\mathbf{J} = \frac{\partial}{\partial\xi}\begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ in which \f$ \mathbf{J} = \begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ is the transpose of `Element::Jacobian`.
+   * @brief \f$ \frac{\partial}{\partial\xi}\mathbf{J} = \frac{\partial}{\partial\xi}\begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$, in which \f$ \mathbf{J} \f$ is returned by `Element::LocalToJacobian`.
    * 
    * @param xyz 
    * @return algebra::Vector<Jacobian, 3> 
@@ -122,7 +122,7 @@ class Cell : public Element<Scalar, 3, 3> {
   }
 
   /**
-   * @brief \f$ \frac{\partial J}{\partial \xi} = J\,\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1} \frac{\partial \mathbf{J}}{\partial \xi}\right) \f$, in which \f$ \mathbf{J} = \begin{bmatrix} \partial_\xi x & \partial_\xi y & \partial_\xi z \\ \partial_\eta x & \partial_\eta y & \partial_\eta z \\ \partial_\zeta x & \partial_\zeta y & \partial_\zeta z \\ \end{bmatrix} \f$ is the transpose of `Element::Jacobian` and \f$ \frac{\partial}{\partial \xi}\mathbf{J} \f$ is returned by `Cell::LocalToJacobianGradient`.
+   * @brief \f$ \frac{\partial}{\partial \xi}\det(\mathbf{J}) = \det(\mathbf{J})\,\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1} \frac{\partial}{\partial \xi}\mathbf{J}\right) \f$, in which \f$ \mathbf{J} \f$ is returned by `Element::LocalToJacobian` and \f$ \frac{\partial}{\partial \xi}\mathbf{J} \f$ is returned by `Cell::LocalToJacobianGradient`.
    * 
    * @param xyz 
    * @return algebra::Vector<Scalar, 3> 
@@ -131,7 +131,7 @@ class Cell : public Element<Scalar, 3, 3> {
       const Local &xyz) const {
     algebra::Vector<Scalar, 3> det_grad;
     auto mat_grad = LocalToJacobianGradient(xyz);
-    Jacobian mat = LocalToJacobian(xyz).transpose();
+    Jacobian mat = LocalToJacobian(xyz);
     Scalar det = mat.determinant();
     Jacobian inv = mat.inverse();
     det_grad[X] = det * (inv * mat_grad[X]).trace();
@@ -172,7 +172,7 @@ class Cell : public Element<Scalar, 3, 3> {
       Callable &&func, Global x, MatJ &&matj, Scalar xtol = 1e-5) {
     Global res;
     do {
-      res = matj(x).partialPivLu().solve(func(x));
+      res = matj(x).transpose().partialPivLu().solve(func(x));
       x -= res;
     } while (res.norm() > xtol);
     return x;
