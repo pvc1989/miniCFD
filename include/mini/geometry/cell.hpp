@@ -5,6 +5,7 @@
 #include <concepts>
 
 #include <algorithm>
+#include <type_traits>
 #include <vector>
 
 #include "mini/geometry/element.hpp"
@@ -167,11 +168,24 @@ class Cell : public Element<Scalar, 3, 3> {
       int face_n_node) const = 0;
 
  private:
-  template <typename Callable, typename MatJ>
-  static Global root(
-      Callable &&func, Global x, MatJ &&matj, Scalar xtol = 1e-5) {
+  /**
+   * @brief Mimic [`scipy.optimize.root`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.root.html).
+   * 
+   * @tparam Func 
+   * @tparam MatJ 
+   * @param func 
+   * @param x 
+   * @param matj 
+   * @param xtol 
+   * @return requires&& 
+   */
+  template <typename Func, typename MatJ>
+      requires std::is_same_v<Global, std::invoke_result_t<Func, Local const &>>
+          && std::is_same_v<Jacobian, std::invoke_result_t<MatJ, Local const &>>
+  static Global root(Func &&func, Global x, MatJ &&matj, Scalar xtol = 1e-5) {
     Global res;
     do {
+      // The Jacobian matrix required here is the transpose of the one returned by `Element::LocalToJacobian`. 
       res = matj(x).transpose().partialPivLu().solve(func(x));
       x -= res;
     } while (res.norm() > xtol);
