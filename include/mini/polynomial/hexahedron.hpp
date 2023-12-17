@@ -58,6 +58,7 @@ class Hexahedron {
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
+  using Mat3xK = algebra::Matrix<Scalar, 3, K>;
 
   using GaussOnLine = GaussX;
 
@@ -66,18 +67,22 @@ class Hexahedron {
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
 
   struct E { };
-  /* \f$ \det(J) \f$ */
+  /* \f$ \det(\mathbf{J}) \f$ */
   [[no_unique_address]] std::conditional_t<kLocal, std::array<Scalar, N>, E>
       jacobian_det_;
-  /* \f$ \det(J)\,J^{-1} \f$ */
+  /* \f$ \det(\mathbf{J})\,\mathbf{J}^{-1} \f$ */
   [[no_unique_address]] std::conditional_t<kLocal, std::array<Jacobian, N>, E>
       jacobian_det_inv_;
+  /* \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \partial_{\zeta} \end{bmatrix}\det(\mathbf{J}) \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, std::array<Local, N>, E>
+      jacobian_det_grad_;
   [[no_unique_address]] std::conditional_t<kLocal, E, std::array<Mat3xN, N>>
       basis_global_gradients_;
 
   static void CheckSize() {
     constexpr size_t large_member_size = kLocal
         ? sizeof(std::array<Scalar, N>) + sizeof(std::array<Jacobian, N>)
+            + sizeof(std::array<Local, N>)
         : sizeof(std::array<Mat3xN, N>);
     constexpr size_t all_member_size = large_member_size
         + sizeof(gauss_ptr_) + sizeof(coeff_);
@@ -116,6 +121,8 @@ class Hexahedron {
       Jacobian jacobian = lagrange().LocalToJacobian(local);
       jacobian_det_[ijk] = jacobian.determinant();
       jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
+      jacobian_det_grad_[ijk]
+          = lagrange().LocalToJacobianDeterminantGradient(local);
     }
   }
   explicit Hexahedron(const GaussBase &gauss) requires (!kLocal)
@@ -153,7 +160,7 @@ class Hexahedron {
     return LobalToValue(local);
   }
   /**
-   * @brief Get the value of \f$ u(x,y,z) \equiv J^{-1}\,\tilde{u}(\xi,\eta,\zeta) \f$ at a Gaussian point.
+   * @brief Get the value of \f$ u(x,y,z) \equiv \det(\mathbf{J})^{-1}\,U(\xi,\eta,\zeta) \f$ at a Gaussian point.
    * 
    * This version is compiled only if `kLocal` is `true`.
    * 
@@ -210,6 +217,33 @@ class Hexahedron {
     return basis_global_gradients_[ijk];
   }
   /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
+   * 
+   */
+  Mat3xK GetLocalGradient(int ijk) const requires (kLocal) {
+    Mat3xK value_grad; value_grad.setZero();
+    Mat3xN const &basis_grads = GetBasisGradients(ijk);
+    for (int abc = 0; abc < N; ++abc) {
+      value_grad += basis_grads.col(abc) * GetValue(abc).transpose();
+    }
+    return value_grad;
+  }
+  /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
+   * 
+   */
+  Mat3xK GetGlobalGradient(int ijk) const requires (kLocal) {
+    auto value_grad = GetLocalGradient(ijk);
+    auto jacobian_det_grad = jacobian_det_grad_[ijk];
+    auto jacobian_det = jacobian_det_[ijk];
+    jacobian_det_grad /= jacobian_det;
+    value_grad -= jacobian_det_grad * GetValue(ijk).transpose();
+    value_grad = GetJacobianAssociated(ijk) * value_grad;
+    value_grad /= (jacobian_det * jacobian_det);
+    return value_grad;
+  }
+
+  /**
    * @brief Convert the gradients in local coordinates to the gradients in global coordinates.
    * 
    * \f$ \begin{bmatrix}\partial\phi/\partial\xi\\ \partial\phi/\partial\eta\\ \cdots \end{bmatrix} = \begin{bmatrix}\partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix}\begin{bmatrix}\partial\phi/\partial x\\\partial\phi/\partial y\\ \cdots \end{bmatrix} \f$
@@ -241,10 +275,10 @@ class Hexahedron {
   /**
    * @brief Get the associated matrix of the Jacobian at a given Gaussian point.
    * 
-   * \f$ J^{*} = \det(J)\,J^{-1} = \det(J) \begin{bmatrix} \partial_x\xi & \partial_x\eta & \partial_x\zeta \\ \partial_y\xi & \partial_y\eta & \partial_y\zeta \\ \partial_z\xi & \partial_z\eta & \partial_z\zeta \\ \end{bmatrix} \f$
+   * \f$ \mathbf{J}^{*} = \det(\mathbf{J})\,\mathbf{J}^{-1} = \det(\mathbf{J}) \begin{bmatrix} \partial_x\xi & \partial_x\eta & \partial_x\zeta \\ \partial_y\xi & \partial_y\eta & \partial_y\zeta \\ \partial_z\xi & \partial_z\eta & \partial_z\zeta \\ \end{bmatrix} \f$
    * 
    * @param ijk the index of the Gaussian point
-   * @return Jacobian const& the associated matrix of \f$ J \f$.
+   * @return Jacobian const& the associated matrix of \f$ \mathbf{J} \f$.
    */
   Jacobian const &GetJacobianAssociated(int ijk) const
       requires (kLocal) {

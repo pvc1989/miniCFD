@@ -126,11 +126,10 @@ class Cell : public Element<Scalar, 3, 3> {
    * @brief \f$ \frac{\partial}{\partial \xi}\det(\mathbf{J}) = \det(\mathbf{J})\,\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1} \frac{\partial}{\partial \xi}\mathbf{J}\right) \f$, in which \f$ \mathbf{J} \f$ is returned by `Element::LocalToJacobian` and \f$ \frac{\partial}{\partial \xi}\mathbf{J} \f$ is returned by `Cell::LocalToJacobianGradient`.
    * 
    * @param xyz 
-   * @return algebra::Vector<Scalar, 3> 
+   * @return Local 
    */
-  algebra::Vector<Scalar, 3> LocalToJacobianDeterminantGradient(
-      const Local &xyz) const {
-    algebra::Vector<Scalar, 3> det_grad;
+  Local LocalToJacobianDeterminantGradient(const Local &xyz) const {
+    Local det_grad;
     auto mat_grad = LocalToJacobianGradient(xyz);
     Jacobian mat = LocalToJacobian(xyz);
     Scalar det = mat.determinant();
