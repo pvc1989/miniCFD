@@ -59,6 +59,7 @@ class Hexahedron {
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
   using Mat3xK = algebra::Matrix<Scalar, 3, K>;
+  using Gradient = Mat3xK;
 
   using GaussOnLine = GaussX;
 
@@ -224,7 +225,7 @@ class Hexahedron {
     Mat3xK value_grad; value_grad.setZero();
     Mat3xN const &basis_grads = GetBasisGradients(ijk);
     for (int abc = 0; abc < N; ++abc) {
-      value_grad += basis_grads.col(abc) * GetValue(abc).transpose();
+      value_grad += basis_grads.col(abc) * coeff_.col(abc).transpose();
     }
     return value_grad;
   }
@@ -234,13 +235,10 @@ class Hexahedron {
    */
   Mat3xK GetGlobalGradient(int ijk) const requires (kLocal) {
     auto value_grad = GetLocalGradient(ijk);
-    auto jacobian_det_grad = jacobian_det_grad_[ijk];
+    value_grad -= jacobian_det_grad_[ijk] * GetValue(ijk).transpose();
     auto jacobian_det = jacobian_det_[ijk];
-    jacobian_det_grad /= jacobian_det;
-    value_grad -= jacobian_det_grad * GetValue(ijk).transpose();
-    value_grad = GetJacobianAssociated(ijk) * value_grad;
     value_grad /= (jacobian_det * jacobian_det);
-    return value_grad;
+    return GetJacobianAssociated(ijk) * value_grad;
   }
 
   /**

@@ -173,6 +173,77 @@ TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
     EXPECT_NEAR(grad.norm(), 0, 1e-15);
   }
 }
+TEST_F(TestPolynomialHexahedronInterpolation, GetGlobalGradient) {
+  using Interpolation = mini::polynomial::Hexahedron<GaussX, GaussY, GaussZ, 11, true>;
+  using Gradient = typename Interpolation::Gradient;
+  using Value = typename Interpolation::Value;
+  using Gauss = typename Interpolation::Gauss;
+  using Global = typename Gauss::Global;
+  std::srand(31415926);
+  for (int i_cell = 1; i_cell > 0; --i_cell) {
+    // build a hexa-gauss and a Lagrange basis on it
+    auto a = 20.0, b = 30.0, c = 40.0;
+    auto lagrange = Lagrange {
+      Global(rand_f() - a, rand_f() - b, rand_f() - c),
+      Global(rand_f() + a, rand_f() - b, rand_f() - c),
+      Global(rand_f() + a, rand_f() + b, rand_f() - c),
+      Global(rand_f() - a, rand_f() + b, rand_f() - c),
+      Global(rand_f() - a, rand_f() - b, rand_f() + c),
+      Global(rand_f() + a, rand_f() - b, rand_f() + c),
+      Global(rand_f() + a, rand_f() + b, rand_f() + c),
+      Global(rand_f() - a, rand_f() + b, rand_f() + c),
+    };
+    auto gauss = Gauss(lagrange);
+    // build a vector function and its interpolation
+    Value coeff = Value::Random();
+    auto get_value = [&coeff](Global const& xyz) {
+      auto x = xyz[0], y = xyz[1], z = xyz[2];
+      Value value{ 0, 1, x, y, z, x*x/2, x * y, x * z, y*y/2, y * z, z*z/2 };
+      // value = value.cwiseProduct(coeff);
+      for (int i = 0; i < Interpolation::K; ++i) {
+        value[i] *= coeff[i];
+      }
+      return value;
+    };
+    auto get_grad = [&coeff](Global const& xyz) {
+      auto x = xyz[0], y = xyz[1], z = xyz[2];
+      // Value value{  };
+      Gradient grad;
+      grad << 0, 0, 1, 0, 0, x, y, z, 0, 0, 0,
+              0, 0, 0, 1, 0, 0, x, 0, y, z, 0,
+              0, 0, 0, 0, 1, 0, 0, x, 0, y, z;
+      for (int i = 0; i < Interpolation::K; ++i) {
+        grad.col(i) *= coeff[i];
+      }
+      return grad;
+    };
+    auto interp = Interpolation(gauss);
+    interp.Approximate(get_value);
+    // test values and gradients on nodes
+    for (int ijk = 0; ijk < Interpolation::N; ++ijk) {
+      Global const &global = interp.gauss().GetGlobalCoord(ijk);
+      Value value = interp.GetValue(ijk);
+      EXPECT_NEAR((value - get_value(global)).norm(), 0, 1e-13);
+      EXPECT_NEAR((value - interp.GlobalToValue(global)).norm(), 0, 1e-10);
+      Gradient grad = interp.GetGlobalGradient(ijk);
+      // compare with analytical derivatives
+      EXPECT_NEAR((get_grad(global) - grad).norm(), 0, 4e-1);
+      // compare with O(h^2) finite difference derivatives
+      constexpr int X{0}, Y{1}, Z{2};
+      auto x = global[X], y = global[Y], z = global[Z], h = 1e-5;
+      Value left = interp.GlobalToValue(Global(x - h, y, z));
+      Value right = interp.GlobalToValue(Global(x + h, y, z));
+      grad.row(X) -= (right - left) / (2 * h);
+      left = interp.GlobalToValue(Global(x, y - h, z));
+      right = interp.GlobalToValue(Global(x, y + h, z));
+      grad.row(Y) -= (right - left) / (2 * h);
+      left = interp.GlobalToValue(Global(x, y, z - h));
+      right = interp.GlobalToValue(Global(x, y, z + h));
+      grad.row(Z) -= (right - left) / (2 * h);
+      EXPECT_NEAR(grad.norm(), 0, 1e-7);
+    }
+  }
+}
 TEST_F(TestPolynomialHexahedronInterpolation, FindCollinearPoints) {
   // build a hexa-gauss and a Lagrange interpolation on it
   auto a = 2.0, b = 3.0, c = 4.0;
