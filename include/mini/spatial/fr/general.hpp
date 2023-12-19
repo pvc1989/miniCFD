@@ -58,7 +58,7 @@ class General : public spatial::FiniteElement<Part> {
     int ijk;
   };
   struct FluxPointCache {
-    Global normal;  // normal_flux = normal * flux_matrix
+    Global normal;  // normal_flux = flux_matrix * normal
     Scalar scale;  // riemann_flux_local = scale * riemann_flux_global
     int ijk;
   };

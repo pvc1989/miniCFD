@@ -258,6 +258,8 @@ class Hexahedron {
   /**
    * @brief Convert a flux matrix from global to local at a given Gaussian point.
    * 
+   * \f$ \begin{bmatrix}F^{\xi} & F^{\eta} & F^{\zeta}\end{bmatrix}=\begin{bmatrix}f^{x} & f^{y} & f^{z}\end{bmatrix}\,\mathbf{J}^{*} \f$, in which \f$ \mathbf{J}^{*} \f$ is returned by `Hexahedron::GetJacobianAssociated`.
+   * 
    * @tparam FluxMatrix a matrix type which has 3 columns
    * @param global_flux the global flux
    * @param ijk the index of the Gaussian point
@@ -266,7 +268,7 @@ class Hexahedron {
   template <class FluxMatrix>
   FluxMatrix GlobalFluxToLocalFlux(const FluxMatrix &global_flux, int ijk) const
       requires (kLocal) {
-    FluxMatrix local_flux = global_flux * jacobian_det_inv_[ijk];
+    FluxMatrix local_flux = global_flux * GetJacobianAssociated(ijk);
     return local_flux;
   }
 
