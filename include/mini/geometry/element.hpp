@@ -33,7 +33,7 @@ class Element {
   using Global = algebra::Matrix<Scalar, kPhysDim, 1>;
 
   /**
-   * @brief The type of (geometric) Jacobian matrix, which is defined as \f$ \begin{bmatrix} \partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix} \f$.
+   * @brief The type of (geometric) Jacobian matrix, which is defined as \f$ \mathbf{J}=\begin{bmatrix}\partial_{\xi}\\\partial_{\eta}\\\partial_{\zeta}\end{bmatrix}\begin{bmatrix}x & y & z\end{bmatrix} \f$.
    * 
    */
   using Jacobian = algebra::Matrix<Scalar, kCellDim, kPhysDim>;

@@ -244,7 +244,7 @@ class Hexahedron {
   /**
    * @brief Convert the gradients in local coordinates to the gradients in global coordinates.
    * 
-   * \f$ \begin{bmatrix}\partial\phi/\partial\xi\\ \partial\phi/\partial\eta\\ \cdots \end{bmatrix} = \begin{bmatrix}\partial x/\partial\xi & \partial y/\partial\xi & \cdots\\ \partial x/\partial\eta & \partial y/\partial\eta & \cdots\\ \cdots & \cdots & \cdots \end{bmatrix}\begin{bmatrix}\partial\phi/\partial x\\\partial\phi/\partial y\\ \cdots \end{bmatrix} \f$
+   * \f$ \begin{bmatrix}\partial_{\xi}\,\phi\\\partial_{\eta}\,\phi\\\partial_{\zeta}\,\phi\end{bmatrix}=\mathbf{J}\begin{bmatrix}\partial_{x}\,\phi\\\partial_{y}\,\phi\\\partial_{z}\,\phi\end{bmatrix} \f$, in which \f$ \mathbf{J}=\begin{bmatrix}\partial_{\xi}\\\partial_{\eta}\\\partial_{\zeta}\end{bmatrix}\begin{bmatrix}x & y & z\end{bmatrix} \f$ is `geometry::Element::Jacobian`.
    * 
    * @param jacobian the Jacobian matrix of the type `geometry::Element::Jacobian`.
    * @param local_grad the gradients in local coordinates
@@ -258,7 +258,7 @@ class Hexahedron {
   /**
    * @brief Convert a flux matrix from global to local at a given Gaussian point.
    * 
-   * \f$ \begin{bmatrix}F^{\xi} & F^{\eta} & F^{\zeta}\end{bmatrix}=\begin{bmatrix}f^{x} & f^{y} & f^{z}\end{bmatrix}\,\mathbf{J}^{*} \f$, in which \f$ \mathbf{J}^{*} \f$ is returned by `Hexahedron::GetJacobianAssociated`.
+   * \f$ \begin{bmatrix}F^{\xi} & F^{\eta} & F^{\zeta}\end{bmatrix}=\begin{bmatrix}f^{x} & f^{y} & f^{z}\end{bmatrix}\mathbf{J}^{*} \f$, in which \f$ \mathbf{J}^{*} = \det(\mathbf{J}) \begin{bmatrix}\partial_{x}\\\partial_{y}\\\partial_{z}\end{bmatrix}\begin{bmatrix}\xi & \eta & \zeta\end{bmatrix} \f$ is returned by `Hexahedron::GetJacobianAssociated`.
    * 
    * @tparam FluxMatrix a matrix type which has 3 columns
    * @param global_flux the global flux
@@ -275,7 +275,7 @@ class Hexahedron {
   /**
    * @brief Get the associated matrix of the Jacobian at a given Gaussian point.
    * 
-   * \f$ \mathbf{J}^{*} = \det(\mathbf{J})\,\mathbf{J}^{-1} = \det(\mathbf{J}) \begin{bmatrix} \partial_x\xi & \partial_x\eta & \partial_x\zeta \\ \partial_y\xi & \partial_y\eta & \partial_y\zeta \\ \partial_z\xi & \partial_z\eta & \partial_z\zeta \\ \end{bmatrix} \f$
+   * \f$ \mathbf{J}^{*}=\det(\mathbf{J})\,\mathbf{J}^{-1} \f$, in which \f$ \mathbf{J}^{-1}=\begin{bmatrix}\partial_{x}\\\partial_{y}\\\partial_{z}\end{bmatrix}\begin{bmatrix}\xi & \eta & \zeta\end{bmatrix} \f$ is the inverse of `geometry::Element::Jacobian`.
    * 
    * @param ijk the index of the Gaussian point
    * @return Jacobian const& the associated matrix of \f$ \mathbf{J} \f$.
