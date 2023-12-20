@@ -39,6 +39,7 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/gauss/pyramid.hpp"
 #include "mini/gauss/wedge.hpp"
+#include "mini/riemann/concept.hpp"
 #include "mini/type/select.hpp"
 
 namespace mini {
@@ -103,6 +104,7 @@ struct Cell;
 
 template <std::integral Int, class R, class P>
 struct Face {
+  static_assert(mini::riemann::Convective<R>);
   using Riemann = R;
   using Scalar = typename Riemann::Scalar;
   constexpr static int kComponents = Riemann::kComponents;
