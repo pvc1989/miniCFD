@@ -11,9 +11,12 @@
 #include <unordered_map>
 
 #include "mini/temporal/ode.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace spatial {
+
+using namespace mini::constant::index;
 
 static bool Near(auto const &x, auto const &y) {
   return (x - y).norm() < 1e-12;

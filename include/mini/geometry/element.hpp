@@ -11,12 +11,12 @@
 #include <vector>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace geometry {
 
-static constexpr int X{0}, Y{1}, Z{2};
-static constexpr int A{0}, B{1}, C{2}, D{3};
+using namespace mini::constant::index;
 
 /**
  * @brief Abstract coordinate map on surface elements.

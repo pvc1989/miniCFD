@@ -3,11 +3,12 @@
 #define MINI_GAUSS_ELEMENT_HPP_
 
 #include "mini/geometry/element.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace gauss {
 
-static constexpr int X{0}, Y{1}, Z{2};
+using namespace mini::constant::index;
 
 /**
  * @brief Abstract numerical integrators on elements.

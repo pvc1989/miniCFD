@@ -2,6 +2,8 @@
 #ifndef MINI_RIEMANN_ROTATED_DIRECT_DG_HPP_
 #define MINI_RIEMANN_ROTATED_DIRECT_DG_HPP_
 
+#include "mini/constant/index.hpp"
+
 namespace mini {
 namespace riemann {
 namespace rotated {
@@ -10,15 +12,7 @@ template <typename Scalar>
 class DirectDG {
   Scalar const beta_0_;
   Scalar const beta_1_;
-  static constexpr int X{0};
-  static constexpr int Y{1};
-  static constexpr int Z{2};
-  static constexpr int XX{0};
-  static constexpr int XY{1}; static constexpr int YX{XY};
-  static constexpr int XZ{2}; static constexpr int ZX{XZ};
-  static constexpr int YY{3};
-  static constexpr int YZ{4}; static constexpr int ZY{YZ};
-  static constexpr int ZZ{5};
+  using namespace mini::contant::index;
 
  public:
   DirectDG(Scalar beta_0 = 2.0, Scalar beta_1 = 1.0 / 12)

@@ -13,8 +13,6 @@
 namespace mini {
 namespace geometry {
 
-static constexpr int XX{0}, XY{1}, XZ{2}, YY{3}, YZ{4}, ZZ{5};
-
 /**
  * @brief Abstract coordinate map on volume elements.
  * 
@@ -102,7 +100,6 @@ class Cell : public Element<Scalar, 3, 3> {
    */
   algebra::Vector<Jacobian, 3> LocalToJacobianGradient(Local const &xyz)
       const {
-    constexpr int YX = XY, ZY = YZ, ZX = XZ;
     auto hessians = LocalToShapeHessians(xyz);
     algebra::Vector<Jacobian, 3> grad;
     grad[X].setZero(); grad[Y].setZero(); grad[Z].setZero();

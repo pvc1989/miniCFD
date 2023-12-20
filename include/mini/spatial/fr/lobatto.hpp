@@ -69,10 +69,6 @@ class Lobatto : public General<Part> {
   std::vector<FaceCache> holder_cache_;
   std::vector<FaceCache> sharer_cache_;
 
-  static constexpr int X = 0;
-  static constexpr int Y = 1;
-  static constexpr int Z = 2;
-
   static bool Collinear(Global const &a, Global const &b) {
     return std::abs(1 - std::abs(a.dot(b) / a.norm() / b.norm())) < 1e-8;
   }

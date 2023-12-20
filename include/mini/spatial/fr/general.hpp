@@ -74,10 +74,6 @@ class General : public spatial::FiniteElement<Part> {
   using Vincent = mini::basis::Vincent<Scalar>;
   Vincent vincent_;
 
-  static constexpr int X = 0;
-  static constexpr int Y = 1;
-  static constexpr int Z = 2;
-
   static bool Collinear(Global const &a, Global const &b) {
     return std::abs(1 - std::abs(a.dot(b) / a.norm() / b.norm())) < 1e-8;
   }
