@@ -1,12 +1,11 @@
 // Copyright 2023 PEI Weicheng
-#ifndef MINI_RIEMANN_ROTATED_DIRECT_DG_HPP_
-#define MINI_RIEMANN_ROTATED_DIRECT_DG_HPP_
+#ifndef MINI_DIFFUSION_DIRECT_DG_HPP_
+#define MINI_DIFFUSION_DIRECT_DG_HPP_
 
 #include "mini/constant/index.hpp"
 
 namespace mini {
-namespace riemann {
-namespace rotated {
+namespace diffusion {
 
 template <typename Scalar>
 class DirectDG {
@@ -15,7 +14,7 @@ class DirectDG {
   using namespace mini::contant::index;
 
  public:
-  DirectDG(Scalar beta_0 = 2.0, Scalar beta_1 = 1.0 / 12)
+  explicit DirectDG(Scalar beta_0 = 2.0, Scalar beta_1 = 1.0 / 12)
       : beta_0_(beta_0), beta_1_(beta_1) {}
 
   template <typename Value, typename Gradient, typename Hessian>
@@ -48,8 +47,7 @@ class DirectDG {
   }
 };
 
-}  // namespace rotated
-}  // namespace riemann
+}  // namespace diffusion
 }  // namespace mini
 
-#endif  // MINI_RIEMANN_ROTATED_DIRECT_DG_HPP_
+#endif  // MINI_DIFFUSION_DIRECT_DG_HPP_
