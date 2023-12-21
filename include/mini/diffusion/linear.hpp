@@ -1,0 +1,83 @@
+// Copyright 2023 PEI Weicheng
+#ifndef MINI_DIFFUSION_SCALAR_HPP_
+#define MINI_DIFFUSION_SCALAR_HPP_
+
+#include "mini/algebra/eigen.hpp"
+#include "mini/constant/index.hpp"
+
+namespace mini {
+namespace diffusion {
+namespace linear {
+
+/**
+ * @brief A constant linear diffusion term, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\partial_x\,u & \nu_y\partial_y\,u & \nu_z\partial_z\,u \end{bmatrix} \f$.
+ * 
+ * @tparam S 
+ * @tparam K 
+ */
+template <typename S, int K>
+class Anisotropic {
+ public:
+  static constexpr int kDimensions = 3;
+  static constexpr int kComponents = K;
+  using Scalar = S;
+  using Conservative = algebra::Vector<Scalar, kComponents>;
+  using Gradient = algebra::Matrix<Scalar, kDimensions, kComponents>;
+  using FluxMatrix = algebra::Matrix<Scalar, kComponents, kDimensions>;
+  using Flux = Conservative;
+
+ private:
+  Scalar const nu_x_;
+  Scalar const nu_y_;
+  Scalar const nu_z_;
+
+ public:
+  Anisotropic(Scalar nu_x, Scalar nu_y, Scalar nu_z)
+      : nu_x_(nu_x), nu_y_(nu_y), nu_z_(nu_z) {
+  }
+
+  void AddFluxMatrix(Conservative const &value, Gradient const &gradient,
+      FluxMatrix *flux) const {
+    using namespace mini::contant::index;
+    flux->col(X) += nu_x_ * gradient.row(X);
+    flux->col(Y) += nu_y_ * gradient.row(Y);
+    flux->col(Z) += nu_z_ * gradient.row(Z);
+  }
+
+  void AddFlux(Conservative const &value, Gradient const &gradient,
+      Vector const &normal, Flux *flux) const {
+    using namespace mini::contant::index;
+    flux += (normal[X] * nu_x_) * gradient.row(X);
+    flux += (normal[Y] * nu_y_) * gradient.row(Y);
+    flux += (normal[Z] * nu_z_) * gradient.row(Z);
+  }
+};
+
+/**
+ * @brief A constant linear diffusion term, whose diffusive flux is \f$ \nu \begin{bmatrix} \partial_x\,u & \partial_y\,u & \partial_z\,u \end{bmatrix} \f$.
+ * 
+ * @tparam S
+ * @tparam K 
+ */
+template <typename S, int K>
+class Isotropic : public Anisotropic<S, K> {
+  using Base = Anisotropic<S, K>;
+
+ public:
+  static constexpr int kDimensions = 3;
+  static constexpr int kComponents = K;
+  using Scalar = typename Base::Scalar;
+  using Conservative = typename Base::Conservative;
+  using Gradient = typename Base::Gradient;
+  using FluxMatrix = typename Base::FluxMatrix;
+  using Flux = typename Base::Flux;
+
+ public:
+  explicit Isotropic(Scalar nu) : Base(nu, nu, nu) {}
+};
+
+}  // namespace linear
+}  // namespace diffusion
+}  // namespace mini
+
+#endif  // MINI_DIFFUSION_SCALAR_HPP_
