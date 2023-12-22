@@ -3,14 +3,14 @@
 #define MINI_RIEMANN_ROTATED_SINGLE_HPP_
 
 #include "mini/riemann/rotated/simple.hpp"
-#include "mini/riemann/linear/single.hpp"
+#include "mini/riemann/simple/single.hpp"
 
 namespace mini {
 namespace riemann {
 namespace rotated {
 
 template <typename S, int D>
-class Single : public Simple<linear::Single<S, D>> {
+class Single : public Simple<simple::Single<S, D>> {
  public:
   constexpr static int kComponents = 1;
   constexpr static int kDimensions = D;

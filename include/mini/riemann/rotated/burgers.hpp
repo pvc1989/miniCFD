@@ -3,15 +3,15 @@
 #define MINI_RIEMANN_ROTATED_BURGERS_HPP_
 
 #include "mini/riemann/rotated/simple.hpp"
-#include "mini/riemann/nonlinear/burgers.hpp"
+#include "mini/riemann/simple/burgers.hpp"
 
 namespace mini {
 namespace riemann {
 namespace rotated {
 
 template <typename S, int D>
-class Burgers : public Simple<nonlinear::Burgers<S, D>> {
-  using Base = Simple<nonlinear::Burgers<S, D>>;
+class Burgers : public Simple<simple::Burgers<S, D>> {
+  using Base = Simple<simple::Burgers<S, D>>;
 
  public:
   constexpr static int kComponents = 1;

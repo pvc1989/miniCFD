@@ -3,15 +3,15 @@
 #define MINI_RIEMANN_ROTATED_MULTIPLE_HPP_
 
 #include "mini/riemann/rotated/simple.hpp"
-#include "mini/riemann/linear/multiple.hpp"
+#include "mini/riemann/simple/multiple.hpp"
 
 namespace mini {
 namespace riemann {
 namespace rotated {
 
 template <typename S, int K, int D>
-class Multiple : public Simple<linear::Multiple<S, K, D>> {
-  using Base = Simple<linear::Multiple<S, K, D>>;
+class Multiple : public Simple<simple::Multiple<S, K, D>> {
+  using Base = Simple<simple::Multiple<S, K, D>>;
 
  public:
   constexpr static int kComponents = K;

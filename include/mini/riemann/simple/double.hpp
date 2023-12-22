@@ -1,7 +1,7 @@
 // Copyright 2019 PEI Weicheng and YANG Minghao
 
-#ifndef MINI_RIEMANN_LINEAR_DOUBLE_HPP_
-#define MINI_RIEMANN_LINEAR_DOUBLE_HPP_
+#ifndef MINI_RIEMANN_SIMPLE_DOUBLE_HPP_
+#define MINI_RIEMANN_SIMPLE_DOUBLE_HPP_
 
 #include <cmath>
 
@@ -9,7 +9,7 @@
 
 namespace mini {
 namespace riemann {
-namespace linear {
+namespace simple {
 
 template <typename S, int D>
 class Double {
@@ -127,8 +127,8 @@ class Double {
   }
 };
 
-}  // namespace linear
+}  // namespace simple
 }  // namespace riemann
 }  // namespace mini
 
-#endif  // MINI_RIEMANN_LINEAR_DOUBLE_HPP_
+#endif  // MINI_RIEMANN_SIMPLE_DOUBLE_HPP_

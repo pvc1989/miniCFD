@@ -4,11 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/riemann/linear/single.hpp"
+#include "mini/riemann/simple/single.hpp"
 
 namespace mini {
 namespace riemann {
-namespace linear {
+namespace simple {
 
 class TestSingleWaveTest : public ::testing::Test {
  protected:
@@ -30,7 +30,7 @@ TEST_F(TestSingleWaveTest, TestFlux) {
   EXPECT_EQ(solver.GetFluxUpwind(u_l, u_r), solver.GetFlux(u_l));
 }
 
-}  // namespace linear
+}  // namespace simple
 }  // namespace riemann
 }  // namespace mini
 

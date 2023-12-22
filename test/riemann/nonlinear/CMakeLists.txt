@@ -1,3 +1,0 @@
-add_executable(test_riemann_nonlinear_burgers burgers.cpp)
-set_target_properties(test_riemann_nonlinear_burgers PROPERTIES OUTPUT_NAME burgers)
-add_test(NAME test_riemann_nonlinear_burgers COMMAND burgers)

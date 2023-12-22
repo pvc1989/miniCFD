@@ -4,11 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/riemann/linear/double.hpp"
+#include "mini/riemann/simple/double.hpp"
 
 namespace mini {
 namespace riemann {
-namespace linear {
+namespace simple {
 
 class TestDoubleWave : public ::testing::Test {
  protected:
@@ -46,7 +46,7 @@ TEST_F(TestDoubleWave, TestNonTrivialMatrix) {
   EXPECT_DOUBLE_EQ(f_on_t_axis[1], 60.0);
 }
 
-}  // namespace linear
+}  // namespace simple
 }  // namespace riemann
 }  // namespace mini
 

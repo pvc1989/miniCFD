@@ -4,11 +4,11 @@
 
 #include "gtest/gtest.h"
 
-#include "mini/riemann/nonlinear/burgers.hpp"
+#include "mini/riemann/simple/burgers.hpp"
 
 namespace mini {
 namespace riemann {
-namespace nonlinear {
+namespace simple {
 
 class TestBurgers : public ::testing::Test {
  protected:
@@ -58,7 +58,7 @@ TEST_F(TestBurgers, TestNonZeroK) {
   }
 }
 
-}  // namespace nonlinear
+}  // namespace simple
 }  // namespace riemann
 }  // namespace mini
 

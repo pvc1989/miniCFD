@@ -1,7 +1,7 @@
 //  Copyright 2019 PEI Weicheng and YANG Minghao
 
-#ifndef MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
-#define MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
+#ifndef MINI_RIEMANN_SIMPLE_BURGERS_HPP_
+#define MINI_RIEMANN_SIMPLE_BURGERS_HPP_
 
 #include <array>
 #include <cmath>
@@ -10,7 +10,7 @@
 
 namespace mini {
 namespace riemann {
-namespace nonlinear {
+namespace simple {
 
 template <typename S, int D>
 class Burgers {
@@ -61,8 +61,8 @@ class Burgers {
   Jacobian k_;
 };
 
-}  // namespace nonlinear
+}  // namespace simple
 }  // namespace riemann
 }  // namespace mini
 
-#endif  // MINI_RIEMANN_NONLINEAR_BURGERS_HPP_
+#endif  // MINI_RIEMANN_SIMPLE_BURGERS_HPP_
