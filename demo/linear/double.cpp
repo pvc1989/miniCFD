@@ -65,10 +65,10 @@ int main(int argc, char* argv[]) {
   /* Define the Double-wave equation. */
   constexpr int kDimensions = 3;
   using Riemann = mini::riemann::rotated::Double<Scalar, kDimensions>;
-  using Jacobi = typename Riemann::Jacobi;
+  using Jacobian = typename Riemann::Jacobian;
   Riemann::SetConvectionCoefficient(
-    Jacobi{ {10., 0.}, {0., 5.} },
-    Jacobi{ {0., 0.}, {0., 0.} }, Jacobi{ {0., 0.}, {0., 0.} }
+    Jacobian{ {10., 0.}, {0., 5.} },
+    Jacobian{ {0., 0.}, {0., 0.} }, Jacobian{ {0., 0.}, {0., 0.} }
   );
 
   /* Partition the mesh. */

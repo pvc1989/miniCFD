@@ -67,10 +67,10 @@ int main(int argc, char* argv[]) {
   constexpr int kDimensions = 3;
   using Riemann = mini::
       riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
-  using Jacobi = typename Riemann::Jacobi;
-  auto a_x = Jacobi{ {6., -2.}, {-2., 6.} };
+  using Jacobian = typename Riemann::Jacobian;
+  auto a_x = Jacobian{ {6., -2.}, {-2., 6.} };
   Riemann::SetConvectionCoefficient(
-    a_x, Jacobi{ {0., 0.}, {0., 0.} }, Jacobi{ {0., 0.}, {0., 0.} }
+    a_x, Jacobian{ {0., 0.}, {0., 0.} }, Jacobian{ {0., 0.}, {0., 0.} }
   );
 
   /* Partition the mesh. */
@@ -107,10 +107,10 @@ int main(int argc, char* argv[]) {
     return (xyz[0] > x_0) ? value_right : value_left;
   };
   // build exact solution
-  auto eig_solver = Eigen::EigenSolver<Jacobi>(a_x);
+  auto eig_solver = Eigen::EigenSolver<Jacobian>(a_x);
   Value eig_vals = eig_solver.eigenvalues().real();
-  Jacobi eig_rows = eig_solver.eigenvectors().real();
-  Jacobi eig_cols = eig_rows.inverse();
+  Jacobian eig_rows = eig_solver.eigenvectors().real();
+  Jacobian eig_cols = eig_rows.inverse();
   auto exact_solution = [&](const Global& xyz, double t){
     Value value; value.setZero();
     for (int i = 0; i < kComponents; ++i) {

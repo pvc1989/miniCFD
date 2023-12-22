@@ -20,8 +20,8 @@ class Multiple {
   using Vector = algebra::Vector<Scalar, kDimensions>;
   using Column = algebra::Vector<Scalar, kComponents>;
   using Matrix = algebra::Matrix<Scalar, kComponents, kComponents>;
-  using Jacobi = Matrix;
-  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
+  using Jacobian = Matrix;
+  using Coefficient = algebra::Vector<Jacobian, kDimensions>;
   using Conservative = Column;
   using Flux = Column;
 

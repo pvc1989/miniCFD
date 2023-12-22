@@ -30,7 +30,7 @@ class Simple {
   using Flux = MatKx1;
   using FluxMatrix = algebra::Matrix<Scalar, K, D>;
   using Frame3d = std::array<Vector, 3>;
-  using Jacobi = typename Base::Jacobi;
+  using Jacobian = typename Base::Jacobian;
   using Coefficient = typename Base::Coefficient;
 
  protected:
@@ -50,7 +50,7 @@ class Simple {
   }
   void Rotate(Scalar n_x, Scalar n_y,  Scalar n_z) {
     static_assert(D == 3);
-    Jacobi a_normal = convection_coefficient_[X] * n_x;
+    Jacobian a_normal = convection_coefficient_[X] * n_x;
     a_normal += convection_coefficient_[Y] * n_y;
     a_normal += convection_coefficient_[Z] * n_z;
     unrotated_simple_ = UnrotatedSimple(a_normal);
@@ -98,8 +98,8 @@ class Simple {
     flux_mat.col(Z) = convection_coefficient_[Z] * state;
     return flux_mat;
   }
-  static void SetConvectionCoefficient(Jacobi const &a_x, Jacobi const &a_y,
-      Jacobi const &a_z) {
+  static void SetConvectionCoefficient(Jacobian const &a_x, Jacobian const &a_y,
+      Jacobian const &a_z) {
     convection_coefficient_[X] = a_x;
     convection_coefficient_[Y] = a_y;
     convection_coefficient_[Z] = a_z;

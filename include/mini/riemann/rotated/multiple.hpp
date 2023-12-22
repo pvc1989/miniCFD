@@ -17,15 +17,15 @@ class Multiple : public Simple<linear::Multiple<S, K, D>> {
   constexpr static int kComponents = K;
   constexpr static int kDimensions = D;
   using Scalar = S;
-  using Jacobi = typename Base::Jacobi;
+  using Jacobian = typename Base::Jacobian;
   using Conservative = typename Base::Conservative;
 
   void UpdateEigenMatrices(const Conservative &) {
   }
-  const Jacobi& L() const {
+  const Jacobian& L() const {
     return this->unrotated_simple_.L();
   }
-  const Jacobi& R() const {
+  const Jacobian& R() const {
     return this->unrotated_simple_.R();
   }
 };

@@ -20,15 +20,15 @@ class Single {
   // Types:
   using Scalar = S;
   using Vector = algebra::Vector<Scalar, kDimensions>;
-  using Jacobi = Scalar;
-  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
+  using Jacobian = Scalar;
+  using Coefficient = algebra::Vector<Jacobian, kDimensions>;
   using Conservative = Scalar;
   using Flux = Scalar;
   using Speed = Scalar;
   using MatKx1 = algebra::Matrix<Scalar, kComponents, 1>;
   // Constructor:
   Single() : a_const_(1) {}
-  explicit Single(Jacobi const& a_const) : a_const_(a_const) {}
+  explicit Single(Jacobian const& a_const) : a_const_(a_const) {}
   // Get F on T Axia:
   Flux GetFluxUpwind(const Conservative& left, const Conservative& right)
       const {
@@ -50,7 +50,7 @@ class Single {
   }
 
  private:
-  Jacobi a_const_;
+  Jacobian a_const_;
 };
 
 }  // namespace linear

@@ -20,10 +20,10 @@ class Burgers {
   // Types:
   using Scalar = S;
   using Vector = algebra::Vector<Scalar, kDimensions>;
-  using Jacobi = Scalar;
+  using Jacobian = Scalar;
   using Conservative = Scalar;
   using Flux = Scalar;
-  using Coefficient = algebra::Vector<Jacobi, kDimensions>;
+  using Coefficient = algebra::Vector<Jacobian, kDimensions>;
   using MatKx1 = algebra::Matrix<Scalar, kComponents, 1>;
   // Constructor:
   Burgers() : k_(1) {}
@@ -58,7 +58,7 @@ class Burgers {
   }
 
  private:
-  Jacobi k_;
+  Jacobian k_;
 };
 
 }  // namespace nonlinear

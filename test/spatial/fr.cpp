@@ -48,11 +48,11 @@ class TestSpatialFR : public ::testing::Test {
   void SetUp() override;
 };
 void TestSpatialFR::SetUp() {
-  using Jacobi = typename Riemann::Jacobi;
+  using Jacobian = typename Riemann::Jacobian;
   Riemann::SetConvectionCoefficient(
-    Jacobi{ {3., 0.}, {0., 4.} },
-    Jacobi{ {5., 0.}, {0., 6.} },
-    Jacobi{ {7., 0.}, {0., 8.} }
+    Jacobian{ {3., 0.}, {0., 4.} },
+    Jacobian{ {5., 0.}, {0., 6.} },
+    Jacobian{ {7., 0.}, {0., 8.} }
   );
 }
 TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
