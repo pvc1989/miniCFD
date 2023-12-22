@@ -68,9 +68,10 @@ int main(int argc, char* argv[]) {
   using Riemann = mini::
       riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
   using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {6., -2.}, {-2., 6.} };
-  Riemann::global_coefficient[1].setZero();
-  Riemann::global_coefficient[2].setZero();
+  auto a_x = Jacobi{ {6., -2.}, {-2., 6.} };
+  Riemann::SetConvectionCoefficient(
+    a_x, Jacobi{ {0., 0.}, {0., 0.} }, Jacobi{ {0., 0.}, {0., 0.} }
+  );
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]) {
     return (xyz[0] > x_0) ? value_right : value_left;
   };
   // build exact solution
-  auto eig_solver = Eigen::EigenSolver<Jacobi>(Riemann::global_coefficient[0]);
+  auto eig_solver = Eigen::EigenSolver<Jacobi>(a_x);
   Value eig_vals = eig_solver.eigenvalues().real();
   Jacobi eig_rows = eig_solver.eigenvectors().real();
   Jacobi eig_cols = eig_rows.inverse();

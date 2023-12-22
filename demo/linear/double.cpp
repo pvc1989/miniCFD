@@ -66,9 +66,10 @@ int main(int argc, char* argv[]) {
   constexpr int kDimensions = 3;
   using Riemann = mini::riemann::rotated::Double<Scalar, kDimensions>;
   using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {10., 0.}, {0., 5.} };
-  Riemann::global_coefficient[1].setZero();
-  Riemann::global_coefficient[2].setZero();
+  Riemann::SetConvectionCoefficient(
+    Jacobi{ {10., 0.}, {0., 5.} },
+    Jacobi{ {0., 0.}, {0., 0.} }, Jacobi{ {0., 0.}, {0., 0.} }
+  );
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {

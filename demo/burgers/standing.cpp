@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
   constexpr int kComponents = 1;
   constexpr int kDimensions = 3;
   using Riemann = mini::riemann::rotated::Burgers<Scalar, kDimensions>;
-  Riemann::global_coefficient = { 1, 0, 0 };
+  Riemann::SetConvectionCoefficient(1, 0, 0);
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {

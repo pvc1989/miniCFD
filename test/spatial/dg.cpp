@@ -65,9 +65,11 @@ int main(int argc, char* argv[]) {
   cgp_mpi_comm(MPI_COMM_WORLD);
 
   using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {3., 0.}, {0., 4.} };
-  Riemann::global_coefficient[1] = Jacobi{ {5., 0.}, {0., 6.} };
-  Riemann::global_coefficient[2] = Jacobi{ {7., 0.}, {0., 8.} };
+  Riemann::SetConvectionCoefficient(
+    Jacobi{ {3., 0.}, {0., 4.} },
+    Jacobi{ {5., 0.}, {0., 6.} },
+    Jacobi{ {7., 0.}, {0., 8.} }
+  );
 
   /* aproximated by Projection on OrthoNormal basis */
 {

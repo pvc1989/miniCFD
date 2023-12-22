@@ -49,9 +49,11 @@ class TestSpatialFR : public ::testing::Test {
 };
 void TestSpatialFR::SetUp() {
   using Jacobi = typename Riemann::Jacobi;
-  Riemann::global_coefficient[0] = Jacobi{ {3., 0.}, {0., 4.} };
-  Riemann::global_coefficient[1] = Jacobi{ {5., 0.}, {0., 6.} };
-  Riemann::global_coefficient[2] = Jacobi{ {7., 0.}, {0., 8.} };
+  Riemann::SetConvectionCoefficient(
+    Jacobi{ {3., 0.}, {0., 4.} },
+    Jacobi{ {5., 0.}, {0., 6.} },
+    Jacobi{ {7., 0.}, {0., 8.} }
+  );
 }
 TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
   /* aproximated by Lagrange basis on Lobatto roots with general correction functions */

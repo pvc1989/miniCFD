@@ -5,10 +5,13 @@
 #include <cstring>
 
 #include "mini/algebra/eigen.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace riemann {
 namespace rotated {
+
+using namespace mini::constant::index;
 
 template <class UnrotatedSimple>
 class Simple {
@@ -16,7 +19,6 @@ class Simple {
   using Base = UnrotatedSimple;
   static constexpr int K = Base::kComponents;
   static constexpr int D = Base::kDimensions;
-  static constexpr int x{0}, y{1}, z{2};
 
  public:
   static constexpr int kComponents = Base::kComponents;
@@ -42,21 +44,21 @@ class Simple {
  public:
   void Rotate(Scalar n_x, Scalar n_y) {
     static_assert(D == 2);
-    auto a_normal = global_coefficient[x] * n_x;
-    a_normal += global_coefficient[y] * n_y;
+    auto a_normal = convection_coefficient_[X] * n_x;
+    a_normal += convection_coefficient_[Y] * n_y;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
   void Rotate(Scalar n_x, Scalar n_y,  Scalar n_z) {
     static_assert(D == 3);
-    Jacobi a_normal = global_coefficient[x] * n_x;
-    a_normal += global_coefficient[y] * n_y;
-    a_normal += global_coefficient[z] * n_z;
+    Jacobi a_normal = convection_coefficient_[X] * n_x;
+    a_normal += convection_coefficient_[Y] * n_y;
+    a_normal += convection_coefficient_[Z] * n_z;
     unrotated_simple_ = UnrotatedSimple(a_normal);
   }
   void Rotate(const Frame3d &frame) {
     const auto &nu = frame[0];
     assert(std::abs(1 - nu.norm()) < 1e-6);
-    Rotate(nu[x], nu[y], nu[z]);
+    Rotate(nu[X], nu[Y], nu[Z]);
   }
   Flux GetFluxUpwind(const Conservative& left,
       const Conservative& right) const {
@@ -91,20 +93,25 @@ class Simple {
   }
   static FluxMatrix GetFluxMatrix(const Conservative& state) {
     FluxMatrix flux_mat;
-    for (int c = 0; c < D; ++c) {
-      flux_mat.col(c) = global_coefficient[c] * state;
-    }
+    flux_mat.col(X) = convection_coefficient_[X] * state;
+    flux_mat.col(Y) = convection_coefficient_[Y] * state;
+    flux_mat.col(Z) = convection_coefficient_[Z] * state;
     return flux_mat;
   }
-
-  static Coefficient global_coefficient;
+  static void SetConvectionCoefficient(Jacobi const &a_x, Jacobi const &a_y,
+      Jacobi const &a_z) {
+    convection_coefficient_[X] = a_x;
+    convection_coefficient_[Y] = a_y;
+    convection_coefficient_[Z] = a_z;
+  }
 
  protected:
   UnrotatedSimple unrotated_simple_;
+  static Coefficient convection_coefficient_;
 };
 template <class UnrotatedSimple>
 typename Simple<UnrotatedSimple>::Coefficient
-Simple<UnrotatedSimple>::global_coefficient;
+Simple<UnrotatedSimple>::convection_coefficient_;
 
 }  // namespace rotated
 }  // namespace riemann

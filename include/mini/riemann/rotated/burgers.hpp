@@ -26,7 +26,7 @@ class Burgers : public Simple<nonlinear::Burgers<S, D>> {
     FluxMatrix flux_mat;
     for (int c = 0; c < D; ++c) {
       flux_mat(0, c) = state[0] * state[0];
-      flux_mat(0, c) *= Base::global_coefficient[c] / 2.0;
+      flux_mat(0, c) *= Base::convection_coefficient_[c] / 2.0;
     }
     return flux_mat;
   }
