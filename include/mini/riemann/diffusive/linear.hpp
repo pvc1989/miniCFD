@@ -1,13 +1,13 @@
 // Copyright 2023 PEI Weicheng
-#ifndef MINI_DIFFUSION_SCALAR_HPP_
-#define MINI_DIFFUSION_SCALAR_HPP_
+#ifndef MINI_RIEMANN_DIFFUSIVE_SCALAR_HPP_
+#define MINI_RIEMANN_DIFFUSIVE_SCALAR_HPP_
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/constant/index.hpp"
 
 namespace mini {
-namespace diffusion {
-namespace linear {
+namespace riemann {
+namespace diffusive {
 
 /**
  * @brief A constant linear diffusion term, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\partial_x\,u & \nu_y\partial_y\,u & \nu_z\partial_z\,u \end{bmatrix} \f$.
@@ -76,8 +76,8 @@ class Isotropic : public Anisotropic<S, K> {
   explicit Isotropic(Scalar nu) : Base(nu, nu, nu) {}
 };
 
-}  // namespace linear
-}  // namespace diffusion
+}  // namespace diffusive
+}  // namespace riemann
 }  // namespace mini
 
-#endif  // MINI_DIFFUSION_SCALAR_HPP_
+#endif  // MINI_RIEMANN_DIFFUSIVE_SCALAR_HPP_

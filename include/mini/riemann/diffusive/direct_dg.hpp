@@ -1,11 +1,12 @@
 // Copyright 2023 PEI Weicheng
-#ifndef MINI_DIFFUSION_DIRECT_DG_HPP_
-#define MINI_DIFFUSION_DIRECT_DG_HPP_
+#ifndef MINI_RIEMANN_DIFFUSIVE_DIRECT_DG_HPP_
+#define MINI_RIEMANN_DIFFUSIVE_DIRECT_DG_HPP_
 
 #include "mini/constant/index.hpp"
 
 namespace mini {
-namespace diffusion {
+namespace riemann {
+namespace diffusive {
 
 template <typename Scalar>
 class DirectDG {
@@ -47,7 +48,8 @@ class DirectDG {
   }
 };
 
-}  // namespace diffusion
+}  // namespace diffusive
+}  // namespace riemann
 }  // namespace mini
 
-#endif  // MINI_DIFFUSION_DIRECT_DG_HPP_
+#endif  // MINI_RIEMANN_DIFFUSIVE_DIRECT_DG_HPP_
