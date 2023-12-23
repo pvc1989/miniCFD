@@ -10,7 +10,7 @@ namespace riemann {
 namespace diffusive {
 
 /**
- * @brief A constant linear diffusion term, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\partial_x\,u & \nu_y\partial_y\,u & \nu_z\partial_z\,u \end{bmatrix} \f$.
+ * @brief A constant linear diffusion model, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\partial_x\,u & \nu_y\partial_y\,u & \nu_z\partial_z\,u \end{bmatrix} \f$.
  * 
  * @tparam S 
  * @tparam K 
@@ -54,7 +54,7 @@ class Anisotropic {
 };
 
 /**
- * @brief A constant linear diffusion term, whose diffusive flux is \f$ \nu \begin{bmatrix} \partial_x\,u & \partial_y\,u & \partial_z\,u \end{bmatrix} \f$.
+ * @brief A constant linear diffusion model, whose diffusive flux is \f$ \nu \begin{bmatrix} \partial_x\,u & \partial_y\,u & \partial_z\,u \end{bmatrix} \f$.
  * 
  * @tparam S
  * @tparam K 
