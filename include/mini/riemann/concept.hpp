@@ -24,17 +24,62 @@ concept HasConvectiveData = requires {
 };
 
 template <typename R, typename C>
-concept HasConvectiveMethods = requires(R r, C const &x, C const &y) {
+concept HasConvectiveMethods = requires(R riemann, C const &value) {
   requires HasConvectiveData<R>;
   requires std::same_as<C, typename R::Conservative>;
-  { R::GetFluxMatrix(x) } -> std::same_as<typename R::FluxMatrix>;
-  { r.GetFluxUpwind(x, y) } -> std::same_as<typename R::Flux>;
+  { R::GetFluxMatrix(value) } -> std::same_as<typename R::FluxMatrix>;
+  { riemann.GetFluxUpwind(value, value) } -> std::same_as<typename R::Flux>;
 };
 
 template <typename R>
 concept Convective =
     HasConvectiveData<R> &&
     HasConvectiveMethods<R, typename R::Conservative>;
+
+template <typename R>
+concept HasDiffusiveData = requires {
+  requires HasConvectiveData<R>;
+  // more than convective
+  typename R::Gradient;
+};
+
+template <typename R, typename C, typename G, typename F, typename M,
+    typename S, typename V>
+concept HasDiffusiveMethods = requires(R riemann, C const &value,
+    G const &gradient, F *flux, M *flux_matrix, S distance, V const &normal) {
+  requires std::same_as<G, typename R::Gradient>;
+  requires std::same_as<S, typename R::Scalar>;
+  requires std::same_as<V, typename R::Vector>;
+  requires std::same_as<F, typename R::Flux>;
+  requires std::same_as<M, typename R::FluxMatrix>;
+  { riemann.AddFluxMatrix(value, gradient, flux_matrix) } -> std::same_as<void>;
+  { riemann.AddFlux(value, gradient, normal, flux) } -> std::same_as<void>;
+  { riemann.GetCommonGradient(distance, normal, value, value,
+      gradient, gradient) } -> std::same_as<typename R::Gradient>;
+};
+
+template <typename R>
+concept Diffusive =
+    HasDiffusiveData<R> &&
+    HasDiffusiveMethods<R, typename R::Conservative, typename R::Gradient,
+        typename R::Flux, typename R::FluxMatrix,
+        typename R::Scalar, typename R::Vector>;
+
+template <typename R>
+concept ConvectiveDiffusive = Convective<R> && Diffusive<R>;
+
+template <Convective C, Diffusive D>
+class ConvectionDiffusion : public C, public D {
+ public:
+  static constexpr int kDimensions = C::kDimensions;
+  static constexpr int kComponents = C::kComponents;
+  using Scalar = typename D::Scalar;
+  using Vector = typename D::Vector;
+  using Conservative = typename D::Conservative;
+  using Gradient = typename D::Gradient;
+  using FluxMatrix = typename D::FluxMatrix;
+  using Flux = typename D::Flux;
+};
 
 }  // namespace riemann
 }  // namespace mini

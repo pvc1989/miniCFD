@@ -21,6 +21,7 @@ class Anisotropic {
   static constexpr int kDimensions = 3;
   static constexpr int kComponents = K;
   using Scalar = S;
+  using Vector = algebra::Vector<Scalar, kDimensions>;
   using Conservative = algebra::Vector<Scalar, kComponents>;
   using Gradient = algebra::Matrix<Scalar, kDimensions, kComponents>;
   using FluxMatrix = algebra::Matrix<Scalar, kComponents, kDimensions>;
