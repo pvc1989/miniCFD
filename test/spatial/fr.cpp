@@ -13,7 +13,10 @@
 #include "mini/mesh/part.hpp"
 #include "mini/mesh/vtk.hpp"
 #include "mini/limiter/weno.hpp"
+#include "mini/riemann/concept.hpp"
 #include "mini/riemann/rotated/multiple.hpp"
+#include "mini/riemann/diffusive/linear.hpp"
+#include "mini/riemann/diffusive/direct_dg.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/spatial/fr/general.hpp"
 #include "mini/spatial/fr/lobatto.hpp"
@@ -22,8 +25,12 @@
 
 constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
 using Scalar = double;
-using Riemann = mini::
+using Convection = mini::
     riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
+using Diffusion = mini::riemann::diffusive::DirectDG<
+    mini::riemann::diffusive::Isotropic<Scalar, kComponents>
+>;
+using Riemann = mini::riemann::ConvectionDiffusion<Convection, Diffusion>;
 using Coord = typename Riemann::Vector;
 using Value = typename Riemann::Conservative;
 Value func(const Coord& xyz) {

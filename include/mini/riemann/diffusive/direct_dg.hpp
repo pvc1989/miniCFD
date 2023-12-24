@@ -8,21 +8,26 @@ namespace mini {
 namespace riemann {
 namespace diffusive {
 
+using namespace mini::constant::index;
+
 template <typename DiffusionModel>
-class DirectDG : public Model {
-  Scalar const beta_0_ = 2.0;
-  Scalar const beta_1_ = 1.0 / 12;
-  using namespace mini::contant::index;
+class DirectDG : public DiffusionModel {
   using Base = DiffusionModel;
 
  public:
   using Scalar = typename Base::Scalar;
+  using Vector = typename Base::Vector;
   using Conservative = typename Base::Conservative;
   using Gradient = typename Base::Gradient;
   using FluxMatrix = typename Base::FluxMatrix;
   using Flux = typename Base::Flux;
 
-  Gradient GetCommonGradient(Scalar distance, Normal normal,
+ protected:
+  Scalar const beta_0_ = 2.0;
+  Scalar const beta_1_ = 1.0 / 12;
+
+ public:
+  Gradient GetCommonGradient(Scalar distance, Vector normal,
       Conservative const &left_value, Conservative const &right_value,
       Gradient const &left_gradient, Gradient const &right_gradient) const {
     // add the average of Gradient
@@ -37,7 +42,7 @@ class DirectDG : public Model {
   }
 
   template <typename Hessian>
-  Gradient GetCommonGradient(Scalar distance, Normal normal,
+  Gradient GetCommonGradient(Scalar distance, Vector normal,
       Conservative const &left_value, Conservative const &right_value,
       Gradient const &left_gradient, Gradient const &right_gradient,
       Hessian const &left_hessian, Hessian const &right_hessian) const {

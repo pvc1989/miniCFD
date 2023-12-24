@@ -33,13 +33,13 @@ class Anisotropic {
   static Scalar nu_z_;
 
  public:
-  static SetDiffusionCoefficient(Scalar nu_x, Scalar nu_y, Scalar nu_z) {
+  static void SetDiffusionCoefficient(Scalar nu_x, Scalar nu_y, Scalar nu_z) {
     nu_x_ = nu_x; nu_y_ = nu_y; nu_z_ = nu_z;
   }
 
   void AddFluxMatrix(Conservative const &value, Gradient const &gradient,
       FluxMatrix *flux) const {
-    using namespace mini::contant::index;
+    using namespace mini::constant::index;
     flux->col(X) += nu_x_ * gradient.row(X);
     flux->col(Y) += nu_y_ * gradient.row(Y);
     flux->col(Z) += nu_z_ * gradient.row(Z);
@@ -47,7 +47,7 @@ class Anisotropic {
 
   void AddFlux(Conservative const &value, Gradient const &gradient,
       Vector const &normal, Flux *flux) const {
-    using namespace mini::contant::index;
+    using namespace mini::constant::index;
     flux += (normal[X] * nu_x_) * gradient.row(X);
     flux += (normal[Y] * nu_y_) * gradient.row(Y);
     flux += (normal[Z] * nu_z_) * gradient.row(Z);
@@ -80,7 +80,7 @@ class Isotropic : public Anisotropic<S, K> {
   using Flux = typename Base::Flux;
 
  public:
-  static SetDiffusionCoefficient(Scalar nu) {
+  static void SetDiffusionCoefficient(Scalar nu) {
     Base::SetDiffusionCoefficient(nu, nu, nu);
   }
 };
