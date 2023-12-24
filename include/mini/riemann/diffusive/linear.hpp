@@ -10,7 +10,7 @@ namespace riemann {
 namespace diffusive {
 
 /**
- * @brief A constant linear diffusion model, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\partial_x\,u & \nu_y\partial_y\,u & \nu_z\partial_z\,u \end{bmatrix} \f$.
+ * @brief A constant linear diffusion model, whose diffusive flux is \f$ \begin{bmatrix} \nu_x\,\partial_x\,u & \nu_y\,\partial_y\,u & \nu_z\,\partial_z\,u \end{bmatrix} \f$.
  * 
  * @tparam S 
  * @tparam K 
@@ -27,13 +27,13 @@ class Anisotropic {
   using Flux = Conservative;
 
  private:
-  Scalar const nu_x_;
-  Scalar const nu_y_;
-  Scalar const nu_z_;
+  static Scalar nu_x_;
+  static Scalar nu_y_;
+  static Scalar nu_z_;
 
  public:
-  Anisotropic(Scalar nu_x, Scalar nu_y, Scalar nu_z)
-      : nu_x_(nu_x), nu_y_(nu_y), nu_z_(nu_z) {
+  static SetDiffusionCoefficient(Scalar nu_x, Scalar nu_y, Scalar nu_z) {
+    nu_x_ = nu_x; nu_y_ = nu_y; nu_z_ = nu_z;
   }
 
   void AddFluxMatrix(Conservative const &value, Gradient const &gradient,
@@ -52,6 +52,12 @@ class Anisotropic {
     flux += (normal[Z] * nu_z_) * gradient.row(Z);
   }
 };
+template <typename S, int K>
+typename Anisotropic<S, K>::Scalar Anisotropic<S, K>::nu_x_;
+template <typename S, int K>
+typename Anisotropic<S, K>::Scalar Anisotropic<S, K>::nu_y_;
+template <typename S, int K>
+typename Anisotropic<S, K>::Scalar Anisotropic<S, K>::nu_z_;
 
 /**
  * @brief A constant linear diffusion model, whose diffusive flux is \f$ \nu \begin{bmatrix} \partial_x\,u & \partial_y\,u & \partial_z\,u \end{bmatrix} \f$.
@@ -73,7 +79,9 @@ class Isotropic : public Anisotropic<S, K> {
   using Flux = typename Base::Flux;
 
  public:
-  explicit Isotropic(Scalar nu) : Base(nu, nu, nu) {}
+  static SetDiffusionCoefficient(Scalar nu) {
+    Base::SetDiffusionCoefficient(nu, nu, nu);
+  }
 };
 
 }  // namespace diffusive
