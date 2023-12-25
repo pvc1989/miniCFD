@@ -14,7 +14,9 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
 
+#include "mini/riemann/concept.hpp"
 #include "mini/spatial/fem.hpp"
 #include "mini/basis/vincent.hpp"
 
@@ -241,6 +243,51 @@ class General : public spatial::FiniteElement<Part> {
       }
     }
   }
+  template <typename Cache>
+  static std::pair<Value, Value> GetFluxOnLocalFace(Riemann const &riemann,
+      const Projection &holder_projection, Cache const &holder_cache,
+      const Projection &sharer_projection, Cache const &sharer_cache)
+      requires(!mini::riemann::Diffusive<Riemann>) {
+    Value u_holder = holder_projection.GetValue(holder_cache.ijk);
+    Value u_sharer = sharer_projection.GetValue(sharer_cache.ijk);
+    Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
+    assert(Collinear(holder_cache.normal, sharer_cache.normal));
+    Value f_holder = f_upwind * holder_cache.scale -
+        Riemann::GetFluxMatrix(u_holder) * holder_cache.normal;
+    Value f_sharer = f_upwind * (-sharer_cache.scale) -
+        Riemann::GetFluxMatrix(u_sharer) * sharer_cache.normal;
+    return { f_holder, f_sharer };
+  }
+  template <typename Cache>
+  static std::pair<Value, Value> GetFluxOnLocalFace(Riemann const &riemann,
+      const Projection &holder_projection, Cache const &holder_cache,
+      const Projection &sharer_projection, Cache const &sharer_cache)
+      requires(mini::riemann::ConvectiveDiffusive<Riemann>) {
+    Value u_holder = holder_projection.GetValue(holder_cache.ijk);
+    Value u_sharer = sharer_projection.GetValue(sharer_cache.ijk);
+    Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
+    auto du_holder = holder_projection.GetGlobalGradient(holder_cache.ijk);
+    auto du_sharer = sharer_projection.GetGlobalGradient(sharer_cache.ijk);
+    assert(Collinear(holder_cache.normal, sharer_cache.normal));
+    // TODO(PVC): cache in riemann
+    auto normal = holder_cache.normal; normal.normalize();
+    auto distance = normal.dot(
+        holder_projection.center() - sharer_projection.center());
+    assert(distance > 0);
+    auto du_common = riemann.GetCommonGradient(distance, normal,
+        u_holder, u_sharer, du_holder, du_sharer);
+    Value u_common = (u_holder + u_sharer) / 2;
+    Riemann::ModifyCommonFlux(u_common, du_common, normal, &f_upwind);
+    auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
+    Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
+    Value f_holder = f_upwind * holder_cache.scale -
+        f_mat_holder * holder_cache.normal;
+    auto f_mat_sharer = Riemann::GetFluxMatrix(u_sharer);
+    Riemann::ModifyFluxMatrix(u_sharer, du_sharer, &f_mat_sharer);
+    Value f_sharer = f_upwind * (-sharer_cache.scale) -
+        f_mat_sharer * sharer_cache.normal;
+    return { f_holder, f_sharer };
+  }
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
       const auto &gauss = face.gauss();
@@ -255,16 +302,9 @@ class General : public spatial::FiniteElement<Part> {
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
-        Value u_holder =
-            holder.projection().GetValue(holder_flux_point.ijk);
-        Value u_sharer =
-            sharer.projection().GetValue(sharer_flux_point.ijk);
-        Value f_upwind = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
-        assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
-        Value f_holder = f_upwind * holder_flux_point.scale -
-            Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-        Value f_sharer = f_upwind * (-sharer_flux_point.scale) -
-            Riemann::GetFluxMatrix(u_sharer) * sharer_flux_point.normal;
+        auto [f_holder, f_sharer] = GetFluxOnLocalFace(face.riemann(f),
+            holder.projection(), holder_flux_point,
+            sharer.projection(), sharer_flux_point);
         for (auto [g_prime, ijk] : holder_solution_points) {
           Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
         }

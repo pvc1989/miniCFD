@@ -45,12 +45,12 @@ class Anisotropic {
     flux->col(Z) -= nu_z_ * gradient.row(Z);
   }
 
-  static void AddFlux(Conservative const &value, Gradient const &gradient,
+  static void ModifyCommonFlux(Conservative const &value, Gradient const &gradient,
       Vector const &normal, Flux *flux) {
     using namespace mini::constant::index;
-    flux += (normal[X] * nu_x_) * gradient.row(X);
-    flux += (normal[Y] * nu_y_) * gradient.row(Y);
-    flux += (normal[Z] * nu_z_) * gradient.row(Z);
+    *flux += (normal[X] * nu_x_) * gradient.row(X);
+    *flux += (normal[Y] * nu_y_) * gradient.row(Y);
+    *flux += (normal[Z] * nu_z_) * gradient.row(Z);
   }
 };
 template <typename S, int K>
