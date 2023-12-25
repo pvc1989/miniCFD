@@ -228,9 +228,8 @@ class General : public spatial::FiniteElement<Part> {
       const auto &gauss = cell.gauss();
       std::array<FluxMatrix, kCellQ> flux;
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        auto const &value = cell.projection().GetValue(q);
-        auto const &global = Riemann::GetFluxMatrix(value);
-        flux[q] = cell.projection().GlobalFluxToLocalFlux(global, q);
+        FluxMatrix global_flux = Base::GetFluxMatrix(cell.projection(), q);
+        flux[q] = cell.projection().GlobalFluxToLocalFlux(global_flux, q);
       }
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         auto const &grad = cell.projection().GetBasisGradients(q);

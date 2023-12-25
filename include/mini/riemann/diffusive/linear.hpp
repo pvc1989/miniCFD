@@ -37,12 +37,12 @@ class Anisotropic {
     nu_x_ = nu_x; nu_y_ = nu_y; nu_z_ = nu_z;
   }
 
-  static void AddFluxMatrix(Conservative const &value, Gradient const &gradient,
+  static void ModifyFluxMatrix(Conservative const &value, Gradient const &gradient,
       FluxMatrix *flux) {
     using namespace mini::constant::index;
-    flux->col(X) += nu_x_ * gradient.row(X);
-    flux->col(Y) += nu_y_ * gradient.row(Y);
-    flux->col(Z) += nu_z_ * gradient.row(Z);
+    flux->col(X) -= nu_x_ * gradient.row(X);
+    flux->col(Y) -= nu_y_ * gradient.row(Y);
+    flux->col(Z) -= nu_z_ * gradient.row(Z);
   }
 
   static void AddFlux(Conservative const &value, Gradient const &gradient,

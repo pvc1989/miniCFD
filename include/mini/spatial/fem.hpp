@@ -10,6 +10,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "mini/riemann/concept.hpp"
 #include "mini/temporal/ode.hpp"
 #include "mini/constant/index.hpp"
 
@@ -145,6 +146,21 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   virtual void ApplySubsonicInlet(Column *residual) const = 0;
   virtual void ApplySubsonicOutlet(Column *residual) const = 0;
   virtual void ApplySmartBoundary(Column *residual) const = 0;
+
+ protected:
+  using FluxMatrix = typename Riemann::FluxMatrix;
+  static FluxMatrix GetFluxMatrix(const Projection &projection, int q)
+      requires(!mini::riemann::Diffusive<Riemann>) {
+    return Riemann::GetFluxMatrix(projection.GetValue(q));
+  }
+  static FluxMatrix GetFluxMatrix(const Projection &projection, int q)
+      requires(mini::riemann::ConvectiveDiffusive<Riemann>) {
+    const auto &value = projection.GetValue(q);
+    FluxMatrix flux_matrix = Riemann::GetFluxMatrix(value);
+    const auto &gradient = projection.GetGlobalGradient(q);
+    Riemann::ModifyFluxMatrix(value, gradient, &flux_matrix);
+    return flux_matrix;
+  }
 };
 
 }  // namespace spatial

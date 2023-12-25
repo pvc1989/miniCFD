@@ -10,7 +10,10 @@
 
 #include "mini/mesh/shuffler.hpp"
 #include "mini/mesh/vtk.hpp"
+#include "mini/riemann/concept.hpp"
 #include "mini/riemann/rotated/single.hpp"
+#include "mini/riemann/diffusive/linear.hpp"
+#include "mini/riemann/diffusive/direct_dg.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/mesh/part.hpp"
@@ -70,9 +73,15 @@ int main(int argc, char* argv[]) {
   using Scalar = double;
   /* Define the single-wave equation. */
   constexpr int kDimensions = 3;
-  using Riemann = mini::riemann::rotated::Single<Scalar, kDimensions>;
+  using Convection = mini::riemann::rotated::Single<Scalar, kDimensions>;
   auto a_x = -10.0;
+  using Diffusion = mini::riemann::diffusive::DirectDG<
+      mini::riemann::diffusive::Isotropic<Scalar, 1>
+  >;
+  using Riemann = mini::riemann::ConvectionDiffusion<Convection, Diffusion>;
   Riemann::SetConvectionCoefficient(a_x, 0, 0);
+  Riemann::SetDiffusionCoefficient(0.0);
+  Riemann::SetBetaValues(2.0, 1.0 / 12);
 
   /* Partition the mesh. */
   if (i_core == 0 && n_parts_prev != n_core) {
