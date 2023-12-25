@@ -61,6 +61,8 @@ void TestSpatialFR::SetUp() {
     Jacobian{ {5., 0.}, {0., 6.} },
     Jacobian{ {7., 0.}, {0., 8.} }
   );
+  Riemann::SetDiffusionCoefficient(1.0);
+  Riemann::SetBetaValues(2.0, 1.0 / 12);
 }
 TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
   /* aproximated by Lagrange basis on Lobatto roots with general correction functions */

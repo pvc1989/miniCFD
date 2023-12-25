@@ -23,13 +23,13 @@ class DirectDG : public DiffusionModel {
   using Flux = typename Base::Flux;
 
  protected:
-  Scalar const beta_0_ = 2.0;
-  Scalar const beta_1_ = 1.0 / 12;
+  static Scalar beta_0_;
+  static Scalar beta_1_;
 
  public:
-  Gradient GetCommonGradient(Scalar distance, Vector normal,
+  static Gradient GetCommonGradient(Scalar distance, Vector normal,
       Conservative const &left_value, Conservative const &right_value,
-      Gradient const &left_gradient, Gradient const &right_gradient) const {
+      Gradient const &left_gradient, Gradient const &right_gradient) {
     // add the average of Gradient
     Gradient common_gradient = (left_gradient + right_gradient) / 2;
     // add the penalty of Value jump
@@ -42,10 +42,10 @@ class DirectDG : public DiffusionModel {
   }
 
   template <typename Hessian>
-  Gradient GetCommonGradient(Scalar distance, Vector normal,
+  static Gradient GetCommonGradient(Scalar distance, Vector normal,
       Conservative const &left_value, Conservative const &right_value,
       Gradient const &left_gradient, Gradient const &right_gradient,
-      Hessian const &left_hessian, Hessian const &right_hessian) const {
+      Hessian const &left_hessian, Hessian const &right_hessian) {
     Gradient common_gradient = GetCommonGradient(distance, normal,
       left_value, right_value, left_gradient, right_gradient);
     // add the penalty of Hessian jump
@@ -62,7 +62,16 @@ class DirectDG : public DiffusionModel {
     common_gradient.row(Z) += normal[Z] * hessian_jump[ZZ];
     return common_gradient;
   }
+
+  static void SetBetaValues(Scalar beta_0, Scalar beta_1) {
+    beta_0_ = beta_0;
+    beta_1_ = beta_1;
+  }
 };
+template <typename DiffusionModel>
+typename DirectDG<DiffusionModel>::Scalar DirectDG<DiffusionModel>::beta_0_;
+template <typename DiffusionModel>
+typename DirectDG<DiffusionModel>::Scalar DirectDG<DiffusionModel>::beta_1_;
 
 }  // namespace diffusive
 }  // namespace riemann
