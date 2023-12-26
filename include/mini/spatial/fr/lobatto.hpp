@@ -215,7 +215,7 @@ class Lobatto : public General<Part> {
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
-        auto [f_holder, f_sharer] = Base::GetFluxOnLocalFace(face.riemann(f),
+        auto [f_holder, f_sharer] = Base::GetFluxOnLocalFace(face, f,
             holder.projection(), holder_flux_point,
             sharer.projection(), sharer_flux_point);
         Projection::MinusValue(holder_flux_point.g_prime * f_holder,

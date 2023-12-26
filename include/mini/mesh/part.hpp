@@ -119,6 +119,7 @@ struct Face {
   LagrangeUptr lagrange_ptr_;
   GaussUptr gauss_ptr_;
   Cell *holder_, *sharer_;
+  Global holder_to_sharer_;
   std::vector<Riemann> riemann_;
   Int id_{-1};
 
@@ -127,6 +128,7 @@ struct Face {
       : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
         holder_(holder), sharer_(sharer),
+        holder_to_sharer_(sharer->center() - holder->center()),
         riemann_(gauss_ptr_->CountPoints()),
         id_(id) {
     for (int i = 0, n = riemann_.size(); i < n; ++i) {
@@ -166,6 +168,9 @@ struct Face {
   Cell const &sharer() const {
     assert(sharer_);
     return *sharer_;
+  }
+  Global const &HolderToSharer() const {
+    return holder_to_sharer_;
   }
   Cell const *other(Cell const *cell) const {
     assert(cell == sharer_ || cell == holder_);
