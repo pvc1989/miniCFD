@@ -29,7 +29,7 @@ class Simple {
   using Conservative = MatKx1;
   using Flux = MatKx1;
   using FluxMatrix = algebra::Matrix<Scalar, K, D>;
-  using Frame3d = std::array<Vector, 3>;
+  using Frame = std::array<Vector, kDimensions>;
   using Jacobian = typename Base::Jacobian;
   using Coefficient = typename Base::Coefficient;
 
@@ -42,23 +42,17 @@ class Simple {
   }
 
  public:
-  void Rotate(Scalar n_x, Scalar n_y) {
-    static_assert(D == 2);
-    auto a_normal = convection_coefficient_[X] * n_x;
-    a_normal += convection_coefficient_[Y] * n_y;
-    unrotated_simple_ = UnrotatedSimple(a_normal);
-  }
-  void Rotate(Scalar n_x, Scalar n_y,  Scalar n_z) {
-    static_assert(D == 3);
-    Jacobian a_normal = convection_coefficient_[X] * n_x;
-    a_normal += convection_coefficient_[Y] * n_y;
-    a_normal += convection_coefficient_[Z] * n_z;
-    unrotated_simple_ = UnrotatedSimple(a_normal);
-  }
-  void Rotate(const Frame3d &frame) {
-    const auto &nu = frame[0];
+  void Rotate(const Frame &frame) {
+    frame_ = &frame;
+    const auto &nu = frame[X];
     assert(std::abs(1 - nu.norm()) < 1e-6);
-    Rotate(nu[X], nu[Y], nu[Z]);
+    Jacobian a_normal = convection_coefficient_[X] * nu[X];
+    a_normal += convection_coefficient_[Y] * nu[Y];
+    a_normal += convection_coefficient_[Z] * nu[Z];
+    unrotated_simple_ = UnrotatedSimple(a_normal);
+  }
+  Vector const &normal() const {
+    return (*frame_)[X];
   }
   Flux GetFluxUpwind(const Conservative& left,
       const Conservative& right) const {
@@ -107,6 +101,7 @@ class Simple {
 
  protected:
   UnrotatedSimple unrotated_simple_;
+  const Frame *frame_;
   static Coefficient convection_coefficient_;
 };
 template <class UnrotatedSimple>

@@ -27,15 +27,16 @@ TEST_F(TestRotatedEuler, Test2dConverter) {
   using UnrotatedSolver = euler::Exact<Gas, 2>;
   using Solver = Euler<UnrotatedSolver>;
   using Vector = Solver::Vector;
+  using Frame = Solver::Frame;
   using Value = Solver::Value;
   Solver solver;
-  Vector n{+0.6, 0.8}, t{-0.8, 0.6};
+  Frame frame { Vector{+0.6, 0.8}, Vector{-0.8, 0.6} };
   Value v{0, 3.0, 4.0, 0}, v_copy{0, 3.0, 4.0, 0};
-  solver.Rotate(n);
+  solver.Rotate(frame);
   solver.GlobalToNormal(&v);
   Vector momentum = v_copy.momentum();
-  EXPECT_EQ(v.momentumX(), momentum.dot(n));
-  EXPECT_NEAR(v.momentumY(), momentum.dot(t), 1e-15);
+  EXPECT_EQ(v.momentumX(), momentum.dot(frame[0]));
+  EXPECT_NEAR(v.momentumY(), momentum.dot(frame[1]), 1e-15);
   solver.NormalToGlobal(&v);
   EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);
@@ -46,16 +47,19 @@ TEST_F(TestRotatedEuler, Test3dConverter) {
   using Solver = Euler<euler::Exact<Gas, 3>>;
   using Scalar = Solver::Scalar;
   using Vector = Solver::Vector;
+  using Frame = Solver::Frame;
   using Value = Solver::Value;
   Solver solver;
-  Vector nu{+0.6, 0.8, 0.0}, sigma{-0.8, 0.6, 0.0}, pi{0.0, 0.0, 1.0};
+  Frame frame {
+    Vector{+0.6, 0.8, 0.0}, Vector{-0.8, 0.6, 0.0}, Vector{0.0, 0.0, 1.0}
+  };
   Value v{0, 3.0, 4.0, 5.0, 0}, v_copy{0, 3.0, 4.0, 5.0, 0};
-  solver.Rotate(nu, sigma, pi);
+  solver.Rotate(frame);
   solver.GlobalToNormal(&v);
   Vector momentum = v_copy.momentum();
-  EXPECT_EQ(v.momentumX(), momentum.dot(nu));
-  EXPECT_EQ(v.momentumY(), momentum.dot(sigma));
-  EXPECT_EQ(v.momentumZ(), momentum.dot(pi));
+  EXPECT_EQ(v.momentumX(), momentum.dot(frame[0]));
+  EXPECT_EQ(v.momentumY(), momentum.dot(frame[1]));
+  EXPECT_EQ(v.momentumZ(), momentum.dot(frame[2]));
   solver.NormalToGlobal(&v);
   EXPECT_DOUBLE_EQ(v[0], v_copy[0]);
   EXPECT_DOUBLE_EQ(v[1], v_copy[1]);

@@ -6,101 +6,17 @@
 #include <concepts>
 #include <type_traits>
 #include <utility>
+#include <iostream>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/riemann/euler/eigen.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace riemann {
 namespace rotated {
 
-template <std::floating_point Scalar = double, int kDimensions = 3>
-class Cartesian;
-
-template <std::floating_point Scalar>
-class Cartesian<Scalar, 2> {
-  static constexpr int x{0}, y{1}, n{0}, t{1};
-
- public:
-  using Vector = mini::algebra::Vector<Scalar, 2>;
-
-  void Rotate(const Vector& nu) {
-    nu_ = nu;
-  }
-  void Rotate(Scalar nu_x, Scalar nu_y) {
-    nu_[x] = nu_x;
-    nu_[y] = nu_y;
-  }
-  void GlobalToNormal(Vector* v) const {
-    /* Calculate the normal component: */
-    auto v_n = (*v)[x] * nu_[x] + (*v)[y] * nu_[y];
-    /* Calculate the tangential component: */
-    auto t_x = -nu_[y], t_y = nu_[x];
-    (*v)[t] =  t_x * (*v)[x] + t_y * (*v)[y];
-    /* Write the normal component: */
-    (*v)[n] = v_n;
-  }
-  void NormalToGlobal(Vector* v) const {
-    auto t_x = -nu_[y], t_y = nu_[x];
-    auto v_x = (*v)[n] * nu_[x] + (*v)[t] * t_x;
-    (*v)[y]  = (*v)[n] * nu_[y] + (*v)[t] * t_y;
-    (*v)[x] = v_x;
-  }
-
- private:
-  Vector nu_{1.0, 0.0};
-};
-
-template <std::floating_point Scalar>
-class Cartesian<Scalar, 3> {
-  static constexpr int x = 0, y = 1, z = 2;
-
- public:
-  using Vector = mini::algebra::Vector<Scalar, 3>;
-
-  void Rotate(const Vector& nu, const Vector& sigma) {
-    nu_ = nu; sigma_ = sigma;
-    // \vec{\pi} = \vec{\nu} \cross \vec{\sigma}
-    pi_[x] = nu[y] * sigma[z] - nu[z] * sigma[y];
-    pi_[y] = nu[z] * sigma[x] - nu[x] * sigma[z];
-    pi_[z] = nu[x] * sigma[y] - nu[y] * sigma[x];
-  }
-  void Rotate(const Vector& nu, const Vector& sigma, const Vector& pi) {
-    nu_ = nu; sigma_ = sigma; pi_ = pi;
-  }
-  void Rotate(const std::array<Vector, 3> &frame) {
-    auto &nu = frame[0], &sigma = frame[1], &pi = frame[2];
-    nu_[x] = nu[x]; sigma_[x] = sigma[x]; pi_[x] = pi[x];
-    nu_[y] = nu[y]; sigma_[y] = sigma[y]; pi_[y] = pi[y];
-    nu_[z] = nu[z]; sigma_[z] = sigma[z]; pi_[z] = pi[z];
-  }
-  void GlobalToNormal(Vector* v) const {
-    auto v_nu = v->dot(nu_), v_sigma = v->dot(sigma_), v_pi = v->dot(pi_);
-    constexpr int nu = 0, sigma = 1, pi = 2;
-    (*v)[nu] = v_nu; (*v)[sigma] = v_sigma; (*v)[pi] = v_pi;
-  }
-  void NormalToGlobal(Vector* v) const {
-    constexpr int nu = 0, sigma = 1, pi = 2;
-    auto v_x = (*v)[nu] * nu_[x] + (*v)[sigma] * sigma_[x] + (*v)[pi] * pi_[x];
-    auto v_y = (*v)[nu] * nu_[y] + (*v)[sigma] * sigma_[y] + (*v)[pi] * pi_[y];
-    auto v_z = (*v)[nu] * nu_[z] + (*v)[sigma] * sigma_[z] + (*v)[pi] * pi_[z];
-    (*v)[x] = v_x; (*v)[y] = v_y; (*v)[z] = v_z;
-  }
-
- private:
-  Vector nu_{1, 0, 0}, sigma_{0, 1, 0}, pi_{0, 0, 1};
-
- public:
-  const Vector& nu() const {
-    return nu_;
-  }
-  const Vector& sigma() const {
-    return sigma_;
-  }
-  const Vector& pi() const {
-    return pi_;
-  }
-};
+using namespace mini::constant::index;
 
 template <class UnrotatedEuler>
 class Euler {
@@ -112,24 +28,73 @@ class Euler {
   using Gas = typename Base::Gas;
   using Scalar = typename Base::Scalar;
   using Vector = typename Base::Vector;
+  using Frame = std::array<Vector, kDimensions>;
   using Flux = typename Base::Flux;
   using FluxMatrix = typename Flux::FluxMatrix;
   using Conservative = typename Base::Conservative;
   using Primitive = typename Base::Primitive;
   using Value = typename Flux::Base;
 
-  template <typename... Args>
-  void Rotate(Args&&... args) {
-    cartesian_.Rotate(std::forward<Args>(args)...);
+  void Rotate(const Frame &frame) {
+    frame_ = &frame;
+  }
+  Vector const &normal() const {
+    return a();
   }
 
-  void GlobalToNormal(Value* v) const {
-    cartesian_.GlobalToNormal(&(v->momentum()));
+ private:
+  const Vector &a() const {
+    return (*frame_)[A];
   }
-  void NormalToGlobal(Value* v) const {
-    cartesian_.NormalToGlobal(&(v->momentum()));
+  const Vector &b() const {
+    return (*frame_)[B];
+  }
+  const Vector &c() const requires (kDimensions == 3) {
+    return (*frame_)[C];
+  }
+  Scalar a(int i) const {
+    return a()[i];
+  }
+  Scalar b(int i) const {
+    return b()[i];
+  }
+  Scalar c(int i) const requires (kDimensions == 3) {
+    return c()[i];
   }
 
+ public:
+  void GlobalToNormal(Value* v) const requires (kDimensions == 2) {
+    Vector &p = v->momentum();
+    Scalar p_a = p[X] * a(X) + p[Y] * a(Y);
+    Scalar p_b = p[X] * b(X) + p[Y] * b(Y);
+    p[A] = p_a;
+    p[B] = p_b;
+  }
+  void NormalToGlobal(Value* v) const requires (kDimensions == 2) {
+    Vector &p = v->momentum();
+    Scalar p_x = p[A] * a(X) + p[B] * b(X);
+    Scalar p_y = p[A] * a(Y) + p[B] * b(Y);
+    p[X] = p_x;
+    p[Y] = p_y;
+  }
+  void GlobalToNormal(Value* v) const requires (kDimensions == 3) {
+    Vector &p = v->momentum();
+    Scalar p_a = p.dot(a());
+    Scalar p_b = p.dot(b());
+    Scalar p_c = p.dot(c());
+    p[A] = p_a;
+    p[B] = p_b;
+    p[C] = p_c;
+  }
+  void NormalToGlobal(Value* v) const requires (kDimensions == 3) {
+    Vector &p = v->momentum();
+    Scalar p_x = p[A] * a(X) + p[B] * b(X) + p[C] * c(X);
+    Scalar p_y = p[A] * a(Y) + p[B] * b(Y) + p[C] * c(Y);
+    Scalar p_z = p[A] * a(Z) + p[B] * b(Z) + p[C] * c(Z);
+    p[X] = p_x;
+    p[Y] = p_y;
+    p[Z] = p_z;
+  }
   static Flux GetFlux(const Primitive& state) {
     return Base::GetFlux(state);
   }
@@ -173,8 +138,8 @@ class Euler {
     auto primitive_i = Gas::ConservativeToPrimitive(conservative_i);
     auto primitive_o = Gas::ConservativeToPrimitive(conservative_o);
     Primitive primitive_b = primitive_o;
-    Scalar u_nu_o = primitive_o.momentum().dot(cartesian_.nu());
-    Scalar u_nu_i = primitive_i.momentum().dot(cartesian_.nu());
+    Scalar u_nu_o = primitive_o.momentum().dot(normal());
+    Scalar u_nu_i = primitive_i.momentum().dot(normal());
     Scalar u_nu_jump = u_nu_o - u_nu_i;
     Scalar a_i = Gas::GetSpeedOfSound(primitive_i);
     Scalar rho_a_i = primitive_i.rho() * (u_nu_o > 0 ? a_i : -a_i);
@@ -182,7 +147,7 @@ class Euler {
         + rho_a_i * u_nu_jump) * 0.5;
     Scalar p_jump = primitive_o.p() - primitive_b.p();
     primitive_b.rho() -= p_jump / (a_i * a_i);
-    primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
+    primitive_b.momentum() += (p_jump / rho_a_i) * normal();
     GlobalToNormal(&primitive_b);
     auto flux = unrotated_euler_.GetFlux(primitive_b);
     NormalToGlobal(&flux);
@@ -197,9 +162,9 @@ class Euler {
     Scalar p_jump = primitive_i.p() - primitive_b.p();
     Scalar a_i = Gas::GetSpeedOfSound(primitive_i);
     primitive_b.rho() -= p_jump / (a_i * a_i);
-    Scalar u_nu_i = primitive_i.momentum().dot(cartesian_.nu());
+    Scalar u_nu_i = primitive_i.momentum().dot(normal());
     Scalar rho_a_i = primitive_i.rho() * (u_nu_i > 0 ? a_i : -a_i);
-    primitive_b.momentum() += (p_jump / rho_a_i) * cartesian_.nu();
+    primitive_b.momentum() += (p_jump / rho_a_i) * normal();
     GlobalToNormal(&primitive_b);
     auto flux = unrotated_euler_.GetFlux(primitive_b);
     NormalToGlobal(&flux);
@@ -209,7 +174,7 @@ class Euler {
       Conservative const& conservative_o) const {
     auto primitive = Gas::ConservativeToPrimitive(conservative_i);
     Scalar a = Gas::GetSpeedOfSound(primitive);
-    Scalar u_nu = primitive.momentum().dot(cartesian_.nu());
+    Scalar u_nu = primitive.momentum().dot(normal());
     Flux flux;
     if (u_nu < 0) {  // inlet
       if (u_nu + a < 0) {
@@ -231,13 +196,12 @@ class Euler {
   using EigenMatrices = riemann::euler::EigenMatrices<Gas>;
   EigenMatrices eigen_matrices_;
   UnrotatedEuler unrotated_euler_;
-  Cartesian<Scalar, kDimensions> cartesian_;
+  Frame const *frame_;
 
  public:
   using Matrix = typename EigenMatrices::Mat5x5;
   void UpdateEigenMatrices(const Conservative& big_u) {
-    eigen_matrices_ = EigenMatrices(big_u,
-        cartesian_.nu(), cartesian_.sigma(), cartesian_.pi());
+    eigen_matrices_ = EigenMatrices(big_u, a(), b(), c());
   }
   const Matrix& L() const {
     return eigen_matrices_.L;
