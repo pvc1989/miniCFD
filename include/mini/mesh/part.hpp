@@ -128,9 +128,10 @@ struct Face {
       : lagrange_ptr_(std::move(lagrange_ptr)),
         gauss_ptr_(std::move(gauss_ptr)),
         holder_(holder), sharer_(sharer),
-        holder_to_sharer_(sharer->center() - holder->center()),
+        holder_to_sharer_(-holder->center()),
         riemann_(gauss_ptr_->CountPoints()),
         id_(id) {
+    holder_to_sharer_ += sharer ? sharer->center() : center();
     for (int i = 0, n = riemann_.size(); i < n; ++i) {
       riemann_[i].Rotate(gauss_ptr_->GetNormalFrame(i));
     }
