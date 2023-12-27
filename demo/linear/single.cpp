@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   >;
   using Riemann = mini::riemann::ConvectionDiffusion<Convection, Diffusion>;
   Riemann::SetConvectionCoefficient(a_x, 0, 0);
-  Riemann::SetDiffusionCoefficient(0.0);
+  Riemann::SetDiffusionCoefficient(0.05);
   Riemann::SetBetaValues(2.0, 1.0 / 12);
 
   /* Partition the mesh. */
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
   }
   MPI_Barrier(MPI_COMM_WORLD);
 
-  constexpr int kDegrees = 2;
+  constexpr int kDegrees = 3;
 #ifdef DGFEM
   using Projection = mini::polynomial::Projection<Scalar, kDimensions, kDegrees, 1>;
 #else

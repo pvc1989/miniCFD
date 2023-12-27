@@ -326,14 +326,9 @@ class General : public spatial::FiniteElement<Part> {
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
-        Value u_holder =
-            holder.projection().GetValue(holder_flux_point.ijk);
-        Value u_sharer =
-            sharer.projection().GetValue(sharer_flux_point.ijk);
-        Value f_upwind = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
-        assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
-        Value f_holder = f_upwind * holder_flux_point.scale -
-            Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
+        auto [f_holder, _] = GetFluxOnLocalFace(face, f,
+            holder.projection(), holder_flux_point,
+            sharer.projection(), sharer_flux_point);
         for (auto [g_prime, ijk] : holder_solution_points) {
           Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
         }
@@ -362,6 +357,34 @@ class General : public spatial::FiniteElement<Part> {
       }
     }
   }
+  template <typename Cache>
+  static Value GetFluxOnSupersonicFace(Face const &face, int f,
+      const Projection &holder_projection, Cache const &holder_cache)
+      requires(!mini::riemann::Diffusive<Riemann>) {
+    Riemann const &riemann = face.riemann(f);
+    Value u_holder = holder_projection.GetValue(holder_cache.ijk);
+    Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
+    auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
+    Value f_holder = f_upwind * holder_cache.scale -
+        f_mat_holder * holder_cache.normal;
+    return f_holder;
+  }
+  template <typename Cache>
+  static Value GetFluxOnSupersonicFace(Face const &face, int f,
+      const Projection &holder_projection, Cache const &holder_cache)
+      requires(mini::riemann::ConvectiveDiffusive<Riemann>) {
+    Riemann const &riemann = face.riemann(f);
+    Value u_holder = holder_projection.GetValue(holder_cache.ijk);
+    Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
+    auto du_holder = holder_projection.GetGlobalGradient(holder_cache.ijk);
+    const auto &normal = riemann.normal();
+    Riemann::ModifyCommonFlux(u_holder, du_holder, normal, &f_upwind);
+    auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
+    Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
+    Value f_holder = f_upwind * holder_cache.scale -
+        f_mat_holder * holder_cache.normal;
+    return f_holder;
+  }
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
@@ -372,11 +395,7 @@ class General : public spatial::FiniteElement<Part> {
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
-          Value u_holder = holder.projection().GetValue(
-              holder_flux_point.ijk);
-          Value f_upwind = face.riemann(f).GetFluxOnSupersonicOutlet(u_holder);
-          Value f_holder = f_upwind * holder_flux_point.scale -
-              Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
+          auto f_holder = GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {
             Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
           }

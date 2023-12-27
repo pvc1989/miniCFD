@@ -237,14 +237,9 @@ class Lobatto : public General<Part> {
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
-        Value u_holder =
-            holder.projection().GetValue(holder_flux_point.ijk);
-        Value u_sharer =
-            sharer.projection().GetValue(sharer_flux_point.ijk);
-        Value f_upwind = face.riemann(f).GetFluxUpwind(u_holder, u_sharer);
-        assert(Collinear(holder_flux_point.normal, sharer_flux_point.normal));
-        Value f_holder = f_upwind * holder_flux_point.scale -
-            Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
+        auto [f_holder, _] = Base::GetFluxOnLocalFace(face, f,
+            holder.projection(), holder_flux_point,
+            sharer.projection(), sharer_flux_point);
         Projection::MinusValue(holder_flux_point.g_prime * f_holder,
                   holder_data, holder_flux_point.ijk);
       }
@@ -302,12 +297,7 @@ class Lobatto : public General<Part> {
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
-          Value u_holder = holder.projection().GetValue(
-              holder_flux_point.ijk);
-          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
-          Value f_upwind = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
-          Value f_holder = f_upwind * holder_flux_point.scale -
-              Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
+          auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           Projection::MinusValue(holder_flux_point.g_prime * f_holder,
                     holder_data, holder_flux_point.ijk);
         }
