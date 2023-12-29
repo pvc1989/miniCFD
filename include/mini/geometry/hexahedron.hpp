@@ -381,6 +381,21 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     LocalToShapeHessians(xyz[X], xyz[Y], xyz[Z], hessians.data());
     return hessians;
   }
+  using typename Base::Tensor3;
+  static void LocalToShape3rdOrderDerivatives(Scalar x_local, Scalar y_local,
+      Scalar z_local, Tensor3 *tensors) {
+    for (int i = 0; i < kNodes; ++i) {
+      auto &local_i = Hexahedron27<Scalar>::local_coords_[i];
+      auto &tensor_i = tensors[i];
+      tensor_i.setZero();
+      tensor_i[XYZ] = local_i[X] * local_i[Y] * local_i[Z] / 8;
+    }
+  }
+  std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &xyz) const final {
+    auto tensors = std::vector<Tensor3>(kNodes);
+    LocalToShape3rdOrderDerivatives(xyz[X], xyz[Y], xyz[Z], tensors.data());
+    return tensors;
+  }
 
  public:
   Global const &GetGlobalCoord(int i) const final {

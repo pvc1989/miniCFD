@@ -6,8 +6,11 @@
 
 #include "mini/geometry/cell.hpp"
 #include "mini/geometry/hexahedron.hpp"
+#include "mini/constant/index.hpp"
 
 #include "gtest/gtest.h"
+
+using namespace mini::constant::index;
 
 class TestLagrangeHexahedron8 : public ::testing::Test {
  protected:
@@ -45,7 +48,6 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
         = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
     EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
     // compare gradients with O(h^2) finite difference derivatives
-    int X{0}, Y{1}, Z{2};
     auto h = 1e-6;
     int n_node = cell.CountNodes();
     auto left = cell.LocalToShapeFunctions(x - h, y, z);
@@ -77,7 +79,7 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
 TEST_F(TestLagrangeHexahedron8, GetJacobianGradient) {
   std::srand(31415926);
   auto rand_f = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
-  using Global = Coord; using Local = Coord;
+  using Global = Coord; using Local = Coord; using Gradient = Coord;
   for (int i_cell = 1 << 5; i_cell > 0; --i_cell) {
     // build a hexa-gauss and a Lagrange basis on it
     auto a = 20.0, b = 30.0, c = 40.0;
@@ -92,7 +94,6 @@ TEST_F(TestLagrangeHexahedron8, GetJacobianGradient) {
       Global(rand_f() - a, rand_f() + b, rand_f() + c),
     };
     // compare gradients with O(h^2) finite difference derivatives
-    constexpr int X{0}, Y{1}, Z{2};
     for (int i_point = 1 << 5; i_point > 0; --i_point) {
       auto x = rand_f(), y = rand_f(), z = rand_f();
       auto local = Local{x, y, z};
@@ -122,6 +123,36 @@ TEST_F(TestLagrangeHexahedron8, GetJacobianGradient) {
       EXPECT_NEAR(mat_grad[Z].norm(), 0.0, 1e-8);
       auto det = cell.LocalToJacobian(x, y, z).determinant();
       EXPECT_NEAR(det_grad.norm(), 0.0, det * 1e-10);
+    }
+    for (int i_point = 1 << 1; i_point > 0; --i_point) {
+      auto x = rand_f(), y = rand_f(), z = rand_f();
+      auto local = Local{x, y, z};
+      auto det_hess = cell.LocalToJacobianDeterminantHessian(local);
+      auto h = 1e-5;
+      Gradient det_grad_diff = (
+          cell.LocalToJacobianDeterminantGradient(Local(x + h, y, z)) -
+          cell.LocalToJacobianDeterminantGradient(Local(x - h, y, z))
+      ) / (2 * h);
+      EXPECT_NEAR(det_hess[XX], det_grad_diff[X], 1e-8);
+      EXPECT_NEAR(det_hess[XY], det_grad_diff[Y], 1e-8);
+      EXPECT_NEAR(det_hess[XZ], det_grad_diff[Z], 1e-8);
+      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
+      det_grad_diff = (
+          cell.LocalToJacobianDeterminantGradient(Local(x, y + h, z)) -
+          cell.LocalToJacobianDeterminantGradient(Local(x, y - h, z))
+      ) / (2 * h);
+      EXPECT_NEAR(det_hess[YX], det_grad_diff[X], 1e-8);
+      EXPECT_NEAR(det_hess[YY], det_grad_diff[Y], 1e-8);
+      EXPECT_NEAR(det_hess[YZ], det_grad_diff[Z], 1e-8);
+      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
+      det_grad_diff = (
+          cell.LocalToJacobianDeterminantGradient(Local(x, y, z + h)) -
+          cell.LocalToJacobianDeterminantGradient(Local(x, y, z - h))
+      ) / (2 * h);
+      EXPECT_NEAR(det_hess[ZX], det_grad_diff[X], 1e-8);
+      EXPECT_NEAR(det_hess[ZY], det_grad_diff[Y], 1e-8);
+      EXPECT_NEAR(det_hess[ZZ], det_grad_diff[Z], 1e-8);
+      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
     }
   }
 }
@@ -249,7 +280,6 @@ TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
         = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
     EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
     // compare gradients with O(h^2) finite difference derivatives
-    int X{0}, Y{1}, Z{2};
     auto h = 1e-6;
     int n_node = cell.CountNodes();
     auto left = cell.LocalToShapeFunctions(x - h, y, z);
@@ -422,7 +452,6 @@ TEST_F(TestLagrangeHexahedron27, CoordinateMap) {
         = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
     EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-15);
     // compare gradients with O(h^2) finite difference derivatives
-    int X{0}, Y{1}, Z{2};
     auto h = 1e-6;
     int n_node = cell.CountNodes();
     auto left = cell.LocalToShapeFunctions(x - h, y, z);
@@ -603,7 +632,6 @@ TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
         = std::accumulate(grads.begin(), grads.end(), Coord(0, 0, 0));
     EXPECT_NEAR(grads_sum.norm(), 0.0, 1e-14);
     // compare gradients with O(h^2) finite difference derivatives
-    int X{0}, Y{1}, Z{2};
     auto h = 1e-6;
     int n_node = cell.CountNodes();
     auto left = cell.LocalToShapeFunctions(x - h, y, z);

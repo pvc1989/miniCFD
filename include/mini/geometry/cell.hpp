@@ -34,26 +34,23 @@ class Cell : public Element<Scalar, 3, 3> {
    * Since Hessian matrices are symmetric, only the upper part are stored.
    */
   using Hessian = algebra::Vector<Scalar, 6>;
-  static Scalar &Get(Hessian &hessian, int row, int col) {
-    if (row > col) { std::swap(row, col); }
-    int i;
-    switch (row) {
-    case X: i = col; break;
-    case Y: i = XZ + col; break;
-    case Z: i = ZZ; break;
-    default: assert(false);
-    }
-    return hessian[i];
-  }
-  static Scalar const &Get(Hessian const &hessian, int row, int col) {
-    return Get(const_cast<Hessian &>(hessian), row, col);
-  }
+
+  /**
+   * @brief The type of (geometric) 3rd-order derivatives of a scalar function \f$ f \f$.
+   * 
+   * Since partial derivatives of smooth functions are permutable, only the upper part are stored.
+   */
+  using Tensor3 = algebra::Vector<Scalar, 10>;
 
   virtual std::vector<Scalar> LocalToShapeFunctions(Scalar, Scalar, Scalar)
       const = 0;
   virtual std::vector<Local> LocalToShapeGradients(Scalar, Scalar, Scalar)
       const = 0;
   virtual std::vector<Hessian> LocalToShapeHessians(Local const &)
+      const {
+    return {};
+  }
+  virtual std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &)
       const {
     return {};
   }
@@ -118,6 +115,56 @@ class Cell : public Element<Scalar, 3, 3> {
     }
     return grad;
   }
+  algebra::Vector<Jacobian, 6> LocalToJacobianHessian(Local const &xyz)
+      const {
+    auto tensors = LocalToShape3rdOrderDerivatives(xyz);
+    algebra::Vector<Jacobian, 6> hessian;
+    hessian[XX].setZero(); hessian[XY].setZero(); hessian[XZ].setZero();
+    hessian[YY].setZero(); hessian[YZ].setZero(); hessian[ZZ].setZero();
+    for (int i = 0, n = this->CountNodes(); i < n; ++i) {
+      auto &xyz = this->GetGlobalCoord(i);
+      auto &tensor = tensors[i];
+      hessian[XX].row(X) += xyz * tensor[XXX];
+      hessian[XX].row(Y) += xyz * tensor[XXY];
+      hessian[XX].row(Z) += xyz * tensor[XXZ];
+      // hessian[XY].row(X) += xyz * tensor[XYX];
+      hessian[XY].row(Y) += xyz * tensor[XYY];
+      hessian[XY].row(Z) += xyz * tensor[XYZ];
+      // hessian[XZ].row(X) += xyz * tensor[XZX];
+      // hessian[XZ].row(Y) += xyz * tensor[XZY];
+      hessian[XZ].row(Z) += xyz * tensor[XZZ];
+      // hessian[YY].row(X) += xyz * tensor[YYX];
+      hessian[YY].row(Y) += xyz * tensor[YYY];
+      hessian[YY].row(Z) += xyz * tensor[YYZ];
+      // hessian[YZ].row(X) += xyz * tensor[YZX];
+      // hessian[YZ].row(Y) += xyz * tensor[YZY];
+      hessian[YZ].row(Z) += xyz * tensor[YZZ];
+      // hessian[ZZ].row(X) += xyz * tensor[ZZX];
+      // hessian[ZZ].row(Y) += xyz * tensor[ZZY];
+      hessian[ZZ].row(Z) += xyz * tensor[ZZZ];
+    }
+    for (int i = 0, n = this->CountNodes(); i < n; ++i) {
+      auto &xyz = this->GetGlobalCoord(i);
+      auto &tensor = tensors[i];
+      hessian[XY].row(X) += xyz * tensor[XYX];
+      hessian[XZ].row(X) += xyz * tensor[XZX];
+      hessian[XZ].row(Y) += xyz * tensor[XZY];
+      hessian[YY].row(X) += xyz * tensor[YYX];
+      hessian[YZ].row(X) += xyz * tensor[YZX];
+      hessian[YZ].row(Y) += xyz * tensor[YZY];
+      hessian[ZZ].row(X) += xyz * tensor[ZZX];
+      hessian[ZZ].row(Y) += xyz * tensor[ZZY];
+    }
+    // hessian[XY].row(X) = hessian[XX].row(Y);
+    // hessian[XZ].row(X) = hessian[XX].row(Z);
+    // hessian[XZ].row(Y) = hessian[XY].row(Z);
+    // hessian[YY].row(X) = hessian[XY].row(Y);
+    // hessian[YZ].row(X) = hessian[XY].row(Z);
+    // hessian[YZ].row(Y) = hessian[YY].row(Z);
+    // hessian[ZZ].row(X) = hessian[XZ].row(Z);
+    // hessian[ZZ].row(Y) = hessian[YZ].row(Z);
+    return hessian;
+  }
 
   /**
    * @brief \f$ \frac{\partial}{\partial \xi}\det(\mathbf{J}) = \det(\mathbf{J})\,\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1} \frac{\partial}{\partial \xi}\mathbf{J}\right) \f$, in which \f$ \mathbf{J} \f$ is returned by `Element::LocalToJacobian` and \f$ \frac{\partial}{\partial \xi}\mathbf{J} \f$ is returned by `Cell::LocalToJacobianGradient`.
@@ -135,6 +182,20 @@ class Cell : public Element<Scalar, 3, 3> {
     det_grad[Y] = det * (inv * mat_grad[Y]).trace();
     det_grad[Z] = det * (inv * mat_grad[Z]).trace();
     return det_grad;
+  }
+  Hessian LocalToJacobianDeterminantHessian(const Local &xyz) const {
+    Hessian det_hess;
+    auto mat_hess = LocalToJacobianHessian(xyz);
+    Jacobian mat = LocalToJacobian(xyz);
+    Scalar det = mat.determinant();
+    Jacobian inv = mat.inverse();
+    det_hess[XX] = det * (inv * mat_hess[XX]).trace();
+    det_hess[XY] = det * (inv * mat_hess[XY]).trace();
+    det_hess[XZ] = det * (inv * mat_hess[XZ]).trace();
+    det_hess[YY] = det * (inv * mat_hess[YY]).trace();
+    det_hess[YZ] = det * (inv * mat_hess[YZ]).trace();
+    det_hess[ZZ] = det * (inv * mat_hess[ZZ]).trace();
+    return det_hess;
   }
 
   Local GlobalToLocal(Scalar x_global, Scalar y_global, Scalar z_global,
