@@ -1,5 +1,6 @@
 link_libraries(gtest_main)
 
+add_subdirectory(constant)
 add_subdirectory(geometry)
 add_subdirectory(mesh)
 add_subdirectory(gauss)
