@@ -106,13 +106,13 @@ class Cell : public Element<Scalar, 3, 3> {
       grad[X].row(X) += xyz * hessian[XX];
       grad[X].row(Y) += xyz * hessian[XY];
       grad[X].row(Z) += xyz * hessian[XZ];
-      grad[Y].row(X) += xyz * hessian[YX];
       grad[Y].row(Y) += xyz * hessian[YY];
       grad[Y].row(Z) += xyz * hessian[YZ];
-      grad[Z].row(X) += xyz * hessian[ZX];
-      grad[Z].row(Y) += xyz * hessian[ZY];
       grad[Z].row(Z) += xyz * hessian[ZZ];
     }
+    grad[Y].row(X) = grad[X].row(Y);
+    grad[Z].row(X) = grad[X].row(Z);
+    grad[Z].row(Y) = grad[Y].row(Z);
     return grad;
   }
   algebra::Vector<Jacobian, 6> LocalToJacobianHessian(Local const &xyz)
@@ -127,42 +127,22 @@ class Cell : public Element<Scalar, 3, 3> {
       hessian[XX].row(X) += xyz * tensor[XXX];
       hessian[XX].row(Y) += xyz * tensor[XXY];
       hessian[XX].row(Z) += xyz * tensor[XXZ];
-      // hessian[XY].row(X) += xyz * tensor[XYX];
       hessian[XY].row(Y) += xyz * tensor[XYY];
       hessian[XY].row(Z) += xyz * tensor[XYZ];
-      // hessian[XZ].row(X) += xyz * tensor[XZX];
-      // hessian[XZ].row(Y) += xyz * tensor[XZY];
       hessian[XZ].row(Z) += xyz * tensor[XZZ];
-      // hessian[YY].row(X) += xyz * tensor[YYX];
       hessian[YY].row(Y) += xyz * tensor[YYY];
       hessian[YY].row(Z) += xyz * tensor[YYZ];
-      // hessian[YZ].row(X) += xyz * tensor[YZX];
-      // hessian[YZ].row(Y) += xyz * tensor[YZY];
       hessian[YZ].row(Z) += xyz * tensor[YZZ];
-      // hessian[ZZ].row(X) += xyz * tensor[ZZX];
-      // hessian[ZZ].row(Y) += xyz * tensor[ZZY];
       hessian[ZZ].row(Z) += xyz * tensor[ZZZ];
     }
-    for (int i = 0, n = this->CountNodes(); i < n; ++i) {
-      auto &xyz = this->GetGlobalCoord(i);
-      auto &tensor = tensors[i];
-      hessian[XY].row(X) += xyz * tensor[XYX];
-      hessian[XZ].row(X) += xyz * tensor[XZX];
-      hessian[XZ].row(Y) += xyz * tensor[XZY];
-      hessian[YY].row(X) += xyz * tensor[YYX];
-      hessian[YZ].row(X) += xyz * tensor[YZX];
-      hessian[YZ].row(Y) += xyz * tensor[YZY];
-      hessian[ZZ].row(X) += xyz * tensor[ZZX];
-      hessian[ZZ].row(Y) += xyz * tensor[ZZY];
-    }
-    // hessian[XY].row(X) = hessian[XX].row(Y);
-    // hessian[XZ].row(X) = hessian[XX].row(Z);
-    // hessian[XZ].row(Y) = hessian[XY].row(Z);
-    // hessian[YY].row(X) = hessian[XY].row(Y);
-    // hessian[YZ].row(X) = hessian[XY].row(Z);
-    // hessian[YZ].row(Y) = hessian[YY].row(Z);
-    // hessian[ZZ].row(X) = hessian[XZ].row(Z);
-    // hessian[ZZ].row(Y) = hessian[YZ].row(Z);
+    hessian[XY].row(X) = hessian[XX].row(Y);
+    hessian[XZ].row(X) = hessian[XX].row(Z);
+    hessian[XZ].row(Y) = hessian[XY].row(Z);
+    hessian[YY].row(X) = hessian[XY].row(Y);
+    hessian[YZ].row(X) = hessian[XY].row(Z);
+    hessian[YZ].row(Y) = hessian[YY].row(Z);
+    hessian[ZZ].row(X) = hessian[XZ].row(Z);
+    hessian[ZZ].row(Y) = hessian[YZ].row(Z);
     return hessian;
   }
 
@@ -183,6 +163,12 @@ class Cell : public Element<Scalar, 3, 3> {
     det_grad[Z] = det * (inv * mat_grad[Z]).trace();
     return det_grad;
   }
+  /**
+   * @brief \f$ \frac{\partial^2}{\partial\xi\,\partial\eta}\det(\mathbf{J})=\det(\mathbf{J})\left[\mathopen{\mathrm{tr}}\left(\frac{\partial^2\mathbf{J}}{\partial\xi\,\partial\eta}\right)+\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1}\frac{\partial\mathbf{J}}{\partial\xi}\right)\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1}\frac{\partial\mathbf{J}}{\partial\eta}\right)-\mathopen{\mathrm{tr}}\left(\mathbf{J}^{-1}\frac{\partial\mathbf{J}}{\partial\xi}\,\mathbf{J}^{-1}\frac{\partial\mathbf{J}}{\partial\eta}\right)\right] \f$
+   * 
+   * @param xyz 
+   * @return Hessian 
+   */
   Hessian LocalToJacobianDeterminantHessian(const Local &xyz) const {
     Hessian det_hess;
     auto mat_hess = LocalToJacobianHessian(xyz);
