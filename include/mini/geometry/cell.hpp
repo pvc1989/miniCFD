@@ -187,14 +187,27 @@ class Cell : public Element<Scalar, 3, 3> {
     Hessian det_hess;
     auto mat_hess = LocalToJacobianHessian(xyz);
     Jacobian mat = LocalToJacobian(xyz);
-    Scalar det = mat.determinant();
     Jacobian inv = mat.inverse();
-    det_hess[XX] = det * (inv * mat_hess[XX]).trace();
-    det_hess[XY] = det * (inv * mat_hess[XY]).trace();
-    det_hess[XZ] = det * (inv * mat_hess[XZ]).trace();
-    det_hess[YY] = det * (inv * mat_hess[YY]).trace();
-    det_hess[YZ] = det * (inv * mat_hess[YZ]).trace();
-    det_hess[ZZ] = det * (inv * mat_hess[ZZ]).trace();
+    det_hess[XX] = (inv * mat_hess[XX]).trace();
+    det_hess[XY] = (inv * mat_hess[XY]).trace();
+    det_hess[XZ] = (inv * mat_hess[XZ]).trace();
+    det_hess[YY] = (inv * mat_hess[YY]).trace();
+    det_hess[YZ] = (inv * mat_hess[YZ]).trace();
+    det_hess[ZZ] = (inv * mat_hess[ZZ]).trace();
+    auto mat_grad = LocalToJacobianGradient(xyz);
+    mat_grad[X] = inv * mat_grad[X];
+    mat_grad[Y] = inv * mat_grad[Y];
+    mat_grad[Z] = inv * mat_grad[Z];
+    auto trace_x = mat_grad[X].trace();
+    auto trace_y = mat_grad[Y].trace();
+    auto trace_z = mat_grad[Z].trace();
+    det_hess[XX] += trace_x * trace_x - (mat_grad[X] * mat_grad[X]).trace();
+    det_hess[XY] += trace_x * trace_y - (mat_grad[X] * mat_grad[Y]).trace();
+    det_hess[XZ] += trace_x * trace_z - (mat_grad[X] * mat_grad[Z]).trace();
+    det_hess[YY] += trace_y * trace_y - (mat_grad[Y] * mat_grad[Y]).trace();
+    det_hess[YZ] += trace_y * trace_z - (mat_grad[Y] * mat_grad[Z]).trace();
+    det_hess[ZZ] += trace_z * trace_z - (mat_grad[Z] * mat_grad[Z]).trace();
+    det_hess *= mat.determinant();
     return det_hess;
   }
 

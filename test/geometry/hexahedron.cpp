@@ -124,35 +124,33 @@ TEST_F(TestLagrangeHexahedron8, GetJacobianGradient) {
       auto det = cell.LocalToJacobian(x, y, z).determinant();
       EXPECT_NEAR(det_grad.norm(), 0.0, det * 1e-10);
     }
-    for (int i_point = 1 << 1; i_point > 0; --i_point) {
+    for (int i_point = 1 << 5; i_point > 0; --i_point) {
       auto x = rand_f(), y = rand_f(), z = rand_f();
       auto local = Local{x, y, z};
+      auto det = cell.LocalToJacobian(local).determinant();
       auto det_hess = cell.LocalToJacobianDeterminantHessian(local);
       auto h = 1e-5;
       Gradient det_grad_diff = (
           cell.LocalToJacobianDeterminantGradient(Local(x + h, y, z)) -
           cell.LocalToJacobianDeterminantGradient(Local(x - h, y, z))
       ) / (2 * h);
-      EXPECT_NEAR(det_hess[XX], det_grad_diff[X], 1e-8);
-      EXPECT_NEAR(det_hess[XY], det_grad_diff[Y], 1e-8);
-      EXPECT_NEAR(det_hess[XZ], det_grad_diff[Z], 1e-8);
-      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
+      EXPECT_NEAR(det_hess[XX], det_grad_diff[X], det * 1e-10);
+      EXPECT_NEAR(det_hess[XY], det_grad_diff[Y], det * 1e-10);
+      EXPECT_NEAR(det_hess[XZ], det_grad_diff[Z], det * 1e-10);
       det_grad_diff = (
           cell.LocalToJacobianDeterminantGradient(Local(x, y + h, z)) -
           cell.LocalToJacobianDeterminantGradient(Local(x, y - h, z))
       ) / (2 * h);
-      EXPECT_NEAR(det_hess[YX], det_grad_diff[X], 1e-8);
-      EXPECT_NEAR(det_hess[YY], det_grad_diff[Y], 1e-8);
-      EXPECT_NEAR(det_hess[YZ], det_grad_diff[Z], 1e-8);
-      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
+      EXPECT_NEAR(det_hess[YX], det_grad_diff[X], det * 1e-10);
+      EXPECT_NEAR(det_hess[YY], det_grad_diff[Y], det * 1e-10);
+      EXPECT_NEAR(det_hess[YZ], det_grad_diff[Z], det * 1e-10);
       det_grad_diff = (
           cell.LocalToJacobianDeterminantGradient(Local(x, y, z + h)) -
           cell.LocalToJacobianDeterminantGradient(Local(x, y, z - h))
       ) / (2 * h);
-      EXPECT_NEAR(det_hess[ZX], det_grad_diff[X], 1e-8);
-      EXPECT_NEAR(det_hess[ZY], det_grad_diff[Y], 1e-8);
-      EXPECT_NEAR(det_hess[ZZ], det_grad_diff[Z], 1e-8);
-      std::cout << det_hess.transpose() << "\n" << det_grad_diff.transpose() << "\n" << "\n";
+      EXPECT_NEAR(det_hess[ZX], det_grad_diff[X], det * 1e-10);
+      EXPECT_NEAR(det_hess[ZY], det_grad_diff[Y], det * 1e-10);
+      EXPECT_NEAR(det_hess[ZZ], det_grad_diff[Z], det * 1e-10);
     }
   }
 }
