@@ -58,8 +58,8 @@ class Hexahedron {
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
-  using Mat3xK = algebra::Matrix<Scalar, 3, K>;
-  using Gradient = Mat3xK;
+  using Gradient = algebra::Matrix<Scalar, 3, K>;
+  using Hessian = algebra::Matrix<Scalar, 6, K>;
 
   using GaussOnLine = GaussX;
 
@@ -221,8 +221,8 @@ class Hexahedron {
    * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
    * 
    */
-  Mat3xK GetLocalGradient(int ijk) const requires (kLocal) {
-    Mat3xK value_grad; value_grad.setZero();
+  Gradient GetLocalGradient(int ijk) const requires (kLocal) {
+    Gradient value_grad; value_grad.setZero();
     Mat3xN const &basis_grads = GetBasisGradients(ijk);
     for (int abc = 0; abc < N; ++abc) {
       value_grad += basis_grads.col(abc) * coeff_.col(abc).transpose();
@@ -233,12 +233,35 @@ class Hexahedron {
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
    * 
    */
-  Mat3xK GetGlobalGradient(int ijk) const requires (kLocal) {
+  Gradient GetGlobalGradient(int ijk) const requires (kLocal) {
     auto value_grad = GetLocalGradient(ijk);
     value_grad -= jacobian_det_grad_[ijk] * GetValue(ijk).transpose();
     auto jacobian_det = jacobian_det_[ijk];
     value_grad /= (jacobian_det * jacobian_det);
     return GetJacobianAssociated(ijk) * value_grad;
+  }
+  /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\partial_{\xi}\\ \partial_{\xi}\partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
+   * 
+   */
+  Hessian GetLocalHessian(int ijk) const requires (kLocal) {
+    Hessian value_hess; value_hess.setZero();
+    Mat3xN const &basis_grads = GetBasisGradients(ijk);
+    for (int abc = 0; abc < N; ++abc) {
+      value_hess += basis_grads.col(abc) * coeff_.col(abc).transpose();
+    }
+    return value_hess;
+  }
+  /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{x}\partial_{x}\\ \partial_{x}\partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
+   * 
+   */
+  Hessian GetGlobalHessian(int ijk) const requires (kLocal) {
+    Hessian value_hess = GetLocalHessian(ijk);
+    value_hess -= jacobian_det_grad_[ijk] * GetValue(ijk).transpose();
+    auto jacobian_det = jacobian_det_[ijk];
+    value_hess /= (jacobian_det * jacobian_det);
+    return GetJacobianAssociated(ijk) * value_hess;
   }
 
   /**
