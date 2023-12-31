@@ -18,9 +18,12 @@
 #include "mini/gauss/hexahedron.hpp"
 #include "mini/geometry/element.hpp"
 #include "mini/basis/lagrange.hpp"
+#include "mini/constant/index.hpp"
 
 namespace mini {
 namespace polynomial {
+
+using namespace mini::constant::index;
 
 /**
  * @brief A vector-valued function interpolated on an given basis::lagrange::Hexahedron basis.
@@ -58,6 +61,7 @@ class Hexahedron {
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
+  using Mat6xN = algebra::Matrix<Scalar, 3, N>;
   using Gradient = algebra::Matrix<Scalar, 3, K>;
   using Hessian = algebra::Matrix<Scalar, 6, K>;
 
@@ -112,6 +116,22 @@ class Hexahedron {
       grad.row(2) = basis.GetDerivatives(0, 0, 1, i, j, k);
     }
     return gradients;
+  }
+  static const std::array<Mat6xN, N> basis_local_hessians_;
+  static std::array<Mat6xN, N> BuildBasisLocalHessians() {
+    std::array<Mat6xN, N> hessians;
+    auto basis = BuildInterpolationBasis();
+    for (int ijk = 0; ijk < N; ++ijk) {
+      auto &hess = hessians[ijk];
+      auto [i, j, k] = basis.index(ijk);
+      hess.row(XX) = basis.GetDerivatives(2, 0, 0, i, j, k);
+      hess.row(XY) = basis.GetDerivatives(1, 1, 0, i, j, k);
+      hess.row(XZ) = basis.GetDerivatives(1, 0, 1, i, j, k);
+      hess.row(YY) = basis.GetDerivatives(0, 2, 0, i, j, k);
+      hess.row(YZ) = basis.GetDerivatives(0, 1, 1, i, j, k);
+      hess.row(ZZ) = basis.GetDerivatives(0, 0, 2, i, j, k);
+    }
+    return hessians;
   }
 
  public:
@@ -241,14 +261,25 @@ class Hexahedron {
     return GetJacobianAssociated(ijk) * value_grad;
   }
   /**
+   * @brief Get the local Hessians of basis at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `true`.
+   * 
+   * @param ijk the index of the Gaussian point
+   * @return const Mat6xN& the local Hessians of basis
+   */
+  const Mat6xN &GetBasisHessians(int ijk) const requires (kLocal) {
+    return basis_local_hessians_[ijk];
+  }
+  /**
    * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\partial_{\xi}\\ \partial_{\xi}\partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
    * 
    */
   Hessian GetLocalHessian(int ijk) const requires (kLocal) {
     Hessian value_hess; value_hess.setZero();
-    Mat3xN const &basis_grads = GetBasisGradients(ijk);
+    Mat6xN const &basis_hess = GetBasisHessians(ijk);
     for (int abc = 0; abc < N; ++abc) {
-      value_hess += basis_grads.col(abc) * coeff_.col(abc).transpose();
+      value_hess += basis_hess.col(abc) * coeff_.col(abc).transpose();
     }
     return value_hess;
   }
@@ -754,6 +785,12 @@ std::array<typename Hexahedron<Gx, Gy, Gz, kC, kL>::Mat3xN,
                     Hexahedron<Gx, Gy, Gz, kC, kL>::N> const
 Hexahedron<Gx, Gy, Gz, kC, kL>::basis_local_gradients_ =
     Hexahedron<Gx, Gy, Gz, kC, kL>::BuildBasisLocalGradients();
+
+template <class Gx, class Gy, class Gz, int kC, bool kL>
+std::array<typename Hexahedron<Gx, Gy, Gz, kC, kL>::Mat6xN,
+                    Hexahedron<Gx, Gy, Gz, kC, kL>::N> const
+Hexahedron<Gx, Gy, Gz, kC, kL>::basis_local_hessians_ =
+    Hexahedron<Gx, Gy, Gz, kC, kL>::BuildBasisLocalHessians();
 
 }  // namespace polynomial
 }  // namespace mini
