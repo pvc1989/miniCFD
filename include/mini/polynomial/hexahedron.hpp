@@ -72,6 +72,8 @@ class Hexahedron {
   Coeff coeff_;  // u^h(local) = coeff_ @ basis.GetValues(local)
 
   struct E { };
+
+  // cache for (kLocal == true)
   /* \f$ \det(\mathbf{J}) \f$ */
   [[no_unique_address]] std::conditional_t<kLocal, std::array<Scalar, N>, E>
       jacobian_det_;
@@ -81,6 +83,8 @@ class Hexahedron {
   /* \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \partial_{\zeta} \end{bmatrix}\det(\mathbf{J}) \f$ */
   [[no_unique_address]] std::conditional_t<kLocal, std::array<Local, N>, E>
       jacobian_det_grad_;
+
+  // cache for (kLocal == false)
   [[no_unique_address]] std::conditional_t<kLocal, E, std::array<Mat3xN, N>>
       basis_global_gradients_;
 
@@ -248,6 +252,27 @@ class Hexahedron {
       value_grad += basis_grads.col(abc) * coeff_.col(abc).transpose();
     }
     return value_grad;
+  }
+  Gradient LocalToLocalGradient(Local const &local) const requires (kLocal) {
+    Gradient value_grad; value_grad.setZero();
+    auto x = local[X], y = local[Y], z = local[Z];
+    Mat3xN basis_grad;
+    basis_grad.row(X) = basis_.GetDerivatives(1, 0, 0, x, y, z);
+    basis_grad.row(Y) = basis_.GetDerivatives(0, 1, 0, x, y, z);
+    basis_grad.row(Z) = basis_.GetDerivatives(0, 0, 1, x, y, z);
+    for (int abc = 0; abc < N; ++abc) {
+      value_grad += basis_grad.col(abc) * coeff_.col(abc).transpose();
+    }
+    return value_grad;
+  }
+  Gradient LocalToGlobalGradient(Local const &local) const requires (kLocal) {
+    Gradient grad = LocalToLocalGradient(local);
+    Jacobian mat = lagrange().LocalToJacobian(local);
+    Scalar det = mat.determinant();
+    Global det_grad = lagrange().LocalToJacobianDeterminantGradient(local);
+    Value value = coeff_ * basis_.GetValues(local).transpose();
+    grad -= (det_grad / det) * value.transpose();
+    return mat.inverse() / det * grad;
   }
   /**
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.

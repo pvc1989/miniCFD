@@ -13,10 +13,12 @@
 #include "mini/basis/linear.hpp"
 #include "mini/polynomial/projection.hpp"
 #include "mini/polynomial/hexahedron.hpp"
+#include "mini/constant/index.hpp"
 
 #include "gtest/gtest.h"
 
 using std::sqrt;
+using namespace mini::constant::index;
 
 double rand_f() {
   return -1 + 2 * std::rand() / (1.0 + RAND_MAX);
@@ -179,6 +181,7 @@ TEST_F(TestPolynomialHexahedronInterpolation, GetGlobalGradient) {
   using Value = typename Interpolation::Value;
   using Gauss = typename Interpolation::Gauss;
   using Global = typename Gauss::Global;
+  using Local = typename Gauss::Local;
   std::srand(31415926);
   for (int i_cell = 1; i_cell > 0; --i_cell) {
     // build a hexa-gauss and a Lagrange basis on it
@@ -221,15 +224,17 @@ TEST_F(TestPolynomialHexahedronInterpolation, GetGlobalGradient) {
     interp.Approximate(get_value);
     // test values and gradients on nodes
     for (int ijk = 0; ijk < Interpolation::N; ++ijk) {
+      Local const &local = interp.gauss().GetLocalCoord(ijk);
       Global const &global = interp.gauss().GetGlobalCoord(ijk);
       Value value = interp.GetValue(ijk);
       EXPECT_NEAR((value - get_value(global)).norm(), 0, 1e-13);
       EXPECT_NEAR((value - interp.GlobalToValue(global)).norm(), 0, 1e-10);
       Gradient grad = interp.GetGlobalGradient(ijk);
+      EXPECT_NEAR((grad - interp.LocalToGlobalGradient(local)).norm(), 0,
+          1e-13);
       // compare with analytical derivatives
       EXPECT_NEAR((get_grad(global) - grad).norm(), 0, 4e-1);
       // compare with O(h^2) finite difference derivatives
-      constexpr int X{0}, Y{1}, Z{2};
       auto x = global[X], y = global[Y], z = global[Z], h = 1e-5;
       Value left = interp.GlobalToValue(Global(x - h, y, z));
       Value right = interp.GlobalToValue(Global(x + h, y, z));
