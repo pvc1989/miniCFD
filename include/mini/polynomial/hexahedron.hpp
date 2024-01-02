@@ -57,13 +57,21 @@ class Hexahedron {
   using Basis = basis::lagrange::Hexahedron<Scalar, Px, Py, Pz>;
   static constexpr int N = Basis::N;
   static constexpr int K = kC;
+
+ protected:
+  using Mat6xN = algebra::Matrix<Scalar, 6, N>;
+  using Mat6xK = algebra::Matrix<Scalar, 6, K>;
+  using Mat3xK = algebra::Matrix<Scalar, 3, K>;
+  using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
+  using Mat1x3 = algebra::Matrix<Scalar, 1, 3>;
+
+ public:
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Mat3xN = algebra::Matrix<Scalar, 3, N>;
-  using Mat6xN = algebra::Matrix<Scalar, 3, N>;
-  using Gradient = algebra::Matrix<Scalar, 3, K>;
-  using Hessian = algebra::Matrix<Scalar, 6, K>;
+  using Gradient = Mat3xK;
+  using Hessian = Mat6xK;
 
   using GaussOnLine = GaussX;
 
@@ -83,6 +91,17 @@ class Hexahedron {
   /* \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \partial_{\zeta} \end{bmatrix}\det(\mathbf{J}) \f$ */
   [[no_unique_address]] std::conditional_t<kLocal, std::array<Local, N>, E>
       jacobian_det_grad_;
+  /* \f$ \underline{J}^{-T}\,J^{-1} \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, Jacobian[N], E>
+      mat_after_hess_of_U_;
+  /* \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \partial_{\zeta} \end{bmatrix} \qty(\underline{J}^{-T}\,J^{-1}) \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, Jacobian[N][3], E>
+      mat_after_grad_of_U_;
+  /* \f$ \underline{C}=\begin{bmatrix}\partial_{\xi}\,J & \partial_{\eta}\,J\end{bmatrix}\underline{J}^{-T}\,J^{-2} \f$ */
+  [[no_unique_address]] std::conditional_t<kLocal, Mat1x3[N], E>
+      mat_before_grad_of_U_;
+  [[no_unique_address]] std::conditional_t<kLocal, Jacobian[N], E>
+      mat_before_U_;
 
   // cache for (kLocal == false)
   [[no_unique_address]] std::conditional_t<kLocal, E, std::array<Mat3xN, N>>
@@ -92,6 +111,8 @@ class Hexahedron {
     constexpr size_t large_member_size = kLocal
         ? sizeof(std::array<Scalar, N>) + sizeof(std::array<Jacobian, N>)
             + sizeof(std::array<Local, N>)
+            + sizeof(Jacobian[N]) + sizeof(Jacobian[N][3])
+            + sizeof(Jacobian[N]) + sizeof(Local[N])
         : sizeof(std::array<Mat3xN, N>);
     constexpr size_t all_member_size = large_member_size
         + sizeof(gauss_ptr_) + sizeof(coeff_);
@@ -301,7 +322,7 @@ class Hexahedron {
    * 
    */
   Hessian GetLocalHessian(int ijk) const requires (kLocal) {
-    Hessian value_hess; value_hess.setZero();
+    Mat6xK value_hess; value_hess.setZero();
     Mat6xN const &basis_hess = GetBasisHessians(ijk);
     for (int abc = 0; abc < N; ++abc) {
       value_hess += basis_hess.col(abc) * coeff_.col(abc).transpose();
@@ -313,11 +334,40 @@ class Hexahedron {
    * 
    */
   Hessian GetGlobalHessian(int ijk) const requires (kLocal) {
-    Hessian value_hess = GetLocalHessian(ijk);
-    value_hess -= jacobian_det_grad_[ijk] * GetValue(ijk).transpose();
-    auto jacobian_det = jacobian_det_[ijk];
-    value_hess /= (jacobian_det * jacobian_det);
-    return GetJacobianAssociated(ijk) * value_hess;
+    Hessian local_hess = GetLocalHessian(ijk);
+    auto &global_hess = local_hess;
+    Mat3xK local_grad = GetLocalGradient(ijk);
+    for (int k = 0; k < K; ++k) {
+      Mat3x3 scalar_hess;
+      scalar_hess(X, X) = local_hess(XX, k);
+      scalar_hess(X, Y) =
+      scalar_hess(Y, X) = local_hess(XY, k);
+      scalar_hess(X, Z) =
+      scalar_hess(Z, X) = local_hess(XZ, k);
+      scalar_hess(Y, Y) = local_hess(YY, k);
+      scalar_hess(Y, Z) =
+      scalar_hess(Z, Y) = local_hess(YZ, k);
+      scalar_hess(Z, Z) = local_hess(ZZ, k);
+      scalar_hess *= mat_after_hess_of_U_[ijk];
+      Mat1x3 scalar_local_grad = local_grad.col(k);
+      scalar_hess.row(X) += scalar_local_grad * mat_after_grad_of_U_[ijk][X]
+          - mat_before_grad_of_U_[ijk] * scalar_local_grad[X];
+      scalar_hess.row(Y) += scalar_local_grad * mat_after_grad_of_U_[ijk][Y]
+          - mat_before_grad_of_U_[ijk] * scalar_local_grad[Y];
+      scalar_hess.row(Z) += scalar_local_grad * mat_after_grad_of_U_[ijk][Z]
+          - mat_before_grad_of_U_[ijk] * scalar_local_grad[Z];
+      Scalar scalar_local_val = coeff_(k, ijk);
+      scalar_hess -= mat_before_U_[ijk] * scalar_local_val;
+      scalar_hess = jacobian_det_inv_[ijk] * scalar_hess;
+      scalar_hess /= jacobian_det_[ijk];
+      global_hess(XX, k) = scalar_hess(X, X);
+      global_hess(XY, k) = scalar_hess(X, Y);
+      global_hess(XZ, k) = scalar_hess(X, Z);
+      global_hess(YY, k) = scalar_hess(Y, Y);
+      global_hess(YZ, k) = scalar_hess(Y, Z);
+      global_hess(ZZ, k) = scalar_hess(Z, Z);
+    }
+    return global_hess;
   }
 
   /**
