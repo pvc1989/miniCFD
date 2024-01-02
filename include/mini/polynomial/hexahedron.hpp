@@ -63,6 +63,7 @@ class Hexahedron {
   using Mat6xK = algebra::Matrix<Scalar, 6, K>;
   using Mat3xK = algebra::Matrix<Scalar, 3, K>;
   using Mat3x3 = algebra::Matrix<Scalar, 3, 3>;
+  using Mat3x1 = algebra::Matrix<Scalar, 3, 1>;
   using Mat1x3 = algebra::Matrix<Scalar, 1, 3>;
 
  public:
@@ -164,11 +165,49 @@ class Hexahedron {
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
-      Jacobian jacobian = lagrange().LocalToJacobian(local);
-      jacobian_det_[ijk] = jacobian.determinant();
-      jacobian_det_inv_[ijk] = jacobian_det_[ijk] * jacobian.inverse();
+      Jacobian mat = lagrange().LocalToJacobian(local);
+      Jacobian inv = mat.inverse();
+      Scalar det = mat.determinant();
+      jacobian_det_[ijk] = det;
+      jacobian_det_inv_[ijk] = det * inv;
       jacobian_det_grad_[ijk]
           = lagrange().LocalToJacobianDeterminantGradient(local);
+      // cache for evaluating Hessian
+      Jacobian inv_T = inv.transpose();
+      mat_after_hess_of_U_[ijk] = inv_T / det;
+      auto mat_grad = lagrange().LocalToJacobianGradient(local);
+      Jacobian inv_T_grad[3];
+      inv_T_grad[X] = -(inv * mat_grad[X] * inv).transpose();
+      inv_T_grad[Y] = -(inv * mat_grad[Y] * inv).transpose();
+      inv_T_grad[Z] = -(inv * mat_grad[Z] * inv).transpose();
+      Mat3x1 const &det_grad = jacobian_det_grad_[ijk];
+      Scalar det2 = det * det;
+      mat_after_grad_of_U_[ijk][X] = inv_T_grad[X] / det
+          + inv_T * (-det_grad[X] / det2);
+      mat_after_grad_of_U_[ijk][Y] = inv_T_grad[Y] / det
+          + inv_T * (-det_grad[Y] / det2);
+      mat_after_grad_of_U_[ijk][Z] = inv_T_grad[Z] / det
+          + inv_T * (-det_grad[Z] / det2);
+      mat_before_grad_of_U_[ijk] = det_grad.transpose() * inv_T / det2;
+      auto det_hess = lagrange().LocalToJacobianDeterminantHessian(local);
+      auto &mat_before_U = mat_before_U_[ijk];
+      mat_before_U(X, X) = det_hess[XX];
+      mat_before_U(X, Y) = det_hess[XY];
+      mat_before_U(X, Z) = det_hess[XZ];
+      mat_before_U(Y, X) = det_hess[YX];
+      mat_before_U(Y, Y) = det_hess[YY];
+      mat_before_U(Y, Z) = det_hess[YZ];
+      mat_before_U(Z, X) = det_hess[ZX];
+      mat_before_U(Z, Y) = det_hess[ZY];
+      mat_before_U(Z, Z) = det_hess[ZZ];
+      mat_before_U *= inv_T / det2;
+      Scalar det3 = det2 * det;
+      mat_before_U.row(X) += det_grad.transpose() *
+          (inv_T_grad[X] / det2 + inv_T * (-2 * det_grad[X] / det3));
+      mat_before_U.row(Y) += det_grad.transpose() *
+          (inv_T_grad[Y] / det2 + inv_T * (-2 * det_grad[Y] / det3));
+      mat_before_U.row(Z) += det_grad.transpose() *
+          (inv_T_grad[Z] / det2 + inv_T * (-2 * det_grad[Z] / det3));
     }
   }
   explicit Hexahedron(const GaussBase &gauss) requires (!kLocal)
@@ -294,6 +333,10 @@ class Hexahedron {
     Value value = coeff_ * basis_.GetValues(local).transpose();
     grad -= (det_grad / det) * value.transpose();
     return mat.inverse() / det * grad;
+  }
+  Gradient GlobalToGlobalGradient(Global const &global) const requires (kLocal) {
+    auto local = lagrange().GlobalToLocal(global);
+    return LocalToGlobalGradient(local);
   }
   /**
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.

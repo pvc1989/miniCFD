@@ -255,26 +255,26 @@ TEST_F(TestPolynomialHexahedronInterpolation, GetGlobalGradient) {
       auto const &global = interp.gauss().GetGlobalCoord(ijk);
       auto x = global[X], y = global[Y], z = global[Z], h = 1e-5;
       Gradient grad_diff = (
-          interp.LocalToGlobalGradient(Global(x + h, y, z)) -
-          interp.LocalToGlobalGradient(Global(x - h, y, z))
+          interp.GlobalToGlobalGradient(Global(x + h, y, z)) -
+          interp.GlobalToGlobalGradient(Global(x - h, y, z))
       ) / (2 * h);
-      EXPECT_NEAR((hess.row(XX) - grad_diff.row(X)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(XY) - grad_diff.row(Y)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(XZ) - grad_diff.row(Z)).norm(), 0, 1e-7);
+      EXPECT_NEAR((hess.row(XX) - grad_diff.row(X)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(XY) - grad_diff.row(Y)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(XZ) - grad_diff.row(Z)).norm(), 0, 1e-8);
       grad_diff = (
-          interp.LocalToGlobalGradient(Global(x, y + h, z)) -
-          interp.LocalToGlobalGradient(Global(x, y - h, z))
+          interp.GlobalToGlobalGradient(Global(x, y + h, z)) -
+          interp.GlobalToGlobalGradient(Global(x, y - h, z))
       ) / (2 * h);
-      EXPECT_NEAR((hess.row(YX) - grad_diff.row(X)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(YY) - grad_diff.row(Y)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(YZ) - grad_diff.row(Z)).norm(), 0, 1e-7);
+      EXPECT_NEAR((hess.row(YX) - grad_diff.row(X)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(YY) - grad_diff.row(Y)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(YZ) - grad_diff.row(Z)).norm(), 0, 1e-8);
       grad_diff = (
-          interp.LocalToGlobalGradient(Global(x, y, z + h)) -
-          interp.LocalToGlobalGradient(Global(x, y, z - h))
+          interp.GlobalToGlobalGradient(Global(x, y, z + h)) -
+          interp.GlobalToGlobalGradient(Global(x, y, z - h))
       ) / (2 * h);
-      EXPECT_NEAR((hess.row(ZX) - grad_diff.row(X)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(ZY) - grad_diff.row(Y)).norm(), 0, 1e-7);
-      EXPECT_NEAR((hess.row(ZZ) - grad_diff.row(Z)).norm(), 0, 1e-7);
+      EXPECT_NEAR((hess.row(ZX) - grad_diff.row(X)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(ZY) - grad_diff.row(Y)).norm(), 0, 1e-8);
+      EXPECT_NEAR((hess.row(ZZ) - grad_diff.row(Z)).norm(), 0, 1e-8);
     }
   }
 }
