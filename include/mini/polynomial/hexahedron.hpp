@@ -226,23 +226,23 @@ class Hexahedron {
   Hexahedron &operator=(Hexahedron &&) noexcept = default;
   ~Hexahedron() noexcept = default;
 
-  Value LobalToValue(Local const &local) const requires (kLocal) {
+  Value LocalToValue(Local const &local) const requires (kLocal) {
     Value value = coeff_ * basis_.GetValues(local).transpose();
     value /= lagrange().LocalToJacobian(local).determinant();
     return value;
   }
-  Value LobalToValue(Local const &local) const requires (!kLocal) {
+  Value LocalToValue(Local const &local) const requires (!kLocal) {
     return coeff_ * basis_.GetValues(local).transpose();
   }
   void LocalToGlobalAndValue(Local const &local,
       Global *global, Value *value) const {
     *global = gauss().lagrange().LocalToGlobal(local);
-    *value = LobalToValue(local);
+    *value = LocalToValue(local);
   }
 
   Value GlobalToValue(Global const &global) const {
     Local local = lagrange().GlobalToLocal(global);
-    return LobalToValue(local);
+    return LocalToValue(local);
   }
   /**
    * @brief Get the value of \f$ u(x,y,z) \equiv \det(\mathbf{J})^{-1}\,U(\xi,\eta,\zeta) \f$ at a Gaussian point.
