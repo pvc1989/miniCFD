@@ -2,6 +2,7 @@
 #ifndef MINI_RIEMANN_DIFFUSIVE_DIRECT_DG_HPP_
 #define MINI_RIEMANN_DIFFUSIVE_DIRECT_DG_HPP_
 
+#include "mini/algebra/eigen.hpp"
 #include "mini/constant/index.hpp"
 
 namespace mini {
@@ -21,6 +22,7 @@ class DirectDG : public DiffusionModel {
   using Gradient = typename Base::Gradient;
   using FluxMatrix = typename Base::FluxMatrix;
   using Flux = typename Base::Flux;
+  using Hessian = algebra::Matrix<Scalar, 6, Base::kComponents>;
 
  protected:
   static Scalar beta_0_;
@@ -41,25 +43,24 @@ class DirectDG : public DiffusionModel {
     return common_gradient;
   }
 
-  template <typename Hessian>
   static Gradient GetCommonGradient(Scalar distance, Vector normal,
       Conservative const &left_value, Conservative const &right_value,
       Gradient const &left_gradient, Gradient const &right_gradient,
       Hessian const &left_hessian, Hessian const &right_hessian) {
     Gradient common_gradient = GetCommonGradient(distance, normal,
-      left_value, right_value, left_gradient, right_gradient);
+        left_value, right_value, left_gradient, right_gradient);
     // add the penalty of Hessian jump
     normal *= beta_1_ * distance;
     Hessian hessian_jump = right_hessian - left_hessian;
-    common_gradient.row(X) += normal[X] * hessian_jump[XX];
-    common_gradient.row(X) += normal[Y] * hessian_jump[XY];
-    common_gradient.row(X) += normal[Z] * hessian_jump[XZ];
-    common_gradient.row(Y) += normal[X] * hessian_jump[YX];
-    common_gradient.row(Y) += normal[Y] * hessian_jump[YY];
-    common_gradient.row(Y) += normal[Z] * hessian_jump[YZ];
-    common_gradient.row(Z) += normal[X] * hessian_jump[ZX];
-    common_gradient.row(Z) += normal[Y] * hessian_jump[ZY];
-    common_gradient.row(Z) += normal[Z] * hessian_jump[ZZ];
+    common_gradient.row(X) += normal[X] * hessian_jump.row(XX);
+    common_gradient.row(X) += normal[Y] * hessian_jump.row(XY);
+    common_gradient.row(X) += normal[Z] * hessian_jump.row(XZ);
+    common_gradient.row(Y) += normal[X] * hessian_jump.row(YX);
+    common_gradient.row(Y) += normal[Y] * hessian_jump.row(YY);
+    common_gradient.row(Y) += normal[Z] * hessian_jump.row(YZ);
+    common_gradient.row(Z) += normal[X] * hessian_jump.row(ZX);
+    common_gradient.row(Z) += normal[Y] * hessian_jump.row(ZY);
+    common_gradient.row(Z) += normal[Z] * hessian_jump.row(ZZ);
     return common_gradient;
   }
 

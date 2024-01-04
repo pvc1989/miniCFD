@@ -270,12 +270,14 @@ class General : public spatial::FiniteElement<Part> {
     Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
     auto du_holder = holder_projection.GetGlobalGradient(holder_cache.ijk);
     auto du_sharer = sharer_projection.GetGlobalGradient(sharer_cache.ijk);
+    auto ddu_holder = holder_projection.GetGlobalHessian(holder_cache.ijk);
+    auto ddu_sharer = sharer_projection.GetGlobalHessian(sharer_cache.ijk);
     assert(Collinear(holder_cache.normal, sharer_cache.normal));
     const auto &normal = riemann.normal();
     auto distance = normal.dot(face.HolderToSharer());
     assert(distance > 0);
     auto du_common = riemann.GetCommonGradient(distance, normal,
-        u_holder, u_sharer, du_holder, du_sharer);
+        u_holder, u_sharer, du_holder, du_sharer, ddu_holder, ddu_sharer);
     Value u_common = (u_holder + u_sharer) / 2;
     Riemann::ModifyCommonFlux(u_common, du_common, normal, &f_upwind);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
