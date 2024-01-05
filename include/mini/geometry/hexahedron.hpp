@@ -296,6 +296,7 @@ class Hexahedron8 : public Hexahedron<Scalar> {
   using typename Base::Global;
   using typename Base::Jacobian;
   using typename Base::Hessian;
+  using typename Base::Tensor3;
 
   static constexpr int kNodes = 8;
 
@@ -381,9 +382,8 @@ class Hexahedron8 : public Hexahedron<Scalar> {
     LocalToShapeHessians(local, hessians.data());
     return hessians;
   }
-  using typename Base::Tensor3;
-  static void LocalToShape3rdOrderDerivatives(Scalar x_local, Scalar y_local,
-      Scalar z_local, Tensor3 *tensors) {
+  static void LocalToShape3rdOrderDerivatives(Local const &local,
+      Tensor3 *tensors) {
     for (int i = 0; i < kNodes; ++i) {
       auto &local_i = Hexahedron27<Scalar>::local_coords_[i];
       auto &tensor_i = tensors[i];
@@ -391,9 +391,9 @@ class Hexahedron8 : public Hexahedron<Scalar> {
       tensor_i[XYZ] = local_i[X] * local_i[Y] * local_i[Z] / 8;
     }
   }
-  std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &xyz) const final {
+  std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &local) const final {
     auto tensors = std::vector<Tensor3>(kNodes);
-    LocalToShape3rdOrderDerivatives(xyz[X], xyz[Y], xyz[Z], tensors.data());
+    LocalToShape3rdOrderDerivatives(local, tensors.data());
     return tensors;
   }
 
@@ -428,6 +428,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
   using typename Base::Global;
   using typename Base::Jacobian;
   using typename Base::Hessian;
+  using typename Base::Tensor3;
 
   static constexpr int kNodes = 20;
 
@@ -553,6 +554,37 @@ class Hexahedron20 : public Hexahedron<Scalar> {
       hessian[XX] = hessian[YY] = 0;
     }
   }
+  static void LocalToNewShape3rdOrderDerivatives(Local const &local,
+      Tensor3 *tensors) {
+    Scalar x_local = local[X], y_local = local[Y], z_local = local[Z];
+    // local_coords_[i][X] = 0
+    for (int a : {8, 10, 16, 18}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &tensor = tensors[a];
+      tensor.setZero();
+      tensor[XXY] = -0.5 * local_a[Y] * (1 + local_a[Z] * z_local);
+      tensor[XXZ] = -0.5 * (1 + local_a[Y] * y_local) * local_a[Z];
+      tensor[XYZ] = -0.5 * x_local * local_a[Y] * local_a[Z];
+    }
+    // local_coords_[i][Y] = 0
+    for (int a : {9, 11, 17, 19}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &tensor = tensors[a];
+      tensor.setZero();
+      tensor[YYX] = -0.5 * local_a[X] * (1 + local_a[Z] * z_local);
+      tensor[YYZ] = -0.5 * (1 + local_a[X] * x_local) * local_a[Z];
+      tensor[XYZ] = -0.5 * y_local * local_a[X] * local_a[Z];
+    }
+    // local_coords_[i][Z] = 0
+    for (int a : {12, 13, 14, 15}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &tensor = tensors[a];
+      tensor.setZero();
+      tensor[ZZX] = -0.5 * local_a[X] * (1 + local_a[Y] * y_local);
+      tensor[ZZY] = -0.5 * (1 + local_a[X] * x_local) * local_a[Y];
+      tensor[XYZ] = -0.5 * z_local * local_a[X] * local_a[Y];
+    }
+  }
 
  public:
   static void LocalToShapeFunctions(Scalar x_local, Scalar y_local,
@@ -622,6 +654,27 @@ class Hexahedron20 : public Hexahedron<Scalar> {
     auto hessians = std::vector<Hessian>(kNodes);
     LocalToShapeHessians(local, hessians.data());
     return hessians;
+  }
+  static void LocalToShape3rdOrderDerivatives(Local const &local,
+      Tensor3 *tensors) {
+    Hexahedron8<Scalar>::LocalToShape3rdOrderDerivatives(local, tensors);
+    LocalToNewShape3rdOrderDerivatives(local, tensors);
+    for (int b = 8; b < 20; ++b) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[8];
+      Hexahedron8<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 8; ++a) {
+        tensors[a] -= old_shapes_on_new_nodes[a] * tensors[b];
+      }
+    }
+  }
+  std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &local) const final {
+    auto tensors = std::vector<Tensor3>(kNodes);
+    LocalToShape3rdOrderDerivatives(local, tensors.data());
+    return tensors;
   }
 
  public:
