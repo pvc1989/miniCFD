@@ -12,6 +12,10 @@
 
 using namespace mini::constant::index;
 
+double rand_f() {
+  return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX);
+}
+
 class TestLagrangeHexahedron8 : public ::testing::Test {
  protected:
   using Lagrange = mini::geometry::Hexahedron8<double>;
@@ -37,9 +41,8 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
   mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
-  auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   for (int i = 0; i < 1000; ++i) {
-    auto x = rand(), y = rand(), z = rand();
+    auto x = rand_f(), y = rand_f(), z = rand_f();
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-15);
@@ -78,7 +81,6 @@ TEST_F(TestLagrangeHexahedron8, CoordinateMap) {
 }
 TEST_F(TestLagrangeHexahedron8, GetJacobianGradient) {
   std::srand(31415926);
-  auto rand_f = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   using Global = Coord; using Local = Coord; using Gradient = Coord;
   for (int i_cell = 1 << 5; i_cell > 0; --i_cell) {
     // build a hexa-gauss and a Lagrange basis on it
@@ -267,9 +269,8 @@ TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
   mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
-  auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   for (int i = 0; i < 1000; ++i) {
-    auto x = rand(), y = rand(), z = rand();
+    auto x = rand_f(), y = rand_f(), z = rand_f();
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-15);
@@ -308,7 +309,6 @@ TEST_F(TestLagrangeHexahedron20, CoordinateMap) {
 }
 TEST_F(TestLagrangeHexahedron20, GetJacobianGradient) {
   std::srand(31415926);
-  auto rand_f = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   using Global = Coord; using Local = Coord; using Gradient = Coord;
   for (int i_cell = 1 << 5; i_cell > 0; --i_cell) {
     // build a hexa-gauss and a Lagrange basis on it
@@ -534,9 +534,8 @@ TEST_F(TestLagrangeHexahedron27, CoordinateMap) {
   mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
-  auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   for (int i = 0; i < 1000; ++i) {
-    auto x = rand(), y = rand(), z = rand();
+    auto x = rand_f(), y = rand_f(), z = rand_f();
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-15);
@@ -714,9 +713,8 @@ TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
   mini::geometry::Cell<typename Lagrange::Real> &cell = hexa;
   // test the partition-of-unity property:
   std::srand(31415926);
-  auto rand = [](){ return -1 + 2.0 * std::rand() / (1.0 + RAND_MAX); };
   for (int i = 0; i < 1000; ++i) {
-    auto x = rand(), y = rand(), z = rand();
+    auto x = rand_f(), y = rand_f(), z = rand_f();
     auto shapes = cell.LocalToShapeFunctions(x, y, z);
     auto sum = std::accumulate(shapes.begin(), shapes.end(), 0.0);
     EXPECT_NEAR(sum, 1.0, 1e-15);
