@@ -707,6 +707,7 @@ class Hexahedron26 : public Hexahedron<Scalar> {
   using typename Base::Local;
   using typename Base::Global;
   using typename Base::Jacobian;
+  using typename Base::Hessian;
 
   static constexpr int kNodes = 26;
 
@@ -782,6 +783,51 @@ class Hexahedron26 : public Hexahedron<Scalar> {
       grads[a][Y] = factor_z * (-y_local) * quadratic_x;
     }
   }
+  static void LocalToNewShapeHessians(Local const &local, Hessian *hessians) {
+    Scalar x_local = local[X], y_local = local[Y], z_local = local[Z];
+    Scalar quadratic_x = (1 - x_local * x_local);
+    Scalar quadratic_y = (1 - y_local * y_local);
+    Scalar quadratic_z = (1 - z_local * z_local);
+    // local_coords_[i][Y] = local_coords_[i][Z] = 0
+    for (int a : {22, 24}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &hessian = hessians[a];
+      auto linear_x = (1 + local_a[X] * x_local);
+      // shapes[a] = linear_x * quadratic_y * quadratic_z;
+      hessian[XX] = 0;
+      hessian[XY] = local_a[X] * (-y_local) * quadratic_z;
+      hessian[XZ] = local_a[X] * (-z_local) * quadratic_y;
+      hessian[YY] = linear_x * (-quadratic_z);
+      hessian[YZ] = linear_x * y_local * z_local * 2;
+      hessian[ZZ] = linear_x * (-quadratic_y);
+    }
+    // local_coords_[i][Z] = local_coords_[i][X] = 0
+    for (int a : {21, 23}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &hessian = hessians[a];
+      auto linear_y = (1 + local_a[Y] * y_local);
+      // shapes[a] = quadratic_x * linear_y * quadratic_z;
+      hessian[YY] = 0;
+      hessian[YX] = local_a[Y] * (-x_local) * quadratic_z;
+      hessian[YZ] = local_a[Y] * (-z_local) * quadratic_x;
+      hessian[XX] = linear_y * (-quadratic_z);
+      hessian[XZ] = linear_y * x_local * z_local * 2;
+      hessian[ZZ] = linear_y * (-quadratic_x);
+    }
+    // local_coords_[i][X] = local_coords_[i][Y] = 0
+    for (int a : {20, 25}) {
+      auto &local_a = Hexahedron27<Scalar>::local_coords_[a];
+      auto &hessian = hessians[a];
+      auto linear_z = (1 + local_a[Z] * z_local);
+      // shapes[a] = quadratic_x * quadratic_y * linear_z;
+      hessian[ZZ] = 0;
+      hessian[ZX] = local_a[Z] * (-x_local) * quadratic_y;
+      hessian[ZY] = local_a[Z] * (-y_local) * quadratic_x;
+      hessian[XX] = linear_z * (-quadratic_y);
+      hessian[XY] = linear_z * x_local * y_local * 2;
+      hessian[YY] = linear_z * (-quadratic_x);
+    }
+  }
 
  public:
   static void LocalToShapeFunctions(Scalar x_local, Scalar y_local,
@@ -829,6 +875,28 @@ class Hexahedron26 : public Hexahedron<Scalar> {
     auto grads = std::vector<Local>(kNodes);
     LocalToShapeGradients(x_local, y_local, z_local, grads.data());
     return grads;
+  }
+  static void LocalToShapeHessians(Local const &local,
+      Hessian *hessians) {
+    Hexahedron20<Scalar>::LocalToShapeHessians(local, hessians);
+    LocalToNewShapeHessians(local, hessians);
+    for (int b = 20; b < 26; ++b) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[20];
+      Hexahedron20<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 20; ++a) {
+        hessians[a] -= old_shapes_on_new_nodes[a] * hessians[b];
+      }
+    }
+  }
+  std::vector<Hessian> LocalToShapeHessians(
+        Local const &local) const final {
+    auto hessians = std::vector<Hessian>(kNodes);
+    LocalToShapeHessians(local, hessians.data());
+    return hessians;
   }
 
  public:

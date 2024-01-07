@@ -751,6 +751,79 @@ TEST_F(TestLagrangeHexahedron26, CoordinateMap) {
     }
   }
 }
+TEST_F(TestLagrangeHexahedron26, GetJacobianGradient) {
+  std::srand(31415926);
+  using Global = Coord; using Local = Coord;
+  for (int i_cell = 1 << 5; i_cell > 0; --i_cell) {
+    // build a hexa-gauss and a Lagrange basis on it
+    auto a = 20.0, b = 30.0, c = 40.0;
+    auto cell = Lagrange {
+      // corner nodes on the bottom face
+      Global(rand_f() - a, rand_f() - b, rand_f() - c),
+      Global(rand_f() + a, rand_f() - b, rand_f() - c),
+      Global(rand_f() + a, rand_f() + b, rand_f() - c),
+      Global(rand_f() - a, rand_f() + b, rand_f() - c),
+      // corner nodes on the top face
+      Global(rand_f() - a, rand_f() - b, rand_f() + c),
+      Global(rand_f() + a, rand_f() - b, rand_f() + c),
+      Global(rand_f() + a, rand_f() + b, rand_f() + c),
+      Global(rand_f() - a, rand_f() + b, rand_f() + c),
+      // mid-edge nodes on the bottom face
+      Global(rand_f(), rand_f() - b, rand_f() - c),
+      Global(rand_f() + a, rand_f(), rand_f() - c),
+      Global(rand_f(), rand_f() + b, rand_f() - c),
+      Global(rand_f() - a, rand_f(), rand_f() - c),
+      // mid-edge nodes on vertical edges
+      Global(rand_f() - a, rand_f() - b, rand_f()),
+      Global(rand_f() + a, rand_f() - b, rand_f()),
+      Global(rand_f() + a, rand_f() + b, rand_f()),
+      Global(rand_f() - a, rand_f() + b, rand_f()),
+      // mid-edge nodes on the top face
+      Global(rand_f(), rand_f() - b, rand_f() + c),
+      Global(rand_f() + a, rand_f(), rand_f() + c),
+      Global(rand_f(), rand_f() + b, rand_f() + c),
+      Global(rand_f() - a, rand_f(), rand_f() + c),
+      // mid-face nodes
+      Global(rand_f(), rand_f(), rand_f() - c),
+      Global(rand_f(), rand_f() - b, rand_f()),
+      Global(rand_f() + a, rand_f(), rand_f()),
+      Global(rand_f(), rand_f() + b, rand_f()),
+      Global(rand_f() - a, rand_f(), rand_f()),
+      Global(rand_f(), rand_f(), rand_f() + c),
+    };
+    // compare gradients with O(h^2) finite difference derivatives
+    for (int i_point = 1 << 5; i_point > 0; --i_point) {
+      auto x = rand_f(), y = rand_f(), z = rand_f();
+      auto local = Local{x, y, z};
+      auto mat_grad = cell.LocalToJacobianGradient(local);
+      auto det_grad = cell.LocalToJacobianDeterminantGradient(local);
+      auto h = 1e-5;
+      auto mat_left = cell.LocalToJacobian(x - h, y, z);
+      auto mat_right = cell.LocalToJacobian(x + h, y, z);
+      mat_grad[X] -= (mat_right - mat_left) / (2 * h);
+      auto det_left = mat_left.determinant();
+      auto det_right = mat_right.determinant();
+      det_grad[X] -= (det_right - det_left) / (2 * h);
+      EXPECT_NEAR(mat_grad[X].norm(), 0.0, 1e-8);
+      mat_left = cell.LocalToJacobian(x, y - h, z);
+      mat_right = cell.LocalToJacobian(x, y + h, z);
+      mat_grad[Y] -= (mat_right - mat_left) / (2 * h);
+      det_left = mat_left.determinant();
+      det_right = mat_right.determinant();
+      det_grad[Y] -= (det_right - det_left) / (2 * h);
+      EXPECT_NEAR(mat_grad[Y].norm(), 0.0, 1e-8);
+      mat_left = cell.LocalToJacobian(x, y, z - h);
+      mat_right = cell.LocalToJacobian(x, y, z + h);
+      mat_grad[Z] -= (mat_right - mat_left) / (2 * h);
+      det_left = mat_left.determinant();
+      det_right = mat_right.determinant();
+      det_grad[Z] -= (det_right - det_left) / (2 * h);
+      EXPECT_NEAR(mat_grad[Z].norm(), 0.0, 1e-8);
+      auto det = cell.LocalToJacobian(x, y, z).determinant();
+      EXPECT_NEAR(det_grad.norm(), 0.0, det * 1e-9);
+    }
+  }
+}
 TEST_F(TestLagrangeHexahedron26, SortNodesOnFace) {
   using mini::geometry::SortNodesOnFace;
   auto cell = Lagrange{
