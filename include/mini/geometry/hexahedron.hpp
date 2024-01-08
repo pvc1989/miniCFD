@@ -141,6 +141,7 @@ class Hexahedron27 : public Hexahedron<Scalar> {
   using typename Base::Global;
   using typename Base::Jacobian;
   using typename Base::Hessian;
+  using typename Base::Tensor3;
 
   static constexpr int kNodes = 27;
   static constexpr int kFaces = 6;
@@ -245,6 +246,27 @@ class Hexahedron27 : public Hexahedron<Scalar> {
     hessian[XZ] = linear_x * linear_z * quadratic_y;
     hessian[YZ] = linear_y * linear_z * quadratic_x;
   }
+  static void LocalToNewShape3rdOrderDerivatives(Local const &local,
+      Tensor3 *tensors) {
+    Scalar x_local = local[X], y_local = local[Y], z_local = local[Z];
+    // local_coords_[i][X] = local_coords_[i][Y] = local_coords_[i][Z] = 0
+    Scalar quadratic_x = (1 - x_local * x_local);
+    Scalar quadratic_y = (1 - y_local * y_local);
+    Scalar quadratic_z = (1 - z_local * z_local);
+    // shapes[26] = quadratic_x * quadratic_y * quadratic_z;
+    Scalar linear_x = 4 * x_local;
+    Scalar linear_y = 4 * y_local;
+    Scalar linear_z = 4 * z_local;
+    auto &tensor = tensors[26];
+    tensor[XXX] = tensor[YYY] = tensor[ZZZ] = 0;
+    tensor[XXY] = linear_y * quadratic_z;
+    tensor[XXZ] = linear_z * quadratic_y;
+    tensor[YYX] = linear_x * quadratic_z;
+    tensor[YYZ] = linear_z * quadratic_x;
+    tensor[ZZX] = linear_x * quadratic_y;
+    tensor[ZZY] = linear_y * quadratic_x;
+    tensor[XYZ] = linear_x * linear_y * linear_z / (-8);
+  }
 
  public:
   static void LocalToShapeHessians(Local const &local,
@@ -268,6 +290,27 @@ class Hexahedron27 : public Hexahedron<Scalar> {
     auto hessians = std::vector<Hessian>(kNodes);
     LocalToShapeHessians(local, hessians.data());
     return hessians;
+  }
+  static void LocalToShape3rdOrderDerivatives(Local const &local,
+      Tensor3 *tensors) {
+    Hexahedron26<Scalar>::LocalToShape3rdOrderDerivatives(local, tensors);
+    LocalToNewShape3rdOrderDerivatives(local, tensors);
+    for (int b : {26}) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[26];
+      Hexahedron26<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 26; ++a) {
+        tensors[a] -= old_shapes_on_new_nodes[a] * tensors[b];
+      }
+    }
+  }
+  std::vector<Tensor3> LocalToShape3rdOrderDerivatives(Local const &local) const final {
+    auto tensors = std::vector<Tensor3>(kNodes);
+    LocalToShape3rdOrderDerivatives(local, tensors.data());
+    return tensors;
   }
 
  public:
