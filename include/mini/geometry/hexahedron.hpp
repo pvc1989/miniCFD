@@ -140,6 +140,7 @@ class Hexahedron27 : public Hexahedron<Scalar> {
   using typename Base::Local;
   using typename Base::Global;
   using typename Base::Jacobian;
+  using typename Base::Hessian;
 
   static constexpr int kNodes = 27;
   static constexpr int kFaces = 6;
@@ -223,6 +224,50 @@ class Hexahedron27 : public Hexahedron<Scalar> {
     auto grads = std::vector<Local>(kNodes);
     LocalToShapeGradients(x_local, y_local, z_local, grads.data());
     return grads;
+  }
+
+ private:
+  static void LocalToNewShapeHessians(Local const &local, Hessian *hessians) {
+    Scalar x_local = local[X], y_local = local[Y], z_local = local[Z];
+    // local_coords_[i][X] = local_coords_[i][Y] = local_coords_[i][Z] = 0
+    Scalar quadratic_x = (1 - x_local * x_local);
+    Scalar quadratic_y = (1 - y_local * y_local);
+    Scalar quadratic_z = (1 - z_local * z_local);
+    // shapes[26] = quadratic_x * quadratic_y * quadratic_z;
+    Scalar linear_x = -2 * x_local;
+    Scalar linear_y = -2 * y_local;
+    Scalar linear_z = -2 * z_local;
+    auto &hessian = hessians[26];
+    hessian[XX] = -2 * quadratic_y * quadratic_z;
+    hessian[YY] = -2 * quadratic_x * quadratic_z;
+    hessian[ZZ] = -2 * quadratic_x * quadratic_y;
+    hessian[XY] = linear_x * linear_y * quadratic_z;
+    hessian[XZ] = linear_x * linear_z * quadratic_y;
+    hessian[YZ] = linear_y * linear_z * quadratic_x;
+  }
+
+ public:
+  static void LocalToShapeHessians(Local const &local,
+      Hessian *hessians) {
+    Hexahedron26<Scalar>::LocalToShapeHessians(local, hessians);
+    LocalToNewShapeHessians(local, hessians);
+    for (int b : {26}) {
+      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
+      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
+      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
+      Scalar old_shapes_on_new_nodes[26];
+      Hexahedron26<Scalar>::LocalToShapeFunctions(
+          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      for (int a = 0; a < 26; ++a) {
+        hessians[a] -= old_shapes_on_new_nodes[a] * hessians[b];
+      }
+    }
+  }
+  std::vector<Hessian> LocalToShapeHessians(
+        Local const &local) const final {
+    auto hessians = std::vector<Hessian>(kNodes);
+    LocalToShapeHessians(local, hessians.data());
+    return hessians;
   }
 
  public:
