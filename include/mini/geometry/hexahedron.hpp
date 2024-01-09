@@ -523,6 +523,19 @@ class Hexahedron20 : public Hexahedron<Scalar> {
  private:
   std::array<Global, kNodes> global_coords_;
 
+  using OldShapesOnNewNodes = std::array<std::array<Scalar, 8>, 20 - 8>;
+  static const OldShapesOnNewNodes old_shapes_on_new_nodes_;
+  static OldShapesOnNewNodes BuildOldShapesOnNewNodes() {
+    OldShapesOnNewNodes old_shapes_on_new_nodes;
+    for (int b = 8; b < 20; ++b) {
+      auto &local_b = Hexahedron27<Scalar>::local_coords_[b];
+      Hexahedron8<Scalar>::LocalToShapeFunctions(
+          local_b[X], local_b[Y], local_b[Z],
+          old_shapes_on_new_nodes[b - 8].data());
+    }
+    return old_shapes_on_new_nodes;
+  }
+
  public:
   int CountNodes() const final {
     return kNodes;
@@ -681,12 +694,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
         x_local, y_local, z_local, shapes);
     LocalToNewShapeFunctions(x_local, y_local, z_local, shapes);
     for (int b = 8; b < 20; ++b) {
-      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
-      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
-      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
-      Scalar old_shapes_on_new_nodes[8];
-      Hexahedron8<Scalar>::LocalToShapeFunctions(
-          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      auto &old_shapes_on_new_nodes = old_shapes_on_new_nodes_[b - 8];
       for (int a = 0; a < 8; ++a) {
         shapes[a] -= old_shapes_on_new_nodes[a] * shapes[b];
       }
@@ -704,12 +712,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
         x_local, y_local, z_local, grads);
     LocalToNewShapeGradients(x_local, y_local, z_local, grads);
     for (int b = 8; b < 20; ++b) {
-      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
-      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
-      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
-      Scalar old_shapes_on_new_nodes[8];
-      Hexahedron8<Scalar>::LocalToShapeFunctions(
-          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      auto &old_shapes_on_new_nodes = old_shapes_on_new_nodes_[b - 8];
       for (int a = 0; a < 8; ++a) {
         grads[a] -= old_shapes_on_new_nodes[a] * grads[b];
       }
@@ -726,12 +729,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
     Hexahedron8<Scalar>::LocalToShapeHessians(local, hessians);
     LocalToNewShapeHessians(local, hessians);
     for (int b = 8; b < 20; ++b) {
-      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
-      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
-      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
-      Scalar old_shapes_on_new_nodes[8];
-      Hexahedron8<Scalar>::LocalToShapeFunctions(
-          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      auto &old_shapes_on_new_nodes = old_shapes_on_new_nodes_[b - 8];
       for (int a = 0; a < 8; ++a) {
         hessians[a] -= old_shapes_on_new_nodes[a] * hessians[b];
       }
@@ -748,12 +746,7 @@ class Hexahedron20 : public Hexahedron<Scalar> {
     Hexahedron8<Scalar>::LocalToShape3rdOrderDerivatives(local, tensors);
     LocalToNewShape3rdOrderDerivatives(local, tensors);
     for (int b = 8; b < 20; ++b) {
-      Scalar x_b = Hexahedron27<Scalar>::local_coords_[b][X];
-      Scalar y_b = Hexahedron27<Scalar>::local_coords_[b][Y];
-      Scalar z_b = Hexahedron27<Scalar>::local_coords_[b][Z];
-      Scalar old_shapes_on_new_nodes[8];
-      Hexahedron8<Scalar>::LocalToShapeFunctions(
-          x_b, y_b, z_b, old_shapes_on_new_nodes);
+      auto &old_shapes_on_new_nodes = old_shapes_on_new_nodes_[b - 8];
       for (int a = 0; a < 8; ++a) {
         tensors[a] -= old_shapes_on_new_nodes[a] * tensors[b];
       }
@@ -780,6 +773,10 @@ class Hexahedron20 : public Hexahedron<Scalar> {
     Element<Scalar, 3, 3>::_Build(this, il);
   }
 };
+template <std::floating_point Scalar>
+const typename Hexahedron20<Scalar>::OldShapesOnNewNodes
+Hexahedron20<Scalar>::old_shapes_on_new_nodes_ =
+    Hexahedron20<Scalar>::BuildOldShapesOnNewNodes();
 
 /**
  * @brief Coordinate map on 26-node hexahedral elements.
