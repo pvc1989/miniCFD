@@ -268,10 +268,16 @@ class General : public spatial::FiniteElement<Part> {
     Value u_holder = holder_projection.GetValue(holder_cache.ijk);
     Value u_sharer = sharer_projection.GetValue(sharer_cache.ijk);
     Value f_upwind = riemann.GetFluxUpwind(u_holder, u_sharer);
-    auto du_holder = holder_projection.GetGlobalGradient(holder_cache.ijk);
-    auto du_sharer = sharer_projection.GetGlobalGradient(sharer_cache.ijk);
-    auto ddu_holder = holder_projection.GetGlobalHessian(holder_cache.ijk);
-    auto ddu_sharer = sharer_projection.GetGlobalHessian(sharer_cache.ijk);
+    auto du_local_holder = holder_projection.GetLocalGradient(holder_cache.ijk);
+    auto du_local_sharer = sharer_projection.GetLocalGradient(sharer_cache.ijk);
+    auto du_holder = holder_projection.GetGlobalGradient(
+        u_holder, du_local_holder, holder_cache.ijk);
+    auto du_sharer = sharer_projection.GetGlobalGradient(
+        u_sharer, du_local_sharer, sharer_cache.ijk);
+    auto ddu_holder = holder_projection.GetGlobalHessian(
+        du_local_holder, holder_cache.ijk);
+    auto ddu_sharer = sharer_projection.GetGlobalHessian(
+        du_local_sharer, sharer_cache.ijk);
     assert(Collinear(holder_cache.normal, sharer_cache.normal));
     const auto &normal = riemann.normal();
     auto distance = normal.dot(face.HolderToSharer());
@@ -378,7 +384,9 @@ class General : public spatial::FiniteElement<Part> {
     Riemann const &riemann = face.riemann(f);
     Value u_holder = holder_projection.GetValue(holder_cache.ijk);
     Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
-    auto du_holder = holder_projection.GetGlobalGradient(holder_cache.ijk);
+    auto du_local_holder = holder_projection.GetLocalGradient(holder_cache.ijk);
+    auto du_holder = holder_projection.GetGlobalGradient(
+        u_holder, du_local_holder, holder_cache.ijk);
     const auto &normal = riemann.normal();
     Riemann::ModifyCommonFlux(u_holder, du_holder, normal, &f_upwind);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
