@@ -343,8 +343,12 @@ class Hexahedron {
    * 
    */
   Gradient GetGlobalGradient(int ijk) const requires (kLocal) {
-    auto value_grad = GetLocalGradient(ijk);
-    value_grad -= jacobian_det_grad_[ijk] * GetValue(ijk).transpose();
+    return GetGlobalGradient(GetValue(ijk), GetLocalGradient(ijk), ijk);
+  }
+  Gradient GetGlobalGradient(Value const &value_ijk, Gradient local_grad_ijk,
+      int ijk) const requires (kLocal) {
+    auto &value_grad = local_grad_ijk;
+    value_grad -= jacobian_det_grad_[ijk] * value_ijk.transpose();
     auto jacobian_det = jacobian_det_[ijk];
     value_grad /= (jacobian_det * jacobian_det);
     return GetJacobianAssociated(ijk) * value_grad;
@@ -377,9 +381,12 @@ class Hexahedron {
    * 
    */
   Hessian GetGlobalHessian(int ijk) const requires (kLocal) {
+    return GetGlobalHessian(GetLocalGradient(ijk), ijk);
+  }
+  Hessian GetGlobalHessian(Gradient const &local_grad_ijk, int ijk) const
+      requires (kLocal) {
     Hessian local_hess = GetLocalHessian(ijk);
     auto &global_hess = local_hess;
-    Mat3xK local_grad = GetLocalGradient(ijk);
     for (int k = 0; k < K; ++k) {
       Mat3x3 scalar_hess;
       scalar_hess(X, X) = local_hess(XX, k);
@@ -392,7 +399,7 @@ class Hexahedron {
       scalar_hess(Z, Y) = local_hess(YZ, k);
       scalar_hess(Z, Z) = local_hess(ZZ, k);
       scalar_hess *= mat_after_hess_of_U_[ijk];
-      Mat1x3 scalar_local_grad = local_grad.col(k);
+      Mat1x3 scalar_local_grad = local_grad_ijk.col(k);
       scalar_hess.row(X) += scalar_local_grad * mat_after_grad_of_U_[ijk][X]
           - mat_before_grad_of_U_[ijk] * scalar_local_grad[X];
       scalar_hess.row(Y) += scalar_local_grad * mat_after_grad_of_U_[ijk][Y]
