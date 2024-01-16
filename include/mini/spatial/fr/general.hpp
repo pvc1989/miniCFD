@@ -88,7 +88,6 @@ class General : public spatial::FiniteElement<Part> {
       auto &curr_face = cache->emplace_back();
       const auto &face_gauss = face.gauss();
       const auto &cell = face_to_cell(face);
-      const auto &cell_lagrange = cell.lagrange();
       const auto &cell_gauss = cell.gauss();
       const auto &cell_basis = cell.basis();
       const auto &cell_projection = cell.projection();
@@ -207,14 +206,14 @@ class General : public spatial::FiniteElement<Part> {
       : Base(part_ptr), vincent_(Part::kDegrees, c_next) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
-    auto local_cells = this->part_ptr_->GetLocalFaces();
-    CacheCorrectionGradients(local_cells, face_to_holder, &holder_cache_);
-    CacheCorrectionGradients(local_cells, face_to_sharer, &sharer_cache_);
-    auto ghost_cells = this->part_ptr_->GetGhostFaces();
-    CacheCorrectionGradients(ghost_cells, face_to_holder, &holder_cache_);
-    CacheCorrectionGradients(ghost_cells, face_to_sharer, &sharer_cache_);
-    auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
-    CacheCorrectionGradients(boundary_cells, face_to_holder, &holder_cache_);
+    auto local_faces = this->part_ptr_->GetLocalFaces();
+    CacheCorrectionGradients(local_faces, face_to_holder, &holder_cache_);
+    CacheCorrectionGradients(local_faces, face_to_sharer, &sharer_cache_);
+    auto ghost_faces = this->part_ptr_->GetGhostFaces();
+    CacheCorrectionGradients(ghost_faces, face_to_holder, &holder_cache_);
+    CacheCorrectionGradients(ghost_faces, face_to_sharer, &sharer_cache_);
+    auto boundary_faces = this->part_ptr_->GetBoundaryFaces();
+    CacheCorrectionGradients(boundary_faces, face_to_holder, &holder_cache_);
   }
   General(const General &) = default;
   General &operator=(const General &) = default;
