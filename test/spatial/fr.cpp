@@ -64,76 +64,52 @@ void TestSpatialFR::SetUp() {
   Riemann::SetDiffusionCoefficient(1.0);
   Riemann::SetBetaValues(2.0, 1.0 / 12);
 }
-TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
+template <typename Spatial>
+auto GetResidualColumn(Spatial &spatial, Part &part) {
+  spatial.SetSmartBoundary("4_S_31", moving);  // Left
+  spatial.SetSolidWall("4_S_1");   // Back
+  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
+  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
+  spatial.SetSupersonicInlet("4_S_27", moving);  // Top
+  spatial.SetSupersonicOutlet("4_S_15");  // Gap
+  spatial.SetSupersonicOutlet("4_S_19");  // Bottom
+  for (auto *cell_ptr : part.GetLocalCellPointers()) {
+    cell_ptr->Approximate(func);
+  }
+  spatial.SetTime(1.5);
+  std::printf("%s() proc[%d/%d] cost %f sec\n",
+      spatial.name(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  auto column = spatial.GetSolutionColumn();
+  assert(column.size() == part.GetCellDataSize());
+  spatial.SetSolutionColumn(column);
+  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  column = spatial.GetResidualColumn();
+  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+  return column;
+}
+TEST_F(TestSpatialFR, CompareResiduals) {
+  auto part = Part(case_name, i_core, n_core);
   /* aproximated by Lagrange basis on Lobatto roots with general correction functions */
   time_begin = MPI_Wtime();
-  using Spatial = mini::spatial::fr::General<Part>;
-  auto part = Part(case_name, i_core, n_core);
+  using General = mini::spatial::fr::General<Part>;
   using Vincent = mini::basis::Vincent<Scalar>;
-  auto spatial = Spatial(&part, Vincent::HuynhLumpingLobatto(kDegrees));
-  spatial.SetSmartBoundary("4_S_27", moving);  // Top
-  spatial.SetSmartBoundary("4_S_31", moving);  // Left
-  spatial.SetSolidWall("4_S_1");   // Back
-  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
-  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
-  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
-  spatial.SetSupersonicOutlet("4_S_15");  // Gap
-  for (auto *cell_ptr : part.GetLocalCellPointers()) {
-    cell_ptr->Approximate(func);
-  }
-  spatial.SetTime(1.5);
-  std::printf("fr::General(&part, c_huynh) proc[%d/%d] cost %f sec\n",
-      i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  time_begin = MPI_Wtime();
-  auto column = spatial.GetSolutionColumn();
-  assert(column.size() == part.GetCellDataSize());
-  spatial.SetSolutionColumn(column);
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  time_begin = MPI_Wtime();
-  column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
-}
-TEST_F(TestSpatialFR, SpecialCorrectionFunction) {
+  auto general = General(&part, Vincent::HuynhLumpingLobatto(kDegrees));
+  auto general_residual = GetResidualColumn(general, part);
   /* aproximated by Lagrange basis on Lobatto roots with Huynh's correction functions */
   time_begin = MPI_Wtime();
-  using Spatial = mini::spatial::fr::Lobatto<Part>;
-  auto part = Part(case_name, i_core, n_core);
-  auto spatial = Spatial(&part);
-  spatial.SetSmartBoundary("4_S_27", moving);  // Top
-  spatial.SetSmartBoundary("4_S_31", moving);  // Left
-  spatial.SetSolidWall("4_S_1");   // Back
-  spatial.SetSubsonicInlet("4_S_32", moving);  // Front
-  spatial.SetSupersonicInlet("4_S_19", moving);  // Bottom
-  spatial.SetSubsonicOutlet("4_S_23", moving);  // Right
-  spatial.SetSupersonicOutlet("4_S_15");  // Gap
-  for (auto *cell_ptr : part.GetLocalCellPointers()) {
-    cell_ptr->Approximate(func);
-  }
-  spatial.SetTime(1.5);
-  std::printf("fr::Lobatto(&part) proc[%d/%d] cost %f sec\n",
-      i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  time_begin = MPI_Wtime();
-  auto column = spatial.GetSolutionColumn();
-  assert(column.size() == part.GetCellDataSize());
-  spatial.SetSolutionColumn(column);
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
-
-  time_begin = MPI_Wtime();
-  column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
-  MPI_Barrier(MPI_COMM_WORLD);
+  using Lobatto = mini::spatial::fr::Lobatto<Part>;
+  auto lobatto = Lobatto(&part);
+  auto lobatto_residual = GetResidualColumn(lobatto, part);
+  EXPECT_NEAR(0, (general_residual - lobatto_residual).norm(), 1e-15);
 }
 
 // mpirun -n 4 ./part must be run in ../mesh
