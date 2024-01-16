@@ -116,6 +116,10 @@ class Lobatto : public General<Part> {
   Lobatto &operator=(Lobatto &&) noexcept = default;
   ~Lobatto() noexcept = default;
 
+  virtual const char *name() const {
+    return "FR::Lobatto";
+  }
+
   Column GetResidualColumn() const override {
     Column residual = this->Base::GetResidualColumn();
     // divide mass matrix for each cell

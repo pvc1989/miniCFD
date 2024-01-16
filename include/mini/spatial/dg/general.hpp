@@ -42,6 +42,10 @@ class General : public spatial::FiniteElement<Part> {
   General &operator=(General &&) noexcept = default;
   ~General() noexcept = default;
 
+  virtual const char *name() const {
+    return "DG::General";
+  }
+
  protected:  // implement pure virtual methods declared in Base
   void AddFluxDivergence(Column *residual) const override {
     // Integrate the dot-product of flux and basis gradient, if there is any.

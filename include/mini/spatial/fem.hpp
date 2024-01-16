@@ -69,6 +69,10 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   FiniteElement &operator=(FiniteElement &&) noexcept = default;
   ~FiniteElement() noexcept = default;
 
+  virtual const char *name() const {
+    return "FEM";
+  }
+
  public:  // set BCs
   template <typename Callable>
   void SetSmartBoundary(const std::string &name, Callable &&func) {

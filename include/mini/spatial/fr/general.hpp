@@ -221,6 +221,10 @@ class General : public spatial::FiniteElement<Part> {
   General &operator=(General &&) noexcept = default;
   ~General() noexcept = default;
 
+  virtual const char *name() const {
+    return "FR::General";
+  }
+
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
     for (const Cell &cell : this->part_ptr_->GetLocalCells()) {

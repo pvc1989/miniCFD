@@ -180,6 +180,10 @@ class Lobatto : public General<Part> {
   Lobatto &operator=(Lobatto &&) noexcept = default;
   ~Lobatto() noexcept = default;
 
+  virtual const char *name() const {
+    return "FR::Lobatto";
+  }
+
  protected:  // override virtual methods defined in Base
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
