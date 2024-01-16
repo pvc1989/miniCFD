@@ -297,7 +297,6 @@ class General : public spatial::FiniteElement<Part> {
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
-      const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
@@ -306,7 +305,7 @@ class General : public spatial::FiniteElement<Part> {
           + this->part_ptr_->GetCellDataOffset(sharer.id());
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         auto [f_holder, f_sharer] = GetFluxOnLocalFace(face, f,
@@ -323,14 +322,13 @@ class General : public spatial::FiniteElement<Part> {
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetGhostFaces()) {
-      const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         auto [f_holder, _] = GetFluxOnLocalFace(face, f,
@@ -345,12 +343,11 @@ class General : public spatial::FiniteElement<Part> {
   void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
-        const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -397,12 +394,11 @@ class General : public spatial::FiniteElement<Part> {
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
-        const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           auto f_holder = GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {

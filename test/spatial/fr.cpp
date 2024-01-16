@@ -90,7 +90,6 @@ TEST_F(TestSpatialFR, GeneralCorrectionFunction) {
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
-  column -= spatial.GetSolutionColumn();
   std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
@@ -126,7 +125,6 @@ TEST_F(TestSpatialFR, SpecialCorrectionFunction) {
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
-  column -= spatial.GetSolutionColumn();
   std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
       column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);

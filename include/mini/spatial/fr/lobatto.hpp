@@ -181,29 +181,8 @@ class Lobatto : public General<Part> {
   ~Lobatto() noexcept = default;
 
  protected:  // override virtual methods defined in Base
-  void AddFluxDivergence(Column *residual) const override {
-    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-      auto i_cell = cell.id();
-      auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
-      const auto &gauss = cell.gauss();
-      std::array<FluxMatrix, kCellQ> flux;
-      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        FluxMatrix global_flux = Base::GetFluxMatrix(cell.projection(), q);
-        flux[q] = cell.projection().GlobalFluxToLocalFlux(global_flux, q);
-      }
-      for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-        auto const &grad = cell.projection().GetBasisGradients(q);
-        Value value = flux[0] * grad.col(0);
-        for (int k = 1; k < n; ++k) {
-          value += flux[k] * grad.col(k);
-        }
-        Projection::MinusValue(value, data, q);
-      }
-    }
-  }
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
-      const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
@@ -212,7 +191,7 @@ class Lobatto : public General<Part> {
           + this->part_ptr_->GetCellDataOffset(sharer.id());
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
         auto [f_holder, f_sharer] = Base::GetFluxOnLocalFace(face, f,
@@ -227,14 +206,13 @@ class Lobatto : public General<Part> {
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetGhostFaces()) {
-      const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
         auto [f_holder, _] = Base::GetFluxOnLocalFace(face, f,
@@ -248,12 +226,11 @@ class Lobatto : public General<Part> {
   void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
-        const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -269,18 +246,13 @@ class Lobatto : public General<Part> {
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
-        const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &holder_flux_point = holder_cache[f];
-          Value u_holder = holder.projection().GetValue(
-              holder_flux_point.ijk);
-          Value f_upwind = face.riemann(f).GetFluxOnSupersonicOutlet(u_holder);
-          Value f_holder = f_upwind * holder_flux_point.scale -
-              Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
+          auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           Projection::MinusValue(holder_flux_point.g_prime * f_holder,
                     holder_data, holder_flux_point.ijk);
         }
@@ -297,7 +269,12 @@ class Lobatto : public General<Part> {
         auto &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
-          auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
+          Value u_holder = holder.projection().GetValue(
+              holder_flux_point.ijk);
+          Value u_given = func(gauss.GetGlobalCoord(f), this->t_curr_);
+          Value f_upwind = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
+          Value f_holder = f_upwind * holder_flux_point.scale -
+              Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           Projection::MinusValue(holder_flux_point.g_prime * f_holder,
                     holder_data, holder_flux_point.ijk);
         }
