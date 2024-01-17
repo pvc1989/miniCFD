@@ -193,7 +193,7 @@ class Lobatto : public General<Part> {
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto *sharer_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(sharer.id());
-      auto &holder_cache = holder_cache_[face.id()];
+      auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &holder_flux_point = holder_cache[f];
@@ -214,7 +214,7 @@ class Lobatto : public General<Part> {
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
-      auto &holder_cache = holder_cache_[face.id()];
+      auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
         auto &holder_flux_point = holder_cache[f];
@@ -233,7 +233,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
@@ -253,7 +253,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
           auto &holder_flux_point = holder_cache[f];
           auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
@@ -270,7 +270,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
@@ -292,7 +292,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
@@ -314,7 +314,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
@@ -336,7 +336,7 @@ class Lobatto : public General<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
-        auto &holder_cache = holder_cache_[face.id()];
+        auto const &holder_cache = holder_cache_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
