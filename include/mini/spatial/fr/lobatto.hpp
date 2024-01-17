@@ -159,6 +159,32 @@ class Lobatto : public General<Part> {
     }
   }
 
+  void CheckCacheConsistency(std::vector<FaceCache> const &this_cache,
+      std::vector<typename Base::FaceCache> const &base_cache) const {
+    int n = this_cache.size();
+    for (int i = 0; i < n; ++i) {
+      auto &face_cache = this_cache.at(i);
+      auto &face_cache_base = base_cache.at(i);
+      for (int f = 0; f < kFaceQ; ++f) {
+        auto &flux_point = face_cache[f];
+        auto &[solution_points, flux_point_base] = face_cache_base[f];
+        assert(flux_point.ijk == flux_point_base.ijk);
+        assert(flux_point.scale == flux_point_base.scale);
+        assert(flux_point.normal == flux_point_base.normal);
+        int n_match = 0;
+        for (int g = 0; g < kLineQ; ++g) {
+          if (flux_point.ijk == solution_points[g].ijk) {
+            n_match++;
+            assert(solution_points[g].g_prime == flux_point.g_prime);
+          } else {
+            assert(std::abs(solution_points[g].g_prime) < 1e-8);
+          }
+        }
+        assert(n_match == 1);
+      }
+    }
+  }
+
  public:
   explicit Lobatto(Part *part_ptr)
       : Base(part_ptr, Vincent::HuynhLumpingLobatto(Part::kDegrees)) {
@@ -173,6 +199,8 @@ class Lobatto : public General<Part> {
     CacheCorrectionGradients(ghost_faces, face_to_sharer, &sharer_cache_);
     auto boundary_faces = this->part_ptr_->GetBoundaryFaces();
     CacheCorrectionGradients(boundary_faces, face_to_holder, &holder_cache_);
+    CheckCacheConsistency(holder_cache_, this->Base::holder_cache_);
+    CheckCacheConsistency(sharer_cache_, this->Base::sharer_cache_);
   }
   Lobatto(const Lobatto &) = default;
   Lobatto &operator=(const Lobatto &) = default;
