@@ -86,7 +86,8 @@ class Lobatto : public General<Part> {
       const auto &cell_basis = cell.basis();
       const auto &cell_projection = cell.projection();
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
-      for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         Global const &face_normal = face_gauss.GetNormalFrame(f)[0];
         auto &flux_point = curr_face.at(f);
         auto &flux_point_coord = face_gauss.GetGlobalCoord(f);
@@ -172,6 +173,7 @@ class Lobatto : public General<Part> {
         assert(flux_point.scale == flux_point_base.scale);
         assert(flux_point.normal == flux_point_base.normal);
         int n_match = 0;
+        assert(kLineQ == solution_points.size());
         for (int g = 0; g < kLineQ; ++g) {
           if (flux_point.ijk == solution_points[g].ijk) {
             n_match++;
@@ -223,7 +225,8 @@ class Lobatto : public General<Part> {
           + this->part_ptr_->GetCellDataOffset(sharer.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
         auto [f_holder, f_sharer] = Base::GetFluxOnLocalFace(face, f,
@@ -244,7 +247,8 @@ class Lobatto : public General<Part> {
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         auto &holder_flux_point = holder_cache[f];
         auto &sharer_flux_point = sharer_cache[f];
         auto [f_holder, _] = Base::GetFluxOnLocalFace(face, f,
@@ -262,7 +266,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -282,7 +287,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           Projection::MinusValue(holder_flux_point.g_prime * f_holder,
@@ -299,7 +305,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -321,7 +328,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -343,7 +351,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -365,7 +374,8 @@ class Lobatto : public General<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);

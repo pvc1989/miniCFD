@@ -92,7 +92,8 @@ class General : public spatial::FiniteElement<Part> {
       const auto &cell_basis = cell.basis();
       const auto &cell_projection = cell.projection();
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
-      for (int f = 0, F = face_gauss.CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         Global const &face_normal = face_gauss.GetNormalFrame(f)[0];
         auto &[curr_line, flux_point] = curr_face.at(f);
         auto &flux_point_coord = face_gauss.GetGlobalCoord(f);
@@ -309,7 +310,8 @@ class General : public spatial::FiniteElement<Part> {
           + this->part_ptr_->GetCellDataOffset(sharer.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         auto [f_holder, f_sharer] = GetFluxOnLocalFace(face, f,
@@ -332,7 +334,8 @@ class General : public spatial::FiniteElement<Part> {
           + this->part_ptr_->GetCellDataOffset(holder.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
-      for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+      assert(kFaceQ == face.gauss().CountPoints());
+      for (int f = 0; f < kFaceQ; ++f) {
         auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
         auto &[sharer_solution_points, sharer_flux_point] = sharer_cache[f];
         auto [f_holder, _] = GetFluxOnLocalFace(face, f,
@@ -351,7 +354,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -402,7 +406,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, F = face.gauss().CountPoints(); f < F; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           auto f_holder = GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {
@@ -420,7 +425,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -443,7 +449,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -466,7 +473,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
@@ -489,7 +497,8 @@ class General : public spatial::FiniteElement<Part> {
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
-        for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
+        assert(kFaceQ == face.gauss().CountPoints());
+        for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           Value u_holder = holder.projection().GetValue(
               holder_flux_point.ijk);
