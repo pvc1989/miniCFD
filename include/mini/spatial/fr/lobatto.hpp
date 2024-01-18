@@ -88,7 +88,8 @@ class Lobatto : public General<Part> {
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
       assert(kFaceQ == face.gauss().CountPoints());
       for (int f = 0; f < kFaceQ; ++f) {
-        Global const &face_normal = face_gauss.GetNormalFrame(f)[0];
+        Global const &face_normal = face.riemann(f).normal();
+        assert(face_normal == face_gauss.GetNormalFrame(f)[0]);
         auto &flux_point = curr_face.at(f);
         auto &flux_point_coord = face_gauss.GetGlobalCoord(f);
         auto [i, j, k] = cell_projection.FindCollinearIndex(flux_point_coord, i_face);

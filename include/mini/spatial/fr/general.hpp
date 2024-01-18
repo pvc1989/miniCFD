@@ -94,7 +94,8 @@ class General : public spatial::FiniteElement<Part> {
       int i_face = cell_projection.FindFaceId(face.lagrange().center());
       assert(kFaceQ == face.gauss().CountPoints());
       for (int f = 0; f < kFaceQ; ++f) {
-        Global const &face_normal = face_gauss.GetNormalFrame(f)[0];
+        Global const &face_normal = face.riemann(f).normal();
+        assert(face_normal == face_gauss.GetNormalFrame(f)[0]);
         auto &[curr_line, flux_point] = curr_face.at(f);
         auto &flux_point_coord = face_gauss.GetGlobalCoord(f);
         auto [i, j, k] = cell_projection.FindCollinearIndex(flux_point_coord, i_face);
@@ -392,6 +393,7 @@ class General : public spatial::FiniteElement<Part> {
     auto du_holder = holder_projection.GetGlobalGradient(
         u_holder, du_local_holder, holder_cache.ijk);
     const auto &normal = riemann.normal();
+    assert(Collinear(normal, holder_cache.normal));
     Riemann::ModifyCommonFlux(u_holder, du_holder, normal, &f_upwind);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
     Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
