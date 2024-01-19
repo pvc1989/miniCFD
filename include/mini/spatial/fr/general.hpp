@@ -319,10 +319,12 @@ class General : public spatial::FiniteElement<Part> {
             holder.projection(), holder_flux_point,
             sharer.projection(), sharer_flux_point);
         for (auto [g_prime, ijk] : holder_solution_points) {
-          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          Value f_correction = f_holder * g_prime;
+          Projection::MinusValue(f_correction, holder_data, ijk);
         }
         for (auto [g_prime, ijk] : sharer_solution_points) {
-          Projection::MinusValue(f_sharer * g_prime, sharer_data, ijk);
+          Value f_correction = f_sharer * g_prime;
+          Projection::MinusValue(f_correction, sharer_data, ijk);
         }
       }
     }
@@ -343,7 +345,8 @@ class General : public spatial::FiniteElement<Part> {
             holder.projection(), holder_flux_point,
             sharer.projection(), sharer_flux_point);
         for (auto [g_prime, ijk] : holder_solution_points) {
-          Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+          Value f_correction = f_holder * g_prime;
+          Projection::MinusValue(f_correction, holder_data, ijk);
         }
       }
     }
@@ -364,7 +367,8 @@ class General : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }
@@ -413,7 +417,8 @@ class General : public spatial::FiniteElement<Part> {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
           auto f_holder = GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }
@@ -437,7 +442,8 @@ class General : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }
@@ -461,7 +467,8 @@ class General : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }
@@ -485,7 +492,8 @@ class General : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }
@@ -509,7 +517,8 @@ class General : public spatial::FiniteElement<Part> {
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
           for (auto [g_prime, ijk] : holder_solution_points) {
-            Projection::MinusValue(f_holder * g_prime, holder_data, ijk);
+            Value f_correction = f_holder * g_prime;
+            Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }
       }

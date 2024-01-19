@@ -233,10 +233,10 @@ class Lobatto : public General<Part> {
         auto [f_holder, f_sharer] = Base::GetFluxOnLocalFace(face, f,
             holder.projection(), holder_flux_point,
             sharer.projection(), sharer_flux_point);
-        Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                  holder_data, holder_flux_point.ijk);
-        Projection::MinusValue(sharer_flux_point.g_prime * f_sharer,
-                  sharer_data, sharer_flux_point.ijk);
+        f_holder *= holder_flux_point.g_prime;
+        Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
+        f_sharer *= sharer_flux_point.g_prime;
+        Projection::MinusValue(f_sharer, sharer_data, sharer_flux_point.ijk);
       }
     }
   }
@@ -255,8 +255,8 @@ class Lobatto : public General<Part> {
         auto [f_holder, _] = Base::GetFluxOnLocalFace(face, f,
             holder.projection(), holder_flux_point,
             sharer.projection(), sharer_flux_point);
-        Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                  holder_data, holder_flux_point.ijk);
+        f_holder *= holder_flux_point.g_prime;
+        Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
       }
     }
   }
@@ -275,8 +275,8 @@ class Lobatto : public General<Part> {
           Value f_upwind = face.riemann(f).GetFluxOnSolidWall(u_holder);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
@@ -292,8 +292,8 @@ class Lobatto : public General<Part> {
         for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
           auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
@@ -315,8 +315,8 @@ class Lobatto : public General<Part> {
           Value f_upwind = face.riemann(f).GetFluxOnSupersonicInlet(u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
@@ -338,8 +338,8 @@ class Lobatto : public General<Part> {
           Value f_upwind = face.riemann(f).GetFluxOnSubsonicInlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
@@ -361,8 +361,8 @@ class Lobatto : public General<Part> {
           Value f_upwind = face.riemann(f).GetFluxOnSubsonicOutlet(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
@@ -384,8 +384,8 @@ class Lobatto : public General<Part> {
           Value f_upwind = face.riemann(f).GetFluxOnSmartBoundary(u_holder, u_given);
           Value f_holder = f_upwind * holder_flux_point.scale -
               Riemann::GetFluxMatrix(u_holder) * holder_flux_point.normal;
-          Projection::MinusValue(holder_flux_point.g_prime * f_holder,
-                    holder_data, holder_flux_point.ijk);
+          f_holder *= holder_flux_point.g_prime;
+          Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
     }
