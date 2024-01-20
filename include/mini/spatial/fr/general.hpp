@@ -375,10 +375,9 @@ class General : public spatial::FiniteElement<Part> {
     }
   }
   template <typename Cache>
-  static Value GetFluxOnSupersonicFace(Face const &face, int f,
+  static Value GetFluxOnSupersonicOutlet(Riemann const &riemann,
       const Projection &holder_projection, Cache const &holder_cache)
       requires(!mini::riemann::Diffusive<Riemann>) {
-    Riemann const &riemann = face.riemann(f);
     Value u_holder = holder_projection.GetValue(holder_cache.ijk);
     Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
@@ -387,10 +386,9 @@ class General : public spatial::FiniteElement<Part> {
     return f_holder;
   }
   template <typename Cache>
-  static Value GetFluxOnSupersonicFace(Face const &face, int f,
+  static Value GetFluxOnSupersonicOutlet(Riemann const &riemann,
       const Projection &holder_projection, Cache const &holder_cache)
       requires(mini::riemann::ConvectiveDiffusive<Riemann>) {
-    Riemann const &riemann = face.riemann(f);
     Value u_holder = holder_projection.GetValue(holder_cache.ijk);
     Value f_upwind = riemann.GetFluxOnSupersonicOutlet(u_holder);
     auto du_local_holder = holder_projection.GetLocalGradient(holder_cache.ijk);
@@ -415,7 +413,8 @@ class General : public spatial::FiniteElement<Part> {
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
           auto &[holder_solution_points, holder_flux_point] = holder_cache[f];
-          auto f_holder = GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
+          auto f_holder = GetFluxOnSupersonicOutlet(face.riemann(f),
+              holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {
             Value f_correction = f_holder * g_prime;
             Projection::MinusValue(f_correction, holder_data, ijk);

@@ -291,7 +291,8 @@ class Lobatto : public General<Part> {
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
           auto &holder_flux_point = holder_cache[f];
-          auto f_holder = Base::GetFluxOnSupersonicFace(face, f, holder.projection(), holder_flux_point);
+          auto f_holder = Base::GetFluxOnSupersonicOutlet(face.riemann(f),
+              holder.projection(), holder_flux_point);
           f_holder *= holder_flux_point.g_prime;
           Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
