@@ -85,14 +85,14 @@ auto GetResidualColumn(Spatial &spatial, Part &part) {
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("solution.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("residual.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
   return column;
 }
@@ -109,7 +109,7 @@ TEST_F(TestSpatialFR, CompareResiduals) {
   using Lobatto = mini::spatial::fr::Lobatto<Part>;
   auto lobatto = Lobatto(&part);
   auto lobatto_residual = GetResidualColumn(lobatto, part);
-  EXPECT_NEAR(0, (general_residual - lobatto_residual).norm(), 1e-15);
+  EXPECT_NEAR(0, (general_residual - lobatto_residual).squaredNorm(), 1e-15);
 }
 
 // mpirun -n 4 ./part must be run in ../mesh

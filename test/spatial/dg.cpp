@@ -104,14 +104,14 @@ int main(int argc, char* argv[]) {
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
   column -= spatial.GetSolutionColumn();
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("solution.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("residual.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 }
   /* aproximated by Projection on Lagrange basis on Lobatto roots */
@@ -146,24 +146,24 @@ int main(int argc, char* argv[]) {
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
   column -= spatial.GetSolutionColumn();
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("solution.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("residual.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
-  std::printf("val_curr.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+  std::printf("val_curr.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
       Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   temporal.Update(&spatial, t_curr, dt);
-  std::printf("val_next.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+  std::printf("val_next.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
       Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -192,24 +192,24 @@ int main(int argc, char* argv[]) {
   assert(column.size() == part.GetCellDataSize());
   spatial.SetSolutionColumn(column);
   column -= spatial.GetSolutionColumn();
-  std::printf("solution.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("solution.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
-  std::printf("residual.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("residual.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
-  std::printf("val_curr.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+  std::printf("val_curr.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
       Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   temporal.Update(&spatial, t_curr, dt);
-  std::printf("val_next.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
+  std::printf("val_next.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
       Norm1(part), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -290,56 +290,56 @@ int main(int argc, char* argv[]) {
 
   time_begin = MPI_Wtime();
   test.AddFluxDivergence(&column);
-  std::printf("AddFluxDivergence.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("AddFluxDivergence.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.AddFluxOnLocalFaces(&column);
-  std::printf("AddFluxOnLocalFaces.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("AddFluxOnLocalFaces.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.AddFluxOnGhostFaces(&column);
-  std::printf("AddFluxOnGhostFaces.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("AddFluxOnGhostFaces.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.ApplySolidWall(&column);
-  std::printf("ApplySolidWall.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySolidWall.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
   
   time_begin = MPI_Wtime();
   test.ApplySupersonicInlet(&column);
-  std::printf("ApplySupersonicInlet.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySupersonicInlet.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
   
   time_begin = MPI_Wtime();
   test.ApplySupersonicOutlet(&column);
-  std::printf("ApplySupersonicOutlet.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySupersonicOutlet.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.ApplySubsonicInlet(&column);
-  std::printf("ApplySubsonicInlet.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySubsonicInlet.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.ApplySubsonicOutlet(&column);
-  std::printf("ApplySubsonicOutlet.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySubsonicOutlet.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   test.ApplySmartBoundary(&column);
-  std::printf("ApplySmartBoundary.norm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.norm(), i_core, n_core, MPI_Wtime() - time_begin);
+  std::printf("ApplySmartBoundary.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
+      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 }
   MPI_Finalize();
