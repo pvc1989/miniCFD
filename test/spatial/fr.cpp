@@ -84,16 +84,35 @@ auto GetResidualColumn(Spatial &spatial, Part &part) {
   time_begin = MPI_Wtime();
   auto column = spatial.GetSolutionColumn();
   assert(column.size() == part.GetCellDataSize());
+  double global_norm2, local_norm2 = column.squaredNorm();
   spatial.SetSolutionColumn(column);
   std::printf("solution.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
+      local_norm2, i_core, n_core, MPI_Wtime() - time_begin);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  MPI_Reduce(&local_norm2, &global_norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (i_core == 0) {
+    std::printf("solution.squaredNorm() == %6.2e on proc[all] cost %f sec\n",
+        global_norm2, MPI_Wtime() - time_begin);
+  }
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();
   column = spatial.GetResidualColumn();
+  local_norm2 = column.squaredNorm();
   std::printf("residual.squaredNorm() == %6.2e on proc[%d/%d] cost %f sec\n",
-      column.squaredNorm(), i_core, n_core, MPI_Wtime() - time_begin);
+      local_norm2, i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
+
+  time_begin = MPI_Wtime();
+  MPI_Reduce(&local_norm2, &global_norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (i_core == 0) {
+    std::printf("residual.squaredNorm() == %6.2e on proc[all] cost %f sec\n",
+        global_norm2, MPI_Wtime() - time_begin);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+
   return column;
 }
 TEST_F(TestSpatialFR, CompareResiduals) {
