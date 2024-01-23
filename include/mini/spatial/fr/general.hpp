@@ -402,6 +402,7 @@ class General : public spatial::FiniteElement<Part> {
     Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
     Value f_holder = f_upwind * holder_cache.scale;
     f_holder -= f_mat_holder * holder_cache.normal;
+    assert(f_holder.norm() < 1e-6);
     return f_holder;
   }
   void ApplySupersonicOutlet(Column *residual) const override {
