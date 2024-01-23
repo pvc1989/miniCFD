@@ -162,7 +162,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     const auto &value = projection.GetValue(q);
     FluxMatrix flux_matrix = Riemann::GetFluxMatrix(value);
     const auto &gradient = projection.GetGlobalGradient(q);
-    Riemann::ModifyFluxMatrix(value, gradient, &flux_matrix);
+    Riemann::MinusViscousFlux(value, gradient, &flux_matrix);
     return flux_matrix;
   }
 };

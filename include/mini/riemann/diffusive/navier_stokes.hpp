@@ -91,7 +91,7 @@ class NavierStokes {
   }
 
  public:
-  static void ModifyFluxMatrix(Conservative const &c_val, Gradient const &c_grad,
+  static void MinusViscousFlux(Conservative const &c_val, Gradient const &c_grad,
       FluxMatrix *flux) {
     auto [p_val, p_grad] = ConservativeToPrimitive(c_val, c_grad);
     Tensor tau = GetViscousStressTensor(p_grad);
@@ -114,7 +114,7 @@ class NavierStokes {
     flux_z[4] -= Dot(tau[ZX], tau[ZY], tau[ZZ], uvw) + kappa_ * grad_T[Z];
   }
 
-  static void ModifyCommonFlux(Conservative const &c_val, Gradient const &c_grad,
+  static void MinusViscousFlux(Conservative const &c_val, Gradient const &c_grad,
       Vector const &normal, Flux *flux) {
     auto [p_val, p_grad] = ConservativeToPrimitive(c_val, c_grad);
     Tensor tau = GetViscousStressTensor(p_grad);

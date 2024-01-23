@@ -290,13 +290,13 @@ class General : public spatial::FiniteElement<Part> {
     auto du_common = riemann.GetCommonGradient(distance, normal,
         u_holder, u_sharer, du_holder, du_sharer, ddu_holder, ddu_sharer);
     Value u_common = (u_holder + u_sharer) / 2;
-    Riemann::ModifyCommonFlux(u_common, du_common, normal, &f_upwind);
+    Riemann::MinusViscousFlux(u_common, du_common, normal, &f_upwind);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
-    Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
+    Riemann::MinusViscousFlux(u_holder, du_holder, &f_mat_holder);
     Value f_holder = f_upwind * holder_cache.scale;
     f_holder -= f_mat_holder * holder_cache.normal;
     auto f_mat_sharer = Riemann::GetFluxMatrix(u_sharer);
-    Riemann::ModifyFluxMatrix(u_sharer, du_sharer, &f_mat_sharer);
+    Riemann::MinusViscousFlux(u_sharer, du_sharer, &f_mat_sharer);
     Value f_sharer = f_upwind * (-sharer_cache.scale);
     f_sharer -= f_mat_sharer * sharer_cache.normal;
     return { f_holder, f_sharer };
@@ -397,9 +397,9 @@ class General : public spatial::FiniteElement<Part> {
         u_holder, du_local_holder, holder_cache.ijk);
     const auto &normal = riemann.normal();
     assert(Collinear(normal, holder_cache.normal));
-    Riemann::ModifyCommonFlux(u_holder, du_holder, normal, &f_upwind);
+    Riemann::MinusViscousFlux(u_holder, du_holder, normal, &f_upwind);
     auto f_mat_holder = Riemann::GetFluxMatrix(u_holder);
-    Riemann::ModifyFluxMatrix(u_holder, du_holder, &f_mat_holder);
+    Riemann::MinusViscousFlux(u_holder, du_holder, &f_mat_holder);
     Value f_holder = f_upwind * holder_cache.scale;
     f_holder -= f_mat_holder * holder_cache.normal;
     assert(f_holder.norm() < 1e-6);
