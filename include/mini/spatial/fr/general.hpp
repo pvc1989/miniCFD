@@ -419,6 +419,8 @@ class General : public spatial::FiniteElement<Part> {
               holder.projection(), holder_flux_point);
           for (auto [g_prime, ijk] : holder_solution_points) {
             Value f_correction = f_holder * g_prime;
+            assert(f_correction.norm() < 1e-6);
+            assert(0 <= ijk && ijk < kCellQ);
             Projection::MinusValue(f_correction, holder_data, ijk);
           }
         }

@@ -295,6 +295,8 @@ class Lobatto : public General<Part> {
           auto f_holder = Base::GetFluxOnSupersonicOutlet(face.riemann(f),
               holder.projection(), holder_flux_point);
           f_holder *= holder_flux_point.g_prime;
+          assert(f_holder.norm() < 1e-6);
+          assert(0 <= holder_flux_point.ijk && holder_flux_point.ijk < kCellQ);
           Projection::MinusValue(f_holder, holder_data, holder_flux_point.ijk);
         }
       }
