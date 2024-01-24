@@ -120,17 +120,42 @@ TEST_F(TestPolynomialHexahedronProjection, Projection) {
 
 class TestPolynomialHexahedronInterpolation : public ::testing::Test {
  protected:
-  using Lagrange = mini::geometry::Hexahedron8<double>;
+  using Scalar = double;
+  using Lagrange = mini::geometry::Hexahedron8<Scalar>;
   // To approximate quadratic functions in each dimension exactly, at least 3 nodes are needed.
-  using GaussX = mini::gauss::Legendre<double, 3>;
-  using GaussY = mini::gauss::Lobatto<double, 3>;
-  using GaussZ = mini::gauss::Lobatto<double, 4>;
+  using GaussX = mini::gauss::Legendre<Scalar, 3>;
+  using GaussY = mini::gauss::Lobatto<Scalar, 3>;
+  using GaussZ = mini::gauss::Lobatto<Scalar, 4>;
   using Interpolation = mini::polynomial::Hexahedron<GaussX, GaussY, GaussZ, 11>;
   using Basis = typename Interpolation::Basis;
   using Gauss = typename Interpolation::Gauss;
+  using Coeff = typename Interpolation::Coeff;
   using Value = typename Interpolation::Value;
   using Global = typename Gauss::Global;
 };
+TEST_F(TestPolynomialHexahedronInterpolation, StaticMethods) {
+  constexpr int N = Interpolation::N;
+  constexpr int K = Interpolation::K;
+  mini::algebra::Vector<Scalar, N * K> output;
+  output.setZero();
+  EXPECT_EQ(output.norm(), 0.0);
+  Scalar *output_data = output.data();
+  std::srand(31415926);
+  for (int i_basis = 0; i_basis < N; ++i_basis) {
+    Value value;
+    for (int i_comp = 0; i_comp < K; ++i_comp) {
+      value[i_comp] = rand_f();
+    }
+    Interpolation::AddValueTo(value, output_data, i_basis);
+    EXPECT_NEAR(output.norm(), value.norm(), 1e-15);
+    auto *curr_col = output_data + (K * i_basis);
+    for (int i_comp = 0; i_comp < K; ++i_comp) {
+      EXPECT_EQ(value[i_comp], curr_col[i_comp]);
+    }
+    Interpolation::MinusValue(value, output_data, i_basis);
+    EXPECT_EQ(output.norm(), 0.0);
+  }
+}
 TEST_F(TestPolynomialHexahedronInterpolation, OnVectorFunction) {
   // build a hexa-gauss and a Lagrange basis on it
   auto a = 2.0, b = 3.0, c = 4.0;
