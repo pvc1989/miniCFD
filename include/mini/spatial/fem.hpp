@@ -3,6 +3,7 @@
 #define MINI_SPATIAL_FEM_HPP_
 
 #include <cassert>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -132,30 +133,34 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
   void AddFluxOnBoundaries(Column *residual) const {
-    std::cout << this->name() << "::ApplySolidWall\n";
-    std::cout << residual->squaredNorm() << " ";
+    std::ofstream log;
+    log.open(name() + std::to_string(part_ptr_->mpi_rank()) + ".txt");
+    assert(log.is_open());
+    log << this->name() << "::ApplySolidWall ";
+    log << residual->squaredNorm() << " ";
     this->ApplySolidWall(residual);
-    std::cout << residual->squaredNorm() << "\n";
-    std::cout << this->name() << "::ApplySupersonicInlet\n";
-    std::cout << residual->squaredNorm() << " ";
+    log << residual->squaredNorm() << "\n";
+    log << this->name() << "::ApplySupersonicInlet ";
+    log << residual->squaredNorm() << " ";
     this->ApplySupersonicInlet(residual);
-    std::cout << residual->squaredNorm() << "\n";
-    std::cout << this->name() << "::ApplySupersonicOutlet\n";
-    std::cout << residual->squaredNorm() << " ";
+    log << residual->squaredNorm() << "\n";
+    log << this->name() << "::ApplySupersonicOutlet ";
+    log << residual->squaredNorm() << " ";
     this->ApplySupersonicOutlet(residual);
-    std::cout << residual->squaredNorm() << "\n";
-    std::cout << this->name() << "::ApplySubsonicInlet\n";
-    std::cout << residual->squaredNorm() << " ";
+    log << residual->squaredNorm() << "\n";
+    log << this->name() << "::ApplySubsonicInlet ";
+    log << residual->squaredNorm() << " ";
     this->ApplySubsonicInlet(residual);
-    std::cout << residual->squaredNorm() << "\n";
-    std::cout << this->name() << "::ApplySubsonicOutlet\n";
-    std::cout << residual->squaredNorm() << " ";
+    log << residual->squaredNorm() << "\n";
+    log << this->name() << "::ApplySubsonicOutlet ";
+    log << residual->squaredNorm() << " ";
     this->ApplySubsonicOutlet(residual);
-    std::cout << residual->squaredNorm() << "\n";
-    std::cout << this->name() << "::ApplySmartBoundary\n";
-    std::cout << residual->squaredNorm() << " ";
+    log << residual->squaredNorm() << "\n";
+    log << this->name() << "::ApplySmartBoundary ";
+    log << residual->squaredNorm() << " ";
     this->ApplySmartBoundary(residual);
-    std::cout << residual->squaredNorm() << "\n";
+    log << residual->squaredNorm() << "\n";
+    log.close();
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses
