@@ -132,12 +132,30 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
   void AddFluxOnBoundaries(Column *residual) const {
+    std::cout << this->name() << "::ApplySolidWall\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySolidWall(residual);
+    std::cout << residual->squaredNorm() << "\n";
+    std::cout << this->name() << "::ApplySupersonicInlet\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySupersonicInlet(residual);
+    std::cout << residual->squaredNorm() << "\n";
+    std::cout << this->name() << "::ApplySupersonicOutlet\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySupersonicOutlet(residual);
+    std::cout << residual->squaredNorm() << "\n";
+    std::cout << this->name() << "::ApplySubsonicInlet\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySubsonicInlet(residual);
+    std::cout << residual->squaredNorm() << "\n";
+    std::cout << this->name() << "::ApplySubsonicOutlet\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySubsonicOutlet(residual);
+    std::cout << residual->squaredNorm() << "\n";
+    std::cout << this->name() << "::ApplySmartBoundary\n";
+    std::cout << residual->squaredNorm() << " ";
     this->ApplySmartBoundary(residual);
+    std::cout << residual->squaredNorm() << "\n";
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses
