@@ -59,21 +59,27 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   Part *part_ptr_;
   double t_curr_;
   size_t cell_data_size_;
+#ifdef ENABLE_LOGGING
   std::unique_ptr<std::ofstream> log_;
+#endif
 
  public:
   explicit FiniteElement(Part *part_ptr)
       : part_ptr_(part_ptr), cell_data_size_(this->part_ptr_->GetCellDataSize()) {
+#ifdef ENABLE_LOGGING
     log_ = std::make_unique<std::ofstream>();
+#endif
   }
   FiniteElement(const FiniteElement &) = default;
   FiniteElement &operator=(const FiniteElement &) = default;
   FiniteElement(FiniteElement &&) noexcept = default;
   FiniteElement &operator=(FiniteElement &&) noexcept = default;
   ~FiniteElement() noexcept {
+#ifdef ENABLE_LOGGING
     if (log_->is_open()) {
       log_->close();
     }
+#endif
   }
 
   virtual const char *name() const {
@@ -83,6 +89,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     return name() + ("_" + std::to_string(part_ptr_->mpi_rank()));
   }
 
+#ifdef ENABLE_LOGGING
   std::ofstream &log() const {
     if (!log_->is_open()) {
       log_->open(fullname() + ".txt");
@@ -90,6 +97,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     assert(log_->is_open());
     return *log_;
   }
+#endif
 
  public:  // set BCs
   template <typename Callable>
@@ -150,30 +158,44 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
   void AddFluxOnBoundaries(Column *residual) const {
+#ifdef ENABLE_LOGGING
     log() << fullname() << "::ApplySolidWall ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySolidWall(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
     log() << fullname() << "::ApplySupersonicInlet ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySupersonicInlet(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
     log() << fullname() << "::ApplySupersonicOutlet ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySupersonicOutlet(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
     log() << fullname() << "::ApplySubsonicInlet ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySubsonicInlet(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
     log() << fullname() << "::ApplySubsonicOutlet ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySubsonicOutlet(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
     log() << fullname() << "::ApplySmartBoundary ";
     log() << residual->squaredNorm() << " ";
+#endif
     this->ApplySmartBoundary(residual);
+#ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
+#endif
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses

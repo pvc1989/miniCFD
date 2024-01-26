@@ -18,6 +18,8 @@
 #include "mini/riemann/diffusive/linear.hpp"
 #include "mini/riemann/diffusive/direct_dg.hpp"
 #include "mini/polynomial/hexahedron.hpp"
+
+#define ENABLE_LOGGING
 #include "mini/spatial/fr/general.hpp"
 #include "mini/spatial/fr/lobatto.hpp"
 #include "mini/basis/vincent.hpp"
