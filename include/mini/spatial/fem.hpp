@@ -59,19 +59,36 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   Part *part_ptr_;
   double t_curr_;
   size_t cell_data_size_;
+  std::unique_ptr<std::ofstream> log_;
 
  public:
   explicit FiniteElement(Part *part_ptr)
       : part_ptr_(part_ptr), cell_data_size_(this->part_ptr_->GetCellDataSize()) {
+    log_ = std::make_unique<std::ofstream>();
   }
   FiniteElement(const FiniteElement &) = default;
   FiniteElement &operator=(const FiniteElement &) = default;
   FiniteElement(FiniteElement &&) noexcept = default;
   FiniteElement &operator=(FiniteElement &&) noexcept = default;
-  ~FiniteElement() noexcept = default;
+  ~FiniteElement() noexcept {
+    if (log_->is_open()) {
+      log_->close();
+    }
+  }
 
   virtual const char *name() const {
     return "FEM";
+  }
+  std::string fullname() const {
+    return name() + ("_" + std::to_string(part_ptr_->mpi_rank()));
+  }
+
+  std::ofstream &log() const {
+    if (!log_->is_open()) {
+      log_->open(fullname() + ".txt");
+    }
+    assert(log_->is_open());
+    return *log_;
   }
 
  public:  // set BCs
@@ -133,34 +150,30 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
   void AddFluxOnBoundaries(Column *residual) const {
-    std::ofstream log;
-    log.open(name() + std::to_string(part_ptr_->mpi_rank()) + ".txt");
-    assert(log.is_open());
-    log << this->name() << "::ApplySolidWall ";
-    log << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySolidWall ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySolidWall(residual);
-    log << residual->squaredNorm() << "\n";
-    log << this->name() << "::ApplySupersonicInlet ";
-    log << residual->squaredNorm() << " ";
+    log() << residual->squaredNorm() << "\n";
+    log() << fullname() << "::ApplySupersonicInlet ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySupersonicInlet(residual);
-    log << residual->squaredNorm() << "\n";
-    log << this->name() << "::ApplySupersonicOutlet ";
-    log << residual->squaredNorm() << " ";
+    log() << residual->squaredNorm() << "\n";
+    log() << fullname() << "::ApplySupersonicOutlet ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySupersonicOutlet(residual);
-    log << residual->squaredNorm() << "\n";
-    log << this->name() << "::ApplySubsonicInlet ";
-    log << residual->squaredNorm() << " ";
+    log() << residual->squaredNorm() << "\n";
+    log() << fullname() << "::ApplySubsonicInlet ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySubsonicInlet(residual);
-    log << residual->squaredNorm() << "\n";
-    log << this->name() << "::ApplySubsonicOutlet ";
-    log << residual->squaredNorm() << " ";
+    log() << residual->squaredNorm() << "\n";
+    log() << fullname() << "::ApplySubsonicOutlet ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySubsonicOutlet(residual);
-    log << residual->squaredNorm() << "\n";
-    log << this->name() << "::ApplySmartBoundary ";
-    log << residual->squaredNorm() << " ";
+    log() << residual->squaredNorm() << "\n";
+    log() << fullname() << "::ApplySmartBoundary ";
+    log() << residual->squaredNorm() << " ";
     this->ApplySmartBoundary(residual);
-    log << residual->squaredNorm() << "\n";
-    log.close();
+    log() << residual->squaredNorm() << "\n";
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses
