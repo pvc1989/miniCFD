@@ -146,13 +146,15 @@ TEST_F(TestPolynomialHexahedronInterpolation, StaticMethods) {
     for (int i_comp = 0; i_comp < K; ++i_comp) {
       value[i_comp] = rand_f();
     }
-    Interpolation::AddValueTo(value, output_data, i_basis);
+    Scalar *curr_col = output_data + (K * i_basis), *next_col;
+    next_col = Interpolation::AddValueTo(value, output_data, i_basis);
+    EXPECT_EQ(next_col, curr_col + K);
     EXPECT_NEAR(output.norm(), value.norm(), 1e-15);
-    auto *curr_col = output_data + (K * i_basis);
     for (int i_comp = 0; i_comp < K; ++i_comp) {
       EXPECT_EQ(value[i_comp], curr_col[i_comp]);
     }
-    Interpolation::MinusValue(value, output_data, i_basis);
+    next_col = Interpolation::MinusValue(value, output_data, i_basis);
+    EXPECT_EQ(next_col, curr_col + K);
     EXPECT_EQ(output.norm(), 0.0);
   }
 }

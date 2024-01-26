@@ -531,20 +531,23 @@ class Hexahedron {
    * @param value the value to be added
    * @param output the beginning of all dofs
    * @param i_basis the (0-based) index of basis
+   * @return Scalar* the end of the modified column 
    */
-  static void AddValueTo(Value const &value, Scalar *output, int i_basis) {
+  static Scalar *AddValueTo(Value const &value, Scalar *output, int i_basis) {
     assert(0 <= i_basis && i_basis < N);
     output += K * i_basis;
     for (int r = 0; r < K; ++r) {
       *output++ += value[r];
     }
+    return output;
   }
-  static void MinusValue(Value const &value, Scalar *output, int i_basis) {
+  static Scalar *MinusValue(Value const &value, Scalar *output, int i_basis) {
     assert(0 <= i_basis && i_basis < N);
     output += K * i_basis;
     for (int r = 0; r < K; ++r) {
       *output++ -= value[r];
     }
+    return output;
   }
   /**
    * @brief Multiply the given scale to the Value at the given address.
