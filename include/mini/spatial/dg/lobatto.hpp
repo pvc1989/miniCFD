@@ -75,22 +75,22 @@ class Lobatto : public General<Part> {
   }
 
   static constexpr bool kLocal = Projection::kLocal;
-  static Scalar GetWeight(const Gauss &gauss, int q) requires (kLocal) {
+  static Scalar GetWeight(const Gauss &gauss, int q) requires(kLocal) {
     return gauss.GetLocalWeight(q);
   }
-  static Scalar GetWeight(const Gauss &gauss, int q) requires (!kLocal) {
+  static Scalar GetWeight(const Gauss &gauss, int q) requires(!kLocal) {
     return gauss.GetGlobalWeight(q);
   }
   using FluxMatrix = typename Riemann::FluxMatrix;
   static FluxMatrix GetWeightedFluxMatrix(const Value &value,
-      const Cell &cell, int q) requires (kLocal) {
+      const Cell &cell, int q) requires(kLocal) {
     auto flux = Riemann::GetFluxMatrix(value);
     flux = cell.projection().GlobalFluxToLocalFlux(flux, q);
     flux *= GetWeight(cell.gauss(), q);
     return flux;
   }
   static FluxMatrix GetWeightedFluxMatrix(const Value &value,
-      const Cell &cell, int q) requires (!kLocal) {
+      const Cell &cell, int q) requires(!kLocal) {
     auto flux = Riemann::GetFluxMatrix(value);
     flux *= GetWeight(cell.gauss(), q);
     return flux;

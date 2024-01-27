@@ -49,7 +49,7 @@ class Euler {
   const Vector &b() const {
     return (*frame_)[B];
   }
-  const Vector &c() const requires (kDimensions == 3) {
+  const Vector &c() const requires(kDimensions == 3) {
     return (*frame_)[C];
   }
   Scalar a(int i) const {
@@ -58,26 +58,26 @@ class Euler {
   Scalar b(int i) const {
     return b()[i];
   }
-  Scalar c(int i) const requires (kDimensions == 3) {
+  Scalar c(int i) const requires(kDimensions == 3) {
     return c()[i];
   }
 
  public:
-  void GlobalToNormal(Value* v) const requires (kDimensions == 2) {
+  void GlobalToNormal(Value* v) const requires(kDimensions == 2) {
     Vector &p = v->momentum();
     Scalar p_a = p[X] * a(X) + p[Y] * a(Y);
     Scalar p_b = p[X] * b(X) + p[Y] * b(Y);
     p[A] = p_a;
     p[B] = p_b;
   }
-  void NormalToGlobal(Value* v) const requires (kDimensions == 2) {
+  void NormalToGlobal(Value* v) const requires(kDimensions == 2) {
     Vector &p = v->momentum();
     Scalar p_x = p[A] * a(X) + p[B] * b(X);
     Scalar p_y = p[A] * a(Y) + p[B] * b(Y);
     p[X] = p_x;
     p[Y] = p_y;
   }
-  void GlobalToNormal(Value* v) const requires (kDimensions == 3) {
+  void GlobalToNormal(Value* v) const requires(kDimensions == 3) {
     Vector &p = v->momentum();
     Scalar p_a = p.dot(a());
     Scalar p_b = p.dot(b());
@@ -86,7 +86,7 @@ class Euler {
     p[B] = p_b;
     p[C] = p_c;
   }
-  void NormalToGlobal(Value* v) const requires (kDimensions == 3) {
+  void NormalToGlobal(Value* v) const requires(kDimensions == 3) {
     Vector &p = v->momentum();
     Scalar p_x = p[A] * a(X) + p[B] * b(X) + p[C] * c(X);
     Scalar p_y = p[A] * a(Y) + p[B] * b(Y) + p[C] * c(Y);

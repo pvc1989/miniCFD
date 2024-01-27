@@ -161,7 +161,7 @@ class Hexahedron {
   }
 
  public:
-  explicit Hexahedron(const GaussBase &gauss) requires (kLocal)
+  explicit Hexahedron(const GaussBase &gauss) requires(kLocal)
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
@@ -210,7 +210,7 @@ class Hexahedron {
           (inv_T_grad[Z] / det2 + inv_T * (-2 * det_grad[Z] / det3));
     }
   }
-  explicit Hexahedron(const GaussBase &gauss) requires (!kLocal)
+  explicit Hexahedron(const GaussBase &gauss) requires(!kLocal)
       : gauss_ptr_(dynamic_cast<const Gauss *>(&gauss)) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &local = gauss_ptr_->GetLocalCoord(ijk);
@@ -226,12 +226,12 @@ class Hexahedron {
   Hexahedron &operator=(Hexahedron &&) noexcept = default;
   ~Hexahedron() noexcept = default;
 
-  Value LocalToValue(Local const &local) const requires (kLocal) {
+  Value LocalToValue(Local const &local) const requires(kLocal) {
     Value value = coeff_ * basis_.GetValues(local).transpose();
     value /= lagrange().LocalToJacobian(local).determinant();
     return value;
   }
-  Value LocalToValue(Local const &local) const requires (!kLocal) {
+  Value LocalToValue(Local const &local) const requires(!kLocal) {
     return coeff_ * basis_.GetValues(local).transpose();
   }
   void LocalToGlobalAndValue(Local const &local,
@@ -252,7 +252,7 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return Value the value \f$ u(x_i,y_i,z_i) \f$
    */
-  Value GetValue(int i) const requires (kLocal) {
+  Value GetValue(int i) const requires(kLocal) {
     return coeff_.col(i) / jacobian_det_[i];
   }
   /**
@@ -263,7 +263,7 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return Value the value \f$ u(x_i,y_i,z_i) \f$
    */
-  Value GetValue(int i) const requires (!kLocal) {
+  Value GetValue(int i) const requires(!kLocal) {
     return coeff_.col(i);
   }
   Mat1xN GlobalToBasisValues(Global const &global) const {
@@ -287,7 +287,7 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return const Mat3xN& the local gradients of basis
    */
-  const Mat3xN &GetBasisGradients(int ijk) const requires (kLocal) {
+  const Mat3xN &GetBasisGradients(int ijk) const requires(kLocal) {
     return basis_local_gradients_[ijk];
   }
   /**
@@ -298,14 +298,14 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return const Mat3xN& the global gradients of basis
    */
-  const Mat3xN &GetBasisGradients(int ijk) const requires (!kLocal) {
+  const Mat3xN &GetBasisGradients(int ijk) const requires(!kLocal) {
     return basis_global_gradients_[ijk];
   }
   /**
    * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\\ \partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
    * 
    */
-  Gradient GetLocalGradient(int ijk) const requires (kLocal) {
+  Gradient GetLocalGradient(int ijk) const requires(kLocal) {
     Gradient value_grad; value_grad.setZero();
     Mat3xN const &basis_grads = GetBasisGradients(ijk);
     for (int abc = 0; abc < N; ++abc) {
@@ -313,7 +313,7 @@ class Hexahedron {
     }
     return value_grad;
   }
-  Gradient LocalToLocalGradient(Local const &local) const requires (kLocal) {
+  Gradient LocalToLocalGradient(Local const &local) const requires(kLocal) {
     Gradient value_grad; value_grad.setZero();
     auto x = local[X], y = local[Y], z = local[Z];
     Mat3xN basis_grad;
@@ -325,7 +325,7 @@ class Hexahedron {
     }
     return value_grad;
   }
-  Gradient LocalToGlobalGradient(Local const &local) const requires (kLocal) {
+  Gradient LocalToGlobalGradient(Local const &local) const requires(kLocal) {
     Gradient grad = LocalToLocalGradient(local);
     Jacobian mat = lagrange().LocalToJacobian(local);
     Scalar det = mat.determinant();
@@ -334,7 +334,7 @@ class Hexahedron {
     grad -= (det_grad / det) * value.transpose();
     return mat.inverse() / det * grad;
   }
-  Gradient GlobalToGlobalGradient(Global const &global) const requires (kLocal) {
+  Gradient GlobalToGlobalGradient(Global const &global) const requires(kLocal) {
     auto local = lagrange().GlobalToLocal(global);
     return LocalToGlobalGradient(local);
   }
@@ -342,11 +342,11 @@ class Hexahedron {
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
    * 
    */
-  Gradient GetGlobalGradient(int ijk) const requires (kLocal) {
+  Gradient GetGlobalGradient(int ijk) const requires(kLocal) {
     return GetGlobalGradient(GetValue(ijk), GetLocalGradient(ijk), ijk);
   }
   Gradient GetGlobalGradient(Value const &value_ijk, Gradient local_grad_ijk,
-      int ijk) const requires (kLocal) {
+      int ijk) const requires(kLocal) {
     auto &value_grad = local_grad_ijk;
     value_grad -= jacobian_det_grad_[ijk] * value_ijk.transpose();
     auto jacobian_det = jacobian_det_[ijk];
@@ -361,14 +361,14 @@ class Hexahedron {
    * @param ijk the index of the Gaussian point
    * @return const Mat6xN& the local Hessians of basis
    */
-  const Mat6xN &GetBasisHessians(int ijk) const requires (kLocal) {
+  const Mat6xN &GetBasisHessians(int ijk) const requires(kLocal) {
     return basis_local_hessians_[ijk];
   }
   /**
    * @brief Get \f$ \begin{bmatrix}\partial_{\xi}\partial_{\xi}\\ \partial_{\xi}\partial_{\eta}\\ \cdots \end{bmatrix} U \f$ at a Gaussian point.
    * 
    */
-  Hessian GetLocalHessian(int ijk) const requires (kLocal) {
+  Hessian GetLocalHessian(int ijk) const requires(kLocal) {
     Mat6xK value_hess; value_hess.setZero();
     Mat6xN const &basis_hess = GetBasisHessians(ijk);
     for (int abc = 0; abc < N; ++abc) {
@@ -380,11 +380,11 @@ class Hexahedron {
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\partial_{x}\\ \partial_{x}\partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
    * 
    */
-  Hessian GetGlobalHessian(int ijk) const requires (kLocal) {
+  Hessian GetGlobalHessian(int ijk) const requires(kLocal) {
     return GetGlobalHessian(GetLocalGradient(ijk), ijk);
   }
   Hessian GetGlobalHessian(Gradient const &local_grad_ijk, int ijk) const
-      requires (kLocal) {
+      requires(kLocal) {
     Hessian local_hess = GetLocalHessian(ijk);
     auto &global_hess = local_hess;
     for (int k = 0; k < K; ++k) {
@@ -446,7 +446,7 @@ class Hexahedron {
    */
   template <class FluxMatrix>
   FluxMatrix GlobalFluxToLocalFlux(const FluxMatrix &global_flux, int ijk) const
-      requires (kLocal) {
+      requires(kLocal) {
     FluxMatrix local_flux = global_flux * GetJacobianAssociated(ijk);
     return local_flux;
   }
@@ -460,7 +460,7 @@ class Hexahedron {
    * @return Jacobian const& the associated matrix of \f$ \mathbf{J} \f$.
    */
   Jacobian const &GetJacobianAssociated(int ijk) const
-      requires (kLocal) {
+      requires(kLocal) {
     return jacobian_det_inv_[ijk];
   }
 
@@ -483,7 +483,7 @@ class Hexahedron {
     return gauss().lagrange();
   }
   template <typename Callable>
-  void Approximate(Callable &&global_to_value) requires (kLocal) {
+  void Approximate(Callable &&global_to_value) requires(kLocal) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &global = gauss_ptr_->GetGlobalCoord(ijk);
       coeff_.col(ijk) = global_to_value(global);  // value in physical space
@@ -491,7 +491,7 @@ class Hexahedron {
     }
   }
   template <typename Callable>
-  void Approximate(Callable &&global_to_value) requires (!kLocal) {
+  void Approximate(Callable &&global_to_value) requires(!kLocal) {
     for (int ijk = 0; ijk < N; ++ijk) {
       auto &global = gauss_ptr_->GetGlobalCoord(ijk);
       coeff_.col(ijk) = global_to_value(global);  // value in physical space

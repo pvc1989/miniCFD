@@ -38,22 +38,22 @@ using DataType = CGNS_ENUMT(DataType_t);
 
 int CountNodesByType(ElementType type) {
   switch (type) {
-  case CGNS_ENUMV( TRI_3 ): return 3;
-  case CGNS_ENUMV( TRI_6 ): return 6;
-  case CGNS_ENUMV( QUAD_4 ): return 4;
-  case CGNS_ENUMV( QUAD_8 ): return 8;
-  case CGNS_ENUMV( QUAD_9 ): return 9;
-  case CGNS_ENUMV( TETRA_4 ): return 4;
-  case CGNS_ENUMV( TETRA_10 ): return 10;
-  case CGNS_ENUMV( PYRA_5 ): return 5;
-  case CGNS_ENUMV( PYRA_13 ): return 13;
-  case CGNS_ENUMV( PYRA_14 ): return 14;
-  case CGNS_ENUMV( HEXA_8 ): return 8;
-  case CGNS_ENUMV( HEXA_20 ): return 20;
-  case CGNS_ENUMV( HEXA_27 ): return 27;
-  case CGNS_ENUMV( PENTA_6 ): return 6;
-  case CGNS_ENUMV( PENTA_15 ): return 15;
-  case CGNS_ENUMV( PENTA_18 ): return 18;
+  case CGNS_ENUMV(TRI_3): return 3;
+  case CGNS_ENUMV(TRI_6): return 6;
+  case CGNS_ENUMV(QUAD_4): return 4;
+  case CGNS_ENUMV(QUAD_8): return 8;
+  case CGNS_ENUMV(QUAD_9): return 9;
+  case CGNS_ENUMV(TETRA_4): return 4;
+  case CGNS_ENUMV(TETRA_10): return 10;
+  case CGNS_ENUMV(PYRA_5): return 5;
+  case CGNS_ENUMV(PYRA_13): return 13;
+  case CGNS_ENUMV(PYRA_14): return 14;
+  case CGNS_ENUMV(HEXA_8): return 8;
+  case CGNS_ENUMV(HEXA_20): return 20;
+  case CGNS_ENUMV(HEXA_27): return 27;
+  case CGNS_ENUMV(PENTA_6): return 6;
+  case CGNS_ENUMV(PENTA_15): return 15;
+  case CGNS_ENUMV(PENTA_18): return 18;
   default:
     int npe; cg_npe(type, &npe); return npe;
   }
@@ -62,22 +62,22 @@ int CountNodesByType(ElementType type) {
 
 int CountFacesByType(ElementType type) {
   switch (type) {
-  case CGNS_ENUMV( TRI_3 ):
-  case CGNS_ENUMV( TRI_6 ): return 3;
-  case CGNS_ENUMV( QUAD_4 ):
-  case CGNS_ENUMV( QUAD_8 ):
-  case CGNS_ENUMV( QUAD_9 ): return 4;
-  case CGNS_ENUMV( TETRA_4 ):
-  case CGNS_ENUMV( TETRA_10 ): return 4;
-  case CGNS_ENUMV( PYRA_5 ):
-  case CGNS_ENUMV( PYRA_13 ):
-  case CGNS_ENUMV( PYRA_14 ): return 5;
-  case CGNS_ENUMV( HEXA_8 ):
-  case CGNS_ENUMV( HEXA_20 ):
-  case CGNS_ENUMV( HEXA_27 ): return 6;
-  case CGNS_ENUMV( PENTA_6 ):
-  case CGNS_ENUMV( PENTA_15 ):
-  case CGNS_ENUMV( PENTA_18 ): return 5;
+  case CGNS_ENUMV(TRI_3):
+  case CGNS_ENUMV(TRI_6): return 3;
+  case CGNS_ENUMV(QUAD_4):
+  case CGNS_ENUMV(QUAD_8):
+  case CGNS_ENUMV(QUAD_9): return 4;
+  case CGNS_ENUMV(TETRA_4):
+  case CGNS_ENUMV(TETRA_10): return 4;
+  case CGNS_ENUMV(PYRA_5):
+  case CGNS_ENUMV(PYRA_13):
+  case CGNS_ENUMV(PYRA_14): return 5;
+  case CGNS_ENUMV(HEXA_8):
+  case CGNS_ENUMV(HEXA_20):
+  case CGNS_ENUMV(HEXA_27): return 6;
+  case CGNS_ENUMV(PENTA_6):
+  case CGNS_ENUMV(PENTA_15):
+  case CGNS_ENUMV(PENTA_18): return 5;
   default:
     int npe; cg_npe(type, &npe); return npe;
   }
