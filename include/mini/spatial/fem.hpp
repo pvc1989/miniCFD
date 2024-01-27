@@ -159,42 +159,44 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
 
   void AddFluxOnBoundaries(Column *residual) const {
 #ifdef ENABLE_LOGGING
-    log() << fullname() << "::ApplySolidWall ";
-    log() << residual->squaredNorm() << " ";
+    log() << "Enter " << fullname() << "::AddFluxOnBoundaries\n";
+    log() << fullname() << "::ApplySolidWall\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySolidWall(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
-    log() << fullname() << "::ApplySupersonicInlet ";
-    log() << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySupersonicInlet\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySupersonicInlet(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
-    log() << fullname() << "::ApplySupersonicOutlet ";
-    log() << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySupersonicOutlet\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySupersonicOutlet(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
-    log() << fullname() << "::ApplySubsonicInlet ";
-    log() << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySubsonicInlet\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySubsonicInlet(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
-    log() << fullname() << "::ApplySubsonicOutlet ";
-    log() << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySubsonicOutlet\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySubsonicOutlet(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
-    log() << fullname() << "::ApplySmartBoundary ";
-    log() << residual->squaredNorm() << " ";
+    log() << fullname() << "::ApplySmartBoundary\n";
+    log() << residual->squaredNorm() << "\n";
 #endif
     this->ApplySmartBoundary(residual);
 #ifdef ENABLE_LOGGING
     log() << residual->squaredNorm() << "\n";
+    log() << "Leave " << fullname() << "::AddFluxOnBoundaries\n";
 #endif
   }
 
