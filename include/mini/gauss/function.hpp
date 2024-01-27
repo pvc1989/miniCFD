@@ -7,6 +7,7 @@
 #include <cmath>
 
 #include <type_traits>
+#include <utility>
 
 #include "mini/algebra/eigen.hpp"
 

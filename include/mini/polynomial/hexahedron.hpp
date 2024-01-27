@@ -7,10 +7,12 @@
 #include <cmath>
 #include <cstring>
 
+#include <algorithm>
 #include <iostream>
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/gauss/cell.hpp"
