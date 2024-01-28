@@ -307,8 +307,12 @@ class General : public spatial::FiniteElement<Part> {
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
+      assert(residual->data() <= holder_data &&
+          holder_data < residual->data() + residual->size());
       auto *sharer_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(sharer.id());
+      assert(residual->data() <= sharer_data &&
+          sharer_data < residual->data() + residual->size());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       assert(kFaceQ == face.gauss().CountPoints());
@@ -335,6 +339,8 @@ class General : public spatial::FiniteElement<Part> {
       const auto &sharer = face.sharer();
       auto *holder_data = residual->data()
           + this->part_ptr_->GetCellDataOffset(holder.id());
+      assert(residual->data() <= holder_data &&
+          holder_data < residual->data() + residual->size());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       assert(kFaceQ == face.gauss().CountPoints());
@@ -357,6 +363,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -411,6 +419,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -434,6 +444,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -460,6 +472,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -486,6 +500,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -512,6 +528,8 @@ class General : public spatial::FiniteElement<Part> {
         const auto &holder = face.holder();
         auto *holder_data = residual->data()
             + this->part_ptr_->GetCellDataOffset(holder.id());
+        assert(residual->data() <= holder_data &&
+            holder_data < residual->data() + residual->size());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
