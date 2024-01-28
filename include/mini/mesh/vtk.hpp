@@ -262,7 +262,8 @@ class Writer {
       vtk::Prepare<Cell>(Tetrahedron4<Coord>::locals, 4, cell, coords, values);
       break;
     case CellType::kTetrahedron10:
-      vtk::Prepare<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords, values);
+      vtk::Prepare<Cell>(Tetrahedron10<Coord>::locals, 10, cell, coords,
+          values);
       break;
     case CellType::kWedge6:
       vtk::Prepare<Cell>(Wedge6<Coord>::locals, 6, cell, coords, values);

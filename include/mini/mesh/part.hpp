@@ -291,9 +291,12 @@ class Section {
   using Cell = part::Cell<Int, Riemann, Projection>;
   using Scalar = typename Cell::Scalar;
 
-  Int head_, size_;
   cgns::ShiftedVector<Cell> cells_;
-  cgns::ShiftedVector<cgns::ShiftedVector<Scalar>> fields_;  // [i_field][i_cell]
+
+  // fields_[i_field][i_cell]
+  cgns::ShiftedVector<cgns::ShiftedVector<Scalar>> fields_;
+
+  Int head_, size_;
   int npe_;
 
  public:

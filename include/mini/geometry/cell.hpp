@@ -209,7 +209,8 @@ class Cell : public Element<Scalar, 3, 3> {
     };
     return root(func, hint, jac);
   }
-  Local GlobalToLocal(const Global &xyz, const Local &hint = Local(0, 0, 0)) const {
+  Local GlobalToLocal(const Global &xyz,
+      const Local &hint = Local(0, 0, 0)) const {
     return GlobalToLocal(xyz[X], xyz[Y], xyz[Z], hint);
   }
 
@@ -241,7 +242,9 @@ class Cell : public Element<Scalar, 3, 3> {
   static Global root(Func &&func, Global x, MatJ &&matj, Scalar xtol = 1e-5) {
     Global res;
     do {
-      // The Jacobian matrix required here is the transpose of the one returned by `Element::LocalToJacobian`. 
+      /**
+       * The Jacobian matrix required here is the transpose of the one returned by `Element::LocalToJacobian`.
+       */
       res = matj(x).transpose().partialPivLu().solve(func(x));
       x -= res;
     } while (res.norm() > xtol);

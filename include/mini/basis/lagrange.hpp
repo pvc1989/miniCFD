@@ -41,7 +41,10 @@ class Line {
   using Taylor = basis::Taylor<Scalar, 1, kDegree>;
 
  private:
-  std::array<std::array<Vector, N>, N> derivatives_;  // derivatives_[k][j][i] := k-th order derivatives at the j-th node of the i-th basis
+  /**
+   * derivatives_[k][j][i] := k-th order derivatives at the j-th node of the i-th basis
+   */
+  std::array<std::array<Vector, N>, N> derivatives_;
   Vector nodes_;  // nodes_[j] := coorinate of the j-th node
   Matrix lagrange_to_taylor_;
 
@@ -71,7 +74,8 @@ class Line {
       taylor_to_lagrange.row(j) = Taylor::GetValues(x_j);
     }
     lagrange_to_taylor_ = taylor_to_lagrange.inverse();
-    assert((taylor_to_lagrange * lagrange_to_taylor_ - Matrix::Identity()).norm() < 1e-12);
+    assert((taylor_to_lagrange * lagrange_to_taylor_
+        - Matrix::Identity()).norm() < 1e-12);
     for (int k = 0; k < N; ++k) {
       for (int j = 0; j < N; ++j) {
         auto x_j = nodes_[j];
@@ -152,15 +156,32 @@ class Line {
 template <std::floating_point Scalar, int kDegreeX, int kDegreeY, int kDegreeZ>
 class Hexahedron {
  public:
-  using LineX = Line<Scalar, kDegreeX>;  // the type of the Lagrange basis in the 1st dimension
-  using LineY = Line<Scalar, kDegreeY>;  // the type of the Lagrange basis in the 2nd dimension
-  using LineZ = Line<Scalar, kDegreeZ>;  // the type of the Lagrange basis in the 3rd dimension
-  static constexpr int I = LineX::N;  // the number of terms in the 1st dimension
-  static constexpr int J = LineY::N;  // the number of terms in the 2nd dimension
-  static constexpr int K = LineZ::N;  // the number of terms in the 3rd dimension
-  static constexpr int N = I * J * K;  // the number of terms in this basis
-  using Vector = algebra::Matrix<Scalar, 1, N>;  // the 1D type of values of this basis
-  using Coord = algebra::Vector<Scalar, 3>;  // the type of coordinates
+  // the type of the Lagrange basis in the 1st dimension
+  using LineX = Line<Scalar, kDegreeX>;
+
+  // the type of the Lagrange basis in the 2nd dimension
+  using LineY = Line<Scalar, kDegreeY>;
+
+  // the type of the Lagrange basis in the 3rd dimension
+  using LineZ = Line<Scalar, kDegreeZ>;
+
+  // the number of terms in the 1st dimension
+  static constexpr int I = LineX::N;
+
+  // the number of terms in the 2nd dimension
+  static constexpr int J = LineY::N;
+
+  // the number of terms in the 3rd dimension
+  static constexpr int K = LineZ::N;
+
+  // the number of terms in this basis
+  static constexpr int N = I * J * K;
+
+  // the 1D type of values of this basis
+  using Vector = algebra::Matrix<Scalar, 1, N>;
+
+  // the type of coordinates
+  using Coord = algebra::Vector<Scalar, 3>;
 
  private:
   LineX line_x_;

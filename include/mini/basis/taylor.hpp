@@ -28,8 +28,12 @@ class Taylor;
 template <std::floating_point Scalar, int kDegree>
 class Taylor<Scalar, 1, kDegree> {
  public:
-  static constexpr int P = kDegree;  // the maximum degree of members in this basis
-  static constexpr int N = P + 1;  // the number of terms in this basis
+  // the maximum degree of members in this basis
+  static constexpr int P = kDegree;
+
+  // the number of terms in this basis
+  static constexpr int N = P + 1;
+
   using Vector = algebra::Vector<Scalar, N>;
 
   /**
@@ -62,7 +66,8 @@ class Taylor<Scalar, 1, kDegree> {
     vec.setZero();  // For all j < k, there is vec[j] = 0.
     auto factorial_j = std::tgamma(Scalar(k + 1));  // factorial(j == k)
     auto factorial_j_minus_k = Scalar(1);  // factorial(j - k == 0)
-    vec[k] = factorial_j / factorial_j_minus_k;  // j * (j - 1) * ... * (j - k + 1)
+    // j * (j - 1) * ... * (j - k + 1) =
+    vec[k] = factorial_j / factorial_j_minus_k;
     auto x_power = Scalar(1);
     for (int j = k + 1; j < N; ++j) {
       auto j_minus_k = j - k;
