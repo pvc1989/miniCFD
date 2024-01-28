@@ -305,14 +305,8 @@ class General : public spatial::FiniteElement<Part> {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
-      assert(residual->data() <= holder_data &&
-          holder_data < residual->data() + residual->size());
-      auto *sharer_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(sharer.id());
-      assert(residual->data() <= sharer_data &&
-          sharer_data < residual->data() + residual->size());
+      auto *holder_data = this->AddCellDataOffset(residual, holder.id());
+      auto *sharer_data = this->AddCellDataOffset(residual, sharer.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       assert(kFaceQ == face.gauss().CountPoints());
@@ -337,10 +331,7 @@ class General : public spatial::FiniteElement<Part> {
     for (const Face &face : this->part_ptr_->GetGhostFaces()) {
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
-      assert(residual->data() <= holder_data &&
-          holder_data < residual->data() + residual->size());
+      auto *holder_data = this->AddCellDataOffset(residual, holder.id());
       auto const &holder_cache = holder_cache_[face.id()];
       auto &sharer_cache = sharer_cache_[face.id()];
       assert(kFaceQ == face.gauss().CountPoints());
@@ -361,10 +352,7 @@ class General : public spatial::FiniteElement<Part> {
     for (const auto &name : this->solid_wall_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -417,10 +405,7 @@ class General : public spatial::FiniteElement<Part> {
     for (const auto &name : this->supersonic_outlet_) {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -442,10 +427,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -470,10 +452,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -498,10 +477,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {
@@ -526,10 +502,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
-        assert(residual->data() <= holder_data &&
-            holder_data < residual->data() + residual->size());
+        auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
         assert(kFaceQ == face.gauss().CountPoints());
         for (int f = 0; f < kFaceQ; ++f) {

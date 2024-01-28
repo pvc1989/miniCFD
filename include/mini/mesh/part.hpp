@@ -397,6 +397,7 @@ class Section {
 template <std::integral Int, class R, class P>
 class Part {
  public:
+  using Index = Int;
   using Riemann = R;
   using Projection = P;
   using Face = part::Face<Int, Riemann, Projection>;

@@ -42,6 +42,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   using Scalar = typename Part::Scalar;
   using Face = typename Part::Face;
   using Cell = typename Part::Cell;
+  using Index = typename Part::Index;
   using Global = typename Cell::Global;
   using Gauss = typename Cell::Gauss;
   using Projection = typename Cell::Projection;
@@ -98,6 +99,13 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     return *log_;
   }
 #endif
+
+  Scalar *AddCellDataOffset(Column *column, Index i_cell) const {
+    auto *data = column->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+    assert(column->data() <= data);
+    assert(data + Cell::kFields <= column->data() + column->size());
+    return data;
+  }
 
  public:  // set BCs
   template <typename Callable>
