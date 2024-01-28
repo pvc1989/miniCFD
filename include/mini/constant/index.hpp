@@ -65,8 +65,8 @@ static constexpr int ZZY{YZZ};
 static constexpr int ZZZ{9};
 //
 
-}  // namespace mini
-}  // namespace constant
 }  // namespace index
+}  // namespace constant
+}  // namespace mini
 
 #endif  // MINI_CONSTANT_INDEX_HPP_
