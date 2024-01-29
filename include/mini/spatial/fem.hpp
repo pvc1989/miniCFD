@@ -67,6 +67,8 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
  public:
   explicit FiniteElement(Part *part_ptr)
       : part_ptr_(part_ptr), cell_data_size_(this->part_ptr_->GetCellDataSize()) {
+    assert(cell_data_size_
+        == Cell::kFields * this->part_ptr_->CountLocalCells());
 #ifdef ENABLE_LOGGING
     log_ = std::make_unique<std::ofstream>();
 #endif

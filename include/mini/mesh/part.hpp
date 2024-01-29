@@ -831,6 +831,7 @@ class Part {
     }
     assert(id == CountLocalCells());
     assert(id + 1 == cell_data_.size());
+    assert(cell_data_.back() == CountLocalCells() * Cell::kFields);
   }
 
  public:
@@ -850,7 +851,9 @@ class Part {
    * @return Int 
    */
   Int GetCellDataSize() const {
-    return GetCellDataOffset(CountLocalCells());
+    Int n_scalar = GetCellDataOffset(CountLocalCells());
+    assert(n_scalar == Cell::kFields * CountLocalCells());
+    return n_scalar;
   }
 
  private:
