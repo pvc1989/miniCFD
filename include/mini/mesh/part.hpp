@@ -303,8 +303,8 @@ class Section {
   static constexpr int kFields = Cell::kFields;
 
   Section(int head, int size, int npe)
-      : head_(head), size_(size), cells_(size, head), fields_(kFields, 1),
-        npe_(npe) {
+      : cells_(size, head), fields_(kFields, 1),
+        head_(head), size_(size), npe_(npe) {
     for (int i = 1; i <= kFields; ++i) {
       fields_[i] = cgns::ShiftedVector<Scalar>(size, head);
     }
