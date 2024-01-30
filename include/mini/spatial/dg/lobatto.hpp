@@ -125,14 +125,14 @@ class Lobatto : public General<Part> {
     // divide mass matrix for each cell
     for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
       auto i_cell = cell.id();
-      auto *data = residual.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      Scalar *data = this->AddCellDataOffset(&residual, i_cell);
       const auto &gauss = cell.gauss();
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         auto scale = 1.0 / GetWeight(gauss, q);
         data = cell.projection().ScaleValueAt(scale, data);
       }
-      assert(data ==
-          residual.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
+      assert(data == residual.data() + residual.size()
+          || data == this->AddCellDataOffset(&residual, i_cell + 1));
     }
     return residual;
   }
@@ -141,8 +141,7 @@ class Lobatto : public General<Part> {
   void AddFluxDivergence(Column *residual) const override {
     if (Part::kDegrees > 0) {
       for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-        auto i_cell = cell.id();
-        auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+        Scalar *data = this->AddCellDataOffset(residual, cell.id());
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           auto const &value = cell.projection().GetValue(q);
@@ -159,10 +158,8 @@ class Lobatto : public General<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
-      auto *sharer_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(sharer.id());
+      Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
+      Scalar *sharer_data = this->AddCellDataOffset(residual, sharer.id());
       auto &i_node_on_holder = i_node_on_holder_[face.id()];
       auto &i_node_on_sharer = i_node_on_sharer_[face.id()];
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
@@ -182,8 +179,7 @@ class Lobatto : public General<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
+      Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
       auto &i_node_on_holder = i_node_on_holder_[face.id()];
       auto &i_node_on_sharer = i_node_on_sharer_[face.id()];
       for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
@@ -202,8 +198,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
@@ -220,8 +215,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
@@ -238,8 +232,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
@@ -256,8 +249,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
@@ -275,8 +267,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];
@@ -294,8 +285,7 @@ class Lobatto : public General<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto &i_node_on_holder = i_node_on_holder_[face.id()];
         for (int f = 0, n = gauss.CountPoints(); f < n; ++f) {
           auto c_holder = i_node_on_holder[f];

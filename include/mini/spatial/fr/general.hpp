@@ -230,8 +230,7 @@ class General : public spatial::FiniteElement<Part> {
  protected:  // override virtual methods defined in Base
   void AddFluxDivergence(Column *residual) const override {
     for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-      auto i_cell = cell.id();
-      auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      auto *data = this->AddCellDataOffset(residual, cell.id());
       const auto &gauss = cell.gauss();
       std::array<FluxMatrix, kCellQ> flux;
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {

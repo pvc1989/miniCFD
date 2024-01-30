@@ -51,8 +51,7 @@ class General : public spatial::FiniteElement<Part> {
     // Integrate the dot-product of flux and basis gradient, if there is any.
     if (Part::kDegrees > 0) {
       for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-        auto i_cell = cell.id();
-        auto *data = residual->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+        Scalar *data = this->AddCellDataOffset(residual, cell.id());
         const auto &gauss = cell.gauss();
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &xyz = gauss.GetGlobalCoord(q);
@@ -71,10 +70,8 @@ class General : public spatial::FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
-      auto *sharer_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(sharer.id());
+      Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
+      Scalar *sharer_data = this->AddCellDataOffset(residual, sharer.id());
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GlobalToValue(coord);
@@ -93,8 +90,7 @@ class General : public spatial::FiniteElement<Part> {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
-      auto *holder_data = residual->data()
-          + this->part_ptr_->GetCellDataOffset(holder.id());
+      Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
       for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
         const auto &coord = gauss.GetGlobalCoord(q);
         Value u_holder = holder.GlobalToValue(coord);
@@ -113,8 +109,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_holder = holder.GlobalToValue(coord);
@@ -131,8 +126,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_holder = holder.GlobalToValue(coord);
@@ -149,8 +143,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_given = func(coord, this->t_curr_);
@@ -167,8 +160,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
@@ -186,8 +178,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
@@ -205,8 +196,7 @@ class General : public spatial::FiniteElement<Part> {
       for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
-        auto *holder_data = residual->data()
-            + this->part_ptr_->GetCellDataOffset(holder.id());
+        Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
         for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
           const auto &coord = gauss.GetGlobalCoord(q);
           Value u_inner = holder.GlobalToValue(coord);
@@ -269,9 +259,7 @@ class WithLimiterAndSource : public General<Part> {
     // Integrate the source term, if there is any.
     if (!std::is_same_v<Source, DummySource<Part>>) {
       for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-        auto i_cell = cell.id();
-        Scalar *data = residual->data() +
-            this->part_ptr_->GetCellDataOffset(i_cell);
+        Scalar *data = this->AddCellDataOffset(residual, cell.id());
         const_cast<WithLimiterAndSource *>(this)->source_.UpdateCoeff(
             cell, this->t_curr_, data);
       }

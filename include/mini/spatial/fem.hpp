@@ -109,6 +109,13 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     return data;
   }
 
+  Scalar const *AddCellDataOffset(Column const &column, Index i_cell) const {
+    auto *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+    assert(column.data() <= data);
+    assert(data + Cell::kFields <= column.data() + column.size());
+    return data;
+  }
+
  public:  // set BCs
   template <typename Callable>
   void SetSmartBoundary(const std::string &name, Callable &&func) {
@@ -140,18 +147,20 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   void SetSolutionColumn(Column const &column) override {
     for (Cell *cell_ptr: this->part_ptr_->GetLocalCellPointers()) {
       auto i_cell = cell_ptr->id();
-      Scalar const *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      Scalar const *data = AddCellDataOffset(column, i_cell);
       data = cell_ptr->projection().GetCoeffFrom(data);
-      assert(data == column.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
+      assert(data == column.data() + column.size()
+          || data == AddCellDataOffset(column, i_cell + 1));
     }
   }
   Column GetSolutionColumn() const override {
     auto column = Column(cell_data_size_);
     for (const auto &cell : this->part_ptr_->GetLocalCells()) {
       auto i_cell = cell.id();
-      Scalar *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+      Scalar *data = AddCellDataOffset(&column, i_cell);
       data = cell.projection().WriteCoeffTo(data);
-      assert(data == column.data() + this->part_ptr_->GetCellDataOffset(i_cell + 1));
+      assert(data == column.data() + column.size()
+          || data == AddCellDataOffset(column, i_cell + 1));
     }
     return column;
   }
