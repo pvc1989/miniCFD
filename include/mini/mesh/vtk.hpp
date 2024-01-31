@@ -21,6 +21,7 @@ enum class CellType {
   kWedge15 = 26,
   kTetrahedron10 = 24,
   kHexahedron20 = 25,
+  kHexahedron27 = 29,
   kHexahedron64 = 72,
 };
 
@@ -155,6 +156,33 @@ const Local Hexahedron20<Local>::locals[20]{
 };
 
 /**
+ * @brief Mimic VTK's [vtkTriQuadraticHexahedron](https://vtk.org/doc/nightly/html/classvtkTriQuadraticHexahedron.html).
+ * 
+ * @tparam Local  Type of local coordinates.
+ */
+template <typename Local>
+class Hexahedron27 : public Element {
+ public:
+  static const Local locals[27];
+};
+template <typename Local>
+const Local Hexahedron27<Local>::locals[27]{
+  // nodes at corners (same as Hexahedron8)
+  Local(-1, -1, -1), Local(+1, -1, -1), Local(+1, +1, -1), Local(-1, +1, -1),
+  Local(-1, -1, +1), Local(+1, -1, +1), Local(+1, +1, +1), Local(-1, +1, +1),
+  // nodes on edges
+  Local(0., -1, -1), Local(+1, 0., -1), Local(0., +1, -1), Local(-1, 0., -1),
+  Local(0., -1, +1), Local(+1, 0., +1), Local(0., +1, +1), Local(-1, 0., +1),
+  Local(-1, -1, 0.), Local(+1, -1, 0.), Local(+1, +1, 0.), Local(-1, +1, 0.),
+  // nodes on faces
+  Local(-1, 0., 0.), Local(+1, 0., 0.),
+  Local(0., -1, 0.), Local(0., +1, 0.),
+  Local(0., 0., -1), Local(0., 0., +1),
+  // node on center
+  Local(0., 0., 0.),
+};
+
+/**
  * @brief Mimic VTK's [vtkLagrangeHexahedron](https://vtk.org/doc/nightly/html/classvtkLagrangeHexahedron.html).
  * 
  * @tparam Local  Type of local coordinates.
@@ -213,7 +241,7 @@ class Writer {
         cell_type = CellType::kWedge15;
         break;
       case 8:
-        cell_type = CellType::kHexahedron20;
+        cell_type = CellType::kHexahedron27;
         break;
       default:
         assert(false);
@@ -241,6 +269,9 @@ class Writer {
         break;
       case CellType::kHexahedron20:
         n_nodes = 20;
+        break;
+      case CellType::kHexahedron27:
+        n_nodes = 27;
         break;
       case CellType::kHexahedron64:
         n_nodes = 64;
@@ -276,6 +307,9 @@ class Writer {
       break;
     case CellType::kHexahedron20:
       vtk::Prepare<Cell>(Hexahedron20<Coord>::locals, 20, cell, coords, values);
+      break;
+    case CellType::kHexahedron27:
+      vtk::Prepare<Cell>(Hexahedron27<Coord>::locals, 27, cell, coords, values);
       break;
     case CellType::kHexahedron64:
       vtk::Prepare<Cell>(Hexahedron64<Coord>::locals, 64, cell, coords, values);
