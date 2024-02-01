@@ -55,6 +55,13 @@ std::string EncodeBase64(Byte const *input_data, std::size_t n_char) {
   return output;
 }
 
+template <typename Iter>
+std::pair<std::string, std::size_t> EncodeBase64(Iter first, Iter last) {
+  auto *input_data = reinterpret_cast<Byte const *>(&first[0]);
+  std::size_t n_char = (last - first) * sizeof(decltype(*first));
+  return {EncodeBase64(input_data, n_char), n_char};
+}
+
 /**
  * @brief Mimic VTK's cell types.
  * 
@@ -276,6 +283,7 @@ class Writer {
   using Cell = typename Part::Cell;
   using Value = typename Cell::Value;
   using Coord = typename Cell::Global;
+  using Scalar = typename Cell::Scalar;
 
   static CellType GetCellType(int n_corners) {
     CellType cell_type;
@@ -424,11 +432,21 @@ class Writer {
     vtu << "      </DataOnCells>\n";
     vtu << "      <Points>\n";
     vtu << "        <DataArray type=\"Float64\" Name=\"Points\" "
-        << "NumberOfComponents=\"3\" format=" << format << ">\n";
-    for (auto &xyz : coords) {
-      for (auto v : xyz) {
-        vtu << v << ' ';
+        << "NumberOfComponents=\"3\" format=" << "\"binary\"" << ">\n";
+    // for (auto &xyz : coords) {
+    //   for (auto v : xyz) {
+    //     vtu << v << ' ';
+    //   }
+    // }
+    static_assert(sizeof(Coord) == sizeof(Scalar) * 3);
+    {
+      auto [encoded, n_char] = EncodeBase64(coords.begin(), coords.end());
+      auto [n_char_encoded, _] = EncodeBase64(&n_char, (&n_char) + 1);
+      while (n_char_encoded.size() < 8) {
+        n_char_encoded.push_back('=');
       }
+      vtu << n_char_encoded;
+      vtu << encoded;
     }
     vtu << "\n        </DataArray>\n";
     vtu << "      </Points>\n";
