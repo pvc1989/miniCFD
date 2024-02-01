@@ -356,6 +356,7 @@ class Writer {
     }
     // write to an ofstream
     bool binary = false;
+    auto format = binary ? "\"binary\"" : "\"ascii\"";
     auto vtu = part.GetFileStream(soln_name, binary, "vtu");
     vtu << "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\""
         << " byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
@@ -366,7 +367,7 @@ class Writer {
     int K = values[0].size();
     for (int k = 0; k < K; ++k) {
       vtu << "        <DataArray type=\"Float64\" Name=\""
-          << part.GetFieldName(k) << "\" format=\"ascii\">\n";
+          << part.GetFieldName(k) << "\" format=" << format << ">\n";
       for (auto &f : values) {
         vtu << f[k] << ' ';
       }
@@ -377,7 +378,7 @@ class Writer {
     vtu << "      </DataOnCells>\n";
     vtu << "      <Points>\n";
     vtu << "        <DataArray type=\"Float64\" Name=\"Points\" "
-        << "NumberOfComponents=\"3\" format=\"ascii\">\n";
+        << "NumberOfComponents=\"3\" format=" << format << ">\n";
     for (auto &xyz : coords) {
       for (auto v : xyz) {
         vtu << v << ' ';
@@ -393,7 +394,7 @@ class Writer {
     }
     vtu << "\n        </DataArray>\n";
     vtu << "        <DataArray type=\"Int32\" Name=\"offsets\" "
-        << "format=\"ascii\">\n";
+        << "format=" << format << ">\n";
     int offset = 0;
     for (auto type : types) {
       offset += CountNodes(type);
@@ -401,7 +402,7 @@ class Writer {
     }
     vtu << "\n        </DataArray>\n";
     vtu << "        <DataArray type=\"UInt8\" Name=\"types\" "
-        << "format=\"ascii\">\n";
+        << "format=" << format << ">\n";
     for (auto type : types) {
       vtu << static_cast<int>(type) << ' ';
     }
