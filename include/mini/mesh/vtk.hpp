@@ -2,12 +2,58 @@
 #ifndef MINI_MESH_VTK_HPP_
 #define MINI_MESH_VTK_HPP_
 
+#include <fstream>
 #include <string>
 #include <vector>
 
 namespace mini {
 namespace mesh {
 namespace vtk {
+
+using Byte = char;
+
+std::string EncodeBase64(Byte const *input_data, std::size_t n_char) {
+  auto output = std::string();
+  output.resize((n_char / 3 + (n_char % 3 != 0)) * 4);
+  auto *output_data = output.data();
+  auto *output_end = output_data + output.size();
+  auto *input_end = input_data + n_char;
+  constexpr char base[]
+      = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  auto encode = [&base](Byte *out, Byte const *in) {
+    out[0] = base[((in[0] & 0xFC/* 1111 1100 */) >> 2)];
+    out[1] = base[((in[0] & 0x03/* 0000 0011 */) << 4)
+                + ((in[1] & 0xF0/* 1111 0000 */) >> 4)];
+    out[2] = base[((in[1] & 0x0F/* 0000 1111 */) << 2)
+                + ((in[2] & 0xC0/* 1100 0000 */) >> 6)];
+    out[3] = base[((in[2] & 0x3F/* 0011 1111 */))];
+  };
+  for (std::size_t i_triplet = 0, n_triplet = n_char / 3;
+      i_triplet < n_triplet; i_triplet++) {
+    // for each (char[3]) input_data, convert it to (char[4]) output_data:
+    encode(output_data, input_data);
+    input_data += 3;
+    output_data += 4;
+  }
+  assert(input_data <= input_end);
+  if (input_data != input_end) {  // need padding
+    Byte triplet[3] = { 0, 0, 0 };
+    int i = 0;
+    while (input_data != input_end) {
+      triplet[i++] = *input_data++;
+    }
+    assert(i == 1 || i == 2);
+    i++;  // 1 in input -> 2 in output, 2 in input -> 3 in output
+    encode(output_data, triplet);
+    output_data += i;
+    while (output_data != output_end) {
+      *output_data++ = '=';
+      i++;
+    }
+    assert(i == 4);
+  }
+  return output;
+}
 
 /**
  * @brief Mimic VTK's cell types.
