@@ -39,3 +39,7 @@ target_include_directories(test_mesh_overset PRIVATE ${CGNS_INC} ${METIS_INC} ${
 target_link_libraries(test_mesh_overset ${CGNS_LIB} metis)
 set_target_properties(test_mesh_overset PROPERTIES OUTPUT_NAME overset)
 add_test(NAME test_mesh_overset COMMAND overset)
+
+add_executable(test_mesh_vtk vtk.cpp)
+set_target_properties(test_mesh_vtk PROPERTIES OUTPUT_NAME vtk)
+add_test(NAME test_mesh_vtk COMMAND vtk)
