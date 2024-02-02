@@ -2,6 +2,7 @@
 #ifndef MINI_MESH_VTK_HPP_
 #define MINI_MESH_VTK_HPP_
 
+#include <bit>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -375,7 +376,12 @@ class Writer {
   }
 
  public:
+  static bool LittleEndian() {
+    return std::endian::native == std::endian::little;
+  }
   static void WriteSolutions(const Part &part, std::string const &soln_name) {
+    std::string endianness
+        = LittleEndian() ? "\"LittleEndian\"" : "\"BigEndian\"";
     // prepare data to be written
     auto types = std::vector<CellType>();
     auto coords = std::vector<Coord>();
@@ -389,7 +395,7 @@ class Writer {
           part.GetDirectoryName().c_str(), soln_name.c_str());
       auto pvtu = std::ofstream(temp, std::ios::out);
       pvtu << "<VTKFile type=\"PUnstructuredGrid\" version=\"1.0\" "
-          << "byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
+          << "byte_order=" << endianness << " header_type=\"UInt64\">\n";
       pvtu << "  <PUnstructuredGrid GhostLevel=\"1\">\n";
       pvtu << "    <PPointData>\n";
       for (int k = 0; k < Part::kComponents; ++k) {
@@ -413,7 +419,7 @@ class Writer {
     auto format = binary ? "\"binary\"" : "\"ascii\"";
     auto vtu = part.GetFileStream(soln_name, binary, "vtu");
     vtu << "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\""
-        << " byte_order=\"LittleEndian\" header_type=\"UInt64\">\n";
+        << " byte_order=" << endianness << " header_type=\"UInt64\">\n";
     vtu << "  <UnstructuredGrid>\n";
     vtu << "    <Piece NumberOfPoints=\"" << coords.size()
         << "\" NumberOfCells=\"" << types.size() << "\">\n";
