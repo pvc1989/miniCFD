@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
     return value_left;
   };
   if (suffix == "tetra") {
-    spatial.SetSupersonicInlet("3_S_31", state_left);   // Left
+    spatial.SetSupersonicOutlet("3_S_31");   // Left
     spatial.SetSupersonicInlet("3_S_23", state_right);  // Right
     spatial.SetSolidWall("3_S_27");  // Top
     spatial.SetSolidWall("3_S_1");   // Back
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
     spatial.SetSolidWall("3_S_15");  // Gap
   } else {
     assert(suffix == "hexa");
-    spatial.SetSupersonicInlet("4_S_31", state_left);   // Left
+    spatial.SetSupersonicOutlet("4_S_31");   // Left
     spatial.SetSupersonicInlet("4_S_23", state_right);  // Right
     spatial.SetSolidWall("4_S_27");  // Top
     spatial.SetSolidWall("4_S_1");   // Back
