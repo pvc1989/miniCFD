@@ -211,7 +211,7 @@ class Lobatto : public General<Part> {
   Lobatto &operator=(Lobatto &&) noexcept = default;
   ~Lobatto() noexcept = default;
 
-  virtual const char *name() const {
+  std::string name() const override {
     return "FR::Lobatto";
   }
 

@@ -47,8 +47,8 @@ class EnergyBasedViscosity : public Base {
   EnergyBasedViscosity &operator=(EnergyBasedViscosity &&) noexcept = default;
   ~EnergyBasedViscosity() noexcept = default;
 
-  virtual const char *name() const {
-    return "EnergyBasedViscosity";
+  std::string name() const override {
+    return this->Base::name() + "EnergyBasedViscosity";
   }
 
  public:  // override virtual methods defined in Base

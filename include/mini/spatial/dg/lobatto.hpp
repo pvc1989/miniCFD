@@ -116,8 +116,8 @@ class Lobatto : public General<Part> {
   Lobatto &operator=(Lobatto &&) noexcept = default;
   ~Lobatto() noexcept = default;
 
-  virtual const char *name() const {
-    return "FR::Lobatto";
+  std::string name() const override {
+    return "DG::Lobatto";
   }
 
   Column GetResidualColumn() const override {

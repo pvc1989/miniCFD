@@ -85,11 +85,11 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
 #endif
   }
 
-  virtual const char *name() const {
+  virtual std::string name() const {
     return "FEM";
   }
   std::string fullname() const {
-    return name() + ("_" + std::to_string(part_ptr_->mpi_rank()));
+    return name() + "_" + std::to_string(part_ptr_->mpi_rank());
   }
 
 #ifdef ENABLE_LOGGING

@@ -223,7 +223,7 @@ class General : public spatial::FiniteElement<Part> {
   General &operator=(General &&) noexcept = default;
   ~General() noexcept = default;
 
-  virtual const char *name() const {
+  std::string name() const override {
     return "FR::General";
   }
 
