@@ -51,8 +51,7 @@ class General : public spatial::FiniteElement<Part> {
     const auto &gauss = cell.gauss();
     for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
       const auto &xyz = gauss.GetGlobalCoord(q);
-      Value cv = cell.projection().GlobalToValue(xyz);
-      auto flux = Riemann::GetFluxMatrix(cv);
+      auto flux = Base::GetFluxMatrix(cell.projection(), q);
       flux *= gauss.GetGlobalWeight(q);
       auto grad = cell.projection().GlobalToBasisGradients(xyz);
       Coeff prod = flux * grad;

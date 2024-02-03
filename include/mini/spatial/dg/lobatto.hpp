@@ -82,16 +82,16 @@ class Lobatto : public General<Part> {
     return gauss.GetGlobalWeight(q);
   }
   using FluxMatrix = typename Riemann::FluxMatrix;
-  static FluxMatrix GetWeightedFluxMatrix(const Value &value,
+  static FluxMatrix GetWeightedFluxMatrix(
       const Cell &cell, int q) requires(kLocal) {
-    auto flux = Riemann::GetFluxMatrix(value);
+    auto flux = Base::GetFluxMatrix(cell.projection(), q);
     flux = cell.projection().GlobalFluxToLocalFlux(flux, q);
     flux *= GetWeight(cell.gauss(), q);
     return flux;
   }
-  static FluxMatrix GetWeightedFluxMatrix(const Value &value,
+  static FluxMatrix GetWeightedFluxMatrix(
       const Cell &cell, int q) requires(!kLocal) {
-    auto flux = Riemann::GetFluxMatrix(value);
+    auto flux = Base::GetFluxMatrix(cell.projection(), q);
     flux *= GetWeight(cell.gauss(), q);
     return flux;
   }
@@ -141,8 +141,7 @@ class Lobatto : public General<Part> {
   void AddFluxDivergence(Cell const &cell, Scalar *data) const override {
     const auto &gauss = cell.gauss();
     for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-      auto const &value = cell.projection().GetValue(q);
-      auto flux = GetWeightedFluxMatrix(value, cell, q);
+      auto flux = GetWeightedFluxMatrix(cell, q);
       auto const &grad = cell.projection().GetBasisGradients(q);
       Coeff prod = flux * grad;
       cell.projection().AddCoeffTo(prod, data);
