@@ -138,20 +138,18 @@ class Lobatto : public General<Part> {
   }
 
  protected:  // override virtual methods defined in Base
-  void AddFluxDivergence(Column *residual) const override {
-    if (Part::kDegrees > 0) {
-      for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-        Scalar *data = this->AddCellDataOffset(residual, cell.id());
-        const auto &gauss = cell.gauss();
-        for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-          auto const &value = cell.projection().GetValue(q);
-          auto flux = GetWeightedFluxMatrix(value, cell, q);
-          auto const &grad = cell.projection().GetBasisGradients(q);
-          Coeff prod = flux * grad;
-          cell.projection().AddCoeffTo(prod, data);
-        }
-      }
+  void AddFluxDivergence(Cell const &cell, Scalar *data) const override {
+    const auto &gauss = cell.gauss();
+    for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+      auto const &value = cell.projection().GetValue(q);
+      auto flux = GetWeightedFluxMatrix(value, cell, q);
+      auto const &grad = cell.projection().GetBasisGradients(q);
+      Coeff prod = flux * grad;
+      cell.projection().AddCoeffTo(prod, data);
     }
+  }
+  void AddFluxDivergence(Column *residual) const override {
+    return this->Base::AddFluxDivergence(residual);
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {

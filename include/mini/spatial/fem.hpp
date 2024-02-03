@@ -220,7 +220,13 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses
-  virtual void AddFluxDivergence(Column *residual) const = 0;
+  virtual void AddFluxDivergence(Cell const &cell, Scalar *data) const = 0;
+  virtual void AddFluxDivergence(Column *residual) const {
+    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+      auto *data = this->AddCellDataOffset(residual, cell.id());
+      this->AddFluxDivergence(cell, data);
+    }
+  }
   virtual void AddFluxOnLocalFaces(Column *residual) const = 0;
   virtual void AddFluxOnGhostFaces(Column *residual) const = 0;
   virtual void ApplySolidWall(Column *residual) const = 0;

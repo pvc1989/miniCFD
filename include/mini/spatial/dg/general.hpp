@@ -47,22 +47,22 @@ class General : public spatial::FiniteElement<Part> {
   }
 
  protected:  // implement pure virtual methods declared in Base
+  void AddFluxDivergence(Cell const &cell, Scalar *data) const override {
+    const auto &gauss = cell.gauss();
+    for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
+      const auto &xyz = gauss.GetGlobalCoord(q);
+      Value cv = cell.projection().GlobalToValue(xyz);
+      auto flux = Riemann::GetFluxMatrix(cv);
+      flux *= gauss.GetGlobalWeight(q);
+      auto grad = cell.projection().GlobalToBasisGradients(xyz);
+      Coeff prod = flux * grad;
+      cell.projection().AddCoeffTo(prod, data);
+    }
+  }
   void AddFluxDivergence(Column *residual) const override {
     // Integrate the dot-product of flux and basis gradient, if there is any.
     if (Part::kDegrees > 0) {
-      for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
-        Scalar *data = this->AddCellDataOffset(residual, cell.id());
-        const auto &gauss = cell.gauss();
-        for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-          const auto &xyz = gauss.GetGlobalCoord(q);
-          Value cv = cell.projection().GlobalToValue(xyz);
-          auto flux = Riemann::GetFluxMatrix(cv);
-          flux *= gauss.GetGlobalWeight(q);
-          auto grad = cell.projection().GlobalToBasisGradients(xyz);
-          Coeff prod = flux * grad;
-          cell.projection().AddCoeffTo(prod, data);
-        }
-      }
+      this->Base::AddFluxDivergence(residual);
     }
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
