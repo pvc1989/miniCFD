@@ -343,6 +343,18 @@ class Hexahedron {
   /**
    * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
    * 
+   * This version is compiled only if `kLocal` is `false`.
+   * 
+   */
+  Gradient GetGlobalGradient(int ijk) const requires(!kLocal) {
+    Mat3xN const &basis_grad = GetBasisGradients(ijk);
+    return basis_grad * coeff().transpose();
+  }
+  /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
+   * 
+   * This version is compiled only if `kLocal` is `true`.
+   * 
    */
   Gradient GetGlobalGradient(int ijk) const requires(kLocal) {
     return GetGlobalGradient(GetValue(ijk), GetLocalGradient(ijk), ijk);

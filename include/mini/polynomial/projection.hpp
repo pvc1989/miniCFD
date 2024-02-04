@@ -79,6 +79,7 @@ class Projection {
   using Mat1xN = algebra::Matrix<Scalar, 1, N>;
   using Coeff = algebra::Matrix<Scalar, K, N>;
   using Value = algebra::Matrix<Scalar, K, 1>;
+  using Gradient = algebra::Matrix<Scalar, 3, K>;
 
   using GaussOnLine = gauss::Legendre<Scalar, kDegrees + 1>;
 
@@ -144,6 +145,15 @@ class Projection {
   }
   Mat3xN GlobalToBasisGradients(Global const &global) const {
     return basis_.GetGradValue(global).transpose();
+  }
+  /**
+   * @brief Get \f$ \begin{bmatrix}\partial_{x}\\ \partial_{y}\\ \cdots \end{bmatrix} u \f$ at a Gaussian point.
+   * 
+   */
+  Gradient GetGlobalGradient(int i) const {
+    auto &global = gauss().GetGlobalCoord(i);
+    Mat3xN basis_grad = GlobalToBasisGradients(global);
+    return basis_grad * coeff().transpose();
   }
 
   template <typename Callable>
