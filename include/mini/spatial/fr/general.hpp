@@ -228,7 +228,7 @@ class General : public spatial::FiniteElement<Part> {
   }
 
  protected:  // override virtual methods defined in Base
-  using CellToFlux = FluxMatrix (*)(const Cell &cell, int q);
+  using CellToFlux = typename Base::CellToFlux;
   void AddFluxDivergence(CellToFlux cell_to_flux, Cell const &cell,
       Scalar *data) const override {
     const auto &gauss = cell.gauss();

@@ -168,7 +168,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     this->part_ptr_->ShareGhostCellCoeffs();
     auto residual = Column(cell_data_size_);
     residual.setZero();
-    this->AddFluxDivergence(&residual);
+    this->AddFluxDivergence(&GetFluxMatrix, &residual);
     this->AddFluxOnLocalFaces(&residual);
     this->AddFluxOnBoundaries(&residual);
     this->part_ptr_->UpdateGhostCellCoeffs();
@@ -222,13 +222,27 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
  protected:  // declare pure virtual methods to be implemented in subclasses
   using FluxMatrix = typename Riemann::FluxMatrix;
   using CellToFlux = FluxMatrix (*)(const Cell &cell, int q);
+
+  /**
+   * @brief Add the flux divergence to the residual column of the given Cell.
+   * 
+   * @param cell_to_flux the pointer of a function that gets the FluxMatrix on a given Gaussian point of a Cell
+   * @param cell the Cell to be processed
+   * @param data the residual column of the given Cell
+   */
   virtual void AddFluxDivergence(CellToFlux cell_to_flux, Cell const &cell,
       Scalar *data) const = 0;
-  virtual void AddFluxDivergence(Column *residual) const {
-    FluxMatrix (*func)(const Cell &, int) = &GetFluxMatrix;
+  /**
+   * @brief Add the flux divergence to the residual column of the given Part.
+   * 
+   * @param cell_to_flux the pointer of a function that gets the FluxMatrix on a given Gaussian point of a Cell
+   * @param data the residual column of the given Part
+   */
+  virtual void AddFluxDivergence(CellToFlux cell_to_flux,
+      Column *residual) const {
     for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
       auto *data = this->AddCellDataOffset(residual, cell.id());
-      this->AddFluxDivergence(func, cell, data);
+      this->AddFluxDivergence(cell_to_flux, cell, data);
     }
   }
   virtual void AddFluxOnLocalFaces(Column *residual) const = 0;

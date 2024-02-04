@@ -218,17 +218,19 @@ int main(int argc, char* argv[]) {
   class Test : public Spatial {
     using SEM = Spatial;
     using FEM = typename Spatial::Base;
+    using CellToFlux = typename FEM::CellToFlux;
 
    public:
     explicit Test(Part *part_ptr)
         : Spatial(part_ptr) {
     }
 
-    void AddFluxDivergence(Column *residual) const override {
+    void AddFluxDivergence(Column *residual) const {
       residual->setZero();
-      this->SEM::AddFluxDivergence(residual);
+      CellToFlux cell_to_flux = &FEM::Base::GetFluxMatrix;
+      this->SEM::AddFluxDivergence(cell_to_flux, residual);
       *residual *= -1.0;
-      this->FEM::AddFluxDivergence(residual);
+      this->FEM::AddFluxDivergence(cell_to_flux, residual);
     }
     void AddFluxOnLocalFaces(Column *residual) const override {
       residual->setZero();

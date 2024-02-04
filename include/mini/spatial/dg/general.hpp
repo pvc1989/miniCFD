@@ -18,9 +18,8 @@ namespace dg {
 
 template <typename Part>
 class General : public spatial::FiniteElement<Part> {
-  using Base = spatial::FiniteElement<Part>;
-
  public:
+  using Base = spatial::FiniteElement<Part>;
   using Riemann = typename Base::Riemann;
   using Scalar = typename Base::Scalar;
   using Face = typename Base::Face;
@@ -60,10 +59,11 @@ class General : public spatial::FiniteElement<Part> {
       cell.projection().AddCoeffTo(prod, data);
     }
   }
-  void AddFluxDivergence(Column *residual) const override {
+  void AddFluxDivergence(CellToFlux cell_to_flux,
+      Column *residual) const override {
     // Integrate the dot-product of flux and basis gradient, if there is any.
     if (Part::kDegrees > 0) {
-      this->Base::AddFluxDivergence(residual);
+      this->Base::AddFluxDivergence(cell_to_flux, residual);
     }
   }
   void AddFluxOnLocalFaces(Column *residual) const override {

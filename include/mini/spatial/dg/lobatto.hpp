@@ -149,8 +149,9 @@ class Lobatto : public General<Part> {
       cell.projection().AddCoeffTo(prod, data);
     }
   }
-  void AddFluxDivergence(Column *residual) const override {
-    return this->Base::AddFluxDivergence(residual);
+  void AddFluxDivergence(CellToFlux cell_to_flux,
+      Column *residual) const override {
+    return this->Base::AddFluxDivergence(cell_to_flux, residual);
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
     for (const Face &face : this->part_ptr_->GetLocalFaces()) {
