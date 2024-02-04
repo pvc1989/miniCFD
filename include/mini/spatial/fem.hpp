@@ -220,11 +220,15 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
 
  protected:  // declare pure virtual methods to be implemented in subclasses
-  virtual void AddFluxDivergence(Cell const &cell, Scalar *data) const = 0;
+  using FluxMatrix = typename Riemann::FluxMatrix;
+  using CellToFlux = FluxMatrix (*)(const Cell &cell, int q);
+  virtual void AddFluxDivergence(CellToFlux cell_to_flux, Cell const &cell,
+      Scalar *data) const = 0;
   virtual void AddFluxDivergence(Column *residual) const {
+    FluxMatrix (*func)(const Cell &, int) = &GetFluxMatrix;
     for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
       auto *data = this->AddCellDataOffset(residual, cell.id());
-      this->AddFluxDivergence(cell, data);
+      this->AddFluxDivergence(func, cell, data);
     }
   }
   virtual void AddFluxOnLocalFaces(Column *residual) const = 0;
@@ -237,7 +241,6 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   virtual void ApplySmartBoundary(Column *residual) const = 0;
 
  protected:
-  using FluxMatrix = typename Riemann::FluxMatrix;
   static FluxMatrix GetFluxMatrix(const Projection &projection, int q)
       requires(!mini::riemann::Diffusive<Riemann>) {
     return Riemann::GetFluxMatrix(projection.GetValue(q));
@@ -249,6 +252,9 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     const auto &gradient = projection.GetGlobalGradient(q);
     Riemann::MinusViscousFlux(value, gradient, &flux_matrix);
     return flux_matrix;
+  }
+  static FluxMatrix GetFluxMatrix(const Cell &cell, int q) {
+    return GetFluxMatrix(cell.projection(), q);
   }
 };
 

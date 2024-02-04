@@ -228,11 +228,13 @@ class General : public spatial::FiniteElement<Part> {
   }
 
  protected:  // override virtual methods defined in Base
-  void AddFluxDivergence(Cell const &cell, Scalar *data) const override {
+  using CellToFlux = FluxMatrix (*)(const Cell &cell, int q);
+  void AddFluxDivergence(CellToFlux cell_to_flux, Cell const &cell,
+      Scalar *data) const override {
     const auto &gauss = cell.gauss();
     std::array<FluxMatrix, kCellQ> flux;
     for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
-      FluxMatrix global_flux = Base::GetFluxMatrix(cell.projection(), q);
+      FluxMatrix global_flux = cell_to_flux(cell, q);
       flux[q] = cell.projection().GlobalFluxToLocalFlux(global_flux, q);
     }
     for (int q = 0, n = gauss.CountPoints(); q < n; ++q) {
