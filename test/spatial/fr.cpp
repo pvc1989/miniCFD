@@ -11,12 +11,6 @@
 
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
-#include "mini/mesh/vtk.hpp"
-#include "mini/limiter/weno.hpp"
-#include "mini/riemann/concept.hpp"
-#include "mini/riemann/rotated/multiple.hpp"
-#include "mini/riemann/diffusive/linear.hpp"
-#include "mini/riemann/diffusive/direct_dg.hpp"
 #include "mini/polynomial/hexahedron.hpp"
 
 #define ENABLE_LOGGING
@@ -25,30 +19,10 @@
 #include "mini/basis/vincent.hpp"
 #include "mini/input/path.hpp"  // defines PROJECT_BINARY_DIR
 
-constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
-using Scalar = double;
-using Convection = mini::
-    riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
-using Diffusion = mini::riemann::diffusive::DirectDG<
-    mini::riemann::diffusive::Isotropic<Scalar, kComponents>
->;
-using Riemann = mini::riemann::ConvectionDiffusion<Convection, Diffusion>;
-using Coord = typename Riemann::Vector;
-using Value = typename Riemann::Conservative;
-Value func(const Coord& xyz) {
-  auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
-  return Value(r, 1 - r + (r >= 1));
-}
-Value moving(const Coord& xyz, double t) {
-  auto x = xyz[0], y = xyz[1];
-  return Value(x + y, x - y);
-}
-using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
+#include "test/mesh/part.hpp"
+
 using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
 using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
-
-int n_core, i_core;
-double time_begin;
 
 auto case_name = PROJECT_BINARY_DIR + std::string("/test/mesh/double_mach");
 
@@ -80,7 +54,7 @@ auto GetResidualColumn(Spatial &spatial, Part &part) {
   }
   spatial.SetTime(1.5);
   std::printf("%s() proc[%d/%d] cost %f sec\n",
-      spatial.name(), i_core, n_core, MPI_Wtime() - time_begin);
+      spatial.name().c_str(), i_core, n_core, MPI_Wtime() - time_begin);
   MPI_Barrier(MPI_COMM_WORLD);
 
   time_begin = MPI_Wtime();

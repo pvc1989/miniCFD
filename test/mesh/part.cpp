@@ -17,19 +17,7 @@
 #include "mini/polynomial/hexahedron.hpp"
 #include "mini/input/path.hpp"  // defines INPUT_DIR
 
-int n_core, i_core;
-double time_begin;
-
-constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
-using Scalar = double;
-using Riemann = mini::
-    riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
-using Coord = typename Riemann::Vector;
-using Value = typename Riemann::Conservative;
-Value func(const Coord& xyz) {
-  auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
-  return Value(r, 1 - r + (r >= 1));
-}
+#include "test/mesh/part.hpp"
 
 template <class Part>
 void Process(Part *part, const std::string &solution_name) {

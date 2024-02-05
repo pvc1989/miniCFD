@@ -21,24 +21,10 @@
 #include "mini/temporal/ode.hpp"
 #include "mini/input/path.hpp"  // defines PROJECT_BINARY_DIR
 
-constexpr int kComponents{2}, kDimensions{3}, kDegrees{2};
-using Scalar = double;
+#include "test/mesh/part.hpp"
 
 mini::temporal::Euler<Scalar> temporal;
 double t_curr = 1.5, dt = 1e-3;
-
-using Riemann = mini::
-    riemann::rotated::Multiple<Scalar, kComponents, kDimensions>;
-using Coord = typename Riemann::Vector;
-using Value = typename Riemann::Conservative;
-Value func(const Coord& xyz) {
-  auto r = std::hypot(xyz[0] - 2, xyz[1] - 0.5);
-  return Value(r, 1 - r + (r >= 1));
-}
-Value moving(const Coord& xyz, double t) {
-  auto x = xyz[0], y = xyz[1];
-  return Value(x + y, x - y);
-}
 
 template <class Part>
 Scalar Norm1(Part const &part){
@@ -117,8 +103,6 @@ int main(int argc, char* argv[]) {
   /* aproximated by Projection on Lagrange basis on Lobatto roots */
 {
   time_begin = MPI_Wtime();
-  using Gx = mini::gauss::Lobatto<Scalar, kDegrees + 1>;
-
   /* Check equivalence between local and global formulation. */
 {
   using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents, true>;
