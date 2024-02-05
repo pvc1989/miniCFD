@@ -23,7 +23,7 @@ set_target_properties(test_mesh_shuffler PROPERTIES OUTPUT_NAME shuffler)
 add_test(NAME test_mesh_shuffler COMMAND shuffler)
 
 add_executable(test_mesh_part part.cpp)
-target_include_directories(test_mesh_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR})
+target_include_directories(test_mesh_part PRIVATE ${CGNS_INC} ${EIGEN_INC} ${MPI_INCLUDE_PATH} ${GTestMPI_INC} ${MPI_INCLUDE_PATH} ${PROJECT_SOURCE_DIR})
 target_link_libraries(test_mesh_part ${CGNS_LIB} ${MPI_LIBRARIES})
 set_target_properties(test_mesh_part PROPERTIES OUTPUT_NAME part)
 add_test(NAME test_mesh_part COMMAND mpirun -n ${N_CORE} part)

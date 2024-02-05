@@ -5,10 +5,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "mpi.h"
-#include "gtest/gtest.h"
-#include "gtest_mpi/gtest_mpi.hpp"
-
 #include "mini/mesh/cgns.hpp"
 #include "mini/mesh/part.hpp"
 #include "mini/polynomial/hexahedron.hpp"
@@ -31,14 +27,7 @@ class TestSpatialFR : public ::testing::Test {
   void SetUp() override;
 };
 void TestSpatialFR::SetUp() {
-  using Jacobian = typename Riemann::Jacobian;
-  Riemann::SetConvectionCoefficient(
-    Jacobian{ {3., 0.}, {0., 4.} },
-    Jacobian{ {5., 0.}, {0., 6.} },
-    Jacobian{ {7., 0.}, {0., 8.} }
-  );
-  Riemann::SetDiffusionCoefficient(1.0);
-  Riemann::SetBetaValues(2.0, 1.0 / 12);
+  ResetRiemann();
 }
 template <typename Spatial>
 auto GetResidualColumn(Spatial &spatial, Part &part) {
@@ -110,30 +99,5 @@ TEST_F(TestSpatialFR, CompareResiduals) {
 // mpirun -n 4 ./part must be run in ../mesh
 // mpirun -n 4 ./fr
 int main(int argc, char* argv[]) {
-  // Initialize MPI before any call to gtest_mpi
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &n_core);
-  MPI_Comm_rank(MPI_COMM_WORLD, &i_core);
-  cgp_mpi_comm(MPI_COMM_WORLD);
-
-  // Intialize google test
-  ::testing::InitGoogleTest(&argc, argv);
-
-  // Add a test environment, which will initialize a test communicator
-  // (a duplicate of MPI_COMM_WORLD)
-  ::testing::AddGlobalTestEnvironment(new gtest_mpi::MPITestEnvironment());
-
-  auto& test_listeners = ::testing::UnitTest::GetInstance()->listeners();
-
-  // Remove default listener and replace with the custom MPI listener
-  delete test_listeners.Release(test_listeners.default_result_printer());
-  test_listeners.Append(new gtest_mpi::PrettyMPIUnitTestResultPrinter());
-
-  // run tests
-  auto exit_code = RUN_ALL_TESTS();
-
-  // Finalize MPI before exiting
-  MPI_Finalize();
-
-  return exit_code;
+  return Main(argc, argv);
 }

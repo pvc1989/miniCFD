@@ -100,10 +100,7 @@ int main(int argc, char* argv[]) {
 {
   std::printf("Run Part() on proc[%d/%d] at %f sec\n",
       i_core, n_core, MPI_Wtime() - time_begin);
-  using Gx = mini::gauss::Lobatto<double, kDegrees + 1>;
-  using Gy = mini::gauss::Lobatto<double, kDegrees + 1>;
-  using Gz = mini::gauss::Lobatto<double, kDegrees + 1>;
-  using Projection = mini::polynomial::Hexahedron<Gx, Gy, Gz, kComponents>;
+  using Projection = mini::polynomial::Hexahedron<Gx, Gx, Gx, kComponents>;
   using Part = mini::mesh::part::Part<cgsize_t, Riemann, Projection>;
   auto part = Part(case_name, i_core, n_core);
   Process(&part, "Interpolation");
