@@ -67,7 +67,7 @@ class General : public spatial::FiniteElement<Part> {
     }
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetLocalFaces()) {
+    for (const Face &face : this->part().GetLocalFaces()) {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
@@ -87,7 +87,7 @@ class General : public spatial::FiniteElement<Part> {
     }
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetGhostFaces()) {
+    for (const Face &face : this->part().GetGhostFaces()) {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
@@ -107,7 +107,7 @@ class General : public spatial::FiniteElement<Part> {
  protected:  // virtual methods that might be overriden in subclasses
   void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -124,7 +124,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -141,7 +141,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySupersonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->supersonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -158,7 +158,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySubsonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -176,7 +176,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySubsonicOutlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -194,7 +194,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySmartBoundary(Column *residual) const override {
     for (auto &[name, func] : this->smart_boundary_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -259,7 +259,7 @@ class WithLimiterAndSource : public General<Part> {
   virtual void AddSourceIntegral(Column *residual) const {
     // Integrate the source term, if there is any.
     if (!std::is_same_v<Source, DummySource<Part>>) {
-      for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+      for (const Cell &cell : this->part().GetLocalCells()) {
         Scalar *data = this->AddCellDataOffset(residual, cell.id());
         const_cast<WithLimiterAndSource *>(this)->source_.UpdateCoeff(
             cell, this->t_curr_, data);

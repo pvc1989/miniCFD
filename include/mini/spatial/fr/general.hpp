@@ -208,13 +208,13 @@ class General : public spatial::FiniteElement<Part> {
       : Base(part_ptr), vincent_(Part::kDegrees, c_next) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
-    auto local_faces = this->part_ptr_->GetLocalFaces();
+    auto local_faces = this->part().GetLocalFaces();
     CacheCorrectionGradients(local_faces, face_to_holder, &holder_cache_);
     CacheCorrectionGradients(local_faces, face_to_sharer, &sharer_cache_);
-    auto ghost_faces = this->part_ptr_->GetGhostFaces();
+    auto ghost_faces = this->part().GetGhostFaces();
     CacheCorrectionGradients(ghost_faces, face_to_holder, &holder_cache_);
     CacheCorrectionGradients(ghost_faces, face_to_sharer, &sharer_cache_);
-    auto boundary_faces = this->part_ptr_->GetBoundaryFaces();
+    auto boundary_faces = this->part().GetBoundaryFaces();
     CacheCorrectionGradients(boundary_faces, face_to_holder, &holder_cache_);
   }
   General(const General &) = default;
@@ -300,7 +300,7 @@ class General : public spatial::FiniteElement<Part> {
     return { f_holder, f_sharer };
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetLocalFaces()) {
+    for (const Face &face : this->part().GetLocalFaces()) {
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -326,7 +326,7 @@ class General : public spatial::FiniteElement<Part> {
     }
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetGhostFaces()) {
+    for (const Face &face : this->part().GetGhostFaces()) {
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
       auto *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -348,7 +348,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
@@ -401,7 +401,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());
         auto const &holder_cache = holder_cache_[face.id()];
@@ -422,7 +422,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySupersonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->supersonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -447,7 +447,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySubsonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -472,7 +472,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySubsonicOutlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -497,7 +497,7 @@ class General : public spatial::FiniteElement<Part> {
   }
   void ApplySmartBoundary(Column *residual) const override {
     for (auto &[name, func] : this->smart_boundary_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         auto *holder_data = this->AddCellDataOffset(residual, holder.id());

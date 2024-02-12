@@ -66,9 +66,8 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
 
  public:
   explicit FiniteElement(Part *part_ptr)
-      : part_ptr_(part_ptr), cell_data_size_(this->part_ptr_->GetCellDataSize()) {
-    assert(cell_data_size_
-        == Cell::kFields * this->part_ptr_->CountLocalCells());
+      : part_ptr_(part_ptr), cell_data_size_(part_ptr->GetCellDataSize()) {
+    assert(cell_data_size_ == Cell::kFields * part_ptr->CountLocalCells());
 #ifdef ENABLE_LOGGING
     log_ = std::make_unique<std::ofstream>();
 #endif
@@ -92,6 +91,10 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     return name() + "_" + std::to_string(part_ptr_->mpi_rank());
   }
 
+  Part const &part() const {
+    return *part_ptr_;
+  }
+
 #ifdef ENABLE_LOGGING
   std::ofstream &log() const {
     if (!log_->is_open()) {
@@ -103,14 +106,14 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
 #endif
 
   Scalar *AddCellDataOffset(Column *column, Index i_cell) const {
-    auto *data = column->data() + this->part_ptr_->GetCellDataOffset(i_cell);
+    auto *data = column->data() + part().GetCellDataOffset(i_cell);
     assert(column->data() <= data);
     assert(data + Cell::kFields <= column->data() + column->size());
     return data;
   }
 
   Scalar const *AddCellDataOffset(Column const &column, Index i_cell) const {
-    auto *data = column.data() + this->part_ptr_->GetCellDataOffset(i_cell);
+    auto *data = column.data() + part().GetCellDataOffset(i_cell);
     assert(column.data() <= data);
     assert(data + Cell::kFields <= column.data() + column.size());
     return data;
@@ -155,7 +158,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   }
   Column GetSolutionColumn() const override {
     auto column = Column(cell_data_size_);
-    for (const auto &cell : this->part_ptr_->GetLocalCells()) {
+    for (const Cell &cell : part().GetLocalCells()) {
       auto i_cell = cell.id();
       Scalar *data = AddCellDataOffset(&column, i_cell);
       data = cell.projection().WriteCoeffTo(data);
@@ -240,7 +243,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
    */
   virtual void AddFluxDivergence(CellToFlux cell_to_flux,
       Column *residual) const {
-    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+    for (const Cell &cell : part().GetLocalCells()) {
       auto *data = this->AddCellDataOffset(residual, cell.id());
       this->AddFluxDivergence(cell_to_flux, cell, data);
     }

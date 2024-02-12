@@ -102,13 +102,13 @@ class Lobatto : public General<Part> {
       : Base(part_ptr) {
     auto face_to_holder = [](auto &face) -> auto & { return face.holder(); };
     auto face_to_sharer = [](auto &face) -> auto & { return face.sharer(); };
-    auto local_cells = this->part_ptr_->GetLocalFaces();
+    auto local_cells = this->part().GetLocalFaces();
     MatchGaussianPoints(local_cells, face_to_holder, &i_node_on_holder_);
     MatchGaussianPoints(local_cells, face_to_sharer, &i_node_on_sharer_);
-    auto ghost_cells = this->part_ptr_->GetGhostFaces();
+    auto ghost_cells = this->part().GetGhostFaces();
     MatchGaussianPoints(ghost_cells, face_to_holder, &i_node_on_holder_);
     MatchGaussianPoints(ghost_cells, face_to_sharer, &i_node_on_sharer_);
-    auto boundary_cells = this->part_ptr_->GetBoundaryFaces();
+    auto boundary_cells = this->part().GetBoundaryFaces();
     MatchGaussianPoints(boundary_cells, face_to_holder, &i_node_on_holder_);
   }
   Lobatto(const Lobatto &) = default;
@@ -124,7 +124,7 @@ class Lobatto : public General<Part> {
   Column GetResidualColumn() const override {
     Column residual = this->Base::GetResidualColumn();
     // divide mass matrix for each cell
-    for (const Cell &cell : this->part_ptr_->GetLocalCells()) {
+    for (const Cell &cell : this->part().GetLocalCells()) {
       auto i_cell = cell.id();
       Scalar *data = this->AddCellDataOffset(&residual, i_cell);
       const auto &gauss = cell.gauss();
@@ -154,7 +154,7 @@ class Lobatto : public General<Part> {
     return this->Base::AddFluxDivergence(cell_to_flux, residual);
   }
   void AddFluxOnLocalFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetLocalFaces()) {
+    for (const Face &face : this->part().GetLocalFaces()) {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
@@ -175,7 +175,7 @@ class Lobatto : public General<Part> {
     }
   }
   void AddFluxOnGhostFaces(Column *residual) const override {
-    for (const Face &face : this->part_ptr_->GetGhostFaces()) {
+    for (const Face &face : this->part().GetGhostFaces()) {
       const auto &gauss = face.gauss();
       const auto &holder = face.holder();
       const auto &sharer = face.sharer();
@@ -195,7 +195,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySolidWall(Column *residual) const override {
     for (const auto &name : this->solid_wall_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -212,7 +212,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySupersonicOutlet(Column *residual) const override {
     for (const auto &name : this->supersonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -229,7 +229,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySupersonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->supersonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -246,7 +246,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySubsonicInlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_inlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -264,7 +264,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySubsonicOutlet(Column *residual) const override {
     for (auto &[name, func] : this->subsonic_outlet_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
@@ -282,7 +282,7 @@ class Lobatto : public General<Part> {
   }
   void ApplySmartBoundary(Column *residual) const override {
     for (auto &[name, func] : this->smart_boundary_) {
-      for (const Face &face : this->part_ptr_->GetBoundaryFaces(name)) {
+      for (const Face &face : this->part().GetBoundaryFaces(name)) {
         const auto &gauss = face.gauss();
         const auto &holder = face.holder();
         Scalar *holder_data = this->AddCellDataOffset(residual, holder.id());
