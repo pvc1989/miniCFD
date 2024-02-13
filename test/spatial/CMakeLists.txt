@@ -1,6 +1,7 @@
 set (cases
   dg
   fr
+  viscosity
 )
 foreach (case ${cases})
   add_executable(test_spatial_${case} ${case}.cpp)

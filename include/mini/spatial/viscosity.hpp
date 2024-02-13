@@ -11,13 +11,16 @@
 #include <vector>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 
 #include "mini/algebra/eigen.hpp"
 #include "mini/riemann/concept.hpp"
 #include "mini/temporal/ode.hpp"
 #include "mini/spatial/fem.hpp"
-
+#include "mini/riemann/concept.hpp"
+#include "mini/riemann/diffusive/linear.hpp"
+#include "mini/riemann/diffusive/direct_dg.hpp"
 
 namespace mini {
 namespace spatial {
@@ -36,11 +39,22 @@ class EnergyBasedViscosity : public FiniteElement<Part> {
   using Value = typename Base::Value;
   using Temporal = typename Base::Temporal;
   using Column = typename Base::Column;
+  using FluxMatrix = typename Base::FluxMatrix;
   using CellToFlux = typename Base::CellToFlux;
   using DampingMatrix = algebra::Matrix<Scalar, Cell::N, Cell::N>;
 
  private:
   Base *base_ptr_;
+
+  using Diffusion = mini::riemann::diffusive::Isotropic<Scalar, Cell::K>;
+  static FluxMatrix GetDiffusiveFluxMatrix(const Cell &cell, int q) {
+    const auto &projection = cell.projection();
+    const auto &value = projection.GetValue(q);
+    FluxMatrix flux_matrix; flux_matrix.setZero();
+    const auto &gradient = projection.GetGlobalGradient(q);
+    Riemann::MinusViscousFlux(value, gradient, &flux_matrix);
+    return flux_matrix;
+  }
 
  public:
   explicit EnergyBasedViscosity(Base *base_ptr)
@@ -69,6 +83,32 @@ class EnergyBasedViscosity : public FiniteElement<Part> {
  public:  // methods for generating artificial viscosity
   std::vector<DampingMatrix> BuildDampingMatrices() const {
     auto matrices = std::vector<DampingMatrix>(part().CountLocalCells());
+    Diffusion::SetDiffusionCoefficient(1.0);
+    for (Cell *cell_ptr: base_ptr_->part_ptr()->GetLocalCellPointers()) {
+      // Nullify all its neighbors' coeffs:
+      for (Cell *neighbor : cell_ptr->adj_cells_) {
+        neighbor->projection().coeff().setZero();
+      }
+      // Build the damping matrix column by column:
+      auto &matrix = matrices.at(cell_ptr->id());
+      auto &solution = cell_ptr->projection().coeff();
+      solution.setZero();
+      for (int c = 0; c < Cell::N; ++c) {
+        solution.col(c).setOnes();
+        if (c > 0) {
+          solution.col(c - 1).setZero();
+        }
+        // Build the element-wise residual column:
+        Coeff residual; residual.setZero();
+        base().AddFluxDivergence(GetDiffusiveFluxMatrix, *cell_ptr,
+            residual.data());
+        // Write the residual column intto the matrix:
+        matrix.col(c) = residual.row(0);
+        for (int r = 1; r < Cell::K; ++r) {
+          assert((residual.row(r) - residual.row(0)).squaredNorm() == 0);
+        }
+      }
+    }
     return matrices;
   }
 
