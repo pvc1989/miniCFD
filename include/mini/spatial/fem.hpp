@@ -91,6 +91,9 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
     return name() + "_" + std::to_string(part_ptr_->mpi_rank());
   }
 
+  Part *part_ptr() {
+    return part_ptr_;
+  }
   Part const &part() const {
     return *part_ptr_;
   }
@@ -222,7 +225,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
 #endif
   }
 
- protected:  // declare pure virtual methods to be implemented in subclasses
+ public:  // declare pure virtual methods to be implemented in subclasses
   using FluxMatrix = typename Riemann::FluxMatrix;
   using CellToFlux = FluxMatrix (*)(const Cell &cell, int q);
 
@@ -257,7 +260,7 @@ class FiniteElement : public temporal::System<typename Part::Scalar> {
   virtual void ApplySubsonicOutlet(Column *residual) const = 0;
   virtual void ApplySmartBoundary(Column *residual) const = 0;
 
- protected:
+ public:
   static FluxMatrix GetFluxMatrix(const Projection &projection, int q)
       requires(!mini::riemann::Diffusive<Riemann>) {
     return Riemann::GetFluxMatrix(projection.GetValue(q));
